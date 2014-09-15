@@ -832,15 +832,15 @@ Signing can be done by using different modules for accessing the signature token
     digidoc::PKCS11Signer *signer = new digidoc::PKCS11Signer("<PKCS11-driver-path>");
     // optionally specify PKCS#11 driver's location. If left  unspecified then location is
     // looked up from configuration file's parameter "pkcs11.driver.path".
-	std::string pin = "<pin-code>"; //PIN2 in case of Estonian ID cards
+    std::string pin = "<pin-code>"; //PIN2 in case of Estonian ID cards
     signer->setPin(pin); 
 \endcode
 If you would like to add PIN insertion dialog window for the signer to enter the PIN code then you can write a new class which extends the PKCS11Signer class, overwrite the std::string pin(const X509Cert &cert) method and write your own PIN dialog implementation code there.
 
 2. Microsoft CNG API and minidriver for signing with smart card in Windows environment. By default, a dialog window is opened for the user to choose the signing certificate and enter PIN code.
 \code{.cpp}
-	std::string pin = "<pin-code>"; //PIN2 in case of Estonian ID cards
-	bool selectFirst;
+    std::string pin = "<pin-code>"; //PIN2 in case of Estonian ID cards
+    bool selectFirst;
     digidoc::CNGSigner *signer = new digidoc::CNGSigner(pin, selectFirst);
 \endcode
 By default, when signing via CNG API then a dialog window is displayed to the user for choosing the signing certificate and inserting PIN code. However, the default behaviour can be changed with parameters "pin" and "selectFirst" of the above mentioned method:
