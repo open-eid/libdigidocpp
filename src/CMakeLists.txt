@@ -273,6 +273,10 @@ install( TARGETS digidocpp ${EXTRA_TARGETS}
     FRAMEWORK DESTINATION /Library/Frameworks
 )
 
+if(WIN32)
+    install( DIRECTORY ${PROJECT_BINARY_DIR}/src/ DESTINATION ${CMAKE_INSTALL_LIBDIR} FILES_MATCHING PATTERN "*.pdb" )
+endif()
+
 source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/37242.p12" )
 source_group( "Resources\\schemas" FILES ${SCHEMA_FILES} )
 
