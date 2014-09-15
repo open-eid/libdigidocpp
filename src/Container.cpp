@@ -37,14 +37,14 @@
 #pragma GCC diagnostic ignored "-Wnull-conversion"
 #endif
 #include <xsec/utils/XSECPlatformUtils.hpp>
-#ifdef __APPLE__
-#pragma GCC diagnostic pop
-#endif
 #ifndef XSEC_NO_XALAN
 #include <xalanc/XPath/XPathEvaluator.hpp>
 #include <xalanc/XalanTransformer/XalanTransformer.hpp>
 XALAN_USING_XALAN(XPathEvaluator)
 XALAN_USING_XALAN(XalanTransformer)
+#endif
+#ifdef __APPLE__
+#pragma GCC diagnostic pop
 #endif
 
 #include <algorithm>
@@ -382,6 +382,7 @@ Signature* Container::sign( Signer *signer, const string &profile )
  * certificate store is chosen for signature creation and the certificate selection’s dialog window is not displayed to the
  * user
  */
+
 Signature* Container::sign(const string &city, const string &stateOrProvince,
                            const string &postalCode, const string &countryName,
                            const vector<string> &signerRoles,
