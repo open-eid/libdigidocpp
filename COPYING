@@ -1,0 +1,206 @@
+etc/schema/xmldsig-core-schema.xsd
+Schema for XML Signatures
+    http://www.w3.org/2000/09/xmldsig#
+    $Revision: 1.1 $ on $Date: 2002/02/08 20:32:26 $ by $Author: reagle $
+
+    Copyright 2001 The Internet Society and W3C (Massachusetts Institute
+    of Technology, Institut National de Recherche en Informatique et en
+    Automatique, Keio University). All Rights Reserved.
+    http://www.w3.org/Consortium/Legal/
+
+    This document is governed by the W3C Software License [1] as described
+    in the FAQ [2].
+
+    [1] http://www.w3.org/Consortium/Legal/copyright-software-19980720
+    [2] http://www.w3.org/Consortium/Legal/IPR-FAQ-20000620.html#DTD
+
+_______________________________________________________________________________
+etc/schema/xmldsig11-schema.xsd
+
+ Copyright ©[2011] World Wide Web Consortium 
+ (Massachusetts Institute of Technology,  
+  European Research Consortium for Informatics and Mathematics, 
+  Keio University). All Rights Reserved.  
+ This work is distributed under the W3C® Software License [1] in the
+ hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ PURPOSE. 
+ [1] http://www.w3.org/Consortium/Legal/2002/copyright-software-20021231
+
+
+_______________________________________________________________________________
+etc/schema/OpenDocument_manifest.rng
+
+	OASIS OpenDocument v1.0
+	OASIS standard, 1 May 2005
+	Relax-NG Manifest Schema
+	$Id$
+	© 2002-2005 OASIS Open
+	© 1999-2005 Sun Microsystems, Inc.
+
+_______________________________________________________________________________
+src/minizip
+
+http://www.winimage.com/zLibDll/minizip.html
+
+MiniZip - Copyright (c) 1998-2010 - by Gilles Vollant - version 1.1 64 bits from Mathias Svensson
+
+Credits
+
+ Gilles Vollant    - Original MiniZip author
+ Even Rouault      - ZIP64 unzip Support
+ Daniel Borca      - BZip Compression method support in unzip
+ Mathias Svensson  - ZIP64 zip support
+ Mathias Svensson  - BZip Compression method support in zip
+
+License
+----------------------------------------------------------
+   Condition of use and distribution are the same than zlib :
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+----------------------------------------------------------
+
+_______________________________________________________________________________
+src/crypto/signer/pkcs11.h
+
+   pkcs11.h
+   Copyright 2006, 2007 g10 Code GmbH
+   Copyright 2006 Andreas Jellinghaus
+
+   This file is free software; as a special exception the author gives
+   unlimited permission to copy and/or distribute it, with or without
+   modifications, as long as this notice is preserved.
+
+   This file is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY, to the extent permitted by law; without even
+   the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+   PURPOSE.
+
+_______________________________________________________________________________
+src/openssl/
+
+ Copyright (c) 2006 The OpenSSL Project.  All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer. 
+
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+ 3. All advertising materials mentioning features or use of this
+    software must display the following acknowledgment:
+    "This product includes software developed by the OpenSSL Project
+    for use in the OpenSSL Toolkit. (http://www.OpenSSL.org/)"
+
+ 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
+    endorse or promote products derived from this software without
+    prior written permission. For written permission, please contact
+    licensing@OpenSSL.org.
+
+ 5. Products derived from this software may not be called "OpenSSL"
+    nor may "OpenSSL" appear in their names without prior written
+    permission of the OpenSSL Project.
+
+ 6. Redistributions of any form whatsoever must retain the following
+    acknowledgment:
+    "This product includes software developed by the OpenSSL Project
+    for use in the OpenSSL Toolkit (http://www.OpenSSL.org/)"
+
+ THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
+ EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ OF THE POSSIBILITY OF SUCH DAMAGE.
+
+_______________________________________________________________________________
+src/xml/ generated files from xsd schemas
+
+Copyright (C) 2005-2010 Code Synthesis Tools CC
+
+This program was generated by CodeSynthesis XSD, an XML Schema to
+C++ data binding compiler.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+
+In addition, as a special exception, Code Synthesis Tools CC gives
+permission to link this program with the Xerces-C++ library (or with
+modified versions of Xerces-C++ that use the same license as Xerces-C++),
+and distribute linked combinations including the two. You must obey
+the GNU General Public License version 2 in all respects for all of
+the code used other than Xerces-C++. If you modify this copy of the
+program, you may extend this exception to your version of the program,
+but you are not obligated to do so. If you do not wish to do so, delete
+this exception statement from your version.
+
+Furthermore, Code Synthesis Tools CC makes a special exception for
+the Free/Libre and Open Source Software (FLOSS) which is described
+in the accompanying FLOSSE file.
+
+_______________________________________________________________________________
+examples/DigiDocCSharp
+
+LICENSE.BSD
+===========
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice,
+    this list  of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+  * Neither the name of the copyright holder nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.

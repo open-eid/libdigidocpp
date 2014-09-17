@@ -1,0 +1,23 @@
+APPNOTE.TXT - ZIP File Format Specification
+BDoc-1.0-eng.pdf - BDoc 1.0 Specification ENG
+BDoc-2.0-eng.pdf - BDoc 2.0 Specification ENG
+BDoc-2.0-est.pdf - BDoc 2.0 Specification EST
+BDoc-2.1-eng.pdf - BDoc 2.1 Specification ENG
+BDoc-2.1.2-eng.pdf - BDoc 2.1.2 Specification ENG
+BDoc-2.1.2-est.pdf - BDoc 2.1.2 Specification EST
+OpenDocument-v1.0-os.pdf - ODF 1.0 Specification
+OpenDocument-v1.2-part3.pdf - ODF 1.2 Specification
+rfc3161.txt - Time-Stamp Protocol (TSP)
+SK-CPP-PRG-GUIDE.docx - Programming Guide DOCX
+SK-CPP-PRG-GUIDE.pdf - Programming Guide PDF
+ts_101903v010302p.pdf - XAdES 1.3.1 Specification
+ts_101903v010401p.pdf - XAdES 1.4.1 Specification
+ts_101903v010402p.pdf - XAdES 1.4.2 Specification
+ts_102231v030102p.pdf - TSL 3.1.2 Specification
+ts_102853v010102p.pdf - XAdES 1.1.2 Validation
+ts_102918v010201p.pdf - ASiC 1.2.1 Specification
+ts_102918v010301p.pdf - ASiC 1.3.1 Specification
+ts_103171v020101p.pdf - XAdES Baseline 2.1.1 Specification
+ts_103174v020101p.pdf - ASiC Baseline 2.1.1 Specification
+ts_103174v020201p.pdf - ASiC Baseline 2.2.1 Specification
+ts_119612v010101p.pdf - TSL(2) 1.1.1 Specification

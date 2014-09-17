@@ -1,0 +1,52 @@
+C# bindingud on tehtud http://swig.org/ tooliga
+libdigidocpp cmake build süsteemi on integreeritud swig bindingu genereerimise käsud.
+
+Alla tuleb laadida swigwin-2.0.4.zip (http://swig.org/download.html)
+Lisaks libdigidocpp teistele cmake build parameetritele tule näidata ka swig asukoht
+-DSWIG_EXECUTABLE=C:/swigwin-2.0.4/swig.exe'
+
+See genereerib ühe õhukese c++ koodi wrapperi (digidoc_csharp.dll) mis transleerib libdigidocpp
+funktsioonid unmanaged koodist managed koodi (swig/csharp kataloog kuhu tekivad cs failid).
+Viimased tuleb importida oma projekti.
+
+API on suht sarnane libdigidocpp
+Kõik klassid asuvad digidoc namespaces
+Hetkel on implementeeritud ainult ddoc/bdoc avamine ja valideerimine
+
+Üldised funktsioonid
+﻿digidoc.initialize(): see tuleks ennem libdigidocpp funktsionaalsuse kasutamist käivitada
+digidoc.terminate(): lõpetamiseks
+
+Konteineri klassid
+ADoc: abstract class millest kõik järgnevad sõltuvad
+DDoc: ddoc konteineri klass
+BDoc: bdoc konteineri klass
+WDoc: wrapper klass mis otsustab failinime järgi kas kasutab BDoc või DDoc klassi
+
+Abi klassid
+Document: konteineri faili info
+Signature: konteineri allkirja info (lisaks SignerRoles, SignatureProductionPlace)
+
+Exceptionid
+DigidocException: abstract exception
+DigidocBDocException: üldised konteiri vead
+DigidocIOException: failide ja teiste resursside lugemisest/kirjutamisest tulenevad vead
+DigidocSignatureException: valideerimisest tulenevad vead
+DigidocSignException: allkirjastamisest tulenevad vead
+
+Näidis
+
+﻿digidoc.initialize();
+DDoc doc = new DDoc("test.ddoc");
+Document f = doc.getDocument(0);
+Signature s = doc.getSignature(0);
+digidoc.terminate();
+
+Rohkem examples kataloogis Program.cs failis
+
+Näidisrakenduse exe on kah sinna examples kataloogi kaasa pandud
+käsud
+DigiDocCSharp.exe -version
+DigiDocCSharp.exe -help
+DigiDocCSharp.exe -verify test.bdoc
+DigiDocCSharp.exe -extract=0 test.bdoc

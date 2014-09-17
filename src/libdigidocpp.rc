@@ -1,0 +1,38 @@
+#include <winver.h>
+
+#define VER_STR_HELPER(x)	#x
+#define VER_STR(x)		VER_STR_HELPER(x)
+
+VS_VERSION_INFO VERSIONINFO
+  FILEVERSION MAJOR_VER,MINOR_VER,RELEASE_VER,BUILD_VER
+  PRODUCTVERSION MAJOR_VER,MINOR_VER,RELEASE_VER,BUILD_VER
+  FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS VS_FF_DEBUG
+#else
+  FILEFLAGS 0x0L
+#endif
+  FILEOS VOS_NT_WINDOWS32
+  FILETYPE VFT_DLL
+  FILESUBTYPE VFT_UNKNOWN
+BEGIN
+	BLOCK "StringFileInfo"
+	BEGIN
+		BLOCK "040904B0"
+		BEGIN
+			VALUE "CompanyName", ORG
+			VALUE "FileDescription", "digidocpp"
+			VALUE "FileVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
+			VALUE "InternalName", "digidocpp"
+			VALUE "LegalCopyright", "(C) 2009-2014 Estonian Information System's Authority"
+			VALUE "OriginalFilename", "digidocpp.dll"
+			VALUE "ProductName", "digidocpp"
+			VALUE "ProductVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
+		END
+	END
+	BLOCK "VarFileInfo"
+	BEGIN
+		VALUE "Translation", 0x409, 1200
+	END
+END
+/* End of Version info */
