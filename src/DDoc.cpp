@@ -19,6 +19,7 @@
 
 #include "DDoc_p.h"
 
+#include "Conf.h"
 #include "Container.h"
 #include "log.h"
 #include "crypto/Digest.h"
@@ -27,7 +28,6 @@
 #include "crypto/Signer.h"
 #include "util/DateTime.h"
 #include "util/File.h"
-#include "XmlConf.h"
 
 #include <libdigidoc/DigiDocSAXParser.h>
 #include <libdigidoc/DigiDocObj.h>
