@@ -116,11 +116,6 @@ if( TSL_URL )
     list( APPEND digidoc-tool_SRCS ${xsd_SRCS} crypto/Connect.cpp crypto/TSL.cpp util/DateTime.cpp tslcert.cpp )
 endif()
 
-if( UNIX )
-    #ignore auto_ptr deprecation warnings
-    set_source_files_properties( ${xsd_SRCS} PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations" )
-endif()
-
 set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd
     ${SCHEMA_DIR}/OpenDocument_manifest.xsd

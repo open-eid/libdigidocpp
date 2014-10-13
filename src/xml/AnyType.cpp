@@ -65,18 +65,18 @@ AnyType::AnyType(const DOMElement &e, Flags f, Container *c)
 
         if(n.name() == "SPURI" && n.namespace_() == "http://uri.etsi.org/01903/v1.3.2#")
         {
-            std::auto_ptr<SPURIType> r(SPURITraits::create(i, f, this));
-            if(!this->SPURI_)
-                this->SPURI_.set(r);
+            std::unique_ptr<SPURIType> r(SPURITraits::create(i, f, this));
+            if(!this->SPURI_.present())
+                this->SPURI_.set(std::move(r));
             continue;
         }
 
 #ifdef SPUSERNOTICE
         if(n.name() == "SPUserNotice" && n.namespace_() == "http://uri.etsi.org/01903/v1.3.2#")
         {
-            std::auto_ptr<SPUserNoticeType> r(SPUserNoticeTraits::create(i, f, this));
-            if(!this->SPUserNotice_)
-                this->SPUserNotice_.set(r);
+            std::unique_ptr<SPUserNoticeType> r(SPUserNoticeTraits::create(i, f, this));
+            if(!this->SPUserNotice_.present())
+                this->SPUserNotice_.set(std::move(r);
             continue;
         }
 #endif

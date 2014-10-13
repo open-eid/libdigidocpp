@@ -50,7 +50,7 @@ if( INSTALL_DOC )
 endif()
 
 if( WIN32 )
-    add_definitions( -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS )
+    add_definitions( -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -DWIN32_LEAN_AND_MEAN )
 endif()
 
 add_subdirectory(src)
