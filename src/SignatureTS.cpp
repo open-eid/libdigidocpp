@@ -40,7 +40,7 @@ using namespace std;
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
 {
-    return v.empty() ? Base64Binary() : Base64Binary(&v[0], v.size());
+    return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
 
@@ -64,23 +64,32 @@ string SignatureTS::TSTime() const
     return xsd2string(makeDateTime(datetime));
 }
 
-void SignatureTS::notarizeTS()
+void SignatureTS::extendTo(const std::string &profile)
 {
-    if(!qualifyingProperties().unsignedProperties().present())
+    if(profile.find(BDoc::ASIC_TS_PROFILE) != string::npos)
     {
-        UnsignedPropertiesType usProp;
-        usProp.unsignedSignatureProperties(UnsignedSignaturePropertiesType());
-        qualifyingProperties().unsignedProperties(usProp);
+        if(!qualifyingProperties().unsignedProperties().present())
+        {
+            UnsignedPropertiesType usProp;
+            usProp.unsignedSignatureProperties(UnsignedSignaturePropertiesType());
+            qualifyingProperties().unsignedProperties(usProp);
+        }
+
+        Digest calc;
+        calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
+
+        TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
+        UnsignedSignaturePropertiesType::SignatureTimeStampType ts;
+        ts.id(id() + Log::format("-T%u", unsignedSignatureProperties().signatureTimeStamp().size()));
+        ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(toBase64(tsa)));
+        unsignedSignatureProperties().signatureTimeStamp().push_back(ts);
+        unsignedSignatureProperties().contentOrder().push_back(
+            UnsignedSignaturePropertiesType::ContentOrderType(
+                UnsignedSignaturePropertiesType::signatureTimeStampId,
+                unsignedSignatureProperties().signatureTimeStamp().size() - 1));
+        sigdata_.clear();
     }
-
-    Digest calc;
-    calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
-
-    TS tsa(ConfV2::instance() ? ConfV2::instance()->TSUrl() : ConfV2().TSUrl(), calc);
-    UnsignedSignaturePropertiesType::SignatureTimeStampType ts;
-    ts.id(id() + Log::format("-T%u", unsignedSignatureProperties().signatureTimeStamp().size()));
-    ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(toBase64(tsa)));
-    unsignedSignatureProperties().signatureTimeStamp().push_back(ts);
+    SignatureTM::extendTo(profile);
 }
 
 vector<unsigned char> SignatureTS::tsBase64() const

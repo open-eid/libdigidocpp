@@ -34,7 +34,7 @@ public:
     X509Cert TSCertificate() const;
     std::string TSTime() const;
     virtual void validate(Validate params = ValidateFULL) const;
-    void notarizeTS();
+    virtual void extendTo(const std::string &profile);
 
 private:
     DISABLE_COPY(SignatureTS);

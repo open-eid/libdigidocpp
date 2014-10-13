@@ -345,8 +345,6 @@ SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc)
                 THROW("AttributeRevocationValues are not supported");
             if(!usp->archiveTimeStamp().empty())
                 THROW("ArchiveTimeStamp is not supported");
-            if(!usp->archiveTimeStampV141().empty())
-                THROW("ArchiveTimeStampV141 is not supported");
             if(!usp->timeStampValidationData().empty())
                 THROW("TimeStampValidationData is not supported");
         }
@@ -366,39 +364,6 @@ SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc)
 SignatureBES::~SignatureBES()
 {
     delete asicsignature;
-}
-
-void SignatureBES::addEPES()
-{
-    map<string,Policy>::const_iterator p = policylist.cbegin();
-    IdentifierType identifierid(p->first);
-    identifierid.qualifier(QualifierType::OIDAsURN);
-
-    ObjectIdentifierType identifier(identifierid);
-    identifier.description(p->second.DESCRIPTION);
-
-    string digestUri = Conf::instance()->digestUri();
-    const vector<unsigned char> *data = &p->second.SHA256;
-    if(Conf::instance()->digestUri() == URI_SHA1) data = &p->second.SHA1;
-    else if(Conf::instance()->digestUri() == URI_SHA224) data = &p->second.SHA224;
-    else if(Conf::instance()->digestUri() == URI_SHA256) data = &p->second.SHA256;
-    else if(Conf::instance()->digestUri() == URI_SHA384) data = &p->second.SHA384;
-    else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;
-    DigestAlgAndValueType policyDigest(DigestMethodType(digestUri),
-        Base64Binary(&data->front(), data->size()));
-
-    SignaturePolicyIdType policyId(identifier, policyDigest);
-
-    SigPolicyQualifiersListType::SigPolicyQualifierType uri;
-    uri.sPURI(p->second.URI);
-
-    SigPolicyQualifiersListType qualifiers;
-    qualifiers.sigPolicyQualifier().push_back(uri);
-    policyId.sigPolicyQualifiers(qualifiers);
-
-    SignaturePolicyIdentifierType policyidentifier;
-    policyidentifier.signaturePolicyId(policyId);
-    getSignedSignatureProperties().signaturePolicyIdentifier(policyidentifier);
 }
 
 string SignatureBES::policy() const
@@ -680,8 +645,41 @@ void SignatureBES::validate(Validate) const
  * @param signer signer that signs the signature object.
  * @throws Exception exception is throws if signing failed.
  */
-vector<unsigned char> SignatureBES::prepareSignedInfo(Signer* signer)
+vector<unsigned char> SignatureBES::prepareSignedInfo(const std::string &profile, Signer* signer)
 {
+    if(profile.find(BDoc::ASIC_TM_PROFILE) != string::npos)
+    {
+        map<string,Policy>::const_iterator p = policylist.cbegin();
+        IdentifierType identifierid(p->first);
+        identifierid.qualifier(QualifierType::OIDAsURN);
+
+        ObjectIdentifierType identifier(identifierid);
+        identifier.description(p->second.DESCRIPTION);
+
+        string digestUri = Conf::instance()->digestUri();
+        const vector<unsigned char> *data = &p->second.SHA256;
+        if(Conf::instance()->digestUri() == URI_SHA1) data = &p->second.SHA1;
+        else if(Conf::instance()->digestUri() == URI_SHA224) data = &p->second.SHA224;
+        else if(Conf::instance()->digestUri() == URI_SHA256) data = &p->second.SHA256;
+        else if(Conf::instance()->digestUri() == URI_SHA384) data = &p->second.SHA384;
+        else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;
+        DigestAlgAndValueType policyDigest(DigestMethodType(digestUri),
+            Base64Binary(&data->front(), data->size()));
+
+        SignaturePolicyIdType policyId(identifier, policyDigest);
+
+        SigPolicyQualifiersListType::SigPolicyQualifierType uri;
+        uri.sPURI(p->second.URI);
+
+        SigPolicyQualifiersListType qualifiers;
+        qualifiers.sigPolicyQualifier().push_back(uri);
+        policyId.sigPolicyQualifiers(qualifiers);
+
+        SignaturePolicyIdentifierType policyidentifier;
+        policyidentifier.signaturePolicyId(policyId);
+        getSignedSignatureProperties().signaturePolicyIdentifier(policyidentifier);
+    }
+
     X509Cert c = signer->cert();
     setSigningCertificate(c);
     signature->signedInfo().signatureMethod(Uri( X509Crypto(c).rsaModulus().empty() ?
@@ -1093,8 +1091,6 @@ void SignatureBES::saveToXml(ostream &os) const
         map["ds"].name = URI_ID_DSIG;
         map["xades"].name = XADES_NAMESPACE;
         map["asic"].name = ASIC_NAMESPACE;
-        if(profile().find("archive") != string::npos)
-            map["xadesv141"].name = XADESv141_NAMESPACE;
         XAdESSignaturesType asic;
         asic.signature().push_back(*signature);
         xAdESSignatures(os, asic, map, "UTF-8", Flags::dont_initialize);

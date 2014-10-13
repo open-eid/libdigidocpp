@@ -35,11 +35,11 @@
 using namespace digidoc;
 using namespace std;
 
-TS::TS(const string &url, const Digest &digest)
+TS::TS(const string &url, const Digest &digest, const string &useragent)
 {
-    string policy;
     SCOPE(TS_REQ, req, TS_REQ_new());
     TS_REQ_set_version(req.get(), 1);
+    TS_REQ_set_cert_req(req.get(), 1);
 
     SCOPE(X509_ALGOR, algo, X509_ALGOR_new());
     algo->algorithm = OBJ_nid2obj(Digest::toMethod(digest.uri()));
@@ -49,14 +49,16 @@ TS::TS(const string &url, const Digest &digest)
     SCOPE(TS_MSG_IMPRINT, msg_imprint, TS_MSG_IMPRINT_new());
     TS_MSG_IMPRINT_set_algo(msg_imprint.get(), algo.get());
     vector<unsigned char> digestdata = digest.result();
-    TS_MSG_IMPRINT_set_msg(msg_imprint.get(), (unsigned char*)&digestdata[0], int(digestdata.size()));
+    TS_MSG_IMPRINT_set_msg(msg_imprint.get(), digestdata.data(), int(digestdata.size()));
     TS_REQ_set_msg_imprint(req.get(), msg_imprint.get());
 
+#if 0
     if(!policy.empty())
     {
         SCOPE(ASN1_OBJECT, obj, OBJ_txt2obj(policy.c_str(), 0));
         TS_REQ_set_policy_id(req.get(), obj.get());
     }
+#endif
 
     SCOPE(ASN1_INTEGER, nonce, ASN1_INTEGER_new());
     nonce->length = 20;
@@ -64,27 +66,29 @@ TS::TS(const string &url, const Digest &digest)
     RAND_bytes(nonce->data, nonce->length);
     TS_REQ_set_nonce(req.get(), nonce.get());
 
-    TS_REQ_set_cert_req(req.get(), 1);
-
     int len = i2d_TS_REQ(req.get(), 0);
     vector<unsigned char> data(len, 0);
-    unsigned char *p = &data[0];
+    unsigned char *p = data.data();
     i2d_TS_REQ(req.get(), &p);
 
-    Connect conn(url);
-    conn.addHeader("Content-Type", "application/timestamp-query");
-    conn.addHeader("Accept", "application/timestamp-reply");
-    conn.addHeader("Connection", "Close");
-    conn.addHeader("Cache-Control", "no-cache");
-    string result = conn.exec(data).content;
+    string result = Connect(url, "POST", 0, useragent).exec({
+        {"Content-Type", "application/timestamp-query"},
+        {"Accept", "application/timestamp-reply"},
+        {"Connection", "Close"},
+        {"Cache-Control", "no-cache"}
+    }, data).content;
 
-    const unsigned char *p2 = (const unsigned char*)&result[0];
+    const unsigned char *p2 = (const unsigned char*)result.c_str();
     SCOPE(TS_RESP, resp, d2i_TS_RESP(0, &p2, long(result.size())));
     if(!resp)
         THROW_OPENSSLEXCEPTION("Failed to parse TS response.");
+
     SCOPE(TS_VERIFY_CTX, ctx, TS_VERIFY_CTX_new());
+    ctx->flags = TS_VFY_NONCE|TS_VFY_VERSION;
+    ctx->nonce = nonce.get();
     if(TS_RESP_verify_response(ctx.get(), resp.get()) != 1)
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
+    ctx->nonce = nullptr;
 
     d.reset(resp->token, function<void(PKCS7*)>(PKCS7_free));
     resp->token = nullptr;
@@ -94,7 +98,7 @@ TS::TS(const std::vector<unsigned char> &data)
 {
     if(data.empty())
         return;
-    const unsigned char *p = &data[0];
+    const unsigned char *p = data.data();
     d.reset(d2i_PKCS7(0, &p, long(data.size())), function<void(PKCS7*)>(PKCS7_free));
 }
 
@@ -135,7 +139,7 @@ string TS::time() const
     SCOPE(TS_TST_INFO, info, PKCS7_to_TS_TST_INFO(d.get()));
     if(!info)
         return string();
-    return string(info->time->data, info->time->data+info->time->length);
+    return string((char*)info->time->data, info->time->length);
 }
 
 void TS::verify(const Digest &digest)
@@ -146,7 +150,7 @@ void TS::verify(const Digest &digest)
     vector<unsigned char> data = digest.result();
     SCOPE(TS_VERIFY_CTX, ctx, TS_VERIFY_CTX_new());
     ctx->flags = TS_VFY_IMPRINT|TS_VFY_VERSION|TS_VFY_SIGNATURE;
-    ctx->imprint = (unsigned char*)&data[0];
+    ctx->imprint = data.data();
     ctx->imprint_len = (unsigned int)data.size();
 
     ctx->store = X509_STORE_new();
@@ -203,7 +207,7 @@ TS::operator vector<unsigned char>() const
     vector<unsigned char> der(i2d_PKCS7(d.get(), 0), 0);
     if(der.empty())
         return der;
-    unsigned char *p = &der[0];
+    unsigned char *p = der.data();
     i2d_PKCS7(d.get(), &p);
     return der;
 }

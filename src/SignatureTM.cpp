@@ -40,7 +40,7 @@ using namespace xml_schema;
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
 {
-    return v.empty() ? Base64Binary() : Base64Binary(&v[0], v.size());
+    return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
 SignatureTM::SignatureTM(unsigned int id, BDoc *bdoc)
@@ -80,9 +80,7 @@ void SignatureTM::addOid(vector<unsigned char> &digest, const string &uri) const
 vector<unsigned char> SignatureTM::nonce() const
 {
     vector<unsigned char> respBuf = getOCSPResponseValue();
-    if(respBuf.empty())
-        return vector<unsigned char>();
-    return OCSP(respBuf).nonce();
+    return respBuf.empty() ? vector<unsigned char>() : OCSP(respBuf).nonce();
 }
 
 /**
@@ -196,8 +194,8 @@ void SignatureTM::validate(Validate params) const
             vector<unsigned char> respNonce = ocsp.nonce();
             if(nonce != respNonce)
             {
-                DEBUGMEM("Calculated signature HASH", &nonce[0], nonce.size());
-                DEBUGMEM("Response nonce", &respNonce[0], respNonce.size());
+                DEBUGMEM("Calculated signature HASH", nonce.data(), nonce.size());
+                DEBUGMEM("Response nonce", respNonce.data(), respNonce.size());
                 EXCEPTION_ADD(exception, "Calculated signature hash doesn't match to OCSP responder nonce field");
             }
         }
@@ -212,11 +210,11 @@ string SignatureTM::nonceAlgorithm() const
 {
     vector<unsigned char> n = nonce();
     if(n.empty()) return string();
-    if(n.size() > sizeof(OID_SHA1) && memcmp(OID_SHA1, &n[0], sizeof(OID_SHA1) - 1) == 0) return URI_SHA1;
-    if(n.size() > sizeof(OID_SHA224) && memcmp(OID_SHA224, &n[0], sizeof(OID_SHA224) - 1) == 0) return URI_SHA224;
-    if(n.size() > sizeof(OID_SHA256) && memcmp(OID_SHA256, &n[0], sizeof(OID_SHA256) - 1) == 0) return URI_SHA256;
-    if(n.size() > sizeof(OID_SHA384) && memcmp(OID_SHA384, &n[0], sizeof(OID_SHA384) - 1) == 0) return URI_SHA384;
-    if(n.size() > sizeof(OID_SHA512) && memcmp(OID_SHA512, &n[0], sizeof(OID_SHA512) - 1) == 0) return URI_SHA512;
+    if(n.size() > sizeof(OID_SHA1) && memcmp(OID_SHA1, n.data(), sizeof(OID_SHA1) - 1) == 0) return URI_SHA1;
+    if(n.size() > sizeof(OID_SHA224) && memcmp(OID_SHA224, n.data(), sizeof(OID_SHA224) - 1) == 0) return URI_SHA224;
+    if(n.size() > sizeof(OID_SHA256) && memcmp(OID_SHA256, n.data(), sizeof(OID_SHA256) - 1) == 0) return URI_SHA256;
+    if(n.size() > sizeof(OID_SHA384) && memcmp(OID_SHA384, n.data(), sizeof(OID_SHA384) - 1) == 0) return URI_SHA384;
+    if(n.size() > sizeof(OID_SHA512) && memcmp(OID_SHA512, n.data(), sizeof(OID_SHA512) - 1) == 0) return URI_SHA512;
     return string();
 }
 
@@ -224,14 +222,17 @@ string SignatureTM::nonceAlgorithm() const
  *
  * @throws SignatureException
  */
-void SignatureTM::notarize()
+void SignatureTM::extendTo(const std::string &profile)
 {
+    if(profile == BDoc::BES_PROFILE || profile == BDoc::EPES_PROFILE)
+        return;
+
     // Calculate NONCE value.
     Digest calc;
     calc.update(getSignatureValue());
     vector<unsigned char> nonce = calc.result();
     addOid(nonce, calc.uri());
-    DEBUGMEM("OID + Calculated signature HASH (nonce):", &nonce[0], nonce.size());
+    DEBUGMEM("OID + Calculated signature HASH (nonce):", nonce.data(), nonce.size());
 
     // Get issuer certificate from certificate store.
     X509Cert cert = signingCertificate();
@@ -247,14 +248,6 @@ void SignatureTM::notarize()
     OCSP ocsp(cert, issuer, nonce, "format: " + bdoc->mediaType() + " version: " + policy());
     ocsp.verifyResponse(cert);
 
-    vector<unsigned char> ocspResponse = ocsp.toDer();
-    DEBUG("OCSP response size %d", ocspResponse.size());
-
-    Digest ocspResponseCalc;
-    ocspResponseCalc.update(ocspResponse);
-    vector<unsigned char> ocspResponseHash = ocspResponseCalc.result();
-    DEBUGMEM("Calculated ocspResponse HASH:", &ocspResponseHash[0], ocspResponseHash.size());
-
     // Set TM profile signature parameters.
     if(!qualifyingProperties().unsignedProperties().present())
     {
@@ -266,6 +259,8 @@ void SignatureTM::notarize()
     addCertificateValue(id() + "-RESPONDER_CERT", ocsp.responderCert());
     addCertificateValue(id() + "-CA-CERT", issuer);
 
+    vector<unsigned char> ocspResponse = ocsp.toDer();
+    DEBUG("OCSP response size %d", ocspResponse.size());
     OCSPValuesType::EncapsulatedOCSPValueType ocspValueData(toBase64(ocspResponse));
     ocspValueData.id(id().replace(0, 1, "N"));
 
@@ -276,6 +271,11 @@ void SignatureTM::notarize()
     revocationValues.oCSPValues(ocspValue);
 
     unsignedSignatureProperties().revocationValues().push_back(revocationValues);
+    unsignedSignatureProperties().contentOrder().push_back(
+        UnsignedSignaturePropertiesType::ContentOrderType(
+            UnsignedSignaturePropertiesType::revocationValuesId,
+            unsignedSignatureProperties().revocationValues().size() - 1));
+    sigdata_.clear();
 }
 
 /**
@@ -291,7 +291,12 @@ void SignatureTM::addCertificateValue(const string& certId, const X509Cert& x509
     UnsignedSignaturePropertiesType::CertificateValuesSequence &values =
             unsignedSignatureProperties().certificateValues();
     if(values.empty())
+    {
         values.push_back(CertificateValuesType());
+        unsignedSignatureProperties().contentOrder().push_back(
+            UnsignedSignaturePropertiesType::ContentOrderType(
+                UnsignedSignaturePropertiesType::certificateValuesId, values.size() - 1));
+    }
 
     CertificateValuesType::EncapsulatedX509CertificateType certData(toBase64(x509));
     certData.id(certId);

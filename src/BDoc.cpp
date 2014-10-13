@@ -460,9 +460,9 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
     {
         THROW("Failed to parse manifest XML: %s", Conf::instance()->xsdPath().c_str());
     }
-    catch(const xsd::cxx::xml::properties<char>::argument &)
+    catch(const xsd::cxx::xml::properties<char>::argument &e)
     {
-        THROW("Failed to parse manifest XML: %s", Conf::instance()->xsdPath().c_str());
+        THROW("Failed to parse manifest XML: %s %s", e, Conf::instance()->xsdPath().c_str());
     }
     catch(const xsd::cxx::tree::unexpected_element<char> &e)
     {
@@ -498,16 +498,9 @@ Signature *BDoc::sign(Signer* signer, const string &profile)
             signature->addDataObjectFormat("#" + id, f.mediaType());
         }
 
-        if(profile.find(BDoc::ASIC_TM_PROFILE) != string::npos)
-            signature->addEPES();
-        vector<unsigned char> digest = signature->prepareSignedInfo(signer); // needs to be here to select also signatureMethod
+        vector<unsigned char> digest = signature->prepareSignedInfo(profile, signer); // needs to be here to select also signatureMethod
         signature->setSignatureValue(signer->sign(signature->signatureMethod(), digest));
-        if(profile.find(BDoc::ASIC_TS_PROFILE) != string::npos)
-            signature->notarizeTS();
-        if(profile != BES_PROFILE && profile != EPES_PROFILE)
-            signature->notarize();
-        /*if(profile == ASIC_TSA_PROFILE || profile == ASIC_TMA_PROFILE)
-            signature->notarizeTSA();*/
+        signature->extendTo(profile);
     }
     catch(const Exception& e)
     {

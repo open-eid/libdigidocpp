@@ -165,3 +165,19 @@ string Signature::TSTime() const
 {
     return string();
 }
+
+/**
+ * Returns signature Archive TimeStampToken certificate.
+ */
+X509Cert Signature::TSACertificate() const
+{
+    return X509Cert();
+}
+
+/**
+ * Returns signature Archive TimeStampToken time.
+ */
+string Signature::TSATime() const
+{
+    return string();
+}

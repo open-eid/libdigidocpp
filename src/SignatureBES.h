@@ -53,7 +53,7 @@ namespace digidoc
           std::string signatureMethod() const;
           virtual void validate(Validate params = ValidateFULL) const;
           void setSignatureValue(const std::vector<unsigned char> &signatureValue);
-          std::vector<unsigned char> prepareSignedInfo(Signer *singer);
+          std::vector<unsigned char> prepareSignedInfo(const std::string &profile, Signer *singer);
 
           // Xades properties
           std::string policy() const;
@@ -65,7 +65,6 @@ namespace digidoc
           std::string countryName() const;
           std::vector<std::string> signerRoles() const;
 
-          void addEPES();
           std::string addReference(const std::string& uri, const std::string& digestUri,
             const std::vector<unsigned char> &digestValue, const std::string& type = "");
           void addDataObjectFormat(const std::string& uri, const std::string& mime);
@@ -86,6 +85,7 @@ namespace digidoc
           dsig::SignatureType *signature;
           asic::XAdESSignaturesType *asicsignature;
           BDoc *bdoc;
+          std::string sigdata_;
 
       private:
           DISABLE_COPY(SignatureBES);
@@ -100,7 +100,5 @@ namespace digidoc
           void checkSignatureValue() const;
           void checkSigningCertificate() const;
           void checkKeyInfo() const;
-
-          std::string sigdata_;
     };
 }

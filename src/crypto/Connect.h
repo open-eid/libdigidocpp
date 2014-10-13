@@ -42,7 +42,8 @@ public:
         }
     };
 
-    Connect(const std::string &url, const std::string &method = "POST", int timeout = 0);
+    Connect(const std::string &url, const std::string &method = "POST",
+        int timeout = 0, const std::string &useragent = std::string());
     void addHeader(const std::string &key, const std::string &value);
     void addHeaders(std::initializer_list<std::pair<std::string,std::string>> list);
     Result exec(const std::vector<unsigned char> &data = std::vector<unsigned char>());

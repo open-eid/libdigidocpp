@@ -412,6 +412,28 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         // Remove third Signature
         BOOST_CHECK_NO_THROW(d->removeSignature(1U));
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+
+        // TS signature
+        BOOST_CHECK_NO_THROW(s3 = d->sign(signer2.get(), "time-stamp"));
+        //BOOST_CHECK_EQUAL(s3->TSCertificate(), signer2->cert());
+        //BOOST_CHECK_NO_THROW(s3->validate());
+        BOOST_CHECK_NO_THROW(d->save(Doc::EXT + "-TS.tmp"));
+        BOOST_CHECK_NO_THROW(d->removeSignature(1U));
+        BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+
+        // TSA signature
+        BOOST_CHECK_NO_THROW(s3 = d->sign(signer2.get(), "time-stamp-archive"));
+        //BOOST_CHECK_EQUAL(s3->TSCertificate(), signer2->cert());
+        //BOOST_CHECK_NO_THROW(s3->validate());
+        BOOST_CHECK_NO_THROW(d->save(Doc::EXT + "-TSA.tmp"));
+        BOOST_CHECK_NO_THROW(d->removeSignature(1U));
+        BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+
+        // TSA signature
+        BOOST_CHECK_NO_THROW(d->sign(signer2.get(), "time-mark-archive"));
+        BOOST_CHECK_NO_THROW(d->save(Doc::EXT + "-TMA.tmp"));
+        BOOST_CHECK_NO_THROW(d->removeSignature(1U));
+        BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     }
 
     // Remove second Signature

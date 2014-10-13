@@ -27,6 +27,7 @@ using namespace digidoc::dsig;
 using namespace digidoc::xades;
 using namespace xercesc;
 using namespace xml_schema;
+using namespace xsd::cxx::xml::dom;
 
 #ifdef _WIN32
 #pragma warning( disable: 4355 )
@@ -39,7 +40,8 @@ UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType()
 {
 }
 
-UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType(const UnsignedSignaturePropertiesType &x, Flags f, Container *c)
+UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType(
+        const UnsignedSignaturePropertiesType &x, Flags f, Container *c)
     : UnsignedSignaturePropertiesTypeBase(x, f, c)
     , ArchiveTimeStampV141_(x.ArchiveTimeStampV141_, f, this)
     , TimeStampValidationData_(x.TimeStampValidationData_, f, this)
@@ -57,9 +59,15 @@ UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType(const DOMElemen
         const DOMElement &i(p.cur_element());
         const xsd::cxx::xml::qualified_name<char> n(xsd::cxx::xml::dom::name<char>(i));
         if(n.name() == "ArchiveTimeStamp" && n.namespace_() == "http://uri.etsi.org/01903/v1.4.1#")
+        {
             ArchiveTimeStampV141_.push_back(xadesv141::ArchiveTimeStampTraits::create(i, f, this));
+            content_order_.push_back(ContentOrderType(archiveTimeStampV141Id, ArchiveTimeStampV141_.size () - 1));
+        }
         else if(n.name() == "TimeStampValidationData" && n.namespace_() == "http://uri.etsi.org/01903/v1.4.1#")
+        {
             TimeStampValidationData_.push_back(xadesv141::TimeStampValidationDataTraits::create(i, f, this));
+            content_order_.push_back(ContentOrderType(timeStampValidationDataId, TimeStampValidationData_.size () - 1));
+        }
     }
 }
 
@@ -94,18 +102,66 @@ const xadesv141::TimeStampValidationData& UnsignedSignaturePropertiesType::timeS
 
 void digidoc::xades::operator<< (DOMElement &e, const UnsignedSignaturePropertiesType &i)
 {
-    e << static_cast<const UnsignedSignaturePropertiesTypeBase&>(i);
+    const char XADES_NS[] = "http://uri.etsi.org/01903/v1.3.2#";
+    const char XADES141_NS[] = "http://uri.etsi.org/01903/v1.4.1#";
+    e << static_cast<const Type&>(i);
 
-    for(const xadesv141::ArchiveTimeStampType &b: i.archiveTimeStampV141())
+    for(UnsignedSignaturePropertiesType::ContentOrderConstIterator
+        b(i.contentOrder().begin()), n(i.contentOrder().end());
+        b != n; ++b)
     {
-        DOMElement &s(
-            xsd::cxx::xml::dom::create_element("ArchiveTimeStamp", "http://uri.etsi.org/01903/v1.4.1#", e));
-        s << b;
+        switch (b->id)
+        {
+        case UnsignedSignaturePropertiesType::counterSignatureId:
+            create_element("CounterSignature", XADES_NS, e) << i.counterSignature()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::signatureTimeStampId:
+            create_element("SignatureTimeStamp", XADES_NS, e) << i.signatureTimeStamp()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::completeCertificateRefsId:
+            create_element("CompleteCertificateRefs", XADES_NS, e) << i.completeCertificateRefs()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::completeRevocationRefsId:
+            create_element("CompleteRevocationRefs", XADES_NS, e) << i.completeRevocationRefs()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::attributeCertificateRefsId:
+            create_element("AttributeCertificateRefs", XADES_NS, e) << i.attributeCertificateRefs()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::attributeRevocationRefsId:
+            create_element("AttributeRevocationRefs", XADES_NS, e) << i.attributeRevocationRefs()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::sigAndRefsTimeStampId:
+            create_element("SigAndRefsTimeStamp", XADES_NS, e) << i.sigAndRefsTimeStamp()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::refsOnlyTimeStampId:
+            create_element("RefsOnlyTimeStamp", XADES_NS, e) << i.refsOnlyTimeStamp()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::certificateValuesId:
+            create_element("CertificateValues", XADES_NS, e) << i.certificateValues()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::revocationValuesId:
+            create_element("RevocationValues", XADES_NS, e) << i.revocationValues()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::attrAuthoritiesCertValuesId:
+            create_element("AttrAuthoritiesCertValues", XADES_NS, e) << i.attrAuthoritiesCertValues()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::attributeRevocationValuesId:
+            create_element("AttributeRevocationValues", XADES_NS, e) << i.attributeRevocationValues()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::archiveTimeStampId:
+            create_element("ArchiveTimeStamp", XADES_NS, e) << i.archiveTimeStamp()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::archiveTimeStampV141Id:
+            create_element("ArchiveTimeStamp", XADES141_NS, e) << i.archiveTimeStampV141()[b->index];
+            continue;
+        case UnsignedSignaturePropertiesType::timeStampValidationDataId:
+            create_element("TimeStampValidationData", XADES141_NS, e) << i.timeStampValidationData()[b->index];
+            continue;
+        default: break;
+        }
+        break;
     }
-    for(const xadesv141::ValidationDataType &b: i.timeStampValidationData())
-    {
-        DOMElement &s(
-            xsd::cxx::xml::dom::create_element("TimeStampValidationData", "http://uri.etsi.org/01903/v1.4.1#", e));
-        s << b;
-    }
+
+    if(i.id())
+        create_attribute("Id", e) << *i.id();
 }

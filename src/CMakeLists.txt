@@ -78,6 +78,7 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdES.xsd
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
     --custom-type AnyType=/AnyTypeBase
     --custom-type UnsignedSignaturePropertiesType=/UnsignedSignaturePropertiesTypeBase
+    --ordered-type UnsignedSignaturePropertiesType
     --hxx-epilogue \"\#include <xml/AnyType.h>\"
     --hxx-epilogue \"\#include <xml/UnsignedSignaturePropertiesType.h>\" )
 XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdESv141.xsd

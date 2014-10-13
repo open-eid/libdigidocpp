@@ -47,8 +47,12 @@ public:
     const xadesv141::ArchiveTimeStampSequence& archiveTimeStampV141() const;
     xadesv141::ArchiveTimeStampSequence& archiveTimeStampV141();
 
+    static const ::std::size_t archiveTimeStampV141Id = 14UL;
+
     const xadesv141::TimeStampValidationData& timeStampValidationData() const;
     xadesv141::TimeStampValidationData& timeStampValidationData();
+
+    static const ::std::size_t timeStampValidationDataId = 15UL;
 
 private:
     xadesv141::ArchiveTimeStampSequence ArchiveTimeStampV141_;

@@ -65,6 +65,10 @@ namespace digidoc
           virtual X509Cert TSCertificate() const;
           virtual std::string TSTime() const;
 
+          //TSA profile properties
+          virtual X509Cert TSACertificate() const;
+          virtual std::string TSATime() const;
+
       private:
           Signature();
           DISABLE_COPY(Signature);

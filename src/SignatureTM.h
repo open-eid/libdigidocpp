@@ -38,7 +38,7 @@ public:
     X509Cert OCSPCertificate() const;
     std::string producedAt() const;
     virtual void validate(Validate params = ValidateFULL) const;
-    void notarize();
+    virtual void extendTo(const std::string &profile);
 
 protected:
     void addCertificateValue(const std::string& certId, const X509Cert& x509);

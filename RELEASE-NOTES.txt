@@ -3,6 +3,7 @@ Libdigidocpp library 3.11.0 release notes
 Changes compared to ver 3.10.3
 - Improve EC signature size calculation
 - Improve HTTP traffic usage by using gzip Content-Encoding
+- TimeStampArchive support
 
 
 

@@ -583,7 +583,9 @@ static int open(int argc, char* argv[])
                 << "    OCSP Responder: " << (*i)->OCSPCertificate() << endl
                 << "    OCSP Nonce (" << nonce.size() << "): " << nonce << endl
                 << "    TS: " << (*i)->TSCertificate() << endl
-                << "    TS time: " << (*i)->TSTime() << endl;
+                << "    TS time: " << (*i)->TSTime() << endl
+                << "    TSA: " << (*i)->TSACertificate() << endl
+                << "    TSA time: " << (*i)->TSATime() << endl;
             if(reportwarnings == WWarning && !warnings.empty())
             {
                 cout << "    Warnings: ";

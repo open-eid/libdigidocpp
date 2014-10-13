@@ -31,11 +31,16 @@ public:
     SignatureA(std::istream &sigdata, BDoc *bdoc);
     virtual ~SignatureA();
 
-    void notarizeTSA();
+    X509Cert TSACertificate() const;
+    std::string TSATime() const;
+    virtual void validate(Validate params = ValidateFULL) const;
+    virtual void extendTo(const std::string &profile);
 
 private:
     DISABLE_COPY(SignatureA);
 
+    void calcArchiveDigest(Digest *digest) const;
+    std::vector<unsigned char> tsaBase64() const;
 };
 
 }

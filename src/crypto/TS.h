@@ -30,7 +30,7 @@ class X509Cert;
 class TS
 {
 public:
-    TS(const std::string &url, const Digest &digest);
+    TS(const std::string &url, const Digest &digest, const std::string &useragent = "");
     TS(const std::vector<unsigned char> &data);
 
     X509Cert cert() const;

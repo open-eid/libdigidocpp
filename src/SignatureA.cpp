@@ -26,6 +26,7 @@
 #include "crypto/Digest.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
+#include "util/DateTime.h"
 #include "util/File.h"
 #include "xml/XAdESv141.hxx"
 
@@ -34,16 +35,15 @@
 using namespace digidoc;
 using namespace digidoc::dsig;
 using namespace digidoc::util;
+using namespace digidoc::util::date;
 using namespace digidoc::xades;
 using namespace xml_schema;
 using namespace std;
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
 {
-    return v.empty() ? Base64Binary() : Base64Binary(&v[0], v.size());
+    return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
-
-
 
 SignatureA::SignatureA(unsigned int id, BDoc *bdoc): SignatureTS(id, bdoc) {}
 
@@ -51,9 +51,8 @@ SignatureA::SignatureA(std::istream &sigdata, BDoc *bdoc): SignatureTS(sigdata, 
 
 SignatureA::~SignatureA() {}
 
-void SignatureA::notarizeTSA()
+void SignatureA::calcArchiveDigest(Digest *digest) const
 {
-    Digest calc;
     string signedPropertiesId;
     if(qualifyingProperties().signedProperties()->id().present())
         signedPropertiesId = "#" + qualifyingProperties().signedProperties()->id().get();
@@ -63,44 +62,132 @@ void SignatureA::notarizeTSA()
         {
             for(const DataFile &file: bdoc->dataFiles())
                 if(file.fileName() == File::fromUriPath(ref.uRI().get()))
-                    file.calcDigest(&calc);
+                    file.calcDigest(digest);
         }
         else
-            calcDigestOnNode(&calc, XADES_NAMESPACE, "SignedProperties");
+            calcDigestOnNode(digest, XADES_NAMESPACE, "SignedProperties");
     };
-    calcDigestOnNode(&calc, URI_ID_DSIG, "SignedInfo");
-    calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
-    calcDigestOnNode(&calc, URI_ID_DSIG, "KeyInfo");
 
-    if(!unsignedSignatureProperties().signatureTimeStamp().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "SignatureTimeStamp");
-    if(!unsignedSignatureProperties().counterSignature().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "CounterSignature");
-    if(!unsignedSignatureProperties().completeCertificateRefs().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "CompleteCertificateRefs");
-    if(!unsignedSignatureProperties().completeRevocationRefs().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "CompleteRevocationRefs");
-    if(!unsignedSignatureProperties().attributeCertificateRefs().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "AttributeCertificateRefs");
-    if(!unsignedSignatureProperties().attributeRevocationRefs().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "AttributeRevocationRefs");
-    if(!unsignedSignatureProperties().certificateValues().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "CertificateValues");
-    if(!unsignedSignatureProperties().revocationValues().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "RevocationValues");
-    if(!unsignedSignatureProperties().sigAndRefsTimeStamp().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "SigAndRefsTimeStamp");
-    if(!unsignedSignatureProperties().refsOnlyTimeStamp().empty())
-        calcDigestOnNode(&calc, XADES_NAMESPACE, "RefsOnlyTimeStamp");
-    if(!unsignedSignatureProperties().archiveTimeStampV141().empty())
-        calcDigestOnNode(&calc, XADESv141_NAMESPACE, "ArchiveTimeStamp");
-    if(!unsignedSignatureProperties().timeStampValidationData().empty())
-        calcDigestOnNode(&calc, XADESv141_NAMESPACE, "TimeStampValidationData");
+    vector<string> list = {"SignedInfo", "SignatureValue", "KeyInfo"};
+    for(const string &name: list)
+    {
+        try {
+            calcDigestOnNode(digest, URI_ID_DSIG, name);
+        } catch(const Exception &) {
+            DEBUG("Element %s not found", name.c_str());
+        }
+    }
+
+    list = {
+        "SignatureTimeStamp",
+        "CounterSignature",
+        "CompleteCertificateRefs",
+        "CompleteRevocationRefs",
+        "AttributeCertificateRefs",
+        "AttributeRevocationRefs",
+        "CertificateValues",
+        "RevocationValues",
+        "SigAndRefsTimeStamp",
+        "RefsOnlyTimeStamp" };
+    for(const string &name: list)
+    {
+        try {
+            calcDigestOnNode(digest, XADES_NAMESPACE, name);
+        } catch(const Exception &) {
+            DEBUG("Element %s not found", name.c_str());
+        }
+    }
+
+    try {
+        calcDigestOnNode(digest, XADESv141_NAMESPACE, "TimeStampValidationData");
+    } catch(const Exception &) {
+        DEBUG("Element TimeStampValidationData not found");
+    }
     //ds:Object
+}
 
-    TS tsa(ConfV2::instance() ? ConfV2::instance()->TSUrl() : ConfV2().TSUrl(), calc);
+void SignatureA::extendTo(const std::string &profile)
+{
+    SignatureTS::extendTo(profile);
+    if(profile != BDoc::ASIC_TSA_PROFILE && profile != BDoc::ASIC_TMA_PROFILE)
+        return;
+
+    Digest calc;
+    calcArchiveDigest(&calc);
+    TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
     xadesv141::ArchiveTimeStampType ts;
     ts.id(id() + "-A0");
     ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(toBase64(tsa)));
     unsignedSignatureProperties().archiveTimeStampV141().push_back(ts);
+    unsignedSignatureProperties().contentOrder().push_back(
+        UnsignedSignaturePropertiesType::ContentOrderType(
+            UnsignedSignaturePropertiesType::archiveTimeStampV141Id,
+            unsignedSignatureProperties().archiveTimeStampV141().size() - 1));
+    sigdata_.clear();
+}
+
+vector<unsigned char> SignatureA::tsaBase64() const
+{
+    try {
+        if(unsignedSignatureProperties().archiveTimeStampV141().empty())
+            return vector<unsigned char>();
+        const xadesv141::ArchiveTimeStampType &ts = unsignedSignatureProperties().archiveTimeStampV141().front();
+        if(ts.encapsulatedTimeStamp().empty())
+            return vector<unsigned char>();
+        const GenericTimeStampType::EncapsulatedTimeStampType &bin =
+                ts.encapsulatedTimeStamp().front();
+        return vector<unsigned char>(bin.data(), bin.data() + bin.size());
+    } catch(const Exception &) {}
+    return vector<unsigned char>();
+}
+
+X509Cert SignatureA::TSACertificate() const
+{
+    return TS(tsaBase64()).cert();
+}
+
+string SignatureA::TSATime() const
+{
+    string time = TS(tsaBase64()).time();
+    if(time.empty())
+        return time;
+    tm datetime = ASN1TimeToTM(time);
+    return xsd2string(makeDateTime(datetime));
+}
+
+void SignatureA::validate(Validate params) const
+{
+    Exception exception(__FILE__, __LINE__, "Signature validation");
+    try {
+        SignatureTS::validate(params);
+    } catch(const Exception &e) {
+        for(const Exception &ex: e.causes())
+            exception.addCause(ex);
+    }
+
+    if(profile().find(BDoc::ASIC_TSA_PROFILE) == string::npos)
+    {
+        if(!exception.causes().empty())
+            throw exception;
+        return;
+    }
+
+    try {
+        if(unsignedSignatureProperties().archiveTimeStampV141().empty())
+            THROW("Missing ArchiveTimeStamp element");
+
+        const xadesv141::ArchiveTimeStampType &ts = unsignedSignatureProperties().archiveTimeStampV141().front();
+        if(ts.encapsulatedTimeStamp().empty())
+            THROW("Missing EncapsulatedTimeStamp");
+
+        const GenericTimeStampType::EncapsulatedTimeStampType &bin = ts.encapsulatedTimeStamp().front();
+        TS tsa(vector<unsigned char>(bin.data(), bin.data() + bin.size()));
+        Digest calc(tsa.digestMethod());
+        calcArchiveDigest(&calc);
+        tsa.verify(calc);
+    } catch(const Exception &e) {
+        exception.addCause(e);
+    }
+    if(!exception.causes().empty())
+        throw exception;
 }

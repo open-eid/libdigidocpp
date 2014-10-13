@@ -34,7 +34,7 @@
 using namespace digidoc;
 using namespace std;
 
-Connect::Connect(const string &url, const string &method, int timeout)
+Connect::Connect(const string &url, const string &method, int timeout, const string &useragent)
     : _timeout(timeout)
 {
     char *_host = nullptr, *_port = nullptr, *_path = nullptr;
@@ -113,8 +113,8 @@ Connect::Connect(const string &url, const string &method, int timeout)
         addHeader("Host", host);
     else
         addHeader("Host", host + ":" + port);
-    BIO_printf(d.get(), "User-Agent: LIB libdigidocpp/%s APP %s\r\n",
-        VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER), appInfo().c_str());
+    addHeader("User-Agent", "LIB libdigidocpp/" +
+        string(VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)) + " APP " + appInfo() + useragent);
 
     if(!c->proxyUser().empty() || !c->proxyPass().empty())
     {
