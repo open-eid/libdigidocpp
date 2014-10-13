@@ -34,9 +34,9 @@ using namespace xsd::cxx::xml::dom;
 
 AnyType::AnyType()
     : AnyTypeBase()
-    , SPURI_(Flags(), this)
+    , SPURI_(this)
 #ifdef SPUSERNOTICE
-    , SPUserNotice_(Flags(), this)
+    , SPUserNotice_(this)
 #endif
 {
 }
@@ -52,13 +52,13 @@ AnyType::AnyType(const AnyType &x, Flags f, Container *c)
 
 AnyType::AnyType(const DOMElement &e, Flags f, Container *c)
     : AnyTypeBase(e, f | Flags::base, c)
-    , SPURI_(f, this)
+    , SPURI_(this)
 #ifdef SPUSERNOTICE
-    , SPUserNotice_(f, this)
+    , SPUserNotice_(this)
 #endif
 {
-    parser<char> p(e, true, false);
-    for (; p.more_elements(); p.next_element())
+    parser<char> p(e, true, false, true);
+    for (; p.more_content(); p.next_content(false))
     {
         const DOMElement &i(p.cur_element());
         const qualified_name<char> n(name<char>(i));

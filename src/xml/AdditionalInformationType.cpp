@@ -40,8 +40,8 @@ AdditionalInformationType::AdditionalInformationType(const AdditionalInformation
 AdditionalInformationType::AdditionalInformationType(const DOMElement &e, Flags f, Container *c)
     : AdditionalInformationTypeBase(e, f, c)
 {
-    xsd::cxx::xml::dom::parser<char> p(e, true, false);
-    for (; p.more_elements (); p.next_element ())
+    xsd::cxx::xml::dom::parser<char> p(e, true, false, true);
+    for (; p.more_content(); p.next_content(false))
     {
         const DOMElement &i(p.cur_element());
         const xsd::cxx::xml::qualified_name<char> n(xsd::cxx::xml::dom::name<char>(i));

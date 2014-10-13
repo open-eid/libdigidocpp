@@ -46,10 +46,13 @@ function make_xml_security {
 }
 
 function xsd {
-    curl -C - -O http://www.codesynthesis.com/download/xsd/3.3/macosx/i686/xsd-3.3.0-i686-macosx.tar.bz2
-    tar -vxf xsd-3.3.0-i686-macosx.tar.bz2
-    sudo cp xsd-3.3.0-i686-macosx/bin/xsd ${TARGET_PATH}/bin/
-    sudo cp -Rf xsd-3.3.0-i686-macosx/libxsd/xsd ${TARGET_PATH}/include/
+    XSD="xsd-4.0.0-i686-macosx"
+    curl -C - -O http://www.codesynthesis.com/download/xsd/4.0/macosx/i686/${XSD}.tar.bz2
+    #curl -C - -O http://www.codesynthesis.com/download/xsd/3.3/macosx/i686/${XSD}.tar.bz2
+    tar -vxf ${XSD}.tar.bz2
+    sudo mkdir -p ${TARGET_PATH}/bin ${TARGET_PATH}/include
+    sudo cp ${XSD}/bin/xsd ${TARGET_PATH}/bin/
+    sudo cp -Rf ${XSD}/libxsd/xsd ${TARGET_PATH}/include/
 }
 
 function check_error {

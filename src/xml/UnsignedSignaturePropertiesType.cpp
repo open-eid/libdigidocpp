@@ -34,8 +34,8 @@ using namespace xml_schema;
 
 UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType()
     : UnsignedSignaturePropertiesTypeBase()
-    , ArchiveTimeStampV141_(Flags(), this)
-    , TimeStampValidationData_(Flags(), this)
+    , ArchiveTimeStampV141_(this)
+    , TimeStampValidationData_(this)
 {
 }
 
@@ -48,11 +48,11 @@ UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType(const UnsignedS
 
 UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType(const DOMElement &e, Flags f, Container *c)
     : UnsignedSignaturePropertiesTypeBase(e, f, c)
-    , ArchiveTimeStampV141_(f, this)
-    , TimeStampValidationData_(f, this)
+    , ArchiveTimeStampV141_(this)
+    , TimeStampValidationData_(this)
 {
-    xsd::cxx::xml::dom::parser<char> p(e, true, false);
-    for (; p.more_elements (); p.next_element ())
+    xsd::cxx::xml::dom::parser<char> p(e, true, false, true);
+    for (; p.more_content(); p.next_content(false))
     {
         const DOMElement &i(p.cur_element());
         const xsd::cxx::xml::qualified_name<char> n(xsd::cxx::xml::dom::name<char>(i));

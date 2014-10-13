@@ -33,7 +33,7 @@ using namespace xml_schema;
 
 ObjectType::ObjectType()
     : ObjectTypeBase()
-    , QualifyingProperties_(Flags(), this)
+    , QualifyingProperties_(this)
 {
 }
 
@@ -45,10 +45,10 @@ ObjectType::ObjectType(const ObjectType &x, Flags f, Container *c)
 
 ObjectType::ObjectType(const DOMElement &e, Flags f, Container *c)
     : ObjectTypeBase(e, f, c)
-    , QualifyingProperties_ (f, this)
+    , QualifyingProperties_ (this)
 {
-    xsd::cxx::xml::dom::parser<char> p(e, true, false);
-    for (; p.more_elements (); p.next_element ())
+    xsd::cxx::xml::dom::parser<char> p(e, true, false, true);
+    for (; p.more_content(); p.next_content(false))
     {
         const DOMElement &i(p.cur_element());
         const xsd::cxx::xml::qualified_name<char> n(xsd::cxx::xml::dom::name<char>(i));
