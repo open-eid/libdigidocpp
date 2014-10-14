@@ -28,8 +28,6 @@
 #include "util/File.h"
 
 #include <algorithm>
-#include <sstream>
-#include <cstring>
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -60,8 +58,6 @@ public:
         sign.cert = 0;
     }
 
-    bool attribute( CK_SESSION_HANDLE session, CK_OBJECT_HANDLE obj,
-        CK_ATTRIBUTE_TYPE type, CK_VOID_PTR value, CK_ULONG &size ) const;
     vector<CK_OBJECT_HANDLE> findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls) const;
 
 #ifdef _WIN32
@@ -118,17 +114,6 @@ const unsigned char PKCS11SignerPrivate::sha384[] =
 
 const unsigned char PKCS11SignerPrivate::sha512[] =
 { 0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40 };
-
-
-
-bool PKCS11SignerPrivate::attribute(CK_SESSION_HANDLE session,
-    CK_OBJECT_HANDLE obj, CK_ATTRIBUTE_TYPE type, CK_VOID_PTR value, CK_ULONG &size) const
-{
-    CK_ATTRIBUTE attr = { type, value, size };
-    CK_RV err = f->C_GetAttributeValue(session, obj, &attr, 1);
-    size = attr.ulValueLen;
-    return err == CKR_OK;
-}
 
 vector<CK_OBJECT_HANDLE> PKCS11SignerPrivate::findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls) const
 {
@@ -237,7 +222,7 @@ X509Cert PKCS11Signer::cert() const
     CK_SESSION_HANDLE session = 0;
     vector<X509Cert> certificates;
     vector<SignSlot> certSlotMapping;
-    for(size_t i = 0; i < slots.size(); ++i)
+    for(const CK_SLOT_ID &slot: slots)
     {
         CK_TOKEN_INFO token;
         vector<CK_OBJECT_HANDLE> objs;
@@ -245,24 +230,25 @@ X509Cert PKCS11Signer::cert() const
         if(session)
            d->f->C_CloseSession(session);
 
-        if(d->f->C_GetTokenInfo(slots[i], &token) != CKR_OK ||
-           d->f->C_OpenSession(slots[i], CKF_SERIAL_SESSION, 0, 0, &session) != CKR_OK ||
+        if(d->f->C_GetTokenInfo(slot, &token) != CKR_OK ||
+           d->f->C_OpenSession(slot, CKF_SERIAL_SESSION, 0, 0, &session) != CKR_OK ||
            (objs = d->findObject(session, CKO_CERTIFICATE)).empty())
             continue;
 
         for(size_t j = 0; j < objs.size(); ++j)
         {
-            CK_ULONG size = 0;
-            if(!d->attribute(session, objs[j], CKA_VALUE, 0, size))
+            CK_ATTRIBUTE attr = { CKA_VALUE, nullptr, 0 };
+            if(d->f->C_GetAttributeValue(session, objs[j], &attr, 1) != CKR_OK)
                 continue;
-            vector<unsigned char> value(size, 0);
-            if(!d->attribute(session, objs[j], CKA_VALUE, &value[0], size))
+            vector<unsigned char> value(attr.ulValueLen, 0);
+            attr.pValue = &value[0];
+            if(d->f->C_GetAttributeValue(session, objs[j], &attr, 1) != CKR_OK)
                 continue;
             X509Cert x509(value);
             vector<X509Cert::KeyUsage> usage = x509.keyUsage();
             if(!x509.isValid() || find(usage.begin(), usage.end(), X509Cert::NonRepudiation) == usage.end())
                 continue;
-            SignSlot signSlot = { x509, slots[i], CK_ULONG(j) };
+            SignSlot signSlot = { x509, slot, CK_ULONG(j) };
             certSlotMapping.push_back(signSlot);
             certificates.push_back(x509);
         }
@@ -279,10 +265,10 @@ X509Cert PKCS11Signer::cert() const
         THROW("No certificate selected.");
 
     // Find the corresponding slot and PKCS11 certificate struct.
-    for(vector<SignSlot>::const_iterator i = certSlotMapping.begin(); i != certSlotMapping.end(); ++i)
+    for(const SignSlot &slot: certSlotMapping)
     {
-        if(i->certificate == selectedCert)
-            d->sign = *i;
+        if(slot.certificate == selectedCert)
+            d->sign = slot;
     }
 
     if(!d->sign.certificate)
@@ -377,26 +363,24 @@ void PKCS11Signer::sign(const string &method, const vector<unsigned char> &diges
         case CKR_CANCEL:
         case CKR_FUNCTION_CANCELED:
         {
-            Exception e(__FILE__, __LINE__, "PIN acquisition canceled.");
+            Exception e(EXCEPTION_PARAMS("PIN acquisition canceled."));
             e.setCode( Exception::PINCanceled );
             throw e;
         }
         case CKR_PIN_INCORRECT:
         {
-            Exception e(__FILE__, __LINE__, "PIN Incorrect");
+            Exception e(EXCEPTION_PARAMS("PIN Incorrect"));
             e.setCode( Exception::PINIncorrect );
             throw e;
         }
         case CKR_PIN_LOCKED:
         {
-            Exception e(__FILE__, __LINE__, "PIN Locked");
+            Exception e(EXCEPTION_PARAMS("PIN Locked"));
             e.setCode( Exception::PINLocked );
             throw e;
         }
         default:
-            ostringstream s;
-            s << "Failed to login to token '" << token.label << "': " << rv;
-            Exception e(__FILE__, __LINE__, s.str());
+            Exception e(EXCEPTION_PARAMS("Failed to login to token '%s': %ul", token.label, rv));
             e.setCode( Exception::PINFailed );
             throw e;
         }
