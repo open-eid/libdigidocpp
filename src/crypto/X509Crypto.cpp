@@ -69,10 +69,10 @@ X509Crypto::X509Crypto(const X509Cert &cert)
  */
 int X509Crypto::compareIssuerToString(const string &name) const
 {
-    size_t pos = 0, old = 0;
+    size_t old = 0;
     while(true)
     {
-        pos = name.find(",", old);
+        size_t pos = name.find(",", old);
         if(pos == string::npos)
         {
             pos = name.size();
