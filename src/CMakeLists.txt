@@ -151,17 +151,15 @@ set( CRYPTO_SOURCE
     crypto/X509CertStore.cpp
     crypto/X509Crypto.cpp
 )
-if( APPLE )
-    #ignore openssl deprecation warnings
-    set_source_files_properties( ${CRYPTO_SOURCE} PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations" )
-    set_source_files_properties( crypto/PKCS12Signer.cpp PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations" )
-endif()
 
 if( WIN32 )
     list( APPEND digidocpp_SRCS crypto/CNGSigner.cpp )
     list( APPEND digidoc-tool_SRCS crypto/CNGSigner.cpp )
     list( APPEND TARGET_LIBRARIES Crypt32 cryptui ncrypt )
 elseif( APPLE )
+    #ignore openssl deprecation warnings
+    set_source_files_properties( ${CRYPTO_SOURCE} PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations" )
+    set_source_files_properties( crypto/PKCS12Signer.cpp PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations" )
     list( APPEND TARGET_LIBRARIES "-framework CoreFoundation" )
 endif()
 
@@ -220,9 +218,6 @@ set_target_properties(digidocpp PROPERTIES
     MACOSX_FRAMEWORK_IDENTIFIER "ee.ria.digidocpp"
     MACOSX_RPATH YES
 )
-if(WIN32)
-    set_target_properties( digidocpp PROPERTIES DEBUG_OUTPUT_NAME "digidocppd" )
-endif()
 
 target_link_libraries(digidocpp
     ${OPENSSL_LIBRARIES}
@@ -269,6 +264,7 @@ install( TARGETS digidocpp ${EXTRA_TARGETS}
 )
 
 if(WIN32)
+    set_target_properties( digidocpp PROPERTIES DEBUG_OUTPUT_NAME "digidocppd" )
     install( DIRECTORY ${PROJECT_BINARY_DIR}/src/ DESTINATION ${CMAKE_INSTALL_LIBDIR} FILES_MATCHING PATTERN "*.pdb" )
 endif()
 
@@ -276,7 +272,8 @@ source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CM
 source_group( "Resources\\schemas" FILES ${SCHEMA_FILES} )
 
 if( FRAMEWORK )
-    install( TARGETS digidoc-tool DESTINATION /Library/Frameworks/digidocpp.framework/Resources )
+    add_custom_command( TARGET digidoc-tool POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:digidoc-tool> $<TARGET_FILE_DIR:digidocpp>/Resources )
     set_source_files_properties( ${SCHEMA_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/schema )
     set_source_files_properties( ${CRYPTO_HEADER} PROPERTIES MACOSX_PACKAGE_LOCATION Headers/crypto )
 else()
