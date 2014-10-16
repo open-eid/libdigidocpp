@@ -499,7 +499,7 @@ Signature *BDoc::sign(Signer* signer, const string &profile)
         }
 
         if(profile.find(BDoc::ASIC_TM_PROFILE) != string::npos)
-            signature->addEPES(profile);
+            signature->addEPES();
         vector<unsigned char> digest = signature->prepareSignedInfo(signer); // needs to be here to select also signatureMethod
         signature->setSignatureValue(signer->sign(signature->signatureMethod(), digest));
         if(profile.find(BDoc::ASIC_TS_PROFILE) != string::npos)

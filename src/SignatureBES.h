@@ -65,7 +65,7 @@ namespace digidoc
           std::string countryName() const;
           std::vector<std::string> signerRoles() const;
 
-          void addEPES(const std::string &profile);
+          void addEPES();
           std::string addReference(const std::string& uri, const std::string& digestUri,
             const std::vector<unsigned char> &digestValue, const std::string& type = "");
           void addDataObjectFormat(const std::string& uri, const std::string& mime);

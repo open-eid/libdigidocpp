@@ -368,7 +368,7 @@ SignatureBES::~SignatureBES()
     delete asicsignature;
 }
 
-void SignatureBES::addEPES(const string &)
+void SignatureBES::addEPES()
 {
     map<string,Policy>::const_iterator p = policylist.cbegin();
     IdentifierType identifierid(p->first);
