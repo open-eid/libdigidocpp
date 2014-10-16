@@ -775,7 +775,7 @@ Signature *DDoc::sign( Signer *signer, const string & )
     vector<unsigned char> signature;
 	try
     {
-        signer->sign( URI_RSA_SHA1, DDocPrivate::toVector(&info->pSigInfoRealDigest->mbufDigestValue), signature );
+        signature = signer->sign(URI_RSA_SHA1, DDocPrivate::toVector(&info->pSigInfoRealDigest->mbufDigestValue));
 	}
 	catch( const Exception &e )
 	{

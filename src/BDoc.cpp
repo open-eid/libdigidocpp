@@ -489,33 +489,19 @@ Signature *BDoc::sign(Signer* signer, const string &profile)
         THROW("Null pointer in BDoc::sign");
 
     SignatureA *signature = new SignatureA(newSignatureId(), this);
-    string digestMethod = Conf::instance()->digestUri();
     try
     {
-        for(DataFileList::const_iterator i = d->documents.begin(); i != d->documents.end(); ++i)
+        string digestMethod = Conf::instance()->digestUri();
+        for(const DataFile &f: d->documents)
         {
-            DEBUG("Adding document '%s', '%s' to the signature references.", i->fileName().c_str(), i->mediaType().c_str());
-            // URIs must encode non-ASCII characters in the format %HH where HH is the hex representation of the character
-            string uri = File::toUriPath(i->fileName());
-            string id = signature->addReference(uri, digestMethod, i->calcDigest(digestMethod), "");
-            signature->addDataObjectFormat("#" + id, i->mediaType());
+            string id = signature->addReference(File::toUriPath(f.fileName()), digestMethod, f.calcDigest(digestMethod), "");
+            signature->addDataObjectFormat("#" + id, f.mediaType());
         }
-    }
-    catch(const Exception& e)
-    {
-        delete signature;
-        THROW_CAUSE(e, "Failed to calculate digests for documents.");
-    }
 
-    try
-    {
         if(profile.find(BDoc::ASIC_TM_PROFILE) != string::npos)
             signature->addEPES(profile);
-
         vector<unsigned char> digest = signature->prepareSignedInfo(signer); // needs to be here to select also signatureMethod
-        vector<unsigned char> sig;
-        signer->sign(signature->signatureMethod(), digest, sig);
-        signature->setSignatureValue(sig);
+        signature->setSignatureValue(signer->sign(signature->signatureMethod(), digest));
         if(profile.find(BDoc::ASIC_TS_PROFILE) != string::npos)
             signature->notarizeTS();
         if(profile != BES_PROFILE && profile != EPES_PROFILE)
@@ -530,6 +516,5 @@ Signature *BDoc::sign(Signer* signer, const string &profile)
     }
 
     d->signatures.push_back(signature);
-
     return signature;
 }
