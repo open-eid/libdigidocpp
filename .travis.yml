@@ -1,0 +1,36 @@
+before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+    echo;
+  else
+    sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test;
+    sudo add-apt-repository --yes ppa:kalakris/cmake;
+    sudo apt-get update -qq;
+    sudo apt-get install -y gcc-4.8 g++-4.8 cmake libxml-security-c-dev libssl-dev;
+    sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90;
+    wget http://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd_4.0.0-1_amd64.deb;
+    sudo dpkg -i xsd_4.0.0-1_amd64.deb;
+  fi
+script:
+- mkdir build
+- cd build
+- cmake ..
+- make
+
+os:
+ - linux
+ - osx
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "VTpLjRFkVZeqSiP/tea7b5WiMU+PjQJlpny8/QEYazRNhn/uie69aT8VvEdkpsUM1AEx8yPnNmVGShvoNNaOi/AoqynTIKgeGPCj44h6lCnPpByGVur0avc5WrRj2xBbPBBUw1rsL65wZ13MufmRLUwnmmVYQZ3qDBdpgZvCEhA="
+
+addons:
+  coverity_scan:
+    project:
+      name: "open-eid/libdigidocpp"
+      description: "Build submitted via Travis CI"
+    notification_email: raul@metsma.ee
+    build_command_prepend: "mkdir coverity; cd coverity; cmake .."
+    build_command: make
+    branch_pattern: coverity_scan

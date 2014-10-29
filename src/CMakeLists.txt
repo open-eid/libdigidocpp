@@ -26,6 +26,7 @@ endif()
 
 if( LIBDIGIDOC_FOUND )
     list( APPEND digidocpp_SRCS DDoc.cpp )
+    include_directories( ${LIBDIGIDOC_INCLUDE_DIR} )
     if( LIBDIGIDOC_LINKED )
         list( APPEND digidocpp_DEFS LINKED_LIBDIGIDOC )
         list( APPEND TARGET_LIBRARIES ${LIBDIGIDOC_LIBRARY} )
@@ -165,7 +166,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${OPENSSL_INCLUDE_DIR}
-    ${LIBDIGIDOC_INCLUDE_DIR}
     ${XERCESC_INCLUDE_DIR}
     ${XMLSECURITYC_INCLUDE_DIRS}
     ${XSD_INCLUDE_DIR}
