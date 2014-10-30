@@ -114,6 +114,8 @@ X509Cert TS::cert() const
 
 string TS::digestMethod() const
 {
+    if(!d)
+        return string();
     SCOPE(TS_TST_INFO, info, PKCS7_to_TS_TST_INFO(d.get()));
     switch(OBJ_obj2nid(info->msg_imprint->hash_algo->algorithm))
     {
