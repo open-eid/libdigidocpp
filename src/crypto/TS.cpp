@@ -183,7 +183,16 @@ void TS::verify(const Digest &digest)
     ctx->imprint = nullptr;
     ctx->imprint_len = 0;
     if(err != 1)
+    {
+        long err = ERR_get_error();
+        if(ERR_GET_LIB(err) == 47 && ERR_GET_REASON(err) == TS_R_CERTIFICATE_VERIFY_ERROR)
+        {
+            Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
+            e.setCode( Exception::CertificateUnknown );
+            throw e;
+        }
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
+    }
 }
 
 TS::operator vector<unsigned char>() const
