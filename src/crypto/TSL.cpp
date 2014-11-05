@@ -290,12 +290,12 @@ string TSL::toString(const InternationalNamesType &obj, const string &lang) cons
 void TSL::validate(const std::vector<X509Cert> &certs)
 {
     if(!tsl || nextUpdate.empty())
-        THROW_CAUSE(Exception(EXCEPTION_PARAMS("Failed to parse XML")), "TSL Signature is invalid");
+        THROW("Failed to parse XML");
 
     time_t t = time(0);
     struct tm *time = gmtime(&t);
     if(nextUpdate.compare(0, 19, xsd2string(makeDateTime(*time))) <= 0)
-        THROW_CAUSE(Exception(EXCEPTION_PARAMS("TSL is expired")), "TSL Signature is invalid");
+        THROW("TSL is expired");
 
     if(find(certs.begin(), certs.end(), signingCert) == certs.end())
         THROW("TSL Signature is signed with untrusted certificate");
@@ -316,8 +316,7 @@ void TSL::validate(const std::vector<X509Cert> &certs)
     catch(XSECException &e)
     {
         string msg = xsd::cxx::xml::transcode<char>(e.getMsg());
-        DEBUG("%s", msg.c_str());
-        THROW_CAUSE(Exception(EXCEPTION_PARAMS(msg.c_str())), "TSL Signature is invalid: %s", msg.c_str());
+        THROW("TSL Signature is invalid: %s", msg.c_str());
     }
     catch(const Exception &)
     {
