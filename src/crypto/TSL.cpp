@@ -53,12 +53,13 @@ namespace digidoc { vector<unsigned char> tslcert(); }
 
 #define CONFV2(method) ConfV2::instance() ? ConfV2::instance()->method() : ConfV2().method()
 
-TSL::TSL(const string &file)
+TSL::TSL(const string &file, const string &_url)
+    : path(file)
+    , url(_url)
 {
-    string f = file;
     if(file.empty())
-        f = CONFV2(TSLCache) + "/" + File::fileName(TSL_URL);
-    if(!File::fileExists(f))
+        path = CONFV2(TSLCache) + "/" + File::fileName(TSL_URL);
+    if(!File::fileExists(path))
         return;
 
     //TSL Type
@@ -89,7 +90,7 @@ TSL::TSL(const string &file)
     try {
         Properties properties;
         properties.schema_location("http://uri.etsi.org/02231/v2#", Conf::instance()->xsdPath() + "/ts_119612v010101.xsd");
-        tsl = trustServiceStatusList(f,
+        tsl = trustServiceStatusList(path,
             Flags::keep_dom|Flags::dont_initialize|Flags::dont_validate, properties);
 
         const TSLSchemeInformationType &info = tsl->schemeInformation();
@@ -229,44 +230,13 @@ void TSL::parse(vector<X509Cert> &list, const string &url, const vector<X509Cert
 {
     INFO("TSL Url: %s", url.c_str());
     string path = cache + "/" + territory;
-    TSL tsl(path);
+    TSL tsl(path, url);
     try {
         tsl.validate(certs);
-
-        Connect::Result r = Connect(url.substr(0, url.size() - 3) + "sha2", "GET").exec();
-        if(r.result.find("200") != string::npos)
-        {
-            Digest sha(URI_RSA_SHA256);
-            vector<unsigned char> buf(10240, 0);
-            fstream is(path);
-            while(is)
-            {
-                is.read((char*)&buf[0], buf.size());
-                if(is.gcount() > 0)
-                    sha.update(&buf[0], (unsigned long)is.gcount());
-            }
-
-            vector<unsigned char> digest;
-            if(r.content.size() == 64)
-            {
-                char data[] = "00";
-                for(string::const_iterator i = r.content.cbegin(); i != r.content.end();)
-                {
-                    data[0] = *(i++);
-                    data[1] = *(i++);
-                    digest.push_back(static_cast<unsigned char>(strtoul(data, 0, 16)));
-                }
-            }
-            else if(r.content.size() == 32)
-                digest.assign(r.content.c_str(), r.content.c_str() + r.content.size());
-
-            if(!digest.empty() && digest != sha.result())
-                THROW("Remote digest does not match");
-        }
-
+        tsl.validateRemoteDigest();
         DEBUG("TSL %s signature is valid", territory.c_str());
-    } catch(const Exception &) {
-        ERR("TSL %s signature is invalid", territory.c_str());
+    } catch(const Exception &e) {
+        ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
         bool autoupdate = CONFV2(TSLAutoUpdate);
         if(!autoupdate)
             return;
@@ -286,7 +256,7 @@ void TSL::parse(vector<X509Cert> &list, const string &url, const vector<X509Cert
             return;
         }
 
-        tsl = TSL(path);
+        tsl = TSL(path, url);
         try {
             tsl.validate(certs);
             DEBUG("TSL %s signature is valid", territory.c_str());
@@ -357,4 +327,38 @@ void TSL::validate(const std::vector<X509Cert> &certs)
     {
         THROW("TSL Signature is invalid");
     }
+}
+
+void TSL::validateRemoteDigest()
+{
+    Connect::Result r = Connect(url.substr(0, url.size() - 3) + "sha2", "GET").exec();
+    if(r.result.find("200") == string::npos)
+        return;
+
+    Digest sha(URI_RSA_SHA256);
+    vector<unsigned char> buf(10240, 0);
+    fstream is(path);
+    while(is)
+    {
+        is.read((char*)&buf[0], buf.size());
+        if(is.gcount() > 0)
+            sha.update(&buf[0], (unsigned long)is.gcount());
+    }
+
+    vector<unsigned char> digest;
+    if(r.content.size() == 64)
+    {
+        char data[] = "00";
+        for(string::const_iterator i = r.content.cbegin(); i != r.content.end();)
+        {
+            data[0] = *(i++);
+            data[1] = *(i++);
+            digest.push_back(static_cast<unsigned char>(strtoul(data, 0, 16)));
+        }
+    }
+    else if(r.content.size() == 32)
+        digest.assign(r.content.c_str(), r.content.c_str() + r.content.size());
+
+    if(!digest.empty() && digest != sha.result())
+        THROW("Remote digest does not match");
 }

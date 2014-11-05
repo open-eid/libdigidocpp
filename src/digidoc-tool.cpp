@@ -780,7 +780,7 @@ static int tslcmd(int , char* [])
     int returnCode = EXIT_SUCCESS;
     ConfV2 *c = ConfV2::instance();
     string cache = c ? c->TSLCache() : ConfV2().TSLCache();
-    TSL t;
+    TSL t("", "");
     cout << "TSL: " << t.url << endl
         << "         Type: " << t.type << endl
         << "    Territory: " << t.territory << endl
@@ -807,7 +807,7 @@ static int tslcmd(int , char* [])
             << "        Url: " << p.location << endl;
         for(const X509Cert &cert: p.certs)
             cout << "       Cert: " << cert << endl;
-        TSL tp(cache + "/" + p.territory + ".xml");
+        TSL tp(cache + "/" + p.territory + ".xml", p.location);
         cout << "    TSL: " << tp.url << endl
             << "             Type: " << tp.type << endl
             << "        Territory: " << tp.territory << endl

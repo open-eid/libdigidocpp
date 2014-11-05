@@ -27,11 +27,12 @@ namespace tsl { class TrustStatusListType; class InternationalNamesType; }
 class TSL
 {
 public:
-    TSL(const std::string &file = "");
+    TSL(const std::string &file, const std::string &url );
     ~TSL();
+    void validateRemoteDigest();
     void validate(const std::vector<X509Cert> &certs);
 
-    std::string url, type, operatorName, territory, issueDate, nextUpdate;
+    std::string path, url, type, operatorName, territory, issueDate, nextUpdate;
     X509Cert signingCert;
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
     std::vector<Pointer> pointer;
