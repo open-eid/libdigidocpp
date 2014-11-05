@@ -22,6 +22,7 @@
 #include "Conf.h"
 #include "log.h"
 #include "crypto/Connect.h"
+#include "crypto/Digest.h"
 #include "util/DateTime.h"
 #include "util/File.h"
 #include "xml/ts_119612v010101.hxx"
@@ -67,27 +68,23 @@ TSL::TSL(const string &file)
     static const string GENERIC_URI_V3 = "http://uri.etsi.org/TrstSvc/TSLtype/generic/eSigDir-1999-93-EC-TrustedList";
     static const string GENERIC_URI_V2 = "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric";
     //Service Type
-    static const vector<string> SERVICETYPE = [](){
-        vector<string> result;
-        result.push_back("http://uri.etsi.org/TrstSvc/Svctype/CA/QC");
-        result.push_back("http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC");
-        result.push_back("http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP");
-        result.push_back("http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC");
-        result.push_back("http://uri.etsi.org/TrstSvc/Svctype/TSA");
-        result.push_back("http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST");
-        result.push_back("http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC");
-        result.push_back("http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES");
-        return result;
-    }();
+    static const vector<string> SERVICETYPE = {
+        "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
+        "http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC",
+        "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
+        "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
+        "http://uri.etsi.org/TrstSvc/Svctype/TSA",
+        "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
+        "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC",
+        "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES",
+    };
     //Service Status
-    static const vector<string> SERVICESTATUS = [](){
-        vector<string> result;
-        result.push_back("http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision");
-        result.push_back("http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionincessation");
-        result.push_back("http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accredited");
-        result.push_back("http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/setbynationallaw");
-        return result;
-    }();
+    static const vector<string> SERVICESTATUS = {
+        "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision",
+        "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionincessation",
+        "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accredited",
+        "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/setbynationallaw",
+    };
 
     try {
         Properties properties;
@@ -235,6 +232,38 @@ void TSL::parse(vector<X509Cert> &list, const string &url, const vector<X509Cert
     TSL tsl(path);
     try {
         tsl.validate(certs);
+
+        Connect::Result r = Connect(url.substr(0, url.size() - 3) + "sha2", "GET").exec();
+        if(r.result.find("200") != string::npos)
+        {
+            Digest sha(URI_RSA_SHA256);
+            vector<unsigned char> buf(10240, 0);
+            fstream is(path);
+            while(is)
+            {
+                is.read((char*)&buf[0], buf.size());
+                if(is.gcount() > 0)
+                    sha.update(&buf[0], (unsigned long)is.gcount());
+            }
+
+            vector<unsigned char> digest;
+            if(r.content.size() == 64)
+            {
+                char data[] = "00";
+                for(string::const_iterator i = r.content.cbegin(); i != r.content.end();)
+                {
+                    data[0] = *(i++);
+                    data[1] = *(i++);
+                    digest.push_back(static_cast<unsigned char>(strtoul(data, 0, 16)));
+                }
+            }
+            else if(r.content.size() == 32)
+                digest.assign(r.content.c_str(), r.content.c_str() + r.content.size());
+
+            if(!digest.empty() && digest != sha.result())
+                THROW("Remote digest does not match");
+        }
+
         DEBUG("TSL %s signature is valid", territory.c_str());
     } catch(const Exception &) {
         ERR("TSL %s signature is invalid", territory.c_str());

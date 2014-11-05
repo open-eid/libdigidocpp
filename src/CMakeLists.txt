@@ -113,7 +113,7 @@ if( TSL_URL )
         COMMENT "Generating tslcert.cpp from ${TSL_CERT}"
     )
     list( APPEND digidocpp_SRCS crypto/TSL.cpp tslcert.cpp )
-    list( APPEND digidoc-tool_SRCS ${xsd_SRCS} crypto/Connect.cpp crypto/TSL.cpp util/DateTime.cpp tslcert.cpp )
+	list( APPEND digidoc-tool_SRCS ${xsd_SRCS} crypto/Connect.cpp crypto/Digest.cpp crypto/TSL.cpp util/DateTime.cpp tslcert.cpp )
 endif()
 
 set( SCHEMA_FILES
