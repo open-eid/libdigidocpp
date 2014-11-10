@@ -782,11 +782,11 @@ static int tslcmd(int , char* [])
     string cache = c ? c->TSLCache() : ConfV2().TSLCache();
     TSL t("", "");
     cout << "TSL: " << t.url << endl
-        << "         Type: " << t.type << endl
-        << "    Territory: " << t.territory << endl
-        << "     Operator: " << t.operatorName << endl
-        << "       Issued: " << t.issueDate << endl
-        << "  Next update: " << t.nextUpdate << endl
+        << "         Type: " << t.type() << endl
+        << "    Territory: " << t.territory() << endl
+        << "     Operator: " << t.operatorName() << endl
+        << "       Issued: " << t.issueDate() << endl
+        << "  Next update: " << t.nextUpdate() << endl
         << "Pointers:" << endl;
     try {
         cout << "  Signature: ";
@@ -809,11 +809,11 @@ static int tslcmd(int , char* [])
             cout << "       Cert: " << cert << endl;
         TSL tp(cache + "/" + p.territory + ".xml", p.location);
         cout << "    TSL: " << tp.url << endl
-            << "             Type: " << tp.type << endl
-            << "        Territory: " << tp.territory << endl
-            << "         Operator: " << tp.operatorName << endl
-            << "           Issued: " << tp.issueDate << endl
-            << "      Next update: " << tp.nextUpdate << endl;
+            << "             Type: " << tp.type() << endl
+            << "        Territory: " << tp.territory() << endl
+            << "         Operator: " << tp.operatorName() << endl
+            << "           Issued: " << tp.issueDate() << endl
+            << "      Next update: " << tp.nextUpdate() << endl;
         try {
             cout << "        Signature: ";
             tp.validate(p.certs);

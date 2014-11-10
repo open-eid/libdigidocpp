@@ -240,7 +240,7 @@ add_executable(digidoc-tool
 
 set_target_properties(digidoc-tool PROPERTIES
     INSTALL_RPATH "@loader_path/../../../..;@loader_path/../.."
-    LINK_LIBRARIES digidocpp
+    LINK_LIBRARIES "digidocpp;${CMAKE_THREAD_LIBS_INIT}"
 )
 
 if(NO)# SWIG_FOUND)

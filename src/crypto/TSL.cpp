@@ -41,6 +41,7 @@
 #endif
 
 #include <fstream>
+#include <thread>
 
 using namespace digidoc;
 using namespace digidoc::tsl;
@@ -94,24 +95,8 @@ TSL::TSL(const string &file, const string &_url)
             Flags::keep_dom|Flags::dont_initialize|Flags::dont_validate, properties);
 
         const TSLSchemeInformationType &info = tsl->schemeInformation();
-        type = info.tSLType();
-        operatorName = toString(info.schemeOperatorName());
-        //BIO_printf(bio, "Name: %s\n", toString(info.schemeName()).c_str());
-        if(info.schemeTerritory().present())
-            territory = info.schemeTerritory().get();
-        issueDate = xsd2string(info.listIssueDateTime());
-        if(info.nextUpdate().dateTime().present())
-            nextUpdate = xsd2string(info.nextUpdate().dateTime().get());
         if(info.distributionPoints().present() && !info.distributionPoints().get().uRI().empty())
             url = info.distributionPoints().get().uRI().front();
-        if(tsl->signature().present() &&
-            tsl->signature()->keyInfo().present() &&
-            !tsl->signature()->keyInfo()->x509Data().empty() &&
-            !tsl->signature()->keyInfo()->x509Data().front().x509Certificate().empty())
-        {
-            const Base64Binary &base64 = tsl->signature()->keyInfo()->x509Data().front().x509Certificate().front();
-            signingCert = X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity()));
-        }
 
         if((info.tSLType() == SCHEMES_URI_V1 || info.tSLType() == SCHEMES_URI_V2) &&
                 info.pointersToOtherTSL().present())
@@ -192,29 +177,40 @@ TSL::TSL(const string &file, const string &_url)
     {
         stringstream s;
         s << e;
-        WARN("Failed to parse TSL %s %s: %s", territory.c_str(), file.c_str(), s.str().c_str());
+        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), s.str().c_str());
     }
     catch(const xsd::cxx::exception &e)
     {
-        WARN("Failed to parse TSL %s %s: %s", territory.c_str(), file.c_str(), e.what());
+        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), e.what());
     }
     catch(XMLException &e)
     {
         string msg = xsd::cxx::xml::transcode<char>(e.getMessage());
-        WARN("Failed to parse TSL %s %s: %s", territory.c_str(), file.c_str(), msg.c_str());
+        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), msg.c_str());
     }
     catch(const Exception &e)
     {
-        WARN("Failed to parse TSL %s %s: %s", territory.c_str(), file.c_str(), e.msg().c_str());
+        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), e.msg().c_str());
     }
     catch(...)
     {
-        WARN("Failed to parse TSL %s %s", territory.c_str(), file.c_str());
+        WARN("Failed to parse TSL %s %s", territory().c_str(), file.c_str());
     }
 }
 
 TSL::~TSL()
 {
+}
+
+string TSL::issueDate() const
+{
+    return !tsl ? string() : xsd2string(tsl->schemeInformation().listIssueDateTime());
+}
+
+string TSL::nextUpdate() const
+{
+    return !tsl || !tsl->schemeInformation().nextUpdate().dateTime().present() ?
+        string() : xsd2string(tsl->schemeInformation().nextUpdate().dateTime().get());
 }
 
 void TSL::parse(vector<X509Cert> &list)
@@ -223,12 +219,11 @@ void TSL::parse(vector<X509Cert> &list)
     std::vector<X509Cert> cert;
     cert.push_back(X509Cert(tslcert(), X509Cert::Pem));
     File::createDirectory(cache);
-    parse(list, TSL_URL, cert, cache, File::fileName(TSL_URL));
+    parse(nullptr, list, TSL_URL, cert, cache, File::fileName(TSL_URL));
 }
 
-void TSL::parse(vector<X509Cert> &list, const string &url, const vector<X509Cert> &certs, const string &cache, const string &territory)
+void TSL::parse(mutex *m, vector<X509Cert> &list, const string &url, const vector<X509Cert> &certs, const string &cache, const string &territory)
 {
-    INFO("TSL Url: %s", url.c_str());
     string path = cache + "/" + territory;
     TSL tsl(path, url);
     try {
@@ -252,7 +247,7 @@ void TSL::parse(vector<X509Cert> &list, const string &url, const vector<X509Cert
         }
         catch(const Exception &)
         {
-            ERR("TSL: Failed to download %s list", tsl.territory.c_str());
+            ERR("TSL: Failed to download %s list", tsl.territory().c_str());
             return;
         }
 
@@ -268,15 +263,31 @@ void TSL::parse(vector<X509Cert> &list, const string &url, const vector<X509Cert
 
     if(!tsl.pointer.empty())
     {
+        mutex m;
+        vector<thread> threads;
         for(const TSL::Pointer &p: tsl.pointer)
-        {
-            if(p.territory == "EE" || p.territory == "FI" || p.territory == "LV" || p.territory == "LT" ||
-               p.territory == "EE_T" || p.territory == "FI_T" || p.territory == "LV_T" || p.territory == "LT_T")
-                parse(list, p.location, p.certs, cache, p.territory + ".xml");
-        }
+            threads.push_back(thread([&](){
+                parse(&m, list, p.location, p.certs, cache, p.territory + ".xml");
+            }));
+        for(thread &t: threads)
+            t.join();
     }
     else
+    {
+        lock_guard<mutex> lock(*m);
         list.insert(list.end(), tsl.certs.begin(), tsl.certs.end());
+    }
+}
+
+string TSL::operatorName() const
+{
+    return !tsl ? string() : toString(tsl->schemeInformation().schemeOperatorName());
+}
+
+string TSL::territory() const
+{
+    return !tsl || tsl->schemeInformation().schemeTerritory().present() ?
+        string() :tsl->schemeInformation().schemeTerritory().get();
 }
 
 string TSL::toString(const InternationalNamesType &obj, const string &lang) const
@@ -287,15 +298,30 @@ string TSL::toString(const InternationalNamesType &obj, const string &lang) cons
     return obj.name().front();
 }
 
+string TSL::type() const
+{
+    return !tsl ? string() : tsl->schemeInformation().tSLType();
+}
+
 void TSL::validate(const std::vector<X509Cert> &certs)
 {
-    if(!tsl || nextUpdate.empty())
+    if(!tsl || nextUpdate().empty())
         THROW("Failed to parse XML");
 
     time_t t = time(0);
     struct tm *time = gmtime(&t);
-    if(nextUpdate.compare(0, 19, xsd2string(makeDateTime(*time))) <= 0)
+    if(nextUpdate().compare(0, 19, xsd2string(makeDateTime(*time))) <= 0)
         THROW("TSL is expired");
+
+    X509Cert signingCert;
+    if(tsl->signature().present() &&
+        tsl->signature()->keyInfo().present() &&
+        !tsl->signature()->keyInfo()->x509Data().empty() &&
+        !tsl->signature()->keyInfo()->x509Data().front().x509Certificate().empty())
+    {
+        const Base64Binary &base64 = tsl->signature()->keyInfo()->x509Data().front().x509Certificate().front();
+        signingCert = X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity()));
+    }
 
     if(find(certs.begin(), certs.end(), signingCert) == certs.end())
         THROW("TSL Signature is signed with untrusted certificate");

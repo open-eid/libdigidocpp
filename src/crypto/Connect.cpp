@@ -44,6 +44,7 @@ Connect::Connect(const string &url, const string &method)
         if(!ssl)
             THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
         SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
+        SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
         BIO *sbio = BIO_new_ssl(ssl.get(), 1);
         if(!sbio)
             THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
@@ -55,7 +56,7 @@ Connect::Connect(const string &url, const string &method)
     if(!d)
         THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
 
-    if(!BIO_do_connect(d.get()))
+    if(BIO_do_connect(d.get()) != 1)
         THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
 
     BIO_printf(d.get(), "%s %s HTTP/1.0\r\n", method.c_str(), path.c_str());
@@ -85,7 +86,8 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
 {
     if(!send.empty())
     {
-        BIO_printf(d.get(), "Content-Length: %ld\r\n\r\n", send.size());
+        addHeader("Content-Length", to_string(send.size()));
+        BIO_printf(d.get(), "\r\n");
         BIO_write(d.get(), &send[0], int(send.size()));
     }
     else

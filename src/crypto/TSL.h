@@ -21,28 +21,36 @@
 
 #include "X509Cert.h"
 
+#include <mutex>
+
 namespace digidoc
 {
 namespace tsl { class TrustStatusListType; class InternationalNamesType; }
 class TSL
 {
 public:
-    TSL(const std::string &file, const std::string &url );
+    TSL(const std::string &file, const std::string &url);
     ~TSL();
     void validateRemoteDigest();
     void validate(const std::vector<X509Cert> &certs);
 
-    std::string path, url, type, operatorName, territory, issueDate, nextUpdate;
-    X509Cert signingCert;
+    std::string type() const;
+    std::string operatorName() const;
+    std::string territory() const;
+    std::string issueDate() const;
+    std::string nextUpdate() const;
+
+    std::string path, url;
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
     std::vector<Pointer> pointer;
     std::vector<X509Cert> certs;
 
     static void parse(std::vector<X509Cert> &list);
-    static void parse(std::vector<X509Cert> &list, const std::string &url,
-        const std::vector<X509Cert> &certs, const std::string &cache, const std::string &territory);
 
 private:
+    static void parse(std::mutex *m, std::vector<X509Cert> &list, const std::string &url,
+        const std::vector<X509Cert> &certs, const std::string &cache, const std::string &territory);
+
     std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en") const;
     std::shared_ptr<tsl::TrustStatusListType> tsl;
 };
