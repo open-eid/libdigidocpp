@@ -54,6 +54,37 @@ namespace digidoc { vector<unsigned char> tslcert(); }
 
 #define CONFV2(method) ConfV2::instance() ? ConfV2::instance()->method() : ConfV2().method()
 
+const set<string> TSL::SCHEMES_URI = {
+    "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/schemes",
+    "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists",
+};
+
+const set<string> TSL::GENERIC_URI = {
+    "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/generic",
+    "http://uri.etsi.org/TrstSvc/TSLtype/generic/eSigDir-1999-93-EC-TrustedList",
+    "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric",
+};
+
+const set<string> TSL::SERVICESTATUS = {
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionincessation",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accredited",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/setbynationallaw",
+};
+
+const set<string> TSL::SERVICETYPE = {
+    "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
+    "http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC",
+    "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
+    "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
+    "http://uri.etsi.org/TrstSvc/Svctype/TSA",
+    "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
+    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC",
+    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES",
+};
+
+
+
 TSL::TSL(const string &file, const string &_url)
     : path(file)
     , url(_url)
@@ -62,35 +93,6 @@ TSL::TSL(const string &file, const string &_url)
         path = CONFV2(TSLCache) + "/" + File::fileName(TSL_URL);
     if(!File::fileExists(path))
         return;
-
-    //TSL Type
-    static const set<string> SCHEMES_URI = {
-        "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/schemes",
-        "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists",
-    };
-    static const set<string> GENERIC_URI = {
-        "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/generic",
-        "http://uri.etsi.org/TrstSvc/TSLtype/generic/eSigDir-1999-93-EC-TrustedList",
-        "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric",
-    };
-    //Service Type
-    static const set<string> SERVICETYPE = {
-        "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
-        "http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC",
-        "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
-        "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
-        "http://uri.etsi.org/TrstSvc/Svctype/TSA",
-        "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
-        "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC",
-        "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES",
-    };
-    //Service Status
-    static const set<string> SERVICESTATUS = {
-        "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision",
-        "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionincessation",
-        "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accredited",
-        "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/setbynationallaw",
-    };
 
     try {
         Properties properties;
@@ -130,52 +132,6 @@ TSL::TSL(const string &file, const string &_url)
                 pointer.push_back(p);
             }
         }
-        else if(GENERIC_URI.find(info.tSLType()) != GENERIC_URI.end() &&
-                tsl->trustServiceProviderList().present())
-        {
-            for(const TrustServiceProviderListType::TrustServiceProviderType &pointer:
-                tsl->trustServiceProviderList()->trustServiceProvider())
-            {
-                for(const TSPServicesListType::TSPServiceType &service:
-                    pointer.tSPServices().tSPService())
-                {
-                    const TSPServiceInformationType &serviceInfo = service.serviceInformation();
-                    if(SERVICESTATUS.find(serviceInfo.serviceStatus()) == SERVICESTATUS.end() ||
-                        SERVICETYPE.find(serviceInfo.serviceTypeIdentifier()) == SERVICETYPE.end())
-                        continue;
-
-                    //BIO_printf(bio, "Provider name: %sn\n", toString(i->tSPInformation().tSPName()).c_str());
-                    //BIO_printf(bio, " Serivce type: %s\n", serviceInfo.serviceTypeIdentifier().c_str());
-                    //BIO_printf(bio, " Service name: %s\n", toString(serviceInfo.serviceName()).c_str());
-                    for(const DigitalIdentityListType::DigitalIdType id:
-                        serviceInfo.serviceDigitalIdentity().digitalId())
-                    {
-                        if(!id.x509Certificate().present())
-                            continue;
-                        const Base64Binary &base64 = id.x509Certificate().get();
-                        certs.push_back(X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity())));
-                    }
-
-                    if(!service.serviceHistory().present())
-                        continue;
-                    for(const ServiceHistoryInstanceType &history: service.serviceHistory()->serviceHistoryInstance())
-                    {
-                        if(SERVICESTATUS.find(history.serviceStatus()) == SERVICESTATUS.end() ||
-                            SERVICETYPE.find(history.serviceTypeIdentifier()) == SERVICETYPE.end())
-                            continue;
-
-                        for(const DigitalIdentityListType::DigitalIdType id:
-                            history.serviceDigitalIdentity().digitalId())
-                        {
-                            if(!id.x509Certificate().present())
-                                continue;
-                            const Base64Binary &base64 = id.x509Certificate().get();
-                            certs.push_back(X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity())));
-                        }
-                    }
-                }
-            }
-        }
     }
     catch(const Parsing &e)
     {
@@ -204,6 +160,58 @@ TSL::TSL(const string &file, const string &_url)
 
 TSL::~TSL()
 {
+}
+
+vector<X509Cert> TSL::certs() const
+{
+    vector<X509Cert> certs;
+    if(GENERIC_URI.find(tsl->schemeInformation().tSLType()) == GENERIC_URI.end() ||
+        !tsl->trustServiceProviderList().present())
+        return certs;
+
+    for(const TrustServiceProviderListType::TrustServiceProviderType &pointer:
+        tsl->trustServiceProviderList()->trustServiceProvider())
+    {
+        for(const TSPServicesListType::TSPServiceType &service:
+            pointer.tSPServices().tSPService())
+        {
+            const TSPServiceInformationType &serviceInfo = service.serviceInformation();
+            if(SERVICESTATUS.find(serviceInfo.serviceStatus()) == SERVICESTATUS.end() ||
+                SERVICETYPE.find(serviceInfo.serviceTypeIdentifier()) == SERVICETYPE.end())
+                continue;
+
+            //BIO_printf(bio, "Provider name: %sn\n", toString(i->tSPInformation().tSPName()).c_str());
+            //BIO_printf(bio, " Serivce type: %s\n", serviceInfo.serviceTypeIdentifier().c_str());
+            //BIO_printf(bio, " Service name: %s\n", toString(serviceInfo.serviceName()).c_str());
+            for(const DigitalIdentityListType::DigitalIdType id:
+                serviceInfo.serviceDigitalIdentity().digitalId())
+            {
+                if(!id.x509Certificate().present())
+                    continue;
+                const Base64Binary &base64 = id.x509Certificate().get();
+                certs.push_back(X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity())));
+            }
+
+            if(!service.serviceHistory().present())
+                continue;
+            for(const ServiceHistoryInstanceType &history: service.serviceHistory()->serviceHistoryInstance())
+            {
+                if(SERVICESTATUS.find(history.serviceStatus()) == SERVICESTATUS.end() ||
+                    SERVICETYPE.find(history.serviceTypeIdentifier()) == SERVICETYPE.end())
+                    continue;
+
+                for(const DigitalIdentityListType::DigitalIdType id:
+                    history.serviceDigitalIdentity().digitalId())
+                {
+                    if(!id.x509Certificate().present())
+                        continue;
+                    const Base64Binary &base64 = id.x509Certificate().get();
+                    certs.push_back(X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity())));
+                }
+            }
+        }
+    }
+    return certs;
 }
 
 string TSL::issueDate() const
@@ -266,7 +274,7 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
     }
 
     if(tsl.pointer.empty())
-        return tsl.certs;
+        return tsl.certs();
 
     vector< future< vector<X509Cert> > > futures;
     for(const TSL::Pointer &p: tsl.pointer)

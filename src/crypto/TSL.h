@@ -21,6 +21,8 @@
 
 #include "X509Cert.h"
 
+#include <set>
+
 namespace digidoc
 {
 namespace tsl { class TrustStatusListType; class InternationalNamesType; }
@@ -41,13 +43,18 @@ public:
     std::string path, url;
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
     std::vector<Pointer> pointer;
-    std::vector<X509Cert> certs;
+    std::vector<X509Cert> certs() const;
 
     static std::vector<X509Cert> parse();
 
 private:
     static std::vector<X509Cert> parse(const std::string &url, const std::vector<X509Cert> &certs,
         const std::string &cache, const std::string &territory);
+
+    static const std::set<std::string> SCHEMES_URI;
+    static const std::set<std::string> GENERIC_URI;
+    static const std::set<std::string> SERVICETYPE;
+    static const std::set<std::string> SERVICESTATUS;
 
     std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en") const;
     std::shared_ptr<tsl::TrustStatusListType> tsl;

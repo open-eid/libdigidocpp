@@ -799,7 +799,7 @@ static int tslcmd(int , char* [])
         parseException(e, "Caught Exception:");
         returnCode = EXIT_FAILURE;
     }
-    for(const X509Cert &x: t.certs)
+    for(const X509Cert &x: t.certs())
         cout << "    Cert: " << x << endl;
     for(const TSL::Pointer &p: t.pointer)
     {
@@ -823,7 +823,7 @@ static int tslcmd(int , char* [])
             parseException(e, "Caught Exception:");
             returnCode = EXIT_FAILURE;
         }
-        for(const X509Cert &x: tp.certs)
+        for(const X509Cert &x: tp.certs())
             cout << "             Cert: " << x << endl;
     };
     return returnCode;
