@@ -41,7 +41,7 @@
 #endif
 
 #include <fstream>
-#include <thread>
+#include <future>
 
 using namespace digidoc;
 using namespace digidoc::tsl;
@@ -64,13 +64,17 @@ TSL::TSL(const string &file, const string &_url)
         return;
 
     //TSL Type
-    static const string SCHEMES_URI_V1 = "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/schemes";
-    static const string SCHEMES_URI_V2 = "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists";
-    static const string GENERIC_URI_V1 = "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/generic";
-    static const string GENERIC_URI_V3 = "http://uri.etsi.org/TrstSvc/TSLtype/generic/eSigDir-1999-93-EC-TrustedList";
-    static const string GENERIC_URI_V2 = "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric";
+    static const set<string> SCHEMES_URI = {
+        "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/schemes",
+        "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists",
+    };
+    static const set<string> GENERIC_URI = {
+        "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/generic",
+        "http://uri.etsi.org/TrstSvc/TSLtype/generic/eSigDir-1999-93-EC-TrustedList",
+        "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric",
+    };
     //Service Type
-    static const vector<string> SERVICETYPE = {
+    static const set<string> SERVICETYPE = {
         "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
         "http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC",
         "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
@@ -81,7 +85,7 @@ TSL::TSL(const string &file, const string &_url)
         "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES",
     };
     //Service Status
-    static const vector<string> SERVICESTATUS = {
+    static const set<string> SERVICESTATUS = {
         "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision",
         "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionincessation",
         "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accredited",
@@ -98,7 +102,7 @@ TSL::TSL(const string &file, const string &_url)
         if(info.distributionPoints().present() && !info.distributionPoints().get().uRI().empty())
             url = info.distributionPoints().get().uRI().front();
 
-        if((info.tSLType() == SCHEMES_URI_V1 || info.tSLType() == SCHEMES_URI_V2) &&
+        if(SCHEMES_URI.find(info.tSLType()) != SCHEMES_URI.end() &&
                 info.pointersToOtherTSL().present())
         {
             for(const OtherTSLPointersType::OtherTSLPointerType &other:
@@ -126,7 +130,7 @@ TSL::TSL(const string &file, const string &_url)
                 pointer.push_back(p);
             }
         }
-        else if((info.tSLType() == GENERIC_URI_V1 || info.tSLType() == GENERIC_URI_V2 || info.tSLType() == GENERIC_URI_V3) &&
+        else if(GENERIC_URI.find(info.tSLType()) != GENERIC_URI.end() &&
                 tsl->trustServiceProviderList().present())
         {
             for(const TrustServiceProviderListType::TrustServiceProviderType &pointer:
@@ -136,8 +140,8 @@ TSL::TSL(const string &file, const string &_url)
                     pointer.tSPServices().tSPService())
                 {
                     const TSPServiceInformationType &serviceInfo = service.serviceInformation();
-                    if(find(SERVICESTATUS.begin(), SERVICESTATUS.end(), serviceInfo.serviceStatus()) == SERVICESTATUS.end() ||
-                        find(SERVICETYPE.begin(), SERVICETYPE.end(), serviceInfo.serviceTypeIdentifier()) == SERVICETYPE.end())
+                    if(SERVICESTATUS.find(serviceInfo.serviceStatus()) == SERVICESTATUS.end() ||
+                        SERVICETYPE.find(serviceInfo.serviceTypeIdentifier()) == SERVICETYPE.end())
                         continue;
 
                     //BIO_printf(bio, "Provider name: %sn\n", toString(i->tSPInformation().tSPName()).c_str());
@@ -156,8 +160,8 @@ TSL::TSL(const string &file, const string &_url)
                         continue;
                     for(const ServiceHistoryInstanceType &history: service.serviceHistory()->serviceHistoryInstance())
                     {
-                        if(find(SERVICESTATUS.begin(), SERVICESTATUS.end(), history.serviceStatus()) == SERVICESTATUS.end() ||
-                            find(SERVICETYPE.begin(), SERVICETYPE.end(), history.serviceTypeIdentifier()) == SERVICETYPE.end())
+                        if(SERVICESTATUS.find(history.serviceStatus()) == SERVICESTATUS.end() ||
+                            SERVICETYPE.find(history.serviceTypeIdentifier()) == SERVICETYPE.end())
                             continue;
 
                         for(const DigitalIdentityListType::DigitalIdType id:
@@ -213,16 +217,16 @@ string TSL::nextUpdate() const
         string() : xsd2string(tsl->schemeInformation().nextUpdate().dateTime().get());
 }
 
-void TSL::parse(vector<X509Cert> &list)
+vector<X509Cert> TSL::parse()
 {
     string cache = CONFV2(TSLCache);
-    std::vector<X509Cert> cert;
-    cert.push_back(X509Cert(tslcert(), X509Cert::Pem));
+    std::vector<X509Cert> cert = { X509Cert(tslcert(), X509Cert::Pem) };
     File::createDirectory(cache);
-    parse(nullptr, list, TSL_URL, cert, cache, File::fileName(TSL_URL));
+    return parse(TSL_URL, cert, cache, File::fileName(TSL_URL));
 }
 
-void TSL::parse(mutex *m, vector<X509Cert> &list, const string &url, const vector<X509Cert> &certs, const string &cache, const string &territory)
+vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
+    const string &cache, const string &territory)
 {
     string path = cache + "/" + territory;
     TSL tsl(path, url);
@@ -234,7 +238,7 @@ void TSL::parse(mutex *m, vector<X509Cert> &list, const string &url, const vecto
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
         bool autoupdate = CONFV2(TSLAutoUpdate);
         if(!autoupdate)
-            return;
+            return vector<X509Cert>();
 
         try
         {
@@ -248,7 +252,7 @@ void TSL::parse(mutex *m, vector<X509Cert> &list, const string &url, const vecto
         catch(const Exception &)
         {
             ERR("TSL: Failed to download %s list", tsl.territory().c_str());
-            return;
+            return vector<X509Cert>();
         }
 
         tsl = TSL(path, url);
@@ -257,26 +261,27 @@ void TSL::parse(mutex *m, vector<X509Cert> &list, const string &url, const vecto
             DEBUG("TSL %s signature is valid", territory.c_str());
         } catch(const Exception &) {
             ERR("TSL %s signature is invalid", territory.c_str());
-            return;
+            return vector<X509Cert>();
         }
     }
 
-    if(!tsl.pointer.empty())
+    if(tsl.pointer.empty())
+        return tsl.certs;
+
+    vector< future< vector<X509Cert> > > futures;
+    for(const TSL::Pointer &p: tsl.pointer)
     {
-        mutex m;
-        vector<thread> threads;
-        for(const TSL::Pointer &p: tsl.pointer)
-            threads.push_back(thread([&](){
-                parse(&m, list, p.location, p.certs, cache, p.territory + ".xml");
-            }));
-        for(thread &t: threads)
-            t.join();
+        futures.push_back(async([&](){
+            return parse(p.location, p.certs, cache, p.territory + ".xml");
+        }));
     }
-    else
+    vector<X509Cert> list;
+    for(auto &f: futures)
     {
-        lock_guard<mutex> lock(*m);
-        list.insert(list.end(), tsl.certs.begin(), tsl.certs.end());
+        vector<X509Cert> data = f.get();
+        list.insert(list.end(), data.begin(), data.end());
     }
+    return list;
 }
 
 string TSL::operatorName() const

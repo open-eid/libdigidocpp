@@ -52,7 +52,8 @@ X509CertStore::X509CertStore()
     : d(new X509CertStorePrivate)
 {
 #ifdef TSL_URL
-    TSL::parse(*d);
+    vector<X509Cert> list = TSL::parse();
+    d->swap(list);
     INFO("Loaded %d certificates into TSL certificate store.", d->size());
 #endif
 }

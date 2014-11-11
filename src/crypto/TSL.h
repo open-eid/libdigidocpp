@@ -21,8 +21,6 @@
 
 #include "X509Cert.h"
 
-#include <mutex>
-
 namespace digidoc
 {
 namespace tsl { class TrustStatusListType; class InternationalNamesType; }
@@ -45,11 +43,11 @@ public:
     std::vector<Pointer> pointer;
     std::vector<X509Cert> certs;
 
-    static void parse(std::vector<X509Cert> &list);
+    static std::vector<X509Cert> parse();
 
 private:
-    static void parse(std::mutex *m, std::vector<X509Cert> &list, const std::string &url,
-        const std::vector<X509Cert> &certs, const std::string &cache, const std::string &territory);
+    static std::vector<X509Cert> parse(const std::string &url, const std::vector<X509Cert> &certs,
+        const std::string &cache, const std::string &territory);
 
     std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en") const;
     std::shared_ptr<tsl::TrustStatusListType> tsl;
