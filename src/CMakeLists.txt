@@ -273,9 +273,59 @@ source_group( "Resources\\schemas" FILES ${SCHEMA_FILES} )
 
 if( FRAMEWORK )
     add_custom_command( TARGET digidoc-tool POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:digidoc-tool> $<TARGET_FILE_DIR:digidocpp>/Resources )
+        COMMAND cp $<TARGET_FILE:digidoc-tool> $<TARGET_FILE_DIR:digidocpp>/Resources )
     set_source_files_properties( ${SCHEMA_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/schema )
     set_source_files_properties( ${CRYPTO_HEADER} PROPERTIES MACOSX_PACKAGE_LOCATION Headers/crypto )
+    get_filename_component( LIBPATH ${XERCESC_LIBRARIES} PATH )
+    add_custom_target( embedlibs DEPENDS digidoc-tool
+        COMMAND mkdir -p $<TARGET_FILE_DIR:digidocpp>/Libraries
+        COMMAND ln -s -f Versions/Current/Libraries $<TARGET_FILE_DIR:digidocpp>/../..
+        COMMAND cp ${XERCESC_LIBRARIES} ${XMLSECURITYC_LIBRARIES} ${XALANMSG_LIBRARY}
+            $<TARGET_FILE_DIR:digidocpp>/Libraries
+        COMMAND install_name_tool -id 'libxerces-c.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxerces-c.dylib
+        COMMAND install_name_tool -id 'libxalanMsg.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxalanMsg.dylib
+        COMMAND install_name_tool -id 'libxalan-c.dylib'
+            -change '${LIBPATH}/libxalanMsg.111.0.dylib' '@loader_path/libxalanMsg.dylib'
+            -change '${LIBPATH}/libxerces-c-3.1.dylib' '@loader_path/libxerces-c.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxalan-c.dylib
+        COMMAND install_name_tool -id 'libxml-security-c.dylib'
+            -change '${LIBPATH}/libxerces-c-3.1.dylib' '@loader_path/libxerces-c.dylib'
+            -change '${LIBPATH}/libxalan-c.111.0.dylib' '@loader_path/libxalan-c.dylib'
+            -change '${LIBPATH}/libxalanMsg.111.0.dylib' '@loader_path/libxalanMsg.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxml-security-c.dylib
+        COMMAND install_name_tool
+            -change '${LIBPATH}/libxerces-c-3.1.dylib' '@loader_path/Libraries/libxerces-c.dylib'
+            -change '${LIBPATH}/libxml-security-c.17.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
+            -change '${LIBPATH}/libxalan-c.111.0.dylib' '@loader_path/Libraries/libxalan-c.dylib'
+            $<TARGET_FILE:digidocpp>
+        COMMAND install_name_tool
+            -change '${LIBPATH}/libxerces-c-3.1.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
+            -change '${LIBPATH}/libxml-security-c.17.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
+            -change '${LIBPATH}/libxalan-c.111.0.dylib' '@executable_path/../Libraries/libxalan-c.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
+        COMMAND touch $<TARGET_FILE:digidoc-tool>
+    )
+    add_custom_target( codesign DEPENDS digidoc-tool
+        COMMAND for f in $<TARGET_FILE_DIR:digidocpp>/Libraries/*\; do
+                codesign -f -s \"$$SIGNCERT\" $$f\;
+            done
+        COMMAND codesign -f -s \"$$SIGNCERT\" $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
+        COMMAND codesign -f -s \"$$SIGNCERT\" $<TARGET_FILE_DIR:digidocpp>/../..
+        COMMAND touch $<TARGET_FILE:digidoc-tool>
+    )
+    add_custom_target( pkgbuild DEPENDS codesign
+        COMMAND make install DESTDIR=install \; pkgbuild
+            --root install
+            --sign \"$$INSTCERT\"
+            ${CMAKE_BINARY_DIR}/libdigidocpp_${VERSION}$ENV{VER_SUFFIX}.pkg
+    )
+    add_custom_target( zipdebug DEPENDS digidoc-tool
+        COMMAND dsymutil -o libdigidocpp.dSYM $<TARGET_FILE:digidocpp>
+        COMMAND dsymutil -o libdigidocpp.dSYM $<TARGET_FILE:digidoc-tool>
+        COMMAND zip -r ${CMAKE_BINARY_DIR}/libdigidocpp-dbg_${VERSION}$ENV{VER_SUFFIX}.zip libdigidocpp.dSYM
+    )
 else()
     install( TARGETS digidoc-tool DESTINATION ${CMAKE_INSTALL_BINDIR} )
     install( FILES ${CMAKE_CURRENT_BINARY_DIR}/digidoc-tool.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 )
