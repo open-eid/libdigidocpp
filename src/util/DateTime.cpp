@@ -23,6 +23,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <cstdlib>
 
 using namespace digidoc;
 using namespace digidoc::util::date;
@@ -104,15 +105,20 @@ string digidoc::util::date::xsd2string(const xml_schema::DateTime& time)
     return stream.str();
 }
 
-time_t digidoc::util::date::xsd2time_t(const xml_schema::DateTime &time)
+time_t digidoc::util::date::string2time_t(const string &time)
 {
+    class xsdparse: public xml_schema::DateTime
+    {
+    public: xsdparse(const string &time) { parse(time); }
+    };
+    const xml_schema::DateTime &xml = xsdparse(time);
     struct tm t = {
-        int(time.seconds()),
-        time.minutes(),
-        time.hours(),
-        time.day(),
-        time.month() - 1,
-        time.year() - 1900,
+        int(xml.seconds()),
+        xml.minutes(),
+        xml.hours(),
+        xml.day(),
+        xml.month() - 1,
+        xml.year() - 1900,
         0,
         0,
         0
@@ -121,16 +127,19 @@ time_t digidoc::util::date::xsd2time_t(const xml_schema::DateTime &time)
         ,0
 #endif
     };
-    return mktime(&t);
-}
 
-time_t digidoc::util::date::string2time_t(const string &time)
-{
-    class xsdparse: public xml_schema::DateTime
-    {
-    public: xsdparse(const string &time) { parse(time); }
-    };
-    return digidoc::util::date::xsd2time_t(xsdparse(time));
+#ifdef _WIN32
+    return _mkgmtime(&t);
+#else
+    char *tz = getenv("TZ");
+    setenv("TZ", "UTC", 1);
+    time_t result = mktime(&t);
+    if (tz)
+        setenv("TZ", tz, 1);
+    else
+        unsetenv("TZ");
+    return result;
+#endif
 }
 
 xml_schema::DateTime digidoc::util::date::makeDateTime(const struct tm& lt)
