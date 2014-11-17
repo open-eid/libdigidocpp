@@ -1,0 +1,88 @@
+Source: libdigidocpp
+Section: libs
+Priority: extra
+Maintainer: RIA <info@ria.ee>
+Build-Depends:
+ cdbs,
+ cmake,
+ libdigidoc-dev (> 3.0),
+ libxml-security-c-dev,
+ xsdcxx (>= 4.0) | xsd (>= 4.0)
+Standards-Version: 3.9.5
+Homepage: https://github.com/open-eid/libdigidocpp
+
+Package: libdigidocpp-common
+Architecture: all
+Section: misc
+Multi-Arch: foreign
+Depends:
+ ${misc:Depends}
+Breaks:
+ libdigidocpp0 (<< ${binary:Version})
+Replaces:
+ libdigidocpp0 (<< ${binary:Version})
+Description: DigiDoc digital signature library common files
+ This package contains common files for using applications with the DigiDoc
+ digital signature library.
+
+Package: libdigidocpp0
+Replaces:
+ libdigidocpp
+Breaks:
+ libdigidocpp
+Architecture: any
+Multi-Arch: same
+Pre-Depends:
+ ${misc:Pre-Depends}
+Depends:
+ libdigidocpp-common (= ${binary:Version}),
+ opensc,
+ ${misc:Depends},
+ ${shlibs:Depends}
+Conflicts:
+ libdigidoc2 (<3.0)
+Description: DigiDoc digital signature library
+ DigiDoc is an XML file format for documents with digital signatures in use by
+ the Estonian ID card infrastructure. This library allows for creation and
+ reading of DigiDoc files.
+
+Package: libdigidocpp-tools
+Architecture: any
+Section: misc
+Depends:
+ libdigidocpp0 (= ${binary:Version}),
+ ${misc:Depends},
+ ${shlibs:Depends}
+Description: DigiDoc digital signature library tools
+ This package contains tools for manipulating signatures command line with the
+ DigiDoc digital signature library.
+
+Package: libdigidocpp-dbg
+Architecture: any
+Section: debug
+Depends:
+ libdigidocpp0 (= ${binary:Version}),
+ xsdcxx,
+ ${misc:Depends}
+Description: Debugging symbols for libdigidocpp0
+ This package contains the debugging symbols for DigiDoc digital signature
+ library.
+
+Package: libdigidocpp-dev
+Architecture: any
+Section: libdevel
+Depends:
+ libdigidocpp0 (= ${binary:Version}),
+ ${misc:Depends}
+Description: DigiDoc digital signature library development files
+ This package contains files necessary for developing applications with the
+ DigiDoc digital signature library.
+
+Package: libdigidocpp-doc
+Architecture: all
+Section: doc
+Depends:
+ ${misc:Depends}
+Description: DigiDoc digital signature library documentation
+ This package contains documentation for developing applications with the
+ DigiDoc digital signature library.
