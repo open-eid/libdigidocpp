@@ -384,8 +384,13 @@ void TSL::validateRemoteDigest()
     }
 
     vector<unsigned char> digest;
-    if(r.content.size() == 64)
+    if(r.content.size() == 32)
+        digest.assign(r.content.c_str(), r.content.c_str() + r.content.size());
+    else
     {
+        r.content.erase(r.content.find_last_not_of(" \n\r\t") + 1);
+        if(r.content.size() != 64)
+            return;
         char data[] = "00";
         for(string::const_iterator i = r.content.cbegin(); i != r.content.end();)
         {
@@ -394,8 +399,6 @@ void TSL::validateRemoteDigest()
             digest.push_back(static_cast<unsigned char>(strtoul(data, 0, 16)));
         }
     }
-    else if(r.content.size() == 32)
-        digest.assign(r.content.c_str(), r.content.c_str() + r.content.size());
 
     if(!digest.empty() && digest != sha.result())
         THROW("Remote digest does not match");
