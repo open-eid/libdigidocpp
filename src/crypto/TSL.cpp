@@ -252,7 +252,7 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
         {
             ofstream file(File::encodeName(path).c_str(), ofstream::binary);
             Connect::Result r = Connect(url, "GET").exec();
-            if(r.result.find("301") != string::npos) //Redirect
+            if(r.isRedirect())
                 r = Connect(r.headers["Location"], "GET").exec();
             file << r.content;
             file.close();
@@ -369,7 +369,12 @@ void TSL::validate(const std::vector<X509Cert> &certs)
 
 void TSL::validateRemoteDigest()
 {
-    Connect::Result r = Connect(url.substr(0, url.size() - 3) + "sha2", "GET").exec();
+    size_t pos = url.find_last_of("/.");
+    if(pos == string::npos)
+        return;
+    Connect::Result r = Connect(url.substr(0, pos) + ".sha2", "GET").exec();
+    if(r.isRedirect())
+        r = Connect(r.headers["Location"], "GET").exec();
     if(r.result.find("200") == string::npos)
         return;
 

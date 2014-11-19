@@ -60,7 +60,10 @@ Connect::Connect(const string &url, const string &method)
         THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
 
     BIO_printf(d.get(), "%s %s HTTP/1.0\r\n", method.c_str(), path.c_str());
-    BIO_printf(d.get(), "Host: %s:%s\r\n", host.c_str(), port.c_str());
+    if(port == "80")
+        addHeader("Host", host);
+    else
+        addHeader("Host", host + ":" + port);
     BIO_printf(d.get(), "User-Agent: LIB libdigidocpp/%s APP %s\r\n",
         VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER), appInfo().c_str());
 

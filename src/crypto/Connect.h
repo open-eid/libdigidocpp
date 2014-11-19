@@ -35,6 +35,11 @@ public:
     struct Result {
         std::string result, content;
         std::map<std::string,std::string> headers;
+        bool isRedirect() const
+        {
+            return result.find("301") != std::string::npos ||
+                   result.find("302") != std::string::npos;
+        }
     };
 
     Connect(const std::string &url, const std::string &method = "POST");
