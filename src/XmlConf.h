@@ -46,6 +46,7 @@ public:
     virtual std::string signatureDigestUri() const override;
     virtual std::string ocsp(const std::string &issuer) const override;
     virtual std::string TSUrl() const override;
+    virtual std::string verifyServiceUri() const override;
 
     virtual std::string PKCS12Cert() const override;
     virtual std::string PKCS12Pass() const override;

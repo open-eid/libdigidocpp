@@ -54,6 +54,7 @@ namespace digidoc
           virtual std::string signatureDigestUri() const;
           virtual std::string ocsp(const std::string &issuer) const;
           virtual std::string TSUrl() const;
+          virtual std::string verifyServiceUri() const;
 
           virtual std::string PKCS12Cert() const;
           virtual std::string PKCS12Pass() const;

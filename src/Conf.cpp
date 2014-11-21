@@ -253,3 +253,8 @@ bool Conf::proxyTunnelSSL() const { return true; }
  * Gets signature digest URI
  */
 string Conf::signatureDigestUri() const { return digestUri(); }
+
+/**
+ * Gets verify service URI
+ */
+string Conf::verifyServiceUri() const { return PDF_URL; }

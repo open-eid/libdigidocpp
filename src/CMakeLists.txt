@@ -219,6 +219,7 @@ add_library(digidocpp ${BUILD_TYPE}
     XmlConf.cpp
     DataFile.cpp
     Exception.cpp
+    RDoc.cpp
     Signature.cpp
     SignatureBES.cpp
     SignatureTM.cpp
@@ -230,7 +231,7 @@ add_library(digidocpp ${BUILD_TYPE}
 )
 
 set_target_properties(digidocpp PROPERTIES
-    COMPILE_DEFINITIONS "PKCS11_MODULE=\"${PKCS11_MODULE}\";TSA_URL=\"${TSA_URL}\";TSL_URL=\"${TSL_URL}\";${digidocpp_DEFS}"
+    COMPILE_DEFINITIONS "PKCS11_MODULE=\"${PKCS11_MODULE}\";TSA_URL=\"${TSA_URL}\";TSL_URL=\"${TSL_URL}\";PDF_URL=\"${PDF_URL}\";${digidocpp_DEFS}"
     VERSION ${MAJOR_VER}.${MINOR_VER}.${RELEASE_VER}
     SOVERSION 1
     PUBLIC_HEADER "${PUBLIC_HEADER}"

@@ -48,6 +48,7 @@ static string to_string(T value)
 Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent)
     : _timeout(timeout)
 {
+    DEBUG("Connecting to URL: %s", _url.c_str());
     char *_host = nullptr, *_port = nullptr, *_path = nullptr;
     int usessl = 0;
     if(!OCSP_parse_url(const_cast<char*>(_url.c_str()), &_host, &_port, &_path, &usessl))
@@ -69,6 +70,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         path = url;
     }
 
+    DEBUG("Connecting to Host: %s", hostname.c_str());
     d = BIO_new_connect(const_cast<char*>(hostname.c_str()));
     if(!d)
         THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());

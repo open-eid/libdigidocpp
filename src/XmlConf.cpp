@@ -118,6 +118,7 @@ public:
     XmlConfParam<string> TSLCache;
     XmlConfParam<bool> TSLOnlineDigest;
     XmlConfParam<int> TSLTimeOut;
+    XmlConfParam<string> verifyServiceUri;
     map<string,string> ocsp;
 
     string SCHEMA_LOC;
@@ -147,6 +148,7 @@ XmlConfPrivate::XmlConfPrivate(const string &path, const string &schema)
     , TSLCache("tsl.cache")
     , TSLOnlineDigest("tsl.onlineDigest", true)
     , TSLTimeOut("tsl.timeOut", 10)
+    , verifyServiceUri("verify.serivceUri")
     , SCHEMA_LOC(schema)
 {
     try {
@@ -231,6 +233,8 @@ void XmlConfPrivate::init(const string& path, bool global)
                 TSLOnlineDigest.setValue(p == "true", p.lock(), global);
             else if(p.name() == TSLTimeOut.name)
                 TSLTimeOut.setValue(stoi(p), p.lock(), global);
+            else if(p.name() == verifyServiceUri.name)
+                verifyServiceUri.setValue(p, p.lock(), global);
             else
                 WARN("Unknown configuration parameter %s", p.name().c_str());
         }
@@ -359,6 +363,7 @@ GET1(string, digestUri)
 GET1(string, signatureDigestUri)
 GET1(bool, TSLOnlineDigest)
 GET1(int, TSLTimeOut)
+GET1(string, verifyServiceUri)
 
 string XmlConf::ocsp(const string &issuer) const
 {

@@ -20,6 +20,7 @@
     <!--<param name="tsl.cache" lock="false"></param>-->
     <!--<param name="tsl.onlineDigest" lock="false">true</param>-->
     <!--<param name="tsl.timeOut" lock="false">10</param>-->
+    <!--<param name="verify.serivceUri" lock="false">@PDF_URL@</param>-->
 
     <!-- OCSP responder url. Used for validating signing certificates and generating BDoc-TM signatures-->
     <!--<ocsp issuer="ESTEID-SK 2007">http://ocsp.sk.ee</ocsp>-->
