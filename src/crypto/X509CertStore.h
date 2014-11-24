@@ -35,6 +35,7 @@ namespace digidoc
           static void destroy();
           static X509CertStore* instance();
 
+          void activate(const std::string &territory) const;
           std::vector<X509Cert> certs() const;
           X509Cert findIssuer(const X509Cert &cert) const;
           bool verify(const X509Cert &cert, time_t *t = nullptr) const;

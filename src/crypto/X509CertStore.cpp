@@ -37,7 +37,15 @@ using namespace std;
 
 namespace digidoc
 {
-class X509CertStorePrivate: public vector<X509Cert> {};
+class X509CertStorePrivate: public vector<X509Cert> {
+public:
+    void update()
+    {
+        vector<X509Cert> list = TSL::parse();
+        swap(list);
+        INFO("Loaded %d certificates into TSL certificate store.", size());
+    }
+};
 }
 
 /**
@@ -51,11 +59,7 @@ X509CertStore* X509CertStore::INSTANCE = nullptr;
 X509CertStore::X509CertStore()
     : d(new X509CertStorePrivate)
 {
-#ifdef TSL_URL
-    vector<X509Cert> list = TSL::parse();
-    d->swap(list);
-    INFO("Loaded %d certificates into TSL certificate store.", d->size());
-#endif
+    d->update();
 }
 
 /**
@@ -64,6 +68,12 @@ X509CertStore::X509CertStore()
 X509CertStore::~X509CertStore()
 {
     delete d;
+}
+
+void X509CertStore::activate(const string &territory) const
+{
+    if(TSL::activate(territory))
+        d->update();
 }
 
 void X509CertStore::addCert(const X509Cert &cert)
@@ -131,6 +141,8 @@ vector<X509Cert> X509CertStore::certs() const
  */
 X509Cert X509CertStore::findIssuer(const X509Cert &cert) const
 {
+    activate(cert.issuerName("C"));
+
     SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(cert.handle(), NID_authority_key_identifier, 0, 0));
     for(const X509Cert &i: *d)
     {
@@ -156,6 +168,8 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert) const
  */
 bool X509CertStore::verify(const X509Cert &cert, time_t *t) const
 {
+    activate(cert.issuerName("C"));
+
     SCOPE(X509_STORE, store, X509_STORE_new());
     for(const X509Cert &i: *d)
         X509_STORE_add_cert(store.get(), i.handle());

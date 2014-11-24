@@ -91,30 +91,28 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_102918v010201.xsd
     --namespace-map http://uri.etsi.org/02918/v1.2.1\#=digidoc::asic )
 list( APPEND xsd_SRCS xml/ObjectType.cpp xml/AnyType.cpp xml/UnsignedSignaturePropertiesType.cpp )
 
-if( TSL_URL )
-    XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/xml.xsd
-        --root-element-none )
-    XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101.xsd
-        --root-element TrustServiceStatusList
-        --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
-        --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
-        --custom-type AdditionalInformationType=/AdditionalInformationTypeBase
-        --hxx-epilogue \"\#include <xml/AdditionalInformationType.h>\" )
-#   XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101_additionaltypes.xsd
-#       --root-element-none
-#       --namespace-map http://uri.etsi.org/02231/v2/additionaltypes\#=digidoc::tslx
-#       --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
-#       --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
-    list( APPEND xsd_SRCS xml/AdditionalInformationType.cpp )
-    add_definitions( -DTSL_URL=\"${TSL_URL}\" )
-    add_executable( embedfile embedfile.cpp )
-    add_custom_command( OUTPUT tslcert.cpp
-        COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT} tslcert tslcert.cpp
-        COMMENT "Generating tslcert.cpp from ${TSL_CERT}"
-    )
-    list( APPEND digidocpp_SRCS crypto/TSL.cpp tslcert.cpp )
-	list( APPEND digidoc-tool_SRCS ${xsd_SRCS} crypto/Connect.cpp crypto/Digest.cpp crypto/TSL.cpp util/DateTime.cpp tslcert.cpp )
-endif()
+XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/xml.xsd
+    --root-element-none )
+XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101.xsd
+    --root-element TrustServiceStatusList
+    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
+    --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
+    --custom-type AdditionalInformationType=/AdditionalInformationTypeBase
+    --hxx-epilogue \"\#include <xml/AdditionalInformationType.h>\" )
+#XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101_additionaltypes.xsd
+#    --root-element-none
+#    --namespace-map http://uri.etsi.org/02231/v2/additionaltypes\#=digidoc::tslx
+#    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
+#    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
+list( APPEND xsd_SRCS xml/AdditionalInformationType.cpp )
+add_definitions( -DTSL_URL=\"${TSL_URL}\" )
+add_executable( embedfile embedfile.cpp )
+add_custom_command( OUTPUT tslcert.cpp
+    COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT} tslcert tslcert.cpp
+    COMMENT "Generating tslcert.cpp from ${TSL_CERT}"
+)
+list( APPEND digidocpp_SRCS crypto/TSL.cpp tslcert.cpp )
+list( APPEND digidoc-tool_SRCS ${xsd_SRCS} crypto/Connect.cpp crypto/Digest.cpp crypto/TSL.cpp util/DateTime.cpp tslcert.cpp )
 
 set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd

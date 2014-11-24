@@ -162,6 +162,18 @@ TSL::~TSL()
 {
 }
 
+bool TSL::activate(const string &territory)
+{
+    string cache = CONFV2(TSLCache);
+    string path = cache + "/" + territory + ".xml";
+    if(File::fileExists(path))
+        return false;
+    ofstream file(File::encodeName(path).c_str(), ofstream::binary);
+    file << " ";
+    file.close();
+    return true;
+}
+
 vector<X509Cert> TSL::certs() const
 {
     vector<X509Cert> certs;
@@ -286,6 +298,8 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
     vector< future< vector<X509Cert> > > futures;
     for(const TSL::Pointer &p: tsl.pointer)
     {
+        if(!File::fileExists(cache + "/" + p.territory + ".xml"))
+            continue;
         futures.push_back(async([&](){
             return parse(p.location, p.certs, cache, p.territory + ".xml");
         }));

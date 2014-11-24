@@ -45,6 +45,7 @@ public:
     std::vector<Pointer> pointer;
     std::vector<X509Cert> certs() const;
 
+    static bool activate(const std::string &territory);
     static std::vector<X509Cert> parse();
 
 private:
