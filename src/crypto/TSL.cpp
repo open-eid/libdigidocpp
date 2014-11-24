@@ -248,9 +248,10 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
         if(!autoupdate)
             return vector<X509Cert>();
 
+        string tmp = path + ".tmp";
         try
         {
-            ofstream file(File::encodeName(path).c_str(), ofstream::binary);
+            ofstream file(File::encodeName(tmp).c_str(), ofstream::binary);
             Connect::Result r = Connect(url, "GET").exec();
             if(r.isRedirect())
                 r = Connect(r.headers["Location"], "GET").exec();
@@ -263,9 +264,15 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
             return vector<X509Cert>();
         }
 
-        tsl = TSL(path, url);
+        tsl = TSL(tmp, url);
         try {
             tsl.validate(certs);
+            ofstream o(File::encodeName(path).c_str(), ofstream::binary);
+            ifstream i(File::encodeName(tmp).c_str(), ofstream::binary);
+            o << i.rdbuf();
+            o.close();
+            i.close();
+            File::removeFile(tmp);
             DEBUG("TSL %s signature is valid", territory.c_str());
         } catch(const Exception &) {
             ERR("TSL %s signature is invalid", territory.c_str());

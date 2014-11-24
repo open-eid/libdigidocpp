@@ -49,11 +49,9 @@ using namespace digidoc::util;
 using namespace std;
 
 #ifdef _WIN32
-#define PATH_DELIMITER '\\'
 #define f_stat      _wstat
 typedef struct _stat f_statbuf;
 #else
-#define PATH_DELIMITER '/'
 #define f_stat      stat
 typedef struct stat f_statbuf;
 #endif
@@ -333,8 +331,7 @@ string File::frameworkResourcesPath(const string &name)
  */
 string File::directory(const string& path)
 {
-    //size_t pos = path.find_last_of("/\\");
-    size_t pos = path.find_last_of(PATH_DELIMITER);
+    size_t pos = path.find_last_of("/\\");
     return pos == string::npos ? "" : path.substr(0, pos);
 }
 
@@ -354,13 +351,12 @@ string File::path(const string& directory, const string& relativePath)
     if(!dir.empty() && (dir[dir.size() - 1] == '/' || dir[dir.size() - 1] == '\\'))
         dir = dir.substr(0, dir.size() - 1);
 
-    string path = dir + PATH_DELIMITER + relativePath;
-#ifdef _POSIX_VERSION
-    replace(path.begin(), path.end(), '\\', '/');
-#else
+    string path = dir + "/" + relativePath;
+#ifdef _WIN32
     replace(path.begin(), path.end(), '/', '\\');
+#else
+    replace(path.begin(), path.end(), '\\', '/');
 #endif
-
     return path;
 }
 
@@ -556,15 +552,19 @@ void File::deleteTempFiles()
 {
     while(!tempFiles.empty())
     {
-#ifdef _WIN32
-        int result = _wremove(encodeName(tempFiles.top()).c_str());
-#else
-        int result = remove(encodeName(tempFiles.top()).c_str());
-#endif
-        if(result)
+        if(!removeFile(tempFiles.top()))
             WARN( "Tried to remove the temporary file or directory '%s', but failed.", tempFiles.top().c_str() );
         tempFiles.pop();
     }
+}
+
+bool File::removeFile(const string &path)
+{
+#ifdef _WIN32
+    return _wremove(encodeName(path).c_str()) == 0;
+#else
+    return remove(encodeName(path).c_str()) == 0;
+#endif
 }
 
 /**
@@ -632,10 +632,9 @@ string File::fromUriPath(const string &path)
     {
         if(*i == '%' && isxdigit(*(i+1)) && isxdigit(*(i+2)))
         {
-            data[2] = *(i+1);
-            data[3] = *(i+2);
+            data[2] = *(++i);
+            data[3] = *(++i);
             ret += static_cast<char>(strtoul(data, 0, 16));
-            i += 2;
         } else
             ret += *i;
     }
