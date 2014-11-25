@@ -176,7 +176,7 @@ include_directories(
 add_library(digidocpp SHARED
     ${digidocpp_SRCS}
     ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf
-    ${CMAKE_SOURCE_DIR}/etc/37242.p12
+	${CMAKE_SOURCE_DIR}/etc/73411.p12
     ${SCHEMA_FILES}
     ${PUBLIC_HEADER}
     ${CRYPTO_HEADER}
@@ -210,7 +210,7 @@ set_target_properties(digidocpp PROPERTIES
     VERSION ${MAJOR_VER}.${MINOR_VER}.${RELEASE_VER}
     SOVERSION 0
     PUBLIC_HEADER "${PUBLIC_HEADER}"
-    RESOURCE "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/37242.p12"
+	RESOURCE "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/73411.p12"
     FRAMEWORK_VERSION 0
     FRAMEWORK "${FRAMEWORK}"
     MACOSX_FRAMEWORK_IDENTIFIER "ee.ria.digidocpp"
@@ -266,7 +266,7 @@ if(WIN32)
     install( DIRECTORY ${PROJECT_BINARY_DIR}/src/ DESTINATION ${CMAKE_INSTALL_LIBDIR} FILES_MATCHING PATTERN "*.pdb" )
 endif()
 
-source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/37242.p12" )
+source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/73411.p12" )
 source_group( "Resources\\schemas" FILES ${SCHEMA_FILES} )
 
 if( FRAMEWORK )

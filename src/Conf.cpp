@@ -72,7 +72,7 @@ string Conf::libdigidocConf() const
 #ifdef _WIN32
     return File::dllPath("digidoc.dll") + "digidoc.ini";
 #else
-    return "";
+    return string();
 #endif
 }
 
@@ -83,7 +83,7 @@ int Conf::logLevel() const {
     return Log::DebugType;
 #endif
 }
-string Conf::logFile() const { return ""; }
+string Conf::logFile() const { return string(); }
 string Conf::digestUri() const { return URI_SHA256; }
 
 string Conf::xsdPath() const
@@ -99,34 +99,32 @@ string Conf::PKCS11Driver() const { return PKCS11_MODULE; }
 
 string Conf::ocsp(const string &issuer) const
 {
-    static const map<string,string> ocsplist = [](){
-        map<string,string> list;
+    static const map<string,string> ocsplist = {
         //Estonia Live
-        list.insert(make_pair("ESTEID-SK 2007", "http://ocsp.sk.ee"));
-        list.insert(make_pair("ESTEID-SK 2011", "http://ocsp.sk.ee"));
-        list.insert(make_pair("KLASS3-SK 2010", "http://ocsp.sk.ee"));
+        {"ESTEID-SK 2007", "http://ocsp.sk.ee"},
+        {"ESTEID-SK 2011", "http://ocsp.sk.ee"},
+        {"KLASS3-SK 2010", "http://ocsp.sk.ee"},
         //Estonia Test
-        list.insert(make_pair("TEST of ESTEID-SK 2007", "http://www.openxades.org/cgi-bin/ocsp.cgi"));
-        list.insert(make_pair("TEST of ESTEID-SK 2011", "http://www.openxades.org/cgi-bin/ocsp.cgi"));
-        list.insert(make_pair("TEST of KLASS3-SK 2010", "http://www.openxades.org/cgi-bin/ocsp.cgi"));
+        {"TEST of ESTEID-SK 2007", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
+        {"TEST of ESTEID-SK 2011", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
+        {"TEST of KLASS3-SK 2010", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
         //Finland Test
-        list.insert(make_pair("VRK CA for Test Purposes", "http://www.openxades.org/cgi-bin/ocsp.cgi"));
-        list.insert(make_pair("VRK CA for Test Purposes - G2", "http://www.openxades.org/cgi-bin/ocsp.cgi"));
+        {"VRK CA for Test Purposes", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
+        {"VRK CA for Test Purposes - G2", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
         //Latvia Test - disabled, issuer name is identical with live certificates
-        //list.insert(make_pair("E-ME SI (CA1)", "http://www.openxades.org/cgi-bin/ocsp.cgi"));
+        //{"E-ME SI (CA1)", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
         //Lithuania Test
-        list.insert(make_pair("Nacionalinis sertifikavimo centras (IssuingCA A)", "http://www.openxades.org/cgi-bin/ocsp.cgi"));
-        return list;
-    }();
+        {"Nacionalinis sertifikavimo centras (IssuingCA A)", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
+    };
     auto pos = ocsplist.find(issuer);
     return pos == ocsplist.end() ? "http://ocsp.sk.ee/_proxy" : pos->second;
 }
 
-string Conf::certsPath() const { return ""; }
-string Conf::proxyHost() const { return ""; }
-string Conf::proxyPort() const { return ""; }
-string Conf::proxyUser() const { return ""; }
-string Conf::proxyPass() const { return ""; }
+string Conf::certsPath() const { return string(); }
+string Conf::proxyHost() const { return string(); }
+string Conf::proxyPort() const { return string(); }
+string Conf::proxyUser() const { return string(); }
+string Conf::proxyPass() const { return string(); }
 string Conf::PKCS12Cert() const
 {
 #ifdef __APPLE__
@@ -138,9 +136,9 @@ string Conf::PKCS12Cert() const
 #else
     string path = DIGIDOCPP_CONFIG_DIR "/";
 #endif
-    return path + "37242.p12";
+    return path + "73411.p12";
 }
-string Conf::PKCS12Pass() const { return "\x30\x75\x35\x61\x52\x55\x6b\x41"; }
+string Conf::PKCS12Pass() const { return "\x32\x30\x4d\x38\x58\x33\x37\x6c"; }
 bool Conf::PKCS12Disable() const { return false; }
 
 ConfV2::ConfV2() {}
@@ -155,11 +153,9 @@ bool ConfV2::TSLAutoUpdate() const { return true; }
 string ConfV2::TSLCache() const
 {
 #ifdef _WIN32
-    string cachePath = File::env("APPDATA");
-    return cachePath += "\\digidocpp\\tsl\\";
+    return File::env("APPDATA") + "\\digidocpp\\tsl\\";
 #else
-    string cachePath = File::env("HOME");
-    return cachePath += "/.digidocpp/tsl/";
+    return File::env("HOME") + "/.digidocpp/tsl/";
 #endif
 }
 X509Cert ConfV2::TSLCert() const { return X509Cert(tslcert(), X509Cert::Pem); }
