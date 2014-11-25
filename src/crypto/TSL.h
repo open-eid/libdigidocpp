@@ -29,9 +29,11 @@ namespace tsl { class TrustStatusListType; class InternationalNamesType; }
 class TSL
 {
 public:
-    TSL(const std::string &file, const std::string &url);
+    struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
+
+    TSL(const std::string &file);
     ~TSL();
-    void validateRemoteDigest();
+    void validateRemoteDigest(const std::string &url);
     void validate(const std::vector<X509Cert> &certs);
 
     std::string type() const;
@@ -39,10 +41,9 @@ public:
     std::string territory() const;
     std::string issueDate() const;
     std::string nextUpdate() const;
+    std::string url() const;
 
-    std::string path, url;
-    struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
-    std::vector<Pointer> pointer;
+    std::vector<Pointer> pointers() const;
     std::vector<X509Cert> certs() const;
 
     static bool activate(const std::string &territory);
@@ -59,5 +60,6 @@ private:
 
     std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en") const;
     std::shared_ptr<tsl::TrustStatusListType> tsl;
+    std::string path;
 };
 }

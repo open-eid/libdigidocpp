@@ -85,12 +85,14 @@ const set<string> TSL::SERVICETYPE = {
 
 
 
-TSL::TSL(const string &file, const string &_url)
+TSL::TSL(const string &file)
     : path(file)
-    , url(_url)
 {
     if(file.empty())
-        path = CONFV2(TSLCache) + "/" + File::fileName(TSL_URL);
+    {
+        path = CONFV2(TSLCache);
+        path += "/" + File::fileName(CONFV2(TSLUrl));
+    }
     if(!File::fileExists(path))
         return;
 
@@ -99,39 +101,6 @@ TSL::TSL(const string &file, const string &_url)
         properties.schema_location("http://uri.etsi.org/02231/v2#", Conf::instance()->xsdPath() + "/ts_119612v010101.xsd");
         tsl = trustServiceStatusList(path,
             Flags::keep_dom|Flags::dont_initialize|Flags::dont_validate, properties);
-
-        const TSLSchemeInformationType &info = tsl->schemeInformation();
-        if(info.distributionPoints().present() && !info.distributionPoints().get().uRI().empty())
-            url = info.distributionPoints().get().uRI().front();
-
-        if(SCHEMES_URI.find(info.tSLType()) != SCHEMES_URI.end() &&
-                info.pointersToOtherTSL().present())
-        {
-            for(const OtherTSLPointersType::OtherTSLPointerType &other:
-                info.pointersToOtherTSL()->otherTSLPointer())
-            {
-                if(!other.additionalInformation().present() ||
-                   !other.serviceDigitalIdentities().present() ||
-                   other.additionalInformation()->mimeType() != "application/vnd.etsi.tsl+xml")
-                    continue;
-
-                Pointer p;
-                p.territory = other.additionalInformation()->schemeTerritory();
-                p.location = string(other.tSLLocation());
-                for(const ServiceDigitalIdentityListType::ServiceDigitalIdentityType &identity:
-                    other.serviceDigitalIdentities()->serviceDigitalIdentity())
-                {
-                    for(const DigitalIdentityListType::DigitalIdType &id: identity.digitalId())
-                    {
-                        if(!id.x509Certificate().present())
-                            continue;
-                        const Base64Binary &base64 = id.x509Certificate().get();
-                        p.certs.push_back(X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity())));
-                    }
-                }
-                pointer.push_back(p);
-            }
-        }
     }
     catch(const Parsing &e)
     {
@@ -177,7 +146,7 @@ bool TSL::activate(const string &territory)
 vector<X509Cert> TSL::certs() const
 {
     vector<X509Cert> certs;
-    if(GENERIC_URI.find(tsl->schemeInformation().tSLType()) == GENERIC_URI.end() ||
+    if(GENERIC_URI.find(type()) == GENERIC_URI.end() ||
         !tsl->trustServiceProviderList().present())
         return certs;
 
@@ -237,22 +206,30 @@ string TSL::nextUpdate() const
         string() : xsd2string(tsl->schemeInformation().nextUpdate().dateTime().get());
 }
 
+string TSL::operatorName() const
+{
+    return !tsl ? string() : toString(tsl->schemeInformation().schemeOperatorName());
+}
+
 vector<X509Cert> TSL::parse()
 {
+    string url = CONFV2(TSLUrl);
     string cache = CONFV2(TSLCache);
     std::vector<X509Cert> cert = { X509Cert(tslcert(), X509Cert::Pem) };
     File::createDirectory(cache);
-    return parse(TSL_URL, cert, cache, File::fileName(TSL_URL));
+    return parse(url, cert, cache, File::fileName(url));
 }
 
 vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
     const string &cache, const string &territory)
 {
     string path = cache + "/" + territory;
-    TSL tsl(path, url);
+    TSL tsl(path);
     try {
         tsl.validate(certs);
-        tsl.validateRemoteDigest();
+        size_t pos = url.find_last_of("/.");
+        if(pos != string::npos)
+            tsl.validateRemoteDigest(url.substr(0, pos) + ".sha2");
         DEBUG("TSL %s signature is valid", territory.c_str());
     } catch(const Exception &e) {
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
@@ -276,7 +253,7 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
             return vector<X509Cert>();
         }
 
-        tsl = TSL(tmp, url);
+        tsl = TSL(tmp);
         try {
             tsl.validate(certs);
             ofstream o(File::encodeName(path).c_str(), ofstream::binary);
@@ -292,15 +269,15 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
         }
     }
 
-    if(tsl.pointer.empty())
+    if(tsl.pointers().empty())
         return tsl.certs();
 
     vector< future< vector<X509Cert> > > futures;
-    for(const TSL::Pointer &p: tsl.pointer)
+    for(const TSL::Pointer &p: tsl.pointers())
     {
         if(!File::fileExists(cache + "/" + p.territory + ".xml"))
             continue;
-        futures.push_back(async([&](){
+        futures.push_back(async([=](){
             return parse(p.location, p.certs, cache, p.territory + ".xml");
         }));
     }
@@ -313,9 +290,38 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
     return list;
 }
 
-string TSL::operatorName() const
+std::vector<TSL::Pointer> TSL::pointers() const
 {
-    return !tsl ? string() : toString(tsl->schemeInformation().schemeOperatorName());
+    std::vector<Pointer> pointer;
+    if(SCHEMES_URI.find(type()) != SCHEMES_URI.end() &&
+        tsl->schemeInformation().pointersToOtherTSL().present())
+    {
+        for(const OtherTSLPointersType::OtherTSLPointerType &other:
+            tsl->schemeInformation().pointersToOtherTSL()->otherTSLPointer())
+        {
+            if(!other.additionalInformation().present() ||
+               !other.serviceDigitalIdentities().present() ||
+               other.additionalInformation()->mimeType() != "application/vnd.etsi.tsl+xml")
+                continue;
+
+            Pointer p;
+            p.territory = other.additionalInformation()->schemeTerritory();
+            p.location = string(other.tSLLocation());
+            for(const ServiceDigitalIdentityListType::ServiceDigitalIdentityType &identity:
+                other.serviceDigitalIdentities()->serviceDigitalIdentity())
+            {
+                for(const DigitalIdentityListType::DigitalIdType &id: identity.digitalId())
+                {
+                    if(!id.x509Certificate().present())
+                        continue;
+                    const Base64Binary &base64 = id.x509Certificate().get();
+                    p.certs.push_back(X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity())));
+                }
+            }
+            pointer.push_back(p);
+        }
+    }
+    return pointer;
 }
 
 string TSL::territory() const
@@ -335,6 +341,16 @@ string TSL::toString(const InternationalNamesType &obj, const string &lang) cons
 string TSL::type() const
 {
     return !tsl ? string() : tsl->schemeInformation().tSLType();
+}
+
+string TSL::url() const
+{
+    if(!tsl)
+        return string();
+    const TSLSchemeInformationType &info = tsl->schemeInformation();
+    if(!info.distributionPoints().present() || info.distributionPoints().get().uRI().empty())
+        return string();
+    return info.distributionPoints().get().uRI().front();
 }
 
 void TSL::validate(const std::vector<X509Cert> &certs)
@@ -388,12 +404,9 @@ void TSL::validate(const std::vector<X509Cert> &certs)
     }
 }
 
-void TSL::validateRemoteDigest()
+void TSL::validateRemoteDigest(const std::string &url)
 {
-    size_t pos = url.find_last_of("/.");
-    if(pos == string::npos)
-        return;
-    Connect::Result r = Connect(url.substr(0, pos) + ".sha2", "GET").exec();
+    Connect::Result r = Connect(url, "GET").exec();
     if(r.isRedirect())
         r = Connect(r.headers["Location"], "GET").exec();
     if(r.result.find("200") == string::npos)
