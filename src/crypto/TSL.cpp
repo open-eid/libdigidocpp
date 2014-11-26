@@ -98,7 +98,8 @@ TSL::TSL(const string &file)
 
     try {
         Properties properties;
-        properties.schema_location("http://uri.etsi.org/02231/v2#", Conf::instance()->xsdPath() + "/ts_119612v010101.xsd");
+        properties.schema_location("http://uri.etsi.org/02231/v2#",
+            Conf::instance()->xsdPath() + "/ts_119612v010101.xsd");
         tsl = trustServiceStatusList(path,
             Flags::keep_dom|Flags::dont_initialize|Flags::dont_validate, properties);
     }
@@ -170,7 +171,7 @@ vector<X509Cert> TSL::certs() const
                 if(!id.x509Certificate().present())
                     continue;
                 const Base64Binary &base64 = id.x509Certificate().get();
-                certs.push_back(X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity())));
+                certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
             }
 
             if(!service.serviceHistory().present())
@@ -187,7 +188,7 @@ vector<X509Cert> TSL::certs() const
                     if(!id.x509Certificate().present())
                         continue;
                     const Base64Binary &base64 = id.x509Certificate().get();
-                    certs.push_back(X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity())));
+                    certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
                 }
             }
         }
@@ -315,7 +316,7 @@ std::vector<TSL::Pointer> TSL::pointers() const
                     if(!id.x509Certificate().present())
                         continue;
                     const Base64Binary &base64 = id.x509Certificate().get();
-                    p.certs.push_back(X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity())));
+                    p.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
                 }
             }
             pointer.push_back(p);
@@ -370,7 +371,7 @@ void TSL::validate(const std::vector<X509Cert> &certs)
         !tsl->signature()->keyInfo()->x509Data().front().x509Certificate().empty())
     {
         const Base64Binary &base64 = tsl->signature()->keyInfo()->x509Data().front().x509Certificate().front();
-        signingCert = X509Cert(vector<unsigned char>(base64.data(), base64.data() + base64.capacity()));
+        signingCert = X509Cert((const unsigned char*)base64.data(), base64.capacity());
     }
 
     if(find(certs.begin(), certs.end(), signingCert) == certs.end())

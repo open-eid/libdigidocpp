@@ -53,6 +53,7 @@ namespace digidoc
           };
 
           explicit X509Cert(X509* cert = 0);
+          explicit X509Cert(const unsigned char *bytes, size_t size, Format format = Der);
           explicit X509Cert(const std::vector<unsigned char> &bytes, Format format = Der);
           explicit X509Cert(const std::string &path, Format format = Pem);
           X509Cert(const X509Cert& copy);

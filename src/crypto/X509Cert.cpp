@@ -144,17 +144,30 @@ X509Cert::X509Cert(X509* cert)
  * @throws Exception throws exception if X509 certificate parsing failed.
  */
 X509Cert::X509Cert(const vector<unsigned char> &bytes, Format format)
+    : X509Cert(bytes.size() > 0 ? &bytes[0] : nullptr, bytes.size(), format)
 {
-    if(bytes.empty())
+}
+
+/**
+ * Creates X509 certificate from bytes.
+ *
+ * @param bytes X509 certificate in bytes.
+ * @param size of X509 certificate in bytes.
+ * @param format <code>Format</code> input bytes format
+ * @throws Exception throws exception if X509 certificate parsing failed.
+ */
+X509Cert::X509Cert(const unsigned char *bytes, size_t size, Format format)
+{
+    if(!bytes || size == 0)
         THROW("No bytes given to parse X509.");
     if(format == Der)
     {
-        const unsigned char *p = reinterpret_cast<const unsigned char*>(&bytes[0]);
-        cert.reset(d2i_X509(0, &p, (unsigned int)bytes.size()), function<void(X509*)>(X509_free));
+        const unsigned char *p = bytes;
+        cert.reset(d2i_X509(0, &p, (unsigned int)size), function<void(X509*)>(X509_free));
     }
     else
     {
-        BIO *bio = BIO_new_mem_buf((void*)&bytes[0], int(bytes.size()));
+        BIO *bio = BIO_new_mem_buf((void*)bytes, int(size));
         cert.reset(PEM_read_bio_X509(bio, 0, 0, 0), function<void(X509*)>(X509_free));
         BIO_free(bio);
     }
