@@ -154,7 +154,7 @@ set( CRYPTO_SOURCE
 if( WIN32 )
     list( APPEND digidocpp_SRCS crypto/CNGSigner.cpp )
     list( APPEND digidoc-tool_SRCS crypto/CNGSigner.cpp )
-    list( APPEND TARGET_LIBRARIES Crypt32 cryptui ncrypt )
+    list( APPEND TARGET_LIBRARIES Crypt32 cryptui ncrypt Ws2_32 )
 elseif( APPLE )
     #ignore openssl deprecation warnings
     set_source_files_properties( ${CRYPTO_SOURCE} PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations" )
@@ -176,7 +176,7 @@ include_directories(
 add_library(digidocpp SHARED
     ${digidocpp_SRCS}
     ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf
-	${CMAKE_SOURCE_DIR}/etc/73411.p12
+    ${CMAKE_SOURCE_DIR}/etc/73411.p12
     ${SCHEMA_FILES}
     ${PUBLIC_HEADER}
     ${CRYPTO_HEADER}
@@ -210,7 +210,7 @@ set_target_properties(digidocpp PROPERTIES
     VERSION ${MAJOR_VER}.${MINOR_VER}.${RELEASE_VER}
     SOVERSION 0
     PUBLIC_HEADER "${PUBLIC_HEADER}"
-	RESOURCE "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/73411.p12"
+    RESOURCE "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/73411.p12"
     FRAMEWORK_VERSION 0
     FRAMEWORK "${FRAMEWORK}"
     MACOSX_FRAMEWORK_IDENTIFIER "ee.ria.digidocpp"

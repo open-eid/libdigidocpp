@@ -14,7 +14,8 @@
     <!--<param name="ts.url" lock="false">@TSA_URL@</param>-->
     <!--<param name="tsl.autoupdate" lock="false">true</param>-->
     <!--<param name="tsl.cache" lock="false"></param>-->
-    <!--<param name="tsl.onlineDigest" lock="false"></param>-->
+    <!--<param name="tsl.onlineDigest" lock="false">true</param>-->
+    <!--<param name="tsl.timeOut" lock="false">10</param>-->
 
     <!-- OCSP responder url. Used for validating signing certificates and generating BDoc-TM signatures-->
     <!--<ocsp issuer="ESTEID-SK 2007">http://ocsp.sk.ee</ocsp>-->

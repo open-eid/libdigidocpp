@@ -42,13 +42,14 @@ public:
         }
     };
 
-    Connect(const std::string &url, const std::string &method = "POST");
+    Connect(const std::string &url, const std::string &method = "POST", int timeout = 0);
     void addHeader(const std::string &key, const std::string &value);
     Result exec(const std::vector<unsigned char> &data = std::vector<unsigned char>());
 
 private:
     std::shared_ptr<BIO> d;
     std::shared_ptr<SSL_CTX> ssl;
+    int _timeout;
 };
 
 }

@@ -41,7 +41,7 @@ class X509CertStorePrivate: public vector<X509Cert> {
 public:
     void update()
     {
-        vector<X509Cert> list = TSL::parse();
+        vector<X509Cert> list = TSL::parse(ConfV3::instance() ? ConfV3::instance()->TSLTimeOut() : ConfV3().TSLTimeOut());
         swap(list);
         INFO("Loaded %d certificates into TSL certificate store.", size());
     }

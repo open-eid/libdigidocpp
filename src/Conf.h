@@ -88,6 +88,7 @@ namespace digidoc
 
           virtual bool TSLAllowExpired() const;
           virtual bool TSLOnlineDigest() const;
+          virtual int TSLTimeOut() const;
 
       private:
           DISABLE_COPY(ConfV3);

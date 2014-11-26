@@ -122,6 +122,7 @@ public:
     virtual std::string TSLCache() const;
     virtual X509Cert TSLCert() const;
     virtual bool TSLOnlineDigest() const;
+    virtual int TSLTimeOut() const;
     virtual std::string TSLUrl() const;
 
     virtual void setProxyHost( const std::string &host );
@@ -133,6 +134,7 @@ public:
     virtual void setPKCS12Disable( bool disable );
 
     virtual void setTSLOnlineDigest( bool enable );
+    virtual void setTSLTimeOut( int timeOut );
 
 private:
     DISABLE_COPY(XmlConfV3);

@@ -8,10 +8,13 @@
 #include <openssl/ocsp.h>
 #include <openssl/ssl.h>
 
+#include <thread>
+
 using namespace digidoc;
 using namespace std;
 
-Connect::Connect(const string &url, const string &method)
+Connect::Connect(const string &url, const string &method, int timeout)
+    : _timeout(timeout)
 {
     char *_host = nullptr, *_port = nullptr, *_path = nullptr;
     int usessl = 0;
@@ -38,6 +41,23 @@ Connect::Connect(const string &url, const string &method)
     if(!bio)
         THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
 
+    if(timeout > 0)
+    {
+        BIO_set_nbio(bio.get(), 1);
+        if(BIO_do_connect(bio.get()) == -1)
+        {
+            int fd = BIO_get_fd(bio.get(), NULL);
+            fd_set writefds;
+            FD_ZERO(&writefds);
+            FD_SET(fd, &writefds);
+            struct timeval tv = { timeout, 0 };
+            if(select(fd + 1, nullptr, &writefds, nullptr, &tv) <= 0)
+                THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
+        }
+    }
+    else if(BIO_do_connect(bio.get()) != 1)
+        THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
+
     if(usessl > 0)
     {
         ssl.reset(SSL_CTX_new(SSLv23_client_method()), function<void(SSL_CTX*)>(SSL_CTX_free));
@@ -49,15 +69,20 @@ Connect::Connect(const string &url, const string &method)
         if(!sbio)
             THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
         d.reset(BIO_push(sbio, bio.release()), function<void(BIO*)>(BIO_free_all));
+        for(int i = 0; i < timeout; ++i)
+        {
+            if(BIO_do_handshake(d.get()) == 1)
+                break;
+            if(i == timeout)
+                THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
+            this_thread::sleep_for(chrono::milliseconds(1000));
+        }
     }
     else
         d.reset(bio.release(), function<void(BIO*)>(BIO_free_all));
 
     if(!d)
         THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
-
-    if(BIO_do_connect(d.get()) != 1)
-        THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
 
     BIO_printf(d.get(), "%s %s HTTP/1.0\r\n", method.c_str(), path.c_str());
     if(port == "80")
@@ -96,13 +121,26 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
     else
         BIO_printf(d.get(), "\r\n");
 
+    if(_timeout)
+    {
+        int fd = BIO_get_fd(d.get(), NULL);
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(fd, &readfds);
+        struct timeval tv = { _timeout, 0 };
+        select(fd + 1, &readfds, nullptr, nullptr, &tv);
+    }
+
     int rc = 0;
     size_t pos = 0;
     string data(1024, 0);
     do {
-        if(size_t(pos += rc) >= data.size())
+        if(rc > 0 && size_t(pos += rc) >= data.size())
             data.resize(data.size()*2);
-    } while((rc = BIO_read(d.get(), &data[pos], int(data.size() - pos))) > 0);
+        rc = BIO_read(d.get(), &data[pos], int(data.size() - pos));
+        if(rc == -1 && BIO_should_read(d.get()) != 1)
+            break;
+    } while(rc != 0);
 
     data.resize(pos);
     pos = data.find("\r\n\r\n");

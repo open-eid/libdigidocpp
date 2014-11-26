@@ -219,17 +219,17 @@ string TSL::operatorName() const
     return !tsl ? string() : toString(tsl->schemeInformation().schemeOperatorName());
 }
 
-vector<X509Cert> TSL::parse()
+vector<X509Cert> TSL::parse(int timeout)
 {
     string url = CONF(TSLUrl);
     string cache = CONF(TSLCache);
     std::vector<X509Cert> cert = { CONF(TSLCert) };
     File::createDirectory(cache);
-    return parse(url, cert, cache, File::fileName(url)).certs;
+    return parse(url, cert, cache, File::fileName(url), timeout).certs;
 }
 
 TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
-    const string &cache, const string &territory)
+    const string &cache, const string &territory, int timeout)
 {
     string path = cache + "/" + territory;
     TSL tsl(path);
@@ -239,10 +239,10 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
         result = { tsl.certs(), tsl.isExpired() };
         if(result.expired)
             THROW("TSL is expired");
-        bool onlineDigest = ConfV3::instance() ? ConfV3::instance()->TSLOnlineDigest() : ConfV3().TSLOnlineDigest();
+        bool onlineDigest = CONF(TSLOnlineDigest);
         size_t pos = url.find_last_of("/.");
         if(onlineDigest && pos != string::npos)
-            tsl.validateRemoteDigest(url.substr(0, pos) + ".sha2");
+            tsl.validateRemoteDigest(url.substr(0, pos) + ".sha2", timeout);
         DEBUG("TSL %s signature is valid", territory.c_str());
     } catch(const Exception &e) {
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
@@ -254,9 +254,9 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
         try
         {
             ofstream file(File::encodeName(tmp).c_str(), ofstream::binary);
-            Connect::Result r = Connect(url, "GET").exec();
+            Connect::Result r = Connect(url, "GET", timeout).exec();
             if(r.isRedirect())
-                r = Connect(r.headers["Location"], "GET").exec();
+                r = Connect(r.headers["Location"], "GET", timeout).exec();
             file << r.content;
             file.close();
         }
@@ -300,7 +300,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
         if(!File::fileExists(cache + "/" + p.territory + ".xml"))
             continue;
         futures.push_back(async(launch::async, [=](){
-            return parse(p.location, p.certs, cache, p.territory + ".xml");
+            return parse(p.location, p.certs, cache, p.territory + ".xml", timeout);
         }));
     }
     vector<X509Cert> list;
@@ -424,11 +424,11 @@ void TSL::validate(const std::vector<X509Cert> &certs)
     }
 }
 
-void TSL::validateRemoteDigest(const std::string &url)
+void TSL::validateRemoteDigest(const std::string &url, int timeout)
 {
-    Connect::Result r = Connect(url, "GET").exec();
+    Connect::Result r = Connect(url, "GET", timeout).exec();
     if(r.isRedirect())
-        r = Connect(r.headers["Location"], "GET").exec();
+        r = Connect(r.headers["Location"], "GET", timeout).exec();
     if(r.result.find("200") == string::npos)
         return;
 

@@ -116,6 +116,7 @@ public:
     XmlConfParam<bool> TSLAutoUpdate;
     XmlConfParam<string> TSLCache;
     XmlConfParam<bool> TSLOnlineDigest;
+    XmlConfParam<int> TSLTimeOut;
     map<string,string> ocsp;
 
     string SCHEMA_LOC;
@@ -140,6 +141,7 @@ XmlConfPrivate::XmlConfPrivate(const string &path, const string &schema)
     , TSLAutoUpdate("tsl.autoupdate", true)
     , TSLCache("tsl.cache")
     , TSLOnlineDigest("tsl.onlineDigest", true)
+    , TSLTimeOut("tsl.timeOut", 10)
     , SCHEMA_LOC(schema)
 {
     try {
@@ -245,6 +247,8 @@ void XmlConfPrivate::init(const string& path, bool global)
                 TSLCache.setValue(p, p.lock(), global);
             else if(p.name() == TSLOnlineDigest.name)
                 TSLOnlineDigest.setValue(p == "true", p.lock(), global);
+            else if(p.name() == TSLTimeOut.name)
+                TSLTimeOut.setValue(stoi(p), p.lock(), global);
             else
                 WARN("Unknown configuration parameter %s", p.name().c_str());
         }
@@ -451,6 +455,17 @@ void XmlConfV3::setTSLOnlineDigest( bool enable )
 {
     if( !d->TSLOnlineDigest.locked )
         d->setUserConf(d->TSLOnlineDigest.name, ConfV3::TSLOnlineDigest() ? "true" : "false", (d->TSLOnlineDigest = enable) ? "true" : "false");
+}
+
+int XmlConfV3::TSLTimeOut() const
+{
+    return d->TSLTimeOut.value(ConfV3::TSLTimeOut());
+}
+
+void XmlConfV3::setTSLTimeOut( int timeOut )
+{
+    if( !d->TSLOnlineDigest.locked )
+        d->setUserConf(d->TSLOnlineDigest.name, std::to_string(ConfV3::TSLTimeOut()), std::to_string(timeOut));
 }
 
 /**
