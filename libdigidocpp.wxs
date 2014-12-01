@@ -47,7 +47,7 @@
                 <File Source="$(var.PREFIX)\xml-security-c\lib\xsec_1_7.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.exe"/>
-                <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\37242.p12"/>
+                <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\73411.p12"/>
                 <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\digidocpp.conf"/>
               </Component>
               <Component Id="LibrariesDevX86" Guid="{9B16F8D1-11AA-4AF4-B8C2-96B4EC7E79CD}">
