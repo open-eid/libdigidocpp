@@ -134,6 +134,8 @@ TSL::~TSL()
 
 bool TSL::activate(const string &territory)
 {
+    if(territory.size() != 2)
+        return false;
     string cache = CONFV2(TSLCache);
     string path = cache + "/" + territory + ".xml";
     if(File::fileExists(path))
