@@ -77,4 +77,18 @@ namespace digidoc
       private:
           DISABLE_COPY(ConfV2);
     };
+
+    class EXP_DIGIDOC ConfV3: public ConfV2
+    {
+
+      public:
+          ConfV3();
+          virtual ~ConfV3();
+          static ConfV3* instance();
+
+          virtual bool TSLOnlineDigest() const;
+
+      private:
+          DISABLE_COPY(ConfV3);
+    };
 }

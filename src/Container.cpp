@@ -144,7 +144,7 @@ void digidoc::initialize(const string &appInfo)
     }
 
     if(!Conf::instance())
-        Conf::init(new XmlConfV2);
+        Conf::init(new XmlConfV3);
     if(!X509CertStore::instance())
         X509CertStore::init();
 }

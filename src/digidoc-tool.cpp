@@ -253,10 +253,10 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
 }
 
 
-class ToolConfig: public XmlConfV2
+class ToolConfig: public XmlConfV3
 {
 public:
-    ToolConfig(): XmlConfV2(), uri(XmlConfV2::digestUri()) {}
+    ToolConfig(): XmlConfV3(), uri(XmlConfV3::digestUri()) {}
     string digestUri() const { return uri; }
 
     string uri;

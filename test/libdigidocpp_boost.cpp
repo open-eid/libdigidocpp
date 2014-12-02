@@ -90,7 +90,7 @@ ostream &operator<<(ostream &os, const vector<X509Cert::KeyUsage> &usage)
 namespace digidoc
 {
 
-class TestConfig: public Conf
+class TestConfig: public ConfV3
 {
 public:
     string libdigidocConf() const { return "digidoc.conf"; }
@@ -101,6 +101,8 @@ public:
     string ocsp(const string &) const
     { return "https://www.openxades.org/cgi-bin/ocsp.cgi"; }
     bool PKCS12Disable() const { return true; }
+    bool TSLAutoUpdate() const { return false; }
+    bool TSLOnlineDigest() const { return false; }
 };
 
 class BDoc2: public Container
@@ -491,7 +493,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(ConfSuite)
 BOOST_AUTO_TEST_CASE(XmlConfCase)
 {
-    XmlConfV2 c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "/conf.xsd"));
+    XmlConfV3 c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "/conf.xsd"));
     BOOST_CHECK_EQUAL(c.logLevel(), 2);
     BOOST_CHECK_EQUAL(c.logFile(), "digidocpp.log");
     BOOST_CHECK_EQUAL(c.digestUri(), "http://www.w3.org/2001/04/xmlenc#sha256");

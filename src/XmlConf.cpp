@@ -31,6 +31,32 @@ using namespace digidoc::util;
 using namespace xercesc;
 using namespace xml_schema;
 
+#define GET1(TYPE, PROP) \
+TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); } \
+TYPE XmlConfV2::PROP() const { return d->PROP.value(ConfV2::PROP()); } \
+TYPE XmlConfV3::PROP() const { return d->PROP.value(ConfV3::PROP()); }
+
+#define GET2(TYPE, PROP) \
+TYPE XmlConfV2::PROP() const { return d->PROP.value(ConfV2::PROP()); } \
+TYPE XmlConfV3::PROP() const { return d->PROP.value(ConfV3::PROP()); }
+
+#define GET1_R(TYPE, PROP) \
+TYPE XmlConf::PROP() const { return Conf::PROP(); } \
+TYPE XmlConfV2::PROP() const { return ConfV2::PROP(); } \
+TYPE XmlConfV3::PROP() const { return ConfV3::PROP(); }
+
+#define GET2_R(TYPE, PROP) \
+TYPE XmlConfV2::PROP() const { return ConfV2::PROP(); } \
+TYPE XmlConfV3::PROP() const { return ConfV3::PROP(); }
+
+#define SET1(TYPE, SET, PROP) \
+void XmlConf::SET( const TYPE &PROP ) \
+{ if( !d->PROP.locked ) d->setUserConf(d->PROP.name, Conf::PROP(), d->PROP = PROP); } \
+void XmlConfV2::SET( const TYPE &PROP ) \
+{ if( !d->PROP.locked ) d->setUserConf(d->PROP.name, ConfV2::PROP(), d->PROP = PROP); } \
+void XmlConfV3::SET( const TYPE &PROP ) \
+{ if( !d->PROP.locked ) d->setUserConf(d->PROP.name, ConfV3::PROP(), d->PROP = PROP); }
+
 namespace digidoc
 {
 
@@ -54,9 +80,10 @@ public:
 
     operator A() const
     {
-        return unique_ptr<A>::get() ? *unique_ptr<A>::get() : _def;
+        return value(_def);
     }
-    A value(const A &def)
+
+    A value(const A &def) const
     {
         return unique_ptr<A>::get() ? *unique_ptr<A>::get(): def;
     }
@@ -69,7 +96,6 @@ public:
 class XmlConfPrivate
 {
 public:
-    struct OCSP { string issuer, url; };
     XmlConfPrivate(const string &path = "", const string &schema = "");
 
     void init(const string &path, bool global);
@@ -78,22 +104,21 @@ public:
 
     XmlConfParam<int> logLevel;
     XmlConfParam<string> logFile;
-    XmlConfParam<string> pkcs11DriverPath;
-    XmlConfParam<string> xsdPath;
+    XmlConfParam<string> PKCS11Driver;
     XmlConfParam<string> proxyHost;
     XmlConfParam<string> proxyPort;
     XmlConfParam<string> proxyUser;
     XmlConfParam<string> proxyPass;
-    XmlConfParam<string> pkcs12Cert;
-    XmlConfParam<string> pkcs12Pass;
-    XmlConfParam<bool> pkcs12Disable;
-    XmlConfParam<string> tsurl;
-    XmlConfParam<bool> tslautoupdate;
-    XmlConfParam<string> tslcache;
-    vector<OCSP> ocsp;
+    XmlConfParam<string> PKCS12Cert;
+    XmlConfParam<string> PKCS12Pass;
+    XmlConfParam<bool> PKCS12Disable;
+    XmlConfParam<string> TSUrl;
+    XmlConfParam<bool> TSLAutoUpdate;
+    XmlConfParam<string> TSLCache;
+    XmlConfParam<bool> TSLOnlineDigest;
+    map<string,string> ocsp;
 
     string SCHEMA_LOC;
-    string DEFAULT_CONF_LOC;
     string USER_CONF_LOC;
 };
 }
@@ -103,18 +128,19 @@ using namespace digidoc;
 XmlConfPrivate::XmlConfPrivate(const string &path, const string &schema)
     : logLevel("log.level")
     , logFile("log.file")
-    , pkcs11DriverPath("pkcs11.driver.path")
-    , xsdPath("xsd.path")
+    , PKCS11Driver("pkcs11.driver.path")
     , proxyHost("proxy.host")
     , proxyPort("proxy.port")
     , proxyUser("proxy.user")
     , proxyPass("proxy.pass")
-    , pkcs12Cert("pkcs12.cert")
-    , pkcs12Pass("pkcs12.pass")
-    , pkcs12Disable("pkcs12.disable")
-    , tsurl("ts.url")
-    , tslautoupdate("tsl.autoupdate", true)
-    , tslcache("tsl.cache")
+    , PKCS12Cert("pkcs12.cert")
+    , PKCS12Pass("pkcs12.pass")
+    , PKCS12Disable("pkcs12.disable")
+    , TSUrl("ts.url")
+    , TSLAutoUpdate("tsl.autoupdate", true)
+    , TSLCache("tsl.cache")
+    , TSLOnlineDigest("tsl.onlineDigest", true)
+    , SCHEMA_LOC(schema)
 {
     try {
         XMLPlatformUtils::Initialize();
@@ -136,26 +162,20 @@ XmlConfPrivate::XmlConfPrivate(const string &path, const string &schema)
         USER_CONF_LOC += "/.digidocpp/digidocpp.conf";
 #endif
 
-#ifdef _WIN32
-#ifdef _DEBUG
-    DEFAULT_CONF_LOC = File::dllPath("digidocppd.dll");
-#else
-    DEFAULT_CONF_LOC = File::dllPath("digidocpp.dll");
-#endif
-    if(!File::directoryExists(DEFAULT_CONF_LOC + "schema"))
-        DEFAULT_CONF_LOC = File::cwd();
-#elif defined(FRAMEWORK)
-    DEFAULT_CONF_LOC = File::frameworkResourcesPath("ee.ria.digidocpp");
-#else
-    DEFAULT_CONF_LOC = DIGIDOCPP_CONFIG_DIR;
-#endif
-    SCHEMA_LOC = schema.empty() ? File::path(DEFAULT_CONF_LOC, "schema/conf.xsd") : schema;
-
     if(path.empty())
     {
         try
         {
-            init(DEFAULT_CONF_LOC + "/digidocpp.conf", true);
+#if defined(_WIN32) && defined(_DEBUG)
+            string path = File::dllPath("digidocppd.dll");
+#elif defined(_WIN32)
+            string path = File::dllPath("digidocpp.dll");
+#elif defined(FRAMEWORK)
+            string path = File::frameworkResourcesPath("ee.ria.digidocpp");
+#else
+            string path = DIGIDOCPP_CONFIG_DIR;
+#endif
+            init(File::path(path, "/digidocpp.conf"), true);
         }
         catch(const Exception &e)
         {
@@ -195,47 +215,42 @@ void XmlConfPrivate::init(const string& path, bool global)
     unique_ptr<Configuration> conf = read(path);
     try
     {
-        const Configuration::ParamSequence &paramSeq = conf->param();
-        for( Configuration::ParamSequence::const_iterator i = paramSeq.begin(); i != paramSeq.end(); ++i)
+        for(const Configuration::ParamType &p: conf->param())
         {
-            if(i->name() == logLevel.name)
-                logLevel.setValue(atoi(string(*i).c_str()), i->lock(), global);
-            else if(i->name() == logFile.name)
-                logFile.setValue(*i, i->lock(), global);
-            else if(i->name() == xsdPath.name)
-                xsdPath.setValue(*i, i->lock(), global);
-            else if(i->name() == pkcs11DriverPath.name)
-                pkcs11DriverPath.setValue(*i, i->lock(), global);
-            else if(i->name() == proxyHost.name)
-                proxyHost.setValue(*i, i->lock(), global);
-            else if(i->name() == proxyPort.name)
-                proxyPort.setValue(*i, i->lock(), global);
-            else if(i->name() == proxyUser.name)
-                proxyUser.setValue(*i, i->lock(), global);
-            else if(i->name() == proxyPass.name)
-                proxyPass.setValue(*i, i->lock(), global);
-            else if(i->name() == pkcs12Cert.name)
-                pkcs12Cert.setValue(*i, i->lock(), global);
-            else if(i->name() == pkcs12Pass.name)
-                pkcs12Pass.setValue(*i, i->lock(), global);
-            else if(i->name() == pkcs12Disable.name)
-                pkcs12Disable.setValue(*i == "true", i->lock(), global);
-            else if(i->name() == tsurl.name)
-                tsurl.setValue(*i, i->lock(), global);
-            else if(i->name() == tslautoupdate.name)
-                tslautoupdate.setValue(*i == "true", i->lock(), global);
-            else if(i->name() == tslcache.name)
-                tslcache.setValue(*i, i->lock(), global);
+            if(p.name() == logLevel.name)
+                logLevel.setValue(atoi(string(p).c_str()), p.lock(), global);
+            else if(p.name() == logFile.name)
+                logFile.setValue(p, p.lock(), global);
+            else if(p.name() == PKCS11Driver.name)
+                PKCS11Driver.setValue(p, p.lock(), global);
+            else if(p.name() == proxyHost.name)
+                proxyHost.setValue(p, p.lock(), global);
+            else if(p.name() == proxyPort.name)
+                proxyPort.setValue(p, p.lock(), global);
+            else if(p.name() == proxyUser.name)
+                proxyUser.setValue(p, p.lock(), global);
+            else if(p.name() == proxyPass.name)
+                proxyPass.setValue(p, p.lock(), global);
+            else if(p.name() == PKCS12Cert.name)
+                PKCS12Cert.setValue(p, p.lock(), global);
+            else if(p.name() == PKCS12Pass.name)
+                PKCS12Pass.setValue(p, p.lock(), global);
+            else if(p.name() == PKCS12Disable.name)
+                PKCS12Disable.setValue(p == "true", p.lock(), global);
+            else if(p.name() == TSUrl.name)
+                TSUrl.setValue(p, p.lock(), global);
+            else if(p.name() == TSLAutoUpdate.name)
+                TSLAutoUpdate.setValue(p == "true", p.lock(), global);
+            else if(p.name() == TSLCache.name)
+                TSLCache.setValue(p, p.lock(), global);
+            else if(p.name() == TSLOnlineDigest.name)
+                TSLOnlineDigest.setValue(p == "true", p.lock(), global);
             else
-                WARN("Unknown configuration parameter %s", i->name().c_str());
+                WARN("Unknown configuration parameter %s", p.name().c_str());
         }
 
-        Configuration::OcspSequence ocspSeq = conf->ocsp();
-        for(Configuration::OcspSequence::const_iterator it = ocspSeq.begin(); it != ocspSeq.end(); ++it)
-        {
-            OCSP o = { it->issuer(), *it };
-            ocsp.push_back(o);
-        }
+        for(const Configuration::OcspType &o: conf->ocsp())
+            ocsp[o.issuer()] = o;
     }
     catch(const xml_schema::Exception& e)
     {
@@ -254,7 +269,7 @@ unique_ptr<Configuration> XmlConfPrivate::read(const string &path)
     {
         Properties props;
         props.no_namespace_schema_location(SCHEMA_LOC);
-        return unique_ptr<Configuration>(configuration(path, Flags::dont_initialize, props).release());
+        return configuration(path, Flags::dont_initialize, props);
     }
     catch(const xml_schema::Exception& e)
     {
@@ -315,51 +330,42 @@ void XmlConfPrivate::setUserConf(const string &paramName, const string &defined,
  * @return
  */
 XmlConf::XmlConf(const string &path, const string &schema)
-    : d(new XmlConfPrivate(path, schema))
-{
-}
+    : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
+{}
+XmlConfV2::XmlConfV2(const string &path, const string &schema)
+    : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
+{}
+XmlConfV3::XmlConfV3(const string &path, const string &schema)
+    : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
+{}
 
-XmlConf::~XmlConf()
-{
-    delete d;
-}
+XmlConf::~XmlConf() { delete d; }
+XmlConfV2::~XmlConfV2() { delete d; }
+XmlConfV3::~XmlConfV3() { delete d; }
 
 /**
  * Gets log level.
  * @return log level.
  */
-int XmlConf::logLevel() const
-{
-    return d->logLevel.value(Conf::logLevel());
-}
+GET1(int, logLevel)
 
 /**
  * Gets log file location.
  * @return log path location.
  */
-string XmlConf::logFile() const
-{
-    return d->logFile.value(Conf::logFile());
-}
+GET1(string, logFile)
 
 /**
  * Gets Manifest schema file location.
  * @return Manifest schema full path location.
  */
-string XmlConf::xsdPath() const
-{
-    string path = d->xsdPath.value(Conf::xsdPath());
-    return File::isRelative(path) ? d->DEFAULT_CONF_LOC + "/" + path : path;
-}
+GET1_R(string, xsdPath)
 
 /**
  * Gets PKCS11 driver file path.
  * @return PKCS11 driver file location.
  */
-string XmlConf::PKCS11Driver() const
-{
-    return d->pkcs11DriverPath.value(Conf::PKCS11Driver());
-}
+GET1(string, PKCS11Driver)
 
 /**
  * Gets OCSP data by issuer.
@@ -368,84 +374,83 @@ string XmlConf::PKCS11Driver() const
  */
 string XmlConf::ocsp(const string &issuer) const
 {
-    for(vector<XmlConfPrivate::OCSP>::const_iterator i = d->ocsp.begin(); i != d->ocsp.end(); ++i)
-    {
-        if(i->issuer == issuer)
-            return i->url;
-    }
-    return Conf::ocsp(issuer);
+    auto i = d->ocsp.find(issuer);
+    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
+}
+string XmlConfV2::ocsp(const string &issuer) const
+{
+    auto i = d->ocsp.find(issuer);
+    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
+}
+string XmlConfV3::ocsp(const string &issuer) const
+{
+    auto i = d->ocsp.find(issuer);
+    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
 }
 
 /**
  * Gets Certificate store location.
  * @return Certificate store full path location.
  */
-string XmlConf::certsPath() const
-{
-    return Conf::certsPath();
-}
+GET1_R(string, certsPath)
 
 /**
  * Gets proxy host address.
  * @return proxy host address.
  */
-string XmlConf::proxyHost() const
-{
-    return d->proxyHost.value(Conf::proxyHost());
-}
+GET1(string, proxyHost)
 
 /**
  * Gets proxy port number.
  * @return proxy port.
  */
-string XmlConf::proxyPort() const
-{
-    return d->proxyPort.value(Conf::proxyPort());
-}
+GET1(string, proxyPort)
 
 /**
  * Gets proxy user name.
  * @return proxy user name.
  */
-string XmlConf::proxyUser() const
-{
-    return d->proxyUser.value(Conf::proxyUser());
-}
+GET1(string, proxyUser)
 
 /**
  * Gets proxy login password.
  * @return proxy password.
  */
-string XmlConf::proxyPass() const
-{
-    return d->proxyPass.value(Conf::proxyPass());
-}
+GET1(string, proxyPass)
 
 /**
  * Gets PKCS12 certificate file location.
  * @return PKCS12 certificate full path location.
  */
-string XmlConf::PKCS12Cert() const
-{
-    return d->pkcs12Cert.value(Conf::PKCS12Cert());
-}
+GET1(string, PKCS12Cert)
 
 /**
  * Gets PKCS12 password.
  * @return PKCS12 password.
  */
-string XmlConf::PKCS12Pass() const
-{
-    return d->pkcs12Pass.value(Conf::PKCS12Pass());
-}
+GET1(string, PKCS12Pass)
 
 /**
  * Gets PKCS12 usage.
  * @return PKCS12 usage.
  */
-bool XmlConf::PKCS12Disable() const
+GET1(bool, PKCS12Disable)
+
+GET2(string, TSUrl)
+GET2(bool, TSLAutoUpdate)
+GET2(string, TSLCache)
+GET2_R(X509Cert, TSLCert)
+GET2_R(string, TSLUrl)
+
+bool XmlConfV3::TSLOnlineDigest() const
 {
-    return d->pkcs12Disable.value(Conf::PKCS12Disable());
+    return d->TSLOnlineDigest.value(ConfV3::TSLOnlineDigest());
+}
+
+void XmlConfV3::setTSLOnlineDigest( bool enable )
+{
+    if( !d->TSLOnlineDigest.locked )
+        d->setUserConf(d->TSLOnlineDigest.name, ConfV3::TSLOnlineDigest() ? "true" : "false", (d->TSLOnlineDigest = enable) ? "true" : "false");
 }
 
 /**
@@ -454,11 +459,7 @@ bool XmlConf::PKCS12Disable() const
  * @param host proxy host address.
  * @throws IOException exception is thrown if saving a proxy host address into a user configuration file fails.
  */
-void XmlConf::setProxyHost( const string &host )
-{
-    if( !d->proxyHost.locked )
-        d->setUserConf(d->proxyHost.name, Conf::proxyHost(), d->proxyHost = host);
-}
+SET1(string, setProxyHost, proxyHost)
 
 /**
  * Sets a Proxy port number. Also adds or replaces proxy port data in the user configuration file.
@@ -466,11 +467,7 @@ void XmlConf::setProxyHost( const string &host )
  * @param port proxy port number.
  * @throws IOException exception is thrown if saving a proxy port number into a user configuration file fails.
  */
-void XmlConf::setProxyPort( const string &port )
-{
-    if( !d->proxyPort.locked )
-        d->setUserConf(d->proxyPort.name, Conf::proxyPort(), d->proxyPort = port);
-}
+SET1(string, setProxyPort, proxyPort)
 
 /**
  * Sets a Proxy user name. Also adds or replaces proxy user name in the user configuration file.
@@ -478,11 +475,7 @@ void XmlConf::setProxyPort( const string &port )
  * @param user proxy user name.
  * @throws IOException exception is thrown if saving a proxy user name into a user configuration file fails.
  */
-void XmlConf::setProxyUser( const string &user )
-{
-    if( !d->proxyUser.locked )
-        d->setUserConf(d->proxyUser.name, Conf::proxyUser(), d->proxyUser = user);
-}
+SET1(string, setProxyUser, proxyUser)
 
 /**
  * Sets a Proxy password. Also adds or replaces proxy password in the user configuration file.
@@ -490,11 +483,7 @@ void XmlConf::setProxyUser( const string &user )
  * @param pass proxy password.
  * @throws IOException exception is thrown if saving a proxy password into a user configuration file fails.
  */
-void XmlConf::setProxyPass( const string &pass )
-{
-    if( !d->proxyPass.locked )
-        d->setUserConf(d->proxyPass.name, Conf::proxyPass(), d->proxyPass = pass);
-}
+SET1(string, setProxyPass, proxyPass)
 
 /**
  * Sets a PKCS#12 certficate path. Also adds or replaces PKCS#12 certificate path in the user configuration file.
@@ -503,11 +492,7 @@ void XmlConf::setProxyPass( const string &pass )
  * @param cert PKCS#12 certificate location path.
  * @throws IOException exception is thrown if saving a PKCS#12 certificate path into a user configuration file fails.
  */
-void XmlConf::setPKCS12Cert( const string &cert )
-{
-    if( !d->pkcs12Cert.locked )
-        d->setUserConf(d->pkcs12Cert.name, Conf::PKCS12Cert(), d->pkcs12Cert = cert);
-}
+SET1(string, setPKCS12Cert, PKCS12Cert)
 
 /**
  * Sets a PKCS#12 certificate password. Also adds or replaces PKCS#12 certificate password in the user configuration file.
@@ -515,11 +500,7 @@ void XmlConf::setPKCS12Cert( const string &cert )
  * @param pass PKCS#12 certificate password.
  * @throws IOException exception is thrown if saving a PKCS#12 certificate password into a user configuration file fails.
  */
-void XmlConf::setPKCS12Pass( const string &pass )
-{
-    if( !d->pkcs12Pass.locked )
-        d->setUserConf(d->pkcs12Pass.name, Conf::PKCS12Pass(), d->pkcs12Pass = pass);
-}
+SET1(string, setPKCS12Pass, PKCS12Pass)
 
 /**
  * Sets a PKCS#12 certificate usage. Also adds or replaces PKCS#12 certificate usage in the user configuration file.
@@ -529,255 +510,16 @@ void XmlConf::setPKCS12Pass( const string &pass )
  */
 void XmlConf::setPKCS12Disable( bool disable )
 {
-    if( !d->pkcs12Disable.locked )
-        d->setUserConf(d->pkcs12Disable.name, Conf::PKCS12Disable() ? "true" : "false", (d->pkcs12Disable = disable) ? "true" : "false");
+    if( !d->PKCS12Disable.locked )
+        d->setUserConf(d->PKCS12Disable.name, Conf::PKCS12Disable() ? "true" : "false", (d->PKCS12Disable = disable) ? "true" : "false");
 }
-
-/**
- * Initialize xml conf from path
- * @param path to use for initializing conf
- * @return
- */
-XmlConfV2::XmlConfV2(const string &path, const string &schema)
-    : d(new XmlConfPrivate(path, schema))
-{
-}
-
-XmlConfV2::~XmlConfV2()
-{
-    delete d;
-}
-
-/**
- * Gets log level.
- * @return log level.
- */
-int XmlConfV2::logLevel() const
-{
-    return d->logLevel.value(Conf::logLevel());
-}
-
-/**
- * Gets log file location.
- * @return log path location.
- */
-string XmlConfV2::logFile() const
-{
-    return d->logFile.value(Conf::logFile());
-}
-
-/**
- * Gets Manifest schema file location.
- * @return Manifest schema full path location.
- */
-string XmlConfV2::xsdPath() const
-{
-    string path = d->xsdPath.value(Conf::xsdPath());
-    return File::isRelative(path) ? d->DEFAULT_CONF_LOC + "/" + path : path;
-}
-
-/**
- * Gets PKCS11 driver file path.
- * @return PKCS11 driver file location.
- */
-string XmlConfV2::PKCS11Driver() const
-{
-    return d->pkcs11DriverPath.value(Conf::PKCS11Driver());
-}
-
-/**
- * Gets OCSP data by issuer.
- * @param issuer OCSP issuer.
- * @return returns OCSP data structure, containing issuer, url and certificate location.
- */
-string XmlConfV2::ocsp(const string &issuer) const
-{
-    for(vector<XmlConfPrivate::OCSP>::const_iterator i = d->ocsp.begin(); i != d->ocsp.end(); ++i)
-    {
-        if(i->issuer == issuer)
-            return i->url;
-    }
-    return Conf::ocsp(issuer);
-}
-
-/**
- * Gets Certificate store location.
- * @return Certificate store full path location.
- */
-string XmlConfV2::certsPath() const
-{
-    return Conf::certsPath();
-}
-
-/**
- * Gets proxy host address.
- * @return proxy host address.
- */
-string XmlConfV2::proxyHost() const
-{
-    return d->proxyHost.value(Conf::proxyHost());
-}
-
-/**
- * Gets proxy port number.
- * @return proxy port.
- */
-string XmlConfV2::proxyPort() const
-{
-    return d->proxyPort.value(Conf::proxyPort());
-}
-
-/**
- * Gets proxy user name.
- * @return proxy user name.
- */
-string XmlConfV2::proxyUser() const
-{
-    return d->proxyUser.value(Conf::proxyUser());
-}
-
-/**
- * Gets proxy login password.
- * @return proxy password.
- */
-string XmlConfV2::proxyPass() const
-{
-    return d->proxyPass.value(Conf::proxyPass());
-}
-
-/**
- * Gets PKCS12 certificate file location.
- * @return PKCS12 certificate full path location.
- */
-string XmlConfV2::PKCS12Cert() const
-{
-    return d->pkcs12Cert.value(Conf::PKCS12Cert());
-}
-
-/**
- * Gets PKCS12 password.
- * @return PKCS12 password.
- */
-string XmlConfV2::PKCS12Pass() const
-{
-    return d->pkcs12Pass.value(Conf::PKCS12Pass());
-}
-
-/**
- * Gets PKCS12 usage.
- * @return PKCS12 usage.
- */
-bool XmlConfV2::PKCS12Disable() const
-{
-    return d->pkcs12Disable.value(Conf::PKCS12Disable());
-}
-
-string XmlConfV2::TSUrl() const
-{
-    return d->tsurl.value(ConfV2::TSUrl());
-}
-
-bool XmlConfV2::TSLAutoUpdate() const
-{
-    return d->tslautoupdate.value(ConfV2::TSLAutoUpdate());
-}
-
-string XmlConfV2::TSLCache() const
-{
-    return d->tslcache.value(ConfV2::TSLCache());
-}
-
-X509Cert XmlConfV2::TSLCert() const
-{
-    return ConfV2::TSLCert();
-}
-
-string XmlConfV2::TSLUrl() const
-{
-    return ConfV2::TSLUrl();
-}
-
-/**
- * Sets a Proxy host address. Also adds or replaces proxy host data in the user configuration file.
- *
- * @param host proxy host address.
- * @throws IOException exception is thrown if saving a proxy host address into a user configuration file fails.
- */
-void XmlConfV2::setProxyHost( const string &host )
-{
-    if( !d->proxyHost.locked )
-        d->setUserConf(d->proxyHost.name, Conf::proxyHost(), d->proxyHost = host);
-}
-
-/**
- * Sets a Proxy port number. Also adds or replaces proxy port data in the user configuration file.
- *
- * @param port proxy port number.
- * @throws IOException exception is thrown if saving a proxy port number into a user configuration file fails.
- */
-void XmlConfV2::setProxyPort( const string &port )
-{
-    if( !d->proxyPort.locked )
-        d->setUserConf(d->proxyPort.name, Conf::proxyPort(), d->proxyPort = port);
-}
-
-/**
- * Sets a Proxy user name. Also adds or replaces proxy user name in the user configuration file.
- *
- * @param user proxy user name.
- * @throws IOException exception is thrown if saving a proxy user name into a user configuration file fails.
- */
-void XmlConfV2::setProxyUser( const string &user )
-{
-    if( !d->proxyUser.locked )
-        d->setUserConf(d->proxyUser.name, Conf::proxyUser(), d->proxyUser = user);
-}
-
-/**
- * Sets a Proxy password. Also adds or replaces proxy password in the user configuration file.
- *
- * @param pass proxy password.
- * @throws IOException exception is thrown if saving a proxy password into a user configuration file fails.
- */
-void XmlConfV2::setProxyPass( const string &pass )
-{
-    if( !d->proxyPass.locked )
-        d->setUserConf(d->proxyPass.name, Conf::proxyPass(), d->proxyPass = pass);
-}
-
-/**
- * Sets a PKCS#12 certficate path. Also adds or replaces PKCS#12 certificate path in the user configuration file.
- * By default the PKCS#12 certificate file should be located at default path, given by getUserConfDir() function.
- *
- * @param cert PKCS#12 certificate location path.
- * @throws IOException exception is thrown if saving a PKCS#12 certificate path into a user configuration file fails.
- */
-void XmlConfV2::setPKCS12Cert( const string &cert )
-{
-    if( !d->pkcs12Cert.locked )
-        d->setUserConf(d->pkcs12Cert.name, Conf::PKCS12Cert(), d->pkcs12Cert = cert);
-}
-
-/**
- * Sets a PKCS#12 certificate password. Also adds or replaces PKCS#12 certificate password in the user configuration file.
- *
- * @param pass PKCS#12 certificate password.
- * @throws IOException exception is thrown if saving a PKCS#12 certificate password into a user configuration file fails.
- */
-void XmlConfV2::setPKCS12Pass( const string &pass )
-{
-    if( !d->pkcs12Pass.locked )
-        d->setUserConf(d->pkcs12Pass.name, Conf::PKCS12Pass(), d->pkcs12Pass = pass);
-}
-
-/**
- * Sets a PKCS#12 certificate usage. Also adds or replaces PKCS#12 certificate usage in the user configuration file.
- *
- * @param pass PKCS#12 certificate usage.
- * @throws IOException exception is thrown if saving a PKCS#12 certificate usage into a user configuration file fails.
- */
 void XmlConfV2::setPKCS12Disable( bool disable )
 {
-    if( !d->pkcs12Disable.locked )
-        d->setUserConf(d->pkcs12Disable.name, Conf::PKCS12Disable() ? "true" : "false", (d->pkcs12Disable = disable) ? "true" : "false");
+    if( !d->PKCS12Disable.locked )
+        d->setUserConf(d->PKCS12Disable.name, Conf::PKCS12Disable() ? "true" : "false", (d->PKCS12Disable = disable) ? "true" : "false");
+}
+void XmlConfV3::setPKCS12Disable( bool disable )
+{
+    if( !d->PKCS12Disable.locked )
+        d->setUserConf(d->PKCS12Disable.name, Conf::PKCS12Disable() ? "true" : "false", (d->PKCS12Disable = disable) ? "true" : "false");
 }

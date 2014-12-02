@@ -89,8 +89,14 @@ string Conf::digestUri() const { return URI_SHA256; }
 string Conf::xsdPath() const
 {
     string path = "schema";
-#ifdef __APPLE__
+#if defined(__APPLE__)
     path.insert(0, File::frameworkResourcesPath("ee.ria.digidocpp"));
+#elif defined(_WIN32) && defined(_DEBUG)
+    path.insert(0, File::dllPath("digidocppd.dll"));
+#elif defined(_WIN32)
+    path.insert(0, File::dllPath("digidocpp.dll"));
+#else
+    path.insert(0, DIGIDOCPP_CONFIG_DIR "/");
 #endif
     return path;
 }
@@ -141,14 +147,11 @@ string Conf::PKCS12Cert() const
 string Conf::PKCS12Pass() const { return "\x32\x30\x4d\x38\x58\x33\x37\x6c"; }
 bool Conf::PKCS12Disable() const { return false; }
 
+
 ConfV2::ConfV2() {}
 ConfV2::~ConfV2() {}
 ConfV2* ConfV2::instance() { return dynamic_cast<ConfV2*>(Conf::instance()); }
-
 string ConfV2::TSUrl() const { return TSA_URL; }
-
-
-
 bool ConfV2::TSLAutoUpdate() const { return true; }
 string ConfV2::TSLCache() const
 {
@@ -160,3 +163,9 @@ string ConfV2::TSLCache() const
 }
 X509Cert ConfV2::TSLCert() const { return X509Cert(tslcert(), X509Cert::Pem); }
 string ConfV2::TSLUrl() const { return TSL_URL; }
+
+
+ConfV3::ConfV3() {}
+ConfV3::~ConfV3() {}
+ConfV3* ConfV3::instance() { return dynamic_cast<ConfV3*>(Conf::instance()); }
+bool ConfV3::TSLOnlineDigest() const { return true; }

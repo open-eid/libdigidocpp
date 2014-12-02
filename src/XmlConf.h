@@ -59,7 +59,7 @@ private:
     XmlConfPrivate *d;
 };
 
-class EXP_DIGIDOC XmlConfV2: public ConfV2
+class DEPRECATED_DIGIDOC EXP_DIGIDOC XmlConfV2: public ConfV2
 {
 public:
     explicit XmlConfV2(const std::string &path = "", const std::string &schema = "");
@@ -81,8 +81,8 @@ public:
     virtual std::string TSUrl() const;
     virtual bool TSLAutoUpdate() const;
     virtual std::string TSLCache() const;
-    DEPRECATED_DIGIDOC virtual X509Cert TSLCert() const;
-    DEPRECATED_DIGIDOC virtual std::string TSLUrl() const;
+    virtual X509Cert TSLCert() const;
+    virtual std::string TSLUrl() const;
 
     virtual void setProxyHost( const std::string &host );
     virtual void setProxyPort( const std::string &port );
@@ -94,6 +94,48 @@ public:
 
 private:
     DISABLE_COPY(XmlConfV2);
+
+    XmlConfPrivate *d;
+};
+
+class EXP_DIGIDOC XmlConfV3: public ConfV3
+{
+public:
+    explicit XmlConfV3(const std::string &path = "", const std::string &schema = "");
+    virtual ~XmlConfV3();
+
+    virtual int logLevel() const;
+    virtual std::string logFile() const;
+    virtual std::string xsdPath() const;
+    virtual std::string PKCS11Driver() const;
+    virtual std::string ocsp(const std::string &issuer) const;
+    DEPRECATED_DIGIDOC virtual std::string certsPath() const;
+    virtual std::string proxyHost() const;
+    virtual std::string proxyPort() const;
+    virtual std::string proxyUser() const;
+    virtual std::string proxyPass() const;
+    virtual std::string PKCS12Cert() const;
+    virtual std::string PKCS12Pass() const;
+    virtual bool PKCS12Disable() const;
+    virtual std::string TSUrl() const;
+    virtual bool TSLAutoUpdate() const;
+    virtual std::string TSLCache() const;
+    virtual X509Cert TSLCert() const;
+    virtual bool TSLOnlineDigest() const;
+    virtual std::string TSLUrl() const;
+
+    virtual void setProxyHost( const std::string &host );
+    virtual void setProxyPort( const std::string &port );
+    virtual void setProxyUser( const std::string &user );
+    virtual void setProxyPass( const std::string &pass );
+    virtual void setPKCS12Cert( const std::string &cert );
+    virtual void setPKCS12Pass( const std::string &pass );
+    virtual void setPKCS12Disable( bool disable );
+
+    virtual void setTSLOnlineDigest( bool enable );
+
+private:
+    DISABLE_COPY(XmlConfV3);
 
     XmlConfPrivate *d;
 };

@@ -230,8 +230,9 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
     TSL tsl(path);
     try {
         tsl.validate(certs);
+        bool onlineDigest = ConfV3::instance() ? ConfV3::instance()->TSLOnlineDigest() : ConfV3().TSLOnlineDigest();
         size_t pos = url.find_last_of("/.");
-        if(pos != string::npos)
+        if(onlineDigest && pos != string::npos)
             tsl.validateRemoteDigest(url.substr(0, pos) + ".sha2");
         DEBUG("TSL %s signature is valid", territory.c_str());
     } catch(const Exception &e) {
