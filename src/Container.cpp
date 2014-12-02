@@ -349,7 +349,7 @@ void Container::save(const string &path)
  */
 Signature* Container::sign( Signer *signer )
 {
-    return sign( signer, BDoc::ASIC_TM_PROFILE );
+    return sign( signer, string() );
 }
 
 /**
@@ -364,7 +364,7 @@ Signature* Container::sign( Signer *signer, const string &profile )
     if( !m_doc )
         THROW("Document not open");
 
-    return m_doc->sign(signer, profile.empty() ? BDoc::ASIC_TM_PROFILE : profile);
+    return m_doc->sign(signer, profile.empty() ? BDoc::ASIC_TS_PROFILE : profile);
 }
 
 /**

@@ -312,22 +312,23 @@ struct Params
     string path, profile, pkcs11, pkcs12, pin, city, state, postalCode, country;
     vector<pair<string,string> > files;
     vector<string> roles;
-    bool cng, selectFirst;
-    map<string,string> profiles;
+    bool cng = true, selectFirst = false;
+    static const map<string,string> profiles;
+};
+
+const map<string,string> Params::profiles = {
+    {"TM", "time-mark"},
+    {"TS", "time-stamp"},
+    {"TMA", "time-mark-archive"},
+    {"TSA", "time-stamp-archive"},
+    {"time-mark", "time-mark"},
+    {"time-stamp", "time-stamp"},
+    {"time-mark-archive", "time-mark-archive"},
+    {"time-stamp-archive", "time-stamp-archive"},
 };
 
 Params::Params(int argc, char *argv[])
-    : cng(true)
-    , selectFirst(false)
 {
-    profiles.insert(pair<string,string>("TM", "time-mark"));
-    profiles.insert(pair<string,string>("TS", "time-stamp"));
-    profiles.insert(pair<string,string>("TMA", "time-mark-archive"));
-    profiles.insert(pair<string,string>("TSA", "time-stamp-archive"));
-    profiles.insert(pair<string,string>("time-mark", "time-mark"));
-    profiles.insert(pair<string,string>("time-stamp", "time-stamp"));
-    profiles.insert(pair<string,string>("time-mark-archive", "time-mark-archive"));
-    profiles.insert(pair<string,string>("time-stamp-archive", "time-stamp-archive"));
     ToolConfig *conf = static_cast<ToolConfig*>(Conf::instance());
 
     for(int i = 2; i < argc; i++)
@@ -337,7 +338,7 @@ Params::Params(int argc, char *argv[])
         {
             profile = arg.substr(10);
             size_t pos = profile.find(".");
-            profile = profiles[profile.substr(0, pos)] + (pos == string::npos ? "" : profile.substr(pos));
+            profile = profiles.at(profile.substr(0, pos)) + (pos == string::npos ? "" : profile.substr(pos));
         }
         else if(arg.find("--file=") == 0)
         {
