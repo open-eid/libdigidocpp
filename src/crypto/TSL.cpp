@@ -260,7 +260,7 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
         try {
             tsl.validate(certs);
             ofstream o(File::encodeName(path).c_str(), ofstream::binary);
-            ifstream i(File::encodeName(tmp).c_str(), ofstream::binary);
+            ifstream i(File::encodeName(tmp).c_str(), ifstream::binary);
             o << i.rdbuf();
             o.close();
             i.close();
@@ -417,7 +417,7 @@ void TSL::validateRemoteDigest(const std::string &url)
 
     Digest sha(URI_RSA_SHA256);
     vector<unsigned char> buf(10240, 0);
-    fstream is(path);
+    ifstream is(path, ifstream::binary);
     while(is)
     {
         is.read((char*)&buf[0], buf.size());
