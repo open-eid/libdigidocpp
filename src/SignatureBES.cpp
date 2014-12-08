@@ -412,10 +412,11 @@ string SignatureBES::policy() const
     if(!id.present())
         return "";
 
-    if(id->sigPolicyId().identifier().qualifier().get() != QualifierType::OIDAsURN)
+    const ObjectIdentifierType::IdentifierType &objid = id->sigPolicyId().identifier();
+    if(!objid.qualifier().present() || objid.qualifier().get() != QualifierType::OIDAsURN)
         return "";
 
-    return id->sigPolicyId().identifier();
+    return objid;
 }
 
 /**
