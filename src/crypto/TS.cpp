@@ -150,6 +150,7 @@ void TS::verify(const Digest &digest)
     ctx->imprint_len = (unsigned int)data.size();
 
     ctx->store = X509_STORE_new();
+    X509CertStore::instance()->activate(cert().issuerName("C"));
     for(const X509Cert &i: X509CertStore::instance()->certs())
         X509_STORE_add_cert(ctx->store, i.handle());
     OpenSSLException(); // Clear errors
