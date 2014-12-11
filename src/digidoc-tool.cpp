@@ -27,12 +27,9 @@
 #include "crypto/CNGSigner.h"
 #include "crypto/PKCS11Signer.h"
 #include "crypto/PKCS12Signer.h"
+#include "crypto/TSL.h"
 #include "crypto/X509Cert.h"
 #include "util/File.h"
-
-#ifdef TSL_URL
-#include "crypto/TSL.h"
-#endif
 
 #include <algorithm>
 #include <functional>
@@ -256,10 +253,16 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
 class ToolConfig: public XmlConfV3
 {
 public:
-    ToolConfig(): XmlConfV3(), uri(XmlConfV3::digestUri()) {}
+    ToolConfig(): XmlConfV3()
+      , tslcert(XmlConfV3::TSLCert())
+      , tslurl(XmlConfV3::TSLUrl())
+      , uri(XmlConfV3::digestUri()) {}
     string digestUri() const { return uri; }
+    X509Cert TSLCert() const { return tslcert; }
+    string TSLUrl() const { return tslurl; }
 
-    string uri;
+    X509Cert tslcert;
+    string tslurl, uri;
 };
 
 
@@ -372,6 +375,8 @@ Params::Params(int argc, char *argv[])
         else if(arg == "--sha256") conf->uri = URI_SHA256;
         else if(arg == "--sha384") conf->uri = URI_SHA384;
         else if(arg == "--sha512") conf->uri = URI_SHA512;
+        else if(arg.find("--tslurl=") == 0) conf->tslurl = arg.substr(9);
+        else if(arg.find("--tslcert=") == 0) conf->tslcert = X509Cert(arg.substr(10));
         else path = arg;
     }
 }
@@ -774,8 +779,6 @@ static int sign(int argc, char* argv[])
     return returnCode;
 }
 
-#ifdef TSL_URL
-namespace digidoc { vector<unsigned char> tslcert(); }
 static int tslcmd(int , char* [])
 {
     int returnCode = EXIT_SUCCESS;
@@ -791,9 +794,7 @@ static int tslcmd(int , char* [])
         << "Pointers:" << endl;
     try {
         cout << "  Signature: ";
-        vector<X509Cert> certs;
-        certs.push_back(X509Cert(tslcert(), X509Cert::Pem));
-        t.validate(certs);
+        t.validate({c ? c->TSLCert() : ConfV2().TSLCert()});
         cout << "VALID" << endl;
     } catch(const Exception &e) {
         cout << "INVALID" << endl;
@@ -829,7 +830,6 @@ static int tslcmd(int , char* [])
     };
     return returnCode;
 }
-#endif
 
 /**
  * Executes digidoc demonstration application.
@@ -845,8 +845,9 @@ int main(int argc, char* argv[])
     printf("  libdigidocpp version: %s\n", version().c_str());
 
     try {
-        digidoc::initialize(string("digidoc-tool/") + VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER));
         Conf::init(new ToolConfig);
+        Params(argc, argv);
+        digidoc::initialize(string("digidoc-tool/") + VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER));
     } catch(const Exception &e) {
         printf("Failed to initalize library:\n");
         parseException(e, "Caught Exception:");
@@ -871,10 +872,8 @@ int main(int argc, char* argv[])
         returnCode = remove(argc, argv);
     else if(command == "sign")
         returnCode = sign(argc, argv);
-#ifdef TSL_URL
     else if(command == "tsl")
         returnCode = tslcmd(argc, argv);
-#endif
     else if(command == "version")
         returnCode = EXIT_SUCCESS;
     else

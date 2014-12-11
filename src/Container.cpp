@@ -110,9 +110,6 @@ string digidoc::version() {
 #if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
     ver += "_ddoc";
 #endif
-#ifdef TSL_URL
-    ver += "_tsl";
-#endif
     return ver;
 }
 

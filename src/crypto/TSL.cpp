@@ -50,7 +50,6 @@ using namespace digidoc::util::date;
 using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
-namespace digidoc { vector<unsigned char> tslcert(); }
 
 #define CONFV2(method) ConfV2::instance() ? ConfV2::instance()->method() : ConfV2().method()
 
@@ -218,7 +217,7 @@ vector<X509Cert> TSL::parse()
 {
     string url = CONFV2(TSLUrl);
     string cache = CONFV2(TSLCache);
-    std::vector<X509Cert> cert = { X509Cert(tslcert(), X509Cert::Pem) };
+    std::vector<X509Cert> cert = { CONFV2(TSLCert) };
     File::createDirectory(cache);
     return parse(url, cert, cache, File::fileName(url));
 }
