@@ -254,13 +254,16 @@ class ToolConfig: public XmlConfV3
 {
 public:
     ToolConfig(): XmlConfV3()
+      , expired(XmlConfV3::TSLAllowExpired())
       , tslcert(XmlConfV3::TSLCert())
       , tslurl(XmlConfV3::TSLUrl())
       , uri(XmlConfV3::digestUri()) {}
     string digestUri() const { return uri; }
+    bool TSLAllowExpired() const { return expired; }
     X509Cert TSLCert() const { return tslcert; }
     string TSLUrl() const { return tslurl; }
 
+    bool expired;
     X509Cert tslcert;
     string tslurl, uri;
 };
@@ -377,6 +380,7 @@ Params::Params(int argc, char *argv[])
         else if(arg == "--sha512") conf->uri = URI_SHA512;
         else if(arg.find("--tslurl=") == 0) conf->tslurl = arg.substr(9);
         else if(arg.find("--tslcert=") == 0) conf->tslcert = X509Cert(arg.substr(10));
+        else if(arg == "--TSLAllowExpired") conf->expired = true;
         else path = arg;
     }
 }
@@ -838,7 +842,7 @@ static int tslcmd(int , char* [])
  * @param argv command line arguments.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     printf("Version\n");
     printf("  digidoc-tool version: %s\n", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER));

@@ -33,6 +33,7 @@ public:
 
     TSL(const std::string &file);
     ~TSL();
+    bool isExpired() const;
     void validateRemoteDigest(const std::string &url);
     void validate(const std::vector<X509Cert> &certs);
 
@@ -50,7 +51,13 @@ public:
     static std::vector<X509Cert> parse();
 
 private:
-    static std::vector<X509Cert> parse(const std::string &url, const std::vector<X509Cert> &certs,
+    struct Result
+    {
+        std::vector<X509Cert> certs;
+        bool expired;
+    };
+
+    static Result parse(const std::string &url, const std::vector<X509Cert> &certs,
         const std::string &cache, const std::string &territory);
 
     static const std::set<std::string> SCHEMES_URI;

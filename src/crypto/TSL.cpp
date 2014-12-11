@@ -51,7 +51,7 @@ using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
 
-#define CONFV2(method) ConfV2::instance() ? ConfV2::instance()->method() : ConfV2().method()
+#define CONF(method) ConfV3::instance() ? ConfV3::instance()->method() : ConfV3().method()
 
 const set<string> TSL::SCHEMES_URI = {
     "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/schemes",
@@ -65,6 +65,7 @@ const set<string> TSL::GENERIC_URI = {
 };
 
 const set<string> TSL::SERVICESTATUS = {
+    "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/Svcstatus/undersupervision",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionincessation",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accredited",
@@ -89,8 +90,8 @@ TSL::TSL(const string &file)
 {
     if(file.empty())
     {
-        path = CONFV2(TSLCache);
-        path += "/" + File::fileName(CONFV2(TSLUrl));
+        path = CONF(TSLCache);
+        path += "/" + File::fileName(CONF(TSLUrl));
     }
     if(!File::fileExists(path))
         return;
@@ -135,7 +136,7 @@ bool TSL::activate(const string &territory)
 {
     if(territory.size() != 2)
         return false;
-    string cache = CONFV2(TSLCache);
+    string cache = CONF(TSLCache);
     string path = cache + "/" + territory + ".xml";
     if(File::fileExists(path))
         return false;
@@ -163,9 +164,6 @@ vector<X509Cert> TSL::certs() const
                 SERVICETYPE.find(serviceInfo.serviceTypeIdentifier()) == SERVICETYPE.end())
                 continue;
 
-            //BIO_printf(bio, "Provider name: %sn\n", toString(i->tSPInformation().tSPName()).c_str());
-            //BIO_printf(bio, " Serivce type: %s\n", serviceInfo.serviceTypeIdentifier().c_str());
-            //BIO_printf(bio, " Service name: %s\n", toString(serviceInfo.serviceName()).c_str());
             for(const DigitalIdentityListType::DigitalIdType id:
                 serviceInfo.serviceDigitalIdentity().digitalId())
             {
@@ -197,6 +195,14 @@ vector<X509Cert> TSL::certs() const
     return certs;
 }
 
+bool TSL::isExpired() const
+{
+    time_t t = time(0);
+    struct tm *time = gmtime(&t);
+    return !tsl || nextUpdate().empty() ||
+        nextUpdate().compare(0, 19, xsd2string(makeDateTime(*time))) <= 0;
+}
+
 string TSL::issueDate() const
 {
     return !tsl ? string() : xsd2string(tsl->schemeInformation().listIssueDateTime());
@@ -215,20 +221,24 @@ string TSL::operatorName() const
 
 vector<X509Cert> TSL::parse()
 {
-    string url = CONFV2(TSLUrl);
-    string cache = CONFV2(TSLCache);
-    std::vector<X509Cert> cert = { CONFV2(TSLCert) };
+    string url = CONF(TSLUrl);
+    string cache = CONF(TSLCache);
+    std::vector<X509Cert> cert = { CONF(TSLCert) };
     File::createDirectory(cache);
-    return parse(url, cert, cache, File::fileName(url));
+    return parse(url, cert, cache, File::fileName(url)).certs;
 }
 
-vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
+TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
     const string &cache, const string &territory)
 {
     string path = cache + "/" + territory;
     TSL tsl(path);
+    Result result = { vector<X509Cert>(), false };
     try {
         tsl.validate(certs);
+        result = { tsl.certs(), tsl.isExpired() };
+        if(result.expired)
+            THROW("TSL is expired");
         bool onlineDigest = ConfV3::instance() ? ConfV3::instance()->TSLOnlineDigest() : ConfV3().TSLOnlineDigest();
         size_t pos = url.find_last_of("/.");
         if(onlineDigest && pos != string::npos)
@@ -236,9 +246,9 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
         DEBUG("TSL %s signature is valid", territory.c_str());
     } catch(const Exception &e) {
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
-        bool autoupdate = CONFV2(TSLAutoUpdate);
+        bool autoupdate = CONF(TSLAutoUpdate);
         if(!autoupdate)
-            return vector<X509Cert>();
+            return result;
 
         string tmp = path + ".tmp";
         try
@@ -253,7 +263,7 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
         catch(const Exception &)
         {
             ERR("TSL: Failed to download %s list", tsl.territory().c_str());
-            return vector<X509Cert>();
+            return result;
         }
 
         tsl = TSL(tmp);
@@ -265,17 +275,26 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
             o.close();
             i.close();
             File::removeFile(tmp);
+            result = { tsl.certs(), tsl.isExpired() };
             DEBUG("TSL %s signature is valid", territory.c_str());
         } catch(const Exception &) {
             ERR("TSL %s signature is invalid", territory.c_str());
-            return vector<X509Cert>();
+            return result;
         }
     }
 
     if(tsl.pointers().empty())
-        return tsl.certs();
+        return result;
 
-    vector< future< vector<X509Cert> > > futures;
+    bool allow = false;
+    if(result.expired)
+    {
+        allow = CONF(TSLAllowExpired);
+        if(!allow)
+            return { vector<X509Cert>(), false };
+    }
+
+    vector< future< Result > > futures;
     for(const TSL::Pointer &p: tsl.pointers())
     {
         if(!File::fileExists(cache + "/" + p.territory + ".xml"))
@@ -287,10 +306,13 @@ vector<X509Cert> TSL::parse(const string &url, const vector<X509Cert> &certs,
     vector<X509Cert> list;
     for(auto &f: futures)
     {
-        vector<X509Cert> data = f.get();
-        list.insert(list.end(), data.begin(), data.end());
+        Result data = f.get();
+        if(data.expired && !allow)
+            allow = CONF(TSLAllowExpired);
+        if(!data.expired || allow)
+            list.insert(list.end(), data.certs.begin(), data.certs.end());
     }
-    return list;
+    return { list, false };
 }
 
 std::vector<TSL::Pointer> TSL::pointers() const
@@ -358,13 +380,8 @@ string TSL::url() const
 
 void TSL::validate(const std::vector<X509Cert> &certs)
 {
-    if(!tsl || nextUpdate().empty())
+    if(!tsl)
         THROW("Failed to parse XML");
-
-    time_t t = time(0);
-    struct tm *time = gmtime(&t);
-    if(nextUpdate().compare(0, 19, xsd2string(makeDateTime(*time))) <= 0)
-        THROW("TSL is expired");
 
     X509Cert signingCert;
     if(tsl->signature().present() &&

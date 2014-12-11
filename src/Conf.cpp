@@ -168,4 +168,5 @@ string ConfV2::TSLUrl() const { return TSL_URL; }
 ConfV3::ConfV3() {}
 ConfV3::~ConfV3() {}
 ConfV3* ConfV3::instance() { return dynamic_cast<ConfV3*>(Conf::instance()); }
+bool ConfV3::TSLAllowExpired() const { return false; }
 bool ConfV3::TSLOnlineDigest() const { return true; }

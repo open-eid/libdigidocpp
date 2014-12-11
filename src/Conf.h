@@ -86,6 +86,7 @@ namespace digidoc
           virtual ~ConfV3();
           static ConfV3* instance();
 
+          virtual bool TSLAllowExpired() const;
           virtual bool TSLOnlineDigest() const;
 
       private:
