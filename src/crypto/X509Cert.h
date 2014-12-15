@@ -56,12 +56,13 @@ namespace digidoc
           explicit X509Cert(const unsigned char *bytes, size_t size, Format format = Der);
           explicit X509Cert(const std::vector<unsigned char> &bytes, Format format = Der);
           explicit X509Cert(const std::string &path, Format format = Pem);
-          X509Cert(const X509Cert& copy);
+          X509Cert(X509Cert &&other);
+          X509Cert(const X509Cert &other);
           ~X509Cert();
 
           std::string serial() const;
-          std::string issuerName(const std::string &obj = "") const;
-          std::string subjectName(const std::string &obj = "") const;
+          std::string issuerName(const std::string &obj = std::string()) const;
+          std::string subjectName(const std::string &obj = std::string()) const;
           std::vector<KeyUsage> keyUsage() const;
           std::vector<std::string> certificatePolicies() const;
           bool isValid(time_t *t = 0) const;
@@ -69,6 +70,7 @@ namespace digidoc
           X509* handle() const;
           operator std::vector<unsigned char>() const;
           X509Cert& operator=(const X509Cert &other);
+          X509Cert& operator=(X509Cert &&other);
           bool operator !() const;
           bool operator ==(const X509Cert &other) const;
           bool operator !=(const X509Cert &other) const;

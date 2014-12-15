@@ -61,10 +61,9 @@ public:
 
                 char *data = nullptr;
                 int size = ASN1_STRING_to_UTF8((unsigned char**)&data, X509_NAME_ENTRY_get_data(e));
-                str = string(data, size);
+                str.append(data, size);
                 OPENSSL_free(data);
             }
-
         }
         else
         {
@@ -202,8 +201,18 @@ X509Cert::X509Cert(const string &path, Format format)
  *
  * @param copy instance of X509Cert class to be copied.
  */
-X509Cert::X509Cert(const X509Cert& copy)
- : cert(copy.cert)
+X509Cert::X509Cert(const X509Cert &other)
+ : cert(other.cert)
+{
+}
+
+/**
+ * Move constructor.
+ *
+ * @param copy instance of X509Cert class to be copied.
+ */
+X509Cert::X509Cert(X509Cert &&other)
+ : cert(move(other.cert))
 {
 }
 
@@ -360,7 +369,18 @@ bool X509Cert::operator !() const
  */
 X509Cert& X509Cert::operator =(const X509Cert &other)
 {
-    cert = other.cert;
+    if(this != &other)
+        cert = other.cert;
+    return *this;
+}
+
+/**
+ * Assign operator to make copy of object
+ */
+X509Cert& X509Cert::operator =(X509Cert &&other)
+{
+    if(this != &other)
+        cert = move(other.cert);
     return *this;
 }
 
