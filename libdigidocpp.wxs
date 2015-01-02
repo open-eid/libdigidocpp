@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<?ifdef env.VS120COMNTOOLS ?>
-<?define MergeModules="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC120" ?>
-<?else?>
-<?define MergeModules="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC110" ?>
-<?endif?>
-
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Name="Estonian ID Card CPP-library for developers" UpgradeCode="{93985BBA-6B59-443B-80C8-BA987407F8B8}"
       Id="*" Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA">
@@ -16,23 +10,16 @@
     <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage=
       "A newer version of [ProductName] is already installed. If you are trying to downgrade, please uninstall the newer version first."/>
     <UIRef Id="WixUI_Mondo" />
-    <!--Binary Id="vcredist_x64.exe"
-      SourceFile="C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bootstrapper\Packages\vcredist_x64\vcredist_x64.exe"/> 
-    <CustomAction Id="InstallX64VCRedist" BinaryKey="vcredist_x64.exe" ExeCommand="/quiet /norestart"
-       Execute="deferred" Impersonate="no" Return="ignore"/--> 
 
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Merge Id='CRT' Language='0' SourceFile='$(var.MergeModules)_CRT_x86.msm' DiskId='1'/>
-      <Merge Id='CRTDebug' Language='0' SourceFile='$(var.MergeModules)_DebugCRT_x86.msm' DiskId='1'/>
-      <!--?if $(var.Platform) = "x64" ?>
-      <Merge Id='CRT64' Language='0' SourceFile='$(var.MergeModules)_CRT_x64.msm' DiskId='1'/>
-      <Merge Id='CRTDebug64' Language='0' SourceFile='$(var.MergeModules)_DebugCRT_x64.msm' DiskId='1'/>
-      <?endif ?-->
       <Directory Id='ProgramFilesFolder'>
         <Directory Id="DEVPACKAGESFOLDER" Name="Estonian ID Card Development">
           <Directory Id="APPLICATIONFOLDER" Name="libdigidocpp">
             <Directory Id="X86FOLDER" Name="x86">
               <Component Id="LibrariesX86" Guid="{57A72AF6-5458-4106-BFC8-A611DAF89A59}">
+                <File Source="$(env.VCINSTALLDIR)\redist\x86\Microsoft.VC120.CRT\msvcp120.dll"/>
+                <File Source="$(env.VCINSTALLDIR)\redist\x86\Microsoft.VC120.CRT\msvcr120.dll"/>
+                <File Source="$(env.VCINSTALLDIR)\redist\x86\Microsoft.VC120.CRT\vccorlib120.dll"/>
                 <File Source="C:\OpenSSL-Win32\bin\libeay32.dll"/>
                 <File Source="C:\OpenSSL-Win32\bin\ssleay32.dll"/>
                 <File Source="$(var.PREFIX)\zlib\bin\zlib1.dll"/>
@@ -51,6 +38,9 @@
                 <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\digidocpp.conf"/>
               </Component>
               <Component Id="LibrariesDevX86" Guid="{9B16F8D1-11AA-4AF4-B8C2-96B4EC7E79CD}">
+                <File Source="$(env.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\msvcp120d.dll"/>
+                <File Source="$(env.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\msvcr120d.dll"/>
+                <File Source="$(env.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\vccorlib120d.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.lib"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.pdb"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.dll"/>
@@ -73,6 +63,9 @@
             </Directory>
             <Directory Id="X64FOLDER" Name="x64">
               <Component Id="LibrariesX64" Guid="{1A068454-C881-49D3-A3C4-58D513C2BFE9}">
+                <File Source="$(env.VCINSTALLDIR)\redist\x64\Microsoft.VC120.CRT\msvcp120.dll" Id="msvcp120_64.dll"/>
+                <File Source="$(env.VCINSTALLDIR)\redist\x64\Microsoft.VC120.CRT\msvcr120.dll" Id="msvcr120_64.dll"/>
+                <File Source="$(env.VCINSTALLDIR)\redist\x64\Microsoft.VC120.CRT\vccorlib120.dll" Id="ccorlib120_64.dll"/>
                 <File Source="C:\OpenSSL-Win64\bin\libeay32.dll" Id="libeay32_64.dll"/>
                 <File Source="C:\OpenSSL-Win64\bin\ssleay32.dll" Id="ssleay32_64.dll"/>
                 <File Source="$(var.PREFIX)\zlib\x64\bin\zlib1.dll" Id="zlib1_64.dll"/>
@@ -91,6 +84,9 @@
                 <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\digidocpp.conf" Id="digidocpp.conf_64"/>
               </Component>
               <Component Id="LibrariesDevX64" Guid="{D992688C-0D4A-4C22-BEF4-582D7FA91731}">
+                <File Source="$(env.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\msvcp120d.dll" Id="msvcp120d_64.dll"/>
+                <File Source="$(env.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\msvcr120d.dll" Id="msvcr120d_64.dll"/>
+                <File Source="$(env.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\vccorlib120d.dll" Id="ccorlib120d_64.dll"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.lib" Id="digidocpp.lib_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.pdb" Id="digidocpp.pdb_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.dll" Id="digidocppd.dll_64"/>
@@ -121,20 +117,11 @@
     </Directory>
 
     <Feature Id="InstallLibdigidocpp" Level="1" Title="libdigidocpp teek" Display="expand" ConfigurableDirectory="APPLICATIONFOLDER">
-      <MergeRef Id="CRT"/>
-      <!--?if $(var.Platform) = "x64" ?>
-      <MergeRef Id="CRT64"/>
-      <?endif ?-->
-
       <ComponentGroupRef Id="Certs"/>
       <Feature Id="InstallSource" Level="1" Title="Source">
         <ComponentGroupRef Id="Source"/>
       </Feature>
       <Feature Id="InstallDevel" Level="1" Title="Development">
-        <MergeRef Id="CRTDebug"/>
-        <!--?if $(var.Platform) = "x64" ?>
-        <MergeRef Id="CRTDebug64"/>
-        <?endif ?-->
         <ComponentGroupRef Id="Headers"/>
         <Feature Id="InstallLibdigidocppDevX86" Level="1" Title="X86">
           <ComponentRef Id="LibrariesX86"/>
