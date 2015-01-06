@@ -299,7 +299,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
     {
         if(!File::fileExists(cache + "/" + p.territory + ".xml"))
             continue;
-        futures.push_back(async([=](){
+        futures.push_back(async(launch::async, [=](){
             return parse(p.location, p.certs, cache, p.territory + ".xml");
         }));
     }
