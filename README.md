@@ -2,6 +2,7 @@
 
  * License: LGPL 2.1
  * &copy; Estonian Information System Authority
+ * [Architecture of ID-software](http://open-eid.github.io)
 
 ## Building
 [![Build Status](https://travis-ci.org/open-eid/libdigidocpp.svg?branch=master)](https://travis-ci.org/open-eid/libdigidocpp)
@@ -38,10 +39,46 @@
         
 ### OSX
 
-1. Install dependencies from [http://www.cmake.org](http://www.cmake.org)
+1. Install dependencies from
+   * [XCode](https://itunes.apple.com/en/app/xcode/id497799835?mt=12)
+   * [http://www.cmake.org](http://www.cmake.org)
+2. Fetch the source
+
+        git clone --recursive https://github.com/open-eid/libdigidocpp
+        cd libdigidocpp
+
+3. Prepare
 
         sh prepare_osx_build_environment.sh all
 
+4. Configure
+
+        mkdir build
+        cd build
+        cmake ..
+
+5. Build
+
+        make
+
+6. Install
+
+        sudo make install
+
+7. Execute
+
+        /usr/local/bin/digidoc-tool
+
+### Windows
+
+1. Install dependencies from
+    * [Visual Studio Express 2013 for Windows Desktop](http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx)
+	* [http://www.cmake.org](http://www.cmake.org)
+	* [Xerces-c](http://mirror.cogentco.com/pub/apache//xerces/c/3/sources/xerces-c-3.1.1.zip)
+	* [Xerces-c MSVC2012 Project files](https://issues.apache.org/jira/secure/attachment/12548623/xerces_vc11proj.zip)
+	* [XML-Security-C](http://www.apache.org/dyn/closer.cgi?path=/santuario/c-library/xml-security-c-1.7.2.tar.gz)
+	* [OpenSSL Win32 binaries](https://slproweb.com/products/Win32OpenSSL.html) or [OpenSSL source](https://www.openssl.org/source/)
+	* [ZLib source](http://zlib.net/zlib128.zip)
 2. Fetch the source
 
         git clone --recursive https://github.com/open-eid/libdigidocpp
@@ -57,15 +94,11 @@
 
         make
 
-5. Install
+5. Execute
 
-        sudo make install
-
-6. Execute
-
-        /usr/local/bin/digidoc-tool
+        src/digidoc-tool.exe
 
 ## Support
-Official builds are provided through official distribution point [installer.id.ee](https://installer.id.ee). If you want support, you need to be using official builds.
+Official builds are provided through official distribution point [installer.id.ee](https://installer.id.ee). If you want support, you need to be using official builds. Contact for assistance by email [abi@id.ee](mailto:abi@id.ee) or [www.id.ee](http://www.id.ee).
 
 Source code is provided on "as is" terms with no warranty (see license for more information). Do not file Github issues with generic support requests.
