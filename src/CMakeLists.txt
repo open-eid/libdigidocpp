@@ -106,7 +106,6 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101.xsd
 #    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
 #    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
 list( APPEND xsd_SRCS xml/AdditionalInformationType.cpp )
-add_definitions( -DTSL_URL=\"${TSL_URL}\" )
 add_executable( embedfile embedfile.cpp )
 add_custom_command( OUTPUT tslcert1.cpp tslcert2.cpp
     COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT1} tslcert1 tslcert1.cpp
@@ -207,7 +206,7 @@ add_library(digidocpp SHARED
 )
 
 set_target_properties(digidocpp PROPERTIES
-    COMPILE_DEFINITIONS "PKCS11_MODULE=\"${PKCS11_MODULE}\";TSA_URL=\"${TSA_URL}\";${digidocpp_DEFS}"
+    COMPILE_DEFINITIONS "PKCS11_MODULE=\"${PKCS11_MODULE}\";TSA_URL=\"${TSA_URL}\";TSL_URL=\"${TSL_URL}\";${digidocpp_DEFS}"
     VERSION ${MAJOR_VER}.${MINOR_VER}.${RELEASE_VER}
     SOVERSION 0
     PUBLIC_HEADER "${PUBLIC_HEADER}"

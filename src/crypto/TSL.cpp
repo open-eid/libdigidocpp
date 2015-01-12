@@ -239,48 +239,49 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
         result = { tsl.certs(), tsl.isExpired() };
         if(result.expired)
             THROW("TSL is expired");
-        bool onlineDigest = CONF(TSLOnlineDigest);
+
         size_t pos = url.find_last_of("/.");
-        if(onlineDigest && pos != string::npos)
+        if((CONF(TSLOnlineDigest)) && pos != string::npos)
             tsl.validateRemoteDigest(url.substr(0, pos) + ".sha2", timeout);
+
         DEBUG("TSL %s signature is valid", territory.c_str());
     } catch(const Exception &e) {
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
-        bool autoupdate = CONF(TSLAutoUpdate);
-        if(!autoupdate)
-            return result;
-
-        string tmp = path + ".tmp";
-        try
+        if((CONF(TSLAutoUpdate)))
         {
-            ofstream file(File::encodeName(tmp).c_str(), ofstream::binary);
-            Connect::Result r = Connect(url, "GET", timeout).exec();
-            if(r.isRedirect())
-                r = Connect(r.headers["Location"], "GET", timeout).exec();
-            file << r.content;
-            file.close();
-        }
-        catch(const Exception &)
-        {
-            ERR("TSL: Failed to download %s list", tsl.territory().c_str());
-            return result;
-        }
+            string tmp = path + ".tmp";
+            try
+            {
+                ofstream file(File::encodeName(tmp).c_str(), ofstream::binary);
+                Connect::Result r = Connect(url, "GET", timeout).exec();
+                if(r.isRedirect())
+                    r = Connect(r.headers["Location"], "GET", timeout).exec();
+                file << r.content;
+                file.close();
 
-        tsl = TSL(tmp);
-        try {
-            tsl.validate(certs);
-            ofstream o(File::encodeName(path).c_str(), ofstream::binary);
-            ifstream i(File::encodeName(tmp).c_str(), ifstream::binary);
-            o << i.rdbuf();
-            o.close();
-            i.close();
-            File::removeFile(tmp);
-            result = { tsl.certs(), tsl.isExpired() };
-            DEBUG("TSL %s signature is valid", territory.c_str());
-        } catch(const Exception &) {
-            ERR("TSL %s signature is invalid", territory.c_str());
-            return result;
+                tsl = TSL(tmp);
+                try {
+                    tsl.validate(certs);
+                    ofstream o(File::encodeName(path).c_str(), ofstream::binary);
+                    ifstream i(File::encodeName(tmp).c_str(), ifstream::binary);
+                    o << i.rdbuf();
+                    o.close();
+                    i.close();
+                    File::removeFile(tmp);
+
+                    result = { tsl.certs(), tsl.isExpired() };
+                    DEBUG("TSL %s signature is valid", territory.c_str());
+                } catch(const Exception &) {
+                    ERR("TSL %s signature is invalid", territory.c_str());
+                }
+            }
+            catch(const Exception &)
+            {
+                ERR("TSL: Failed to download %s list", tsl.territory().c_str());
+            }
         }
+        if(!result.expired)
+            return result;
     }
 
     if(tsl.pointers().empty())
