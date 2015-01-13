@@ -255,16 +255,16 @@ class ToolConfig: public XmlConfV3
 public:
     ToolConfig(): XmlConfV3()
       , expired(XmlConfV3::TSLAllowExpired())
-      , tslcert(XmlConfV3::TSLCert())
+      , tslcerts(XmlConfV3::TSLCerts())
       , tslurl(XmlConfV3::TSLUrl())
       , uri(XmlConfV3::digestUri()) {}
     string digestUri() const { return uri; }
     bool TSLAllowExpired() const { return expired; }
-    X509Cert TSLCert() const { return tslcert; }
+    vector<X509Cert> TSLCerts() const { return tslcerts; }
     string TSLUrl() const { return tslurl; }
 
     bool expired;
-    X509Cert tslcert;
+    vector<X509Cert> tslcerts;
     string tslurl, uri;
 };
 
@@ -379,7 +379,7 @@ Params::Params(int argc, char *argv[])
         else if(arg == "--sha384") conf->uri = URI_SHA384;
         else if(arg == "--sha512") conf->uri = URI_SHA512;
         else if(arg.find("--tslurl=") == 0) conf->tslurl = arg.substr(9);
-        else if(arg.find("--tslcert=") == 0) conf->tslcert = X509Cert(arg.substr(10));
+        else if(arg.find("--tslcert=") == 0) conf->tslcerts = { X509Cert(arg.substr(10)) };
         else if(arg == "--TSLAllowExpired") conf->expired = true;
         else path = arg;
     }

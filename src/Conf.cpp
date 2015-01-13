@@ -30,7 +30,11 @@
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
-namespace digidoc { vector<unsigned char> tslcert(); }
+namespace digidoc
+{
+    vector<unsigned char> tslcert1();
+    vector<unsigned char> tslcert2();
+}
 
 Conf* Conf::INSTANCE = nullptr;
 
@@ -162,7 +166,7 @@ string ConfV2::TSLCache() const
     return File::env("HOME") + "/.digidocpp/tsl/";
 #endif
 }
-X509Cert ConfV2::TSLCert() const { return X509Cert(tslcert(), X509Cert::Pem); }
+X509Cert ConfV2::TSLCert() const { return X509Cert(tslcert1(), X509Cert::Pem); }
 string ConfV2::TSLUrl() const { return TSL_URL; }
 
 
@@ -170,5 +174,12 @@ ConfV3::ConfV3() {}
 ConfV3::~ConfV3() {}
 ConfV3* ConfV3::instance() { return dynamic_cast<ConfV3*>(Conf::instance()); }
 bool ConfV3::TSLAllowExpired() const { return false; }
+vector<X509Cert> ConfV3::TSLCerts() const
+{
+    return {
+        X509Cert(tslcert1(), X509Cert::Pem),
+        X509Cert(tslcert2(), X509Cert::Pem)
+    };
+}
 bool ConfV3::TSLOnlineDigest() const { return true; }
 int ConfV3::TSLTimeOut() const { return 10; }

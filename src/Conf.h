@@ -22,6 +22,7 @@
 #include "Exports.h"
 
 #include <string>
+#include <vector>
 
 namespace digidoc
 {
@@ -41,7 +42,7 @@ namespace digidoc
           virtual std::string xsdPath() const;
           virtual std::string PKCS11Driver() const;
           virtual std::string ocsp(const std::string &issuer) const;
-          DEPRECATED_DIGIDOC virtual std::string certsPath() const;
+          DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
           virtual std::string proxyHost() const;
           virtual std::string proxyPort() const;
           virtual std::string proxyUser() const;
@@ -50,7 +51,7 @@ namespace digidoc
           virtual std::string PKCS12Pass() const;
           virtual bool PKCS12Disable() const;
           virtual std::string libdigidocConf() const;
-          DEPRECATED_DIGIDOC virtual bool bdoc1Supported() const;
+          DEPRECATED_DIGIDOCPP virtual bool bdoc1Supported() const;
           virtual std::string defaultPolicyId() const;
 
       private:
@@ -71,7 +72,7 @@ namespace digidoc
 
           virtual bool TSLAutoUpdate() const;
           virtual std::string TSLCache() const;
-          virtual X509Cert TSLCert() const;
+          DEPRECATED_DIGIDOCPP virtual X509Cert TSLCert() const;
           virtual std::string TSLUrl() const;
 
       private:
@@ -87,6 +88,7 @@ namespace digidoc
           static ConfV3* instance();
 
           virtual bool TSLAllowExpired() const;
+          virtual std::vector<X509Cert> TSLCerts() const;
           virtual bool TSLOnlineDigest() const;
           virtual int TSLTimeOut() const;
 

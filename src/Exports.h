@@ -25,15 +25,15 @@
   #else
     #define EXP_DIGIDOC __declspec(dllimport)
   #endif
-  #define DEPRECATED_DIGIDOC __declspec(deprecated)
+  #define DEPRECATED_DIGIDOCPP __declspec(deprecated)
   #pragma warning( disable: 4251 ) // shut up std::vector warnings
 #else
   #if __GNUC__ >= 4
     #define EXP_DIGIDOC __attribute__ ((visibility("default")))
-    #define DEPRECATED_DIGIDOC __attribute__ ((__deprecated__))
+    #define DEPRECATED_DIGIDOCPP __attribute__ ((__deprecated__))
   #else
     #define EXP_DIGIDOC
-    #define DEPRECATED_DIGIDOC
+    #define DEPRECATED_DIGIDOCPP
   #endif
 #endif
 

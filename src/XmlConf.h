@@ -25,7 +25,7 @@ namespace digidoc
 {
 
 class XmlConfPrivate;
-class DEPRECATED_DIGIDOC EXP_DIGIDOC XmlConf: public Conf
+class DEPRECATED_DIGIDOCPP EXP_DIGIDOC XmlConf: public Conf
 {
 public:
     XmlConf(const std::string &path = "", const std::string &schema = "");
@@ -36,7 +36,7 @@ public:
     virtual std::string xsdPath() const;
     virtual std::string PKCS11Driver() const;
     virtual std::string ocsp(const std::string &issuer) const;
-    DEPRECATED_DIGIDOC virtual std::string certsPath() const;
+    DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
     virtual std::string proxyHost() const;
     virtual std::string proxyPort() const;
     virtual std::string proxyUser() const;
@@ -59,7 +59,7 @@ private:
     XmlConfPrivate *d;
 };
 
-class DEPRECATED_DIGIDOC EXP_DIGIDOC XmlConfV2: public ConfV2
+class DEPRECATED_DIGIDOCPP EXP_DIGIDOC XmlConfV2: public ConfV2
 {
 public:
     explicit XmlConfV2(const std::string &path = "", const std::string &schema = "");
@@ -70,7 +70,7 @@ public:
     virtual std::string xsdPath() const;
     virtual std::string PKCS11Driver() const;
     virtual std::string ocsp(const std::string &issuer) const;
-    DEPRECATED_DIGIDOC virtual std::string certsPath() const;
+    DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
     virtual std::string proxyHost() const;
     virtual std::string proxyPort() const;
     virtual std::string proxyUser() const;
@@ -81,7 +81,7 @@ public:
     virtual std::string TSUrl() const;
     virtual bool TSLAutoUpdate() const;
     virtual std::string TSLCache() const;
-    virtual X509Cert TSLCert() const;
+    DEPRECATED_DIGIDOCPP virtual X509Cert TSLCert() const;
     virtual std::string TSLUrl() const;
 
     virtual void setProxyHost( const std::string &host );
@@ -109,7 +109,7 @@ public:
     virtual std::string xsdPath() const;
     virtual std::string PKCS11Driver() const;
     virtual std::string ocsp(const std::string &issuer) const;
-    DEPRECATED_DIGIDOC virtual std::string certsPath() const;
+    DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
     virtual std::string proxyHost() const;
     virtual std::string proxyPort() const;
     virtual std::string proxyUser() const;
@@ -120,7 +120,7 @@ public:
     virtual std::string TSUrl() const;
     virtual bool TSLAutoUpdate() const;
     virtual std::string TSLCache() const;
-    virtual X509Cert TSLCert() const;
+    DEPRECATED_DIGIDOCPP virtual X509Cert TSLCert() const;
     virtual bool TSLOnlineDigest() const;
     virtual int TSLTimeOut() const;
     virtual std::string TSLUrl() const;

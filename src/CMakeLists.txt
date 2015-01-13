@@ -108,11 +108,12 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101.xsd
 list( APPEND xsd_SRCS xml/AdditionalInformationType.cpp )
 add_definitions( -DTSL_URL=\"${TSL_URL}\" )
 add_executable( embedfile embedfile.cpp )
-add_custom_command( OUTPUT tslcert.cpp
-    COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT} tslcert tslcert.cpp
-    COMMENT "Generating tslcert.cpp from ${TSL_CERT}"
+add_custom_command( OUTPUT tslcert1.cpp tslcert2.cpp
+    COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT1} tslcert1 tslcert1.cpp
+    COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT2} tslcert2 tslcert2.cpp
+    COMMENT "Generating tslcert1.cpp from ${TSL_CERT1} and tslcert2.cpp from ${TSL_CERT2}"
 )
-list( APPEND digidocpp_SRCS crypto/TSL.cpp tslcert.cpp )
+list( APPEND digidocpp_SRCS crypto/TSL.cpp tslcert1.cpp tslcert2.cpp )
 list( APPEND digidoc-tool_SRCS ${xsd_SRCS} crypto/Connect.cpp crypto/Digest.cpp crypto/TSL.cpp util/DateTime.cpp )
 
 set( SCHEMA_FILES

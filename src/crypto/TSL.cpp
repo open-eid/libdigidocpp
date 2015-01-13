@@ -223,7 +223,7 @@ vector<X509Cert> TSL::parse(int timeout)
 {
     string url = CONF(TSLUrl);
     string cache = CONF(TSLCache);
-    std::vector<X509Cert> cert = { CONF(TSLCert) };
+    std::vector<X509Cert> cert = CONF(TSLCerts);
     File::createDirectory(cache);
     return parse(url, cert, cache, File::fileName(url), timeout).certs;
 }
