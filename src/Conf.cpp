@@ -109,6 +109,7 @@ string Conf::ocsp(const string &issuer) const
         //Estonia Live
         {"ESTEID-SK 2007", "http://ocsp.sk.ee"},
         {"ESTEID-SK 2011", "http://ocsp.sk.ee"},
+        {"EID-SK 2011", "http://ocsp.sk.ee"},
         {"KLASS3-SK 2010", "http://ocsp.sk.ee"},
         //Estonia Test
         {"TEST of ESTEID-SK 2007", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
