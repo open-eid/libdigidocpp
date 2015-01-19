@@ -427,11 +427,17 @@ void TSL::validate(const std::vector<X509Cert> &certs)
 
 void TSL::validateRemoteDigest(const std::string &url, int timeout)
 {
-    Connect::Result r = Connect(url, "GET", timeout).exec();
-    if(r.isRedirect())
-        r = Connect(r.headers["Location"], "GET", timeout).exec();
-    if(r.result.find("200") == string::npos)
+    Connect::Result r;
+    try
+    {
+        r= Connect(url, "GET", timeout).exec();
+        if(r.isRedirect())
+            r = Connect(r.headers["Location"], "GET", timeout).exec();
+        if(r.result.find("200") == string::npos)
+            return;
+    } catch(const Exception &) {
         return;
+    }
 
     Digest sha(URI_RSA_SHA256);
     vector<unsigned char> buf(10240, 0);
