@@ -47,6 +47,8 @@ Connect::Connect(const string &url, const string &method, int timeout)
         if(BIO_do_connect(bio.get()) == -1)
         {
             int fd = BIO_get_fd(bio.get(), NULL);
+            if(fd <= 0)
+                THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
             fd_set writefds;
             FD_ZERO(&writefds);
             FD_SET(fd, &writefds);
@@ -124,11 +126,14 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
     if(_timeout)
     {
         int fd = BIO_get_fd(d.get(), NULL);
-        fd_set readfds;
-        FD_ZERO(&readfds);
-        FD_SET(fd, &readfds);
-        struct timeval tv = { _timeout, 0 };
-        select(fd + 1, &readfds, nullptr, nullptr, &tv);
+        if(fd > 0)
+        {
+            fd_set readfds;
+            FD_ZERO(&readfds);
+            FD_SET(fd, &readfds);
+            struct timeval tv = { _timeout, 0 };
+            select(fd + 1, &readfds, nullptr, nullptr, &tv);
+        }
     }
 
     int rc = 0;
