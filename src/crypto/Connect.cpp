@@ -34,6 +34,8 @@ Connect::Connect(const string &url, const string &method, int timeout)
     {
         chost = c->proxyHost();
         cport = c->proxyPort();
+        usessl = 0;
+        path = url;
     }
 
     string hostname = chost + ":" + cport;
