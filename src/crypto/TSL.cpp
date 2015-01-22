@@ -234,8 +234,10 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
     string path = cache + "/" + territory;
     TSL tsl(path);
     Result result = { vector<X509Cert>(), false };
+    bool valid = false;
     try {
         tsl.validate(certs);
+        valid = true;
         result = { tsl.certs(), tsl.isExpired() };
         if(result.expired)
             THROW("TSL is expired");
@@ -259,15 +261,17 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
                 file << r.content;
                 file.close();
 
-                tsl = TSL(tmp);
+                TSL tslnew = TSL(tmp);
                 try {
-                    tsl.validate(certs);
+                    tslnew.validate(certs);
                     ofstream o(File::encodeName(path).c_str(), ofstream::binary);
                     ifstream i(File::encodeName(tmp).c_str(), ifstream::binary);
                     o << i.rdbuf();
                     o.close();
                     i.close();
                     File::removeFile(tmp);
+                    tsl = tslnew;
+                    valid = true;
 
                     result = { tsl.certs(), tsl.isExpired() };
                     DEBUG("TSL %s signature is valid", territory.c_str());
@@ -280,20 +284,16 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
                 ERR("TSL: Failed to download %s list", tsl.territory().c_str());
             }
         }
-        if(!result.expired)
-            return result;
     }
+
+    if(!valid)
+        return { vector<X509Cert>(), false };
 
     if(tsl.pointers().empty())
         return result;
 
-    bool allow = false;
-    if(result.expired)
-    {
-        allow = CONF(TSLAllowExpired);
-        if(!allow)
-            return { vector<X509Cert>(), false };
-    }
+    if(result.expired && !(CONF(TSLAllowExpired)))
+        return { vector<X509Cert>(), false };
 
     vector< future< Result > > futures;
     for(const TSL::Pointer &p: tsl.pointers())
@@ -308,9 +308,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
     for(auto &f: futures)
     {
         Result data = f.get();
-        if(data.expired && !allow)
-            allow = CONF(TSLAllowExpired);
-        if(!data.expired || allow)
+        if(!data.expired || (CONF(TSLAllowExpired)))
             list.insert(list.end(), data.certs.begin(), data.certs.end());
     }
     return { list, false };
