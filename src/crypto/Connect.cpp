@@ -30,11 +30,10 @@ Connect::Connect(const string &url, const string &method, int timeout)
     OPENSSL_free(_path);
 
     Conf *c = Conf::instance();
-    if(!c->proxyHost().empty())
+    if(usessl == 0 && !c->proxyHost().empty())
     {
         chost = c->proxyHost();
         cport = c->proxyPort();
-        usessl = 0;
         path = url;
     }
 
