@@ -55,7 +55,7 @@ Connect::Connect(const string &url, const string &method, int timeout)
             FD_SET(fd, &writefds);
             struct timeval tv = { timeout, 0 };
             if(select(fd + 1, nullptr, &writefds, nullptr, &tv) <= 0)
-                THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
+                THROW("Failed to connect to host: '%s'", hostname.c_str());
         }
     }
     else if(BIO_do_connect(bio.get()) != 1)
@@ -77,7 +77,7 @@ Connect::Connect(const string &url, const string &method, int timeout)
             if(BIO_do_handshake(d.get()) == 1)
                 break;
             if(i == timeout)
-                THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
+                THROW("Failed to create ssl connection with host: '%s'", hostname.c_str());
             this_thread::sleep_for(chrono::milliseconds(1000));
         }
     }
@@ -133,7 +133,8 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
             FD_ZERO(&readfds);
             FD_SET(fd, &readfds);
             struct timeval tv = { _timeout, 0 };
-            select(fd + 1, &readfds, nullptr, nullptr, &tv);
+            if(select(fd + 1, &readfds, nullptr, nullptr, &tv) <= 0)
+                THROW("Failed to read from host");
         }
     }
 
