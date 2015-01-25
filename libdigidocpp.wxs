@@ -80,7 +80,7 @@
                 <File Source="$(var.PREFIX)\xml-security-c\lib\x64\xsec_1_7.dll" Id="xsec_1_7.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.dll" Id="digidocpp.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.exe" Id="digidoc_tool.exe_64"/>
-                <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\37242.p12" Id="_37242.p12_64"/>
+                <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\73411.p12" Id="_73411.p12_64"/>
                 <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\digidocpp.conf" Id="digidocpp.conf_64"/>
               </Component>
               <Component Id="LibrariesDevX64" Guid="{D992688C-0D4A-4C22-BEF4-582D7FA91731}">
