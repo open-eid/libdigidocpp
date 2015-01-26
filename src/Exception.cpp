@@ -67,6 +67,9 @@ std::vector<Exception::ExceptionCode> Exception::ignores = std::vector<Exception
  * @var digidoc::Exception::PINLocked
  * PIN locked error
  *
+ * @var digidoc::Exception::ReferenceDigestWeak
+ * @see digidoc::Exception::RefereneceDigestWeak
+ * @deprecated keeping for backwards compatibility
  * @var digidoc::Exception::RefereneceDigestWeak
  * One or more referenced objects in BDoc container are calculated by using weaker digest method that recommended
  * @var digidoc::Exception::SignatureDigestWeak
@@ -75,6 +78,8 @@ std::vector<Exception::ExceptionCode> Exception::ignores = std::vector<Exception
  * DDoc warning: &lt;DataFile&gt; XML element is missing xmlns attribute 
  * @var digidoc::Exception::IssuerNameSpaceWarning
  * DDoc warning: &lt;X509IssuerName&gt; and/or &lt;X509IssuerSerial&gt; XML element is missing xmlns attribute
+ * @var digidoc::Exception::ProducedATLateWarning
+ * TimeStamp and OCSP time difference is more than 15 minutes
  *
  * @var digidoc::Exception::DDocError
  * DDoc libdigidoc error codes bit masked 
@@ -159,6 +164,19 @@ Exception::Causes Exception::causes() const { return m_causes; }
  */
 void Exception::setCode( ExceptionCode code ) { m_code = code; }
 
+/**
+ * Ignore Warning exceptions globaly
+ * @param code Push additional exception to list
+ */
 void Exception::addWarningIgnore(ExceptionCode code) { ignores.push_back(code); }
+
+/**
+ * Ignore Warning exceptions globaly
+ * @param list Set new exception list
+ */
 void Exception::setWarningIgnoreList(const std::vector<ExceptionCode> &list) { ignores = list; }
+
+/**
+ * Verifies if Warning exception is in igonre list
+ */
 bool Exception::hasWarningIgnore(ExceptionCode code) { return find(ignores.begin(), ignores.end(), code) != ignores.end(); }

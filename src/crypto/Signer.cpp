@@ -124,14 +124,14 @@ void Signer::setSignerRoles(const vector<string> &signerRoles)
 }
 
 /**
- * @fn digidoc::Signer::sign
+ * @fn void digidoc::Signer::sign(const std::string &method, const std::vector<unsigned char> &digest, std::vector<unsigned char> &signature)
  *
  * Signs message digest. Must be reimplemented when subclassing
  * @param method digest method to be used
  * @param digest digest to sign
  * @param signature signed result
  * @throws Exception throws exception on error 
- * @TODO Remove on next API change
+ * @deprecated Remove on next API change
  */
 
 /**
@@ -141,7 +141,7 @@ void Signer::setSignerRoles(const vector<string> &signerRoles)
  * @returns signed result
  * @throws Exception throws exception on error
  */
-vector<unsigned char> Signer::sign(const string &method, const std::vector<unsigned char> &digest)
+vector<unsigned char> Signer::sign(const string &method, const vector<unsigned char> &digest)
 {
     vector<unsigned char> sig;
     sign(method, digest, sig);

@@ -198,8 +198,6 @@ X509Cert::X509Cert(const string &path, Format format)
 
 /**
  * Copy constructor.
- *
- * @param copy instance of X509Cert class to be copied.
  */
 X509Cert::X509Cert(const X509Cert &other)
  : cert(other.cert)
@@ -208,8 +206,6 @@ X509Cert::X509Cert(const X509Cert &other)
 
 /**
  * Move constructor.
- *
- * @param copy instance of X509Cert class to be copied.
  */
 X509Cert::X509Cert(X509Cert &&other)
  : cert(move(other.cert))
