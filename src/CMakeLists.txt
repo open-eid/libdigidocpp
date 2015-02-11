@@ -107,12 +107,13 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101.xsd
 #    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
 list( APPEND xsd_SRCS xml/AdditionalInformationType.cpp )
 add_executable( embedfile embedfile.cpp )
-add_custom_command( OUTPUT tslcert1.cpp tslcert2.cpp
+add_custom_command( OUTPUT tslcert1.cpp tslcert2.cpp tslcert3.cpp
     COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT1} tslcert1 tslcert1.cpp
     COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT2} tslcert2 tslcert2.cpp
-    COMMENT "Generating tslcert1.cpp from ${TSL_CERT1} and tslcert2.cpp from ${TSL_CERT2}"
+    COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT3} tslcert3 tslcert3.cpp
+    COMMENT "Generating tslcert1.cpp from ${TSL_CERT1}, tslcert2.cpp from ${TSL_CERT2}, tslcert3.cpp from ${TSL_CERT3}"
 )
-list( APPEND digidocpp_SRCS crypto/TSL.cpp tslcert1.cpp tslcert2.cpp )
+list( APPEND digidocpp_SRCS crypto/TSL.cpp tslcert1.cpp tslcert2.cpp tslcert3.cpp )
 list( APPEND digidoc-tool_SRCS ${xsd_SRCS} crypto/Connect.cpp crypto/Digest.cpp crypto/TSL.cpp util/DateTime.cpp )
 
 set( SCHEMA_FILES

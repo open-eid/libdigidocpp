@@ -34,6 +34,7 @@ namespace digidoc
 {
     vector<unsigned char> tslcert1();
     vector<unsigned char> tslcert2();
+    vector<unsigned char> tslcert3();
 }
 
 Conf* Conf::INSTANCE = nullptr;
@@ -178,7 +179,8 @@ vector<X509Cert> ConfV3::TSLCerts() const
 {
     return {
         X509Cert(tslcert1(), X509Cert::Pem),
-        X509Cert(tslcert2(), X509Cert::Pem)
+        X509Cert(tslcert2(), X509Cert::Pem),
+        X509Cert(tslcert3(), X509Cert::Pem),
     };
 }
 bool ConfV3::TSLOnlineDigest() const { return true; }
