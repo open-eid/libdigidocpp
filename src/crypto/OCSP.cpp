@@ -94,12 +94,14 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     if(!OCSP_resp_find_status(basic, certId, &certStatus, &reason, &producedAt, &thisUpdate, &nextUpdate))
         THROW("Failed to get status code from OCSP response.");
 
+#if 0
     if(!OCSP_check_validity(thisUpdate, nextUpdate, 15*60, 2*60))
     {
         Exception e(__FILE__, __LINE__, "OCSP response not in valid time slot.");
         e.setCode(Exception::OCSPTimeSlot);
         throw e;
     }
+#endif
 }
 
 OCSP::OCSP(const vector<unsigned char> &ocspResponseDER)
