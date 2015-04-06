@@ -623,8 +623,9 @@ void SignatureBES::validate(Validate) const
         if(ref.uRI().present() && ref.uRI().get() != signedPropertiesId)
         {
             string uri = File::fromUriPath(ref.uRI().get());
-            if(strncmp(uri.c_str(), "/", 1) == 0) uri.erase(0, 1);
-            signatureref.insert(pair<string,string>(uri, mimeinfo["#"+ref.id().get()]));
+            if(strncmp(uri.c_str(), "/", 1) == 0)
+                uri.erase(0, 1);
+            signatureref.insert({ uri, mimeinfo["#"+ref.id().get()] });
         }
         if(ref.uRI().present() && ref.uRI().get() == signedPropertiesId)
             signedInfoFound = true;
@@ -651,6 +652,9 @@ void SignatureBES::validate(Validate) const
         else
             EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file.fileName().c_str());
     };
+
+    if(bdoc->dataFiles().empty())
+        EXCEPTION_ADD(exception, "No DataFiles signed");
 
     if(!signatureref.empty())
         EXCEPTION_ADD(exception, "Manifest references and signature references do not match");
