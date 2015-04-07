@@ -27,6 +27,8 @@
 #include <openssl/ocsp.h>
 #include <openssl/ssl.h>
 
+#include <zlib.h>
+
 #include <thread>
 
 using namespace digidoc;
@@ -40,7 +42,7 @@ Connect::Connect(const string &url, const string &method, int timeout)
     if(!OCSP_parse_url(const_cast<char*>(url.c_str()), &_host, &_port, &_path, &usessl))
         THROW_OPENSSLEXCEPTION("Incorrect URL provided: '%s'.", url.c_str());
 
-    std::string host, port;
+    string host, port;
     string chost = host = _host ? _host : "";
     string cport = port = _port ? _port : "80";
     string path = _path ? _path : "/";
@@ -132,13 +134,26 @@ void Connect::addHeader(const string &key, const string &value)
     BIO_printf(d.get(), "%s: %s\r\n", key.c_str(), value.c_str());
 }
 
+void Connect::addHeaders(initializer_list<pair<string,string>> list)
+{
+    for(const pair<string,string> &it: list)
+        addHeader(it.first, it.second);
+}
+
+Connect::Result Connect::exec(initializer_list<pair<string,string>> list,
+    const vector<unsigned char> &send)
+{
+    addHeaders(list);
+    return exec(send);
+}
+
 Connect::Result Connect::exec(const vector<unsigned char> &send)
 {
     if(!send.empty())
     {
         addHeader("Content-Length", to_string(send.size()));
         BIO_printf(d.get(), "\r\n");
-        BIO_write(d.get(), &send[0], int(send.size()));
+        BIO_write(d.get(), send.data(), int(send.size()));
     }
     else
         BIO_printf(d.get(), "\r\n");
@@ -159,26 +174,24 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
 
     int rc = 0;
     size_t pos = 0;
-    string data(1024, 0);
+    Result r;
+    r.content.resize(1024);
     do {
-        if(rc > 0 && size_t(pos += rc) >= data.size())
-            data.resize(data.size()*2);
-        rc = BIO_read(d.get(), &data[pos], int(data.size() - pos));
+        if(rc > 0 && size_t(pos += rc) >= r.content.size())
+            r.content.resize(r.content.size()*2);
+        rc = BIO_read(d.get(), &r.content[pos], int(r.content.size() - pos));
         if(rc == -1 && BIO_should_read(d.get()) != 1)
             break;
     } while(rc != 0);
+    r.content.resize(pos);
 
-    data.resize(pos);
-    pos = data.find("\r\n\r\n");
-
-    stringstream header(data.substr(0, pos));
+    stringstream stream(r.content);
     string line;
-    Result r;
-    while(getline(header, line))
+    while(getline(stream, line))
     {
         line.resize(line.size() - 1);
         if(line.empty())
-            continue;
+            break;
         if(r.result.empty())
         {
             r.result = line;
@@ -191,8 +204,46 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
             r.headers[line] = string();
     }
 
+    pos = r.content.find("\r\n\r\n");
     if(pos != string::npos)
-        r.content = data.substr(pos + 4);
+        r.content.erase(0, pos + 4);
+
+    const auto it = r.headers.find("Content-Encoding");
+    if(it != r.headers.cend())
+    {
+        z_stream s;
+        s.zalloc = Z_NULL;
+        s.zfree = Z_NULL;
+        s.next_in = (Bytef*)r.content.c_str();
+        s.avail_in = r.content.size();
+        s.total_out = 0;
+        if(it->second == "gzip")
+            inflateInit2(&s, 16 + MAX_WBITS);
+        else if(it->second == "deflate")
+            inflateInit2(&s, -MAX_WBITS);
+        else
+        {
+            WARN("Unsuported Content-Encoding: %s", it->second.c_str());
+            return r;
+        }
+
+        string out(2048, 0);
+        do {
+            if(s.total_out >= out.size())
+                out.resize(out.size() * 2);
+            s.next_out = (Bytef*)&out[s.total_out];
+            s.avail_out = out.size() - s.total_out;
+            switch(inflate(&s, Z_NO_FLUSH))
+            {
+            case Z_OK:
+            case Z_STREAM_END: break;
+            default: THROW("Failed to decompress HTTP content");
+            }
+        } while(s.avail_out == 0);
+        out.resize(s.total_out);
+        inflateEnd(&s);
+        r.content = move(out);
+    }
 
     return r;
 }

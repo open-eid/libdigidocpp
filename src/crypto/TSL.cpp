@@ -253,9 +253,9 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
             try
             {
                 ofstream file(File::encodeName(tmp).c_str(), ofstream::binary);
-                Connect::Result r = Connect(url, "GET", timeout).exec();
+                Connect::Result r = Connect(url, "GET", timeout).exec({{"Accept-Encoding", "gzip"}}, vector<unsigned char>());
                 if(r.isRedirect())
-                    r = Connect(r.headers["Location"], "GET", timeout).exec();
+                    r = Connect(r.headers["Location"], "GET", timeout).exec({{"Accept-Encoding", "gzip"}}, vector<unsigned char>());
                 file << r.content;
                 file.close();
 

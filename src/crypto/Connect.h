@@ -44,7 +44,10 @@ public:
 
     Connect(const std::string &url, const std::string &method = "POST", int timeout = 0);
     void addHeader(const std::string &key, const std::string &value);
+    void addHeaders(std::initializer_list<std::pair<std::string,std::string>> list);
     Result exec(const std::vector<unsigned char> &data = std::vector<unsigned char>());
+    Result exec(std::initializer_list<std::pair<std::string,std::string>> list,
+        const std::vector<unsigned char> &data);
 
 private:
     std::shared_ptr<BIO> d;
