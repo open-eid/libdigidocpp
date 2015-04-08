@@ -31,7 +31,7 @@ namespace DigiDocCSharp
                         help();
                     }
                     else
-                        extract(Convert.ToUInt32(args[0].Substring(pos + 1)), args[1]);
+                        extract(Convert.ToInt32(args[0].Substring(pos + 1)), args[1]);
                     return;
                 case "-verify": verify(args[1]); return;
                 case "-version": version(); return;
@@ -40,30 +40,25 @@ namespace DigiDocCSharp
             }
         }
 
-        static void extract(uint index, string file)
+        static void extract(int index, string file)
         {
             digidoc.digidoc.initialize();
             try
             {
                 Console.WriteLine("Opening file: " + file);
-                WDoc b = new WDoc(file);
-                if (index < b.documentCount())
+                Container b = new Container(file);
+                DataFile d = b.dataFiles()[index];
+                string dest = Path.Combine(Directory.GetCurrentDirectory(), d.fileName());
+                Console.WriteLine("Extracting file {0} to {1}", d.fileName(), dest);
+                try
                 {
-                    Document d = b.getDocument(index);
-                    string dest = Path.Combine(Directory.GetCurrentDirectory(), d.getFileName());
-                    Console.WriteLine("Extracting file {0} to {1}", d.getFileName(), dest);
-                    try
-                    {
-                        File.Copy(d.getFilePath(), dest);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Failed to copy file");
-                        Console.WriteLine(e.Message);
-                    }
+                    d.saveAs(dest);
                 }
-                else
-                    Console.WriteLine("No such document");
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to copy file");
+                    Console.WriteLine(e.Message);
+                }
             }
             catch (Exception e)
             {
@@ -89,66 +84,41 @@ namespace DigiDocCSharp
             try
             {
                 Console.WriteLine("Opening file: " + file);
-                WDoc b = new WDoc(file);
+                Container b = new Container(file);
 
                 Console.WriteLine("Files:");
-                for (uint i = 0; i < b.documentCount(); ++i)
+                foreach (DataFile d in b.dataFiles())
                 {
-                    Document d = b.getDocument(i);
-                    Console.WriteLine(" {0} - {1}", i, d.getFileName());
+                    Console.WriteLine(" {0} - {1}", d.fileName(), d.mediaType());
                 }
                 Console.WriteLine();
 
                 Console.WriteLine("Signatures:");
-                for (uint i = 0; i < b.signatureCount(); ++i)
+                foreach (Signature s in b.signatures())
                 {
-                    Signature s = b.getSignature(i);
+                    Console.WriteLine("Address: {0} {1} {2} {3}", s.city(), s.countryName(), s.stateOrProvince(), s.postalCode());
 
-                    SignatureProductionPlace p = s.getProductionPlace();
-                    Console.WriteLine("Address: {0} {1} {2} {3}", p.city, p.countryName, p.stateOrProvince, p.postalCode);
-
-                    SignerRole r = s.getSignerRole();
                     Console.Write("Role:");
-                    for (int j = 0; j < r.claimedRoles.Count; ++j)
-                        Console.Write(" " + r.claimedRoles[j]);
+                    foreach (String role in s.signerRoles())
+                        Console.Write(" " + role);
                     Console.WriteLine();
 
-                    Console.WriteLine("Time: " + s.getSigningTime());
+                    Console.WriteLine("Time: " + s.signingTime());
 
                     System.Security.Cryptography.X509Certificates.X509Certificate2 c =
-                        new System.Security.Cryptography.X509Certificates.X509Certificate2(s.getSigningCert());
+                        new System.Security.Cryptography.X509Certificates.X509Certificate2(s.signingCert());
                     Console.WriteLine("Cert: " + c.Subject);
                     try
                     {
-                        s.validateOffline();
+                        s.validate();
                         Console.WriteLine("Signature is valid");
                     }
-                    catch (DigidocSignatureException e)
+                    catch (Exception e)
                     {
                         Console.WriteLine("Signature is invalid");
                         Console.WriteLine(e.Message);
                     }
                 }
-            }
-            catch (DigidocBDocException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            catch (DigidocIOException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            catch (DigidocSignException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            catch (DigidocSignatureException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            catch (DigidocException e)
-            {
-                Console.WriteLine(e.Message);
             }
             catch (Exception e)
             {

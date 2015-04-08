@@ -43,21 +43,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="digidoc\ADoc.cs" />
-    <Compile Include="digidoc\BDoc.cs" />
-    <Compile Include="digidoc\Exception.cs" />
-    <Compile Include="digidoc\DDoc.cs" />
-    <Compile Include="digidoc\digidoc.cs" />
-    <Compile Include="digidoc\digidocPINVOKE.cs" />
-    <Compile Include="digidoc\Document.cs" />
-    <Compile Include="digidoc\Signature.cs" />
-    <Compile Include="digidoc\SignatureProductionPlace.cs" />
-    <Compile Include="digidoc\SignerRole.cs" />
-    <Compile Include="digidoc\StringVector.cs" />
-    <Compile Include="digidoc\SWIGTYPE_p_digidoc__Digest.cs" />
-    <Compile Include="digidoc\WDoc.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="digidoc\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

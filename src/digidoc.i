@@ -45,97 +45,62 @@
   #include "Exception.h"
   #include <vector>
 
-  // Code to handle throwing of C# DigidocApplicationException from C/C++ code.
-  // The equivalent delegate to the callback, CSharpExceptionCallback_t, is DigidocExceptionDelegate
-  // and the equivalent digidocExceptionCallback instance is digidocDelegate
-  typedef void (SWIGSTDCALL* CSharpExceptionCallback_t)(const char *);
-  CSharpExceptionCallback_t digidocExceptionCallback = NULL;
-
   extern "C"
   {
     SWIGEXPORT unsigned char* SWIGSTDCALL ByteVector_data(void *ptr) {
-      std::vector<unsigned char> *arg = (std::vector<unsigned char>*)ptr;
-      return (unsigned char*)&(*arg)[0];
+      return static_cast<std::vector<unsigned char>*>(ptr)->data();
     }
     SWIGEXPORT int SWIGSTDCALL ByteVector_size(void *ptr) {
-      std::vector<unsigned char> *arg = (std::vector<unsigned char>*)ptr;
-      return (int)arg->size();
+      return static_cast<std::vector<unsigned char>*>(ptr)->size();
     }
     SWIGEXPORT void* SWIGSTDCALL ByteVector_to(unsigned char *data, int size) {
       return new std::vector<unsigned char>(data, data + size);
-    }
-
-    SWIGEXPORT void SWIGSTDCALL DigidocExceptionRegisterCallback(CSharpExceptionCallback_t digidocCallback) {
-      digidocExceptionCallback = digidocCallback;
     }
   }
 
   static void parseException(const digidoc::Exception &e, std::string &msg) {
       msg += e.msg() + "\n";
-      digidoc::Exception::Causes list = e.causes();
-      for(digidoc::Exception::Causes::const_iterator i = list.begin(); i != list.end(); ++i)
-          parseException(*i, msg);
-  }
-
-  // Note that SWIG detects any method calls named starting with
-  // CSharpSetPendingException for warning 845
-  static void CSharpSetPendingExceptionDigidoc(const digidoc::Exception &e) {
-    std::string msg;
-    parseException(e, msg);
-    digidocExceptionCallback(msg.c_str());
+      for(const digidoc::Exception &ex: e.causes())
+          parseException(ex, msg);
   }
 %}
 
 %pragma(csharp) imclasscode=%{
-  [DllImport("$dllimport", EntryPoint="ByteVector_data")]
-  public static extern IntPtr ByteVector_data(IntPtr data);
-  [DllImport("$dllimport", EntryPoint="ByteVector_size")]
-  public static extern int ByteVector_size(IntPtr data);
-  [DllImport("$dllimport", EntryPoint="ByteVector_to")]
-  public static extern HandleRef ByteVector_to([MarshalAs(UnmanagedType.LPArray)]byte[] data, int size);
-
-  class DigidocExceptionHelper {
-
-    public delegate void DigidocExceptionDelegate(string message);
-
-    static DigidocExceptionDelegate digidocDelegate = new DigidocExceptionDelegate(SetPendingDigidocException);
-
-    [DllImport("$dllimport", EntryPoint="DigidocExceptionRegisterCallback")]
-    public static extern void DigidocExceptionRegisterCallback(DigidocExceptionDelegate digidocCallback);
-
-    static void SetPendingDigidocException(string message) {
-      SWIGPendingException.Set(new DigidocException(message));
-    }
-
-    static DigidocExceptionHelper() {
-      DigidocExceptionRegisterCallback(digidocDelegate);
-    }
-  }
-  static DigidocExceptionHelper exceptionHelper = new DigidocExceptionHelper();
+  [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_data")]
+  public static extern global::System.IntPtr ByteVector_data(global::System.IntPtr data);
+  [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_size")]
+  public static extern int ByteVector_size(global::System.IntPtr data);
+  [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_to")]
+  public static extern global::System.Runtime.InteropServices.HandleRef ByteVector_to(
+    [global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPArray)]byte[] data, int size);
 %}
 
 %typemap(throws, canthrow=1) Exception %{
-    CSharpSetPendingExceptionDigidoc($1);
+    std::string msg;
+    parseException(e, msg);
+    SWIG_CSharpSetPendingException(SWIG_CSharpApplicationException, msg.c_str());
     return $null;
 %}
 
 //%feature("except", throws="Exception") {
-%exception {
+%exception %{
  try {
    $action
  } catch (const digidoc::Exception &e) {
-   CSharpSetPendingExceptionDigidoc(e);
+   std::string msg;
+   parseException(e, msg);
+   SWIG_CSharpSetPendingException(SWIG_CSharpApplicationException, msg.c_str());
    return $null;
  }
-}
+%}
 
 %typemap(cstype) std::vector<unsigned char> "byte[]"
 %typemap(csin) std::vector<unsigned char> "$modulePINVOKE.ByteVector_to($csinput, $csinput.Length)"
 %typemap(csout) std::vector<unsigned char>
 {
-  IntPtr data = $imcall;
+  global::System.IntPtr data = $imcall;
   byte[] result = new byte[$modulePINVOKE.ByteVector_size(data)];
-  Marshal.Copy($modulePINVOKE.ByteVector_data(data), result, 0, result.Length);
+  global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(data), result, 0, result.Length);
   return result;
 }
 
@@ -156,6 +121,10 @@
 // ignore X509Cert and implement later cert as ByteVector
 %ignore digidoc::Signature::signingCertificate;
 %ignore digidoc::Signature::OCSPCertificate;
+%ignore digidoc::Signature::TSCertificate;
+%ignore digidoc::Container::addRawSignature(std::istream &signature);
+%ignore digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
+%ignore digidoc::DataFile::saveAs(std::ostream &os) const;
 
 // Handle standard C++ types
 %include "std_string.i"
@@ -177,6 +146,10 @@
     std::vector<unsigned char> OCSPCert() const
     {
         return $self->OCSPCertificate();
+    }
+    std::vector<unsigned char> TSCert() const
+    {
+        return $self->TSCertificate();
     }
 }
 

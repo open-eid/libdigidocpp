@@ -33,6 +33,7 @@
                 <File Source="$(var.PREFIX)\xalan\lib\XalanMessages_1_11.dll"/>
                 <File Source="$(var.PREFIX)\xml-security-c\lib\xsec_1_7.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.dll"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.exe"/>
                 <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\73411.p12"/>
                 <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\digidocpp.conf"/>
@@ -46,6 +47,7 @@
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.lib"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.pdb"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharpd.dll"/>
               </Component>
               <Directory Id="SchemaFolderX86" Name="schema"
                   FileSource="$(var.libdigidocpp)\x86\etc\digidocpp\schema">
@@ -79,6 +81,7 @@
                 <File Source="$(var.PREFIX)\xalan\lib\x64\XalanMessages_1_11.dll" Id="XalanMessages_1_11.dll_64"/>
                 <File Source="$(var.PREFIX)\xml-security-c\lib\x64\xsec_1_7.dll" Id="xsec_1_7.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.dll" Id="digidocpp.dll_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.dll" Id="digidoc_csharp.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.exe" Id="digidoc_tool.exe_64"/>
                 <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\73411.p12" Id="_73411.p12_64"/>
                 <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\digidocpp.conf" Id="digidocpp.conf_64"/>
@@ -92,6 +95,7 @@
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.dll" Id="digidocppd.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.lib" Id="digidocppd.lib_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.pdb" Id="digidocppd.pdb_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharpd.dll" Id="digidoc_csharpd.dll_64"/>
               </Component>
               <Directory Id="SchemaFolderX64" Name="schema"
                   FileSource="$(var.libdigidocpp)\x64\etc\digidocpp\schema">

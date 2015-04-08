@@ -242,18 +242,20 @@ set_target_properties(digidoc-tool PROPERTIES
     LINK_LIBRARIES "digidocpp;${CMAKE_THREAD_LIBS_INIT}"
 )
 
-if(NO)# SWIG_FOUND)
+if(SWIG_FOUND AND WIN32)
     INCLUDE(${SWIG_USE_FILE})
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
     SET(CMAKE_SWIG_FLAGS -dllimport digidoc_csharp -namespace digidoc)
     SET_SOURCE_FILES_PROPERTIES(digidoc.i PROPERTIES CPLUSPLUS ON)
-    SET(CMAKE_SWIG_OUTDIR ${CMAKE_BINARY_DIR}/swig/csharp)
+    SET(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/csharp)
     SWIG_ADD_MODULE(digidoc_csharp csharp digidoc.i)
     SWIG_LINK_LIBRARIES(digidoc_csharp digidocpp)
-    set(EXTRA_TARGETS digidoc_csharp)
+    set_target_properties( digidoc_csharp PROPERTIES DEBUG_OUTPUT_NAME "digidoc_csharpd" )
+    install(TARGETS digidoc_csharp DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/csharp/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_csharp FILES_MATCHING PATTERN "*.cs")
 endif()
 
-install( TARGETS digidocpp ${EXTRA_TARGETS}
+install( TARGETS digidocpp
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
