@@ -246,7 +246,8 @@ X509Cert PKCS11Signer::cert() const
                 continue;
             X509Cert x509(value);
             vector<X509Cert::KeyUsage> usage = x509.keyUsage();
-            if(!x509.isValid() || find(usage.begin(), usage.end(), X509Cert::NonRepudiation) == usage.end())
+            if(x509.isCA() || !x509.isValid() ||
+               find(usage.begin(), usage.end(), X509Cert::NonRepudiation) == usage.end())
                 continue;
             SignSlot signSlot = { x509, slot, CK_ULONG(j) };
             certSlotMapping.push_back(signSlot);

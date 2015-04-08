@@ -268,6 +268,8 @@ string X509Cert::serial() const
  */
 string X509Cert::issuerName(const string &obj) const
 {
+    if(!cert)
+        return string();
     return cert ? X509CertPrivate::toString(X509_get_issuer_name(cert.get()), obj) : string();
 }
 
@@ -325,6 +327,8 @@ vector<string> X509Cert::certificatePolicies() const
  */
 string X509Cert::subjectName(const string &obj) const
 {
+    if(!cert)
+        return string();
     return cert ? X509CertPrivate::toString(X509_get_subject_name(cert.get()), obj) : string();
 }
 
@@ -334,6 +338,17 @@ string X509Cert::subjectName(const string &obj) const
 X509* X509Cert::handle() const
 {
     return cert.get();
+}
+
+/**
+ * Rerturns true if certificate is CA
+ */
+bool X509Cert::isCA() const
+{
+    if(!cert)
+        return false;
+    SCOPE(BASIC_CONSTRAINTS, cons, (BASIC_CONSTRAINTS*)X509_get_ext_d2i(cert.get(), NID_basic_constraints, 0, 0));
+    return cons && cons->ca > 0;
 }
 
 /**

@@ -65,6 +65,7 @@ namespace digidoc
           std::string subjectName(const std::string &obj = std::string()) const;
           std::vector<KeyUsage> keyUsage() const;
           std::vector<std::string> certificatePolicies() const;
+          bool isCA() const;
           bool isValid(time_t *t = 0) const;
 
           X509* handle() const;
