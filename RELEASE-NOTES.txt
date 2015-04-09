@@ -1,4 +1,15 @@
-Libdigidocpp library 3.10 release notes
+Libdigidocpp library 3.10.3 release notes
+--------------------------------------
+Changes compared to ver 3.10.0
+- Updated experimental .NET C# wrapper swig configuration file to recent API
+- Included C# wrapper files in Windows installer package
+- Filter out CA certificates in PKCS11Signer implementation to support Finland id-card signing in digidoc-tool
+- On signature validation at least one DataFile should be signed
+- Disable OCSP time slot check – local computer time against OCSP server time
+
+
+
+Libdigidocpp library 3.10.0 release notes
 --------------------------------------
 Changes compared to ver 3.9
 

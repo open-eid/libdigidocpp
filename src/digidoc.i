@@ -115,15 +115,14 @@
 %feature("notabstract") digidoc::Signature;  // Breaks PHP if abstract
 #endif
 
-// TODO: useful, but broken
-%ignore *::sign;
-
 // ignore X509Cert and implement later cert as ByteVector
 %ignore digidoc::Signature::signingCertificate;
 %ignore digidoc::Signature::OCSPCertificate;
 %ignore digidoc::Signature::TSCertificate;
 %ignore digidoc::Container::addRawSignature(std::istream &signature);
 %ignore digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
+%ignore digidoc::Container::sign(Signer* signer);
+%ignore digidoc::Container::sign(Signer* signer, const std::string &profile);
 %ignore digidoc::DataFile::saveAs(std::ostream &os) const;
 
 // Handle standard C++ types
