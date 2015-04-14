@@ -116,15 +116,21 @@ void SignatureTS::validate(Validate params) const
     }
 
     try {
-        if(unsignedSignatureProperties().signatureTimeStamp().empty())
+        const UnsignedSignaturePropertiesType::SignatureTimeStampSequence &tseq =
+            unsignedSignatureProperties().signatureTimeStamp();
+        if(tseq.empty())
             THROW("Missing SignatureTimeStamp");
-        const UnsignedSignaturePropertiesType::SignatureTimeStampType &ts =
-                unsignedSignatureProperties().signatureTimeStamp().front();
+        if(tseq.size() > 1)
+            THROW("More than one SignatureTimeStamp is not supported");
+        const UnsignedSignaturePropertiesType::SignatureTimeStampType &ts = tseq.front();
 
-        if(ts.encapsulatedTimeStamp().empty())
+        const GenericTimeStampType::EncapsulatedTimeStampSequence &etseq =
+            ts.encapsulatedTimeStamp();
+        if(etseq.empty())
             THROW("Missing EncapsulatedTimeStamp");
-        GenericTimeStampType::EncapsulatedTimeStampType bin =
-                ts.encapsulatedTimeStamp().front();
+        if(etseq.size() > 1)
+            THROW("More than one EncapsulatedTimeStamp is not supported");
+        GenericTimeStampType::EncapsulatedTimeStampType bin = etseq.front();
 
         TS tsa(vector<unsigned char>(bin.data(), bin.data() + bin.size()));
         Digest calc(tsa.digestMethod());
