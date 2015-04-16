@@ -49,6 +49,7 @@ XALAN_USING_XALAN(XalanTransformer)
 
 #include <algorithm>
 #include <sstream>
+#include <thread>
 
 using namespace digidoc;
 using namespace std;
@@ -116,12 +117,24 @@ string digidoc::version() {
 /**
  * Libdigidocpp’s initialization method: initializes dependent libraries,
  * loads configuration settings from default configuration files (see \ref conf) and initializes
- * certificate store according to default settings (either the system’s native
- * certificate store or a directory containing the trusted certificates).
+ * certificate store using TSL lists
  *
- * Additionally it is possible to set application name for user agent string
+ * @param appInfo Application name for user agent string
  */
 void digidoc::initialize(const string &appInfo)
+{
+    digidoc::initializeEx(appInfo);
+}
+
+/**
+ * Libdigidocpp’s initialization method: initializes dependent libraries,
+ * loads configuration settings from default configuration files (see \ref conf) and initializes
+ * certificate store using TSL lists
+ *
+ * @param appInfo Application name for user agent string
+ * @param callBack Callback when background thread TSL loading is completed
+ */
+void digidoc::initializeEx(const string &appInfo, initCallBack callBack)
 {
     m_appInfo = appInfo;
 
@@ -142,7 +155,21 @@ void digidoc::initialize(const string &appInfo)
 
     if(!Conf::instance())
         Conf::init(new XmlConfV3);
-    if(!X509CertStore::instance())
+    if(X509CertStore::instance())
+        return;
+    if(callBack)
+    {
+        thread([=](){
+            try {
+                X509CertStore::init();
+                callBack(nullptr);
+            }
+            catch(const Exception &e) {
+                callBack(&e);
+            }
+        }).detach();
+    }
+    else
         X509CertStore::init();
 }
 

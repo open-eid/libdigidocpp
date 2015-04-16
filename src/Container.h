@@ -28,13 +28,16 @@ namespace digidoc
 {
 class ADoc;
 class DataFile;
+class Exception;
 class Signature;
 class Signer;
 typedef std::vector<DataFile> DataFileList;
 typedef std::vector<Signature*> SignatureList;
+typedef void (*initCallBack)(const Exception *e);
 
 EXP_DIGIDOC std::string appInfo();
 EXP_DIGIDOC void initialize(const std::string &appInfo = "libdigidocpp");
+EXP_DIGIDOC void initializeEx(const std::string &appInfo = "libdigidocpp", initCallBack callBack = nullptr);
 EXP_DIGIDOC void terminate();
 EXP_DIGIDOC std::string version();
 
