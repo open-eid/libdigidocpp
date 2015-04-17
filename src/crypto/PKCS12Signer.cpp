@@ -40,12 +40,11 @@ using namespace digidoc;
 using namespace std;
 
 /**
- * Initializes the RSA signer with X.509 certificate and private key pair.
+ * Initializes the PKCS12 signer with X.509 certificate and private key pair.
  *
- * @param cert X.509 certificate of the private key.
- * @param privateKey private key, should match the X.509 certificate.
- * @throws SignException throws exception if the certificate or the private key
- *         is NULL.
+ * @param path PKCS12 file path
+ * @param pass PKCS12 file passworkd
+ * @throws Exception throws exception if the file is not found or wrong password
  */
 PKCS12Signer::PKCS12Signer(const string &path, const string &pass)
  : d(new PKCS12SignerPrivate)
@@ -78,7 +77,6 @@ PKCS12Signer::~PKCS12Signer()
  * Returns the X.509 certificate used for signing.
  *
  * @return returns certificate used for signing.
- * @throws throws never thrown.
  */
 X509Cert PKCS12Signer::cert() const
 {
@@ -88,10 +86,10 @@ X509Cert PKCS12Signer::cert() const
 /**
  * Signs the provided digest using the private key that matches the X.509 certificate.
  *
+ * @param method digest uri
  * @param digest digest, which is being signed.
- * @param signature memory for the signature that is created. Struct parameter <code>length</code>
- *        is set to the actual signature length.
- * @throws SignException throws exception if the signing operation failed or not enough memory
+ * @param signature memory for the signature that is created.
+ * @throws Exception throws exception if the signing operation failed or not enough memory
  *         allocated for the signature.
  */
 void PKCS12Signer::sign(const string &method, const vector<unsigned char> &digest, vector<unsigned char> &signature)
@@ -121,10 +119,25 @@ void PKCS12Signer::sign(const string &method, const vector<unsigned char> &diges
         SCOPE(EC_KEY, ec, EVP_PKEY_get1_EC_KEY(d->key));
         SCOPE(ECDSA_SIG, sig, ECDSA_do_sign(&digest[0], (unsigned int)digest.size(), ec.get()));
         if(!sig)
-            break;
-        signature.resize(BN_num_bytes(sig->r) + BN_num_bytes(sig->s));
-        unsigned int size = BN_bn2bin(sig->r, &signature[0]);
-        BN_bn2bin(sig->s, &signature[size]);
+             break;
+
+        unsigned int keyLen = 0;
+        if(const EC_GROUP *group = EC_KEY_get0_group(ec.get()))
+        {
+            BIGNUM *order = BN_new();
+            if (EC_GROUP_get_order(group, order, nullptr))
+                keyLen = BN_num_bytes(order);
+            BN_clear_free(order);
+        }
+        if(keyLen == 0)
+             THROW("Error caclulating signature size");
+        signature.resize(keyLen * 2);
+
+        if(BN_bn2bin(sig->r, &signature[keyLen - BN_num_bytes(sig->r)]) <= 0)
+            THROW("Error copying signature 'r' value to buffer");
+        if(BN_bn2bin(sig->s, &signature[keyLen*2 - BN_num_bytes(sig->s)]) <= 0)
+            THROW("Error copying signature 's' value to buffer");
+
         result = 1;
         break;
     }

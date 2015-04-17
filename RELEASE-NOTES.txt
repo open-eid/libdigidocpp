@@ -1,3 +1,10 @@
+Libdigidocpp library 3.11.0 release notes
+--------------------------------------
+Changes compared to ver 3.10.3
+- Improve EC signature size calculation
+
+
+
 Libdigidocpp library 3.10.3 release notes
 --------------------------------------
 Changes compared to ver 3.10.0
