@@ -1,8 +1,8 @@
 #!/bin/sh
 
 TARGET_PATH=/Library/EstonianIDCard
-XERCES_DIR=xerces-c-3.1.1
-XMLSEC_DIR=xml-security-c-1.7.2
+XERCES_DIR=xerces-c-3.1.2
+XMLSEC_DIR=xml-security-c-1.7.3
 SDK_PATH=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk
 export CFLAGS="-isysroot ${SDK_PATH} -mmacosx-version-min=10.7"
 export CXXFLAGS="${CFLAGS} -stdlib=libc++"
