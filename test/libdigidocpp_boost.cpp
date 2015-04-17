@@ -101,6 +101,7 @@ public:
     string ocsp(const string &) const
     { return "https://www.openxades.org/cgi-bin/ocsp.cgi"; }
     bool PKCS12Disable() const { return true; }
+    string TSUrl() const { return "http://demo.sk.ee/tsa/"; }
     bool TSLAutoUpdate() const { return false; }
     bool TSLOnlineDigest() const { return false; }
 };
