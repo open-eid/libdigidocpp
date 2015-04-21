@@ -518,6 +518,7 @@ void SignatureBES::validate(Validate) const
                 const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
                 if(id.present())
                 {
+#if 0 //Disabled IB-3684
                     const DigestAlgAndValueType &hash = id->sigPolicyHash();
                     vector<unsigned char> digest(hash.digestValue().begin(), hash.digestValue().end());
 
@@ -532,6 +533,7 @@ void SignatureBES::validate(Validate) const
 
                     if(!valid)
                         EXCEPTION_ADD(exception, "Signature policy digest does not match");
+#endif
                 }
                 else
                     EXCEPTION_ADD(exception, "Signature policy digest is missing");
