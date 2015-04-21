@@ -113,8 +113,8 @@ add_custom_command( OUTPUT tslcert1.cpp tslcert2.cpp tslcert3.cpp
     COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT3} tslcert3 tslcert3.cpp
     COMMENT "Generating tslcert1.cpp from ${TSL_CERT1}, tslcert2.cpp from ${TSL_CERT2}, tslcert3.cpp from ${TSL_CERT3}"
 )
-list( APPEND digidocpp_SRCS crypto/TSL.cpp tslcert1.cpp tslcert2.cpp tslcert3.cpp )
-list( APPEND digidoc-tool_SRCS ${xsd_SRCS} crypto/Connect.cpp crypto/Digest.cpp crypto/TSL.cpp util/DateTime.cpp )
+list( APPEND digidocpp_SRCS tslcert1.cpp tslcert2.cpp tslcert3.cpp )
+list( APPEND digidoc-tool_SRCS crypto/Connect.cpp crypto/Digest.cpp )
 
 set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd
@@ -174,6 +174,20 @@ include_directories(
     ${MINIZIP_INCLUDE_DIR}
 )
 
+add_library(digidocpp_priv STATIC
+    ${xsd_SRCS}
+    log.cpp
+    crypto/PKCS12Signer.cpp
+    crypto/TSL.cpp
+    util/File.cpp
+    util/DateTime.cpp
+)
+
+set_target_properties(digidocpp_priv PROPERTIES
+    COMPILE_DEFINITIONS "DIGIDOCPP_CONFIG_DIR=\"${DIGIDOCPP_CONFIG_DIR}\""
+    POSITION_INDEPENDENT_CODE YES
+)
+
 add_library(digidocpp SHARED
     ${digidocpp_SRCS}
     ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf
@@ -182,12 +196,10 @@ add_library(digidocpp SHARED
     ${PUBLIC_HEADER}
     ${CRYPTO_HEADER}
     ${CRYPTO_SOURCE}
-    ${xsd_SRCS}
     ${XML_HEADER}
     libdigidocpp.rc
     ADoc.cpp
     BDoc.cpp
-    log.cpp
     Conf.cpp
     Container.cpp
     XmlConf.cpp
@@ -202,8 +214,6 @@ add_library(digidocpp SHARED
     crypto/PKCS11Signer.cpp
     crypto/Signer.cpp
     util/ZipSerialize.cpp
-    util/File.cpp
-    util/DateTime.cpp
 )
 
 set_target_properties(digidocpp PROPERTIES
@@ -218,7 +228,7 @@ set_target_properties(digidocpp PROPERTIES
     MACOSX_RPATH YES
 )
 
-target_link_libraries(digidocpp
+target_link_libraries(digidocpp digidocpp_priv
     ${OPENSSL_LIBRARIES}
     ${CMAKE_DL_LIBS}
     ${MINIZIP_LIBRARIES}
@@ -228,18 +238,11 @@ target_link_libraries(digidocpp
     ${TARGET_LIBRARIES}
 )
 
-add_executable(digidoc-tool
-    ${digidoc-tool_SRCS}
-    digidoc-tool.rc
-    digidoc-tool.cpp
-    log.cpp
-    crypto/PKCS12Signer.cpp
-    util/File.cpp
-)
+add_executable(digidoc-tool ${digidoc-tool_SRCS} digidoc-tool.rc digidoc-tool.cpp)
 
 set_target_properties(digidoc-tool PROPERTIES
     INSTALL_RPATH "@loader_path/../../../..;@loader_path/../.."
-    LINK_LIBRARIES "digidocpp;${CMAKE_THREAD_LIBS_INIT}"
+    LINK_LIBRARIES "digidocpp;digidocpp_priv;${CMAKE_THREAD_LIBS_INIT}"
 )
 
 if(SWIG_FOUND AND WIN32)

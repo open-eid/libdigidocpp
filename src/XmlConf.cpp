@@ -142,16 +142,7 @@ XmlConfPrivate::XmlConfPrivate(const string &path, const string &schema)
     {
         try
         {
-#if defined(_WIN32) && defined(_DEBUG)
-            string path = File::dllPath("digidocppd.dll");
-#elif defined(_WIN32)
-            string path = File::dllPath("digidocpp.dll");
-#elif defined(FRAMEWORK)
-            string path = File::frameworkResourcesPath("ee.ria.digidocpp");
-#else
-            string path = DIGIDOCPP_CONFIG_DIR;
-#endif
-            init(File::path(path, "/digidocpp.conf"), true);
+            init(File::confPath() + "digidocpp.conf", true);
         }
         catch(const Exception &e)
         {
@@ -208,7 +199,10 @@ void XmlConfPrivate::init(const string& path, bool global)
             else if(p.name() == proxyPass.name)
                 proxyPass.setValue(p, p.lock(), global);
             else if(p.name() == PKCS12Cert.name)
-                PKCS12Cert.setValue(p, p.lock(), global);
+            {
+                string path = File::isRelative(p) ? File::confPath() + p : string(p);
+                PKCS12Cert.setValue(path, p.lock(), global);
+            }
             else if(p.name() == PKCS12Pass.name)
                 PKCS12Pass.setValue(p, p.lock(), global);
             else if(p.name() == PKCS12Disable.name)

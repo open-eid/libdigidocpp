@@ -13,16 +13,10 @@ if( Boost_INCLUDE_DIR )
     if( LIBDIGIDOC_LINKED )
         list( APPEND unittests_DEFS LINKED_LIBDIGIDOC )
     endif()
-    add_executable( unittests
-        libdigidocpp_boost.cpp
-        ../src/log.cpp
-        ../src/util/File.cpp
-        ../src/util/DateTime.cpp
-        ../src/crypto/PKCS12Signer.cpp
-    )
+	add_executable( unittests libdigidocpp_boost.cpp )
     set_target_properties( unittests PROPERTIES
         COMPILE_DEFINITIONS "DIGIDOCPPCONF=\"${CMAKE_SOURCE_DIR}/etc/schema\";PKCS11_MODULE=\"${PKCS11_MODULE}\";${unittests_DEFS}"
-        LINK_LIBRARIES digidocpp
+        LINK_LIBRARIES "digidocpp;digidocpp_priv"
     )
     if(WIN32)
         string(REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})

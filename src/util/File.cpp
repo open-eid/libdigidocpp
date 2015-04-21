@@ -137,6 +137,19 @@ string File::convertUTF8(const string &str_in, bool to_UTF)
 
 stack<string> File::tempFiles;
 
+string File::confPath()
+{
+#if defined(__APPLE__)
+    return frameworkResourcesPath("ee.ria.digidocpp");
+#elif defined(_WIN32) && defined(_DEBUG)
+    return dllPath("digidocppd.dll");
+#elif defined(_WIN32)
+    return dllPath("digidocpp.dll");
+#else
+    return DIGIDOCPP_CONFIG_DIR "/";
+#endif
+}
+
 string File::cwd()
 {
 #ifdef _WIN32

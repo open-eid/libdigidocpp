@@ -129,20 +129,7 @@ string Conf::digestUri() const { return URI_SHA256; }
 /**
  * Gets XSD schema files path
  */
-string Conf::xsdPath() const
-{
-    string path = "schema";
-#if defined(__APPLE__)
-    path.insert(0, File::frameworkResourcesPath("ee.ria.digidocpp"));
-#elif defined(_WIN32) && defined(_DEBUG)
-    path.insert(0, File::dllPath("digidocppd.dll"));
-#elif defined(_WIN32)
-    path.insert(0, File::dllPath("digidocpp.dll"));
-#else
-    path.insert(0, DIGIDOCPP_CONFIG_DIR "/");
-#endif
-    return path;
-}
+string Conf::xsdPath() const { return File::confPath() + "schema"; }
 
 /**
  * Returns PKCS11 driver file path
@@ -208,19 +195,7 @@ string Conf::proxyPass() const { return string(); }
  *
  * Used for signing OCSP request
  */
-string Conf::PKCS12Cert() const
-{
-#ifdef __APPLE__
-    string path = File::frameworkResourcesPath("ee.ria.digidocpp");
-#elif defined(_WIN32) && defined(_DEBUG)
-    string path = File::dllPath("digidocppd.dll");
-#elif defined(_WIN32)
-    string path = File::dllPath("digidocpp.dll");
-#else
-    string path = DIGIDOCPP_CONFIG_DIR "/";
-#endif
-    return path + "73411.p12";
-}
+string Conf::PKCS12Cert() const { return File::confPath() + "73411.p12"; }
 
 /**
  * Gets PKCS12 password.

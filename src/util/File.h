@@ -42,6 +42,7 @@ namespace digidoc
         class File
         {
           public:
+              static std::string confPath();
               static std::string cwd();
               static std::string env(const std::string &varname);
               static bool fileExists(const std::string& path);

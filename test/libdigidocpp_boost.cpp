@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(XmlConfCase)
     BOOST_CHECK_EQUAL(c.proxyPort(), "port");
     BOOST_CHECK_EQUAL(c.proxyUser(), "user");
     BOOST_CHECK_EQUAL(c.proxyPass(), "pass");
-    BOOST_CHECK_EQUAL(c.PKCS12Cert(), "cert");
+    BOOST_CHECK_EQUAL(util::File::fileName(c.PKCS12Cert()), "cert");
     BOOST_CHECK_EQUAL(c.PKCS12Pass(), "pass");
     BOOST_CHECK_EQUAL(c.PKCS12Disable(), true);
     BOOST_CHECK_EQUAL(c.ocsp("ESTEID-SK 2007"), "http://ocsp.sk.ee");
