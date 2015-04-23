@@ -154,7 +154,7 @@ void digidoc::initializeEx(const string &appInfo, initCallBack callBack)
     }
 
     if(!Conf::instance())
-        Conf::init(new XmlConfV3);
+        Conf::init(new XmlConfV4);
     if(X509CertStore::instance())
         return;
     if(callBack)

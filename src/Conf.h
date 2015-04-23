@@ -95,4 +95,20 @@ namespace digidoc
       private:
           DISABLE_COPY(ConfV3);
     };
+
+    class EXP_DIGIDOC ConfV4: public ConfV3
+    {
+
+      public:
+          ConfV4();
+          virtual ~ConfV4();
+          static ConfV4* instance();
+
+          virtual std::string signatureDigestUri() const;
+
+      private:
+          DISABLE_COPY(ConfV4);
+    };
+
+#define CONF(method) ConfV4::instance() ? ConfV4::instance()->method() : ConfV4().method()
 }

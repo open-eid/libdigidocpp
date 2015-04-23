@@ -35,6 +35,8 @@ namespace digidoc
           virtual void sign(const std::string &method, const std::vector<unsigned char> &digest,
                             std::vector<unsigned char> &signature) = 0;
           std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest);
+          std::string method() const;
+
           std::string city() const;
           std::string stateOrProvince() const;
           std::string postalCode() const;
@@ -46,6 +48,7 @@ namespace digidoc
 
       protected:
           Signer();
+          void setMethod(const std::string &method);
 
       private:
           DISABLE_COPY(Signer);

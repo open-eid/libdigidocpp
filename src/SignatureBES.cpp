@@ -678,11 +678,15 @@ void SignatureBES::validate(Validate) const
  * Prepares SignedInfo
  *
  * @param signer signer that signs the signature object.
- * @throws SignatureException exception is throws if signing failed.
+ * @throws Exception exception is throws if signing failed.
  */
 vector<unsigned char> SignatureBES::prepareSignedInfo(Signer* signer)
 {
-    setSigningCertificate(signer->cert());
+    X509Cert c = signer->cert();
+    setSigningCertificate(c);
+    signature->signedInfo().signatureMethod(Uri( X509Crypto(c).rsaModulus().empty() ?
+        Digest::toEcUri(signer->method()) : Digest::toRsaUri(signer->method()) ));
+
     setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
     setSignerRoles(signer->signerRoles());
     time_t t = time(0);
@@ -837,30 +841,6 @@ string SignatureBES::addReference(const string& uri, const string& digestUri,
 void SignatureBES::setSigningCertificate(const X509Cert& x509)
 {
     DEBUG("SignatureBES::setSigningCertificate()");
-    // Estoniand ID-Card specific hack for older cards, they support only max SHA224
-    string method = Conf::instance()->digestUri();
-    X509Crypto key(x509);
-    if(!key.rsaModulus().empty())
-    {
-        if(method != URI_SHA1 && method != URI_SHA224)
-        {
-            vector<string> pol = x509.certificatePolicies();
-            for(vector<string>::const_iterator i = pol.begin(); i != pol.end(); ++i)
-            {
-                if((i->compare(0, 22, "1.3.6.1.4.1.10015.1.1.") == 0 ||
-                    i->compare(0, 22, "1.3.6.1.4.1.10015.3.1.") == 0) &&
-                    key.rsaModulus().size() <= 128)
-                {
-                     method = URI_SHA224;
-                     break;
-                }
-            }
-        }
-        signature->signedInfo().signatureMethod(Uri(Digest::toRsaUri(method)));
-    }
-    else
-        signature->signedInfo().signatureMethod(Uri(Digest::toEcUri(method)));
-
     // Signature->KeyInfo->X509Data->X509Certificate
     // BASE64 encoding of a DER-encoded X.509 certificate = PEM encoded.
     X509DataType x509Data;

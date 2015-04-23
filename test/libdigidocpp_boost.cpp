@@ -494,7 +494,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(ConfSuite)
 BOOST_AUTO_TEST_CASE(XmlConfCase)
 {
-    XmlConfV3 c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "/conf.xsd"));
+    XmlConfV4 c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "/conf.xsd"));
     BOOST_CHECK_EQUAL(c.logLevel(), 2);
     BOOST_CHECK_EQUAL(c.logFile(), "digidocpp.log");
     BOOST_CHECK_EQUAL(c.digestUri(), "http://www.w3.org/2001/04/xmlenc#sha256");

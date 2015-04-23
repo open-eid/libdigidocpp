@@ -78,6 +78,8 @@ public:
 
     XmlConfParam<int> logLevel;
     XmlConfParam<string> logFile;
+    XmlConfParam<string> digestUri;
+    XmlConfParam<string> signatureDigestUri;
     XmlConfParam<string> PKCS11Driver;
     XmlConfParam<string> proxyHost;
     XmlConfParam<string> proxyPort;
@@ -103,6 +105,8 @@ using namespace digidoc;
 XmlConfPrivate::XmlConfPrivate(const string &path, const string &schema)
     : logLevel("log.level")
     , logFile("log.file")
+    , digestUri("signer.digestUri")
+    , signatureDigestUri("signer.signatureDigestUri")
     , PKCS11Driver("pkcs11.driver.path")
     , proxyHost("proxy.host")
     , proxyPort("proxy.port")
@@ -188,6 +192,10 @@ void XmlConfPrivate::init(const string& path, bool global)
                 logLevel.setValue(atoi(string(p).c_str()), p.lock(), global);
             else if(p.name() == logFile.name)
                 logFile.setValue(p, p.lock(), global);
+            else if(p.name() == digestUri.name)
+                digestUri.setValue(p, p.lock(), global);
+            else if(p.name() == signatureDigestUri.name)
+                signatureDigestUri.setValue(p, p.lock(), global);
             else if(p.name() == PKCS11Driver.name)
                 PKCS11Driver.setValue(p, p.lock(), global);
             else if(p.name() == proxyHost.name)
@@ -256,7 +264,7 @@ unique_ptr<Configuration> XmlConfPrivate::read(const string &path)
  *
  * @param paramName name of parameter that needs to be changed or created.
  * @param value value for changing or adding to a given parameter. If value is an empty string, the walue for a given parameter will be erased.
- * @throws IOException exception is thrown if reading, writing or creating of a user configuration file fails.
+ * @throws Exception exception is thrown if reading, writing or creating of a user configuration file fails.
  */
 void XmlConfPrivate::setUserConf(const string &paramName, const string &defined, const string &value)
 {
@@ -298,60 +306,81 @@ void XmlConfPrivate::setUserConf(const string &paramName, const string &defined,
 /**
  * @class digidoc::XmlConf
  * @brief XML Configuration class
- * @deprecated See digidoc::XmlConfV3
- * @see digidoc::ConfV2
+ * @deprecated See digidoc::XmlConfV4
+ * @see digidoc::Conf
  */
 /**
  * @class digidoc::XmlConfV2
  * @brief Version 2 of XML Configuration class
- * @deprecated See digidoc::XmlConfV3
+ * @deprecated See digidoc::XmlConfV4
  * @see digidoc::ConfV2
  */
 /**
  * @class digidoc::XmlConfV3
  * @brief Version 3 of XML Configuration class
- * @see digidoc::ConfV2
+ * @deprecated See digidoc::XmlConfV4
+ * @see digidoc::ConfV3
  */
 /**
- * @deprecated See digidoc::XmlConfV3::XmlConfV3
+ * @class digidoc::XmlConfV4
+ * @brief Version 4 of XML Configuration class
+ * @see digidoc::ConfV4
+ */
+/**
+ * @deprecated See digidoc::XmlConfV4::XmlConfV4
  */
 XmlConf::XmlConf(const string &path, const string &schema)
     : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
 {}
 /**
- * @deprecated See digidoc::XmlConfV3::XmlConfV3
+ * @deprecated See digidoc::XmlConfV4::XmlConfV4
  */
 XmlConfV2::XmlConfV2(const string &path, const string &schema)
     : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
 {}
 /**
- * Initialize xml conf from path
+ * @deprecated See digidoc::XmlConfV4::XmlConfV4
  */
 XmlConfV3::XmlConfV3(const string &path, const string &schema)
+    : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
+{}
+/**
+ * Initialize xml conf from path
+ */
+XmlConfV4::XmlConfV4(const string &path, const string &schema)
     : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
 {}
 
 XmlConf::~XmlConf() { delete d; }
 XmlConfV2::~XmlConfV2() { delete d; }
 XmlConfV3::~XmlConfV3() { delete d; }
+XmlConfV4::~XmlConfV4() { delete d; }
 
 #define GET1(TYPE, PROP) \
 TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); } \
 TYPE XmlConfV2::PROP() const { return d->PROP.value(ConfV2::PROP()); } \
-TYPE XmlConfV3::PROP() const { return d->PROP.value(ConfV3::PROP()); }
+TYPE XmlConfV3::PROP() const { return d->PROP.value(ConfV3::PROP()); } \
+TYPE XmlConfV4::PROP() const { return d->PROP.value(ConfV4::PROP()); }
 
 #define GET2(TYPE, PROP) \
 TYPE XmlConfV2::PROP() const { return d->PROP.value(ConfV2::PROP()); } \
-TYPE XmlConfV3::PROP() const { return d->PROP.value(ConfV3::PROP()); }
+TYPE XmlConfV3::PROP() const { return d->PROP.value(ConfV3::PROP()); } \
+TYPE XmlConfV4::PROP() const { return d->PROP.value(ConfV4::PROP()); }
+
+#define GET3(TYPE, PROP) \
+TYPE XmlConfV3::PROP() const { return d->PROP.value(ConfV3::PROP()); } \
+TYPE XmlConfV4::PROP() const { return d->PROP.value(ConfV4::PROP()); }
 
 #define GET1_R(TYPE, PROP) \
 TYPE XmlConf::PROP() const { return Conf::PROP(); } \
 TYPE XmlConfV2::PROP() const { return ConfV2::PROP(); } \
-TYPE XmlConfV3::PROP() const { return ConfV3::PROP(); }
+TYPE XmlConfV3::PROP() const { return ConfV3::PROP(); } \
+TYPE XmlConfV4::PROP() const { return ConfV4::PROP(); }
 
 #define GET2_R(TYPE, PROP) \
 TYPE XmlConfV2::PROP() const { return ConfV2::PROP(); } \
-TYPE XmlConfV3::PROP() const { return ConfV3::PROP(); }
+TYPE XmlConfV3::PROP() const { return ConfV3::PROP(); } \
+TYPE XmlConfV4::PROP() const { return ConfV4::PROP(); }
 
 #define SET1(TYPE, SET, PROP) \
 void XmlConf::SET( const TYPE &PROP ) \
@@ -359,7 +388,9 @@ void XmlConf::SET( const TYPE &PROP ) \
 void XmlConfV2::SET( const TYPE &PROP ) \
 { if( !d->PROP.locked ) d->setUserConf(d->PROP.name, ConfV2::PROP(), d->PROP = PROP); } \
 void XmlConfV3::SET( const TYPE &PROP ) \
-{ if( !d->PROP.locked ) d->setUserConf(d->PROP.name, ConfV3::PROP(), d->PROP = PROP); }
+{ if( !d->PROP.locked ) d->setUserConf(d->PROP.name, ConfV3::PROP(), d->PROP = PROP); } \
+void XmlConfV4::SET( const TYPE &PROP ) \
+{ if( !d->PROP.locked ) d->setUserConf(d->PROP.name, ConfV4::PROP(), d->PROP = PROP); }
 
 GET1(int, logLevel)
 GET1(string, logFile)
@@ -378,6 +409,8 @@ GET1_R(string, xsdPath)
 GET1_R(string, certsPath)
 GET2_R(X509Cert, TSLCert)
 GET2_R(string, TSLUrl)
+GET3(bool,TSLOnlineDigest)
+GET3(int,TSLTimeOut)
 
 string XmlConf::ocsp(const string &issuer) const
 {
@@ -394,141 +427,189 @@ string XmlConfV3::ocsp(const string &issuer) const
     auto i = d->ocsp.find(issuer);
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
 }
-
-bool XmlConfV3::TSLOnlineDigest() const
+string XmlConfV4::ocsp(const string &issuer) const
 {
-    return d->TSLOnlineDigest.value(ConfV3::TSLOnlineDigest());
+    auto i = d->ocsp.find(issuer);
+    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
 }
 
+
 /**
- * Enables/Disables online digest check
+ * @deprecated See digidoc::XmlConfV4::setTSLOnlineDigest
  */
 void XmlConfV3::setTSLOnlineDigest( bool enable )
 {
     if( !d->TSLOnlineDigest.locked )
         d->setUserConf(d->TSLOnlineDigest.name, ConfV3::TSLOnlineDigest() ? "true" : "false", (d->TSLOnlineDigest = enable) ? "true" : "false");
 }
-
-int XmlConfV3::TSLTimeOut() const
+/**
+ * Enables/Disables online digest check
+ * @throws Exception exception is thrown if saving a TSL online digest into a user configuration file fails.
+ */
+void XmlConfV4::setTSLOnlineDigest( bool enable )
 {
-    return d->TSLTimeOut.value(ConfV3::TSLTimeOut());
+    if( !d->TSLOnlineDigest.locked )
+        d->setUserConf(d->TSLOnlineDigest.name, ConfV3::TSLOnlineDigest() ? "true" : "false", (d->TSLOnlineDigest = enable) ? "true" : "false");
 }
 
 /**
- * Sets TSL connection timeout
- * @param timeOut Time out in seconds
+ * @deprecated See digidoc::XmlConfV4::setTSLTimeOut
  */
 void XmlConfV3::setTSLTimeOut( int timeOut )
 {
     if( !d->TSLTimeOut.locked )
-        d->setUserConf(d->TSLTimeOut.name, std::to_string(ConfV3::TSLTimeOut()), std::to_string(timeOut));
+        d->setUserConf(d->TSLTimeOut.name, to_string(ConfV3::TSLTimeOut()), to_string(timeOut));
+}
+/**
+ * Sets TSL connection timeout
+ * @param timeOut Time out in seconds
+ * @throws Exception exception is thrown if saving a TSL timeout into a user configuration file fails.
+ */
+void XmlConfV4::setTSLTimeOut( int timeOut )
+{
+    if( !d->TSLTimeOut.locked )
+        d->setUserConf(d->TSLTimeOut.name, to_string(ConfV3::TSLTimeOut()), to_string(timeOut));
+}
+
+string XmlConfV4::digestUri() const
+{
+    return d->digestUri.value(ConfV4::digestUri());
+}
+
+string XmlConfV4::signatureDigestUri() const
+{
+    return d->signatureDigestUri.value(ConfV4::signatureDigestUri());
 }
 
 /**
  * @fn void digidoc::XmlConf::setProxyHost(const std::string &host)
- * @deprecated See digidoc::XmlConfV3::setProxyHost
+ * @deprecated See digidoc::XmlConfV4::setProxyHost
  */
 /**
  * @fn void digidoc::XmlConfV2::setProxyHost(const std::string &host)
- * @deprecated See digidoc::XmlConfV3::setProxyHost
+ * @deprecated See digidoc::XmlConfV4::setProxyHost
  */
 /**
  * @fn void digidoc::XmlConfV3::setProxyHost(const std::string &host)
+ * @deprecated See digidoc::XmlConfV4::setProxyHost
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setProxyHost(const std::string &host)
  * Sets a Proxy host address. Also adds or replaces proxy host data in the user configuration file.
  *
  * @param host proxy host address.
- * @throws IOException exception is thrown if saving a proxy host address into a user configuration file fails.
+ * @throws Exception exception is thrown if saving a proxy host address into a user configuration file fails.
  */
 SET1(string, setProxyHost, proxyHost)
 
 /**
  * @fn void digidoc::XmlConf::setProxyPort(const std::string &port)
- * @deprecated See digidoc::XmlConfV3::setProxyPort
+ * @deprecated See digidoc::XmlConfV4::setProxyPort
  */
 /**
  * @fn void digidoc::XmlConfV2::setProxyPort(const std::string &port)
- * @deprecated See digidoc::XmlConfV3::setProxyPort
+ * @deprecated See digidoc::XmlConfV4::setProxyPort
  */
 /**
  * @fn void digidoc::XmlConfV3::setProxyPort(const std::string &port)
+ * @deprecated See digidoc::XmlConfV4::setProxyPort
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setProxyPort(const std::string &port)
  * Sets a Proxy port number. Also adds or replaces proxy port data in the user configuration file.
  *
  * @param port proxy port number.
- * @throws IOException exception is thrown if saving a proxy port number into a user configuration file fails.
+ * @throws Exception exception is thrown if saving a proxy port number into a user configuration file fails.
  */
 SET1(string, setProxyPort, proxyPort)
 
 /**
  * @fn void digidoc::XmlConf::setProxyUser(const std::string &user)
- * @deprecated See digidoc::XmlConfV3::setProxyUser
+ * @deprecated See digidoc::XmlConfV4::setProxyUser
  */
 /**
  * @fn void digidoc::XmlConfV2::setProxyUser(const std::string &user)
- * @deprecated See digidoc::XmlConfV3::setProxyUser
+ * @deprecated See digidoc::XmlConfV4::setProxyUser
  */
 /**
  * @fn void digidoc::XmlConfV3::setProxyUser(const std::string &user)
+ * @deprecated See digidoc::XmlConfV4::setProxyUser
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setProxyUser(const std::string &user)
  * Sets a Proxy user name. Also adds or replaces proxy user name in the user configuration file.
  *
  * @param user proxy user name.
- * @throws IOException exception is thrown if saving a proxy user name into a user configuration file fails.
+ * @throws Exception exception is thrown if saving a proxy user name into a user configuration file fails.
  */
 SET1(string, setProxyUser, proxyUser)
 
 /**
  * @fn void digidoc::XmlConf::setProxyPass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV3::setProxyPass
+ * @deprecated See digidoc::XmlConfV4::setProxyPass
  */
 /**
  * @fn void digidoc::XmlConfV2::setProxyPass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV3::setProxyPass
+ * @deprecated See digidoc::XmlConfV4::setProxyPass
  */
 /**
  * @fn void digidoc::XmlConfV3::setProxyPass(const std::string &pass)
+ * @deprecated See digidoc::XmlConfV4::setProxyPass
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setProxyPass(const std::string &pass)
  * Sets a Proxy password. Also adds or replaces proxy password in the user configuration file.
  *
  * @param pass proxy password.
- * @throws IOException exception is thrown if saving a proxy password into a user configuration file fails.
+ * @throws Exception exception is thrown if saving a proxy password into a user configuration file fails.
  */
 SET1(string, setProxyPass, proxyPass)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
- * @deprecated See digidoc::XmlConfV3::setPKCS12Cert
+ * @deprecated See digidoc::XmlConfV4::setPKCS12Cert
  */
 /**
  * @fn void digidoc::XmlConfV2::setPKCS12Cert(const std::string &cert)
- * @deprecated See digidoc::XmlConfV3::setPKCS12Cert
+ * @deprecated See digidoc::XmlConfV4::setPKCS12Cert
  */
 /**
  * @fn void digidoc::XmlConfV3::setPKCS12Cert(const std::string &cert)
+ * @deprecated See digidoc::XmlConfV4::setPKCS12Cert
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setPKCS12Cert(const std::string &cert)
  * Sets a PKCS#12 certficate path. Also adds or replaces PKCS#12 certificate path in the user configuration file.
  * By default the PKCS#12 certificate file should be located at default path, given by getUserConfDir() function.
  *
  * @param cert PKCS#12 certificate location path.
- * @throws IOException exception is thrown if saving a PKCS#12 certificate path into a user configuration file fails.
+ * @throws Exception exception is thrown if saving a PKCS#12 certificate path into a user configuration file fails.
  */
 SET1(string, setPKCS12Cert, PKCS12Cert)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV3::setPKCS12Pass
+ * @deprecated See digidoc::XmlConfV4::setPKCS12Pass
  */
 /**
  * @fn void digidoc::XmlConfV2::setPKCS12Pass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV3::setPKCS12Pass
+ * @deprecated See digidoc::XmlConfV4::setPKCS12Pass
  */
 /**
  * @fn void digidoc::XmlConfV3::setPKCS12Pass(const std::string &pass)
+ * @deprecated See digidoc::XmlConfV4::setPKCS12Pass
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setPKCS12Pass(const std::string &pass)
  * Sets a PKCS#12 certificate password. Also adds or replaces PKCS#12 certificate password in the user configuration file.
  *
  * @param pass PKCS#12 certificate password.
- * @throws IOException exception is thrown if saving a PKCS#12 certificate password into a user configuration file fails.
+ * @throws Exception exception is thrown if saving a PKCS#12 certificate password into a user configuration file fails.
  */
 SET1(string, setPKCS12Pass, PKCS12Pass)
 
 /**
- * @deprecated See digidoc::XmlConfV3::setPKCS12Disable
+ * @deprecated See digidoc::XmlConfV4::setPKCS12Disable
  */
 void XmlConf::setPKCS12Disable( bool disable )
 {
@@ -536,9 +617,17 @@ void XmlConf::setPKCS12Disable( bool disable )
         d->setUserConf(d->PKCS12Disable.name, Conf::PKCS12Disable() ? "true" : "false", (d->PKCS12Disable = disable) ? "true" : "false");
 }
 /**
- * @deprecated See digidoc::XmlConfV3::setPKCS12Disable
+ * @deprecated See digidoc::XmlConfV4::setPKCS12Disable
  */
 void XmlConfV2::setPKCS12Disable( bool disable )
+{
+    if( !d->PKCS12Disable.locked )
+        d->setUserConf(d->PKCS12Disable.name, Conf::PKCS12Disable() ? "true" : "false", (d->PKCS12Disable = disable) ? "true" : "false");
+}
+/**
+ * @deprecated See digidoc::XmlConfV4::setPKCS12Disable
+ */
+void XmlConfV3::setPKCS12Disable( bool disable )
 {
     if( !d->PKCS12Disable.locked )
         d->setUserConf(d->PKCS12Disable.name, Conf::PKCS12Disable() ? "true" : "false", (d->PKCS12Disable = disable) ? "true" : "false");
@@ -547,9 +636,9 @@ void XmlConfV2::setPKCS12Disable( bool disable )
  * Sets a PKCS#12 certificate usage. Also adds or replaces PKCS#12 certificate usage in the user configuration file.
  *
  * @param disable PKCS#12 certificate usage.
- * @throws IOException exception is thrown if saving a PKCS#12 certificate usage into a user configuration file fails.
+ * @throws Exception exception is thrown if saving a PKCS#12 certificate usage into a user configuration file fails.
  */
-void XmlConfV3::setPKCS12Disable( bool disable )
+void XmlConfV4::setPKCS12Disable( bool disable )
 {
     if( !d->PKCS12Disable.locked )
         d->setUserConf(d->PKCS12Disable.name, Conf::PKCS12Disable() ? "true" : "false", (d->PKCS12Disable = disable) ? "true" : "false");

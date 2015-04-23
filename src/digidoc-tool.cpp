@@ -251,22 +251,24 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
 }
 
 
-class ToolConfig: public XmlConfV3
+class ToolConfig: public XmlConfV4
 {
 public:
-    ToolConfig(): XmlConfV3()
-      , expired(XmlConfV3::TSLAllowExpired())
-      , tslcerts(XmlConfV3::TSLCerts())
-      , tslurl(XmlConfV3::TSLUrl())
-      , uri(XmlConfV3::digestUri()) {}
+    ToolConfig(): XmlConfV4()
+      , expired(XmlConfV4::TSLAllowExpired())
+      , tslcerts(XmlConfV4::TSLCerts())
+      , tslurl(XmlConfV4::TSLUrl())
+      , uri(XmlConfV4::digestUri())
+      , siguri(XmlConfV4::signatureDigestUri()) {}
     string digestUri() const { return uri; }
+    string signatureDigestUri() const { return siguri; }
     bool TSLAllowExpired() const { return expired; }
     vector<X509Cert> TSLCerts() const { return tslcerts; }
     string TSLUrl() const { return tslurl; }
 
     bool expired;
     vector<X509Cert> tslcerts;
-    string tslurl, uri;
+    string tslurl, uri, siguri;
 };
 
 
@@ -307,10 +309,11 @@ static void printUsage(const char *executable)
     << "      --cng          - Use CNG api for signing under windows." << endl
     << "      --selectFirst  - Select first certificate in store." << endl
 #endif
-    << "      --pkcs11[=]    - default is " << Conf::instance()->PKCS11Driver() << ". Path of PKCS11 driver." << endl
+    << "      --pkcs11[=]    - default is " << (CONF(PKCS11Driver)) << ". Path of PKCS11 driver." << endl
     << "      --pkcs12=      - pkcs12 signer certificate (use --pin for password)" << endl
     << "      --pin=         - default asks pin from prompt" << endl
-    << "      --sha(1,224,256,384,512) - set default digest method (default sha256)" << endl;
+    << "      --sha(1,224,256,384,512) - set default digest method (default sha256)" << endl
+    << "      --sigsha(1,224,256,384,512) - set default digest method (default sha256)" << endl;
 }
 
 struct Params
@@ -379,6 +382,11 @@ Params::Params(int argc, char *argv[])
         else if(arg == "--sha256") conf->uri = URI_SHA256;
         else if(arg == "--sha384") conf->uri = URI_SHA384;
         else if(arg == "--sha512") conf->uri = URI_SHA512;
+        else if(arg == "--sigsha1") conf->siguri = URI_SHA1;
+        else if(arg == "--sigsha224") conf->siguri = URI_SHA224;
+        else if(arg == "--sigsha256") conf->siguri = URI_SHA256;
+        else if(arg == "--sigsha384") conf->siguri = URI_SHA384;
+        else if(arg == "--sigsha512") conf->siguri = URI_SHA512;
         else if(arg.find("--tslurl=") == 0) conf->tslurl = arg.substr(9);
         else if(arg.find("--tslcert=") == 0) conf->tslcerts = { X509Cert(arg.substr(10)) };
         else if(arg == "--TSLAllowExpired") conf->expired = true;
@@ -787,8 +795,7 @@ static int sign(int argc, char* argv[])
 static int tslcmd(int , char* [])
 {
     int returnCode = EXIT_SUCCESS;
-    ConfV2 *c = ConfV2::instance();
-    string cache = c ? c->TSLCache() : ConfV2().TSLCache();
+    string cache = CONF(TSLCache);
     TSL t("");
     cout << "TSL: " << t.url() << endl
         << "         Type: " << t.type() << endl
@@ -799,7 +806,7 @@ static int tslcmd(int , char* [])
         << "Pointers:" << endl;
     try {
         cout << "  Signature: ";
-        t.validate({c ? c->TSLCert() : ConfV2().TSLCert()});
+        t.validate(CONF(TSLCerts));
         cout << "VALID" << endl;
     } catch(const Exception &e) {
         cout << "INVALID" << endl;

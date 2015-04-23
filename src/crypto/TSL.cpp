@@ -51,8 +51,6 @@ using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
 
-#define CONF(method) ConfV3::instance() ? ConfV3::instance()->method() : ConfV3().method()
-
 const set<string> TSL::SCHEMES_URI = {
     "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/schemes",
     "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists",

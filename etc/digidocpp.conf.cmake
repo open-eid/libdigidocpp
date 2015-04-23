@@ -3,6 +3,8 @@
     <!--<param name="log.level" lock="false">2</param>-->
     <!--<param name="log.file" lock="false">/tmp/digidocpp.log</param>-->
     <!--<param name="log.file" lock="false">C:\Documents and Settings\All Users\Documents\digidocpp.log</param>-->
+    <!--<param name="signer.digestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
+    <!--<param name="signer.signatureDigestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
     <!--<param name="pkcs11.driver.path" lock="false">@PKCS11_MODULE@</param>-->
     <!--<param name="proxy.host" lock="false"></param>-->
     <!--<param name="proxy.port" lock="false"></param>-->

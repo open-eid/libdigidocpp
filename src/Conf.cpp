@@ -308,3 +308,27 @@ bool ConfV3::TSLOnlineDigest() const { return true; }
  * Gets TSL downloading connection's current timeout value
  */
 int ConfV3::TSLTimeOut() const { return 10; }
+
+
+
+/**
+ * @class digidoc::ConfV4
+ * @brief Verison 4 of configuration class to add additonial parameters.
+ * @see digidoc::ConfV3
+ * @see @ref parameters
+ */
+/**
+ * Version 4 config with new parameters
+ */
+ConfV4::ConfV4() {}
+ConfV4::~ConfV4() {}
+
+/**
+ * Return global instance object
+ */
+ConfV4* ConfV4::instance() { return dynamic_cast<ConfV4*>(Conf::instance()); }
+
+/**
+ * Gets signature digest URI
+ */
+string ConfV4::signatureDigestUri() const { return digestUri(); }
