@@ -38,6 +38,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <sstream>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -851,7 +852,17 @@ int main(int argc, char *argv[])
     try {
         Conf::init(new ToolConfig);
         Params(argc, argv);
-        digidoc::initialize(string("digidoc-tool/") + VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER));
+        stringstream info;
+        info << "digidoc-tool/" << VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER) << " (";
+#ifdef _WIN32
+        info << "Windows";
+#elif __APPLE__
+        info << "OS X";
+#else
+        info << "Unknown";
+#endif
+        info << ")";
+        digidoc::initialize(info.str());
     } catch(const Exception &e) {
         printf("Failed to initalize library:\n");
         parseException(e, "Caught Exception:");
