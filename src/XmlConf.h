@@ -156,6 +156,8 @@ public:
     virtual std::string PKCS11Driver() const;
     virtual std::string ocsp(const std::string &issuer) const;
     DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
+    virtual bool proxyForceSSL() const;
+    virtual bool proxyTunnelSSL() const;
     virtual std::string proxyHost() const;
     virtual std::string proxyPort() const;
     virtual std::string proxyUser() const;

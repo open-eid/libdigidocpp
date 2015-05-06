@@ -193,6 +193,13 @@ vector<X509Cert> TSL::certs() const
     return certs;
 }
 
+void TSL::debugException(const digidoc::Exception &e)
+{
+    Log::out(Log::DebugType, e.file().c_str(), e.line(), e.msg().c_str());
+    for(const Exception &ex: e.causes())
+        debugException(ex);
+}
+
 bool TSL::isExpired() const
 {
     time_t t = time(0);
@@ -239,11 +246,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
         result = { tsl.certs(), tsl.isExpired() };
         if(result.expired)
             THROW("TSL is expired");
-
-        size_t pos = url.find_last_of("/.");
-        if((CONF(TSLOnlineDigest)) && pos != string::npos)
-            tsl.validateRemoteDigest(url.substr(0, pos) + ".sha2", timeout);
-
+        tsl.validateRemoteDigest(url, timeout);
         DEBUG("TSL %s signature is valid", territory.c_str());
     } catch(const Exception &e) {
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
@@ -273,12 +276,14 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
 
                     result = { tsl.certs(), tsl.isExpired() };
                     DEBUG("TSL %s signature is valid", territory.c_str());
-                } catch(const Exception &) {
+                } catch(const Exception &e) {
+                    debugException(e);
                     ERR("TSL %s signature is invalid", territory.c_str());
                 }
             }
-            catch(const Exception &)
+            catch(const Exception &e)
             {
+                debugException(e);
                 ERR("TSL: Failed to download %s list", tsl.territory().c_str());
             }
         }
@@ -423,16 +428,21 @@ void TSL::validate(const std::vector<X509Cert> &certs)
 
 void TSL::validateRemoteDigest(const std::string &url, int timeout)
 {
+    size_t pos = url.find_last_of("/.");
+    if(!(CONF(TSLOnlineDigest)) || pos == string::npos)
+        return;
+
     Connect::Result r;
     try
     {
-        r= Connect(url, "GET", timeout).exec();
+        r= Connect(url.substr(0, pos) + ".sha2", "GET", timeout).exec();
         if(r.isRedirect())
             r = Connect(r.headers["Location"], "GET", timeout).exec();
         if(r.result.find("200") == string::npos)
             return;
-    } catch(const Exception &) {
-        return;
+    } catch(const Exception &e) {
+        debugException(e);
+        return DEBUG("Failed to get remote digest %s", url.c_str());
     }
 
     Digest sha(URI_RSA_SHA256);

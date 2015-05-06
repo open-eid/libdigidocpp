@@ -25,6 +25,7 @@
 
 namespace digidoc
 {
+class Exception;
 namespace tsl { class TrustStatusListType; class InternationalNamesType; }
 class TSL
 {
@@ -57,6 +58,7 @@ private:
         bool expired;
     };
 
+    static void debugException(const Exception &e);
     static Result parse(const std::string &url, const std::vector<X509Cert> &certs,
         const std::string &cache, const std::string &territory, int timeout);
 

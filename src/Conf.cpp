@@ -329,6 +329,18 @@ ConfV4::~ConfV4() {}
 ConfV4* ConfV4::instance() { return dynamic_cast<ConfV4*>(Conf::instance()); }
 
 /**
+ * Redirect SSL traffic over proxy server
+ * Default: false
+ */
+bool ConfV4::proxyForceSSL() const { return false; }
+
+/**
+ * Tunnel SSL traffic over proxy server
+ * Default: false
+ */
+bool ConfV4::proxyTunnelSSL() const { return false; }
+
+/**
  * Gets signature digest URI
  */
 string ConfV4::signatureDigestUri() const { return digestUri(); }

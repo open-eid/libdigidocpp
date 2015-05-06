@@ -104,6 +104,8 @@ namespace digidoc
           virtual ~ConfV4();
           static ConfV4* instance();
 
+          virtual bool proxyForceSSL() const;
+          virtual bool proxyTunnelSSL() const;
           virtual std::string signatureDigestUri() const;
 
       private:
