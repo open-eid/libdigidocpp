@@ -4,6 +4,8 @@ Changes compared to ver 3.10.3
 - Improve EC signature size calculation
 - Improve HTTP traffic usage by using gzip Content-Encoding
 - TimeStampArchive support
+- Option to specify signature digest other than standard digest
+- Resolve relative PKCS11 config parameter to library path, instead current working directory
 
 
 

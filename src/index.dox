@@ -952,7 +952,7 @@ The check for old file formats is implemented in method:
 \code{.cpp}
  checkOldFormatVer(SignedDoc* pSigDoc);
  \endcode
-2.	It is possible to check the source code of DigiDoc3 Client desktop application, accessible from https://svn.eesti.ee/projektid/idkaart_public/trunk/qdigidoc/.
+2.	It is possible to check the source code of DigiDoc3 Client desktop application, accessible from https://github.com/open-eid/qdigidoc.
 
 
 \subsubsection validation-status Determining the validation status
