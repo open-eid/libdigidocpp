@@ -28,8 +28,6 @@
                 <IniFile Id="setCaCertPathX86" Action="addLine" Directory="X86FOLDER" Section="ca"
                   Name="digidoc.ini" Key="CA_CERT_PATH" Value="[APPLICATIONFOLDER]certs"/>
                 <File Source="$(var.PREFIX)\xerces\Build\Win32\VC12\Release\xerces-c_3_1.dll"/>
-                <File Source="$(var.PREFIX)\xalan\lib\Xalan-C_1_11.dll"/>
-                <File Source="$(var.PREFIX)\xalan\lib\XalanMessages_1_11.dll"/>
                 <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC12\Release No Xalan\xsec_1_7.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.dll"/>
@@ -76,8 +74,6 @@
                 <IniFile Id="setCaCertPathX64" Action="addLine" Directory="X64FOLDER" Section="ca"
                   Name="digidoc.ini" Key="CA_CERT_PATH" Value="[APPLICATIONFOLDER]certs"/>
                 <File Source="$(var.PREFIX)\xerces\Build\Win64\VC12\Release\xerces-c_3_1.dll" Id="xerces_c_3_1.dll_64"/>
-                <File Source="$(var.PREFIX)\xalan\lib\x64\Xalan-C_1_11.dll" Id="Xalan_C_1_11.dll_64"/>
-                <File Source="$(var.PREFIX)\xalan\lib\x64\XalanMessages_1_11.dll" Id="XalanMessages_1_11.dll_64"/>
                 <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC12\Release No Xalan\xsec_1_7.dll" Id="xsec_1_7.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.dll" Id="digidocpp.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.dll" Id="digidoc_csharp.dll_64"/>
