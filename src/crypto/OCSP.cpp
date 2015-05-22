@@ -302,16 +302,17 @@ X509Cert OCSP::responderCert() const
  * @throws IOException throws exception if the server failed to accept request or
  *         returned incorrectly formated OCSP response.
  */
-OCSP_RESPONSE* OCSP::sendRequest(const string &url, OCSP_REQUEST *req, const string &useragent)
+OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const string &useragent)
 {
     char *host = nullptr, *port = nullptr, *path = nullptr;
     int ssl = 0;
-    if(!OCSP_parse_url(const_cast<char*>(url.c_str()), &host, &port, &path, &ssl))
-        THROW_OPENSSLEXCEPTION("Incorrect OCSP URL provided: '%s'.", url.c_str());
+    if(!OCSP_parse_url(const_cast<char*>(_url.c_str()), &host, &port, &path, &ssl))
+        THROW_OPENSSLEXCEPTION("Incorrect OCSP URL provided: '%s'.", _url.c_str());
 
     string hostname = host ? host : "";
     if(port)
         hostname += ":" + string(port);
+    string url = path ? _url : _url + "/";
     OPENSSL_free(host);
     OPENSSL_free(port);
     OPENSSL_free(path);
