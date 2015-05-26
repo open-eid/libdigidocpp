@@ -19,11 +19,11 @@
 
 #include "X509CertStore.h"
 
-#include "DirectoryX509CertStore.h"
 #include "Conf.h"
 #include "log.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/TSL.h"
+#include "util/File.h"
 
 #include <openssl/conf.h>
 #include <openssl/x509v3.h>
@@ -49,17 +49,40 @@ public:
 }
 
 /**
- * X.509 certificate store implementation.
- */
-X509CertStore* X509CertStore::INSTANCE = nullptr;
-
-/**
  * X509CertStore constructor.
  */
 X509CertStore::X509CertStore()
     : d(new X509CertStorePrivate)
 {
+    SSL_load_error_strings();
+    SSL_library_init();
+    OPENSSL_config(0);
     d->update();
+
+    string path = Conf::instance()->certsPath();
+    if(path.empty())
+        return;
+
+    if(!util::File::directoryExists(path))
+    {
+        WARN("Directory %s does not exists, can not load cert store.", path.c_str());
+        return;
+    }
+
+    for(const std::string &file: util::File::listFiles(path))
+    {
+        string ext = file.substr(file.size() - 3);
+        transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if(ext != "pem" && ext != "crt")
+            continue;
+        try {
+            d->push_back(X509Cert(file));
+        } catch(const Exception &e) {
+            WARN("Failed to parse cert '%s': %s", file.c_str(),
+                 e.causes().empty() ? e.msg().c_str() : e.causes().front().msg().c_str());
+        }
+    }
+    INFO("Loaded %d certificates into certificate store.", certs().size());
 }
 
 /**
@@ -76,47 +99,13 @@ void X509CertStore::activate(const string &territory) const
         d->update();
 }
 
-void X509CertStore::addCert(const X509Cert &cert)
-{
-    d->push_back(cert);
-}
-
-/**
- * Sets the X.509 certificate store implementation.
- *
- * @param impl X.509 certificate store implementation or 0 for platform default.
- */
-void X509CertStore::init(X509CertStore *impl)
-{
-    SSL_load_error_strings();
-    SSL_library_init();
-    OPENSSL_config(0);
-
-    delete INSTANCE;
-    if(!impl)
-    {
-        string path = Conf::instance()->certsPath();
-        INSTANCE = path.empty() ? new X509CertStore() : new DirectoryX509CertStore(path);
-    }
-    else
-        INSTANCE = impl;
-}
-
-/**
- * Releases the X.509 certificate store implementation.
- */
-void X509CertStore::destroy()
-{
-    delete INSTANCE;
-    INSTANCE = nullptr;
-}
-
 /**
  * @return returns the X.509 certificate store implementation.
  */
 X509CertStore* X509CertStore::instance()
 {
-    return INSTANCE;
+    static X509CertStore INSTANCE;
+    return &INSTANCE;
 }
 
 
@@ -231,7 +220,7 @@ bool X509CertStore::verify(const X509Cert &cert, time_t *t) const
         case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
         case X509_V_ERR_CERT_UNTRUSTED:
         {
-            if(find(INSTANCE->d->begin(), INSTANCE->d->end(), X509Cert(ctx->current_cert)) != INSTANCE->d->end())
+            if(find(instance()->d->begin(), instance()->d->end(), X509Cert(ctx->current_cert)) != instance()->d->end())
                 return 1;
             return ok;
         }

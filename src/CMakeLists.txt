@@ -211,7 +211,6 @@ add_library(digidocpp SHARED
     SignatureTM.cpp
     SignatureTS.cpp
     SignatureA.cpp
-    crypto/DirectoryX509CertStore.cpp
     crypto/PKCS11Signer.cpp
     crypto/Signer.cpp
     util/ZipSerialize.cpp

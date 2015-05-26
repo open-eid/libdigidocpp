@@ -825,7 +825,7 @@ EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          */crypto/Digest.* \
                          */crypto/OpenSSLHelpers.h \
-                         */crypto/*Store* \
+                         */crypto/X509CertStore* \
                          */crypto/X509Crypto.* \
                          */crypto/OCSP.* \
                          */crypto/TS.* \
@@ -833,7 +833,6 @@ EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          */crypto/CNGSigner.* \
                          */crypto/PKCS12Signer.* \
                          */crypto/pkcs11.* \
-                         */io/* \
                          */minizip/* \
                          */openssl/* \
                          */util/* \

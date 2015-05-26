@@ -155,13 +155,11 @@ void digidoc::initializeEx(const string &appInfo, initCallBack callBack)
 
     if(!Conf::instance())
         Conf::init(new XmlConfV4);
-    if(X509CertStore::instance())
-        return;
     if(callBack)
     {
         thread([=](){
             try {
-                X509CertStore::init();
+                X509CertStore::instance();
                 callBack(nullptr);
             }
             catch(const Exception &e) {
@@ -170,7 +168,7 @@ void digidoc::initializeEx(const string &appInfo, initCallBack callBack)
         }).detach();
     }
     else
-        X509CertStore::init();
+        X509CertStore::instance();
 }
 
 /**
@@ -180,7 +178,6 @@ void digidoc::initializeEx(const string &appInfo, initCallBack callBack)
  */
 void digidoc::terminate()
 {
-    X509CertStore::destroy();
     Conf::init(0);
 
     XSECPlatformUtils::Terminate();

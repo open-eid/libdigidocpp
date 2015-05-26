@@ -30,9 +30,6 @@ namespace digidoc
     class X509CertStore
     {
       public:
-          virtual ~X509CertStore();
-          static void init(X509CertStore *impl = nullptr);
-          static void destroy();
           static X509CertStore* instance();
 
           void activate(const std::string &territory) const;
@@ -40,14 +37,11 @@ namespace digidoc
           X509Cert findIssuer(const X509Cert &cert) const;
           bool verify(const X509Cert &cert, time_t *t = nullptr) const;
 
-      protected:
-          X509CertStore();
-          void addCert(const X509Cert &cert);
-
       private:
+          X509CertStore();
+          ~X509CertStore();
           DISABLE_COPY(X509CertStore);
 
-          static X509CertStore* INSTANCE;
           X509CertStorePrivate *d;
     };
 }
