@@ -47,9 +47,9 @@ if( INSTALL_DOC )
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             COMMENT "Generating API documentation with Doxygen" VERBATIM
         )
-        install( DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/libdigidocpp )
+		install( DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} )
     endif()
-    install( DIRECTORY doc/ DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/libdigidocpp PATTERN ".svn" EXCLUDE )
+	install( DIRECTORY doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} )
 endif()
 
 if( WIN32 )
