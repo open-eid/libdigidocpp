@@ -312,7 +312,7 @@ OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const st
     string hostname = host ? host : "";
     if(port)
         hostname += ":" + string(port);
-    string url = path ? _url : _url + "/";
+    string url = strlen(path) == 1 && path[0] == '/' && _url[_url.size() - 1] != '/' ? _url + "/" : _url;
     OPENSSL_free(host);
     OPENSSL_free(port);
     OPENSSL_free(path);

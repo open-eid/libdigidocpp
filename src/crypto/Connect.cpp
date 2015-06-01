@@ -45,7 +45,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     string host = _host ? _host : "";
     string port = _port ? _port : "80";
     string path = _path ? _path : "/";
-    string url = _path ? _url : _url + "/";
+    string url = strlen(_path) == 1 && _path[0] == '/' && _url[_url.size() - 1] != '/' ? _url + "/" : _url;
     OPENSSL_free(_host);
     OPENSSL_free(_port);
     OPENSSL_free(_path);
