@@ -195,13 +195,13 @@ string Conf::proxyPass() const { return string(); }
  *
  * Used for signing OCSP request
  */
-string Conf::PKCS12Cert() const { return File::confPath() + "73411.p12"; }
+string Conf::PKCS12Cert() const { return File::confPath() + "878252.p12"; }
 
 /**
  * Gets PKCS12 password.
  * @see digidoc::Conf::PKCS12Cert
  */
-string Conf::PKCS12Pass() const { return "\x32\x30\x4d\x38\x58\x33\x37\x6c"; }
+string Conf::PKCS12Pass() const { return "\x61\x50\x51\x31\x31\x74\x69\x34"; }
 
 /**
  * Gets PKCS12 usage.

@@ -32,7 +32,7 @@
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.exe"/>
-                <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\73411.p12"/>
+                <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\878252.p12"/>
                 <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\digidocpp.conf"/>
               </Component>
               <Component Id="LibrariesDevX86" Guid="{9B16F8D1-11AA-4AF4-B8C2-96B4EC7E79CD}">
@@ -78,7 +78,7 @@
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.dll" Id="digidocpp.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.dll" Id="digidoc_csharp.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.exe" Id="digidoc_tool.exe_64"/>
-                <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\73411.p12" Id="_73411.p12_64"/>
+                <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\878252.p12" Id="_878252.p12_64"/>
                 <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\digidocpp.conf" Id="digidocpp.conf_64"/>
               </Component>
               <Component Id="LibrariesDevX64" Guid="{D992688C-0D4A-4C22-BEF4-582D7FA91731}">
