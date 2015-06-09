@@ -85,10 +85,9 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
 
     SCOPE(TS_VERIFY_CTX, ctx, TS_VERIFY_CTX_new());
     ctx->flags = TS_VFY_NONCE|TS_VFY_VERSION;
-    ctx->nonce = nonce.get();
+    ctx->nonce = nonce.release();
     if(TS_RESP_verify_response(ctx.get(), resp.get()) != 1)
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
-    ctx->nonce = nullptr;
 
     d.reset(resp->token, function<void(PKCS7*)>(PKCS7_free));
     resp->token = nullptr;

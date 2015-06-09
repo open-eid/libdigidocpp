@@ -40,7 +40,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends}
 Conflicts:
- libdigidoc2 (<3.0)
+ libdigidoc2 (<<3.0)
 Description: DigiDoc digital signature library
  DigiDoc is an XML file format for documents with digital signatures in use by
  the Estonian ID card infrastructure. This library allows for creation and
