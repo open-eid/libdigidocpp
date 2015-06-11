@@ -127,7 +127,11 @@ time_t digidoc::util::date::string2time_t(const string &time)
         ,0
 #endif
     };
+    return mkgmtime(t);
+}
 
+time_t digidoc::util::date::mkgmtime(struct tm &t)
+{
 #ifdef _WIN32
     return _mkgmtime(&t);
 #else

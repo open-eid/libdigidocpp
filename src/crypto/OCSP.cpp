@@ -24,6 +24,7 @@
 #include "Conf.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509CertStore.h"
+#include "util/DateTime.h"
 
 #include <algorithm>
 
@@ -441,6 +442,10 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         default: return ok;
         }
     });
+
+    tm t = util::date::ASN1TimeToTM(producedAt());
+    X509_VERIFY_PARAM_set_time(store->param, util::date::mkgmtime(t));
+    X509_STORE_set_flags(store.get(), X509_V_FLAG_USE_CHECK_TIME);
 
     //X509_STORE_set_trust(store.get(), X509_TRUST_TRUSTED);
     //X509_STORE_set_purpose(store.get(), NID_OCSP_sign);
