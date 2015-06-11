@@ -36,12 +36,13 @@
 6. Execute
 
         /usr/local/bin/digidoc-tool
-        
+
 ### OSX
 
 1. Install dependencies from
-   * [XCode](https://itunes.apple.com/en/app/xcode/id497799835?mt=12)
-   * [http://www.cmake.org](http://www.cmake.org)
+	* [XCode](https://itunes.apple.com/en/app/xcode/id497799835?mt=12)
+	* [http://www.cmake.org](http://www.cmake.org)
+
 2. Fetch the source
 
         git clone --recursive https://github.com/open-eid/libdigidocpp
@@ -72,13 +73,15 @@
 ### Windows
 
 1. Install dependencies from
-    * [Visual Studio Express 2013 for Windows Desktop](http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx)
+	* [Visual Studio Express 2013 for Windows Desktop](http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx)
 	* [http://www.cmake.org](http://www.cmake.org)
 	* [Xerces-c](http://mirror.cogentco.com/pub/apache//xerces/c/3/sources/xerces-c-3.1.1.zip)
 	* [Xerces-c MSVC2012 Project files](https://issues.apache.org/jira/secure/attachment/12548623/xerces_vc11proj.zip)
 	* [XML-Security-C](http://www.apache.org/dyn/closer.cgi?path=/santuario/c-library/xml-security-c-1.7.2.tar.gz)
 	* [OpenSSL Win32 binaries](https://slproweb.com/products/Win32OpenSSL.html) or [OpenSSL source](https://www.openssl.org/source/)
 	* [ZLib source](http://zlib.net/zlib128.zip)
+	* [swigwin-3.0.5.zip](http://swig.org/download.html) - Optional, for C# bindings
+
 2. Fetch the source
 
         git clone --recursive https://github.com/open-eid/libdigidocpp
@@ -89,6 +92,14 @@
         mkdir build
         cd build
         cmake ..
+
+   Optional CMake parameters:
+
+       -DSWIG_EXECUTABLE=C:/swigwin-3.0.5/swig.exe
+
+   After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
+   [README.md](https://github.com/open-eid/libdigidocpp/blob/master/examples/DigiDocCSharp/README.md).
+
 
 4. Build
 

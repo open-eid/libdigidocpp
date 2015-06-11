@@ -1,22 +1,32 @@
 Libdigidocpp library 3.11.0 release notes
 --------------------------------------
 Changes compared to ver 3.10.3
-- Improve EC signature size calculation
-- Improve HTTP traffic usage by using gzip Content-Encoding
-- TimeStampArchive support
-- Option to specify signature digest other than standard digest
-- Resolve relative PKCS11 config parameter to library path, instead current working directory
 
+- Improved ECDSA signature size calculation
+- Optimized HTTP download speed (e.g. when updating TSL lists) by compressing the traffic (using gzip Content-Encoding)
+- Added support for validating BDOC 2.1 time-stamp signatures with archive time-stamps 
+- Added option to specify different digest algorithm for the signature value than the default algorithm used in case of other digest values in the signature. 
+	- Added API methods Signer::setMethod(), Signer::method(), XmlConfV4::signatureDigestUri()
+	- Added configuration parameters signer.digestUri and signer.signatureDigestUri 
+	- Added parameter -sigsha(1,224,256,384,512) to digidoc-tool utility program
+- Improved OCSPserver access certificate usage, relative pkcs12.cert configuration parameter value is now resolved to the library's installation path, instead of current working directory
+- Added option to download TSL-s over proxy in case of HTTPS connections
+	- Added API methods XmlConfV4::proxyForceSSL(), XmlConfV4::proxyTunnelSSL() 
+	- Added configuration file parameters forceSSL and tunnelSSL
+- Fixed OCSP certificate verification, the verification is now done based on the OCSP poducedAt field's time.
+
+List of known issues: https://github.com/open-eid/libdigidocpp/wiki/Known-issues
 
 
 Libdigidocpp library 3.10.3 release notes
 --------------------------------------
 Changes compared to ver 3.10.0
+
 - Updated experimental .NET C# wrapper swig configuration file to recent API
 - Included C# wrapper files in Windows installer package
-- Filter out CA certificates in PKCS11Signer implementation to support Finland id-card signing in digidoc-tool
-- On signature validation at least one DataFile should be signed
-- Disable OCSP time slot check – local computer time against OCSP server time
+- Filter out CA certificates in PKCS11Signer implementation to support Finland ID-card signing in digidoc-tool
+- Improved signature validation, it is now checked that at least one data file is signed
+- Disabled OCSP time slot check when requesting OCSP confirmation, the local computer time difference compared to OCSP server time is not checked.
 
 
 

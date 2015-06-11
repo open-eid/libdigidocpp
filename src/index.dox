@@ -240,6 +240,9 @@ The information is provided with a special OCSP confirmation (also referred to a
 </td></tr><tr><td>
 time-stamp	</td><td>Mechanism used for adding certificate validity and signing time information with the signature. The certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token retrieved form a time-stamping service. In this case, signature creation time is the issuance time (genTime value in the time-stamp) of the time-stamp token. The respective signature profile is TS profile (supported only in case of BDOC 2.1 document format).
 </td></tr>
+tr><td>
+archive time-stamp	</td><td>Mechanism used for providing long term validity of a XAdES signature. The signature and validation data values are time-stamped. The respective signature profile is TSA profile (supported only in case of BDOC 2.1 document format).
+</td></tr>
 <tr><td>
 TSA	</td><td>Time-Stamping Authority. Time-stamping service provider.
 </td></tr>
@@ -289,6 +292,8 @@ The following table gives overview of functional features that are supported wit
 <td>Signature profiles are based on the profiles defined by XAdES (\ref XAdES "XAdES").
 - time-stamp (TS) - signature profile in case of which the certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token (see also \ref RFC6960 "RFC6960") retrieved from a time-stamping service. In this case, signature creation time is regarded as the issuance time of the time-stamp token (genTime value in the time-stamp). The profile is supported only in case of BDOC 2.1 document format, the “SignatureTimeStamp” element is added to the signature (see also \ref BDOC "BDOC2.1:2013"). Supported since v3.9 of the library.
 - time-mark (TM) - certificate validity and signing time information is added to the signature with a time-mark - a special OCSP confirmation in case of which the hash value of the binary value of the signature (along with hash algorithm identifier in case of BDOC 2.1 document format) must be present in the “nonce” field of the OCSP confirmation. In this case, signature creation time is regarded as the issuance time of the OCSP confirmation (producedAt value in the confirmation), additional time-stamp token is not required. 
+- archive time-stamp (LTA) - the signature and all the accompanying validation data is time-stamped in order to provide long term validity. The profile is supported only in case of BDOC 2.1 document format, the "ArchiveTimeStamp" element is added to the time-stamp or time-mark signature (see also \ref BDOC "BDOC2.1:2013").
+In Libdigidocpp, validation of BDOC 2.1 time-stamp signatures with archive time-stamps is supported since v3.11 of the library.
 </td>
 </tr>
 <tr><td>Trust anchors</td>
@@ -667,7 +672,34 @@ By default, the trusted certificates' information is obtained from European Comm
   <td>proxy.pass</td>
   <td>Specifies the proxy password.</td>
 </tr>
+<tr>
+  <td>proxy.forceSSL</td>
+  <td>May be used to enable downloading TSL-s over proxy in case of HTTPS connections. </td>
+</tr>
+<tr>
+  <td>proxy.tunnelSSL</td>
+  <td>May be used to enable downloading TSL-s over proxy in case of HTTPS connections. </td>
+</tr>
 </table>
+
+
+\subsubsection digest-settings Digest type settings
+<table>
+<tr>
+  <th>Parameter name</th>
+  <th>Comments</th>
+</tr>
+<tr>
+  <td>signer.signatureDigestUri</td>
+  <td>Specifies the digest algorithm that is used when calculating the hash that is being signed, supported only with BDOC 2.1 format. By default, the SHA-256 algorithm (with URI http://www.w3.org/2001/04/xmlenc#sha256) is used (except of SHA-224 in case of older generation of Estonian ID-cards)</td>
+</tr>
+<tr>
+  <td>signer.digestUri</td>
+  <td>Specifies the digest algorithm that is used for calculating all the hash values in the signature, supported only with BDOC 2.1 format. By default, the SHA-256 algorithm is used</td>
+</tr>
+</table>
+
+
 
 \subsubsection ocspsigning-settings Settings for signing OCSP requests
 Whether you need to sign the OCSP requests sent to your OCSP responder or not depends on your responder. Some OCSP servers require that the OCSP request is signed. To sign the OCSP request, you need to obtain and specify the PKCS#12 token, which will be used for signing.
@@ -767,6 +799,11 @@ xsi:noNamespaceSchemaLocation="schema/conf.xsd">
 <!--OCSP responder settings for test OCSP service-->
 <ocsp issuer="TEST of ESTEID-SK 2011">http://www.openxades.org/cgi-bin/ocsp.cgi</ocsp>
 <ocsp issuer="TEST of KLASS3-SK 2010">http://www.openxades.org/cgi-bin/ocsp.cgi</ocsp>
+
+<!--Digest algorithm settings-->
+<!--<param name="signer.digestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
+<!--<param name="signer.signatureDigestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
+  
 
 </configuration>	
 \endcode
@@ -871,6 +908,10 @@ Signature production place and signer role are optional signed meta-data about t
     signer->setSignatureProductionPlace(city, state, postalCode, country); // location where the signature is created
     signer->setSignerRoles(roles); // role(s) of the signer
 \endcode
+
+\paragraph API-signature-hash Optionally specify signature digest method
+By default, the hash that is being signed is calculated with SHA-256 algorithm in case of BDOC documents and SHA-1 algorithm in case of DDOC documents. 
+In case of BDOC format, you can also use a different digest algorithm for calculating the hash that is signed (this does not affect calculating other hash values). For that, use the digidoc::Signer::setMethod(const std::string &method) method.
 
 
 \paragraph API-sign-create Specify the signature profile and create the signature
@@ -1462,7 +1503,11 @@ Signer’s role(s). The option can occur multiple times.
 --sha(1,224,
 256,384,512)	</td><td>Optional
 
-Used for testing purposes. Specifies the hash function that is used for calculating digest values. If not specified then SHA-256 is used by default.
+Used for testing purposes. Specifies the hash function that is used when calculating digest values, supported only in case of BDOC documents. If not specified then SHA-256 is used by default.
+</td></tr><tr><td>
+--sigsha(1,224,256,384,512)	</td><td>Optional
+
+Used for testing purposes. Specifies the hash function that is used for calculating the hash that is being signed, supported only in case of BDOC format. If not specified then SHA-256 is used by default.
 </td></tr>
 </table>
 
