@@ -149,16 +149,16 @@ string Conf::ocsp(const string &issuer) const
         {"EID-SK 2011", "http://ocsp.sk.ee"},
         {"KLASS3-SK 2010", "http://ocsp.sk.ee"},
         //Estonia Test
-        {"TEST of ESTEID-SK 2007", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
-        {"TEST of ESTEID-SK 2011", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
-        {"TEST of KLASS3-SK 2010", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
+        {"TEST of ESTEID-SK 2007", "http://demo.sk.ee/ocsp"},
+        {"TEST of ESTEID-SK 2011", "http://demo.sk.ee/ocsp"},
+        {"TEST of KLASS3-SK 2010", "http://demo.sk.ee/ocsp"},
         //Finland Test
-        {"VRK CA for Test Purposes", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
-        {"VRK CA for Test Purposes - G2", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
+        {"VRK CA for Test Purposes", "http://demo.sk.ee/ocsp"},
+        {"VRK CA for Test Purposes - G2", "http://demo.sk.ee/ocsp"},
         //Latvia Test - disabled, issuer name is identical with live certificates
-        //{"E-ME SI (CA1)", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
+        //{"E-ME SI (CA1)", "http://demo.sk.ee/ocsp"},
         //Lithuania Test
-        {"Nacionalinis sertifikavimo centras (IssuingCA A)", "http://www.openxades.org/cgi-bin/ocsp.cgi"},
+        {"Nacionalinis sertifikavimo centras (IssuingCA A)", "http://demo.sk.ee/ocsp"},
     };
     auto pos = ocsplist.find(issuer);
     return pos == ocsplist.end() ? "http://ocsp.sk.ee/_proxy" : pos->second;

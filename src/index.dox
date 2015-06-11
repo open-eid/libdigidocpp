@@ -739,7 +739,7 @@ The default OCSP responder that the library uses for retrieving the OCSP confirm
 - in case of SK's live certificates: the SK's live OCSP responder http://ocsp.sk.ee is used
 - in case of certificates issued by Finnish, Latvian and Lithuanian CAs: the SK's proxy OCSP responder http://ocsp.sk.ee/_proxy is used
 
-In case of SK's test certificates, the SK's test OCSP responder http://www.openxades.org/cgi-bin/ocsp.cgi is used by default.
+In case of SK's test certificates, the SK's test OCSP responder http://demo.sk.ee/ocsp is used by default (replaces the old test responder URL http://www.openxades.org/cgi-bin/ocsp.cgi). Information about the service can be found and certificates for testing can be loaded at https://demo.sk.ee/upload_cert/. 
 
 You change the default behaviour in the configuration file with the following parameter. 
 
@@ -797,8 +797,13 @@ xsi:noNamespaceSchemaLocation="schema/conf.xsd">
 <!--<ocsp issuer="KLASS3-SK 2010">http://ocsp.sk.ee</ocsp>-->
 
 <!--OCSP responder settings for test OCSP service-->
-<ocsp issuer="TEST of ESTEID-SK 2011">http://www.openxades.org/cgi-bin/ocsp.cgi</ocsp>
-<ocsp issuer="TEST of KLASS3-SK 2010">http://www.openxades.org/cgi-bin/ocsp.cgi</ocsp>
+<ocsp issuer="TEST of ESTEID-SK 2011">http://demo.sk.ee/ocsp</ocsp>
+<ocsp issuer="TEST of KLASS3-SK 2010">http://demo.sk.ee/ocsp</ocsp>
+
+<!--Digest algorithm settings-->
+<!--<param name="signer.digestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
+<!--<param name="signer.signatureDigestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
+  
 
 <!--Digest algorithm settings-->
 <!--<param name="signer.digestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->

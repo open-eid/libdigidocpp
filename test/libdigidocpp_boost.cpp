@@ -99,7 +99,7 @@ public:
     string xsdPath() const { return DIGIDOCPPCONF; }
     string certsPath() const { return "."; }
     string ocsp(const string &) const
-    { return "https://www.openxades.org/cgi-bin/ocsp.cgi"; }
+    { return "http://demo.sk.ee/ocsp"; }
     bool PKCS12Disable() const { return true; }
     string TSUrl() const { return "http://demo.sk.ee/tsa/"; }
     bool TSLAutoUpdate() const { return false; }
