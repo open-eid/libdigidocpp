@@ -88,25 +88,8 @@ vector<unsigned char> SignatureTM::nonce() const
  */
 X509Cert SignatureTM::OCSPCertificate() const
 {
-    try
-    {
-        if(unsignedSignatureProperties().certificateValues().empty())
-            return X509Cert();
-
-        typedef UnsignedSignaturePropertiesType::CertificateValuesType::EncapsulatedX509CertificateSequence Seq;
-        const Seq &certs = unsignedSignatureProperties().certificateValues()[0].encapsulatedX509Certificate();
-        if(certs.empty())
-            return X509Cert();
-
-        for(Seq::const_iterator i = certs.begin(); i != certs.end(); ++i)
-        {
-            if(i->id().present() && i->id().get().find( "RESPONDER_CERT" ) != string::npos)
-                return X509Cert(vector<unsigned char>(i->data(), i->data() + i->size()));
-        }
-        return X509Cert(vector<unsigned char>(certs[0].data(), certs[0].data() + certs[0].size()));
-    }
-    catch( const Exception & ) {}
-    return X509Cert();
+    vector<unsigned char> respBuf = getOCSPResponseValue();
+    return respBuf.empty() ? X509Cert() : OCSP(respBuf).responderCert();
 }
 
 /**
