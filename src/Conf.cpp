@@ -25,17 +25,15 @@
 #include "crypto/X509Cert.h"
 #include "util/File.h"
 
+#include "tslcert1.h"
+#include "tslcert2.h"
+#include "tslcert3.h"
+
 #include <map>
 
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
-namespace digidoc
-{
-    vector<unsigned char> tslcert1();
-    vector<unsigned char> tslcert2();
-    vector<unsigned char> tslcert3();
-}
 
 Conf* Conf::INSTANCE = nullptr;
 
@@ -223,11 +221,12 @@ bool Conf::TSLAllowExpired() const { return false; }
  */
 vector<X509Cert> Conf::TSLCerts() const
 {
-    return {
-        X509Cert(tslcert1(), X509Cert::Pem),
-        X509Cert(tslcert2(), X509Cert::Pem),
-        X509Cert(tslcert3(), X509Cert::Pem),
+    static vector<X509Cert> certs {
+        X509Cert(tslcert1_crt, tslcert1_crt_len, X509Cert::Pem),
+        X509Cert(tslcert2_crt, tslcert2_crt_len, X509Cert::Pem),
+        X509Cert(tslcert3_crt, tslcert3_crt_len, X509Cert::Pem),
     };
+    return certs;
 }
 
 /**

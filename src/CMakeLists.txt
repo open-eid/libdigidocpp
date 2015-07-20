@@ -30,6 +30,11 @@ if( LIBDIGIDOC_FOUND )
     if( LIBDIGIDOC_LINKED )
         list( APPEND digidocpp_DEFS LINKED_LIBDIGIDOC )
         list( APPEND TARGET_LIBRARIES ${LIBDIGIDOC_LIBRARY} )
+        if( ${BUILD_TYPE} STREQUAL "STATIC" )
+            find_package(Iconv)
+            find_package(LibXml2)
+            list( APPEND TARGET_LIBRARIES ${ICONV_LIBRARIES} ${LIBXML2_LIBRARIES} )
+        endif()
     else()
         list( APPEND digidocpp_DEFS DYNAMIC_LIBDIGIDOC )
     endif()
@@ -107,14 +112,26 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101.xsd
 #    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
 #    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
 list( APPEND xsd_SRCS xml/AdditionalInformationType.cpp )
-add_executable( embedfile embedfile.cpp )
-add_custom_command( OUTPUT tslcert1.cpp tslcert2.cpp tslcert3.cpp
-    COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT1} tslcert1 tslcert1.cpp
-    COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT2} tslcert2 tslcert2.cpp
-    COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT3} tslcert3 tslcert3.cpp
-    COMMENT "Generating tslcert1.cpp from ${TSL_CERT1}, tslcert2.cpp from ${TSL_CERT2}, tslcert3.cpp from ${TSL_CERT3}"
-)
-list( APPEND digidocpp_SRCS tslcert1.cpp tslcert2.cpp tslcert3.cpp )
+if( WIN32 )
+    add_executable( embedfile embedfile.cpp )
+    add_custom_command( OUTPUT tslcert1.h tslcert2.h tslcert3.h
+        COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT1} tslcert1_crt tslcert1.h
+        COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT2} tslcert2_crt tslcert2.h
+        COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT3} tslcert3_crt tslcert3.h
+        COMMENT "Generating tslcert1.h from ${TSL_CERT1}, tslcert2.h from ${TSL_CERT2}, tslcert3.h from ${TSL_CERT3}"
+    )
+else()
+    add_custom_command( OUTPUT tslcert1.h tslcert2.h tslcert3.h
+        COMMAND ln -sf ${TSL_CERT1} tslcert1.crt
+        COMMAND ln -sf ${TSL_CERT2} tslcert2.crt
+        COMMAND ln -sf ${TSL_CERT3} tslcert3.crt
+        COMMAND xxd -i tslcert1.crt tslcert1.h
+        COMMAND xxd -i tslcert2.crt tslcert2.h
+        COMMAND xxd -i tslcert3.crt tslcert3.h
+        COMMENT "Generating tslcert1.h from ${TSL_CERT1}, tslcert2.h from ${TSL_CERT2}, tslcert3.h from ${TSL_CERT3}"
+    )
+endif()
+list( APPEND digidocpp_SRCS tslcert1.h tslcert2.h tslcert3.h )
 list( APPEND digidoc-tool_SRCS crypto/Connect.cpp crypto/Digest.cpp )
 
 set( SCHEMA_FILES
@@ -189,7 +206,7 @@ set_target_properties(digidocpp_priv PROPERTIES
     POSITION_INDEPENDENT_CODE YES
 )
 
-add_library(digidocpp SHARED
+add_library(digidocpp ${BUILD_TYPE}
     ${digidocpp_SRCS}
     ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf
     ${CMAKE_SOURCE_DIR}/etc/878252.p12
@@ -228,33 +245,43 @@ set_target_properties(digidocpp PROPERTIES
 )
 
 target_link_libraries(digidocpp digidocpp_priv
-    ${OPENSSL_LIBRARIES}
     ${CMAKE_DL_LIBS}
     ${MINIZIP_LIBRARIES}
     ${XERCESC_LIBRARIES}
     ${XMLSECURITYC_LIBRARIES}
-    ${ZLIB_LIBRARIES}
     ${TARGET_LIBRARIES}
+    ${OPENSSL_LIBRARIES}
+    ${ZLIB_LIBRARIES}
 )
 
-add_executable(digidoc-tool ${digidoc-tool_SRCS} digidoc-tool.rc digidoc-tool.cpp)
-
-set_target_properties(digidoc-tool PROPERTIES
-    INSTALL_RPATH "@loader_path/../../../..;@loader_path/../.."
-    LINK_LIBRARIES "digidocpp;digidocpp_priv;${CMAKE_THREAD_LIBS_INIT}"
-)
+if( BUILD_TOOLS )
+    add_executable(digidoc-tool ${digidoc-tool_SRCS} digidoc-tool.rc digidoc-tool.cpp)
+    set_target_properties(digidoc-tool PROPERTIES
+        INSTALL_RPATH "@loader_path/../../../..;@loader_path/../.."
+        LINK_LIBRARIES "digidocpp;digidocpp_priv;${CMAKE_THREAD_LIBS_INIT}"
+    )
+endif()
 
 if(SWIG_FOUND AND WIN32)
     INCLUDE(${SWIG_USE_FILE})
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
     SET(CMAKE_SWIG_FLAGS -dllimport digidoc_csharp -namespace digidoc)
     SET_SOURCE_FILES_PROPERTIES(digidoc.i PROPERTIES CPLUSPLUS ON)
     SET(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/csharp)
     SWIG_ADD_MODULE(digidoc_csharp csharp digidoc.i)
     SWIG_LINK_LIBRARIES(digidoc_csharp digidocpp)
-    set_target_properties( digidoc_csharp PROPERTIES DEBUG_OUTPUT_NAME "digidoc_csharpd" )
+    set_target_properties(digidoc_csharp PROPERTIES DEBUG_OUTPUT_NAME "digidoc_csharpd")
     install(TARGETS digidoc_csharp DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/csharp/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_csharp FILES_MATCHING PATTERN "*.cs")
+elseif(SWIG_FOUND AND ANDROID)
+    INCLUDE(${SWIG_USE_FILE})
+    SET(CMAKE_SWIG_FLAGS -package ee.ria.libdigidocpp)
+    SET_SOURCE_FILES_PROPERTIES(digidoc.i PROPERTIES CPLUSPLUS ON)
+    SET(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/java)
+    SWIG_ADD_MODULE(digidoc_java java digidoc.i)
+    SWIG_LINK_LIBRARIES(digidoc_java digidocpp)
+    set_target_properties(digidoc_java PROPERTIES SOVERSION 0 NO_SONAME YES VERSION 0)
+    install(TARGETS digidoc_java DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_java FILES_MATCHING PATTERN "*.java")
 endif()
 
 install( TARGETS digidocpp
@@ -320,8 +347,13 @@ if( FRAMEWORK )
         COMMAND zip -r ${CMAKE_BINARY_DIR}/libdigidocpp-dbg_${VERSION}$ENV{VER_SUFFIX}.zip libdigidocpp.dSYM
     )
 else()
-    install( TARGETS digidoc-tool DESTINATION ${CMAKE_INSTALL_BINDIR} )
-    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/digidoc-tool.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 )
+    if( ${BUILD_TYPE} STREQUAL "STATIC" )
+        install( TARGETS minizip digidocpp_priv DESTINATION ${CMAKE_INSTALL_LIBDIR} )
+    endif()
+    if( BUILD_TOOLS )
+        install( TARGETS digidoc-tool DESTINATION ${CMAKE_INSTALL_BINDIR} )
+        install( FILES ${CMAKE_CURRENT_BINARY_DIR}/digidoc-tool.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 )
+    endif()
     install( FILES ${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
     install( FILES ${SCHEMA_FILES} DESTINATION ${DIGIDOCPP_CONFIG_DIR}/schema )
     install( FILES ${CRYPTO_HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp/crypto )

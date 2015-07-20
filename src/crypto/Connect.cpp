@@ -34,6 +34,17 @@
 using namespace digidoc;
 using namespace std;
 
+#ifdef ANDROID
+#include <sys/select.h>
+template <typename T>
+static string to_string(T value)
+{
+    ostringstream os;
+    os << value;
+    return os.str();
+}
+#endif
+
 Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent)
     : _timeout(timeout)
 {

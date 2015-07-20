@@ -301,7 +301,7 @@ tm* File::modifiedTime(const string &path)
     f_statbuf fileInfo;
     if(f_stat(encodeName(path).c_str(), &fileInfo) != 0)
         return gmtime(0);
-    return gmtime(&fileInfo.st_mtime);
+    return gmtime((const time_t*)&fileInfo.st_mtime);
 }
 
 /**

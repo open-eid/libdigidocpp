@@ -40,8 +40,10 @@
 #include "XmlConf.h"
 #include "crypto/PKCS11Signer.h"
 #include "crypto/PKCS12Signer.h"
-#include "crypto/WinSigner.h"
 #include "crypto/X509Cert.h"
+#ifdef SWIGWIN
+#include "crypto/WinSigner.h"
+#endif
 
 #include <vector>
 
@@ -59,14 +61,52 @@ extern "C"
         return static_cast<std::vector<unsigned char>*>(ptr)->data();
     }
     SWIGEXPORT int SWIGSTDCALL ByteVector_size(void *ptr) {
-        return static_cast<std::vector<unsigned char>*>(ptr)->size();
+       return static_cast<std::vector<unsigned char>*>(ptr)->size();
     }
     SWIGEXPORT void* SWIGSTDCALL ByteVector_to(unsigned char *data, int size) {
-        return new std::vector<unsigned char>(data, data + size);
+       return new std::vector<unsigned char>(data, data + size);
     }
 }
 #endif
 
+#ifdef SWIGJAVA
+class DigiDocConf: public digidoc::XmlConf
+{
+public:
+    DigiDocConf(const std::string &_cache)
+        : digidoc::XmlConf(), cache(_cache), xsd(_cache) {}
+    std::string TSLCache() const { return cache; }
+    std::string xsdPath() const { return xsd; }
+
+private:
+    std::string cache, xsd;
+};
+
+extern "C"
+{
+SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jenv, jclass jcls, jstring path) {
+  (void)jcls;
+  if(!path) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+    return;
+  }
+
+  const char *path_pstr = (const char *)jenv->GetStringUTFChars(path, 0); 
+  if (!path_pstr)
+    return;
+  std::string path_str(path_pstr);
+  jenv->ReleaseStringUTFChars(path, path_pstr); 
+
+  try {
+    digidoc::Conf::init(new DigiDocConf(path_str));
+    digidoc::initialize();
+  } catch (const digidoc::Exception &e) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, parseException(e).c_str());
+    return;
+  }
+}
+}
+#endif
 %}
 
 %pragma(csharp) imclasscode=%{
@@ -79,6 +119,28 @@ extern "C"
     [global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPArray)]byte[] data, int size);
 %}
 
+#ifdef SWIGJAVA
+%native(initJava) void initJava(char *);
+
+%typemap(in) std::vector<unsigned char> %{
+    jbyte *$input_ptr = jenv->GetByteArrayElements($input, NULL);
+    jsize $input_size = jenv->GetArrayLength($input);
+    std::vector<unsigned char> $1_data($input_ptr, $input_ptr+$input_size);
+    $1 = &$1_data;
+    jenv->ReleaseByteArrayElements($input, $input_ptr, JNI_ABORT);
+%}
+%typemap(out) std::vector<unsigned char> %{
+    jresult = jenv->NewByteArray((&result)->size());
+    jenv->SetByteArrayRegion(jresult, 0, (&result)->size(), (const jbyte*)(&result)->data());
+%}
+#endif
+%typemap(jtype) std::vector<unsigned char> "byte[]"
+%typemap(jstype) std::vector<unsigned char> "byte[]"
+%typemap(jni) std::vector<unsigned char> "jbyteArray"
+%typemap(javain) std::vector<unsigned char> "$javainput"
+%typemap(javaout) std::vector<unsigned char> {
+    return $jnicall;
+  }
 %typemap(cstype) std::vector<unsigned char> "byte[]"
 %typemap(csin) std::vector<unsigned char> "$modulePINVOKE.ByteVector_to($csinput, $csinput.Length)"
 %typemap(csout) std::vector<unsigned char>
@@ -88,14 +150,17 @@ extern "C"
   global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(data), result, 0, result.Length);
   return result;
 }
-
 %apply std::vector<unsigned char> { std::vector<unsigned char> const & };
 
 %exception %{
  try {
    $action
  } catch (const digidoc::Exception &e) {
+#ifdef SWIGJAVA
+   SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, parseException(e).c_str());
+#elif defined(SWIGCSHARP)
    SWIG_CSharpSetPendingException(SWIG_CSharpApplicationException, parseException(e).c_str());
+#endif
    return $null;
  }
 %}
@@ -109,6 +174,9 @@ extern "C"
 %feature("notabstract") digidoc::Signature;  // Breaks PHP if abstract
 #endif
 
+#ifdef SWIGJAVA
+%ignore digidoc::initialize;
+#endif
 // ignore X509Cert and implement later cert as ByteVector
 %ignore digidoc::Signer::cert;
 %ignore digidoc::Signature::signingCertificate;
@@ -132,7 +200,9 @@ extern "C"
 %include "crypto/Signer.h"
 %include "crypto/PKCS12Signer.h"
 %include "crypto/PKCS11Signer.h"
+#ifdef SWIGWIN
 %include "crypto/WinSigner.h"
+#endif
 
 %template(StringVector) std::vector<std::string>;
 %template(DataFiles) std::vector<digidoc::DataFile*>;
@@ -146,7 +216,7 @@ extern "C"
     }
 }
 %extend digidoc::Signature {
-    std::vector<unsigned char> signingCertificate() const
+    std::vector<unsigned char> signingCertificateDer() const
     {
         return $self->signingCertificate();
     }

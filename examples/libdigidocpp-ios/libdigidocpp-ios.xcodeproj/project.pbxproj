@@ -1,0 +1,382 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		4E25CC401B5D1D85005E0B79 /* test.bdoc in Resources */ = {isa = PBXBuildFile; fileRef = 4E25CC3F1B5D1D85005E0B79 /* test.bdoc */; };
+		4E25CC421B5D1EDA005E0B79 /* schema in Resources */ = {isa = PBXBuildFile; fileRef = 4E25CC411B5D1EDA005E0B79 /* schema */; };
+		4E76639E1B5A37AC00672ACF /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E76639D1B5A37AC00672ACF /* main.m */; };
+		4E7663A11B5A37AC00672ACF /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E7663A01B5A37AC00672ACF /* AppDelegate.mm */; };
+		4E7663A41B5A37AC00672ACF /* MasterViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E7663A31B5A37AC00672ACF /* MasterViewController.mm */; };
+		4E7663A71B5A37AC00672ACF /* DetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E7663A61B5A37AC00672ACF /* DetailViewController.m */; };
+		4E7663AA1B5A37AC00672ACF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663A81B5A37AC00672ACF /* Main.storyboard */; };
+		4E7663AC1B5A37AC00672ACF /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663AB1B5A37AC00672ACF /* Images.xcassets */; };
+		4E7663AF1B5A37AC00672ACF /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663AD1B5A37AC00672ACF /* LaunchScreen.xib */; };
+		4E7663C91B5A3F3400672ACF /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E7663C81B5A3F3400672ACF /* libz.dylib */; };
+		4ED8CAC21B6A431D0043F53F /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ED8CAC11B6A431D0043F53F /* libxml2.dylib */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		4E25CC3F1B5D1D85005E0B79 /* test.bdoc */ = {isa = PBXFileReference; lastKnownFileType = file; path = test.bdoc; sourceTree = "<group>"; };
+		4E25CC411B5D1EDA005E0B79 /* schema */ = {isa = PBXFileReference; lastKnownFileType = folder; name = schema; path = /Library/EstonianIDCard.iphoneos/etc/digidocpp/schema; sourceTree = "<absolute>"; };
+		4E7663981B5A37AC00672ACF /* libdigidocpp-ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "libdigidocpp-ios.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4E76639C1B5A37AC00672ACF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4E76639D1B5A37AC00672ACF /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		4E76639F1B5A37AC00672ACF /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		4E7663A01B5A37AC00672ACF /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
+		4E7663A21B5A37AC00672ACF /* MasterViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MasterViewController.h; sourceTree = "<group>"; };
+		4E7663A31B5A37AC00672ACF /* MasterViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MasterViewController.mm; sourceTree = "<group>"; };
+		4E7663A51B5A37AC00672ACF /* DetailViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DetailViewController.h; sourceTree = "<group>"; };
+		4E7663A61B5A37AC00672ACF /* DetailViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DetailViewController.m; sourceTree = "<group>"; };
+		4E7663A91B5A37AC00672ACF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		4E7663AB1B5A37AC00672ACF /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		4E7663AE1B5A37AC00672ACF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
+		4E7663C81B5A3F3400672ACF /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
+		4ED8CAC11B6A431D0043F53F /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4E7663951B5A37AC00672ACF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4ED8CAC21B6A431D0043F53F /* libxml2.dylib in Frameworks */,
+				4E7663C91B5A3F3400672ACF /* libz.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4E76638F1B5A37AC00672ACF = {
+			isa = PBXGroup;
+			children = (
+				4E76639A1B5A37AC00672ACF /* libdigidocpp-ios */,
+				4E7663991B5A37AC00672ACF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4E7663991B5A37AC00672ACF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4E7663981B5A37AC00672ACF /* libdigidocpp-ios.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4E76639A1B5A37AC00672ACF /* libdigidocpp-ios */ = {
+			isa = PBXGroup;
+			children = (
+				4E76639F1B5A37AC00672ACF /* AppDelegate.h */,
+				4E7663A01B5A37AC00672ACF /* AppDelegate.mm */,
+				4E7663A21B5A37AC00672ACF /* MasterViewController.h */,
+				4E7663A31B5A37AC00672ACF /* MasterViewController.mm */,
+				4E7663A51B5A37AC00672ACF /* DetailViewController.h */,
+				4E7663A61B5A37AC00672ACF /* DetailViewController.m */,
+				4E7663A81B5A37AC00672ACF /* Main.storyboard */,
+				4E7663AB1B5A37AC00672ACF /* Images.xcassets */,
+				4E7663AD1B5A37AC00672ACF /* LaunchScreen.xib */,
+				4E76639B1B5A37AC00672ACF /* Supporting Files */,
+			);
+			path = "libdigidocpp-ios";
+			sourceTree = "<group>";
+		};
+		4E76639B1B5A37AC00672ACF /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				4E25CC411B5D1EDA005E0B79 /* schema */,
+				4E25CC3F1B5D1D85005E0B79 /* test.bdoc */,
+				4E7663C81B5A3F3400672ACF /* libz.dylib */,
+				4ED8CAC11B6A431D0043F53F /* libxml2.dylib */,
+				4E76639C1B5A37AC00672ACF /* Info.plist */,
+				4E76639D1B5A37AC00672ACF /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4E7663971B5A37AC00672ACF /* libdigidocpp-ios */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4E7663BE1B5A37AC00672ACF /* Build configuration list for PBXNativeTarget "libdigidocpp-ios" */;
+			buildPhases = (
+				4E7663941B5A37AC00672ACF /* Sources */,
+				4E7663951B5A37AC00672ACF /* Frameworks */,
+				4E7663961B5A37AC00672ACF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "libdigidocpp-ios";
+			productName = "libdigidocpp-ios";
+			productReference = 4E7663981B5A37AC00672ACF /* libdigidocpp-ios.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4E7663901B5A37AC00672ACF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0710;
+				ORGANIZATIONNAME = RIA;
+				TargetAttributes = {
+					4E7663971B5A37AC00672ACF = {
+						CreatedOnToolsVersion = 6.4;
+						DevelopmentTeam = ET847QJV9F;
+					};
+				};
+			};
+			buildConfigurationList = 4E7663931B5A37AC00672ACF /* Build configuration list for PBXProject "libdigidocpp-ios" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4E76638F1B5A37AC00672ACF;
+			productRefGroup = 4E7663991B5A37AC00672ACF /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4E7663971B5A37AC00672ACF /* libdigidocpp-ios */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4E7663961B5A37AC00672ACF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4E25CC421B5D1EDA005E0B79 /* schema in Resources */,
+				4E7663AA1B5A37AC00672ACF /* Main.storyboard in Resources */,
+				4E7663AF1B5A37AC00672ACF /* LaunchScreen.xib in Resources */,
+				4E7663AC1B5A37AC00672ACF /* Images.xcassets in Resources */,
+				4E25CC401B5D1D85005E0B79 /* test.bdoc in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4E7663941B5A37AC00672ACF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4E7663A11B5A37AC00672ACF /* AppDelegate.mm in Sources */,
+				4E7663A41B5A37AC00672ACF /* MasterViewController.mm in Sources */,
+				4E76639E1B5A37AC00672ACF /* main.m in Sources */,
+				4E7663A71B5A37AC00672ACF /* DetailViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		4E7663A81B5A37AC00672ACF /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				4E7663A91B5A37AC00672ACF /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		4E7663AD1B5A37AC00672ACF /* LaunchScreen.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				4E7663AE1B5A37AC00672ACF /* Base */,
+			);
+			name = LaunchScreen.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		4E7663BC1B5A37AC00672ACF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		4E7663BD1B5A37AC00672ACF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		4E7663BF1B5A37AC00672ACF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/libdigidocpp-ios",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					/Library/EstonianIDCard.iphonesimulator/include,
+				);
+				INFOPLIST_FILE = "libdigidocpp-ios/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/libdigidocpp-ios",
+					/Library/EstonianIDCard.iphonesimulator/lib,
+				);
+				OTHER_LDFLAGS = (
+					"-ldigidocpp_priv",
+					"-ldigidocpp",
+					"-ldigidoc",
+					"-lssl",
+					"-lcrypto",
+					"-lxml-security-c",
+					"-lxerces-c",
+					"-lminizip",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		4E7663C01B5A37AC00672ACF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/libdigidocpp-ios",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					/Library/EstonianIDCard.iphoneos/include,
+				);
+				INFOPLIST_FILE = "libdigidocpp-ios/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/libdigidocpp-ios",
+					/Library/EstonianIDCard.iphoneos/lib,
+				);
+				OTHER_LDFLAGS = (
+					"-ldigidocpp_priv",
+					"-ldigidocpp",
+					"-ldigidoc",
+					"-lssl",
+					"-lcrypto",
+					"-lxml-security-c",
+					"-lxerces-c",
+					"-lminizip",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4E7663931B5A37AC00672ACF /* Build configuration list for PBXProject "libdigidocpp-ios" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4E7663BC1B5A37AC00672ACF /* Debug */,
+				4E7663BD1B5A37AC00672ACF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4E7663BE1B5A37AC00672ACF /* Build configuration list for PBXNativeTarget "libdigidocpp-ios" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4E7663BF1B5A37AC00672ACF /* Debug */,
+				4E7663C01B5A37AC00672ACF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 4E7663901B5A37AC00672ACF /* Project object */;
+}

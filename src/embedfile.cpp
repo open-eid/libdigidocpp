@@ -30,24 +30,15 @@ int main(int argc, char *argv[])
 	if (!in || !out)
 		return EXIT_FAILURE;
 
-	fprintf(out,
-		"#include <vector>\n"
-		"namespace digidoc {\n"
-		" std::vector<unsigned char> %s() {\n"
-		"  static const unsigned char data[] = {", argv[2]);
-	int ch;
-	for (int i = 0; (ch = fgetc(in)) != EOF; ++i)
+	fprintf(out, "unsigned char %s[] = {", argv[2]);
+	unsigned int ch, i;
+	for (i = 0; (ch = fgetc(in)) != EOF; ++i)
 	{
 		if (i % 12 == 0)
 			fprintf(out, "\n");
 		fprintf(out, " %#04x,", ch);
 	}
-	fprintf(out,
-		" 0x00\n"
-		"  };\n"
-		"  return std::vector<unsigned char>(data, data + sizeof(data));\n"
-		" }\n"
-		"}\n");
+	fprintf(out, "};\nunsigned int %s_len = %u;\n", argv[2], i);
 	fclose(in);
 	fclose(out);
 

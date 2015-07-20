@@ -60,6 +60,16 @@ using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
 
+#ifdef ANDROID
+template <typename T>
+static string to_string(T value)
+{
+    ostringstream os;
+    os << value;
+    return os.str();
+}
+#endif
+
 static vector<unsigned char> toVector(const char *data, size_t size)
 {
     return vector<unsigned char>(data, data + size);
