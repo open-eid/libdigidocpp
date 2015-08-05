@@ -29,21 +29,27 @@
 
 namespace digidoc
 {
-struct PKCS12SignerPrivate
+class PKCS12SignerPrivate
 {
-    PKCS12SignerPrivate(): cert(0), key(0) {}
-    X509 *cert;
-    EVP_PKEY *key;
+public:
+    X509 *cert = nullptr;
+    EVP_PKEY *key = nullptr;
 };
 }
 using namespace digidoc;
 using namespace std;
 
 /**
- * Initializes the PKCS12 signer with X.509 certificate and private key pair.
+ * @class digidoc::PKCS12Signer
+ * @brief Implements <code>Signer</code> interface for PKCS#12 files.
+ */
+
+
+/**
+ * Initializes the PKCS12 signer with PKCS#12 file and password.
  *
- * @param path PKCS12 file path
- * @param pass PKCS12 file passworkd
+ * @param path PKCS#12 file path
+ * @param pass PKCS#12 file password
  * @throws Exception throws exception if the file is not found or wrong password
  */
 PKCS12Signer::PKCS12Signer(const string &path, const string &pass)

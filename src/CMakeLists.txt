@@ -139,6 +139,7 @@ set( PUBLIC_HEADER
 )
 set( CRYPTO_HEADER
     crypto/PKCS11Signer.h
+    crypto/PKCS12Signer.h
     crypto/Signer.h
     crypto/X509Cert.h
 )
@@ -147,6 +148,7 @@ set( CRYPTO_SOURCE
     crypto/Connect.cpp
     crypto/Digest.cpp
     crypto/OCSP.cpp
+    crypto/PKCS12Signer.cpp
     crypto/TS.cpp
     crypto/X509Cert.cpp
     crypto/X509CertStore.cpp
@@ -160,7 +162,6 @@ if( WIN32 )
 elseif( APPLE )
     #ignore openssl deprecation warnings
     set_source_files_properties( ${CRYPTO_SOURCE} PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations" )
-    set_source_files_properties( crypto/PKCS12Signer.cpp PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations" )
     list( APPEND TARGET_LIBRARIES "-framework CoreFoundation" )
 endif()
 
@@ -178,7 +179,6 @@ include_directories(
 add_library(digidocpp_priv STATIC
     ${xsd_SRCS}
     log.cpp
-    crypto/PKCS12Signer.cpp
     crypto/TSL.cpp
     util/File.cpp
     util/DateTime.cpp

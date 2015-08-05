@@ -163,7 +163,7 @@ BOOST_GLOBAL_FIXTURE(DigiDocPPFixture)
 BOOST_AUTO_TEST_SUITE(SignerSuite)
 BOOST_AUTO_TEST_CASE(signerParameters)
 {
-    unique_ptr<PKCS12Signer> signer;
+    unique_ptr<Signer> signer;
 
     BOOST_CHECK_THROW(signer.reset(new PKCS12Signer("signer1.p12", "signer0")), Exception); // wrong pass
     BOOST_CHECK_THROW(signer.reset(new PKCS12Signer("signer0.p12", "signer1")), Exception); // missing file
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(X509CertSuite)
 BOOST_AUTO_TEST_CASE(parameters)
 {
-    unique_ptr<PKCS12Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
+    unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
     X509Cert c = signer1->cert();
     BOOST_CHECK_EQUAL(c, signer1->cert());
     BOOST_CHECK_EQUAL(!c, false);
@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 
     BOOST_CHECK_THROW(d->removeSignature(0U), Exception);
 
-    unique_ptr<PKCS12Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
+    unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
     BOOST_CHECK_THROW(d->sign(signer1.get()), Exception);
     if(Doc::EXT == DDoc::EXT)
         return;
@@ -374,7 +374,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_THROW(d->removeDataFile(0U), Exception);
 
     // Add second Signature
-    unique_ptr<PKCS12Signer> signer2(new PKCS12Signer("signer2.p12", "signer2"));
+    unique_ptr<Signer> signer2(new PKCS12Signer("signer2.p12", "signer2"));
     BOOST_CHECK_NO_THROW(d->sign(signer2.get()));
     BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
     if(d->signatures().size() == 2)
@@ -389,7 +389,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 
     if(d->mediaType() == BDoc2::TYPE)
     {
-        unique_ptr<PKCS12Signer> signer3(new PKCS12Signer("signerEC.p12", "signerEC"));
+        unique_ptr<Signer> signer3(new PKCS12Signer("signerEC.p12", "signerEC"));
         Signature *s3 = 0;
         BOOST_CHECK_NO_THROW(s3 = d->sign(signer3.get()));
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 {
-    unique_ptr<PKCS12Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
+    unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
     vector<string> data;
     data.push_back("0123456789~#%&()=`@{[]}'");
     data.push_back("öäüõ");
@@ -468,7 +468,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
 {
     unique_ptr<Doc> d(new Doc);
-    unique_ptr<PKCS12Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
+    unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
 
     signer1->setSignatureProductionPlace("Tartu", "Tartumaa", "12345", "Estonia");
 
@@ -508,7 +508,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
     if(d->signatures().size() == 1U)
         BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
 
-    unique_ptr<PKCS12Signer> signer3(new PKCS12Signer("signer3.p12", "signer3"));
+    unique_ptr<Signer> signer3(new PKCS12Signer("signer3.p12", "signer3"));
     BOOST_CHECK_THROW(d->sign(signer3.get()), Exception); // OCSP UNKNOWN
 }
 BOOST_AUTO_TEST_SUITE_END()

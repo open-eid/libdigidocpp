@@ -34,9 +34,9 @@ namespace digidoc
           void setSelectFirst(bool first);
 
       private:
-          X509Cert cert() const;
+          X509Cert cert() const override;
           void sign(const std::string &method, const std::vector<unsigned char> &digest,
-                    std::vector<unsigned char> &signature);
+                    std::vector<unsigned char> &signature) override;
 
           DISABLE_COPY(CNGSigner);
           CNGSignerPrivate *d;

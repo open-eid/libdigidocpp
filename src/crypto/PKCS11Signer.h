@@ -38,9 +38,9 @@ namespace digidoc
           virtual X509Cert selectSigningCertificate(const std::vector<X509Cert> &certificates) const;
 
       private:
-          X509Cert cert() const;
+          X509Cert cert() const override;
           void sign(const std::string &method, const std::vector<unsigned char> &digest,
-                    std::vector<unsigned char> &signature);
+                    std::vector<unsigned char> &signature) override;
 
           PKCS11SignerPrivate *d;
     };

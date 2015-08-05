@@ -831,7 +831,6 @@ EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          */crypto/TS.* \
                          */crypto/TSL.* \
                          */crypto/CNGSigner.* \
-                         */crypto/PKCS12Signer.* \
                          */crypto/pkcs11.* \
                          */minizip/* \
                          */openssl/* \

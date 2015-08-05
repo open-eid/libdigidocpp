@@ -23,24 +23,20 @@
 
 namespace digidoc
 {
-    struct PKCS12SignerPrivate;
-    /**
-     * Implements <code>Signer</code> interface for signing with RSA private key.
-     *
-     * @author Janari Põld
-     */
-    class PKCS12Signer : public Signer
+    class PKCS12SignerPrivate;
+    class EXP_DIGIDOC PKCS12Signer : public Signer
     {
 
       public:
-          PKCS12Signer(const std::string &pkcs12, const std::string &pass);
+          PKCS12Signer(const std::string &path, const std::string &pass);
           virtual ~PKCS12Signer();
-          X509Cert cert() const;
-          void sign(const std::string &method, const std::vector<unsigned char> &digest,
-                    std::vector<unsigned char> &signature);
 
       private:
-          PKCS12SignerPrivate *d;
+          X509Cert cert() const override;
+          void sign(const std::string &method, const std::vector<unsigned char> &digest,
+                    std::vector<unsigned char> &signature) override;
 
+          DISABLE_COPY(PKCS12Signer);
+          PKCS12SignerPrivate *d;
     };
 }
