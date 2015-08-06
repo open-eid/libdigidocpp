@@ -35,6 +35,10 @@ public:
     struct Result {
         std::string result, content;
         std::map<std::string,std::string> headers;
+        bool isOK() const
+        {
+            return result.find("200") != std::string::npos;
+        }
         bool isRedirect() const
         {
             return result.find("301") != std::string::npos ||

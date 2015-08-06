@@ -259,6 +259,8 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
                 Connect::Result r = Connect(url, "GET", timeout).exec({{"Accept-Encoding", "gzip"}}, vector<unsigned char>());
                 if(r.isRedirect())
                     r = Connect(r.headers["Location"], "GET", timeout).exec({{"Accept-Encoding", "gzip"}}, vector<unsigned char>());
+                if(!r.isOK() || r.content.empty())
+                    THROW("HTTP status code is not 200 or content is empty");
                 file << r.content;
                 file.close();
 
