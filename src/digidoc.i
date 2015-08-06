@@ -32,37 +32,40 @@
 
 %module digidoc
 %{
-#undef seed // Combat braindead #defines that are present in PERL headers
 
 #include "Container.h"
 #include "DataFile.h"
+#include "Exception.h"
 #include "Signature.h"
+#include "XmlConf.h"
+#include "crypto/PKCS11Signer.h"
+#include "crypto/PKCS12Signer.h"
 #include "crypto/X509Cert.h"
 
-%}
+#include <vector>
 
-%insert(runtime) %{
-  #include "Exception.h"
-  #include <vector>
+static std::string parseException(const digidoc::Exception &e) {
+    std::string msg = e.msg();
+    for(const digidoc::Exception &ex: e.causes())
+        msg += "\n" + parseException(ex);
+    return msg;
+}
 
-  extern "C"
-  {
+#ifdef SWIGCSHARP
+extern "C"
+{
     SWIGEXPORT unsigned char* SWIGSTDCALL ByteVector_data(void *ptr) {
-      return static_cast<std::vector<unsigned char>*>(ptr)->data();
+        return static_cast<std::vector<unsigned char>*>(ptr)->data();
     }
     SWIGEXPORT int SWIGSTDCALL ByteVector_size(void *ptr) {
-      return static_cast<std::vector<unsigned char>*>(ptr)->size();
+        return static_cast<std::vector<unsigned char>*>(ptr)->size();
     }
     SWIGEXPORT void* SWIGSTDCALL ByteVector_to(unsigned char *data, int size) {
-      return new std::vector<unsigned char>(data, data + size);
+        return new std::vector<unsigned char>(data, data + size);
     }
-  }
+}
+#endif
 
-  static void parseException(const digidoc::Exception &e, std::string &msg) {
-      msg += e.msg() + "\n";
-      for(const digidoc::Exception &ex: e.causes())
-          parseException(ex, msg);
-  }
 %}
 
 %pragma(csharp) imclasscode=%{
@@ -73,25 +76,6 @@
   [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_to")]
   public static extern global::System.Runtime.InteropServices.HandleRef ByteVector_to(
     [global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPArray)]byte[] data, int size);
-%}
-
-%typemap(throws, canthrow=1) Exception %{
-    std::string msg;
-    parseException(e, msg);
-    SWIG_CSharpSetPendingException(SWIG_CSharpApplicationException, msg.c_str());
-    return $null;
-%}
-
-//%feature("except", throws="Exception") {
-%exception %{
- try {
-   $action
- } catch (const digidoc::Exception &e) {
-   std::string msg;
-   parseException(e, msg);
-   SWIG_CSharpSetPendingException(SWIG_CSharpApplicationException, msg.c_str());
-   return $null;
- }
 %}
 
 %typemap(cstype) std::vector<unsigned char> "byte[]"
@@ -106,12 +90,21 @@
 
 %apply std::vector<unsigned char> { std::vector<unsigned char> const & };
 
+%exception %{
+ try {
+   $action
+ } catch (const digidoc::Exception &e) {
+   SWIG_CSharpSetPendingException(SWIG_CSharpApplicationException, parseException(e).c_str());
+   return $null;
+ }
+%}
+
 // Handle DigiDoc Export declarations
 #define EXP_DIGIDOC
+#define DEPRECATED_DIGIDOCPP
 
 #ifdef SWIGPHP
 // Broken in PHP :(
-%ignore digidoc::DataFile::DataFile;
 %feature("notabstract") digidoc::Signature;  // Breaks PHP if abstract
 #endif
 
@@ -119,24 +112,30 @@
 %ignore digidoc::Signature::signingCertificate;
 %ignore digidoc::Signature::OCSPCertificate;
 %ignore digidoc::Signature::TSCertificate;
+%ignore digidoc::Signature::TSACertificate;
+// hide stream methods
+%ignore digidoc::DataFile::saveAs(std::ostream &os) const;
 %ignore digidoc::Container::addRawSignature(std::istream &signature);
 %ignore digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
-%ignore digidoc::Container::sign(Signer* signer);
-%ignore digidoc::Container::sign(Signer* signer, const std::string &profile);
-%ignore digidoc::DataFile::saveAs(std::ostream &os) const;
 
 // Handle standard C++ types
 %include "std_string.i"
 %include "std_vector.i"
 // Expose selected DigiDoc classes
+%include "Conf.h"
 %include "Container.h"
 %include "DataFile.h"
 %include "Signature.h"
+%include "XmlConf.h"
+%include "crypto/Signer.h"
+%include "crypto/PKCS12Signer.h"
+%include "crypto/PKCS11Signer.h"
 
 %template(StringVector) std::vector<std::string>;
 %template(DataFiles) std::vector<digidoc::DataFile>;
 %template(Signatures) std::vector<digidoc::Signature*>;
 
+// override X509Cert methods to return byte array
 %extend digidoc::Signature {
     std::vector<unsigned char> signingCert() const
     {
@@ -150,6 +149,10 @@
     {
         return $self->TSCertificate();
     }
+    std::vector<unsigned char> TSACert() const
+    {
+        return $self->TSACertificate();
+    }
 }
 
 // Target language specific functions
@@ -157,10 +160,7 @@
 %minit %{ %}
 %mshutdown %{ %}
 %rinit %{
-    using namespace digidoc;
-
-    // Initialize digidoc library.
-    initialize();
+    digidoc::initialize();
 %}
 %rshutdown %{
     digidoc::terminate();
