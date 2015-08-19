@@ -24,6 +24,7 @@
                 <File Source="$(var.PREFIX)\zlib\x86\bin\zlib1.dll"/>
                 <File Source="$(var.PREFIX)\libxml2\x86\bin\libxml2.dll"/>
                 <File Source="$(var.libdigidoc)\x86\bin\digidoc.dll"/>
+                <File Source="$(var.libdigidoc)\x86\bin\cdigidoc.exe"/>
                 <File Source="$(var.libdigidoc)\x86\etc\digidoc.ini"/>
                 <IniFile Id="setCaCertPathX86" Action="addLine" Directory="X86FOLDER" Section="ca"
                   Name="digidoc.ini" Key="CA_CERT_PATH" Value="[APPLICATIONFOLDER]certs"/>
@@ -70,6 +71,7 @@
                 <File Source="$(var.PREFIX)\zlib\x64\bin\zlib1.dll" Id="zlib1_64.dll"/>
                 <File Source="$(var.PREFIX)\libxml2\x64\bin\libxml2.dll" Id="libxml2.dll_64"/>
                 <File Source="$(var.libdigidoc)\x64\bin\digidoc.dll" Id="digidoc.dll_64"/>
+                <File Source="$(var.libdigidoc)\x64\bin\cdigidoc.exe" Id="cdigidoc.exe_64"/>
                 <File Source="$(var.libdigidoc)\x64\etc\digidoc.ini" Id="digidoc.ini_64"/>
                 <IniFile Id="setCaCertPathX64" Action="addLine" Directory="X64FOLDER" Section="ca"
                   Name="digidoc.ini" Key="CA_CERT_PATH" Value="[APPLICATIONFOLDER]certs"/>
