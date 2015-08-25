@@ -26,7 +26,6 @@
 
 namespace digidoc
 {
-class ADoc;
 class DataFile;
 class Exception;
 class Signature;
@@ -44,39 +43,38 @@ EXP_DIGIDOC std::string version();
 class EXP_DIGIDOC Container
 {
 public:
-    enum DocumentType
-    {
-        AsicType,
-        BDocType,
-        DDocType
-    };
+    virtual ~Container();
 
-    Container( DocumentType type = AsicType );
-    Container( const std::string &path );
-    ~Container();
+    virtual void save(const std::string &path = "") = 0;
+    virtual std::string mediaType() const = 0;
 
-    void save(const std::string &path = "");
-    std::string mediaType() const;
-
-    void addDataFile(const std::string &path, const std::string &mediaType);
-    void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
-    DataFileList dataFiles() const;
-    void removeDataFile(unsigned int id);
+    virtual void addDataFile(const std::string &path, const std::string &mediaType) = 0;
+    virtual void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType) = 0;
+    virtual DataFileList dataFiles() const = 0;
+    virtual void removeDataFile(unsigned int id) = 0;
 
     void addRawSignature(const std::vector<unsigned char> &signature);
-    void addRawSignature(std::istream &signature);
-    SignatureList signatures() const;
-    void removeSignature(unsigned int id);
-    Signature* sign(Signer* signer);
-    Signature* sign(Signer* signer, const std::string &profile);
+    virtual void addRawSignature(std::istream &signature) = 0;
+    virtual SignatureList signatures() const = 0;
+    virtual void removeSignature(unsigned int id) = 0;
+    Signature* sign(Signer *signer);
+    virtual Signature* sign(Signer *signer, const std::string &profile) = 0;
     Signature* sign(const std::string &city, const std::string &stateOrProvince,
                     const std::string &postalCode, const std::string &countryName,
                     const std::vector<std::string> &signerRoles,
                     const std::string &pin, bool useFirstCertificate = true);
 
+    static Container* create(const std::string &path);
+    static Container* open(const std::string &path);
+    template<class T>
+    static void addContainerImplementation();
+
+protected:
+    Container();
+    unsigned int newSignatureId() const;
+
 private:
     DISABLE_COPY(Container);
-	ADoc *m_doc;
 };
 
 }

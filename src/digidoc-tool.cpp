@@ -472,7 +472,7 @@ static int open(int argc, char* argv[])
 
     unique_ptr<Container> doc;
     try {
-        doc.reset(new Container(path));
+        doc.reset(Container::open(path));
     } catch(const Exception &e) {
         printf("Failed to parse container");
         parseException(e, "  Exception:");
@@ -633,7 +633,7 @@ static int remove(int argc, char *argv[])
 
     unique_ptr<Container> doc;
     try {
-        doc.reset(new Container(path));
+        doc.reset(Container::open(path));
     } catch(const Exception &e) {
         printf("Failed to parse container");
         parseException(e, "  Exception:");
@@ -687,11 +687,7 @@ static int create(int argc, char* argv[])
 
     unique_ptr<Container> doc;
     try {
-        Container::DocumentType type = Container::AsicType;
-        string ext = p.path.substr(p.path.size() - 4);
-        transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-        if(ext == "ddoc") type = Container::DDocType;
-        doc.reset(new Container(type));
+        doc.reset(Container::create(p.path));
     } catch(const Exception &e) {
         printf("Failed to parse container");
         parseException(e, "  Exception:");
@@ -753,7 +749,7 @@ static int sign(int argc, char* argv[])
 
     unique_ptr<Container> doc;
     try {
-        doc.reset(new Container(p.path));
+        doc.reset(Container::open(p.path));
     } catch(const Exception &e) {
         printf("Failed to parse container");
         parseException(e, "  Exception:");

@@ -25,6 +25,7 @@
 
 #include "DDoc.h"
 #include "DataFile.h"
+#include "Exception.h"
 #include "Signature.h"
 
 #ifdef _WIN32
@@ -150,8 +151,8 @@ class SignatureDDOC;
 class DDocPrivate
 {
 public:
-	DDocLibrary *lib;
-	SignedDoc *doc;
+	DDocLibrary *lib = nullptr;
+	SignedDoc *doc = nullptr;
 	std::string filename;
 
 	void loadSignatures();

@@ -216,6 +216,13 @@ void BDoc::addDataFile(istream *is, const string &fileName, const string &mediaT
     d->documents.push_back(DataFile(is, fileName, mediaType));
 }
 
+Container* BDoc::createInternal(const string &path)
+{
+    BDoc *doc = new BDoc();
+    doc->d->path = path;
+    return doc;
+}
+
 /**
  * Returns document referenced by document id.
  *
@@ -272,6 +279,11 @@ void BDoc::addRawSignature(istream &sigdata)
     {
         THROW_CAUSE(e, "Failed to add signature.");
     }
+}
+
+Container* BDoc::openInternal(const string &path)
+{
+    return new BDoc(path);
 }
 
 /**
@@ -498,9 +510,10 @@ Signature *BDoc::sign(Signer* signer, const string &profile)
             signature->addDataObjectFormat("#" + id, f.mediaType());
         }
 
-        vector<unsigned char> digest = signature->prepareSignedInfo(profile, signer); // needs to be here to select also signatureMethod
+        string prof = profile.empty() ? BDoc::ASIC_TS_PROFILE : profile;
+        vector<unsigned char> digest = signature->prepareSignedInfo(prof, signer); // needs to be here to select also signatureMethod
         signature->setSignatureValue(signer->sign(signature->signatureMethod(), digest));
-        signature->extendTo(profile);
+        signature->extendTo(prof);
     }
     catch(const Exception& e)
     {

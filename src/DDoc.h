@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "ADoc.h"
+#include "Container.h"
 #include "Signature.h"
 
 struct SignatureInfo_st;
@@ -76,27 +76,31 @@ private:
  * not signed. To add or remove documents from signed container remove all the
  * signatures before modifying documents list in container.
  */
-class DDoc: public ADoc
+class DDoc: public Container
 {
 public:
-    DDoc();
-    DDoc(const std::string &path);
     ~DDoc();
 
-    void save(const std::string &path = "");
-    std::string mediaType() const;
+    void save(const std::string &path = "") override;
+    std::string mediaType() const override;
 
-    void addDataFile(const std::string &path, const std::string &mediaType);
-    void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
-    DataFileList dataFiles() const;
-    void removeDataFile(unsigned int id);
+    void addDataFile(const std::string &path, const std::string &mediaType) override;
+    void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType) override;
+    DataFileList dataFiles() const override;
+    void removeDataFile(unsigned int id) override;
 
-    void addRawSignature(std::istream &sigdata);
-    SignatureList signatures() const;
-    void removeSignature(unsigned int id);
-    Signature* sign(Signer* signer, const std::string &profile);
+    void addRawSignature(std::istream &sigdata) override;
+    SignatureList signatures() const override;
+    void removeSignature(unsigned int id) override;
+    Signature* sign(Signer* signer, const std::string &profile) override;
+
+    static Container* createInternal(const std::string &path);
+    static Container* openInternal(const std::string &path);
 
 private:
+    DDoc();
+    DDoc(const std::string &path);
+    void load(const std::string &path);
     DISABLE_COPY(DDoc);
     DDocPrivate *d;
 };

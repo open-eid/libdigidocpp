@@ -110,15 +110,11 @@ class BDoc2: public Container
 {
 public:
     static const string TYPE, EXT;
-    BDoc2(): Container(AsicType) {}
-    BDoc2(const string &path): Container(path) {}
 };
 class DDoc: public Container
 {
 public:
     static const string TYPE, EXT;
-    DDoc(): Container(DDocType) {}
-    DDoc(const string &path): Container(path) {}
 };
 const string BDoc2::TYPE = "application/vnd.etsi.asic-e+zip";
 const string DDoc::TYPE = "DIGIDOC-XML/1.3";
@@ -246,12 +242,12 @@ typedef boost::mpl::list<BDoc2> DocTypes;
 #endif
 BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
 {
-    unique_ptr<Doc> d(new Doc);
+    unique_ptr<Container> d(Container::create("test." + Doc::EXT));
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 0U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 0U);
     BOOST_CHECK_EQUAL(d->mediaType(), Doc::TYPE);
 
-    d.reset(new Doc("test." + Doc::EXT));
+    d.reset(Container::open("test." + Doc::EXT));
     if(!d)
        return;
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
@@ -261,7 +257,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
 {
-    unique_ptr<Doc> d(new Doc);
+    unique_ptr<Container> d(Container::create("test." + Doc::EXT));
 
     BOOST_CHECK_THROW(d->removeDataFile(0U), Exception);
 
@@ -308,7 +304,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     if(d->mediaType() == DDoc::TYPE)
         return;
 
-    d.reset(new Doc("test." + Doc::EXT));
+    d.reset(Container::open("test." + Doc::EXT));
     DataFile data = d->dataFiles().front();
     BOOST_CHECK_NO_THROW(data.saveAs("test1.tmp"));
 
@@ -352,7 +348,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 {
-    unique_ptr<Doc> d(new Doc);
+    unique_ptr<Container> d(Container::create("test." + Doc::EXT));
 
     BOOST_CHECK_THROW(d->removeSignature(0U), Exception);
 
@@ -401,7 +397,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_NO_THROW(d->save());
 
         // Reload from file and validate
-        d.reset(new Doc(Doc::EXT + ".tmp"));
+        d.reset(Container::open(Doc::EXT + ".tmp"));
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
         if((s3 = d->signatures().back()))
         {
@@ -449,7 +445,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
     data.push_back("öäüõ");
     for(vector<string>::const_iterator i = data.begin(); i != data.end(); ++i)
     {
-        unique_ptr<Doc> d(new Doc);
+        unique_ptr<Container> d(Container::create("test." + Doc::EXT));
         const Signature *s1 = 0;
         BOOST_CHECK_NO_THROW(d->addDataFile(*i + ".txt", "file"));
         if(Doc::EXT == DDoc::EXT)
@@ -458,7 +454,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
         if(s1)
             s1->validate();
         d->save(*i + Doc::EXT + ".tmp");
-        d.reset(new Doc(*i + Doc::EXT + ".tmp"));
+        d.reset(Container::open(*i + Doc::EXT + ".tmp"));
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
         s1 = d->signatures().front();
         s1->validate();
@@ -467,7 +463,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
 {
-    unique_ptr<Doc> d(new Doc);
+    unique_ptr<Container> d(Container::create("test." + Doc::EXT));
     unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
 
     signer1->setSignatureProductionPlace("Tartu", "Tartumaa", "12345", "Estonia");
@@ -504,7 +500,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
     }
 
     BOOST_CHECK_NO_THROW(d->save(Doc::EXT + ".tmp")); //Check if reloading and binary files work
-    d.reset(new Doc(Doc::EXT + ".tmp"));
+    d.reset(Container::open(Doc::EXT + ".tmp"));
     if(d->signatures().size() == 1U)
         BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
 

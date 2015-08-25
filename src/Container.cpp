@@ -55,9 +55,13 @@ using namespace digidoc;
 using namespace std;
 using namespace xercesc;
 
+typedef Container* (*plugin)(const std::string &);
+
 namespace digidoc
 {
 static string m_appInfo = "libdigidocpp";
+static vector<plugin> m_createList = vector<plugin>();
+static vector<plugin> m_openList = vector<plugin>();
 }
 
 /**
@@ -69,33 +73,6 @@ static string m_appInfo = "libdigidocpp";
  * data files can be added and removed from container only if the container is
  * not signed. To add or remove data files from signed container remove all the
  * signatures before modifying data files list in container.
- */
-
-/**
- * @enum digidoc::Container::DocumentType
- * Enum to select container type to create
- *
- * @var digidoc::Container::AsicType
- *
- * creates new \ref BDOC "BDOC 2.1" container with mime-type "application/vnd.etsi.asic-e+zip". See also \ref format
- *
- * @var digidoc::Container::BDocType
- *
- * creates new BDOC 1.0 container with mime-type "application/vnd.bdoc-1.0"
- * @deprecated Defauts to digidoc::Container::AsicType
- * @note the functionality of creating new files in DigiDoc file formats
- * BDOC 1.0 is not supported.
- *
- * @var digidoc::Container::DDocType
- *
- * creates new \ref DDOC "DIGIDOC-XML 1.3" container. Note that using BDOC 2.1 format is
- * preferred for new documents. Support for DIGIDOC-XML 1.3 format has been
- * added to Libdigidocpp via \ref CDigiDoc "CDigiDoc library". Note that usage of this
- * document format is tested only indirectly via DigiDoc3 Client desktop
- * application which uses CDigiDoc as a base layer.
- *
- * @note the functionality of creating new files in DigiDoc file formats
- * SK-XML, DIGIDOC-XML 1.1, DIGIDOC-XML 1.2 is not supported.
  */
 
 /**
@@ -155,6 +132,11 @@ void digidoc::initializeEx(const string &appInfo, initCallBack callBack)
 
     if(!Conf::instance())
         Conf::init(new XmlConfV4);
+
+#if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
+    Container::addContainerImplementation<DDoc>();
+#endif
+
     if(callBack)
     {
         thread([=](){
@@ -194,16 +176,8 @@ void digidoc::terminate()
 /**
  * Create a new container object and specify the DigiDoc container type
  */
-Container::Container( DocumentType type )
-    : m_doc(0)
+Container::Container()
 {
-    switch( type )
-    {
-#if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
-    case DDocType: m_doc = new DDoc(); break;
-#endif
-    default: m_doc = new BDoc(); break;
-    }
 }
 
 /**
@@ -211,28 +185,10 @@ Container::Container( DocumentType type )
  */
 Container::~Container()
 {
-    delete m_doc;
 }
 
 /**
- * Opens container from a file
- *
- * @param path
- * @throws Exception
- */
-Container::Container( const string &path )
-{
-#if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
-    string ext = path.substr( path.size() - 4 );
-    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-    if( ext == "ddoc" )
-        m_doc = new DDoc( path );
-    else
-#endif
-        m_doc = new BDoc( path );
-}
-
-/**
+ * @fn digidoc::Container::addDataFile(const std::string &path, const std::string &mediaType)
  * Adds data file from file system to the container.
  *
  * @param path a data file, which is added to the container.
@@ -242,15 +198,9 @@ Container::Container( const string &path )
  * already has one or more signatures.
  * @note Data files can be removed from container only after all signatures are removed.
  */
-void Container::addDataFile(const string &path, const string &mediaType)
-{
-	if( !m_doc )
-        THROW("Document not open");
-
-    m_doc->addDataFile(path, mediaType);
-}
 
 /**
+ * @fn digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType)
  * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer)
  *
  * @param is input stream from where data is read
@@ -261,12 +211,6 @@ void Container::addDataFile(const string &path, const string &mediaType)
  * already has one or more signatures.
  * @note Data files can be removed from container only after all signatures are removed.
  */
-void Container::addDataFile(istream *is, const string &fileName, const string &mediaType)
-{
-    if(!m_doc)
-        THROW("Document not open");
-    m_doc->addDataFile(is, fileName, mediaType);
-}
 
 /**
  * Adds signature to the container.
@@ -278,48 +222,81 @@ void Container::addRawSignature(const std::vector<unsigned char> &signature)
 {
     std::stringstream s(std::string(&signature[0], &signature[0] + signature.size()));
     addRawSignature(s);
-#if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
-    if(m_doc->mediaType().compare(0, 11, "DIGIDOC-XML") == 0)
-    {
-        string path = util::File::tempFileName();
-        m_doc->save(path);
-        delete m_doc;
-        m_doc = new DDoc(path);
-    }
-#endif
 }
 
 /**
+ * @fn digidoc::Container::addRawSignature(std::istream &signature)
  * Adds signature to the container.
  *
  * @param signature signature, which is added to the container.
  * @throws Exception throws exception if there are no data files in container.
  */
-void Container::addRawSignature(istream &signature)
-{
-	if( !m_doc )
-        THROW("Document not open");
 
-    m_doc->addRawSignature(signature);
+/**
+ * Create a new container object and specify the DigiDoc container type
+ */
+Container* Container::create(const std::string &path)
+{
+    for(auto create: m_createList)
+    {
+        if(Container *container = create(path))
+            return container;
+    }
+    return BDoc::createInternal(path);
 }
 
 /**
+ * @fn digidoc::Container::dataFiles
  * List of all the data files in the container
  */
-DataFileList Container::dataFiles() const
-{
-    return m_doc ? m_doc->dataFiles() : DataFileList();
-}
 
 /**
- * Returnes list of all container's signatures.
+ * @fn digidoc::Container::mediaType
+ * Returns current data file format
  */
-SignatureList Container::signatures() const
+
+/**
+ * Returns unique signature id
+ */
+unsigned int Container::newSignatureId() const
 {
-    return m_doc ? m_doc->signatures() : SignatureList();
+    unsigned int id = 0;
+    while(true)
+    {
+        bool found = false;
+        for(Signature *s: signatures())
+        {
+            if(s->id() == Log::format("S%u", id))
+            {
+                found = true;
+                break;
+            }
+        }
+        if(!found)
+            return id;
+        ++id;
+    }
+    return id;
 }
 
 /**
+ * Opens container from a file
+ *
+ * @param path
+ * @throws Exception
+ */
+Container* Container::open(const string &path)
+{
+    for(auto open: m_openList)
+    {
+        if(Container *container = open(path))
+            return container;
+    }
+    return BDoc::openInternal(path);
+}
+
+/**
+ * @fn digidoc::Container::removeDataFile
  * Removes data file from container by data file id. Data files can be
  * removed from container only after all signatures are removed.
  *
@@ -327,40 +304,22 @@ SignatureList Container::signatures() const
  * @throws Exception throws exception if the data file id is incorrect or there are
  * one or more signatures.
  */
-void Container::removeDataFile( unsigned int id )
-{
-	if( !m_doc )
-        THROW("Document not open");
-
-    m_doc->removeDataFile( id );
-}
 
 /**
+ * @fn digidoc::Container::removeSignature
  * Removes signature from container by signature id.
  *
  * @param id signature's id, which will be removed.
  * @throws Exception throws exception if the signature id is incorrect.
  */
-void Container::removeSignature( unsigned int id )
-{
-	if( !m_doc )
-        THROW("Document not open");
-
-	m_doc->removeSignature( id );
-}
 
 /**
+ * @fn digidoc::Container::save
  * Saves the container.
  *
  * @throws Exception is thrown if there was a failure saving BDOC container. For example added
  * data file does not exist.
  */
-void Container::save(const string &path)
-{
-    if( !m_doc )
-        THROW("Document not open");
-    m_doc->save(path);
-}
 
 /**
  * Signs all data files in container.
@@ -368,24 +327,25 @@ void Container::save(const string &path)
  * @param signer signer implementation.
  * @throws Exception exception is thrown if signing the container failed.
  */
-Signature* Container::sign( Signer *signer )
+Signature* Container::sign(Signer *signer)
 {
-    return sign( signer, string() );
+    return sign(signer, string());
 }
 
 /**
+ * @fn digidoc::Container::sign(Signer *signer, const std::string &profile)
  * Signs all data files in container.
  *
  * @param signer signer implementation.
  * @param profile type enables to specify the signature profile. Defaults to BDOC profile with time-stamp. To create BDOC with time-mark, set the parameter value to "time-mark". See also \ref Supported.
  * @throws Exception exception is thrown if signing the container failed.
  */
-Signature* Container::sign( Signer *signer, const string &profile )
-{
-    if( !m_doc )
-        THROW("Document not open");
 
-    return m_doc->sign(signer, profile.empty() ? BDoc::ASIC_TS_PROFILE : profile);
+template<class T>
+void Container::addContainerImplementation()
+{
+    m_createList.push_back(&T::createInternal);
+    m_openList.push_back(&T::openInternal);
 }
 
 /**
@@ -403,7 +363,6 @@ Signature* Container::sign( Signer *signer, const string &profile )
  * certificate store is chosen for signature creation and the certificate selection’s dialog window is not displayed to the
  * user
  */
-
 Signature* Container::sign(const string &city, const string &stateOrProvince,
                            const string &postalCode, const string &countryName,
                            const vector<string> &signerRoles,
@@ -422,9 +381,6 @@ Signature* Container::sign(const string &city, const string &stateOrProvince,
 }
 
 /**
- * Returns current data file format
+ * @fn digidoc::Container::signatures
+ * Returns list of all container's signatures.
  */
-string Container::mediaType() const
-{
-    return m_doc ? m_doc->mediaType() : "";
-}

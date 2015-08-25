@@ -199,7 +199,6 @@ add_library(digidocpp SHARED
     ${CRYPTO_SOURCE}
     ${XML_HEADER}
     libdigidocpp.rc
-    ADoc.cpp
     BDoc.cpp
     Conf.cpp
     Container.cpp

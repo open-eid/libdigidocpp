@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "ADoc.h"
+#include "Container.h"
 
 namespace digidoc
 {
@@ -39,7 +39,7 @@ namespace digidoc
      *
      * @author Janari Põld
      */
-    class BDoc: public ADoc
+    class BDoc: public Container
     {
 
       public:
@@ -53,23 +53,26 @@ namespace digidoc
           static const std::string ASIC_TMA_PROFILE;
           static const std::string ASIC_TSA_PROFILE;
 
-          BDoc();
-          BDoc(const std::string &path);
           virtual ~BDoc();
-          void save(const std::string &path = "");
-          std::string mediaType() const;
+          void save(const std::string &path = "") override;
+          std::string mediaType() const override;
 
-          void addDataFile(const std::string &path, const std::string &mediaType);
-          void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
-          DataFileList dataFiles() const;
-          void removeDataFile(unsigned int id);
+          void addDataFile(const std::string &path, const std::string &mediaType) override;
+          void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType) override;
+          DataFileList dataFiles() const override;
+          void removeDataFile(unsigned int id) override;
 
-          void addRawSignature(std::istream &sigdata);
-          SignatureList signatures() const;
-          void removeSignature(unsigned int id);
-          Signature* sign(Signer* signer, const std::string &profile);
+          void addRawSignature(std::istream &sigdata) override;
+          SignatureList signatures() const override;
+          void removeSignature(unsigned int id) override;
+          Signature* sign(Signer* signer, const std::string &profile) override;
+
+          static Container* createInternal(const std::string &path);
+          static Container* openInternal(const std::string &path);
 
       private:
+          BDoc();
+          BDoc(const std::string &path);
           DISABLE_COPY(BDoc);
           void createManifest(std::ostream &os);
           void readMimetype(std::istream &path);

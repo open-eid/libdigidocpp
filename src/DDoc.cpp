@@ -445,11 +445,19 @@ DDoc::DDoc()
 DDoc::DDoc(const string &path)
  :	d( new DDocPrivate )
 {
-    d->doc = nullptr;
     d->lib = DDocLibrary::instance();
+    load(path);
+}
+
+void DDoc::load(const std::string &path)
+{
     if(!d->lib->f_initDigiDocLib)
         d->throwError("DDoc library not loaded", __LINE__);
 
+    if(d->doc)
+        d->lib->f_SignedDoc_free(d->doc);
+    d->documents.clear();
+    d->doc = nullptr;
     d->filename = path;
     int err = d->lib->f_ddocSaxReadSignedDocFromFile(&d->doc, d->filename.c_str(), 0, DDOC_MEMORY_BUF);
     switch(err)
@@ -608,6 +616,23 @@ void DDoc::addRawSignature(istream &sigdata)
 
     d->lib->f_SignedDoc_free( sigDoc );
 #endif
+    //Force reload
+    save(fileName);
+    load(fileName);
+}
+
+Container* DDoc::createInternal(const string &path)
+{
+    size_t pos = path.find_last_of(".");
+    if(pos == string::npos)
+        return nullptr;
+    string ext = path.substr(pos + 1);
+    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    if(ext != "ddoc")
+        return nullptr;
+    DDoc *doc = new DDoc();
+    doc->d->filename = path;
+    return doc;
 }
 
 /**
@@ -631,6 +656,19 @@ string DDoc::mediaType() const
 DataFileList DDoc::dataFiles() const
 {
     return d->documents;
+}
+
+Container* DDoc::openInternal(const string &path)
+{
+    size_t pos = path.find_last_of(".");
+    if(pos == string::npos)
+        return nullptr;
+    string ext = path.substr(pos + 1);
+    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    if(ext != "ddoc")
+        return nullptr;
+    DDoc *doc = new DDoc(path);
+    return doc;
 }
 
 /**
@@ -710,19 +748,13 @@ void DDoc::removeSignature( unsigned int id )
 void DDoc::save(const string &path)
 {
     d->throwDocOpenError( __LINE__ );
-    int err = 0;
     if(d->filename.empty() && path.empty())
         d->throwError("Path missing", __LINE__);
-    else if(d->filename.empty())
-        err = d->lib->f_createSignedDoc(d->doc, 0, (d->filename = path).c_str());
-    else if(path.empty())
-        err = d->lib->f_createSignedDoc(d->doc, d->filename.c_str(), d->filename.c_str());
-    else
-    {
-        err = d->lib->f_createSignedDoc(d->doc, d->filename.c_str(), path.c_str());
-        d->filename = path;
-    }
+    string target = path.empty() ? d->filename : path;
+    int err = d->lib->f_createSignedDoc(d->doc,
+        d->filename.empty() || !File::fileExists(d->filename) ? nullptr : d->filename.c_str(), target.c_str());
     d->throwCodeError(err, "Failed to save document", __LINE__);
+    d->filename = target;
 }
 
 /**
