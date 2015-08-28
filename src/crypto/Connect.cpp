@@ -77,7 +77,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
             sendProxyAuth();
             _timeout = 1; // Don't wait additional data on read, case proxy tunnel
             Result r = exec();
-            if(r.result.find("200") == string::npos || r.result.find("established") == string::npos)
+            if(!r.isOK() || r.result.find("established") == string::npos)
                 THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
             _timeout = timeout; // Restore
         }
@@ -153,11 +153,15 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
     size_t pos = 0;
     Result r;
     r.content.resize(1024);
+    chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
     do {
         if(rc > 0 && size_t(pos += rc) >= r.content.size())
             r.content.resize(r.content.size()*2);
         rc = BIO_read(d, &r.content[pos], int(r.content.size() - pos));
         if(rc == -1 && BIO_should_read(d) != 1)
+            break;
+        if(_timeout > 0 && _timeout * 1000 <
+           chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count())
             break;
     } while(rc != 0);
     r.content.resize(pos);
