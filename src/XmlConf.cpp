@@ -304,100 +304,23 @@ void XmlConfPrivate::setUserConf(XmlConfParam<A> &param, const A &defined, const
 /**
  * @class digidoc::XmlConf
  * @brief XML Configuration class
- * @deprecated See digidoc::XmlConfV4
  * @see digidoc::Conf
- */
-/**
- * @class digidoc::XmlConfV2
- * @brief Version 2 of XML Configuration class
- * @deprecated See digidoc::XmlConfV4
- * @see digidoc::ConfV2
- */
-/**
- * @class digidoc::XmlConfV3
- * @brief Version 3 of XML Configuration class
- * @deprecated See digidoc::XmlConfV4
- * @see digidoc::ConfV3
- */
-/**
- * @class digidoc::XmlConfV4
- * @brief Version 4 of XML Configuration class
- * @see digidoc::ConfV4
- */
-/**
- * @deprecated See digidoc::XmlConfV4::XmlConfV4
  */
 XmlConf::XmlConf(const string &path, const string &schema)
     : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
 {}
-/**
- * @deprecated See digidoc::XmlConfV4::XmlConfV4
- */
-XmlConfV2::XmlConfV2(const string &path, const string &schema)
-    : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
-{}
-/**
- * @deprecated See digidoc::XmlConfV4::XmlConfV4
- */
-XmlConfV3::XmlConfV3(const string &path, const string &schema)
-    : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
-{}
-/**
- * Initialize xml conf from path
- */
-XmlConfV4::XmlConfV4(const string &path, const string &schema)
-    : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
-{}
-
 XmlConf::~XmlConf() { delete d; }
-XmlConfV2::~XmlConfV2() { delete d; }
-XmlConfV3::~XmlConfV3() { delete d; }
-XmlConfV4::~XmlConfV4() { delete d; }
 
 #define GET1(TYPE, PROP) \
-TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); } \
-GET2(TYPE, PROP)
-
-#define GET2(TYPE, PROP) \
-TYPE XmlConfV2::PROP() const { return d->PROP.value(ConfV2::PROP()); } \
-GET3(TYPE, PROP)
-
-#define GET3(TYPE, PROP) \
-TYPE XmlConfV3::PROP() const { return d->PROP.value(ConfV3::PROP()); } \
-TYPE XmlConfV4::PROP() const { return d->PROP.value(ConfV4::PROP()); }
-
-
-#define GET1_R(TYPE, PROP) \
-TYPE XmlConf::PROP() const { return Conf::PROP(); } \
-GET2_R(TYPE, PROP)
-
-#define GET2_R(TYPE, PROP) \
-TYPE XmlConfV2::PROP() const { return ConfV2::PROP(); } \
-TYPE XmlConfV3::PROP() const { return ConfV3::PROP(); } \
-TYPE XmlConfV4::PROP() const { return ConfV4::PROP(); }
+TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); }
 
 #define SET1(TYPE, SET, PROP) \
 void XmlConf::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
-void XmlConfV2::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV2::PROP(), PROP); } \
-SET3(TYPE, SET, PROP)
-
-#define SET3(TYPE, SET, PROP) \
-void XmlConfV3::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV3::PROP(), PROP); } \
-void XmlConfV4::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV4::PROP(), PROP); }
+{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
 
 #define SET1CONST(TYPE, SET, PROP) \
 void XmlConf::SET(const TYPE &PROP) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
-void XmlConfV2::SET(const TYPE &PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV2::PROP(), PROP); } \
-void XmlConfV3::SET(const TYPE &PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV3::PROP(), PROP); } \
-void XmlConfV4::SET(const TYPE &PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV4::PROP(), PROP); }
+{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
 
 GET1(int, logLevel)
 GET1(string, logFile)
@@ -406,98 +329,42 @@ GET1(string, proxyHost)
 GET1(string, proxyPort)
 GET1(string, proxyUser)
 GET1(string, proxyPass)
+GET1(bool, proxyForceSSL)
+GET1(bool, proxyTunnelSSL)
 GET1(string, PKCS12Cert)
 GET1(string, PKCS12Pass)
 GET1(bool, PKCS12Disable)
-GET2(string, TSUrl)
-GET2(bool, TSLAutoUpdate)
-GET2(string, TSLCache)
-GET1_R(string, xsdPath)
-GET1_R(string, certsPath)
-GET2_R(X509Cert, TSLCert)
-GET2_R(string, TSLUrl)
-GET3(bool,TSLOnlineDigest)
-GET3(int,TSLTimeOut)
+GET1(string, TSUrl)
+GET1(bool, TSLAutoUpdate)
+GET1(string, TSLCache)
+GET1(string, digestUri)
+GET1(string, signatureDigestUri)
+GET1(bool, TSLOnlineDigest)
+GET1(int, TSLTimeOut)
 
 string XmlConf::ocsp(const string &issuer) const
 {
     auto i = d->ocsp.find(issuer);
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
 }
-string XmlConfV2::ocsp(const string &issuer) const
-{
-    auto i = d->ocsp.find(issuer);
-    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
-}
-string XmlConfV3::ocsp(const string &issuer) const
-{
-    auto i = d->ocsp.find(issuer);
-    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
-}
-string XmlConfV4::ocsp(const string &issuer) const
-{
-    auto i = d->ocsp.find(issuer);
-    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
-}
-
 
 /**
- * @fn void digidoc::XmlConfV3::setTSLOnlineDigest( bool enable )
- * @deprecated See digidoc::XmlConfV4::setTSLOnlineDigest
- */
-/**
- * @fn void digidoc::XmlConfV4::setTSLOnlineDigest( bool enable )
+ * @fn void digidoc::XmlConf::setTSLOnlineDigest( bool enable )
  * Enables/Disables online digest check
  * @throws Exception exception is thrown if saving a TSL online digest into a user configuration file fails.
  */
-SET3(bool, setTSLOnlineDigest, TSLOnlineDigest)
+SET1(bool, setTSLOnlineDigest, TSLOnlineDigest)
 
 /**
- * @fn void digidoc::XmlConfV3::setTSLTimeOut( int timeOut )
- * @deprecated See digidoc::XmlConfV4::setTSLTimeOut
- */
-/**
- * @fn void digidoc::XmlConfV4::setTSLTimeOut( int timeOut )
+ * @fn void digidoc::XmlConf::setTSLTimeOut( int timeOut )
  * Sets TSL connection timeout
  * @param timeOut Time out in seconds
  * @throws Exception exception is thrown if saving a TSL timeout into a user configuration file fails.
  */
-SET3(int, setTSLTimeOut, TSLTimeOut)
-
-string XmlConfV4::digestUri() const
-{
-    return d->digestUri.value(ConfV4::digestUri());
-}
-
-string XmlConfV4::signatureDigestUri() const
-{
-    return d->signatureDigestUri.value(ConfV4::signatureDigestUri());
-}
-
-bool XmlConfV4::proxyForceSSL() const
-{
-    return d->proxyForceSSL.value(ConfV4::proxyForceSSL());
-}
-
-bool XmlConfV4::proxyTunnelSSL() const
-{
-    return d->proxyTunnelSSL.value(ConfV4::proxyTunnelSSL());
-}
+SET1(int, setTSLTimeOut, TSLTimeOut)
 
 /**
  * @fn void digidoc::XmlConf::setProxyHost(const std::string &host)
- * @deprecated See digidoc::XmlConfV4::setProxyHost
- */
-/**
- * @fn void digidoc::XmlConfV2::setProxyHost(const std::string &host)
- * @deprecated See digidoc::XmlConfV4::setProxyHost
- */
-/**
- * @fn void digidoc::XmlConfV3::setProxyHost(const std::string &host)
- * @deprecated See digidoc::XmlConfV4::setProxyHost
- */
-/**
- * @fn void digidoc::XmlConfV4::setProxyHost(const std::string &host)
  * Sets a Proxy host address. Also adds or replaces proxy host data in the user configuration file.
  *
  * @param host proxy host address.
@@ -507,18 +374,6 @@ SET1CONST(string, setProxyHost, proxyHost)
 
 /**
  * @fn void digidoc::XmlConf::setProxyPort(const std::string &port)
- * @deprecated See digidoc::XmlConfV4::setProxyPort
- */
-/**
- * @fn void digidoc::XmlConfV2::setProxyPort(const std::string &port)
- * @deprecated See digidoc::XmlConfV4::setProxyPort
- */
-/**
- * @fn void digidoc::XmlConfV3::setProxyPort(const std::string &port)
- * @deprecated See digidoc::XmlConfV4::setProxyPort
- */
-/**
- * @fn void digidoc::XmlConfV4::setProxyPort(const std::string &port)
  * Sets a Proxy port number. Also adds or replaces proxy port data in the user configuration file.
  *
  * @param port proxy port number.
@@ -528,18 +383,6 @@ SET1CONST(string, setProxyPort, proxyPort)
 
 /**
  * @fn void digidoc::XmlConf::setProxyUser(const std::string &user)
- * @deprecated See digidoc::XmlConfV4::setProxyUser
- */
-/**
- * @fn void digidoc::XmlConfV2::setProxyUser(const std::string &user)
- * @deprecated See digidoc::XmlConfV4::setProxyUser
- */
-/**
- * @fn void digidoc::XmlConfV3::setProxyUser(const std::string &user)
- * @deprecated See digidoc::XmlConfV4::setProxyUser
- */
-/**
- * @fn void digidoc::XmlConfV4::setProxyUser(const std::string &user)
  * Sets a Proxy user name. Also adds or replaces proxy user name in the user configuration file.
  *
  * @param user proxy user name.
@@ -549,18 +392,6 @@ SET1CONST(string, setProxyUser, proxyUser)
 
 /**
  * @fn void digidoc::XmlConf::setProxyPass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV4::setProxyPass
- */
-/**
- * @fn void digidoc::XmlConfV2::setProxyPass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV4::setProxyPass
- */
-/**
- * @fn void digidoc::XmlConfV3::setProxyPass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV4::setProxyPass
- */
-/**
- * @fn void digidoc::XmlConfV4::setProxyPass(const std::string &pass)
  * Sets a Proxy password. Also adds or replaces proxy password in the user configuration file.
  *
  * @param pass proxy password.
@@ -570,18 +401,6 @@ SET1CONST(string, setProxyPass, proxyPass)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
- * @deprecated See digidoc::XmlConfV4::setPKCS12Cert
- */
-/**
- * @fn void digidoc::XmlConfV2::setPKCS12Cert(const std::string &cert)
- * @deprecated See digidoc::XmlConfV4::setPKCS12Cert
- */
-/**
- * @fn void digidoc::XmlConfV3::setPKCS12Cert(const std::string &cert)
- * @deprecated See digidoc::XmlConfV4::setPKCS12Cert
- */
-/**
- * @fn void digidoc::XmlConfV4::setPKCS12Cert(const std::string &cert)
  * Sets a PKCS#12 certficate path. Also adds or replaces PKCS#12 certificate path in the user configuration file.
  * By default the PKCS#12 certificate file should be located at default path, given by getUserConfDir() function.
  *
@@ -592,18 +411,6 @@ SET1CONST(string, setPKCS12Cert, PKCS12Cert)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV4::setPKCS12Pass
- */
-/**
- * @fn void digidoc::XmlConfV2::setPKCS12Pass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV4::setPKCS12Pass
- */
-/**
- * @fn void digidoc::XmlConfV3::setPKCS12Pass(const std::string &pass)
- * @deprecated See digidoc::XmlConfV4::setPKCS12Pass
- */
-/**
- * @fn void digidoc::XmlConfV4::setPKCS12Pass(const std::string &pass)
  * Sets a PKCS#12 certificate password. Also adds or replaces PKCS#12 certificate password in the user configuration file.
  *
  * @param pass PKCS#12 certificate password.
@@ -613,18 +420,6 @@ SET1CONST(string, setPKCS12Pass, PKCS12Pass)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Disable( bool disable )
- * @deprecated See digidoc::XmlConfV4::setPKCS12Disable
- */
-/**
- * @fn void digidoc::XmlConfV2::setPKCS12Disable( bool disable )
- * @deprecated See digidoc::XmlConfV4::setPKCS12Disable
- */
-/**
- * @fn void digidoc::XmlConfV3::setPKCS12Disable( bool disable )
- * @deprecated See digidoc::XmlConfV4::setPKCS12Disable
- */
-/**
- * @fn void digidoc::XmlConfV4::setPKCS12Disable( bool disable )
  * Sets a PKCS#12 certificate usage. Also adds or replaces PKCS#12 certificate usage in the user configuration file.
  *
  * @param disable PKCS#12 certificate usage.
@@ -636,7 +431,7 @@ SET1(bool, setPKCS12Disable, PKCS12Disable)
  * Enables SSL proxy connections
  * @throws Exception exception is thrown if saving into a user configuration file fails.
  */
-void XmlConfV4::setProxyTunnelSSL(bool enable)
+void XmlConf::setProxyTunnelSSL(bool enable)
 {
-    d->setUserConf<bool>(d->proxyTunnelSSL, ConfV4::proxyTunnelSSL(), enable);
+    d->setUserConf<bool>(d->proxyTunnelSSL, Conf::proxyTunnelSSL(), enable);
 }

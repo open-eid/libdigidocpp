@@ -251,20 +251,20 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
 }
 
 
-class ToolConfig: public XmlConfV4
+class ToolConfig: public XmlConf
 {
 public:
-    ToolConfig(): XmlConfV4()
-      , expired(XmlConfV4::TSLAllowExpired())
-      , tslcerts(XmlConfV4::TSLCerts())
-      , tslurl(XmlConfV4::TSLUrl())
-      , uri(XmlConfV4::digestUri())
-      , siguri(XmlConfV4::signatureDigestUri()) {}
-    string digestUri() const { return uri; }
-    string signatureDigestUri() const { return siguri; }
-    bool TSLAllowExpired() const { return expired; }
-    vector<X509Cert> TSLCerts() const { return tslcerts; }
-    string TSLUrl() const { return tslurl; }
+    ToolConfig(): XmlConf()
+      , expired(XmlConf::TSLAllowExpired())
+      , tslcerts(XmlConf::TSLCerts())
+      , tslurl(XmlConf::TSLUrl())
+      , uri(XmlConf::digestUri())
+      , siguri(XmlConf::signatureDigestUri()) {}
+    string digestUri() const override { return uri; }
+    string signatureDigestUri() const override { return siguri; }
+    bool TSLAllowExpired() const override { return expired; }
+    vector<X509Cert> TSLCerts() const override { return tslcerts; }
+    string TSLUrl() const override { return tslurl; }
 
     bool expired;
     vector<X509Cert> tslcerts;

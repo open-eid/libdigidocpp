@@ -131,7 +131,7 @@ void digidoc::initializeEx(const string &appInfo, initCallBack callBack)
     }
 
     if(!Conf::instance())
-        Conf::init(new XmlConfV4);
+        Conf::init(new XmlConf);
 
 #if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
     Container::addContainerImplementation<DDoc>();

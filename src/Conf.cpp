@@ -48,21 +48,14 @@ Conf* Conf::INSTANCE = nullptr;
 /**
  * Configuration parameters
  */
-Conf::Conf()
-{
-}
+Conf::Conf() {}
 
-Conf::~Conf()
-{
-}
+Conf::~Conf() {}
 
 /**
  * Return global instance object
  */
-Conf* Conf::instance()
-{
-	return INSTANCE;
-}
+Conf* Conf::instance() { return INSTANCE; }
 
 /**
  * Init global Conf with conf
@@ -71,22 +64,6 @@ void Conf::init(Conf *conf)
 {
     delete INSTANCE;
     INSTANCE = conf;
-}
-
-/**
- * Returns if BDOC 1 is supported
- */
-bool Conf::bdoc1Supported() const
-{
-    return false;
-}
-
-/**
- * Returns BDOC 2.1 Signature Policy Identifier
- */
-string Conf::defaultPolicyId() const
-{
-    return SignatureBES::policylist.cbegin()->first;
 }
 
 /**
@@ -209,42 +186,20 @@ string Conf::PKCS12Pass() const { return "\x61\x50\x51\x31\x31\x74\x69\x34"; }
  */
 bool Conf::PKCS12Disable() const { return false; }
 
-
-/**
- * @class digidoc::ConfV2
- * @brief Verison 2 of configuration class to add additonial parameters.
- *
- * Conf contains virtual members and is not leaf class we need create
- * subclasses to keep binary compatibility
- * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
- * @see digidoc::Conf
- * @see @ref parameters
- */
-/**
- * Version 2 config with new parameters
- */
-ConfV2::ConfV2() {}
-ConfV2::~ConfV2() {}
-
-/**
- * Return global instance object
- */
-ConfV2* ConfV2::instance() { return dynamic_cast<ConfV2*>(Conf::instance()); }
-
 /**
  * Returns default time-stamp server URL
  */
-string ConfV2::TSUrl() const { return TSA_URL; }
+string Conf::TSUrl() const { return TSA_URL; }
 
 /**
  * Download new TSL list when it is expired or invalid
  */
-bool ConfV2::TSLAutoUpdate() const { return true; }
+bool Conf::TSLAutoUpdate() const { return true; }
 
 /**
  * TSL cache path in local file system
  */
-string ConfV2::TSLCache() const
+string Conf::TSLCache() const
 {
 #ifdef _WIN32
     return File::env("APPDATA") + "\\digidocpp\\tsl\\";
@@ -254,43 +209,19 @@ string ConfV2::TSLCache() const
 }
 
 /**
- * TSL master list's (LOTL) signing certificate
- * @deprecated digidoc::ConfV3::TSLCerts
- */
-X509Cert ConfV2::TSLCert() const { return X509Cert(tslcert1(), X509Cert::Pem); }
-
-/**
  * TSL master list's (LOTL) URL
  */
-string ConfV2::TSLUrl() const { return TSL_URL; }
-
-
-/**
- * @class digidoc::ConfV3
- * @brief Verison 3 of configuration class to add additonial parameters.
- * @see digidoc::ConfV2
- * @see @ref parameters
- */
-/**
- * Version 3 config with new parameters
- */
-ConfV3::ConfV3() {}
-ConfV3::~ConfV3() {}
-
-/**
- * Return global instance object
- */
-ConfV3* ConfV3::instance() { return dynamic_cast<ConfV3*>(Conf::instance()); }
+string Conf::TSLUrl() const { return TSL_URL; }
 
 /**
  * Allow expired TSL lists
  */
-bool ConfV3::TSLAllowExpired() const { return false; }
+bool Conf::TSLAllowExpired() const { return false; }
 
 /**
  * TSL master list's (LOTL) signing certificates
  */
-vector<X509Cert> ConfV3::TSLCerts() const
+vector<X509Cert> Conf::TSLCerts() const
 {
     return {
         X509Cert(tslcert1(), X509Cert::Pem),
@@ -302,45 +233,26 @@ vector<X509Cert> ConfV3::TSLCerts() const
 /**
  * Compare local TSL digest with digest published online to check for newer version
  */
-bool ConfV3::TSLOnlineDigest() const { return true; }
+bool Conf::TSLOnlineDigest() const { return true; }
 
 /**
  * Gets TSL downloading connection's current timeout value
  */
-int ConfV3::TSLTimeOut() const { return 10; }
-
-
-
-/**
- * @class digidoc::ConfV4
- * @brief Verison 4 of configuration class to add additonial parameters.
- * @see digidoc::ConfV3
- * @see @ref parameters
- */
-/**
- * Version 4 config with new parameters
- */
-ConfV4::ConfV4() {}
-ConfV4::~ConfV4() {}
-
-/**
- * Return global instance object
- */
-ConfV4* ConfV4::instance() { return dynamic_cast<ConfV4*>(Conf::instance()); }
+int Conf::TSLTimeOut() const { return 10; }
 
 /**
  * Redirect SSL traffic over proxy server
  * Default: false
  */
-bool ConfV4::proxyForceSSL() const { return false; }
+bool Conf::proxyForceSSL() const { return false; }
 
 /**
  * Tunnel SSL traffic over proxy server
  * Default: false
  */
-bool ConfV4::proxyTunnelSSL() const { return true; }
+bool Conf::proxyTunnelSSL() const { return true; }
 
 /**
  * Gets signature digest URI
  */
-string ConfV4::signatureDigestUri() const { return digestUri(); }
+string Conf::signatureDigestUri() const { return digestUri(); }

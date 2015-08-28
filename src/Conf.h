@@ -38,21 +38,34 @@ namespace digidoc
 
           virtual int logLevel() const;
           virtual std::string logFile() const;
-          virtual std::string digestUri() const;
+          DEPRECATED_DIGIDOCPP virtual std::string libdigidocConf() const;
+          DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
           virtual std::string xsdPath() const;
           virtual std::string PKCS11Driver() const;
-          virtual std::string ocsp(const std::string &issuer) const;
-          DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
+
           virtual std::string proxyHost() const;
           virtual std::string proxyPort() const;
           virtual std::string proxyUser() const;
           virtual std::string proxyPass() const;
+          virtual bool proxyForceSSL() const;
+          virtual bool proxyTunnelSSL() const;
+
+          virtual std::string digestUri() const;
+          virtual std::string signatureDigestUri() const;
+          virtual std::string ocsp(const std::string &issuer) const;
+          virtual std::string TSUrl() const;
+
           virtual std::string PKCS12Cert() const;
           virtual std::string PKCS12Pass() const;
           virtual bool PKCS12Disable() const;
-          virtual std::string libdigidocConf() const;
-          DEPRECATED_DIGIDOCPP virtual bool bdoc1Supported() const;
-          virtual std::string defaultPolicyId() const;
+
+          virtual bool TSLAllowExpired() const;
+          virtual bool TSLAutoUpdate() const;
+          virtual std::string TSLCache() const;
+          virtual std::vector<X509Cert> TSLCerts() const;
+          virtual bool TSLOnlineDigest() const;
+          virtual int TSLTimeOut() const;
+          virtual std::string TSLUrl() const;
 
       private:
           DISABLE_COPY(Conf);
@@ -60,57 +73,5 @@ namespace digidoc
           static Conf *INSTANCE;
     };
 
-    class EXP_DIGIDOC ConfV2: public Conf
-    {
-
-      public:
-          ConfV2();
-          virtual ~ConfV2();
-          static ConfV2* instance();
-
-          virtual std::string TSUrl() const;
-
-          virtual bool TSLAutoUpdate() const;
-          virtual std::string TSLCache() const;
-          DEPRECATED_DIGIDOCPP virtual X509Cert TSLCert() const;
-          virtual std::string TSLUrl() const;
-
-      private:
-          DISABLE_COPY(ConfV2);
-    };
-
-    class EXP_DIGIDOC ConfV3: public ConfV2
-    {
-
-      public:
-          ConfV3();
-          virtual ~ConfV3();
-          static ConfV3* instance();
-
-          virtual bool TSLAllowExpired() const;
-          virtual std::vector<X509Cert> TSLCerts() const;
-          virtual bool TSLOnlineDigest() const;
-          virtual int TSLTimeOut() const;
-
-      private:
-          DISABLE_COPY(ConfV3);
-    };
-
-    class EXP_DIGIDOC ConfV4: public ConfV3
-    {
-
-      public:
-          ConfV4();
-          virtual ~ConfV4();
-          static ConfV4* instance();
-
-          virtual bool proxyForceSSL() const;
-          virtual bool proxyTunnelSSL() const;
-          virtual std::string signatureDigestUri() const;
-
-      private:
-          DISABLE_COPY(ConfV4);
-    };
-
-#define CONF(method) ConfV4::instance() ? ConfV4::instance()->method() : ConfV4().method()
+#define CONF(method) Conf::instance() ? Conf::instance()->method() : Conf().method()
 }

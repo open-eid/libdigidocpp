@@ -90,20 +90,20 @@ ostream &operator<<(ostream &os, const vector<X509Cert::KeyUsage> &usage)
 namespace digidoc
 {
 
-class TestConfig: public ConfV3
+class TestConfig: public Conf
 {
 public:
-    string libdigidocConf() const { return "digidoc.conf"; }
-    int logLevel() const { return 4; }
-    string logFile() const { return "libdigidocpp.log"; }
-    string xsdPath() const { return DIGIDOCPPCONF; }
-    string certsPath() const { return "."; }
-    string ocsp(const string &) const
+    string libdigidocConf() const override { return "digidoc.conf"; }
+    int logLevel() const override { return 4; }
+    string logFile() const override { return "libdigidocpp.log"; }
+    string xsdPath() const override { return DIGIDOCPPCONF; }
+    string certsPath() const override { return "."; }
+    string ocsp(const string &) const override
     { return "http://demo.sk.ee/ocsp"; }
-    bool PKCS12Disable() const { return true; }
-    string TSUrl() const { return "http://demo.sk.ee/tsa/"; }
-    bool TSLAutoUpdate() const { return false; }
-    bool TSLOnlineDigest() const { return false; }
+    bool PKCS12Disable() const override { return true; }
+    string TSUrl() const override { return "http://demo.sk.ee/tsa/"; }
+    bool TSLAutoUpdate() const override { return false; }
+    bool TSLOnlineDigest() const override { return false; }
 };
 
 class BDoc2: public Container
@@ -515,7 +515,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(ConfSuite)
 BOOST_AUTO_TEST_CASE(XmlConfCase)
 {
-    XmlConfV4 c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "/conf.xsd"));
+    XmlConf c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "/conf.xsd"));
     BOOST_CHECK_EQUAL(c.logLevel(), 2);
     BOOST_CHECK_EQUAL(c.logFile(), "digidocpp.log");
     BOOST_CHECK_EQUAL(c.digestUri(), "http://www.w3.org/2001/04/xmlenc#sha256");
