@@ -57,8 +57,7 @@ public:
     virtual void addRawSignature(std::istream &signature) = 0;
     virtual SignatureList signatures() const = 0;
     virtual void removeSignature(unsigned int id) = 0;
-    Signature* sign(Signer *signer);
-    virtual Signature* sign(Signer *signer, const std::string &profile) = 0;
+    virtual Signature* sign(Signer *signer) = 0;
     Signature* sign(const std::string &city, const std::string &stateOrProvince,
                     const std::string &postalCode, const std::string &countryName,
                     const std::vector<std::string> &signerRoles,

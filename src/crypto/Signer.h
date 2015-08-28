@@ -36,19 +36,21 @@ namespace digidoc
                             std::vector<unsigned char> &signature) = 0;
           std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest);
           std::string method() const;
+          std::string profile() const;
 
           std::string city() const;
           std::string stateOrProvince() const;
           std::string postalCode() const;
           std::string countryName() const;
           std::vector<std::string> signerRoles() const;
+          void setMethod(const std::string &method);
+          void setProfile(const std::string &profile);
           void setSignatureProductionPlace(const std::string &city,
               const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
           void setSignerRoles(const std::vector<std::string>& signerRoles);
 
       protected:
           Signer();
-          void setMethod(const std::string &method);
 
       private:
           DISABLE_COPY(Signer);

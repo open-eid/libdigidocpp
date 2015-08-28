@@ -33,7 +33,9 @@ namespace digidoc
 class SignerPrivate
 {
 public:
-    string city, stateOrProvince, postalCode, countryName, method;
+    string method = CONF(signatureDigestUri);
+    string profile = "time-stamp";
+    string city, stateOrProvince, postalCode, countryName;
     vector<string> signerRoles;
 };
 }
@@ -52,9 +54,7 @@ public:
  */
 Signer::Signer()
     : d(new SignerPrivate)
-{
-    d->method = CONF(signatureDigestUri);
-}
+{}
 
 /**
  * Destructor
@@ -110,12 +110,22 @@ string Signer::postalCode() const
     return d->postalCode;
 }
 
+string Signer::profile() const
+{
+    return d->profile;
+}
+
 /**
  * Returns country from signature production place
  */
 string Signer::countryName() const
 {
     return d->countryName;
+}
+
+void Signer::setProfile(const string &profile)
+{
+    d->profile = profile;
 }
 
 /**

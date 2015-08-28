@@ -53,7 +53,7 @@ namespace digidoc
           std::string signatureMethod() const;
           virtual void validate(Validate params = ValidateFULL) const;
           void setSignatureValue(const std::vector<unsigned char> &signatureValue);
-          std::vector<unsigned char> prepareSignedInfo(const std::string &profile, Signer *singer);
+          std::vector<unsigned char> prepareSignedInfo(Signer *singer);
 
           // Xades properties
           std::string policy() const;

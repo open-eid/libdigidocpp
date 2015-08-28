@@ -490,10 +490,9 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
  * Signs all documents in container.
  *
  * @param signer signer implementation.
- * @param profile signature profile (e.g. BES, TM).
  * @throws ContainerException exception is throws if signing the BDCO container failed.
  */
-Signature *BDoc::sign(Signer* signer, const string &profile)
+Signature *BDoc::sign(Signer* signer)
 {
     if(d->documents.empty())
         THROW("No documents in container, can not sign container.");
@@ -510,10 +509,9 @@ Signature *BDoc::sign(Signer* signer, const string &profile)
             signature->addDataObjectFormat("#" + id, f.mediaType());
         }
 
-        string prof = profile.empty() ? BDoc::ASIC_TS_PROFILE : profile;
-        vector<unsigned char> digest = signature->prepareSignedInfo(prof, signer); // needs to be here to select also signatureMethod
+        vector<unsigned char> digest = signature->prepareSignedInfo(signer); // needs to be here to select also signatureMethod
         signature->setSignatureValue(signer->sign(signature->signatureMethod(), digest));
-        signature->extendTo(prof);
+        signature->extendTo(signer->profile().empty() ? BDoc::ASIC_TS_PROFILE : signer->profile());
     }
     catch(const Exception& e)
     {

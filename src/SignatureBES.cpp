@@ -645,9 +645,9 @@ void SignatureBES::validate(Validate) const
  * @param signer signer that signs the signature object.
  * @throws Exception exception is throws if signing failed.
  */
-vector<unsigned char> SignatureBES::prepareSignedInfo(const std::string &profile, Signer* signer)
+vector<unsigned char> SignatureBES::prepareSignedInfo(Signer* signer)
 {
-    if(profile.find(BDoc::ASIC_TM_PROFILE) != string::npos)
+    if(signer->profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
     {
         map<string,Policy>::const_iterator p = policylist.cbegin();
         IdentifierType identifierid(p->first);

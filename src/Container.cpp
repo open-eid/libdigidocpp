@@ -322,22 +322,10 @@ Container* Container::open(const string &path)
  */
 
 /**
+ * @fn digidoc::Container::sign(Signer *signer)
  * Signs all data files in container.
  *
  * @param signer signer implementation.
- * @throws Exception exception is thrown if signing the container failed.
- */
-Signature* Container::sign(Signer *signer)
-{
-    return sign(signer, string());
-}
-
-/**
- * @fn digidoc::Container::sign(Signer *signer, const std::string &profile)
- * Signs all data files in container.
- *
- * @param signer signer implementation.
- * @param profile type enables to specify the signature profile. Defaults to BDOC profile with time-stamp. To create BDOC with time-mark, set the parameter value to "time-mark". See also \ref Supported.
  * @throws Exception exception is thrown if signing the container failed.
  */
 

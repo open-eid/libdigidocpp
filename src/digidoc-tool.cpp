@@ -711,7 +711,8 @@ static int create(int argc, char* argv[])
             signer.reset(new ConsolePinSigner(p.pkcs11, p.pin));
         signer->setSignatureProductionPlace(p.city, p.state, p.postalCode, p.country);
         signer->setSignerRoles(p.roles);
-        if(Signature *signature = doc->sign(signer.get(), p.profile))
+        signer->setProfile(p.profile);
+        if(Signature *signature = doc->sign(signer.get()))
         {
             try {
                 signature->validate();
@@ -770,7 +771,8 @@ static int sign(int argc, char* argv[])
             signer.reset(new ConsolePinSigner(p.pkcs11, p.pin));
         signer->setSignatureProductionPlace(p.city, p.state, p.postalCode, p.country);
         signer->setSignerRoles(p.roles);
-        if(Signature *signature = doc->sign(signer.get(), p.profile))
+        signer->setProfile(p.profile);
+        if(Signature *signature = doc->sign(signer.get()))
         {
             try {
                 signature->validate();

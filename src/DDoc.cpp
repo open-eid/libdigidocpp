@@ -761,10 +761,9 @@ void DDoc::save(const string &path)
  * Signs all documents in container.
  *
  * @param signer signer implementation.
- * @param profile signature profile (e.g. BES, TM).
  * @throws ContainerException exception is throws if signing the BDCO container failed.
  */
-Signature *DDoc::sign( Signer *signer, const string & )
+Signature *DDoc::sign(Signer *signer)
 {
     d->throwDocOpenError( __LINE__ );
     if(d->documents.empty())

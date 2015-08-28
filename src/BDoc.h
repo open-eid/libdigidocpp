@@ -65,7 +65,7 @@ namespace digidoc
           void addRawSignature(std::istream &sigdata) override;
           SignatureList signatures() const override;
           void removeSignature(unsigned int id) override;
-          Signature* sign(Signer* signer, const std::string &profile) override;
+          Signature* sign(Signer* signer) override;
 
           static Container* createInternal(const std::string &path);
           static Container* openInternal(const std::string &path);
