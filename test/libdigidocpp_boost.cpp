@@ -182,8 +182,8 @@ BOOST_AUTO_TEST_CASE(signerParameters)
 
     const unsigned char digest[] = "Signature";
     vector<unsigned char> signature;
-    BOOST_CHECK_NO_THROW(signer->sign("http://www.w3.org/2000/09/xmldsig#rsa-sha1",
-        vector<unsigned char>(digest, digest+sizeof(digest)), signature));
+    BOOST_CHECK_NO_THROW(signature = signer->sign("http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+        vector<unsigned char>(digest, digest+sizeof(digest))));
 
     const unsigned char sig[] = {
         0x8F, 0x05, 0x7B, 0x15, 0xC8, 0x9B, 0x18, 0x76, 0x93, 0x70, 0xA2, 0x3A,

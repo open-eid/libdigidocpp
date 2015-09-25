@@ -417,7 +417,7 @@ void SignatureDDOC::setSignatureValue(const vector<unsigned char> &signature)
  * </ul>
  * @throws SignatureException if signature is not valid
  */
-void SignatureDDOC::validate(Validate) const
+void SignatureDDOC::validate() const
 {
     if(int err = d->lib->f_verifySignatureAndNotary(d->doc, s, d->filename.c_str()))
         d->throwError("Signature validation", __LINE__, err);

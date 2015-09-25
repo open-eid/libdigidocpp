@@ -35,8 +35,7 @@ typedef std::vector<Signature*> SignatureList;
 typedef void (*initCallBack)(const Exception *e);
 
 EXP_DIGIDOC std::string appInfo();
-EXP_DIGIDOC void initialize(const std::string &appInfo = "libdigidocpp");
-EXP_DIGIDOC void initializeEx(const std::string &appInfo = "libdigidocpp", initCallBack callBack = nullptr);
+EXP_DIGIDOC void initialize(const std::string &appInfo = "libdigidocpp", initCallBack callBack = nullptr);
 EXP_DIGIDOC void terminate();
 EXP_DIGIDOC std::string version();
 
@@ -58,10 +57,6 @@ public:
     virtual SignatureList signatures() const = 0;
     virtual void removeSignature(unsigned int id) = 0;
     virtual Signature* sign(Signer *signer) = 0;
-    Signature* sign(const std::string &city, const std::string &stateOrProvince,
-                    const std::string &postalCode, const std::string &countryName,
-                    const std::vector<std::string> &signerRoles,
-                    const std::string &pin, bool useFirstCertificate = true);
 
     static Container* create(const std::string &path);
     static Container* open(const std::string &path);

@@ -94,11 +94,11 @@ X509Cert PKCS12Signer::cert() const
  *
  * @param method digest uri
  * @param digest digest, which is being signed.
- * @param signature memory for the signature that is created.
+ * @return the signature that is created.
  * @throws Exception throws exception if the signing operation failed or not enough memory
  *         allocated for the signature.
  */
-void PKCS12Signer::sign(const string &method, const vector<unsigned char> &digest, vector<unsigned char> &signature)
+vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsigned char> &digest) const
 {
     DEBUG("PKCS12Signer::sign(method = %s, digest = %d)", method.c_str(), digest.size());
 
@@ -109,6 +109,7 @@ void PKCS12Signer::sign(const string &method, const vector<unsigned char> &diges
     if ( method == URI_RSA_SHA512 ) nid = NID_sha512;
 
     int result = 0;
+    vector<unsigned char> signature;
     switch(EVP_PKEY_type(d->key->type))
     {
     case EVP_PKEY_RSA:
@@ -152,4 +153,5 @@ void PKCS12Signer::sign(const string &method, const vector<unsigned char> &diges
     }
     if(result != 1)
         THROW_CAUSE(OpenSSLException(), "Failed to sign the digest");
+    return signature;
 }

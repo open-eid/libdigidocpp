@@ -328,14 +328,12 @@ void PKCS11Signer::setPin(const string &pin)
  * the PIN is acquired by calling the callback function <code>pin</code>.
  *
  * @param digest digest, which is being signed.
- * @param signature memory for the signature that is created.
+ * @return signature memory for the signature that is created.
  * @throws Exception throws exception if the signing operation failed.
  */
-void PKCS11Signer::sign(const string &method, const vector<unsigned char> &digest,
-                        vector<unsigned char> &signature)
+vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsigned char> &digest) const
 {
-    DEBUG("sign(mehthod = %s, digest = length=%d, signature=length=%d)",
-          method.c_str(), digest.size(), signature.size());
+    DEBUG("sign(mehthod = %s, digest = length=%d)", method.c_str(), digest.size());
 
     // Check that sign slot and certificate are selected.
     if(!d->sign.certificate)
@@ -411,8 +409,9 @@ void PKCS11Signer::sign(const string &method, const vector<unsigned char> &diges
     if(d->f->C_Sign(session, &data[0], CK_ULONG(data.size()), 0, &size) != CKR_OK)
         THROW("Failed to sign digest");
 
-    signature.resize(size);
+    vector<unsigned char> signature(size, 0);
     rv = d->f->C_Sign(session, &data[0], CK_ULONG(data.size()), &signature[0], CK_ULONG_PTR(&size));
     if(rv != CKR_OK)
         THROW("Failed to sign digest");
+    return signature;
 }

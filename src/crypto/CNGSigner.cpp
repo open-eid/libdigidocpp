@@ -200,15 +200,12 @@ void CNGSigner::setSelectFirst(bool first)
  * the PIN is acquired by calling the callback function <code>getPin</code>.
  *
  * @param digest digest, which is being signed.
- * @param signature memory for the signature that is created. Struct parameter <code>length</code>
- *        is set to the actual signature length.
+ * @return the signature that is created.
  * @throws SignException throws exception if the signing operation failed.
  */
-void CNGSigner::sign(const string &method, const vector<unsigned char> &digest,
-                     vector<unsigned char> &signature)
+vector<unsigned char> CNGSigner::sign(const string &method, const vector<unsigned char> &digest) const
 {
-    DEBUG("sign(method = %s, digest = length=%d, signature=length=%d)",
-          method.c_str(), digest.size(), signature.size());
+    DEBUG("sign(method = %s, digest = length=%d)", method.c_str(), digest.size());
 
     BCRYPT_PKCS1_PADDING_INFO padInfo;
     padInfo.pszAlgId = nullptr;
@@ -227,7 +224,7 @@ void CNGSigner::sign(const string &method, const vector<unsigned char> &digest,
     err = d->f_NCryptSignHash(d->key, &padInfo, PBYTE(&digest[0]), digest.size(),
         0, 0, &size, BCRYPT_PAD_PKCS1);*/
 
-    signature.resize(size);
+    vector<unsigned char> signature(size, 0);
     err = NCryptSignHash(d->key, &padInfo, PBYTE(&digest[0]), DWORD(digest.size()),
         &signature[0], DWORD(signature.size()), (DWORD*)&size, BCRYPT_PAD_PKCS1);
     signature.resize(size);
@@ -248,4 +245,5 @@ void CNGSigner::sign(const string &method, const vector<unsigned char> &digest,
         e.setCode(Exception::PINFailed);
         throw e;
     }
+    return signature;
 }

@@ -155,11 +155,11 @@ string SignatureA::TSATime() const
     return xsd2string(makeDateTime(datetime));
 }
 
-void SignatureA::validate(Validate params) const
+void SignatureA::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureTS::validate(params);
+        SignatureTS::validate();
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);

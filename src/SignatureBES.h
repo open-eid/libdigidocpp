@@ -47,23 +47,23 @@ namespace digidoc
           SignatureBES(std::istream &sigdata, BDoc *bdoc);
           virtual ~SignatureBES();
 
-          std::string id() const;
-          std::string signingTime() const;
-          X509Cert signingCertificate() const;
-          std::string signatureMethod() const;
-          virtual void validate(Validate params = ValidateFULL) const;
+          std::string id() const override;
+          std::string signingTime() const override;
+          X509Cert signingCertificate() const override;
+          std::string signatureMethod() const override;
+          virtual void validate() const override;
           void setSignatureValue(const std::vector<unsigned char> &signatureValue);
           std::vector<unsigned char> prepareSignedInfo(Signer *singer);
 
           // Xades properties
-          std::string policy() const;
-          std::string SPUri() const;
-          std::string profile() const;
-          std::string city() const;
-          std::string stateOrProvince() const;
-          std::string postalCode() const;
-          std::string countryName() const;
-          std::vector<std::string> signerRoles() const;
+          std::string policy() const override;
+          std::string SPUri() const override;
+          std::string profile() const override;
+          std::string city() const override;
+          std::string stateOrProvince() const override;
+          std::string postalCode() const override;
+          std::string countryName() const override;
+          std::vector<std::string> signerRoles() const override;
 
           std::string addReference(const std::string& uri, const std::string& digestUri,
             const std::vector<unsigned char> &digestValue, const std::string& type = "");

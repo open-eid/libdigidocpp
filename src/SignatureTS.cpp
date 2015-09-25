@@ -108,11 +108,11 @@ vector<unsigned char> SignatureTS::tsBase64() const
     return vector<unsigned char>();
 }
 
-void SignatureTS::validate(Validate params) const
+void SignatureTS::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureTM::validate(params);
+        SignatureTM::validate();
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);

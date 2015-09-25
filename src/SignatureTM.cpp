@@ -120,11 +120,11 @@ string SignatureTM::realTime() const
  *
  * @throws SignatureException if signature is not valid
  */
-void SignatureTM::validate(Validate params) const
+void SignatureTM::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureBES::validate(params);
+        SignatureBES::validate();
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);

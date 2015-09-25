@@ -39,9 +39,9 @@ namespace digidoc
 
       private:
           X509Cert cert() const override;
-          void sign(const std::string &method, const std::vector<unsigned char> &digest,
-                    std::vector<unsigned char> &signature) override;
+          std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const override;
 
+          DISABLE_COPY(PKCS11Signer);
           PKCS11SignerPrivate *d;
     };
 }

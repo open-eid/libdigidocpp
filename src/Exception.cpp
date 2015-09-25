@@ -68,9 +68,6 @@ std::vector<Exception::ExceptionCode> Exception::ignores = std::vector<Exception
  * PIN locked error
  *
  * @var digidoc::Exception::ReferenceDigestWeak
- * @see digidoc::Exception::RefereneceDigestWeak
- * @deprecated keeping for backwards compatibility
- * @var digidoc::Exception::RefereneceDigestWeak
  * One or more referenced objects in BDoc container are calculated by using weaker digest method that recommended
  * @var digidoc::Exception::SignatureDigestWeak
  * The digest that is signed in BDoc container has been calculated by using weaker digest method than recommended

@@ -31,10 +31,10 @@ public:
     SignatureA(std::istream &sigdata, BDoc *bdoc);
     virtual ~SignatureA();
 
-    X509Cert TSACertificate() const;
-    std::string TSATime() const;
-    virtual void validate(Validate params = ValidateFULL) const;
-    virtual void extendTo(const std::string &profile);
+    X509Cert TSACertificate() const override;
+    std::string TSATime() const override;
+    virtual void validate() const override;
+    virtual void extendTo(const std::string &profile) override;
 
 private:
     DISABLE_COPY(SignatureA);

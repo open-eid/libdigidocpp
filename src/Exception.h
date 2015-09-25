@@ -49,7 +49,6 @@ namespace digidoc
               PINLocked                = 3,
               //Warnings
               ReferenceDigestWeak      = 12,
-              RefereneceDigestWeak     = ReferenceDigestWeak,
               SignatureDigestWeak      = 13,
               DataFileNameSpaceWarning = 14,
               IssuerNameSpaceWarning   = 15,

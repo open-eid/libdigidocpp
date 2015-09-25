@@ -34,16 +34,16 @@ public:
     SignatureTM(std::istream &sigdata, BDoc *bdoc);
     virtual ~SignatureTM();
 
-    std::vector<unsigned char> nonce() const;
-    X509Cert OCSPCertificate() const;
-    std::string producedAt() const;
-    virtual void validate(Validate params = ValidateFULL) const;
+    std::vector<unsigned char> nonce() const override;
+    X509Cert OCSPCertificate() const override;
+    std::string producedAt() const override;
+    virtual void validate() const override;
     virtual void extendTo(const std::string &profile);
 
 protected:
     void addCertificateValue(const std::string& certId, const X509Cert& x509);
     std::vector<unsigned char> getOCSPResponseValue() const;
-    virtual std::string realTime() const;
+    virtual std::string realTime() const override;
     xades::UnsignedSignaturePropertiesType& unsignedSignatureProperties() const;
 
 private:

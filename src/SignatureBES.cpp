@@ -451,7 +451,7 @@ string SignatureBES::SPUri() const
  *
  * @throws SignatureException containing details on what's wrong in this signature.
 */
-void SignatureBES::validate(Validate) const
+void SignatureBES::validate() const
 {
     // A "master" exception containing all problems (causes) with this signature.
     // It'll be only thrown in case we have a reason (cause).

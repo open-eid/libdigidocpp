@@ -97,21 +97,9 @@ string digidoc::version() {
  * certificate store using TSL lists
  *
  * @param appInfo Application name for user agent string
- */
-void digidoc::initialize(const string &appInfo)
-{
-    digidoc::initializeEx(appInfo);
-}
-
-/**
- * Libdigidocpp’s initialization method: initializes dependent libraries,
- * loads configuration settings from default configuration files (see \ref conf) and initializes
- * certificate store using TSL lists
- *
- * @param appInfo Application name for user agent string
  * @param callBack Callback when background thread TSL loading is completed
  */
-void digidoc::initializeEx(const string &appInfo, initCallBack callBack)
+void digidoc::initialize(const string &appInfo, initCallBack callBack)
 {
     m_appInfo = appInfo;
 
@@ -334,38 +322,6 @@ void Container::addContainerImplementation()
 {
     m_createList.push_back(&T::createInternal);
     m_openList.push_back(&T::openInternal);
-}
-
-/**
- * Signs all data files in container.
- *
- * @param city sets a signature production place signed property (optional)
- * @param stateOrProvince sets a signature production place signed property (optional)
- * @param postalCode sets a signature production place signed property (optional)
- * @param countryName sets a signature production place signed property (optional)
- * @param signerRoles the parameter may contain the signer’s role and optionally the signer’s resolution. Note that only one  signer role value (i.e. one &lt;ClaimedRole&gt; XML element) should be used. 
- * If the signer role contains both role and resolution then they must be separated with a slash mark, e.g. “role / resolution”. 
- * Note that when setting the resolution value then role must also be specified.
- * @param pin PIN code for accessing the private key
- * @param useFirstCertificate if set to “true”, determines that the first signing certificate that is found from the 
- * certificate store is chosen for signature creation and the certificate selection’s dialog window is not displayed to the
- * user
- */
-Signature* Container::sign(const string &city, const string &stateOrProvince,
-                           const string &postalCode, const string &countryName,
-                           const vector<string> &signerRoles,
-                           const string &pin, bool useFirstCertificate)
-{
-#ifdef _WIN32
-    CNGSigner signer(pin, useFirstCertificate);
-#else
-    (void)useFirstCertificate;
-    PKCS11Signer signer;
-    signer.setPin(pin);
-#endif
-    signer.setSignatureProductionPlace(city, stateOrProvince, postalCode, countryName);
-    signer.setSignerRoles(signerRoles);
-    return sign(&signer);
 }
 
 /**

@@ -30,13 +30,6 @@ namespace digidoc
     class EXP_DIGIDOC Signature
     {
       public:
-          enum Validate
-          {
-              ValidateTM = 1<<0,
-              ValidatePOLICY = 1<<1,
-              ValidateFULL = ValidateTM|ValidatePOLICY
-          };
-
           virtual ~Signature();
 
           // DSig properties
@@ -44,7 +37,7 @@ namespace digidoc
           virtual std::string signingTime() const = 0;
           virtual X509Cert signingCertificate() const = 0;
           virtual std::string signatureMethod() const = 0;
-          virtual void validate(Validate params = ValidateFULL) const = 0;
+          virtual void validate() const = 0;
 
           // Xades properties
           virtual std::string policy() const;
