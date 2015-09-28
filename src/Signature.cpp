@@ -93,7 +93,7 @@ Signature::~Signature()
  */
 
 /**
- * @fn digidoc::Signature::signingTime
+ * @fn digidoc::Signature::claimedSigningTime
  *
  * Returns signature computer time that was used for signing.
  */
@@ -129,7 +129,7 @@ string Signature::SPUri() const
 /**
  * Returns signature OCSP producedAt timestamp.
  */
-string Signature::producedAt() const
+string Signature::OCSPProducedAt() const
 {
     return string();
 }
@@ -145,7 +145,7 @@ X509Cert Signature::OCSPCertificate() const
 /**
  * Returns signature OCSP response nonce.
  */
-vector<unsigned char> Signature::nonce() const
+vector<unsigned char> Signature::OCSPNonce() const
 {
     return vector<unsigned char>();
 }
@@ -153,7 +153,7 @@ vector<unsigned char> Signature::nonce() const
 /**
  * Returns signature TimeStampToken certificate.
  */
-X509Cert Signature::TSCertificate() const
+X509Cert Signature::TimeStampCertificate() const
 {
     return X509Cert();
 }
@@ -161,7 +161,7 @@ X509Cert Signature::TSCertificate() const
 /**
  * Returns signature TimeStampToken time.
  */
-string Signature::TSTime() const
+string Signature::TimeStampTime() const
 {
     return string();
 }
@@ -169,7 +169,7 @@ string Signature::TSTime() const
 /**
  * Returns signature Archive TimeStampToken certificate.
  */
-X509Cert Signature::TSACertificate() const
+X509Cert Signature::ArchiveTimeStampCertificate() const
 {
     return X509Cert();
 }
@@ -177,7 +177,7 @@ X509Cert Signature::TSACertificate() const
 /**
  * Returns signature Archive TimeStampToken time.
  */
-string Signature::TSATime() const
+string Signature::ArchiveTimeStampTime() const
 {
     return string();
 }

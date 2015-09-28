@@ -31,8 +31,10 @@ public:
     SignatureTS(std::istream &sigdata, BDoc *bdoc);
     virtual ~SignatureTS();
 
-    X509Cert TSCertificate() const override;
-    std::string TSTime() const override;
+    virtual std::string trustedSigningTime() const override;
+
+    X509Cert TimeStampCertificate() const override;
+    std::string TimeStampTime() const override;
     virtual void validate() const override;
     virtual void extendTo(const std::string &profile) override;
 

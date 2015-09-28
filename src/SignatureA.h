@@ -31,8 +31,8 @@ public:
     SignatureA(std::istream &sigdata, BDoc *bdoc);
     virtual ~SignatureA();
 
-    X509Cert TSACertificate() const override;
-    std::string TSATime() const override;
+    X509Cert ArchiveTimeStampCertificate() const override;
+    std::string ArchiveTimeStampTime() const override;
     virtual void validate() const override;
     virtual void extendTo(const std::string &profile) override;
 

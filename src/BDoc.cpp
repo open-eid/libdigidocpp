@@ -266,7 +266,7 @@ string BDoc::mediaType() const
  * @param signature signature, which is added to the container.
  * @throws ContainerException throws exception if there are no documents in container.
  */
-void BDoc::addRawSignature(istream &sigdata)
+void BDoc::addAdESSignature(istream &sigdata)
 {
     if(d->documents.empty())
         THROW("No documents in container, can not add signature.");

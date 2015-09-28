@@ -62,7 +62,7 @@ namespace digidoc
           DataFileList dataFiles() const override;
           void removeDataFile(unsigned int id) override;
 
-          void addRawSignature(std::istream &sigdata) override;
+          void addAdESSignature(std::istream &sigdata) override;
           SignatureList signatures() const override;
           void removeSignature(unsigned int id) override;
           Signature* sign(Signer* signer) override;

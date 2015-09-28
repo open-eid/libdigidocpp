@@ -141,12 +141,12 @@ vector<unsigned char> SignatureA::tsaBase64() const
     return vector<unsigned char>();
 }
 
-X509Cert SignatureA::TSACertificate() const
+X509Cert SignatureA::ArchiveTimeStampCertificate() const
 {
     return TS(tsaBase64()).cert();
 }
 
-string SignatureA::TSATime() const
+string SignatureA::ArchiveTimeStampTime() const
 {
     string time = TS(tsaBase64()).time();
     if(time.empty())

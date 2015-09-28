@@ -34,7 +34,8 @@ namespace digidoc
 
           // DSig properties
           virtual std::string id() const = 0;
-          virtual std::string signingTime() const = 0;
+          virtual std::string claimedSigningTime() const = 0;
+          virtual std::string trustedSigningTime() const = 0;
           virtual X509Cert signingCertificate() const = 0;
           virtual std::string signatureMethod() const = 0;
           virtual void validate() const = 0;
@@ -50,17 +51,17 @@ namespace digidoc
           virtual std::vector<std::string> signerRoles() const = 0;
 
           //TM profile properties
-          virtual std::string producedAt() const;
+          virtual std::string OCSPProducedAt() const;
           virtual X509Cert OCSPCertificate() const;
-          virtual std::vector<unsigned char> nonce() const;
+          virtual std::vector<unsigned char> OCSPNonce() const;
 
           //TS profile properties
-          virtual X509Cert TSCertificate() const;
-          virtual std::string TSTime() const;
+          virtual X509Cert TimeStampCertificate() const;
+          virtual std::string TimeStampTime() const;
 
           //TSA profile properties
-          virtual X509Cert TSACertificate() const;
-          virtual std::string TSATime() const;
+          virtual X509Cert ArchiveTimeStampCertificate() const;
+          virtual std::string ArchiveTimeStampTime() const;
 
       private:
           Signature();

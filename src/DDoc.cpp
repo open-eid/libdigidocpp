@@ -283,7 +283,7 @@ string SignatureDDOC::profile() const
 	return s.str();
 }
 
-string SignatureDDOC::signingTime() const
+string SignatureDDOC::claimedSigningTime() const
 {
     Timestamp ts = { 0, 0, 0, 0, 0, 0, 0 };
     d->lib->f_convertStringToTimestamp(d->doc, s->szTimeStamp, &ts);
@@ -343,7 +343,7 @@ vector<string> SignatureDDOC::signerRoles() const
 /**
  * @return returns OCSP nonce value
  */
-vector<unsigned char> SignatureDDOC::nonce() const
+vector<unsigned char> SignatureDDOC::OCSPNonce() const
 {
     NotaryInfo *n = s->pNotary;
     if(n && n->mbufOcspResponse.nLen)
@@ -391,7 +391,7 @@ X509Cert SignatureDDOC::OCSPCertificate() const
 /**
  * @return returns OCSP timestamp
  */
-string SignatureDDOC::producedAt() const
+string SignatureDDOC::OCSPProducedAt() const
 {
     NotaryInfo *n = s->pNotary;
 	if( !n || !n->timeProduced )
@@ -405,6 +405,12 @@ void SignatureDDOC::setSignatureValue(const vector<unsigned char> &signature)
 {
     int err = d->lib->f_ddocSigInfo_SetSignatureValue(s, (const char*)&signature[0], long(signature.size()));
     d->throwSignError(s, err, "Failed to sign document", __LINE__);
+}
+
+string SignatureDDOC::trustedSigningTime() const
+{
+    string time = OCSPProducedAt();
+    return time.empty() ? claimedSigningTime() : time;
 }
 
 /**
@@ -571,7 +577,7 @@ void DDoc::addDataFile(istream *, const string &, const string &)
  * @param signature signature, which is added to the container.
  * @throws ContainerException throws exception if there are no documents in container.
  */
-void DDoc::addRawSignature(istream &sigdata)
+void DDoc::addAdESSignature(istream &sigdata)
 {
 #if USE_SIGFROMMEMORY
     stringstream ofs;

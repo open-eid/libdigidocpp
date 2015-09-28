@@ -48,7 +48,8 @@ namespace digidoc
           virtual ~SignatureBES();
 
           std::string id() const override;
-          std::string signingTime() const override;
+          std::string claimedSigningTime() const override;
+          virtual std::string trustedSigningTime() const override;
           X509Cert signingCertificate() const override;
           std::string signatureMethod() const override;
           virtual void validate() const override;
@@ -72,7 +73,6 @@ namespace digidoc
           void saveToXml(std::ostream &os) const;
 
       protected:
-          virtual std::string realTime() const;
           std::vector<unsigned char> getSignatureValue() const;
           xades::QualifyingPropertiesType& qualifyingProperties() const;
           xades::SignedSignaturePropertiesType& getSignedSignatureProperties() const;

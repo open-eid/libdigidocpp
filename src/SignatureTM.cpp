@@ -77,7 +77,7 @@ void SignatureTM::addOid(vector<unsigned char> &digest, const string &uri) const
 /**
  * @return nonce value
  */
-vector<unsigned char> SignatureTM::nonce() const
+vector<unsigned char> SignatureTM::OCSPNonce() const
 {
     vector<unsigned char> respBuf = getOCSPResponseValue();
     return respBuf.empty() ? vector<unsigned char>() : OCSP(respBuf).nonce();
@@ -95,7 +95,7 @@ X509Cert SignatureTM::OCSPCertificate() const
 /**
  * @return returns OCSP timestamp
  */
-string SignatureTM::producedAt() const
+string SignatureTM::OCSPProducedAt() const
 {
     vector<unsigned char> respBuf = getOCSPResponseValue();
     if(respBuf.empty())
@@ -104,10 +104,10 @@ string SignatureTM::producedAt() const
     return xsd2string(makeDateTime(datetime));
 }
 
-string SignatureTM::realTime() const
+string SignatureTM::trustedSigningTime() const
 {
-    string time = producedAt();
-    return time.empty() ? SignatureBES::signingTime() : time;
+    string time = OCSPProducedAt();
+    return time.empty() ? claimedSigningTime() : time;
 }
 
 /**
@@ -191,7 +191,7 @@ void SignatureTM::validate() const
 
 string SignatureTM::nonceAlgorithm() const
 {
-    vector<unsigned char> n = nonce();
+    vector<unsigned char> n = OCSPNonce();
     if(n.empty()) return string();
     if(n.size() > sizeof(OID_SHA1) && memcmp(OID_SHA1, n.data(), sizeof(OID_SHA1) - 1) == 0) return URI_SHA1;
     if(n.size() > sizeof(OID_SHA224) && memcmp(OID_SHA224, n.data(), sizeof(OID_SHA224) - 1) == 0) return URI_SHA224;

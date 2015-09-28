@@ -50,18 +50,24 @@ SignatureTS::SignatureTS(std::istream &sigdata, BDoc *bdoc): SignatureTM(sigdata
 
 SignatureTS::~SignatureTS() {}
 
-X509Cert SignatureTS::TSCertificate() const
+X509Cert SignatureTS::TimeStampCertificate() const
 {
     return TS(tsBase64()).cert();
 }
 
-string SignatureTS::TSTime() const
+string SignatureTS::TimeStampTime() const
 {
     string time = TS(tsBase64()).time();
     if(time.empty())
         return time;
     tm datetime = ASN1TimeToTM(time);
     return xsd2string(makeDateTime(datetime));
+}
+
+string SignatureTS::trustedSigningTime() const
+{
+    string time = TimeStampTime();
+    return time.empty() ? SignatureTM::trustedSigningTime() : time;
 }
 
 void SignatureTS::extendTo(const std::string &profile)

@@ -39,9 +39,10 @@ public:
     virtual ~SignatureDDOC();
 
     std::string id() const override;
-    std::string signingTime() const override;
+    std::string claimedSigningTime() const override;
     X509Cert signingCertificate() const override;
     std::string signatureMethod() const override;
+    std::string trustedSigningTime() const override;
     void validate() const override;
     void setSignatureValue(const std::vector<unsigned char> &signatureValue);
     void notarize();
@@ -54,9 +55,9 @@ public:
     std::string countryName() const override;
     std::vector<std::string> signerRoles() const override;
 
-    std::vector<unsigned char> nonce() const override;
+    std::vector<unsigned char> OCSPNonce() const override;
     X509Cert OCSPCertificate() const override;
-    std::string producedAt() const override;
+    std::string OCSPProducedAt() const override;
 
 private:
     SignatureDDOC(SignatureInfo_st *sig, DDocPrivate *doc);
@@ -89,7 +90,7 @@ public:
     DataFileList dataFiles() const override;
     void removeDataFile(unsigned int id) override;
 
-    void addRawSignature(std::istream &sigdata) override;
+    void addAdESSignature(std::istream &sigdata) override;
     SignatureList signatures() const override;
     void removeSignature(unsigned int id) override;
     Signature* sign(Signer* signer) override;

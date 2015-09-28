@@ -111,11 +111,11 @@ extern "C"
 // ignore X509Cert and implement later cert as ByteVector
 %ignore digidoc::Signature::signingCertificate;
 %ignore digidoc::Signature::OCSPCertificate;
-%ignore digidoc::Signature::TSCertificate;
-%ignore digidoc::Signature::TSACertificate;
+%ignore digidoc::Signature::TimeStampCertificate;
+%ignore digidoc::Signature::ArchiveTimeStampCertificate;
 // hide stream methods
 %ignore digidoc::DataFile::saveAs(std::ostream &os) const;
-%ignore digidoc::Container::addRawSignature(std::istream &signature);
+%ignore digidoc::Container::addAdESSignature(std::istream &signature);
 %ignore digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
 
 // Handle standard C++ types
@@ -145,13 +145,13 @@ extern "C"
     {
         return $self->OCSPCertificate();
     }
-    std::vector<unsigned char> TSCert() const
+    std::vector<unsigned char> TimeStampCert() const
     {
-        return $self->TSCertificate();
+        return $self->TimeStampCertificate();
     }
-    std::vector<unsigned char> TSACert() const
+    std::vector<unsigned char> ArchiveTimeStampCert() const
     {
-        return $self->TSACertificate();
+        return $self->ArchiveTimeStampCertificate();
     }
 }
 

@@ -206,14 +206,14 @@ Container::~Container()
  * @param signature signature, which is added to the container.
  * @throws Exception throws exception if there are no data files in container.
  */
-void Container::addRawSignature(const std::vector<unsigned char> &signature)
+void Container::addAdESSignature(const std::vector<unsigned char> &signature)
 {
     std::stringstream s(std::string(&signature[0], &signature[0] + signature.size()));
-    addRawSignature(s);
+    addAdESSignature(s);
 }
 
 /**
- * @fn digidoc::Container::addRawSignature(std::istream &signature)
+ * @fn digidoc::Container::addAdESSignature(std::istream &signature)
  * Adds signature to the container.
  *
  * @param signature signature, which is added to the container.

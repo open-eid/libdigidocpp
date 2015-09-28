@@ -52,8 +52,8 @@ public:
     virtual DataFileList dataFiles() const = 0;
     virtual void removeDataFile(unsigned int id) = 0;
 
-    void addRawSignature(const std::vector<unsigned char> &signature);
-    virtual void addRawSignature(std::istream &signature) = 0;
+    void addAdESSignature(const std::vector<unsigned char> &signature);
+    virtual void addAdESSignature(std::istream &signature) = 0;
     virtual SignatureList signatures() const = 0;
     virtual void removeSignature(unsigned int id) = 0;
     virtual Signature* sign(Signer *signer) = 0;

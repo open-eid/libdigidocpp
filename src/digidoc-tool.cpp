@@ -573,19 +573,19 @@ static int open(int argc, char* argv[])
                     printf("      %s\n", iter->c_str());
             }
 
-            vector<unsigned char> nonce = (*i)->nonce();
+            vector<unsigned char> nonce = (*i)->OCSPNonce();
             cout << "    EPES policy: " << (*i)->policy() << endl
                 << "    SPUri: " << (*i)->SPUri() << endl
                 << "    Signature method: " << (*i)->signatureMethod() << endl
-                << "    Signing time: " << (*i)->signingTime() << endl
+                << "    Signing time: " << (*i)->claimedSigningTime() << endl
                 << "    Signing cert: " << (*i)->signingCertificate() << endl
-                << "    Produced At: " << (*i)->producedAt() << endl
+                << "    Produced At: " << (*i)->OCSPProducedAt() << endl
                 << "    OCSP Responder: " << (*i)->OCSPCertificate() << endl
                 << "    OCSP Nonce (" << nonce.size() << "): " << nonce << endl
-                << "    TS: " << (*i)->TSCertificate() << endl
-                << "    TS time: " << (*i)->TSTime() << endl
-                << "    TSA: " << (*i)->TSACertificate() << endl
-                << "    TSA time: " << (*i)->TSATime() << endl;
+                << "    TS: " << (*i)->TimeStampCertificate() << endl
+                << "    TS time: " << (*i)->TimeStampTime() << endl
+                << "    TSA: " << (*i)->ArchiveTimeStampCertificate() << endl
+                << "    TSA time: " << (*i)->ArchiveTimeStampTime() << endl;
             if(reportwarnings == WWarning && !warnings.empty())
             {
                 cout << "    Warnings: ";

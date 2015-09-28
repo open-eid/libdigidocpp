@@ -497,8 +497,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
         time_t t = time(0);
         struct tm *t2 = gmtime(&t);
         string time = util::date::xsd2string(util::date::makeDateTime(*t2));
-        BOOST_WARN_EQUAL(s1->signingTime().substr(0, 16), time.substr(0, 16));
-        BOOST_WARN_EQUAL(s1->producedAt().substr(0, 16), time.substr(0, 16));
+        BOOST_WARN_EQUAL(s1->claimedSigningTime().substr(0, 16), time.substr(0, 16));
+        BOOST_WARN_EQUAL(s1->OCSPProducedAt().substr(0, 16), time.substr(0, 16));
         BOOST_CHECK_EQUAL(s1->OCSPCertificate().subjectName("CN"), "TEST of SK OCSP RESPONDER 2011");
     }
 

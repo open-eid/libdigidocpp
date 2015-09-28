@@ -43,8 +43,8 @@ namespace digidoc
           std::vector<std::string> signerRoles() const;
           void setMethod(const std::string &method);
           void setProfile(const std::string &profile);
-          void setSignatureProductionPlace(const std::string &city,
-              const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
+          void setSignatureProductionPlace(const std::string &city, const std::string &stateOrProvince,
+              const std::string &postalCode, const std::string &countryName);
           void setSignerRoles(const std::vector<std::string>& signerRoles);
 
       protected:
