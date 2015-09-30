@@ -116,7 +116,7 @@ XmlConfPrivate::XmlConfPrivate(const string &path, const string &schema)
     , signatureDigestUri("signer.signatureDigestUri")
     , PKCS11Driver("pkcs11.driver.path")
     , proxyForceSSL("proxy.forceSSL", false)
-    , proxyTunnelSSL("proxy.tunnelSSL", false)
+    , proxyTunnelSSL("proxy.tunnelSSL", true)
     , proxyHost("proxy.host")
     , proxyPort("proxy.port")
     , proxyUser("proxy.user")
@@ -631,3 +631,12 @@ SET1CONST(string, setPKCS12Pass, PKCS12Pass)
  * @throws Exception exception is thrown if saving a PKCS#12 certificate usage into a user configuration file fails.
  */
 SET1(bool, setPKCS12Disable, PKCS12Disable)
+
+/**
+ * Enables SSL proxy connections
+ * @throws Exception exception is thrown if saving into a user configuration file fails.
+ */
+void XmlConfV4::setProxyTunnelSSL(bool enable)
+{
+    d->setUserConf<bool>(d->proxyTunnelSSL, ConfV4::proxyTunnelSSL(), enable);
+}

@@ -338,7 +338,7 @@ bool ConfV4::proxyForceSSL() const { return false; }
  * Tunnel SSL traffic over proxy server
  * Default: false
  */
-bool ConfV4::proxyTunnelSSL() const { return false; }
+bool ConfV4::proxyTunnelSSL() const { return true; }
 
 /**
  * Gets signature digest URI

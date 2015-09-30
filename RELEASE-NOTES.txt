@@ -1,3 +1,18 @@
+Libdigidocpp library 3.12.0 release notes
+--------------------------------------
+Changes compared to ver 3.11.1
+
+- Fix download TSL-s over proxy in case of HTTPS connections
+- Behaviour change, proxy tunnel SSL option is now default on
+- Export PKCS12Signer class
+- Update C# bindings
+- Find OCSP certificate from TSL list
+- On loading TSL lists, verify HTTP result is 200
+
+List of known issues: https://github.com/open-eid/libdigidocpp/wiki/Known-issues
+
+
+
 Libdigidocpp library 3.11.1 release notes
 --------------------------------------
 Changes compared to ver 3.11.0

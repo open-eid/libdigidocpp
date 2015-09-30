@@ -177,6 +177,7 @@ public:
     virtual void setProxyPort( const std::string &port );
     virtual void setProxyUser( const std::string &user );
     virtual void setProxyPass( const std::string &pass );
+    virtual void setProxyTunnelSSL( bool enable );
     virtual void setPKCS12Cert( const std::string &cert );
     virtual void setPKCS12Pass( const std::string &pass );
     virtual void setPKCS12Disable( bool disable );
