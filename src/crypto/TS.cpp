@@ -62,8 +62,10 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
 
     SCOPE(ASN1_INTEGER, nonce, ASN1_INTEGER_new());
     nonce->length = 20;
-    nonce->data = (unsigned char*)OPENSSL_malloc(nonce->length + 1);
-    RAND_bytes(nonce->data, nonce->length);
+    nonce->data = (unsigned char*)OPENSSL_malloc(nonce->length);
+    nonce->data[0] = 0;
+    while(nonce->data[0] == 0) // Make sure that first byte is not 0x00
+        RAND_bytes(nonce->data, nonce->length);
     TS_REQ_set_nonce(req.get(), nonce.get());
 
     int len = i2d_TS_REQ(req.get(), 0);
