@@ -44,7 +44,6 @@ namespace digidoc
 
       public:
           static const std::string ASIC_MIMETYPE;
-          static const std::string BDOC_MIMETYPE;
 
           static const std::string BES_PROFILE;
           static const std::string EPES_PROFILE;

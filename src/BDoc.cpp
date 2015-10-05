@@ -42,7 +42,6 @@ namespace digidoc
 class BDocPrivate
 {
 public:
-    BDocPrivate(): mimetype(BDoc::ASIC_MIMETYPE) {}
     ZipSerialize::Properties propertie(const string &file)
     {
         map<string, ZipSerialize::Properties>::const_iterator i = properties.find(file);
@@ -57,7 +56,7 @@ public:
 
     static const string MANIFEST_NAMESPACE;
 
-    string mimetype, path;
+    string path;
     DataFileList documents;
     vector<Signature*> signatures;
     map<string, ZipSerialize::Properties> properties;
@@ -65,7 +64,6 @@ public:
 }
 
 const string BDoc::ASIC_MIMETYPE = "application/vnd.etsi.asic-e+zip";
-const string BDoc::BDOC_MIMETYPE = "application/vnd.bdoc-1.0";
 const string BDocPrivate::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 
 const string BDoc::BES_PROFILE = "BES";
@@ -103,8 +101,6 @@ BDoc::BDoc(const string &path)
     stringstream mimetype;
     z.extract(list.front(), mimetype);
     readMimetype(mimetype);
-    if(d->mimetype == BDOC_MIMETYPE)
-        THROW("BDoc1 container altering is unsupported");
     parseManifestAndLoadFiles(z, list);
 }
 
@@ -257,7 +253,7 @@ void BDoc::removeDataFile(unsigned int id)
  */
 string BDoc::mediaType() const
 {
-    return d->mimetype;
+    return BDoc::ASIC_MIMETYPE;
 }
 
 /**
@@ -375,9 +371,7 @@ void BDoc::readMimetype(istream &is)
         THROW("Failed to read mimetype.");
 
     DEBUG("mimetype = '%s'", mimetype.c_str());
-    if(mimetype == BDoc::ASIC_MIMETYPE || mimetype == BDoc::BDOC_MIMETYPE)
-        d->mimetype = mimetype;
-    else
+    if(mimetype != BDoc::ASIC_MIMETYPE)
         THROW("Incorrect mimetype '%s'", mimetype.c_str());
 }
 
@@ -446,8 +440,7 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
                *iter == "META-INF/manifest.xml")
                 continue;
 
-            if(d->mimetype == BDoc::ASIC_MIMETYPE &&
-               iter->compare(0, 19, "META-INF/signatures") == 0)
+            if(iter->compare(0, 19, "META-INF/signatures") == 0)
             {
                 if(count(list.begin(), list.end(), *iter) > 1)
                     THROW("Multiple signature files with same name found '%s'", iter->c_str());
