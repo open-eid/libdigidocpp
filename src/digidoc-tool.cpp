@@ -124,6 +124,19 @@ static string decodeParameter(const string &param)
 #endif
 }
 
+static vector<unsigned char> hexToBin(const string &in)
+{
+    vector<unsigned char> out;
+    char data[] = "00";
+    for(string::const_iterator i = in.cbegin(); i != in.end();)
+    {
+        data[0] = *(i++);
+        data[1] = *(i++);
+        out.push_back(static_cast<unsigned char>(strtoul(data, 0, 16)));
+    }
+    return out;
+}
+
 
 /**
  * For demonstration purpose overwrites certificate selection to print out all
@@ -250,6 +263,22 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
     return result;
 }
 
+class WebSigner: public Signer
+{
+public:
+    WebSigner(const X509Cert &cert): _cert(cert) {}
+
+private:
+    X509Cert cert() const override { return _cert; }
+    vector<unsigned char> sign(const string &, const vector<unsigned char> &) const override
+    {
+        THROW("Not implemented");
+        return vector<unsigned char>();
+    }
+
+    X509Cert _cert;
+};
+
 
 class ToolConfig: public XmlConf
 {
@@ -296,6 +325,11 @@ static void printUsage(const char *executable)
     << "    Available options:" << endl
     << "      --document=    - documents to remove" << endl
     << "      --signature=   - signatures to remove" << endl << endl
+    << "  Command websign:" << endl
+    << "    Example: " << executable << " sign --cert=signer.crt demo-container.bdoc" << endl
+    << "    Available options:" << endl
+    << "      --cert=        - signer token certificate" << endl
+    << "      for additional options look sign command" << endl << endl
     << "  Command sign:" << endl
     << "    Example: " << executable << " sign demo-container.bdoc" << endl
     << "    Available options:" << endl
@@ -319,7 +353,7 @@ static void printUsage(const char *executable)
 struct Params
 {
     Params(int argc, char *argv[]);
-    string path, profile, pkcs11, pkcs12, pin, city, state, postalCode, country;
+    string path, profile, pkcs11, pkcs12, pin, city, state, postalCode, country, cert;
     vector<pair<string,string> > files;
     vector<string> roles;
     bool cng = true, selectFirst = false;
@@ -372,6 +406,7 @@ Params::Params(int argc, char *argv[])
             pkcs12 = arg.substr(9);
         }
         else if(arg.find("--pin=") == 0) pin = arg.substr(6);
+        else if(arg.find("--cert=") == 0) cert = arg.substr(7);
         else if(arg.find("--city=") == 0) city = arg.substr(7);
         else if(arg.find("--state=") == 0) state = arg.substr(8);
         else if(arg.find("--postalCode=") == 0) postalCode = arg.substr(13);
@@ -792,6 +827,61 @@ static int sign(int argc, char* argv[])
     return returnCode;
 }
 
+static int websign(int argc, char* argv[])
+{
+    Params p(argc, argv);
+    if(p.path.empty())
+    {
+        printUsage(argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    unique_ptr<Container> doc;
+    try {
+        doc.reset(Container::create(p.path));
+    } catch(const Exception &e) {
+        printf("Failed to parse container");
+        parseException(e, "  Exception:");
+        return EXIT_FAILURE;
+    }
+
+    int returnCode = EXIT_SUCCESS;
+    try {
+        for(const pair<string,string> &file: p.files)
+            doc->addDataFile(file.first, file.second);
+
+        unique_ptr<Signer> signer(new WebSigner(X509Cert(p.cert, X509Cert::Pem)));
+        signer->setSignatureProductionPlace(p.city, p.state, p.postalCode, p.country);
+        signer->setSignerRoles(p.roles);
+        signer->setProfile(p.profile);
+        if(Signature *signature = doc->prepareSignature(signer.get()))
+        {
+            cout << "Signature method: " << signature->signatureMethod() << endl
+                 << "Digest to sign:   " << signature->dataToSign() << endl
+                 << "Please enter signed digest in hex: " << endl;
+            string signedData;
+            cin >> signedData;
+            signature->setSignatureValue(hexToBin(signedData));
+            cout << "Test" << hexToBin(signedData);
+            signature->extendSignatureProfile(p.profile);
+            try {
+                signature->validate();
+                printf("    Validation: OK\n");
+            } catch(const Exception &e) {
+                printf("    Validation: FAILED\n");
+                parseException(e, "     Exception:");
+                returnCode = EXIT_FAILURE;
+            }
+        }
+        doc->save();
+    } catch(const Exception &e) {
+        parseException(e, "Caught Exception:");
+        returnCode = EXIT_FAILURE;
+    }
+
+    return returnCode;
+}
+
 static int tslcmd(int , char* [])
 {
     int returnCode = EXIT_SUCCESS;
@@ -894,6 +984,8 @@ int main(int argc, char *argv[])
         returnCode = remove(argc, argv);
     else if(command == "sign")
         returnCode = sign(argc, argv);
+    else if(command == "websign")
+        returnCode = websign(argc, argv);
     else if(command == "tsl")
         returnCode = tslcmd(argc, argv);
     else if(command == "version")

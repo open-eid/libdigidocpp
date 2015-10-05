@@ -44,8 +44,9 @@ public:
     std::string signatureMethod() const override;
     std::string trustedSigningTime() const override;
     void validate() const override;
-    void setSignatureValue(const std::vector<unsigned char> &signatureValue);
-    void notarize();
+    std::vector<unsigned char> dataToSign() const override;
+    void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
+    void extendSignatureProfile(const std::string &profile) override;
 
     // Xades properties
     std::string profile() const override;
@@ -66,6 +67,7 @@ private:
     DDocPrivate *d;
     SignatureInfo_st *s;
 
+    friend class DDoc;
     friend class DDocPrivate;
 };
 
@@ -91,6 +93,7 @@ public:
     void removeDataFile(unsigned int id) override;
 
     void addAdESSignature(std::istream &sigdata) override;
+    Signature* prepareSignature(Signer *signer) override;
     SignatureList signatures() const override;
     void removeSignature(unsigned int id) override;
     Signature* sign(Signer* signer) override;

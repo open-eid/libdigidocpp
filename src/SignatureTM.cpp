@@ -43,8 +43,8 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
     return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
-SignatureTM::SignatureTM(unsigned int id, BDoc *bdoc)
-: SignatureBES(id, bdoc)
+SignatureTM::SignatureTM(unsigned int id, BDoc *bdoc, Signer *signer)
+: SignatureBES(id, bdoc, signer)
 {
 }
 
@@ -205,7 +205,7 @@ string SignatureTM::nonceAlgorithm() const
  *
  * @throws SignatureException
  */
-void SignatureTM::extendTo(const std::string &profile)
+void SignatureTM::extendSignatureProfile(const std::string &profile)
 {
     if(profile == BDoc::BES_PROFILE || profile == BDoc::EPES_PROFILE)
         return;

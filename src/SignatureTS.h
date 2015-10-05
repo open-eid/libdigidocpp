@@ -27,7 +27,7 @@ namespace digidoc
 class SignatureTS: public SignatureTM
 {
 public:
-    SignatureTS(unsigned int id, BDoc *bdoc);
+    SignatureTS(unsigned int id, BDoc *bdoc, Signer *signer);
     SignatureTS(std::istream &sigdata, BDoc *bdoc);
     virtual ~SignatureTS();
 
@@ -36,7 +36,7 @@ public:
     X509Cert TimeStampCertificate() const override;
     std::string TimeStampTime() const override;
     virtual void validate() const override;
-    virtual void extendTo(const std::string &profile) override;
+    virtual void extendSignatureProfile(const std::string &profile) override;
 
 private:
     DISABLE_COPY(SignatureTS);

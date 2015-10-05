@@ -43,7 +43,7 @@ namespace digidoc
           };
           static const std::map<std::string,Policy> policylist;
 
-          SignatureBES(unsigned int id, BDoc *bdoc);
+          SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer);
           SignatureBES(std::istream &sigdata, BDoc *bdoc);
           virtual ~SignatureBES();
 
@@ -53,8 +53,8 @@ namespace digidoc
           X509Cert signingCertificate() const override;
           std::string signatureMethod() const override;
           virtual void validate() const override;
-          void setSignatureValue(const std::vector<unsigned char> &signatureValue);
-          std::vector<unsigned char> prepareSignedInfo(Signer *singer);
+          std::vector<unsigned char> dataToSign() const override;
+          void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
 
           // Xades properties
           std::string policy() const override;

@@ -223,7 +223,7 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 /**
  * Creates an empty BDOC-BES signature with mandatory XML nodes.
  */
-SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc)
+SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
  : signature(0)
  , asicsignature(0)
  , bdoc(bdoc)
@@ -247,6 +247,38 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc)
     SignedPropertiesType signedProperties;
     signedProperties.signedSignatureProperties(SignedSignaturePropertiesType());
     signedProperties.id(nr + "-SignedProperties");
+    if(signer->profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
+    {
+        map<string,Policy>::const_iterator p = policylist.cbegin();
+        IdentifierType identifierid(p->first);
+        identifierid.qualifier(QualifierType::OIDAsURN);
+
+        ObjectIdentifierType identifier(identifierid);
+        identifier.description(p->second.DESCRIPTION);
+
+        string digestUri = Conf::instance()->digestUri();
+        const vector<unsigned char> *data = &p->second.SHA256;
+        if(Conf::instance()->digestUri() == URI_SHA1) data = &p->second.SHA1;
+        else if(Conf::instance()->digestUri() == URI_SHA224) data = &p->second.SHA224;
+        else if(Conf::instance()->digestUri() == URI_SHA256) data = &p->second.SHA256;
+        else if(Conf::instance()->digestUri() == URI_SHA384) data = &p->second.SHA384;
+        else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;
+        DigestAlgAndValueType policyDigest(DigestMethodType(digestUri),
+            Base64Binary(&data->front(), data->size()));
+
+        SignaturePolicyIdType policyId(identifier, policyDigest);
+
+        SigPolicyQualifiersListType::SigPolicyQualifierType uri;
+        uri.sPURI(p->second.URI);
+
+        SigPolicyQualifiersListType qualifiers;
+        qualifiers.sigPolicyQualifier().push_back(uri);
+        policyId.sigPolicyQualifiers(qualifiers);
+
+        SignaturePolicyIdentifierType policyidentifier;
+        policyidentifier.signaturePolicyId(policyId);
+        signedProperties.signedSignatureProperties()->signaturePolicyIdentifier(policyidentifier);
+    }
 
     // Signature->Object->QualifyingProperties
     QualifyingPropertiesType qualifyingProperties("#" + nr);
@@ -257,6 +289,28 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc)
     object.qualifyingProperties().push_back(qualifyingProperties);
 
     signature->object().push_back(object);
+
+    //Fill XML-DSIG/XAdES properties
+    X509Cert c = signer->cert();
+    setSigningCertificate(c);
+    signature->signedInfo().signatureMethod(Uri( X509Crypto(c).rsaModulus().empty() ?
+        Digest::toEcUri(signer->method()) : Digest::toRsaUri(signer->method()) ));
+
+    setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
+    setSignerRoles(signer->signerRoles());
+    time_t t = time(0);
+    setSigningTime(gmtime(&t));
+
+    string digestMethod = Conf::instance()->digestUri();
+    for(const DataFile &f: bdoc->dataFiles())
+    {
+        string id = addReference(File::toUriPath(f.fileName()), digestMethod, f.calcDigest(digestMethod), "");
+        addDataObjectFormat("#" + id, f.mediaType());
+    }
+
+    Digest calc(digestMethod);
+    calcDigestOnNode(&calc, XADES_NAMESPACE, "SignedProperties");
+    addReference("#" + nr +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties");
 }
 
 /**
@@ -639,62 +693,9 @@ void SignatureBES::validate() const
         throw exception;
 }
 
-/**
- * Prepares SignedInfo
- *
- * @param signer signer that signs the signature object.
- * @throws Exception exception is throws if signing failed.
- */
-vector<unsigned char> SignatureBES::prepareSignedInfo(Signer* signer)
+vector<unsigned char> SignatureBES::dataToSign() const
 {
-    if(signer->profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
-    {
-        map<string,Policy>::const_iterator p = policylist.cbegin();
-        IdentifierType identifierid(p->first);
-        identifierid.qualifier(QualifierType::OIDAsURN);
-
-        ObjectIdentifierType identifier(identifierid);
-        identifier.description(p->second.DESCRIPTION);
-
-        string digestUri = Conf::instance()->digestUri();
-        const vector<unsigned char> *data = &p->second.SHA256;
-        if(Conf::instance()->digestUri() == URI_SHA1) data = &p->second.SHA1;
-        else if(Conf::instance()->digestUri() == URI_SHA224) data = &p->second.SHA224;
-        else if(Conf::instance()->digestUri() == URI_SHA256) data = &p->second.SHA256;
-        else if(Conf::instance()->digestUri() == URI_SHA384) data = &p->second.SHA384;
-        else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;
-        DigestAlgAndValueType policyDigest(DigestMethodType(digestUri),
-            Base64Binary(&data->front(), data->size()));
-
-        SignaturePolicyIdType policyId(identifier, policyDigest);
-
-        SigPolicyQualifiersListType::SigPolicyQualifierType uri;
-        uri.sPURI(p->second.URI);
-
-        SigPolicyQualifiersListType qualifiers;
-        qualifiers.sigPolicyQualifier().push_back(uri);
-        policyId.sigPolicyQualifiers(qualifiers);
-
-        SignaturePolicyIdentifierType policyidentifier;
-        policyidentifier.signaturePolicyId(policyId);
-        getSignedSignatureProperties().signaturePolicyIdentifier(policyidentifier);
-    }
-
-    X509Cert c = signer->cert();
-    setSigningCertificate(c);
-    signature->signedInfo().signatureMethod(Uri( X509Crypto(c).rsaModulus().empty() ?
-        Digest::toEcUri(signer->method()) : Digest::toRsaUri(signer->method()) ));
-
-    setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
-    setSignerRoles(signer->signerRoles());
-    time_t t = time(0);
-    setSigningTime(gmtime(&t));
-
-    Digest calc;
-    calcDigestOnNode(&calc, XADES_NAMESPACE, "SignedProperties");
-    addReference("#" + id() +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties");
-
-    calc.reset(signatureMethod());
+    Digest calc(signatureMethod());
     calcDigestOnNode(&calc, URI_ID_DSIG, "SignedInfo");
     return calc.result();
 }

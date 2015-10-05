@@ -252,9 +252,6 @@ void DDocPrivate::throwSignError( SignatureInfo *sig, int err, const string &msg
 
 
 
-/**
- * DDoc profile signature media type.
- */
 SignatureDDOC::SignatureDDOC(SignatureInfo_st *sig, DDocPrivate *priv)
     : d(priv)
     , s(sig)
@@ -263,10 +260,12 @@ SignatureDDOC::SignatureDDOC(SignatureInfo_st *sig, DDocPrivate *priv)
         throw Exception(__FILE__, __LINE__, "Null pointer in SignatureDDOC constructor");
 }
 
-/**
- * Destructs SignatureDDOC object
- */
 SignatureDDOC::~SignatureDDOC() {}
+
+vector<unsigned char> SignatureDDOC::dataToSign() const
+{
+    return DDocPrivate::toVector(&s->pSigInfoRealDigest->mbufDigestValue);
+}
 
 string SignatureDDOC::id() const
 {
@@ -351,7 +350,7 @@ vector<unsigned char> SignatureDDOC::OCSPNonce() const
     return vector<unsigned char>();
 }
 
-void SignatureDDOC::notarize()
+void SignatureDDOC::extendSignatureProfile(const string &)
 {
     Conf *c = Conf::instance();
     if(!c->proxyHost().empty())
@@ -763,13 +762,7 @@ void DDoc::save(const string &path)
     d->filename = target;
 }
 
-/**
- * Signs all documents in container.
- *
- * @param signer signer implementation.
- * @throws ContainerException exception is throws if signing the BDCO container failed.
- */
-Signature *DDoc::sign(Signer *signer)
+Signature *DDoc::prepareSignature(Signer *signer)
 {
     d->throwDocOpenError( __LINE__ );
     if(d->documents.empty())
@@ -778,15 +771,15 @@ Signature *DDoc::sign(Signer *signer)
         THROW("Null pointer in DDoc::sign");
 
     X509Cert cert = signer->cert();
-    if( !cert )
-        throw Exception( __FILE__, __LINE__, "Failed to sign document, Certificate cannot be NULL" );
+    if(!cert)
+        THROW("Failed to sign document, Certificate cannot be NULL");
 
     ostringstream role;
     vector<string> r = signer->signerRoles();
-    for( vector<string>::const_iterator i = r.begin(); i != r.end(); ++i )
+    for(vector<string>::const_iterator i = r.begin(); i != r.end(); ++i)
     {
         role << *i;
-        if( i + 1 != r.end() )
+        if(i + 1 != r.end())
             role << " / ";
     }
 
@@ -795,41 +788,36 @@ Signature *DDoc::sign(Signer *signer)
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
     SignatureInfo *info = nullptr;
-    int err = d->lib->f_ddocPrepareSignature( d->doc, &info,
+    int err = d->lib->f_ddocPrepareSignature(d->doc, &info,
         (role.str().empty() ? 0 : role.str().c_str()),
         (signer->city().empty() ? 0 : signer->city().c_str()),
         (signer->stateOrProvince().empty() ? 0 : signer->stateOrProvince().c_str()),
         (signer->postalCode().empty() ? 0 : signer->postalCode().c_str()),
         (signer->countryName().empty() ? 0 : signer->countryName().c_str()),
-        X509_dup( cert.handle() ), 0 );
+        X509_dup(cert.handle()), 0);
 #ifdef __APPLE__
 #pragma GCC diagnostic pop
 #endif
     d->throwSignError( info, err, "Failed to sign document", __LINE__ );
     if( !info )
         d->throwCodeError(ERR_NULL_POINTER, "Failed to sign document", __LINE__);
-
-    vector<unsigned char> signature;
-	try
-    {
-        signature = signer->sign(URI_RSA_SHA1, DDocPrivate::toVector(&info->pSigInfoRealDigest->mbufDigestValue));
-	}
-	catch( const Exception &e )
-	{
-		d->lib->f_SignatureInfo_delete( d->doc, info->szId );
-        throw Exception(__FILE__, __LINE__, "Failed to sign document", e);
-	}
-
     d->loadSignatures();
-    SignatureDDOC *s = static_cast<SignatureDDOC*>(d->signatures.back());
-    s->setSignatureValue(signature);
-    try {
-        s->notarize();
-    } catch(const Exception &) {
-        d->signatures.pop_back();
-        delete s;
-        throw;
-    }
+    return d->signatures.back();
+}
 
+Signature* DDoc::sign(Signer *signer)
+{
+    SignatureDDOC *s = static_cast<SignatureDDOC*>(prepareSignature(signer));
+    try
+    {
+        s->setSignatureValue(signer->sign(URI_RSA_SHA1, s->dataToSign()));
+        s->extendSignatureProfile(signer->profile());
+    }
+    catch( const Exception &e )
+    {
+        d->lib->f_SignatureInfo_delete( d->doc, s->s->szId );
+        d->loadSignatures();
+        throw Exception(__FILE__, __LINE__, "Failed to sign document", e);
+    }
     return s;
 }

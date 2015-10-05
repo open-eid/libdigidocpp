@@ -30,7 +30,7 @@ namespace xades { class OCSPRefType; class UnsignedSignaturePropertiesType; }
 class SignatureTM: public SignatureBES
 {
 public:
-    SignatureTM(unsigned int id, BDoc *bdoc);
+    SignatureTM(unsigned int id, BDoc *bdoc, Signer *signer);
     SignatureTM(std::istream &sigdata, BDoc *bdoc);
     virtual ~SignatureTM();
 
@@ -40,7 +40,7 @@ public:
     X509Cert OCSPCertificate() const override;
     std::string OCSPProducedAt() const override;
     virtual void validate() const override;
-    virtual void extendTo(const std::string &profile);
+    virtual void extendSignatureProfile(const std::string &profile) override;
 
 protected:
     void addCertificateValue(const std::string& certId, const X509Cert& x509);

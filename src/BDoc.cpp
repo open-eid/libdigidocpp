@@ -479,39 +479,33 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
     }
 }
 
-/**
- * Signs all documents in container.
- *
- * @param signer signer implementation.
- * @throws ContainerException exception is throws if signing the BDCO container failed.
- */
-Signature *BDoc::sign(Signer* signer)
+Signature* BDoc::prepareSignature(Signer *signer)
 {
     if(d->documents.empty())
         THROW("No documents in container, can not sign container.");
-    if (!signer)
+    if(!signer)
         THROW("Null pointer in BDoc::sign");
 
-    SignatureA *signature = new SignatureA(newSignatureId(), this);
+    SignatureA *signature = new SignatureA(newSignatureId(), this, signer);
+    d->signatures.push_back(signature);
+    return signature;
+}
+
+Signature *BDoc::sign(Signer* signer)
+{
+    SignatureA *s = static_cast<SignatureA*>(prepareSignature(signer));
     try
     {
-        string digestMethod = Conf::instance()->digestUri();
-        for(const DataFile &f: d->documents)
-        {
-            string id = signature->addReference(File::toUriPath(f.fileName()), digestMethod, f.calcDigest(digestMethod), "");
-            signature->addDataObjectFormat("#" + id, f.mediaType());
-        }
-
-        vector<unsigned char> digest = signature->prepareSignedInfo(signer); // needs to be here to select also signatureMethod
-        signature->setSignatureValue(signer->sign(signature->signatureMethod(), digest));
-        signature->extendTo(signer->profile().empty() ? BDoc::ASIC_TS_PROFILE : signer->profile());
+        s->setSignatureValue(signer->sign(s->signatureMethod(), s->dataToSign()));
+        s->extendSignatureProfile(signer->profile().empty() ? BDoc::ASIC_TS_PROFILE : signer->profile());
     }
     catch(const Exception& e)
     {
-        delete signature;
+        SignatureList::iterator i = find(d->signatures.begin(), d->signatures.end(), s);
+        if(i != d->signatures.end())
+            d->signatures.erase(i);
+        delete s;
         THROW_CAUSE(e, "Failed to sign BDOC container.");
     }
-
-    d->signatures.push_back(signature);
-    return signature;
+    return s;
 }

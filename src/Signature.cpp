@@ -111,7 +111,28 @@ Signature::~Signature()
  */
 
 /**
- * Returns BDoc signature policy. If container is DDoc returns empty string.
+ * @fn digidoc::Signature::dataToSign
+ *
+ * Digest to sign with token
+ */
+
+/**
+ * @fn digidoc::Signature::setSignatureValue
+ *
+ * Signed digest will be added to SignatureValue element
+ * @see dataToSign
+ */
+
+/**
+ * Extends signature to selected profile
+ *
+ * @param profile Target profile
+ */
+void Signature::extendSignatureProfile(const string &)
+{}
+
+/**
+ * Returns signature policy when it is available or empty string.
  */
 string Signature::policy() const
 {
@@ -119,7 +140,7 @@ string Signature::policy() const
 }
 
 /**
- * Returns BDoc signature policy uri. If container is DDoc returns empty string.
+ * Returns signature policy uri when it is available or empty string.
  */
 string Signature::SPUri() const
 {

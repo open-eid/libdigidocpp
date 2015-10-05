@@ -54,6 +54,7 @@ public:
 
     void addAdESSignature(const std::vector<unsigned char> &signature);
     virtual void addAdESSignature(std::istream &signature) = 0;
+    virtual Signature* prepareSignature(Signer *signer) = 0;
     virtual SignatureList signatures() const = 0;
     virtual void removeSignature(unsigned int id) = 0;
     virtual Signature* sign(Signer *signer) = 0;

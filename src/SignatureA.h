@@ -27,14 +27,14 @@ namespace digidoc
 class SignatureA: public SignatureTS
 {
 public:
-    SignatureA(unsigned int id, BDoc *bdoc);
+    SignatureA(unsigned int id, BDoc *bdoc, Signer *signer);
     SignatureA(std::istream &sigdata, BDoc *bdoc);
     virtual ~SignatureA();
 
     X509Cert ArchiveTimeStampCertificate() const override;
     std::string ArchiveTimeStampTime() const override;
     virtual void validate() const override;
-    virtual void extendTo(const std::string &profile) override;
+    virtual void extendSignatureProfile(const std::string &profile) override;
 
 private:
     DISABLE_COPY(SignatureA);

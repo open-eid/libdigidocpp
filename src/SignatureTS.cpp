@@ -44,7 +44,7 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 }
 
 
-SignatureTS::SignatureTS(unsigned int id, BDoc *bdoc): SignatureTM(id, bdoc) {}
+SignatureTS::SignatureTS(unsigned int id, BDoc *bdoc, Signer *signer): SignatureTM(id, bdoc, signer) {}
 
 SignatureTS::SignatureTS(std::istream &sigdata, BDoc *bdoc): SignatureTM(sigdata, bdoc) {}
 
@@ -70,7 +70,7 @@ string SignatureTS::trustedSigningTime() const
     return time.empty() ? SignatureTM::trustedSigningTime() : time;
 }
 
-void SignatureTS::extendTo(const std::string &profile)
+void SignatureTS::extendSignatureProfile(const std::string &profile)
 {
     if(profile.find(BDoc::ASIC_TS_PROFILE) != string::npos)
     {
@@ -95,7 +95,7 @@ void SignatureTS::extendTo(const std::string &profile)
                 unsignedSignatureProperties().signatureTimeStamp().size() - 1));
         sigdata_.clear();
     }
-    SignatureTM::extendTo(profile);
+    SignatureTM::extendSignatureProfile(profile);
 }
 
 vector<unsigned char> SignatureTS::tsBase64() const

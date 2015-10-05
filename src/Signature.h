@@ -39,6 +39,9 @@ namespace digidoc
           virtual X509Cert signingCertificate() const = 0;
           virtual std::string signatureMethod() const = 0;
           virtual void validate() const = 0;
+          virtual std::vector<unsigned char> dataToSign() const = 0;
+          virtual void setSignatureValue(const std::vector<unsigned char> &signatureValue) = 0;
+          virtual void extendSignatureProfile(const std::string &profile);
 
           // Xades properties
           virtual std::string policy() const;

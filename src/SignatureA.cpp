@@ -45,7 +45,7 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
     return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
-SignatureA::SignatureA(unsigned int id, BDoc *bdoc): SignatureTS(id, bdoc) {}
+SignatureA::SignatureA(unsigned int id, BDoc *bdoc, Signer *signer): SignatureTS(id, bdoc, signer) {}
 
 SignatureA::SignatureA(std::istream &sigdata, BDoc *bdoc): SignatureTS(sigdata, bdoc) {}
 
@@ -106,9 +106,9 @@ void SignatureA::calcArchiveDigest(Digest *digest) const
     //ds:Object
 }
 
-void SignatureA::extendTo(const std::string &profile)
+void SignatureA::extendSignatureProfile(const std::string &profile)
 {
-    SignatureTS::extendTo(profile);
+    SignatureTS::extendSignatureProfile(profile);
     if(profile != BDoc::ASIC_TSA_PROFILE && profile != BDoc::ASIC_TMA_PROFILE)
         return;
 
