@@ -23,13 +23,13 @@
 
 namespace digidoc
 {
-    class CNGSignerPrivate;
-    class CNGSigner : public Signer
+    class WinSignerPrivate;
+    class EXP_DIGIDOC WinSigner : public Signer
     {
 
       public:
-          CNGSigner(const std::string &pin = "", bool selectFirst = false);
-          ~CNGSigner();
+          WinSigner(const std::string &pin = "", bool selectFirst = false);
+          virtual ~WinSigner();
           void setPin(const std::string &pin);
           void setSelectFirst(bool first);
 
@@ -37,7 +37,7 @@ namespace digidoc
           X509Cert cert() const override;
           std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const override;
 
-          DISABLE_COPY(CNGSigner);
-          CNGSignerPrivate *d;
+          DISABLE_COPY(WinSigner);
+          WinSignerPrivate *d;
     };
 }

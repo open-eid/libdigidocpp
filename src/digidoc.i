@@ -40,6 +40,7 @@
 #include "XmlConf.h"
 #include "crypto/PKCS11Signer.h"
 #include "crypto/PKCS12Signer.h"
+#include "crypto/WinSigner.h"
 #include "crypto/X509Cert.h"
 
 #include <vector>
@@ -109,6 +110,7 @@ extern "C"
 #endif
 
 // ignore X509Cert and implement later cert as ByteVector
+%ignore digidoc::Signer::cert;
 %ignore digidoc::Signature::signingCertificate;
 %ignore digidoc::Signature::OCSPCertificate;
 %ignore digidoc::Signature::TimeStampCertificate;
@@ -130,26 +132,33 @@ extern "C"
 %include "crypto/Signer.h"
 %include "crypto/PKCS12Signer.h"
 %include "crypto/PKCS11Signer.h"
+%include "crypto/WinSigner.h"
 
 %template(StringVector) std::vector<std::string>;
 %template(DataFiles) std::vector<digidoc::DataFile>;
 %template(Signatures) std::vector<digidoc::Signature*>;
 
 // override X509Cert methods to return byte array
+%extend digidoc::Signer {
+    std::vector<unsigned char> cert() const
+    {
+        return $self->cert();
+    }
+}
 %extend digidoc::Signature {
-    std::vector<unsigned char> signingCert() const
+    std::vector<unsigned char> signingCertificate() const
     {
         return $self->signingCertificate();
     }
-    std::vector<unsigned char> OCSPCert() const
+    std::vector<unsigned char> OCSPCertificate() const
     {
         return $self->OCSPCertificate();
     }
-    std::vector<unsigned char> TimeStampCert() const
+    std::vector<unsigned char> TimeStampCertificate() const
     {
         return $self->TimeStampCertificate();
     }
-    std::vector<unsigned char> ArchiveTimeStampCert() const
+    std::vector<unsigned char> ArchiveTimeStampCertificate() const
     {
         return $self->ArchiveTimeStampCertificate();
     }

@@ -69,9 +69,6 @@ PKCS12Signer::PKCS12Signer(const string &path, const string &pass)
         OpenSSLException();
 }
 
-/**
- *
- */
 PKCS12Signer::~PKCS12Signer()
 {
     X509_free(d->cert);
@@ -79,25 +76,11 @@ PKCS12Signer::~PKCS12Signer()
     delete d;
 }
 
-/**
- * Returns the X.509 certificate used for signing.
- *
- * @return returns certificate used for signing.
- */
 X509Cert PKCS12Signer::cert() const
 {
     return X509Cert(d->cert);
 }
 
-/**
- * Signs the provided digest using the private key that matches the X.509 certificate.
- *
- * @param method digest uri
- * @param digest digest, which is being signed.
- * @return the signature that is created.
- * @throws Exception throws exception if the signing operation failed or not enough memory
- *         allocated for the signature.
- */
 vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsigned char> &digest) const
 {
     DEBUG("PKCS12Signer::sign(method = %s, digest = %d)", method.c_str(), digest.size());

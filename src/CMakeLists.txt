@@ -156,8 +156,8 @@ set( CRYPTO_SOURCE
 )
 
 if( WIN32 )
-    list( APPEND digidocpp_SRCS crypto/CNGSigner.cpp )
-    list( APPEND digidoc-tool_SRCS crypto/CNGSigner.cpp )
+    list( APPEND CRYPTO_SOURCE crypto/WinSigner.cpp )
+    list( APPEND CRYPTO_HEADER crypto/WinSigner.h )
     list( APPEND TARGET_LIBRARIES Crypt32 cryptui ncrypt Ws2_32 )
 elseif( APPLE )
     #ignore openssl deprecation warnings

@@ -25,8 +25,6 @@
 #include "Exception.h"
 #include "log.h"
 #include "XmlConf.h"
-#include "crypto/CNGSigner.h"
-#include "crypto/PKCS11Signer.h"
 #include "crypto/X509CertStore.h"
 #include "util/File.h"
 

@@ -44,8 +44,8 @@ public:
  * @class digidoc::Signer
  * @brief <code>Signer</code> interface. Provides interface for signing documents.
  * 
- * Digidoc LIB implements PKCS11, PKCS12, CNG
- * signer class that allows signing with EstId chip card. Other implementations may provide signing
+ * Digidoc LIB implements PKCS11, PKCS12, Windows Crypto
+ * signer class that allows signing with various tokens. Other implementations may provide signing
  * implementation with other public-key cryptography systems.
  */
 

@@ -24,9 +24,9 @@
 #include "Signature.h"
 #include "XmlConf.h"
 #include "crypto/Digest.h"
-#include "crypto/CNGSigner.h"
 #include "crypto/PKCS11Signer.h"
 #include "crypto/PKCS12Signer.h"
+#include "crypto/WinSigner.h"
 #include "crypto/TSL.h"
 #include "crypto/X509Cert.h"
 #include "util/File.h"
@@ -737,7 +737,7 @@ static int create(int argc, char* argv[])
         unique_ptr<Signer> signer;
 #ifdef _WIN32
         if(p.cng)
-            signer.reset(new CNGSigner(p.pin, p.selectFirst));
+            signer.reset(new WinSigner(p.pin, p.selectFirst));
         else
 #endif
         if(!p.pkcs12.empty())
@@ -797,7 +797,7 @@ static int sign(int argc, char* argv[])
         unique_ptr<Signer> signer;
 #ifdef _WIN32
         if(p.cng)
-            signer.reset(new CNGSigner(p.pin, p.selectFirst));
+            signer.reset(new WinSigner(p.pin, p.selectFirst));
         else
 #endif
         if(!p.pkcs12.empty())
