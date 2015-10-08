@@ -25,7 +25,7 @@ Description: DigiDoc digital signature library common files
  This package contains common files for using applications with the DigiDoc
  digital signature library.
 
-Package: libdigidocpp0
+Package: libdigidocpp1
 Replaces:
  libdigidocpp
 Breaks:
@@ -50,7 +50,7 @@ Package: libdigidocpp-tools
 Architecture: any
 Section: misc
 Depends:
- libdigidocpp0 (= ${binary:Version}),
+ libdigidocpp1 (= ${binary:Version}),
  ${misc:Depends},
  ${shlibs:Depends}
 Description: DigiDoc digital signature library tools
@@ -61,10 +61,10 @@ Package: libdigidocpp-dbg
 Architecture: any
 Section: debug
 Depends:
- libdigidocpp0 (= ${binary:Version}),
+ libdigidocpp1 (= ${binary:Version}),
  xsdcxx,
  ${misc:Depends}
-Description: Debugging symbols for libdigidocpp0
+Description: Debugging symbols for libdigidocpp1
  This package contains the debugging symbols for DigiDoc digital signature
  library.
 
@@ -72,7 +72,7 @@ Package: libdigidocpp-dev
 Architecture: any
 Section: libdevel
 Depends:
- libdigidocpp0 (= ${binary:Version}),
+ libdigidocpp1 (= ${binary:Version}),
  ${misc:Depends}
 Description: DigiDoc digital signature library development files
  This package contains files necessary for developing applications with the
