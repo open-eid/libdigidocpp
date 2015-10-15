@@ -87,7 +87,11 @@
         git clone --recursive https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Configure
+3. Prepare
+
+        powershell -ExecutionPolicy ByPass -File prepare_osx_build_environment.ps1
+
+4. Configure
 
         mkdir build
         cd build
@@ -101,11 +105,11 @@
    [README.md](https://github.com/open-eid/libdigidocpp/blob/master/examples/DigiDocCSharp/README.md).
 
 
-4. Build
+5. Build
 
         make
 
-5. Execute
+6. Execute
 
         src/digidoc-tool.exe
 

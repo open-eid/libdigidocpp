@@ -356,7 +356,7 @@ Libdigidocpp library depends on the software libraries listed below.
 </tr>
 <tr><td>XmlSecurityC	</td><td>required	</td><td>Used in case of BDOC documents (as an extension for XercesC): for handling signature related components. </td>
 </tr>
-<tr><td>XalanC	</td><td>required 	</td><td>Used for processing TSL documents</td>
+<tr><td>XalanC	</td><td>Depends on XmlSecurityC 	</td><td>Used for processing TSL documents with XPath references</td>
 </tr>
 <tr><td>XSD	</td><td>required 	</td><td>Used for dynamically generating C++ source code according to XML Schemas, only used during building process of the library. Required when building the library from source code.</td>
 </tr>
