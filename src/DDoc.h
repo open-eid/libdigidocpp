@@ -89,12 +89,12 @@ public:
 
     void addDataFile(const std::string &path, const std::string &mediaType) override;
     void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType) override;
-    DataFileList dataFiles() const override;
+    std::vector<DataFile*> dataFiles() const override;
     void removeDataFile(unsigned int id) override;
 
     void addAdESSignature(std::istream &sigdata) override;
     Signature* prepareSignature(Signer *signer) override;
-    SignatureList signatures() const override;
+    std::vector<Signature*> signatures() const override;
     void removeSignature(unsigned int id) override;
     Signature* sign(Signer* signer) override;
 

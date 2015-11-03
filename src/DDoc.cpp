@@ -461,6 +461,7 @@ void DDoc::load(const std::string &path)
 
     if(d->doc)
         d->lib->f_SignedDoc_free(d->doc);
+    for_each(d->documents.begin(), d->documents.end(), [](DataFile *file){ delete file; });
     d->documents.clear();
     d->doc = nullptr;
     d->filename = path;
@@ -511,7 +512,7 @@ void DDoc::load(const std::string &path)
         int size = 0;
         d->lib->f_ddocGetDataFileFilename(d->doc, data->szId, (void**)&filename, &size);
         d->documents.push_back(
-            DataFile(is, filename, data->szMimeType, data->szId, DDocPrivate::toVector(&data->mbufDigest)));
+            new DataFilePrivate(is, filename, data->szMimeType, data->szId, DDocPrivate::toVector(&data->mbufDigest)));
         if(filename)
             d->lib->f_freeLibMem(filename);
     }
@@ -525,6 +526,7 @@ void DDoc::load(const std::string &path)
 DDoc::~DDoc()
 {
     for_each(d->signatures.begin(), d->signatures.end(), [](Signature *s){ delete s; });
+    for_each(d->documents.begin(), d->documents.end(), [](DataFile *file){ delete file; });
     if(d->lib->f_SignedDoc_free)
         d->lib->f_SignedDoc_free(d->doc);
     d->lib->destroy();
@@ -562,7 +564,7 @@ void DDoc::addDataFile(const string &path, const string &mediaType)
         CONTENT_EMBEDDED_BASE64, mediaType.c_str(), buf.str().c_str(), buf.str().size());
 #endif
     d->documents.push_back(
-        DataFile(is, File::fileName(path), mediaType, data->szId, DDocPrivate::toVector(&data->mbufDigest)));
+        new DataFilePrivate(is, File::fileName(path), mediaType, data->szId, DDocPrivate::toVector(&data->mbufDigest)));
 }
 
 void DDoc::addDataFile(istream *, const string &, const string &)
@@ -658,7 +660,7 @@ string DDoc::mediaType() const
  * @return returns document referenced by document id.
  * @throws ContainerException throws exception if the document id is incorrect.
  */
-DataFileList DDoc::dataFiles() const
+std::vector<digidoc::DataFile*> DDoc::dataFiles() const
 {
     return d->documents;
 }
@@ -683,7 +685,7 @@ Container* DDoc::openInternal(const string &path)
  * @return returns signature referenced by signature id.
  * @throws ContainerException throws exception if the signature id is incorrect.
  */
-SignatureList DDoc::signatures() const
+std::vector<Signature *> DDoc::signatures() const
 {
     return d->signatures;
 }

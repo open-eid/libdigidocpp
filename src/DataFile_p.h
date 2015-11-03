@@ -21,15 +21,32 @@
 
 #include "DataFile.h"
 
+#include <istream>
+#include <memory>
+
 namespace digidoc
 {
-class DataFilePrivate
+
+class Digest;
+class DataFilePrivate: public DataFile
 {
 public:
-    ~DataFilePrivate() { delete is; }
-    std::istream *is;
-    std::string id, filename, mediatype;
-    std::vector<unsigned char> digestValue;
-    unsigned long size;
+	DataFilePrivate(std::istream *is, const std::string &filename, const std::string &mediatype,
+			 const std::string &id = "", const std::vector<unsigned char> &digestValue = std::vector<unsigned char>());
+
+	std::string id() const override { return m_id; }
+	std::string fileName() const override { return m_filename; }
+	unsigned long fileSize() const override { return m_size; }
+	std::string mediaType() const override { return m_mediatype; }
+
+	std::vector<unsigned char> calcDigest(const std::string &method) const override;
+	void calcDigest(Digest *method) const;
+	void saveAs(std::ostream &os) const override;
+	void saveAs(const std::string& path) const override;
+
+	std::shared_ptr<std::istream> m_is;
+	std::string m_id, m_filename, m_mediatype;
+	std::vector<unsigned char> m_digestValue;
+	unsigned long m_size;
 };
 }

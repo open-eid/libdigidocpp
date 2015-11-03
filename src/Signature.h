@@ -66,11 +66,10 @@ namespace digidoc
           virtual X509Cert ArchiveTimeStampCertificate() const;
           virtual std::string ArchiveTimeStampTime() const;
 
-      private:
+      protected:
           Signature();
-          DISABLE_COPY(Signature);
 
-      friend class SignatureBES;
-      friend class SignatureDDOC;
+      private:
+          DISABLE_COPY(Signature);
     };
 }

@@ -24,7 +24,7 @@
 #include <libdigidoc/DigiDocGen.h>
 
 #include "DDoc.h"
-#include "DataFile.h"
+#include "DataFile_p.h"
 #include "Exception.h"
 #include "Signature.h"
 
@@ -156,8 +156,8 @@ public:
 	std::string filename;
 
 	void loadSignatures();
-	SignatureList signatures;
-	DataFileList documents;
+	std::vector<Signature*> signatures;
+	std::vector<DataFile*> documents;
 
 	static std::vector<unsigned char> toVector( DigiDocMemBuf *m )
 	{ return std::vector<unsigned char>((unsigned char*)m->pMem, (unsigned char*)m->pMem + m->nLen); }

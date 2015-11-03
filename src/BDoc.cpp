@@ -57,7 +57,7 @@ public:
     static const string MANIFEST_NAMESPACE;
 
     string path;
-    DataFileList documents;
+    std::vector<DataFile*> documents;
     vector<Signature*> signatures;
     map<string, ZipSerialize::Properties> properties;
 };
@@ -109,11 +109,8 @@ BDoc::BDoc(const string &path)
  */
 BDoc::~BDoc()
 {
-    while(!d->signatures.empty())
-    {
-        delete (d->signatures.back());
-        d->signatures.pop_back();
-    }
+    for_each(d->signatures.begin(), d->signatures.end(), [](Signature *s){ delete s; });
+    for_each(d->documents.begin(), d->documents.end(), [](DataFile *file){ delete file; });
     delete d;
 }
 
@@ -142,14 +139,14 @@ void BDoc::save(const string &path)
     createManifest(manifest);
     s.addFile("META-INF/manifest.xml", manifest, d->propertie("META-INF/manifest.xml"));
 
-    for(DataFileList::const_iterator iter = d->documents.begin(); iter != d->documents.end(); ++iter)
-        s.addFile(iter->fileName(), *iter->d->is, d->propertie(iter->fileName()));
+    for(const DataFile *file: d->documents)
+        s.addFile(file->fileName(), *(static_cast<const DataFilePrivate*>(file)->m_is.get()), d->propertie(file->fileName()));
 
     unsigned int i = 0;
-    for(vector<Signature*>::const_iterator iter = d->signatures.begin(); iter != d->signatures.end(); ++iter)
+    for(Signature *iter: d->signatures)
     {
         string file = Log::format("META-INF/signatures%u.xml", i++);
-        SignatureBES *signature = static_cast<SignatureBES*>(*iter);
+        SignatureBES *signature = static_cast<SignatureBES*>(iter);
 
         stringstream ofs;
         signature->saveToXml(ofs);
@@ -176,10 +173,10 @@ void BDoc::addDataFile(const string &path, const string &mediaType)
     if(!File::fileExists(path))
         THROW("Document file '%s' does not exist.", path.c_str());
 
-    for(DataFileList::const_iterator iter = d->documents.begin(); iter != d->documents.end(); ++iter)
+    for(const DataFile *file: d->documents)
     {
-        if(path.compare(iter->fileName()) == 0)
-            THROW("Document with same file name '%s' already exists '%s'.", path.c_str(), iter->fileName().c_str());
+        if(path.compare(file->fileName()) == 0)
+            THROW("Document with same file name '%s' already exists '%s'.", path.c_str(), file->fileName().c_str());
     }
 
     tm *filetime = File::modifiedTime(path);
@@ -194,7 +191,7 @@ void BDoc::addDataFile(const string &path, const string &mediaType)
     if(file)
         *data << file.rdbuf();
     file.close();
-    d->documents.push_back(DataFile(data, File::fileName(path), mediaType));
+    d->documents.push_back(new DataFilePrivate(data, File::fileName(path), mediaType));
 #endif
 }
 
@@ -203,13 +200,13 @@ void BDoc::addDataFile(istream *is, const string &fileName, const string &mediaT
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
 
-    for(DataFileList::const_iterator iter = d->documents.begin(); iter != d->documents.end(); ++iter)
+    for(DataFile *file: d->documents)
     {
-        if(fileName == iter->fileName())
-            THROW("Document with same file name '%s' already exists '%s'.", fileName.c_str(), iter->fileName().c_str());
+        if(fileName == file->fileName())
+            THROW("Document with same file name '%s' already exists '%s'.", fileName.c_str(), file->fileName().c_str());
     }
 
-    d->documents.push_back(DataFile(is, fileName, mediaType));
+    d->documents.push_back(new DataFilePrivate(is, fileName, mediaType));
 }
 
 Container* BDoc::createInternal(const string &path)
@@ -224,7 +221,7 @@ Container* BDoc::createInternal(const string &path)
  *
  * @return returns dataFiles.
  */
-DataFileList BDoc::dataFiles() const
+std::vector<DataFile*> BDoc::dataFiles() const
 {
     return d->documents;
 }
@@ -289,7 +286,7 @@ Container* BDoc::openInternal(const string &path)
  * @return returns signature referenced by signature id.
  * @throws ContainerException throws exception if the signature id is incorrect.
  */
-SignatureList BDoc::signatures() const
+std::vector<Signature *> BDoc::signatures() const
 {
     return d->signatures;
 }
@@ -330,8 +327,8 @@ void BDoc::createManifest(ostream &os)
     {
         manifest::Manifest manifest;
         manifest.file_entry().push_back(manifest::File_entry("/", mediaType()));
-        for(DataFileList::const_iterator iter = d->documents.begin(); iter != d->documents.end(); ++iter)
-            manifest.file_entry().push_back(manifest::File_entry(iter->fileName(), iter->mediaType()));
+        for(DataFile *file: d->documents)
+            manifest.file_entry().push_back(manifest::File_entry(file->fileName(), file->mediaType()));
 
         xml_schema::NamespaceInfomap map;
         map["manifest"].name = BDocPrivate::MANIFEST_NAMESPACE;
@@ -430,7 +427,7 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
             stringstream *data = new stringstream;
 #endif
             z.extract(iter->full_path(), *data);
-            d->documents.push_back(DataFile(data, iter->full_path(), iter->media_type()));
+            d->documents.push_back(new DataFilePrivate(data, iter->full_path(), iter->media_type()));
         }
 
         for(vector<string>::const_iterator iter = list.begin(); iter != list.end(); ++iter)
@@ -501,7 +498,7 @@ Signature *BDoc::sign(Signer* signer)
     }
     catch(const Exception& e)
     {
-        SignatureList::iterator i = find(d->signatures.begin(), d->signatures.end(), s);
+        std::vector<Signature*>::iterator i = find(d->signatures.begin(), d->signatures.end(), s);
         if(i != d->signatures.end())
             d->signatures.erase(i);
         delete s;

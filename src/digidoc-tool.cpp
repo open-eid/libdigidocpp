@@ -509,7 +509,7 @@ static int open(int argc, char* argv[])
     try {
         doc.reset(Container::open(path));
     } catch(const Exception &e) {
-        printf("Failed to parse container");
+        cout << "Failed to parse container";
         parseException(e, "  Exception:");
         return EXIT_FAILURE;
     }
@@ -518,15 +518,14 @@ static int open(int argc, char* argv[])
         if(!extractPath.empty())
         {
             cout << "Extracting documents: " << endl;
-            DataFileList dataFiles = doc->dataFiles();
-            for(DataFileList::const_iterator i = dataFiles.begin(); i != dataFiles.end(); ++i)
+            for(const DataFile *file: doc->dataFiles())
             {
                 try {
-                    string dst = extractPath.empty() ? i->fileName() : extractPath + "/" + i->fileName();
-                    i->saveAs(dst);
-                    cout << "  Document(" << i->mediaType() << ") extracted to " << dst << " (" << i->fileSize() << " bytes)" << endl;
+                    string dst = extractPath.empty() ? file->fileName() : extractPath + "/" + file->fileName();
+                    file->saveAs(dst);
+                    cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
                 } catch(const Exception &e) {
-                    cout << "  Document " << i->fileName() << " extraction: FAILED" << endl;
+                    cout << "  Document " << file->fileName() << " extraction: FAILED" << endl;
                     parseException(e, "  Exception:");
                     return EXIT_FAILURE;
                 }
@@ -534,32 +533,30 @@ static int open(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
 
-        printf("Container file: %s\n", path.c_str());
-        printf("Container type: %s\n", doc->mediaType().c_str());
+        cout << "Container file: " << path << endl;
+        cout << "Container type: " << doc->mediaType() << endl;
 
         // Print container document list.
-        DataFileList files = doc->dataFiles();
-        printf("Documents (%lu):\n", files.size());
-        for(DataFileList::const_iterator i = files.begin(); i != files.end(); ++i)
+        cout << "Documents (" << doc->dataFiles().size() << "):\n" << endl;
+        for(const DataFile *file: doc->dataFiles())
         {
-            printf("  Document (%s): %s (%lu bytes)\n", i->mediaType().c_str(),
-                   i->fileName().c_str(), i->fileSize());
+            cout << "  Document (" << file->mediaType() << "): " << file->fileName()
+                 << " (" << file->fileSize() << " bytes)" << endl;
         }
 
         // Print container signatures list.
-        SignatureList signatures = doc->signatures();
-        printf("\nSignatures (%lu):\n", signatures.size());
+        cout << endl << "Signatures (" << doc->signatures().size() << "):" << endl;
         unsigned int pos = 0;
-        for(SignatureList::const_iterator i = signatures.begin(); i != signatures.end(); ++i, ++pos)
+        for(const Signature *s: doc->signatures())
         {
-            printf("  Signature %u (%s):\n", pos, (*i)->profile().c_str());
+            cout << "  Signature " << pos++ << " (" << s->profile().c_str() << "):" << endl;
             vector<string> warnings;
 
             // Validate signature. Checks, whether signature format is correct
             // and signed documents checksums are correct.
             try {
-                (*i)->validate();
-                printf("    Validation: OK\n");
+                s->validate();
+                cout << "    Validation: OK" << endl;
             } catch(const Exception &e) {
                 function<void (const Exception &e)> validate = [=, &returnCode, &warnings, &validate] (const Exception &e)
                 {
@@ -582,45 +579,45 @@ static int open(int argc, char* argv[])
                 validate(e);
                 if(reportwarnings == WError || returnCode == EXIT_FAILURE)
                 {
-                    printf("    Validation: FAILED\n");
+                    cout << "    Validation: FAILED" << endl;
                     parseException(e, "     Exception:");
                 }
                 else
-                    printf("    Validation: OK\n");
+                    cout << "    Validation: OK" << endl;
             }
 
             // Get signature production place info.
-            if(!(*i)->city().empty() || !(*i)->stateOrProvince().empty() || !(*i)->postalCode().empty() || !(*i)->countryName().empty())
+            if(!s->city().empty() || !s->stateOrProvince().empty() || !s->postalCode().empty() || !s->countryName().empty())
             {
-                printf("    Signature production place:\n");
-                printf("      City:              %s\n", (*i)->city().c_str());
-                printf("      State or Province: %s\n", (*i)->stateOrProvince().c_str());
-                printf("      Postal code:       %s\n", (*i)->postalCode().c_str());
-                printf("      Country:           %s\n", (*i)->countryName().c_str());
+                cout << "    Signature production place:" << endl
+                     << "      City:              " << s->city() << endl
+                     << "      State or Province: " << s->stateOrProvince() << endl
+                     << "      Postal code:       " << s->postalCode() << endl
+                     << "      Country:           " << s->countryName() << endl;
             }
 
             // Get signer role info.
-            vector<string> roles = (*i)->signerRoles();
+            vector<string> roles = s->signerRoles();
             if(!roles.empty())
             {
-                printf("    Signer role(s):\n");
+                cout << "    Signer role(s):" << endl;
                 for(vector<string>::const_iterator iter = roles.begin(); iter != roles.end(); ++iter)
-                    printf("      %s\n", iter->c_str());
+                    cout << "      " << *iter << endl;
             }
 
-            vector<unsigned char> nonce = (*i)->OCSPNonce();
-            cout << "    EPES policy: " << (*i)->policy() << endl
-                << "    SPUri: " << (*i)->SPUri() << endl
-                << "    Signature method: " << (*i)->signatureMethod() << endl
-                << "    Signing time: " << (*i)->claimedSigningTime() << endl
-                << "    Signing cert: " << (*i)->signingCertificate() << endl
-                << "    Produced At: " << (*i)->OCSPProducedAt() << endl
-                << "    OCSP Responder: " << (*i)->OCSPCertificate() << endl
+            vector<unsigned char> nonce = s->OCSPNonce();
+            cout << "    EPES policy: " << s->policy() << endl
+                << "    SPUri: " << s->SPUri() << endl
+                << "    Signature method: " << s->signatureMethod() << endl
+                << "    Signing time: " << s->claimedSigningTime() << endl
+                << "    Signing cert: " << s->signingCertificate() << endl
+                << "    Produced At: " << s->OCSPProducedAt() << endl
+                << "    OCSP Responder: " << s->OCSPCertificate() << endl
                 << "    OCSP Nonce (" << nonce.size() << "): " << nonce << endl
-                << "    TS: " << (*i)->TimeStampCertificate() << endl
-                << "    TS time: " << (*i)->TimeStampTime() << endl
-                << "    TSA: " << (*i)->ArchiveTimeStampCertificate() << endl
-                << "    TSA time: " << (*i)->ArchiveTimeStampTime() << endl;
+                << "    TS: " << s->TimeStampCertificate() << endl
+                << "    TS time: " << s->TimeStampTime() << endl
+                << "    TSA: " << s->ArchiveTimeStampCertificate() << endl
+                << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
             if(reportwarnings == WWarning && !warnings.empty())
             {
                 cout << "    Warnings: ";

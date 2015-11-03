@@ -195,10 +195,10 @@ public:
         XMLString::release(&enc);
 #endif
         if(strncmp(_uri.c_str(), "/", 1) == 0) _uri.erase(0, 1);
-        for(const DataFile &file: doc_->dataFiles())
+        for(const DataFile *file: doc_->dataFiles())
         {
-            if(file.fileName() == File::fromUriPath(_uri))
-                return new IStreamInputStream(file.d->is);
+            if(file->fileName() == File::fromUriPath(_uri))
+                return new IStreamInputStream(static_cast<const DataFilePrivate*>(file)->m_is.get());
         }
 
         return XSECURIResolverXerces::resolveURI(uri);
@@ -302,10 +302,10 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
     setSigningTime(gmtime(&t));
 
     string digestMethod = Conf::instance()->digestUri();
-    for(const DataFile &f: bdoc->dataFiles())
+    for(const DataFile *f: bdoc->dataFiles())
     {
-        string id = addReference(File::toUriPath(f.fileName()), digestMethod, f.calcDigest(digestMethod), "");
-        addDataObjectFormat("#" + id, f.mediaType());
+        string id = addReference(File::toUriPath(f->fileName()), digestMethod, f->calcDigest(digestMethod), "");
+        addDataObjectFormat("#" + id, f->mediaType());
     }
 
     Digest calc(digestMethod);
@@ -660,18 +660,18 @@ void SignatureBES::validate() const
         exception.addCause(e);
     }
 
-    for(const DataFile &file: bdoc->dataFiles())
+    for(const DataFile *file: bdoc->dataFiles())
     {
-        map<string,string>::const_iterator i = signatureref.find(file.fileName());
+        map<string,string>::const_iterator i = signatureref.find(file->fileName());
         if(i != signatureref.end())
         {
-            if(i->second != file.mediaType())
+            if(i->second != file->mediaType())
                 EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
-                    file.fileName().c_str(), file.mediaType().c_str(), i->second.c_str());
+                    file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
             signatureref.erase(i);
         }
         else
-            EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file.fileName().c_str());
+            EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
     };
 
     if(bdoc->dataFiles().empty())

@@ -35,63 +35,8 @@ using namespace std;
  *
  * @brief Data file wrapper providing methods for handling signed files or files to be signed in <code>Container</code>.
  */
-
 /**
- * Initializes the data file object.
- *
- * @param filename name of the data file
- * @param filepath full path of the data file.
- * @param mediaType data file's media type (e.g. "application/msword" or "text/xml").
- * @param id DDoc DataFile id
- * @param digestValue DDoc container calculated digest
- */
-DataFile::DataFile(istream *is, const string &filename, const string &mediatype,
-                   const string &id, const vector<unsigned char> &digestValue)
-    : d(new DataFilePrivate)
-{
-    d->is = is;
-    d->id = id.empty() ? filename : id;
-    d->filename = filename;
-    d->mediatype = mediatype;
-    d->digestValue = digestValue;
-    d->is->seekg(0, istream::end);
-    istream::pos_type pos = d->is->tellg();
-    d->size = pos < 0 ? 0 : (unsigned long)pos;
-}
-
-/**
- * Returns data file id
- */
-string DataFile::id() const
-{
-    return d->id;
-}
-
-/**
- * Returns data file name
- */
-string DataFile::fileName() const
-{
-    return d->filename;
-}
-
-/**
- * Returns data file size
- */
-unsigned long DataFile::fileSize() const
-{
-    return d->size;
-}
-
-/**
- * Returns data file's media type
- */
-string DataFile::mediaType() const
-{
-    return d->mediatype;
-}
-
-/**
+ * @fn digidoc::DataFile::calcDigest
  * Calculates digest for data file. If digest is already calculated returns it,
  * otherwise calculates the digest.
  *
@@ -108,47 +53,84 @@ string DataFile::mediaType() const
  * @return returns calculated digest.
  * @throws Exception throws exception if the file does not exist or digest calculation fails.
  */
-vector<unsigned char> DataFile::calcDigest(const string &method) const
+/**
+ * @fn digidoc::DataFile::id
+ * Returns data file id
+ */
+/**
+ * @fn digidoc::DataFile::fileName
+ * Returns data file name
+ */
+/**
+ * @fn digidoc::DataFile::fileName
+ * Returns data file size
+ */
+/**
+ * @fn digidoc::DataFile::mediaType
+ * Returns data file's media type
+ */
+/**
+ * @fn void digidoc::DataFile::saveAs(const std::string &path) const
+ *
+ * Saves a copy of the data file as file specified by path.
+ * @param path full file path, where the data file should be saved to. If file exists, it is overwritten
+ * @throws Exception if part of path does not exist or path is existing directory (without file name)
+ */
+/**
+ * @fn void digidoc::DataFile::saveAs(std::ostream &os) const
+ * Saves a copy of the data file as file specified by stream.
+ * @param os stream where data is written
+ */
+
+DataFile::DataFile() {}
+DataFile::~DataFile() {}
+
+
+DataFilePrivate::DataFilePrivate(istream *is, const string &filename, const string &mediatype,
+                   const string &id, const vector<unsigned char> &digestValue)
+    : m_id(id.empty() ? filename : id)
+    , m_filename(filename)
+    , m_mediatype(mediatype)
+    , m_digestValue(digestValue)
 {
-    if(!d->digestValue.empty())
-        return d->digestValue;
+    m_is.reset(is);
+    m_is->seekg(0, istream::end);
+    istream::pos_type pos = m_is->tellg();
+    m_size = pos < 0 ? 0 : (unsigned long)pos;
+}
+
+vector<unsigned char> DataFilePrivate::calcDigest(const string &method) const
+{
+    if(!m_digestValue.empty())
+        return m_digestValue;
     Digest calc(method);
     calcDigest(&calc);
     return calc.result();
 }
 
-void DataFile::calcDigest(Digest *digest) const
+void DataFilePrivate::calcDigest(Digest *digest) const
 {
     vector<unsigned char> buf(10240, 0);
-    d->is->clear();
-    d->is->seekg(0);
-    while(*d->is)
+    m_is->clear();
+    m_is->seekg(0);
+    while(*m_is)
     {
-        d->is->read((char*)&buf[0], buf.size());
-        if(d->is->gcount() > 0)
-            digest->update(&buf[0], (unsigned long)d->is->gcount());
+        m_is->read((char*)&buf[0], buf.size());
+        if(m_is->gcount() > 0)
+            digest->update(&buf[0], (unsigned long)m_is->gcount());
     }
 }
 
-/**
- * Saves a copy of the data file as file specified by path.
- * @param path full file path, where the data file should be saved to. If file exists, it is overwritten
- * @throws Exception if part of path does not exist or path is existing directory (without file name)
- */
-void DataFile::saveAs(const string& path) const
+void DataFilePrivate::saveAs(const string& path) const
 {
     ofstream ofs(File::encodeName(path).c_str(), ofstream::binary);
     saveAs(ofs);
     ofs.close();
 }
 
-/**
- * Saves a copy of the data file as file specified by stream.
- * @param os stream where data is written
- */
-void DataFile::saveAs(ostream &os) const
+void DataFilePrivate::saveAs(ostream &os) const
 {
-    d->is->clear();
-    d->is->seekg(0);
-    os << d->is->rdbuf();
+    m_is->clear();
+    m_is->seekg(0);
+    os << m_is->rdbuf();
 }

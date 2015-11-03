@@ -21,38 +21,29 @@
 
 #include "Exports.h"
 
-#include <memory>
-#include <istream>
 #include <string>
 #include <vector>
 
 namespace digidoc
 {
-    class DataFilePrivate;
-    class Digest;
     class EXP_DIGIDOC DataFile
     {
 
       public:
-          std::string id() const;
-          std::string fileName() const;
-          unsigned long fileSize() const;
-          std::string mediaType() const;
+          virtual ~DataFile();
+          virtual std::string id() const = 0;
+          virtual std::string fileName() const = 0;
+          virtual unsigned long fileSize() const = 0;
+          virtual std::string mediaType() const = 0;
 
-          std::vector<unsigned char> calcDigest(const std::string &method) const;
-          void saveAs(std::ostream &os) const;
-          void saveAs(const std::string& path) const;
+          virtual std::vector<unsigned char> calcDigest(const std::string &method) const = 0;
+          virtual void saveAs(std::ostream &os) const = 0;
+          virtual void saveAs(const std::string& path) const = 0;
+
+      protected:
+          DataFile();
 
       private:
-          DataFile(std::istream *is, const std::string &filename, const std::string &mediatype,
-                   const std::string &id = "", const std::vector<unsigned char> &digestValue = std::vector<unsigned char>());
-          void calcDigest(Digest *method) const;
-
-          std::shared_ptr<DataFilePrivate> d;
-
-          friend class BDoc;
-          friend class DDoc;
-          friend class URIResolver;
-          friend class SignatureA;
+          DISABLE_COPY(DataFile);
     };
 }

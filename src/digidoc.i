@@ -135,7 +135,7 @@ extern "C"
 %include "crypto/WinSigner.h"
 
 %template(StringVector) std::vector<std::string>;
-%template(DataFiles) std::vector<digidoc::DataFile>;
+%template(DataFiles) std::vector<digidoc::DataFile*>;
 %template(Signatures) std::vector<digidoc::Signature*>;
 
 // override X509Cert methods to return byte array

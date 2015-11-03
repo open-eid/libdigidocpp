@@ -21,7 +21,7 @@
 
 #include "BDoc.h"
 #include "Conf.h"
-#include "DataFile.h"
+#include "DataFile_p.h"
 #include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/TS.h"
@@ -60,9 +60,9 @@ void SignatureA::calcArchiveDigest(Digest *digest) const
     {
         if(ref.uRI().present() && ref.uRI().get() != signedPropertiesId)
         {
-            for(const DataFile &file: bdoc->dataFiles())
-                if(file.fileName() == File::fromUriPath(ref.uRI().get()))
-                    file.calcDigest(digest);
+            for(const DataFile *file: bdoc->dataFiles())
+                if(file->fileName() == File::fromUriPath(ref.uRI().get()))
+                    static_cast<const DataFilePrivate*>(file)->calcDigest(digest);
         }
         else
             calcDigestOnNode(digest, XADES_NAMESPACE, "SignedProperties");

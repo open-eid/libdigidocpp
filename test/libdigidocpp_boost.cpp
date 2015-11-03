@@ -266,11 +266,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     if(!d->dataFiles().empty())
     {
-        DataFile doc1 = d->dataFiles().front();
+        const DataFile *doc1 = d->dataFiles().front();
         if(d->mediaType() == DDoc::TYPE)
-            BOOST_CHECK_EQUAL(doc1.id(), "D0");
-        BOOST_CHECK_EQUAL(doc1.fileName(), "test1.txt");
-        BOOST_CHECK_EQUAL(doc1.mediaType(), "file1");
+            BOOST_CHECK_EQUAL(doc1->id(), "D0");
+        BOOST_CHECK_EQUAL(doc1->fileName(), "test1.txt");
+        BOOST_CHECK_EQUAL(doc1->mediaType(), "file1");
     }
 
     // Add second Document
@@ -278,11 +278,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 2U);
     if(!d->dataFiles().empty())
     {
-        DataFile doc2 = d->dataFiles().back();
+        const DataFile *doc2 = d->dataFiles().back();
         if(d->mediaType() == DDoc::TYPE)
-            BOOST_CHECK_EQUAL(doc2.id(), "D1");
-        BOOST_CHECK_EQUAL(doc2.fileName(), "test2.bin");
-        BOOST_CHECK_EQUAL(doc2.mediaType(), "file2");
+            BOOST_CHECK_EQUAL(doc2->id(), "D1");
+        BOOST_CHECK_EQUAL(doc2->fileName(), "test2.bin");
+        BOOST_CHECK_EQUAL(doc2->mediaType(), "file2");
     }
 
     // Remove first Document
@@ -290,11 +290,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     if(!d->dataFiles().empty())
     {
-        DataFile doc3 = d->dataFiles().front();
+        const DataFile *doc3 = d->dataFiles().front();
         if(d->mediaType() == DDoc::TYPE)
-            BOOST_CHECK_EQUAL(doc3.id(), "D1");
-        BOOST_CHECK_EQUAL(doc3.fileName(), "test2.bin");
-        BOOST_CHECK_EQUAL(doc3.mediaType(), "file2");
+            BOOST_CHECK_EQUAL(doc3->id(), "D1");
+        BOOST_CHECK_EQUAL(doc3->fileName(), "test2.bin");
+        BOOST_CHECK_EQUAL(doc3->mediaType(), "file2");
     }
 
     // Remove second Document
@@ -305,45 +305,35 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
         return;
 
     d.reset(Container::open("test." + Doc::EXT));
-    DataFile data = d->dataFiles().front();
-    BOOST_CHECK_NO_THROW(data.saveAs("test1.tmp"));
+    const DataFile *data = d->dataFiles().front();
+    BOOST_CHECK_NO_THROW(data->saveAs("test1.tmp"));
 
-    unsigned char sha1[] = {
+    BOOST_CHECK_EQUAL(data->calcDigest("http://www.w3.org/2000/09/xmldsig#sha1"), vector<unsigned char>({
         0x1B, 0xE1, 0x68, 0xFF, 0x83, 0x7F, 0x04, 0x3B, 0xDE, 0x17,
-        0xC0, 0x31, 0x43, 0x41, 0xC8, 0x42, 0x71, 0x04, 0x7B, 0x31 };
-    unsigned char sha224[] = {
+        0xC0, 0x31, 0x43, 0x41, 0xC8, 0x42, 0x71, 0x04, 0x7B, 0x31 }));
+    BOOST_CHECK_EQUAL(data->calcDigest("http://www.w3.org/2001/04/xmldsig-more#sha224"), vector<unsigned char>({
         0xD7, 0x60, 0x41, 0x11, 0x2E, 0x34, 0x3B, 0x2B, 0xDC, 0x14,
         0xD4, 0x39, 0x34, 0xE5, 0xAE, 0xD7, 0xAB, 0xF9, 0x01, 0x92,
-        0xC6, 0x54, 0x3B, 0xDF, 0x2A, 0xE4, 0xF8, 0x1B };
-    unsigned char sha256[] = {
+        0xC6, 0x54, 0x3B, 0xDF, 0x2A, 0xE4, 0xF8, 0x1B }));
+    BOOST_CHECK_EQUAL(data->calcDigest("http://www.w3.org/2001/04/xmlenc#sha256"), vector<unsigned char>({
         0xA8, 0x83, 0xDA, 0xFC, 0x48, 0x0D, 0x46, 0x6E, 0xE0, 0x4E,
         0x0D, 0x6D, 0xA9, 0x86, 0xBD, 0x78, 0xEB, 0x1F, 0xDD, 0x21,
         0x78, 0xD0, 0x46, 0x93, 0x72, 0x3D, 0xA3, 0xA8, 0xF9, 0x5D,
-        0x42, 0xF4 };
-    unsigned char sha384[] = {
+        0x42, 0xF4 }));
+    BOOST_CHECK_EQUAL(data->calcDigest("http://www.w3.org/2001/04/xmldsig-more#sha384"), vector<unsigned char>({
         0x63, 0x7E, 0x2E, 0xDD, 0x55, 0x55, 0x70, 0xED, 0xA9, 0x66,
         0xD9, 0x9D, 0x4E, 0x77, 0xD9, 0xFB, 0xB3, 0xAA, 0xB8, 0x4A,
         0x49, 0x8F, 0xF5, 0x5A, 0xC2, 0x1B, 0x96, 0x3C, 0x1E, 0x05,
         0xC2, 0xAD, 0xDF, 0xB5, 0xC1, 0x5C, 0xD2, 0x07, 0x1E, 0x7E,
-        0xDD, 0x47, 0x35, 0x9D, 0x78, 0x79, 0x41, 0xD3 };
-    unsigned char sha512[] = {
+        0xDD, 0x47, 0x35, 0x9D, 0x78, 0x79, 0x41, 0xD3 }));
+    BOOST_CHECK_EQUAL(data->calcDigest("http://www.w3.org/2001/04/xmlenc#sha512"), vector<unsigned char>({
         0x79, 0x85, 0x55, 0x83, 0x70, 0xF0, 0xDE, 0x86, 0xA8, 0x64,
         0xE0, 0x05, 0x0A, 0xFD, 0xF4, 0x5D, 0x70, 0x29, 0xB8, 0x79,
         0x8B, 0xCD, 0x72, 0xCD, 0xDB, 0xF7, 0x81, 0x32, 0x9F, 0x99,
         0x38, 0x0E, 0x3F, 0x3B, 0x1A, 0xFD, 0xCA, 0x67, 0x65, 0xD8,
         0x9F, 0xC3, 0x88, 0xB2, 0x13, 0xDF, 0x8F, 0x6A, 0x19, 0x3C,
         0xFC, 0x56, 0xD4, 0xFF, 0x2E, 0xF6, 0xE0, 0xA9, 0x9B, 0xD8,
-        0x83, 0xA6, 0xD9, 0x8C };
-    BOOST_CHECK_EQUAL(data.calcDigest("http://www.w3.org/2000/09/xmldsig#sha1"),
-                      vector<unsigned char>(sha1, sha1 + sizeof(sha1)));
-    BOOST_CHECK_EQUAL(data.calcDigest("http://www.w3.org/2001/04/xmldsig-more#sha224"),
-                      vector<unsigned char>(sha224, sha224 + sizeof(sha224)));
-    BOOST_CHECK_EQUAL(data.calcDigest("http://www.w3.org/2001/04/xmlenc#sha256"),
-                      vector<unsigned char>(sha256, sha256 + sizeof(sha256)));
-    BOOST_CHECK_EQUAL(data.calcDigest("http://www.w3.org/2001/04/xmldsig-more#sha384"),
-                      vector<unsigned char>(sha384, sha384 + sizeof(sha384)));
-    BOOST_CHECK_EQUAL(data.calcDigest("http://www.w3.org/2001/04/xmlenc#sha512"),
-                      vector<unsigned char>(sha512, sha512 + sizeof(sha512)));
+        0x83, 0xA6, 0xD9, 0x8C }));
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
