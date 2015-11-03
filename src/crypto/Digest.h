@@ -27,12 +27,6 @@
 #define URI_SHA384 "http://www.w3.org/2001/04/xmldsig-more#sha384"
 #define URI_SHA512 "http://www.w3.org/2001/04/xmlenc#sha512"
 
-#define OID_SHA1 "\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14"
-#define OID_SHA224 "\x30\x2d\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x04\x05\x00\x04\x1c"
-#define OID_SHA256 "\x30\x31\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01\x05\x00\x04\x20"
-#define OID_SHA384 "\x30\x41\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x02\x05\x00\x04\x30"
-#define OID_SHA512 "\x30\x51\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x03\x05\x00\x04\x40"
-
 #define URI_RSA_SHA1 "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 #define URI_RSA_SHA224 "http://www.w3.org/2001/04/xmldsig-more#rsa-sha224"
 #define URI_RSA_SHA256 "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
@@ -65,6 +59,9 @@ namespace digidoc
           static std::string toRsaUri(const std::string &uri);
           static std::string toEcUri(const std::string &uri);
           static int toMethod(const std::string &uri);
+          static std::vector<unsigned char> addDigestInfo(const std::vector<unsigned char> &digest, const std::string &uri);
+          static std::vector<unsigned char> digestInfoDigest(const std::vector<unsigned char> &digest);
+          static std::string digestInfoUri(const std::vector<unsigned char> &digest);
 
       private:
           DISABLE_COPY(Digest);

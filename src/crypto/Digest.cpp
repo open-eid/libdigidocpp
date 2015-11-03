@@ -24,6 +24,7 @@
 
 #include <openssl/objects.h>
 #include <openssl/sha.h>
+#include <openssl/x509.h>
 
 using namespace std;
 
@@ -62,6 +63,50 @@ Digest::Digest(const string &uri)
 Digest::~Digest()
 {
     delete d;
+}
+
+vector<unsigned char> Digest::addDigestInfo(const vector<unsigned char> &digest, const string &uri)
+{
+    vector<unsigned char> result = digest;
+    vector<unsigned char> oid;
+    switch(toMethod(uri))
+    {
+    case NID_sha1: oid = {0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14}; break;
+    case NID_sha224: oid = {0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1c}; break;
+    case NID_sha256: oid = {0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20}; break;
+    case NID_sha384: oid = {0x30, 0x41, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30}; break;
+    case NID_sha512: oid = {0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40}; break;
+    default: break;
+    }
+    if(!oid.empty())
+        result.insert(result.begin(), oid.begin(), oid.end());
+    return result;
+}
+
+vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> &digest)
+{
+    const unsigned char *p = digest.data();
+    SCOPE(X509_SIG, sig, d2i_X509_SIG(NULL, &p, (long)digest.size()));
+    if(!sig)
+        return vector<unsigned char>();
+    return vector<unsigned char>(sig->digest->data, sig->digest->data + sig->digest->length);
+}
+
+string Digest::digestInfoUri(const std::vector<unsigned char> &digest)
+{
+    const unsigned char *p = digest.data();
+    SCOPE(X509_SIG, sig, d2i_X509_SIG(NULL, &p, (long)digest.size()));
+    if(!sig)
+        return string();
+    switch(OBJ_obj2nid(sig->algor->algorithm))
+    {
+    case NID_sha1:  return URI_SHA1;
+    case NID_sha224: return URI_SHA224;
+    case NID_sha256: return URI_SHA256;
+    case NID_sha384: return URI_SHA384;
+    case NID_sha512: return URI_SHA512;
+    default: return string();
+    }
 }
 
 /**

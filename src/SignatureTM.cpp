@@ -57,23 +57,6 @@ SignatureTM::~SignatureTM()
 {
 }
 
-void SignatureTM::addOid(vector<unsigned char> &digest, const string &uri) const
-{
-    const char *oid = nullptr;
-    int size = 0;
-    switch(Digest::toMethod(uri))
-    {
-    case NID_sha1: { oid = OID_SHA1; size = sizeof(OID_SHA1); break; }
-    case NID_sha224: { oid = OID_SHA224; size = sizeof(OID_SHA224); break; }
-    case NID_sha256: { oid = OID_SHA256; size = sizeof(OID_SHA256); break; }
-    case NID_sha384: { oid = OID_SHA384; size = sizeof(OID_SHA384); break; }
-    case NID_sha512: { oid = OID_SHA512; size = sizeof(OID_SHA512); break; }
-    default: break;
-    }
-    if(oid)
-        digest.insert(digest.begin(), oid, oid + (size - 1));
-}
-
 /**
  * @return nonce value
  */
@@ -166,19 +149,17 @@ void SignatureTM::validate() const
 
         if(profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
         {
-            string method = nonceAlgorithm();
+            string method = Digest::digestInfoUri(ocsp.nonce());
             if(method.empty())
                 THROW("Nonce digest method is missing");
             Digest calc(method);
             calc.update(getSignatureValue());
-            vector<unsigned char> nonce = calc.result();
-            addOid(nonce, method);
-
-            vector<unsigned char> respNonce = ocsp.nonce();
-            if(nonce != respNonce)
+            vector<unsigned char> digest = calc.result();
+            vector<unsigned char> respDigest = Digest::digestInfoDigest(ocsp.nonce());
+            if(digest != respDigest)
             {
-                DEBUGMEM("Calculated signature HASH", nonce.data(), nonce.size());
-                DEBUGMEM("Response nonce", respNonce.data(), respNonce.size());
+                DEBUGMEM("Calculated signature HASH", digest.data(), digest.size());
+                DEBUGMEM("Response nonce", respDigest.data(), respDigest.size());
                 EXCEPTION_ADD(exception, "Calculated signature hash doesn't match to OCSP responder nonce field");
             }
         }
@@ -187,18 +168,6 @@ void SignatureTM::validate() const
     }
     if(!exception.causes().empty())
         throw exception;
-}
-
-string SignatureTM::nonceAlgorithm() const
-{
-    vector<unsigned char> n = OCSPNonce();
-    if(n.empty()) return string();
-    if(n.size() > sizeof(OID_SHA1) && memcmp(OID_SHA1, n.data(), sizeof(OID_SHA1) - 1) == 0) return URI_SHA1;
-    if(n.size() > sizeof(OID_SHA224) && memcmp(OID_SHA224, n.data(), sizeof(OID_SHA224) - 1) == 0) return URI_SHA224;
-    if(n.size() > sizeof(OID_SHA256) && memcmp(OID_SHA256, n.data(), sizeof(OID_SHA256) - 1) == 0) return URI_SHA256;
-    if(n.size() > sizeof(OID_SHA384) && memcmp(OID_SHA384, n.data(), sizeof(OID_SHA384) - 1) == 0) return URI_SHA384;
-    if(n.size() > sizeof(OID_SHA512) && memcmp(OID_SHA512, n.data(), sizeof(OID_SHA512) - 1) == 0) return URI_SHA512;
-    return string();
 }
 
 /**
@@ -213,8 +182,7 @@ void SignatureTM::extendSignatureProfile(const std::string &profile)
     // Calculate NONCE value.
     Digest calc;
     calc.update(getSignatureValue());
-    vector<unsigned char> nonce = calc.result();
-    addOid(nonce, calc.uri());
+    vector<unsigned char> nonce = Digest::addDigestInfo(calc.result(), calc.uri());
     DEBUGMEM("OID + Calculated signature HASH (nonce):", nonce.data(), nonce.size());
 
     // Get issuer certificate from certificate store.

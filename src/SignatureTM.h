@@ -50,9 +50,6 @@ protected:
 private:
     DISABLE_COPY(SignatureTM);
 
-    void addOid(std::vector<unsigned char> &digest, const std::string &uri) const;
-    std::string nonceAlgorithm() const;
-
     void setOCSPResponseValue(const std::vector<unsigned char>& data);
 };
 
