@@ -2,7 +2,7 @@ sudo: required
 services:
  - docker
 before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-    echo;
+    ./prepare_osx_build_environment.sh all;
   else
     sudo apt-get update -qq;
     sudo apt-get install -y libxml-security-c-dev;
@@ -17,6 +17,9 @@ script:
 
 os:
  - linux
+ - osx
+
+osx_image: xcode6.4
 
 env:
   global:
