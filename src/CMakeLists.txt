@@ -114,24 +114,21 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101.xsd
 list( APPEND xsd_SRCS xml/AdditionalInformationType.cpp )
 if( WIN32 )
     add_executable( embedfile embedfile.cpp )
-    add_custom_command( OUTPUT tslcert1.h tslcert2.h tslcert3.h
+    add_custom_command( OUTPUT tslcert1.h tslcert2.h
         COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT1} tslcert1_crt tslcert1.h
         COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT2} tslcert2_crt tslcert2.h
-        COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT3} tslcert3_crt tslcert3.h
-        COMMENT "Generating tslcert1.h from ${TSL_CERT1}, tslcert2.h from ${TSL_CERT2}, tslcert3.h from ${TSL_CERT3}"
+        COMMENT "Generating tslcert1.h from ${TSL_CERT1}, tslcert2.h from ${TSL_CERT2}"
     )
 else()
-    add_custom_command( OUTPUT tslcert1.h tslcert2.h tslcert3.h
+    add_custom_command( OUTPUT tslcert1.h tslcert2.h
         COMMAND ln -sf ${TSL_CERT1} tslcert1.crt
         COMMAND ln -sf ${TSL_CERT2} tslcert2.crt
-        COMMAND ln -sf ${TSL_CERT3} tslcert3.crt
         COMMAND xxd -i tslcert1.crt tslcert1.h
         COMMAND xxd -i tslcert2.crt tslcert2.h
-        COMMAND xxd -i tslcert3.crt tslcert3.h
-        COMMENT "Generating tslcert1.h from ${TSL_CERT1}, tslcert2.h from ${TSL_CERT2}, tslcert3.h from ${TSL_CERT3}"
+        COMMENT "Generating tslcert1.h from ${TSL_CERT1}, tslcert2.h from ${TSL_CERT2}"
     )
 endif()
-list( APPEND digidocpp_SRCS tslcert1.h tslcert2.h tslcert3.h )
+list( APPEND digidocpp_SRCS tslcert1.h tslcert2.h )
 list( APPEND digidoc-tool_SRCS crypto/Connect.cpp crypto/Digest.cpp )
 
 set( SCHEMA_FILES
