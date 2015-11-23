@@ -85,12 +85,6 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
 {
     DEBUG("PKCS12Signer::sign(method = %s, digest = %d)", method.c_str(), digest.size());
 
-    int nid = NID_sha1;
-    if ( method == URI_RSA_SHA224 ) nid = NID_sha224;
-    if ( method == URI_RSA_SHA256 ) nid = NID_sha256;
-    if ( method == URI_RSA_SHA384 ) nid = NID_sha384;
-    if ( method == URI_RSA_SHA512 ) nid = NID_sha512;
-
     int result = 0;
     vector<unsigned char> signature;
     switch(EVP_PKEY_type(d->key->type))
@@ -99,6 +93,7 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
     {
         SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(d->key));
         signature.resize(RSA_size(rsa.get()));
+        int nid = Digest::toMethod(method);
         unsigned int size = (unsigned int)signature.size();
         result = RSA_sign(nid, &digest[0], (unsigned int)digest.size(), &signature[0], &size, rsa.get());
         break;

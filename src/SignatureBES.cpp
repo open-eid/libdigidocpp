@@ -70,90 +70,33 @@ static string to_string(T value)
 }
 #endif
 
-static vector<unsigned char> toVector(const char *data, size_t size)
-{
-    return vector<unsigned char>(data, data + size);
-}
-
 const string SignatureBES::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3.2#";
 const string SignatureBES::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
 const string SignatureBES::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.1#";
-const map<string,SignatureBES::Policy> SignatureBES::policylist = [](){
-    map<string,SignatureBES::Policy> result;
-    SignatureBES::Policy p210 = {
+const map<string,SignatureBES::Policy> SignatureBES::policylist = {
+    {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.1",{
         "BDOC – FORMAT FOR DIGITAL SIGNATURES",
         "https://www.sk.ee/repository/bdoc-spec21.pdf",
-        toVector(
-            "\x80\x81\xe2\x69\xeb\x44\x13\xde\x20\x6e\x40\x91\xca\x04\x3d\x5a"
-            "\xca\x71\x51\xdc", 20),
-        toVector(
-            "\xc8\xeb\x95\x3f\xc8\xe5\x93\x74\xaa\x81\x5a\x1e\x24\x3f\xcb\x42"
-            "\x30\xd2\x0a\xf0\xc4\x0d\xc4\xb4\x80\xa5\xb0\xdf", 28),
-        toVector(
-            "\xdd\x39\x75\xa0\x82\xd2\xbc\xe0\x16\xa2\x67\x48\xf5\x57\x96\x57"
-            "\xa2\x00\xff\x7d\x9e\x49\x74\x54\xae\x2f\x64\x3c\x4c\xf5\x21\x5b", 32),
-        toVector(
-            "\x81\xfa\xa3\x7b\x82\xf1\x8d\xc2\x8c\x71\x2e\xc1\xb9\x7b\xf9\x79"
-            "\xaf\x08\x99\x77\xb7\x55\x42\x62\xfc\x07\x0d\x6b\xb3\x06\x0b\x44"
-            "\x40\xa8\x1c\x9d\xbc\x67\x4c\xb5\x0c\x97\x33\xc6\x33\x17\x1a\x4e", 48),
-        toVector(
-            "\x8e\x1d\x3f\xa0\xe7\x66\x0c\xa7\x1c\xcf\xb0\x80\x13\x39\x1e\xbf"
-            "\x29\x73\xcf\x25\xff\x6d\xd1\xe1\xc8\xc4\x5b\x84\xdd\xb1\xca\x3e"
-            "\xa6\x7b\x18\x86\x04\xd8\x20\x9b\xf8\x54\x4e\xb0\x5f\xb3\x67\x58"
-            "\x39\xb9\xef\xfe\xf7\x75\x7d\x34\x5e\x39\xa8\xa5\xbf\x4a\xa1\xd7", 64)
-    };
-    result.insert(pair<string,SignatureBES::Policy>("urn:oid:1.3.6.1.4.1.10015.1000.3.2.1",p210));
-#if 0
-    SignatureBES::Policy p212 = {
-        "BDOC – FORMAT FOR DIGITAL SIGNATURES",
-        "https://www.sk.ee/repository/bdoc-spec212.pdf",
-        toVector(
-            "\x15\x57\xb5\x48\x73\x0c\x5f\x2c\xf5\x71\x91\xce\x78\xc9\x7b\x7a"
-            "\x24\x09\xa0\x19", 20),
-        toVector(
-            "\x32\x81\x72\xc2\x7a\x7b\x8a\xe4\x43\xa5\xb3\xab\xaf\x55\x2a\xaf"
-            "\xff\x74\xde\xe3\x54\x05\x89\x75\x66\xa8\x30\xd5", 28),
-        toVector(
-            "\xaf\xe4\x20\xd3\x69\x42\x07\x0b\x28\x36\x35\xed\x17\x46\x9e\xdd"
-            "\xd7\x6d\x2d\xec\x72\x17\xd5\x40\x0d\xcb\x9b\x56\x80\xd8\x75\xbc", 32),
-        toVector(
-            "\x3b\x29\xfc\x6c\xc0\x8c\x7d\x51\xe8\x3a\x43\xa9\xa7\x48\xa9\xb0"
-            "\x78\x5b\x98\xca\x9b\xd8\x73\x21\x9b\x3b\x59\xec\xd5\x25\x4b\x56"
-            "\x50\xfa\x2e\xc4\xde\x87\xa4\x6b\x0d\xa7\x4a\xef\x91\x53\x30\x89", 48),
-        toVector(
-            "\x7e\x96\xa2\xb4\x21\x86\x64\x46\x4a\x7a\xc0\x39\x50\x0d\xa0\x79"
-            "\x7d\xcf\x16\x09\x62\x0c\xac\x4b\x69\x22\x39\x98\x40\x34\xb7\xf6"
-            "\x86\x6e\x3c\x00\xe4\x91\x6d\x23\x51\x32\x9d\x92\x8a\x3e\x92\x6b"
-            "\x5b\x14\x99\xee\xc5\x3e\xa6\x17\xa2\xc7\xb0\x38\xe7\x2a\x76\x85", 64)
-    };
-    result.insert(pair<string,SignatureBES::Policy>("urn:oid:1.3.6.1.4.1.10015.1000.3.2.3",p212));
-#endif
-#if 0
-    result.insert(make_pair<string,SignatureBES::Policy>("urn:oid:1.3.6.1.4.1.10015.1000.3.1.1",{
-        "BDOC – FORMAT FOR DIGITAL SIGNATURES",
-        "https://www.sk.ee/repository/bdoc-spec20.pdf",
-        toVector(
-            "\x14\x5b\x43\x5b\x85\x82\xcf\xee\x79\x55\xea\xee\x94\x12\xac\xc5"
-            "\xca\x75\x3b\x7d", 20),
-        toVector(
-            "\xa3\xad\xaa\x8e\xfc\x35\x3a\x69\x0f\x8b\xf4\x18\x83\x93\x89\x39"
-            "\xcd\x22\x20\x86\x9e\xc1\xef\x11\xc7\x3d\x17\xaa", 28),
-        toVector(
-            "\x62\x0c\x3d\x13\x1e\xf0\x09\x2a\xde\xa7\x63\x27\x8e\xef\x8c\x97"
-            "\x7a\x4e\x3d\x96\x41\x99\xde\xaf\x89\xc4\x24\xbc\xe4\x0a\xc7\x2a", 32),
-        toVector(
-            "\x71\x00\x5d\x0a\xc3\x90\x0f\x28\x3e\xdf\xca\xd7\x02\xaa\xd9\xf4"
-            "\xa8\xd9\x01\x88\x93\xd0\xa2\xc6\xb4\x95\xbf\x85\xb9\xf4\xe9\xdc"
-            "\xbf\x91\x75\x58\xb8\x3d\xa7\x31\x7e\x09\xda\x7e\xd3\xae\xad\xef", 48),
-        toVector(
-            "\xb6\x57\x3d\x28\xbf\x8f\x2c\x54\xd7\xba\x9e\xc6\xad\x5b\xbf\x03"
-            "\x56\x3e\x58\x2b\x18\x13\xda\x69\x09\xe4\x5b\xc3\xb9\xda\x67\xb9"
-            "\x7e\x90\xd1\xfe\xfb\xbd\x76\x13\xc9\x9b\x20\x37\x94\x53\xe5\x0e"
-            "\x60\x36\x93\x18\x23\xdf\xf6\x69\xe7\xa2\x6d\xdb\x3f\xa0\x47\xeb", 64)
-    }));
-#endif
-    return result;
-}();
+        // SHA-1
+        {   0x80,0x81,0xe2,0x69,0xeb,0x44,0x13,0xde,0x20,0x6e,0x40,0x91,0xca,0x04,0x3d,0x5a,
+            0xca,0x71,0x51,0xdc},
+        // SHA-224
+        {   0xc8,0xeb,0x95,0x3f,0xc8,0xe5,0x93,0x74,0xaa,0x81,0x5a,0x1e,0x24,0x3f,0xcb,0x42,
+            0x30,0xd2,0x0a,0xf0,0xc4,0x0d,0xc4,0xb4,0x80,0xa5,0xb0,0xdf},
+        // SHA-256
+        {   0xdd,0x39,0x75,0xa0,0x82,0xd2,0xbc,0xe0,0x16,0xa2,0x67,0x48,0xf5,0x57,0x96,0x57,
+            0xa2,0x00,0xff,0x7d,0x9e,0x49,0x74,0x54,0xae,0x2f,0x64,0x3c,0x4c,0xf5,0x21,0x5b},
+        // SHA-384
+        {   0x81,0xfa,0xa3,0x7b,0x82,0xf1,0x8d,0xc2,0x8c,0x71,0x2e,0xc1,0xb9,0x7b,0xf9,0x79,
+            0xaf,0x08,0x99,0x77,0xb7,0x55,0x42,0x62,0xfc,0x07,0x0d,0x6b,0xb3,0x06,0x0b,0x44,
+            0x40,0xa8,0x1c,0x9d,0xbc,0x67,0x4c,0xb5,0x0c,0x97,0x33,0xc6,0x33,0x17,0x1a,0x4e},
+        // SHA-512
+        {   0x8e,0x1d,0x3f,0xa0,0xe7,0x66,0x0c,0xa7,0x1c,0xcf,0xb0,0x80,0x13,0x39,0x1e,0xbf,
+            0x29,0x73,0xcf,0x25,0xff,0x6d,0xd1,0xe1,0xc8,0xc4,0x5b,0x84,0xdd,0xb1,0xca,0x3e,
+            0xa6,0x7b,0x18,0x86,0x04,0xd8,0x20,0x9b,0xf8,0x54,0x4e,0xb0,0x5f,0xb3,0x67,0x58,
+            0x39,0xb9,0xef,0xfe,0xf7,0x75,0x7d,0x34,0x5e,0x39,0xa8,0xa5,0xbf,0x4a,0xa1,0xd7}
+    }}
+};
 
 namespace digidoc
 {
@@ -268,8 +211,7 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
 
         string digestUri = Conf::instance()->digestUri();
         const vector<unsigned char> *data = &p->second.SHA256;
-        if(Conf::instance()->digestUri() == URI_SHA1) data = &p->second.SHA1;
-        else if(Conf::instance()->digestUri() == URI_SHA224) data = &p->second.SHA224;
+        if(Conf::instance()->digestUri() == URI_SHA224) data = &p->second.SHA224;
         else if(Conf::instance()->digestUri() == URI_SHA256) data = &p->second.SHA256;
         else if(Conf::instance()->digestUri() == URI_SHA384) data = &p->second.SHA384;
         else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;

@@ -11,6 +11,7 @@ Changes compared to ver 3.11.1
 - Major API changes, SO version increased to 1. Applications need to adopt new changes and recompile applications.
 - Added support for signing in web browser
 - Example projects for iOS and Android
+- Disable SHA1 support on signature creation
 
 List API changes https://github.com/open-eid/libdigidocpp/wiki/API-changes-(v3.12)
 List of known issues: https://github.com/open-eid/libdigidocpp/wiki/Known-issues

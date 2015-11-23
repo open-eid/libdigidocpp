@@ -86,7 +86,10 @@ string Digest::uri() const
  */
 void Digest::reset(const string &uri)
 {
-    int result = 1;
+    if(uri.empty() && Conf::instance()->digestUri() == URI_SHA1)
+        THROW("Unsupported digest method");
+
+    int result = 0;
     switch(d->method = toMethod(uri.empty() ? Conf::instance()->digestUri() : uri))
     {
     case NID_sha1: result = SHA1_Init(&d->sha1); break;

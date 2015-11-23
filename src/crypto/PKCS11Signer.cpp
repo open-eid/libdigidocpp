@@ -81,30 +81,9 @@ public:
         CK_ULONG cert;
     } sign = SignSlot({ X509Cert(), 0, 0 });
     string pin;
-
-    static const vector<unsigned char> sha1;
-    static const vector<unsigned char> sha224;
-    static const vector<unsigned char> sha256;
-    static const vector<unsigned char> sha384;
-    static const vector<unsigned char> sha512;
 };
 
 }
-
-const vector<unsigned char> PKCS11SignerPrivate::sha1 =
-{ 0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14 };
-
-const vector<unsigned char> PKCS11SignerPrivate::sha224 =
-{ 0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1c };
-
-const vector<unsigned char> PKCS11SignerPrivate::sha256 =
-{ 0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20 };
-
-const vector<unsigned char> PKCS11SignerPrivate::sha384 =
-{ 0x30, 0x41, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30 };
-
-const vector<unsigned char> PKCS11SignerPrivate::sha512 =
-{ 0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40 };
 
 vector<CK_OBJECT_HANDLE> PKCS11SignerPrivate::findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls) const
 {
@@ -384,14 +363,7 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
     if(d->f->C_SignInit(session, &mech, key[d->sign.cert]) != CKR_OK)
         THROW("Failed to sign digest");
 
-    vector<unsigned char> data;
-    if(method == URI_RSA_SHA1) data = PKCS11SignerPrivate::sha1;
-    if(method == URI_RSA_SHA224) data = PKCS11SignerPrivate::sha224;
-    if(method == URI_RSA_SHA256) data = PKCS11SignerPrivate::sha256;
-    if(method == URI_RSA_SHA384) data = PKCS11SignerPrivate::sha384;
-    if(method == URI_RSA_SHA512) data = PKCS11SignerPrivate::sha512;
-    data.insert(data.end(), digest.begin(), digest.end());
-
+    vector<unsigned char> data = Digest::addDigestInfo(digest, method);
     CK_ULONG size = 0;
     if(d->f->C_Sign(session, data.data(), CK_ULONG(data.size()), 0, &size) != CKR_OK)
         THROW("Failed to sign digest");

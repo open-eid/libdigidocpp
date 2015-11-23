@@ -346,8 +346,8 @@ static void printUsage(const char *executable)
     << "      --pkcs11[=]    - default is " << (CONF(PKCS11Driver)) << ". Path of PKCS11 driver." << endl
     << "      --pkcs12=      - pkcs12 signer certificate (use --pin for password)" << endl
     << "      --pin=         - default asks pin from prompt" << endl
-    << "      --sha(1,224,256,384,512) - set default digest method (default sha256)" << endl
-    << "      --sigsha(1,224,256,384,512) - set default digest method (default sha256)" << endl;
+    << "      --sha(224,256,384,512) - set default digest method (default sha256)" << endl
+    << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl;
 }
 
 struct Params
@@ -412,12 +412,10 @@ Params::Params(int argc, char *argv[])
         else if(arg.find("--postalCode=") == 0) postalCode = arg.substr(13);
         else if(arg.find("--country=") == 0) country = arg.substr(10);
         else if(arg.find("--role=") == 0) roles.push_back(arg.substr(7));
-        else if(arg == "--sha1") conf->uri = URI_SHA1;
         else if(arg == "--sha224") conf->uri = URI_SHA224;
         else if(arg == "--sha256") conf->uri = URI_SHA256;
         else if(arg == "--sha384") conf->uri = URI_SHA384;
         else if(arg == "--sha512") conf->uri = URI_SHA512;
-        else if(arg == "--sigsha1") conf->siguri = URI_SHA1;
         else if(arg == "--sigsha224") conf->siguri = URI_SHA224;
         else if(arg == "--sigsha256") conf->siguri = URI_SHA256;
         else if(arg == "--sigsha384") conf->siguri = URI_SHA384;
