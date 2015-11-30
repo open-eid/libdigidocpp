@@ -126,9 +126,12 @@ In case of BDOC with time-stamp (TS profile), the proof is provided as follows:
 <tr><td>
 \anchor BDOC  BDOC2.1:2013	</td><td>BDOC – Format for Digital Signatures. Version 2.1:2013
 
-https://www.sk.ee/repository/bdoc-spec21.pdf
-
-http://id.ee/public/bdoc-spec21-est.pdf
+https://www.sk.ee/repository/bdoc-spec21.pdf<br />
+Other releases:<br />
+https://www.sk.ee/repository/bdoc-spec20.pdf<br />
+https://www.sk.ee/repository/bdoc-spec212.pdf<br />
+http://id.ee/public/bdoc-spec21-est.pdf<br />
+http://id.ee/public/bdoc-spec212-est.pdf
 </td></tr><tr><td>
 \anchor DDOC DigiDoc format	</td><td>DigiDoc file format 
 
@@ -144,15 +147,41 @@ http://www.w3.org/TR/xmldsig-core1/
 </td></tr><tr><td>
 \anchor XAdES XAdES	</td><td>ETSI TS 101 903 V1.4.2 (2010-12) – XML Advanced Electronic Signatures 
 
-http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.04.02_60/ts_101903v010402p.pdf 
+http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.04.02_60/ts_101903v010402p.pdf<br />
+Other versions:<br />
+http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.04.01_60/ts_101903v010401p.pdf<br />
+http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.03.02_60/ts_101903v010302p.pdf
 </td></tr><tr><td>
-\anchor OpenDocument OpenDocument	</td><td>OASIS "Open Document Format for Office Applications. Version 1.2 Part 3: Packages"
+\anchor XAdES-BP XAdES Baseline Profile	</td><td>ETSI TS 103 171 V2.1.1 (2012-03)
 
-http://docs.oasis-open.org/office/v1.2/cs01/OpenDocument-v1.2-cs01-part3.html#__RefHeading__752803_826425813 
+http://www.etsi.org/deliver/etsi_ts/103100_103199/103171/02.01.01_60/ts_103171v020101p.pdf 
 </td></tr><tr><td>
-\anchor ASiC ASiC </td><td>ETSI TS 102 918 V1.2.1 (2012-02) - Associated Signature Containers
+\anchor XAdES-Validation XAdES Validation	</td><td>ETSI TS 102 853 V1.1.2 (2012-10) – Signature validation procedures and policies
 
+http://www.etsi.org/deliver/etsi_ts/102800_102899/102853/01.01.02_60/ts_102853v010102p.pdf
+</td></tr><tr><td>
+\anchor ZIP PKWARE ZIP</td><td>ZIP File Format Specification
+
+http://www.pkware.com/documents/casestudies/APPNOTE.TXT
+</td></tr><tr><td>
+\anchor OpenDocument OpenDocument</td><td>OASIS "Open Document Format for Office Applications. Version 1.2 Part 3: Packages"
+
+http://docs.oasis-open.org/office/v1.2/cs01/OpenDocument-v1.2-cs01-part3.html#__RefHeading__752803_826425813<br />
+Other versions:<br />
+http://docs.oasis-open.org/office/v1.0/OpenDocument-v1.0-os.pdf<br />
+</td></tr><tr><td>
+\anchor ASiC ASiC </td><td>ETSI TS 102 918 V1.3.1 (2013-06) - Associated Signature Containers
+
+http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf<br />
+Other versions:<br />
+http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.01.01_60/ts_102918v010101p.pdf<br />
 http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.02.01_60/ts_102918v010201p.pdf 
+</td></tr><tr><td>
+\anchor ASiC-BP ASiC Baseline Profile</td><td>ETSI TS 103 174 V2.1.1 (2012-03)
+
+http://www.etsi.org/deliver/etsi_ts/103100_103199/103174/02.02.01_60/ts_103174v020201p.pdf<br />
+Other versions:<br />
+http://www.etsi.org/deliver/etsi_ts/103100_103199/103174/02.01.01_60/ts_103174v020101p.pdf
 </td></tr><tr><td>
 \anchor RFC6960 RFC6960	</td><td>X.509 Internet Public Key Infrastructure Online Certificate Status Protocol – OCSP
 
@@ -166,17 +195,11 @@ http://tools.ietf.org/html/rfc3161
 
 http://tools.ietf.org/html/rfc5280
 </td></tr><tr><td>
-\anchor XAdES-BP XAdES Baseline Profile	</td><td>ETSI TS 103 171 V2.1.1 (2012-03)
-
-http://www.etsi.org/deliver/etsi_ts/103100_103199/103171/02.01.01_60/ts_103171v020101p.pdf 
-</td></tr><tr><td>
-\anchor ASiC-BP ASiC Baseline Profile	 </td><td>ETSI TS 103 174 V2.1.1 (2012-03)
-
-http://www.etsi.org/deliver/etsi_ts/103100_103199/103174/02.01.01_60/ts_103174v020101p.pdf 
-</td></tr><tr><td>
 \anchor TSL Trusted Lists </td><td>ETSI TS 119 612 V1.1.1 (2013-06)
 
-http://www.etsi.org/deliver/etsi_ts/119600_119699/119612/01.01.01_60/ts_119612v010101p.pdf 
+http://www.etsi.org/deliver/etsi_ts/119600_119699/119612/01.01.01_60/ts_119612v010101p.pdf<br />
+Other versions:<br />
+http://www.etsi.org/deliver/etsi_ts/102200_102299/102231/03.01.02_60/ts_102231v030102p.pdf
 </td></tr><tr><td>
 \anchor DSA DSA	</td><td>Estonian Digital Signature Act 
 
