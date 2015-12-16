@@ -150,11 +150,11 @@ struct DigiDocPPFixture
     ~DigiDocPPFixture()
     {
         digidoc::terminate();
-        BOOST_MESSAGE("unloading libdigidocpp");
+        //BOOST_MESSAGE("unloading libdigidocpp");
     }
 };
 
-BOOST_GLOBAL_FIXTURE(DigiDocPPFixture)
+BOOST_GLOBAL_FIXTURE(DigiDocPPFixture);
 
 BOOST_AUTO_TEST_SUITE(SignerSuite)
 BOOST_AUTO_TEST_CASE(signerParameters)
