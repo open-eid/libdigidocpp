@@ -127,7 +127,7 @@ OCSP::~OCSP()
     if(resp) OCSP_RESPONSE_free(resp);
 }
 
-bool OCSP::compareResponderCert(const X509Cert &cert)
+bool OCSP::compareResponderCert(const X509Cert &cert) const
 {
     if(!basic || !cert)
         return false;
@@ -266,32 +266,17 @@ X509Cert OCSP::responderCert() const
 {
     if(!basic)
         return X509Cert();
-
-    if(sk_X509_num(basic->certs) > 0)
-        return X509Cert(sk_X509_value(basic->certs, 0));
-
-    OCSP_RESPID *respID =  basic->tbsResponseData->responderId;
-    vector<X509Cert> list = X509CertStore::instance()->certs();
-    for(vector<X509Cert>::const_iterator i = list.begin(); i != list.end(); ++i)
+    for(int i = 0; i < sk_X509_num(basic->certs); ++i)
     {
-        switch(respID->type)
-        {
-        case V_OCSP_RESPID_NAME:
-            if(X509_NAME_cmp(X509_get_subject_name(i->handle()), respID->value.byName) == 0)
-                return *i;
-            break;
-        case V_OCSP_RESPID_KEY:
-        {
-            unsigned char sha1[SHA_DIGEST_LENGTH];
-            ASN1_BIT_STRING *key = i->handle()->cert_info->key->public_key;
-            if(EVP_Digest(key->data, key->length, sha1, nullptr, EVP_sha1(), nullptr) == 1 &&
-                memcmp(respID->value.byKey->data, &sha1, respID->value.byKey->length) == 0)
-                return *i;
-            break;
-        }
-        }
+        X509Cert cert(sk_X509_value(basic->certs, i));
+        if(compareResponderCert(cert))
+            return cert;
     }
-
+    for(const X509Cert &cert: X509CertStore::instance()->certs())
+    {
+        if(compareResponderCert(cert))
+            return cert;
+    }
     return X509Cert();
 }
 
