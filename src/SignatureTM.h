@@ -43,13 +43,13 @@ public:
     virtual void extendSignatureProfile(const std::string &profile) override;
 
 protected:
-    void addCertificateValue(const std::string& certId, const X509Cert& x509);
     std::vector<unsigned char> getOCSPResponseValue() const;
     xades::UnsignedSignaturePropertiesType& unsignedSignatureProperties() const;
 
 private:
     DISABLE_COPY(SignatureTM);
 
+    void addCertificateValue(const std::string& certId, const X509Cert& x509);
     void setOCSPResponseValue(const std::vector<unsigned char>& data);
 };
 
