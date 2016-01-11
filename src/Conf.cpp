@@ -120,11 +120,13 @@ string Conf::ocsp(const string &issuer) const
         //Estonia Live
         {"ESTEID-SK 2007", "http://ocsp.sk.ee"},
         {"ESTEID-SK 2011", "http://ocsp.sk.ee"},
+        {"ESTEID-SK 2015", "http://ocsp.sk.ee"},
         {"EID-SK 2011", "http://ocsp.sk.ee"},
         {"KLASS3-SK 2010", "http://ocsp.sk.ee"},
         //Estonia Test
         {"TEST of ESTEID-SK 2007", "http://demo.sk.ee/ocsp"},
         {"TEST of ESTEID-SK 2011", "http://demo.sk.ee/ocsp"},
+        {"TEST of ESTEID-SK 2015", "http://demo.sk.ee/ocsp"},
         {"TEST of KLASS3-SK 2010", "http://demo.sk.ee/ocsp"},
         //Finland Test
         {"VRK CA for Test Purposes", "http://demo.sk.ee/ocsp"},

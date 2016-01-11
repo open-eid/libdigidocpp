@@ -25,8 +25,10 @@
     <!-- OCSP responder url. Used for validating signing certificates and generating BDoc-TM signatures-->
     <!--<ocsp issuer="ESTEID-SK 2007">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="ESTEID-SK 2011">http://ocsp.sk.ee</ocsp>-->
+    <!--<ocsp issuer="ESTEID-SK 2015">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="EID-SK 2011">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="KLASS3-SK 2010">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="TEST of ESTEID-SK 2011">http://demo.sk.ee/ocsp</ocsp>-->
+    <!--<ocsp issuer="TEST of ESTEID-SK 2015">http://demo.sk.ee/ocsp</ocsp>-->
     <!--<ocsp issuer="TEST of KLASS3-SK 2010">http://demo.sk.ee/ocsp</ocsp>-->
 </configuration>
