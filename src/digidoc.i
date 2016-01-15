@@ -115,7 +115,7 @@ SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jen
   [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_size")]
   public static extern int ByteVector_size(global::System.IntPtr data);
   [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_to")]
-  public static extern global::System.Runtime.InteropServices.HandleRef ByteVector_to(
+  public static extern global::System.IntPtr ByteVector_to(
     [global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPArray)]byte[] data, int size);
 %}
 
@@ -142,10 +142,13 @@ SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jen
     return $jnicall;
   }
 %typemap(cstype) std::vector<unsigned char> "byte[]"
-%typemap(csin) std::vector<unsigned char> "$modulePINVOKE.ByteVector_to($csinput, $csinput.Length)"
-%typemap(csout) std::vector<unsigned char>
+%typemap(csin,
+		 pre= "	global::System.IntPtr cPtr$csinput = (global::System.IntPtr)digidocPINVOKE.ByteVector_to($csinput, $csinput.Length);
+	global::System.Runtime.InteropServices.HandleRef handleRef$csinput = new global::System.Runtime.InteropServices.HandleRef(this, cPtr$csinput);"
+) std::vector<unsigned char> "handleRef$csinput"
+%typemap(csout, excode=SWIGEXCODE) std::vector<unsigned char>
 {
-  global::System.IntPtr data = $imcall;
+  global::System.IntPtr data = $imcall;$excode
   byte[] result = new byte[$modulePINVOKE.ByteVector_size(data)];
   global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(data), result, 0, result.Length);
   return result;
