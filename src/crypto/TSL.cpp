@@ -344,7 +344,17 @@ std::vector<TSL::Pointer> TSL::pointers() const
                     if(!id.x509Certificate().present())
                         continue;
                     const Base64Binary &base64 = id.x509Certificate().get();
-                    p.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+                    try {
+                        p.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+                        continue;
+                    } catch(const Exception &e) {
+                        DEBUG("Failed to parse %s certificate, Testing also parse as PEM: %s", p.territory.c_str(), e.msg().c_str());
+                    }
+                    try {
+                        p.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity(), X509Cert::Pem));
+                    } catch(const Exception &e) {
+                        DEBUG("Failed to parse %s certificate as PEM: %s", p.territory.c_str(), e.msg().c_str());
+                    }
                 }
             }
             pointer.push_back(p);
