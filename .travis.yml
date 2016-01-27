@@ -1,12 +1,12 @@
 sudo: required
 services:
- - docker
+- docker
 before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
     ./prepare_osx_build_environment.sh all;
   else
     sudo apt-get update -qq;
     sudo apt-get install -y libxml-security-c-dev;
-    wget http://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd_4.0.0-1_amd64.deb;
+  wget http://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd_4.0.0-1_amd64.deb;
     sudo dpkg -i xsd_4.0.0-1_amd64.deb;
   fi
 script:
@@ -14,25 +14,39 @@ script:
 - cd build
 - cmake ..
 - make
+- cd ..
 
 os:
- - linux
- - osx
+- linux
+- osx
 
 osx_image: xcode6.4
 
 env:
   global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-   #   via the "travis encrypt" command using the project repo's public key
-   - secure: "VTpLjRFkVZeqSiP/tea7b5WiMU+PjQJlpny8/QEYazRNhn/uie69aT8VvEdkpsUM1AEx8yPnNmVGShvoNNaOi/AoqynTIKgeGPCj44h6lCnPpByGVur0avc5WrRj2xBbPBBUw1rsL65wZ13MufmRLUwnmmVYQZ3qDBdpgZvCEhA="
-
+  - secure: VTpLjRFkVZeqSiP/tea7b5WiMU+PjQJlpny8/QEYazRNhn/uie69aT8VvEdkpsUM1AEx8yPnNmVGShvoNNaOi/AoqynTIKgeGPCj44h6lCnPpByGVur0avc5WrRj2xBbPBBUw1rsL65wZ13MufmRLUwnmmVYQZ3qDBdpgZvCEhA=
 addons:
   coverity_scan:
     project:
-      name: "open-eid/libdigidocpp"
-      description: "Build submitted via Travis CI"
+      name: open-eid/libdigidocpp
+      description: Build submitted via Travis CI
     notification_email: raul@metsma.ee
-    build_command_prepend: "mkdir coverity; cd coverity; cmake .."
+    build_command_prepend: mkdir coverity; cd coverity; cmake ..
     build_command: make
     branch_pattern: coverity_scan
+
+before_deploy:
+- export VERSION=${TRAVIS_TAG:1}
+- rm -rf build
+- cd ..
+- mv libdigidocpp libdigidocpp-${VERSION}
+- tar czf libdigidocpp-${VERSION}.tar.gz --exclude-vcs libdigidocpp-${VERSION}
+deploy:
+  provider: releases
+  api_key:
+    secure: CXl5yp2RQ1VpUWU3j8hsTrQ38TwShaUSIQoAAfHjEdMZvk5GAR0JFzrswpE2AWOEEDHsQV+66DHydqAnv4fYQlAZdXSc44PlNiIC3LV15sVdtoLLZhFBM/UWxDJ1tPMeU654d/SUeXWLd3CMHMrbOEyUA+ymUR1icmc8xHNGqpo=
+  file: libdigidocpp-${VERSION}.tar.gz
+  skip_cleanup: true
+  on:
+    tags: true
+    condition: "$TRAVIS_OS_NAME = linux"
