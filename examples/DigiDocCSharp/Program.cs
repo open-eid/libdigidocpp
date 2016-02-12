@@ -36,7 +36,7 @@ namespace DigiDocCSharp
             try
             {
                 Console.WriteLine("Opening file: " + file);
-                Container b = new Container(file);
+                Container b = Container.open(file);
                 DataFile d = b.dataFiles()[index];
                 string dest = Path.Combine(Directory.GetCurrentDirectory(), d.fileName());
                 Console.WriteLine("Extracting file {0} to {1}", d.fileName(), dest);
@@ -59,13 +59,16 @@ namespace DigiDocCSharp
 
         static void help()
         {
-            Console.WriteLine("DigiDocCSharpt command");
+            Console.WriteLine("DigiDocCSharp command [parameters]");
             Console.WriteLine("Command:");
             Console.WriteLine(" extract\tExtracts files from document");
             Console.WriteLine("    num");
             Console.WriteLine("    file");
             Console.WriteLine(" help\t\tPrints utility commands");
             Console.WriteLine(" sign\t\tSigns file");
+            Console.WriteLine("    file1 file2 ...");
+            Console.WriteLine("    container");
+            Console.WriteLine("    pin2");
             Console.WriteLine(" verify\t\tVerifies document signature and shows info");
             Console.WriteLine("    file");
             Console.WriteLine(" version\tPrints utility version");
@@ -77,12 +80,16 @@ namespace DigiDocCSharp
             digidoc.digidoc.initialize();
             try
             {
-                Console.WriteLine("Creating file: " + args[args.Length-1]);
-                Container b = new Container(Container.DocumentType.BDocType);
-                for (int i = 1; i < args.Length - 1; ++i)
+                Console.WriteLine("Creating file: " + args[args.Length - 2]);
+                Container b = Container.create(args[args.Length - 2]);
+                for (int i = 1; i < args.Length - 2; ++i)
                     b.addDataFile(args[i], "");
-                b.sign("", "", "", "", new StringVector { }, "");
-                b.save(args[args.Length - 1]);
+                using (PKCS11Signer signer = new PKCS11Signer())
+                {
+                    signer.setPin(args[args.Length - 1]);
+                    b.sign(signer);
+                    b.save(args[args.Length - 2]);
+                }
             }
             catch (Exception e)
             {
@@ -97,7 +104,7 @@ namespace DigiDocCSharp
             try
             {
                 Console.WriteLine("Opening file: " + file);
-                Container b = new Container(file);
+                Container b = Container.open(file);
 
                 Console.WriteLine("Files:");
                 foreach (DataFile d in b.dataFiles())
@@ -114,13 +121,11 @@ namespace DigiDocCSharp
                         Console.Write(" " + role);
                     Console.WriteLine();
 
-                    Console.WriteLine("Time: " + s.signingTime());
-                    X509Certificate2 c = new X509Certificate2(s.signingCert());
+                    Console.WriteLine("Time: " + s.trustedSigningTime());
+                    X509Certificate2 c = new X509Certificate2(s.signingCertificateDer());
                     Console.WriteLine("Cert: " + c.Subject);
 
-                    Console.WriteLine("ProducedAt: " + s.producedAt());
-                    c = new X509Certificate2(s.OCSPCert());
-                    Console.WriteLine("OCSP Cert: " + c.Subject);
+                    Console.WriteLine("ProducedAt: " + s.OCSPProducedAt());
 
                     s.validate();
                     Console.WriteLine("Signature is valid");
