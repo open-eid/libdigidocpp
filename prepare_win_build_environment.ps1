@@ -23,6 +23,7 @@ if(!(Test-Path -Path $target)){
 }
 Push-Location -Path $target
 
+[Net.ServicePointManager]::SecurityProtocol = 'Tls12'
 $shell = new-object -com shell.application
 $client = new-object System.Net.WebClient
 
