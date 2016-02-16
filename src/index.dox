@@ -11,6 +11,8 @@ Development of the library can be monitored in GitHub environment: <a href="http
 <table>
 <tr><th>Date</th><th>Library's Version</th><th>Changes</th>
 <tr><td>17.02.2015</td><td>3.10</td><td>Updated according to v3.10 of the library</td></tr>
+<tr><td>11.06.2015</td><td>3.11</td><td>Updated according to v3.11 of the library  </td></tr>
+<tr><td>16.02.2016</td><td>3.12</td><td>Added information about utility program's "websign" command</td></tr>
 </tr>
 </table>
 
@@ -1293,7 +1295,7 @@ The general format for executing the program is:
 > digidoc-tool [command] [options] [input/output file]
 \endcode
 
-\subsection	Creating Creating and signing a document
+\subsection	Creating Creating and signing a document (local signing)
 
 Command "create" can be used to create a new DigiDoc container, add data files, optionally some meta-info about the signer and sign the document. Documents can be created only in BDOC 2.1 format.
 General form of the command is:
@@ -1333,7 +1335,7 @@ Input:
   - Tallinn			- city where the signature is created
   - 12345			- postal code of the signature creation location
   - --pkcs11			- signing is done via PKCS#11 module
-  - demo-container.bdoc	- container to be created (in BDOC2.0 format)
+  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
 \endcode
 
 \code{.txt}
@@ -1343,7 +1345,7 @@ Sample: creating new BDOC file, adding data file and signing via CNG API
 Input:
   - file1.txt 			- a data file to be added to container
   - --cng			- CNG API is used for signing
-  - demo-container.bdoc	- container to be created (in BDOC2.0 format)
+  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
 \endcode
 
 \code{.txt}
@@ -1355,8 +1357,67 @@ Input:
   - --cng			- CNG API is used for signing
   - --selectFirst	- the first signing certificate in store is used for signing
   - 01497			- PIN code (PIN2 in case of Estonian ID cards)
-  - demo-container.bdoc	- container to be created (in BDOC2.0 format)
+  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
 \endcode
+
+\subsection	Creating Creating and signing a document (external signing, e.g. in browser)
+
+Command "websign" can be used to create a new DigiDoc container, add data files, optionally some meta-info about the signer and sign the document. Documents can be created only in BDOC 2.1 format.
+External signing use case may be used when signing is done in web applications, the communication with the signer's token and signing the hash is done via a web browser's signing module (plug-in or extension). See also  https://github.com/open-eid/hwcrypto.js for implementing signing in browser environment.   
+General form of the command is:
+\code{.txt}
+> digidoc-tool websign --cert=<signer-certificate> --file=<data-file> <output-bdoc-file>
+\endcode 
+
+Available options:
+<table>
+<tr><td>
+--cert=	</td><td>Required
+
+Signer's certificate, in PEM format. 
+</td></tr>
+<tr><td>
+--file=	</td><td>Required
+
+Data file(s) to be signed. The option can occur multiple times. 
+</td></tr><tr><td>
+--mime=	</td><td>Optional
+
+Specifies the data file's mime-type value. When used then must be written right after the "--file" parameter. If left unspecified then the default mime-type value "application/octet-stream" is used.
+</td></tr>
+</table>
+
+Additional options for the "websign" command are the same as for "sign" command (see \ref Adding).
+
+Sample commands for creating and external signing of BDOC files:
+
+\code{.txt}
+Sample: creating new BDOC-TM file, specifying signer's certificate, adding data file and calculating the RSA signature value in browser
+> digidoc-tool websign --cert=signer.cer --file=file1.txt --profile=time-mark demo-container.bdoc 
+
+Input:
+  - signer.cer 			- signer's certificate
+  - file1.txt 			- a data file to be added to container
+  - time-mark			- profile of the signature
+  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
+\endcode
+
+\code{.txt}
+Sample: creating new BDOC-TS file, specifying signer's certificate, adding data files and other meta-data and calculating the RSA signature value in browser
+> digidoc-tool websign --cert=signer.cer --file=file1.txt --file=file2.pdf --country=Estonia --state=Harjumaa --city=Tallinn --postalCode=12345 --profile=time-stamp demo-container.bdoc
+
+Input:
+  - signer.cer 			- signer's certificate
+  - file1.txt 			- a data file to be added to container
+  - file2.txt 			- a data file to be added to container
+  - time-stamp			- profile of the signature
+  - Estonia			- country where the signature is created
+  - Harjumaa			- county where the signature is created
+  - Tallinn			- city where the signature is created
+  - 12345			- postal code of the signature creation location
+  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
+\endcode
+
 
 \subsection	Opening Opening document, validating signatures and extracting data files
 Command "open" enables to read in an existing DigiDoc document, print out a list of its contents and validate signatures. By specifying the additional option --extractaAll, then the data files are extracted from the container and stored on the disk. All DigiDoc file formats are supported with this command (except of BDOC1.0).
