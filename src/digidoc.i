@@ -36,16 +36,32 @@
 #include "Container.h"
 #include "DataFile.h"
 #include "Exception.h"
+#include "log.h"
 #include "Signature.h"
 #include "XmlConf.h"
 #include "crypto/PKCS11Signer.h"
 #include "crypto/PKCS12Signer.h"
 #include "crypto/X509Cert.h"
-#ifdef SWIGWIN
+#ifdef _WIN32
 #include "crypto/WinSigner.h"
 #endif
 
 #include <vector>
+
+class WebSignerPrivate: public digidoc::Signer
+{
+public:
+    WebSignerPrivate(const digidoc::X509Cert &cert): _cert(cert) {}
+
+private:
+    digidoc::X509Cert cert() const override { return _cert; }
+    std::vector<unsigned char> sign(const std::string &, const std::vector<unsigned char> &) const override
+    {
+        THROW("Not implemented");
+    }
+
+    digidoc::X509Cert _cert;
+};
 
 static std::string parseException(const digidoc::Exception &e) {
     std::string msg = e.msg();
@@ -203,9 +219,9 @@ SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jen
 %include "crypto/Signer.h"
 %include "crypto/PKCS12Signer.h"
 %include "crypto/PKCS11Signer.h"
-#ifdef SWIGWIN
+//#ifdef SWIGWIN
 %include "crypto/WinSigner.h"
-#endif
+//#endif
 
 %template(StringVector) std::vector<std::string>;
 %template(DataFiles) std::vector<digidoc::DataFile*>;
@@ -223,17 +239,31 @@ SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jen
     {
         return $self->signingCertificate();
     }
-    std::vector<unsigned char> OCSPCertificate() const
+    std::vector<unsigned char> OCSPCertificateDer() const
     {
         return $self->OCSPCertificate();
     }
-    std::vector<unsigned char> TimeStampCertificate() const
+    std::vector<unsigned char> TimeStampCertificateDer() const
     {
         return $self->TimeStampCertificate();
     }
-    std::vector<unsigned char> ArchiveTimeStampCertificate() const
+    std::vector<unsigned char> ArchiveTimeStampCertificateDer() const
     {
         return $self->ArchiveTimeStampCertificate();
+    }
+}
+
+%extend digidoc::Container {
+    Signature* prepareWebSignature(const std::vector<unsigned char> &cert, const std::string &profile = "",
+                                   const std::vector<std::string> &roles = std::vector<std::string>(),
+                                   const std::string &city = "", const std::string &state = "",
+                                   const std::string &postalCode = "", const std::string &country = "")
+    {
+        WebSignerPrivate signer(X509Cert(cert, X509Cert::Der));
+        signer.setProfile(profile);
+        signer.setSignatureProductionPlace(city, state, postalCode, country);
+        signer.setSignerRoles(roles);
+        return $self->prepareSignature(&signer);
     }
 }
 
