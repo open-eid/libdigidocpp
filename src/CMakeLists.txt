@@ -333,16 +333,17 @@ if( FRAMEWORK )
     )
     add_custom_target( codesign DEPENDS digidoc-tool
         COMMAND for f in $<TARGET_FILE_DIR:digidocpp>/Libraries/*\; do
-                codesign -f -s \"$$SIGNCERT\" $$f\;
+                codesign -f -s \""${SIGNCERT}"\" $$f\;
             done
-        COMMAND codesign -f -s \"$$SIGNCERT\" $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
-        COMMAND codesign -f -s \"$$SIGNCERT\" $<TARGET_FILE_DIR:digidocpp>/../..
+        COMMAND codesign -f -s \""${SIGNCERT}"\" $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
+        COMMAND codesign -f -s \""${SIGNCERT}"\" $<TARGET_FILE_DIR:digidocpp>/../..
         COMMAND touch $<TARGET_FILE:digidoc-tool>
     )
-    add_custom_target( pkgbuild DEPENDS codesign
-        COMMAND make install DESTDIR=install \; pkgbuild
-            --root install
-            --sign \"$$INSTCERT\"
+    if(INSTCERT)
+        set(PKGEXTRA "--sign \"${INSTCERT}\"")
+    endif()
+    add_custom_target( pkgbuild DEPENDS digidoc-tool
+        COMMAND make install DESTDIR=install \; pkgbuild --root install "${PKGEXTRA}"
             ${CMAKE_BINARY_DIR}/libdigidocpp_${VERSION}$ENV{VER_SUFFIX}.pkg
     )
     add_custom_target( zipdebug DEPENDS digidoc-tool

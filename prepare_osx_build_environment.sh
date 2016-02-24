@@ -1,9 +1,9 @@
 #!/bin/sh
 
-XERCES_DIR=xerces-c-3.1.2
+XERCES_DIR=xerces-c-3.1.3
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.0.2e
+OPENSSL_DIR=openssl-1.0.2f
 LIBXML2_DIR=libxml2-2.9.3
 
 case "$@" in

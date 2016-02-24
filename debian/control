@@ -5,7 +5,6 @@ Maintainer: RIA <info@ria.ee>
 Build-Depends:
  cdbs,
  cmake,
- libdigidoc-dev (>= 3.0),
  libxml-security-c-dev,
  xsdcxx (>= 4.0) | xsd (>= 4.0)
 Standards-Version: 3.9.5
