@@ -168,7 +168,7 @@ private:
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
 {
-    return v.empty() ? Base64Binary() : Base64Binary(&v[0], v.size());
+    return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
 }
@@ -685,10 +685,10 @@ void SignatureBES::checkKeyInfo() const
 
     DigestAlgAndValueType::DigestValueType const& certDigestValue = certs[0].certDigest().digestValue();
     if(certDigestValue.size() != calcDigest.size() ||
-       memcmp(&calcDigest[0], certDigestValue.data(), certDigestValue.size()) != 0)
+       memcmp(calcDigest.data(), certDigestValue.data(), certDigestValue.size()) != 0)
     {
         DEBUGMEM("Document cert digest", certDigestValue.data(), certDigestValue.size());
-        DEBUGMEM("Calculated cert digest", &calcDigest[0], calcDigest.size());
+        DEBUGMEM("Calculated cert digest", calcDigest.data(), calcDigest.size());
         THROW("Signing certificate digest does not match");
     }
 }
@@ -730,7 +730,7 @@ void SignatureBES::checkSignatureValue() const
         Digest calc(signatureMethod());
         calcDigestOnNode(&calc, URI_ID_DSIG, "SignedInfo");
         vector<unsigned char> sha = calc.result();
-        DEBUGMEM("Digest", &sha[0], sha.size());
+        DEBUGMEM("Digest", sha.data(), sha.size());
 
         if(!X509Crypto(signingCertificate()).verify(signatureMethod(), sha, getSignatureValue()))
             THROW_CAUSE(OpenSSLException(), "Signature is not valid.");

@@ -145,7 +145,7 @@ vector<unsigned char> X509Crypto::rsaModulus() const
         return vector<unsigned char>();
 
     vector<unsigned char> rsaModulus(bufSize, 0);
-    if(BN_bn2bin(rsa->n, &rsaModulus[0]) <= 0)
+    if(BN_bn2bin(rsa->n, rsaModulus.data()) <= 0)
         return vector<unsigned char>();
 
     return rsaModulus;
@@ -177,8 +177,8 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
     case EVP_PKEY_RSA:
     {
         SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(key.get()));
-        result = RSA_verify(Digest::toMethod(method), &digest[0], (unsigned int)digest.size(),
-            const_cast<unsigned char*>(&signature[0]), (unsigned int)signature.size(), rsa.get());
+        result = RSA_verify(Digest::toMethod(method), digest.data(), (unsigned int)digest.size(),
+            const_cast<unsigned char*>(signature.data()), (unsigned int)signature.size(), rsa.get());
         break;
     }
 #ifndef OPENSSL_NO_ECDSA
@@ -188,11 +188,11 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
         SCOPE(ECDSA_SIG, sig, ECDSA_SIG_new());
         BN_free(sig->r);
         BN_free(sig->s);
-        sig->r = BN_bin2bn(&signature[0], int(signature.size()/2), 0);
+        sig->r = BN_bin2bn(signature.data(), int(signature.size()/2), 0);
         sig->s = BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), 0);
-        result = ECDSA_do_verify(&digest[0], (unsigned int)digest.size(), sig.get(), ec.get());
-        //result = ECDSA_verify(Digest::toMethod(method), &digest[0], (unsigned int)digest.size(),
-        //    const_cast<unsigned char*>(&signature[0]), (unsigned int)signature.size(), ec.get());
+        result = ECDSA_do_verify(digest.data(), (unsigned int)digest.size(), sig.get(), ec.get());
+        //result = ECDSA_verify(Digest::toMethod(method), digest.data(), (unsigned int)digest.size(),
+        //    const_cast<unsigned char*>(signature.data()), (unsigned int)signature.size(), ec.get());
         break;
     }
 #endif
