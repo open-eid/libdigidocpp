@@ -45,6 +45,7 @@
 #ifdef _WIN32
 #include "crypto/WinSigner.h"
 #endif
+#include "util/File.h"
 
 #include <vector>
 
@@ -90,12 +91,15 @@ class DigiDocConf: public digidoc::XmlConfCurrent
 {
 public:
     DigiDocConf(const std::string &_cache)
-        : digidoc::XmlConfCurrent(), cache(_cache), xsd(_cache) {}
-    std::string TSLCache() const { return cache; }
-    std::string xsdPath() const { return xsd; }
+        : digidoc::XmlConfCurrent(), cache(_cache) {}
+    int logLevel() const override { return 4; }
+    std::string logFile() const override { return cache + "/digidocpp.log"; }
+    std::string PKCS12Cert() const override { return cache + "/" + digidoc::util::File::fileName(digidoc::XmlConfCurrent::PKCS12Cert()); }
+    std::string TSLCache() const override { return cache; }
+    std::string xsdPath() const override { return cache; }
 
 private:
-    std::string cache, xsd;
+    std::string cache;
 };
 
 extern "C"
@@ -157,18 +161,19 @@ SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jen
 %typemap(javaout) std::vector<unsigned char> {
     return $jnicall;
   }
+#ifdef SWIGCSHARP
 %typemap(cstype) std::vector<unsigned char> "byte[]"
 %typemap(csin,
 		 pre= "	global::System.IntPtr cPtr$csinput = (global::System.IntPtr)digidocPINVOKE.ByteVector_to($csinput, $csinput.Length);
 	global::System.Runtime.InteropServices.HandleRef handleRef$csinput = new global::System.Runtime.InteropServices.HandleRef(this, cPtr$csinput);"
 ) std::vector<unsigned char> "handleRef$csinput"
-%typemap(csout, excode=SWIGEXCODE) std::vector<unsigned char>
-{
+%typemap(csout, excode=SWIGEXCODE) std::vector<unsigned char> {
   global::System.IntPtr data = $imcall;$excode
   byte[] result = new byte[$modulePINVOKE.ByteVector_size(data)];
   global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(data), result, 0, result.Length);
   return result;
 }
+#endif
 %apply std::vector<unsigned char> { std::vector<unsigned char> const & };
 
 %exception %{
@@ -219,9 +224,9 @@ SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jen
 %include "crypto/Signer.h"
 %include "crypto/PKCS12Signer.h"
 %include "crypto/PKCS11Signer.h"
-//#ifdef SWIGWIN
+#ifdef SWIGWIN
 %include "crypto/WinSigner.h"
-//#endif
+#endif
 
 %template(StringVector) std::vector<std::string>;
 %template(DataFiles) std::vector<digidoc::DataFile*>;

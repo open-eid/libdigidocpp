@@ -22,10 +22,6 @@
         open project with eclipse, build and run
 
 Swig is required for generating digidoc_java.so for example JNI wrapper.
-Build issues:
-
- * Recent cmake adds empty soname version to JNI wrapper library
-   Remove "-Wl,-soname," from android/src/CMakeFiles/digidoc_java.dir/link.txt.
 
 Shared library must placed libs/armeabi/libdigidoc_java.so. Also /Library/EstonianIDCard.android/etc/digidocpp/schema content should be ziped and included res/raw/schema.zip path. It will be extracted on application execution and path given to library special digidoc.initJava(path) JNI function.
 Libdigidoc still needs adjusted to point CA files folder and include certificates in project.

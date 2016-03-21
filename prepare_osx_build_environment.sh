@@ -1,22 +1,38 @@
 #!/bin/sh
 
 XERCES_DIR=xerces-c-3.1.4
-XMLSEC_DIR=xml-security-c-1.7.3
+XMLSEC_DIR=xml-security-c-1.7.2
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2h
 LIBXML2_DIR=libxml2-2.9.3
+ARGS="$@"
 
 case "$@" in
 *android*)
   echo "Building for Android"
 
+  if [ ! -f android-ndk-r10e-darwin-x86_64.bin ]; then
+    curl -O http://dl.google.com/android/ndk/android-ndk-r10e-darwin-x86_64.bin
+  fi
+  rm -rf android-ndk-r10e
+  chmod +x android-ndk-r10e-darwin-x86_64.bin;
+  ./android-ndk-r10e-darwin-x86_64.bin | egrep -v ^Extracting;
+
   case "$@" in
-  *x86*) ARCH=x86 ;;
-  *) ARCH=arm ;;
+  *x86*)
+    ARCH=x86
+    TOOLCHAIN=x86-4.9
+    CROSS_COMPILE=i686-linux-android
+    ;;
+  *)
+    ARCH=arm
+    TOOLCHAIN=arm-linux-androideabi-4.9
+    CROSS_COMPILE=arm-linux-androideabi
+    ;;
   esac
 
-  TARGET_PATH=/Library/EstonianIDCard.android
-  export CROSS_COMPILE=${ARCH}-linux-androideabi
+  TARGET_PATH=/Library/EstonianIDCard.android${ARCH}
+  export ANDROID_NDK=$PWD/android-ndk-r10e
   export SYSROOT=${TARGET_PATH}/sysroot
   export ANDROID_PREFIX=${TARGET_PATH}/${CROSS_COMPILE}
   export ANDROID_DEV=${SYSROOT}/usr
@@ -29,11 +45,15 @@ case "$@" in
   export LIBS="-liconv -lsupc++ -lstdc++ -lgnustl_shared -lglob -lz"
 
   sudo ${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh \
-    --toolchain=${CROSS_COMPILE}-4.8 --platform=android-21 --install-dir=${TARGET_PATH}
+    --toolchain=${TOOLCHAIN} --platform=android-19 --install-dir=${TARGET_PATH}
+
+  #iconv for xerces
   sudo cp ${ANDROID_NDK}/sources/android/support/include/iconv.h ${TARGET_PATH}/include/
+  patch -Np0 -i examples/libdigidocpp-android/iconv.c.patch
   sudo ${CC} ${CFLAGS} -std=c99 -o ${TARGET_PATH}/lib/libiconv.o -c ${ANDROID_NDK}/sources/android/support/src/musl-locale/iconv.c
   sudo ${CROSS_COMPILE}-ar rcs ${TARGET_PATH}/lib/libiconv.a ${TARGET_PATH}/lib/libiconv.o
 
+  #glob for xml-security-c
   sudo ln -s ${ANDROID_DEV}/include/sys/types.h ${ANDROID_DEV}/include/sys/_types.h
   curl -O https://raw.githubusercontent.com/white-gecko/TokyoCabinet/master/glob.c
   curl -O https://raw.githubusercontent.com/white-gecko/TokyoCabinet/master/glob.h
@@ -48,7 +68,7 @@ case "$@" in
   TARGET_PATH=/Library/EstonianIDCard.iphoneos
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
   export SDK_PATH=$(xcrun -sdk iphoneos --show-sdk-path)
-  export CFLAGS="-arch armv7 -arch armv7s -arch arm64 -miphoneos-version-min=7.0 -isysroot ${SDK_PATH}"
+  export CFLAGS="-arch armv7 -arch armv7s -arch arm64 -miphoneos-version-min=8.0 -isysroot ${SDK_PATH} -Wno-null-conversion"
   export CXXFLAGS="${CFLAGS} -stdlib=libc++"
   ARCHS="armv7 armv7s arm64"
   ;;
@@ -57,16 +77,17 @@ case "$@" in
   TARGET_PATH=/Library/EstonianIDCard.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
   export SDK_PATH=$(xcrun -sdk iphonesimulator --show-sdk-path)
-  export CFLAGS="-arch i386 -arch x86_64 -miphoneos-version-min=7.0 -isysroot ${SDK_PATH}"
+  export CFLAGS="-arch i386 -arch x86_64 -miphoneos-version-min=8.0 -isysroot ${SDK_PATH} -Wno-null-conversion"
   export CXXFLAGS="${CFLAGS} -stdlib=libc++"
   ARCHS="i386 x86_64"
   ;;
 *)
   echo "Building for OSX"
+  XMLSEC_DIR=xml-security-c-1.7.3
   TARGET_PATH=/Library/EstonianIDCard
   CONFIGURE="--disable-static"
   export SDK_PATH=$(xcrun -sdk macosx --show-sdk-path)
-  export CFLAGS="-mmacosx-version-min=10.7"
+  export CFLAGS="-mmacosx-version-min=10.7 -Wno-null-conversion"
   export CXXFLAGS="${CFLAGS} -stdlib=libc++"
   ;;
 esac
@@ -80,8 +101,12 @@ function xerces {
     rm -rf ${XERCES_DIR}
     unzip -qq ${XERCES_DIR}.zip
     cd ${XERCES_DIR}
+    case "${ARGS}" in
+    *android*) patch -Np1 -i ../examples/libdigidocpp-android/XMLAbstractDoubleFloat.cpp.patch ;;
+    *) ;;
+    esac
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE}
-    make
+    make -s
     sudo make install
     cd ..
 }
@@ -96,7 +121,7 @@ function xalan {
     export XERCESCROOT=${TARGET_PATH}
     export XALANCROOT=${PWD}
     ./runConfigure -p macosx -b 64 -P ${TARGET_PATH}
-    make
+    make -s
     sudo XALANCROOT=${PWD} make install
     sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.dylib
     sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
@@ -113,7 +138,7 @@ function xml_security {
     cd ${XMLSEC_DIR}
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${SDK_PATH}/usr
 # --with-xalan=${TARGET_PATH}
-    make
+    make -s
     sudo make install
     cd ..
 }
@@ -144,18 +169,23 @@ function xsd {
 
 function openssl {
     if [ ! -f ${OPENSSL_DIR}.tar.gz ]; then
-        curl -O http://www.openssl.org/source/${OPENSSL_DIR}.tar.gz
+        curl -O https://www.openssl.org/source/${OPENSSL_DIR}.tar.gz
     fi
     rm -rf ${OPENSSL_DIR}
     tar xf ${OPENSSL_DIR}.tar.gz
     cd ${OPENSSL_DIR}
 
-    if [[ "${ANDROID_DEV}" != "" ]]; then
+    case "${ARGS}" in
+    *android*)
         unset CROSS_COMPILE
-        ./Configure android-armv7 --openssldir=${TARGET_PATH}
-        make
-	sudo make install
-    else
+        case "${ARGS}" in
+        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} ;;
+        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} ;;
+        esac
+        make -s
+        sudo make install
+        ;;
+    *ios*|*simulator*)
         CRYPTO=""
         SSL=""
         for ARCH in $ARCHS
@@ -163,12 +193,12 @@ function openssl {
             export ARCH
             if [[ "${ARCH}" == "x86_64" ]]; then
                 ./Configure darwin64-x86_64-cc --openssldir=${TARGET_PATH}
-                sed -ie 's!^CFLAG=!CFLAG=-isysroot ${SDK_PATH} -miphoneos-version-min=7.0 !' Makefile
+                sed -ie 's!^CFLAG=!CFLAG=-isysroot ${SDK_PATH} -miphoneos-version-min=8.0 !' Makefile
             else
                 ./Configure iphoneos-cross --openssldir=${TARGET_PATH}
-                sed -ie 's!-isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!-arch ${ARCH} -isysroot ${SDK_PATH} -miphoneos-version-min=7.0!' Makefile
+                sed -ie 's!-isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!-arch ${ARCH} -isysroot ${SDK_PATH} -miphoneos-version-min=8.0!' Makefile
             fi
-            make install INSTALL_PREFIX=${PWD}/${ARCH}
+            make -s install INSTALL_PREFIX=${PWD}/${ARCH}
             make clean
             sudo cp -R ${ARCH}/${TARGET_PATH}/include/openssl ${TARGET_PATH}/include
             CRYPTO="${CRYPTO} ${ARCH}/${TARGET_PATH}/lib/libcrypto.a"
@@ -176,8 +206,10 @@ function openssl {
         done
         sudo lipo -create ${CRYPTO} -output ${TARGET_PATH}/lib/libcrypto.a
         sudo lipo -create ${SSL} -output ${TARGET_PATH}/lib/libssl.a
-    fi
-
+        ;;
+    *)
+        ;;
+    esac
     cd ..
 }
 
@@ -199,8 +231,9 @@ case "$@" in
     ;;
 *)
     echo "Usage:"
-    echo "  $0 [target] [task]"
-    echo "  target: osx ios simulator"
+    echo "  $0 [target] [host] [task]"
+    echo "  target: osx ios simulator android"
+    echo "  host: arm x86"
     echo "  tasks: xerces, xalan, xmlsec, xsd, all, help"
     ;;
 esac

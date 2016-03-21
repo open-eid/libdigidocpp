@@ -1,0 +1,10 @@
+--- android-ndk-r10e/sources/android/support/src/musl-locale/iconv.c.orig	2016-05-26 15:32:10.000000000 +0300
++++ android-ndk-r10e/sources/android/support/src/musl-locale/iconv.c	2016-05-26 15:32:41.000000000 +0300
+@@ -152,6 +152,7 @@
+ }
+ 
+ /* Adapt as needed */
++int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
+ #define mbrtowc_utf8 mbrtowc
+ #define wctomb_utf8 wctomb
+ 

@@ -40,6 +40,11 @@ if( LIBDIGIDOC_FOUND )
     endif()
 endif()
 
+if(ANDROID)
+    find_package(Iconv)
+    list( APPEND TARGET_LIBRARIES ${ICONV_LIBRARIES} )
+endif()
+
 if( OPENSSL_VERSION LESS "1.0.0" )
     list( APPEND openssl_SRCS
         openssl/ts_asn1.c
@@ -283,9 +288,8 @@ elseif(SWIG_FOUND AND ANDROID)
     SET(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/java)
     SWIG_ADD_MODULE(digidoc_java java digidoc.i)
     SWIG_LINK_LIBRARIES(digidoc_java digidocpp)
-    set_target_properties(digidoc_java PROPERTIES SOVERSION 0 NO_SONAME YES VERSION 0)
-    install(TARGETS digidoc_java DESTINATION ${CMAKE_INSTALL_BINDIR})
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_java FILES_MATCHING PATTERN "*.java")
+    install(TARGETS digidoc_java DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ee/ria/libdigidocpp FILES_MATCHING PATTERN "*.java")
 endif()
 
 install( TARGETS digidocpp

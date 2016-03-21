@@ -1,0 +1,13 @@
+--- xerces-c-3.1.3/src/xercesc/util/XMLAbstractDoubleFloat.cpp	2016-02-01 19:44:37.000000000 +0200
++++ examples/libdigidocpp-android/XMLAbstractDoubleFloat.cpp	2016-05-23 19:08:59.000000000 +0300
+@@ -427,8 +427,8 @@
+ void XMLAbstractDoubleFloat::normalizeDecimalPoint(char* const toNormal)
+ {
+     // find the locale-specific decimal point delimiter
+-    lconv* lc = localeconv();
+-    char delimiter = *lc->decimal_point;
++    //lconv* lc = localeconv();
++    char delimiter = '.';//*lc->decimal_point;
+ 
+     // replace '.' with the locale-specific decimal point delimiter
+     if ( delimiter != '.' )
