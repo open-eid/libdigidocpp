@@ -435,32 +435,38 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
             d->documents.push_back(new DataFilePrivate(data, iter->full_path(), iter->media_type()));
         }
 
-        for(vector<string>::const_iterator iter = list.begin(); iter != list.end(); ++iter)
+        for(const string &file: list)
         {
-            if(*iter == "mimetype" ||
-               *iter == "META-INF/" ||
-               *iter == "META-INF/manifest.xml")
+            if(file == "mimetype" ||
+               file == "META-INF/" ||
+               file == "META-INF/manifest.xml")
                 continue;
 
-            if(iter->compare(0, 19, "META-INF/signatures") == 0)
+            /**
+             * http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
+             * 6.2.2 Contents of Container
+             * 3) The root element of each "*signatures*.xml" content shall be either:
+             */
+            if(file.compare(0, 9, "META-INF/") == 0 &&
+               file.find("signatures") != std::string::npos)
             {
-                if(count(list.begin(), list.end(), *iter) > 1)
-                    THROW("Multiple signature files with same name found '%s'", iter->c_str());
+                if(count(list.begin(), list.end(), file) > 1)
+                    THROW("Multiple signature files with same name found '%s'", file.c_str());
                 try
                 {
                     stringstream data;
-                    z.extract(*iter, data);
+                    z.extract(file, data);
                     d->signatures.push_back(new SignatureA(data, this));
                 }
                 catch(const Exception &e)
                 {
-                    THROW_CAUSE(e, "Failed to parse signature '%s'.", iter->c_str());
+                    THROW_CAUSE(e, "Failed to parse signature '%s'.", file.c_str());
                 }
                 continue;
             }
 
-            if(manifestFiles.find(*iter) == manifestFiles.end())
-                THROW("File '%s' found in BDOC container is not described in manifest.", iter->c_str());
+            if(manifestFiles.find(file) == manifestFiles.end())
+                THROW("File '%s' found in BDOC container is not described in manifest.", file.c_str());
         }
     }
     catch(const xsd::cxx::xml::invalid_utf16_string &)
