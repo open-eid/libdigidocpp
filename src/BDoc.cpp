@@ -36,6 +36,7 @@
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
+using namespace manifest;
 
 namespace digidoc
 {
@@ -329,10 +330,10 @@ void BDoc::createManifest(ostream &os)
 
     try
     {
-        manifest::Manifest manifest;
-        manifest.file_entry().push_back(manifest::File_entry("/", mediaType()));
+        Manifest manifest;
+        manifest.file_entry().push_back(File_entry("/", mediaType()));
         for(DataFile *file: d->documents)
-            manifest.file_entry().push_back(manifest::File_entry(file->fileName(), file->mediaType()));
+            manifest.file_entry().push_back(File_entry(file->fileName(), file->mediaType()));
 
         xml_schema::NamespaceInfomap map;
         map["manifest"].name = BDocPrivate::MANIFEST_NAMESPACE;
@@ -404,9 +405,9 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
         xml_schema::Properties properties;
         properties.schema_location(BDocPrivate::MANIFEST_NAMESPACE,
             File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
-        unique_ptr<manifest::Manifest> manifest(manifest::manifest(manifestdata, xml_schema::Flags::dont_initialize, properties).release());
+        unique_ptr<Manifest> manifest(manifest::manifest(manifestdata, xml_schema::Flags::dont_initialize|xml_schema::Flags::dont_validate, properties).release());
 
-        manifest::Manifest::File_entrySequence::const_iterator iter = manifest->file_entry().begin();
+        Manifest::File_entrySequence::const_iterator iter = manifest->file_entry().begin();
         if(iter->full_path() == "/" && mediaType() != iter->media_type())
             THROW("Manifest has incorrect BDOC container media type defined '%s', expecting '%s'.", iter->media_type().c_str(), mediaType().c_str());
 
