@@ -342,8 +342,7 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
         const SignedPropertiesType::SignedDataObjectPropertiesOptional &sdop = sp->signedDataObjectProperties();
         if(sdop.present())
         {
-            if(!sdop->commitmentTypeIndication().empty())
-                THROW("CommitmentTypeIndicationType is not supported");
+            DEBUG("CommitmentTypeIndicationType is not supported");
             if(!sdop->allDataObjectsTimeStamp().empty())
                 THROW("AllDataObjectsTimeStamp is not supported");
             if(!sdop->individualDataObjectsTimeStamp().empty())
@@ -601,17 +600,17 @@ void SignatureXAdES_B::validate() const
     }
     else
     {
-        EXCEPTION_ADD(exception, "DataObjectFormat element is missing");
+        // ADoc 1.0 does not add DataObjectProperties>DataObjectFormat elements
+        if(bdoc->mediaType() != ASiC_E::MIMETYPE_ADOC)
+            EXCEPTION_ADD(exception, "DataObjectFormat element is missing");
     }
 
     map<string,string> signatureref;
-    string signedPropertiesId;
+    string signedPropertiesId = sp.id().present() ? "#" + sp.id().get() : string();
     bool signedInfoFound = false;
-    if(sp.id().present())
-        signedPropertiesId = "#" + sp.id().get();
     for(const ReferenceType &ref: signature->signedInfo().reference())
     {
-        if(!ref.uRI().present())
+        if(!ref.uRI().present() || ref.uRI()->empty())
         {
             EXCEPTION_ADD(exception, "Reference URI missing");
             continue;
@@ -628,6 +627,8 @@ void SignatureXAdES_B::validate() const
 
         if(ref.uRI().get() == signedPropertiesId)
             signedInfoFound = true;
+        else if(!sp.signedDataObjectProperties().present())
+            continue; // DataObjectProperties is missing, no need to match later MediaTypes
         else if(!ref.id().present())
             EXCEPTION_ADD(exception, "Reference '%s' ID  missing", ref.uRI().get().c_str());
         else
@@ -641,19 +642,23 @@ void SignatureXAdES_B::validate() const
     if(!signedInfoFound)
         EXCEPTION_ADD(exception, "SignedProperties not found");
 
-    for(const DataFile *file: bdoc->dataFiles())
+    // Match DataObjectFormat element MediaTypes with Manifest
+    if(!signatureref.empty())
     {
-        map<string,string>::const_iterator i = signatureref.find(file->fileName());
-        if(i != signatureref.end())
+        for(const DataFile *file: bdoc->dataFiles())
         {
-            if(i->second != file->mediaType())
-                EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
-                    file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
-            signatureref.erase(i);
-        }
-        else
-            EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
-    };
+            map<string,string>::const_iterator i = signatureref.find(file->fileName());
+            if(i != signatureref.end())
+            {
+                if(i->second != file->mediaType())
+                    EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
+                        file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
+                signatureref.erase(i);
+            }
+            else
+                EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
+        };
+    }
 
     if(bdoc->dataFiles().empty())
         EXCEPTION_ADD(exception, "No DataFiles signed");
@@ -785,7 +790,7 @@ void SignatureXAdES_B::checkSignatureValue() const
     }
     catch(const Exception &e)
     {
-        THROW_CAUSE(e, "Failed to validate signature.");
+        THROW_CAUSE(e, "Failed to validate signatureValue.");
     }
 }
 
