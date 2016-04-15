@@ -115,18 +115,19 @@ function xalan {
     if [ ! -f xalan_c-1.11-src.tar.gz ]; then
         curl -O http://www.eu.apache.org/dist/xalan/xalan-c/sources/xalan_c-1.11-src.tar.gz
     fi
-    rm -rf xalan_c-1.11
+    rm -rf xalan-c-1.11
     tar xf xalan_c-1.11-src.tar.gz
     cd xalan-c-1.11/c
     export XERCESCROOT=${TARGET_PATH}
     export XALANCROOT=${PWD}
+    export LDFLAGS="-headerpad_max_install_names"
     ./runConfigure -p macosx -b 64 -P ${TARGET_PATH}
     make -s
     sudo XALANCROOT=${PWD} make install
     sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.dylib
     sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
     sudo install_name_tool -change libxalanMsg.dylib ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib 
-    cd ..
+    cd ../..
 }
 
 function xml_security {
@@ -136,9 +137,8 @@ function xml_security {
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
-    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${SDK_PATH}/usr
-# --with-xalan=${TARGET_PATH}
-    make -s
+    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${SDK_PATH}/usr --with-xalan=${TARGET_PATH}
+    make
     sudo make install
     cd ..
 }
@@ -224,7 +224,7 @@ case "$@" in
     xerces
     case "$@" in
     *ios*|*simulator*|*android*) openssl ;;
-    *) ;;
+    *) xalan ;;
     esac
     xml_security
     xsd

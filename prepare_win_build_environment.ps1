@@ -1,17 +1,20 @@
-#powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 [-openssl] [-xerces] [-xmlsec] [-xsd] [-zlib]
+#powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 [-openssl] [-xerces] [-xalan] [-xmlsec] [-xsd] [-zlib]
 param(
 	[string]$target = "C:\build",
 	[string]$msbuild = "C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe",
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
 	[string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
+	[string]$devenv = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\devenv.exe",
 	[string]$vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat", #$env:VCINSTALLDIR
 	[string]$opensslver = "openssl-1.0.2h",
 	[string]$xercesver = "xerces-c-3.1.4",
+	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
 	[string]$zlibver = "zlib-1.2.8",
 	[switch]$openssl = $false,
 	[switch]$xerces = $false,
+	[switch]$xalan = $false,
 	[switch]$xmlsec = $false,
 	[switch]$xsd = $false,
 	[switch]$zlib = $false
@@ -58,6 +61,32 @@ function xerces() {
 	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=X64" $xercesproj
 }
 
+function xalan() {
+	$client.DownloadFile("http://www-eu.apache.org/dist/xalan/xalan-c/sources/$xalanver-src.zip", "$target\$xalanver.zip")
+	foreach($item in $shell.NameSpace("$target\$xalanver.zip").items()) {
+		$shell.Namespace($target).CopyHere($item,0x14)
+	}
+	Rename-Item "xalan-c-1.11" xalan
+	$xalanproj = "xalan\c\Projects\Win32\VC10\Xalan.sln"
+	& $devenv /upgrade "xalan\c\Projects\Win32\VC10\Xalan.sln"
+	$Env:XERCESCROOT="$target\xerces"
+	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12" "$Env:XERCESCROOT\Build\Win32\VC10" -Recurse -Force
+	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12" "$Env:XERCESCROOT\Build\Win64\VC10" -Recurse -Force
+	New-Item -ItemType directory -Path "xalan\c\Build\Win32\VC10\Release" -Force
+	New-Item -ItemType directory -Path "xalan\c\Build\Win64\VC10\Release" -Force
+	New-Item -ItemType directory -Path "xalan\c\Build\Win32\VC10\Debug" -Force
+	New-Item -ItemType directory -Path "xalan\c\Build\Win64\VC10\Debug" -Force
+	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12\Release\*.dll" "xalan\c\Build\Win32\VC10\Release"
+	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12\Release\*.dll" "xalan\c\Build\Win64\VC10\Release"
+	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12\Debug\*.dll" "xalan\c\Build\Win32\VC10\Debug"
+	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12\Debug\*.dll" "xalan\c\Build\Win64\VC10\Debug"
+	& $msbuild /nologo /verbosity:quiet "/p:PlatformToolset=v120;Configuration=Release;Platform=Win32" "/t:AllInOne" $xalanproj
+	& $msbuild /nologo /verbosity:quiet "/p:PlatformToolset=v120;Configuration=Release;Platform=X64" "/t:AllInOne" $xalanproj
+	& $msbuild /nologo /verbosity:quiet "/p:PlatformToolset=v120;Configuration=Debug;Platform=Win32" "/t:AllInOne" $xalanproj
+	& $msbuild /nologo /verbosity:quiet "/p:PlatformToolset=v120;Configuration=Debug;Platform=X64" "/t:AllInOne" $xalanproj
+	Copy-Item "xalan\c\Build\Win32\VC10\Release\Nls\Include\*" "xalan\c\src\xalanc\PlatformSupport"
+}
+
 function xmlsec() {
 	$client.DownloadFile("http://mirrors.advancedhosters.com/apache//santuario/c-library/$xmlsecver.tar.gz", "$target\$xmlsecver.tar.gz")
 	& $7zip x "$xmlsecver.tar.gz" > $null
@@ -67,12 +96,13 @@ function xmlsec() {
 	}
 
 	$env:XERCES_PATH = "$target\xerces"
+	$env:XALAN_PATH = "$target\xalan\c"
 	Rename-Item $xmlsecver xmlsec
 	$xsecproj = "xmlsec\Projects\VC12.0\xsec\xsec_lib\xsec_lib.vcxproj"
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release No Xalan;Platform=Win32" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release No Xalan;Platform=X64" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug No Xalan;Platform=Win32" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug No Xalan;Platform=X64" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=Win32" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=X64" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=Win32" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=X64" $xsecproj
 }
 
 function xsd() {
@@ -106,6 +136,9 @@ if($openssl) {
 if($xerces) {
 	xerces
 }
+if($xalan) {
+	xalan
+}
 if($xmlsec) {
 	xmlsec
 }
@@ -115,9 +148,10 @@ if($xsd) {
 if($zlib) {
 	zlib
 }
-if(!$openssl -and !$xerces -and !$xmlsec -and !$xsd -and !$zlib) {
+if(!$openssl -and !$xerces -and !$xalan -and !$xmlsec -and !$xsd -and !$zlib) {
 	openssl
 	xerces
+	xalan
 	xmlsec
 	xsd
 	zlib

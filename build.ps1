@@ -53,26 +53,42 @@ foreach($platform in @("x86", "x64")) {
     { 'x86Debug' {
       $xerces_lib = 'Win32/VC12/Debug/xerces-c_3D.lib'
       $xerces_dll = 'Win32/VC12/Debug/xerces-c_3_1D.dll'
-      $xmlsec_lib = 'Win32/VC12/Debug No Xalan/xsec_1D.lib'
-      $xmlsec_dll = 'Win32/VC12/Debug No Xalan/xsec_1_7D.dll'
+      $xalanmsg_lib = 'Win32/VC10/Debug/XalanMsgLib.lib'
+      $xalanmsg_dll = 'Win32/VC10/Debug/XalanMessages_1_11D.dll'
+      $xalanc_lib = 'Win32/VC10/Debug/Xalan-C_1D.lib'
+      $xalanc_dll = 'Win32/VC10/Debug/Xalan-C_1_11D.dll'
+      $xmlsec_lib = 'Win32/VC12/Debug/xsec_1D.lib'
+      $xmlsec_dll = 'Win32/VC12/Debug/xsec_1_7D.dll'
       $openssl = '/OpenSSL-Win32'
     } 'x86RelWithDebInfo' {
       $xerces_lib = 'Win32/VC12/Release/xerces-c_3.lib'
       $xerces_dll = 'Win32/VC12/Release/xerces-c_3_1.dll'
-      $xmlsec_lib = 'Win32/VC12/Release No Xalan/xsec_1.lib'
-      $xmlsec_dll = 'Win32/VC12/Release No Xalan/xsec_1_7.dll'
+      $xalanmsg_lib = 'Win32/VC10/Release/XalanMsgLib.lib'
+      $xalanmsg_dll = 'Win32/VC10/Release/XalanMessages_1_11.dll'
+      $xalanc_lib = 'Win32/VC10/Release/Xalan-C_1.lib'
+      $xalanc_dll = 'Win32/VC10/Release/Xalan-C_1_11.dll'
+      $xmlsec_lib = 'Win32/VC12/Release/xsec_1.lib'
+      $xmlsec_dll = 'Win32/VC12/Release/xsec_1_7.dll'
       $openssl = '/OpenSSL-Win32'
     } 'x64Debug' {
       $xerces_lib = 'Win64/VC12/Debug/xerces-c_3D.lib'
       $xerces_dll = 'Win64/VC12/Debug/xerces-c_3_1D.dll'
-      $xmlsec_lib = 'X64/VC12/Debug No Xalan/xsec_1D.lib'
-      $xmlsec_dll = 'X64/VC12/Debug No Xalan/xsec_1_7D.dll'
+      $xalanmsg_lib = 'Win64/VC10/Debug/XalanMsgLib.lib'
+      $xalanmsg_dll = 'Win64/VC10/Debug/XalanMessages_1_11D.dll'
+      $xalanc_lib = 'Win64/VC10/Debug/Xalan-C_1D.lib'
+      $xalanc_dll = 'Win64/VC10/Debug/Xalan-C_1_11D.dll'
+      $xmlsec_lib = 'X64/VC12/Debug/xsec_1D.lib'
+      $xmlsec_dll = 'X64/VC12/Debug/xsec_1_7D.dll'
       $openssl = '/OpenSSL-Win64'
     } 'x64RelWithDebInfo' {
       $xerces_lib = 'Win64/VC12/Release/xerces-c_3.lib'
       $xerces_dll = 'Win64/VC12/Release/xerces-c_3_1.dll'
-      $xmlsec_lib = 'X64/VC12/Release No Xalan/xsec_1.lib'
-      $xmlsec_dll = 'X64/VC12/Release No Xalan/xsec_1_7.dll'
+      $xalanmsg_lib = 'Win64/VC10/Release/XalanMsgLib.lib'
+      $xalanmsg_dll = 'Win64/VC10/Release/XalanMessages_1_11.dll'
+      $xalanc_lib = 'Win64/VC10/Release/Xalan-C_1.lib'
+      $xalanc_dll = 'Win64/VC10/Release/Xalan-C_1_11.dll'
+      $xmlsec_lib = 'X64/VC12/Release/xsec_1.lib'
+      $xmlsec_dll = 'X64/VC12/Release/xsec_1_7.dll'
       $openssl = '/OpenSSL-Win64'
     }}
     if($libdigidoc) {
@@ -84,6 +100,8 @@ foreach($platform in @("x86", "x64")) {
     if($boost) {
       New-Item -ItemType directory -Path test
       Copy-Item "$target/xerces/Build/$xerces_dll" test
+      Copy-Item "$target/xalan/c/Build/$xalanmsg_dll" test
+      Copy-Item "$target/xalan/c/Build/$xalanc_dll" test
       Copy-Item "$target/xmlsec/Build/$xmlsec_dll" test
       Copy-Item "$target/zlib/$platform/bin/zlib1.dll" test
       Copy-Item "$openssl/bin/ssleay32.dll" test
@@ -97,6 +115,9 @@ foreach($platform in @("x86", "x64")) {
       "-DOPENSSL_ROOT_DIR=$openssl" `
       "-DXERCESC_LIBRARY=$target/xerces/Build/$xerces_lib" `
       "-DXERCESC_INCLUDE_DIR=$target/xerces/src" `
+      "-DXALANC_INCLUDE_DIR=$target/xalan/c/src" `
+      "-DXALANMSG_LIBRARY=$target/xalan/c/Build/$xalanmsg_lib" `
+      "-DXALANC_LIBRARY=$target/xalan/c/Build/$xalanc_lib" `
       "-DXMLSECURITYC_LIBRARY=$target/xmlsec/Build/$xmlsec_lib" `
       "-DXMLSECURITYC_INCLUDE_DIR=$target/xmlsec" `
       "-DXSD_INCLUDE_DIR=$target/xsd/libxsd" `

@@ -319,20 +319,30 @@ if( FRAMEWORK )
     add_custom_target( embedlibs DEPENDS digidoc-tool
         COMMAND mkdir -p $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND ln -s -f Versions/Current/Libraries $<TARGET_FILE_DIR:digidocpp>/../..
-        COMMAND cp ${XERCESC_LIBRARIES} ${XMLSECURITYC_LIBRARIES}
+        COMMAND cp ${XERCESC_LIBRARIES} ${XMLSECURITYC_LIBRARIES} ${XALANMSG_LIBRARY}
             $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND install_name_tool -id 'libxerces-c.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libxerces-c.dylib
+        COMMAND install_name_tool -id 'libxalanMsg.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxalanMsg.dylib
+        COMMAND install_name_tool -id 'libxalan-c.dylib'
+            -change '${LIBPATH}/libxalanMsg.111.0.dylib' '@loader_path/libxalanMsg.dylib'
+            -change '${LIBPATH}/libxerces-c-3.1.dylib' '@loader_path/libxerces-c.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxalan-c.dylib
         COMMAND install_name_tool -id 'libxml-security-c.dylib'
             -change '${LIBPATH}/libxerces-c-3.1.dylib' '@loader_path/libxerces-c.dylib'
+            -change '${LIBPATH}/libxalan-c.111.0.dylib' '@loader_path/libxalan-c.dylib'
+            -change '${LIBPATH}/libxalanMsg.111.0.dylib' '@loader_path/libxalanMsg.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libxml-security-c.dylib
         COMMAND install_name_tool
             -change '${LIBPATH}/libxerces-c-3.1.dylib' '@loader_path/Libraries/libxerces-c.dylib'
             -change '${LIBPATH}/libxml-security-c.17.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
+            -change '${LIBPATH}/libxalan-c.111.0.dylib' '@loader_path/Libraries/libxalan-c.dylib'
             $<TARGET_FILE:digidocpp>
         COMMAND install_name_tool
             -change '${LIBPATH}/libxerces-c-3.1.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
             -change '${LIBPATH}/libxml-security-c.17.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
+            -change '${LIBPATH}/libxalan-c.111.0.dylib' '@executable_path/../Libraries/libxalan-c.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
         COMMAND touch $<TARGET_FILE:digidoc-tool>
     )

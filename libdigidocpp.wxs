@@ -30,7 +30,9 @@
                   Name="digidoc.ini" Key="CA_CERT_PATH" Value="[APPLICATIONFOLDER]certs"/>
 <?endif?>
                 <File Source="$(var.PREFIX)\xerces\Build\Win32\VC12\Release\xerces-c_3_1.dll"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC12\Release No Xalan\xsec_1_7.dll"/>
+                <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Release\Xalan-C_1_11.dll"/>
+                <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Release\XalanMessages_1_11.dll"/>
+                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC12\Release\xsec_1_7.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.dll"/>
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.dll"/>
@@ -43,7 +45,9 @@
                 <File Source="$(var.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\msvcp120d.dll"/>
                 <File Source="$(var.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\msvcr120d.dll"/>
                 <File Source="$(var.PREFIX)\xerces\Build\Win32\VC12\Debug\xerces-c_3_1D.dll"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC12\Debug No Xalan\xsec_1_7D.dll"/>
+                <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Debug\Xalan-C_1_11D.dll"/>
+                <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Debug\XalanMessages_1_11D.dll"/>
+                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC12\Debug\xsec_1_7D.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.lib"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.pdb"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.dll"/>
@@ -83,7 +87,9 @@
                   Name="digidoc.ini" Key="CA_CERT_PATH" Value="[APPLICATIONFOLDER]certs"/>
 <?endif?>
                 <File Source="$(var.PREFIX)\xerces\Build\Win64\VC12\Release\xerces-c_3_1.dll" Id="xerces_c_3_1.dll_64"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC12\Release No Xalan\xsec_1_7.dll" Id="xsec_1_7.dll_64"/>
+                <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Release\Xalan-C_1_11.dll" Id="Xalan_C_1_11.dll_64"/>
+                <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Release\XalanMessages_1_11.dll" Id="XalanMessages_1_11.dll_64"/>
+                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC12\Release\xsec_1_7.dll" Id="xsec_1_7.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.dll" Id="digidocpp.dll_64"/>
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.dll" Id="digidoc_csharp.dll_64"/>
@@ -96,7 +102,9 @@
                 <File Source="$(var.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\msvcp120d.dll" Id="msvcp120d_64.dll"/>
                 <File Source="$(var.VCINSTALLDIR)\redist\Debug_NonRedist\x86\Microsoft.VC120.DebugCRT\msvcr120d.dll" Id="msvcr120d_64.dll"/>
                 <File Source="$(var.PREFIX)\xerces\Build\Win64\VC12\Debug\xerces-c_3_1D.dll" Id="xerces_c_3_1D.dll_64"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC12\Debug No Xalan\xsec_1_7D.dll" Id="xsec_1_7D.dll_64"/>
+                <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Debug\Xalan-C_1_11D.dll" Id="Xalan_C_1_11D.dll_64"/>
+                <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Debug\XalanMessages_1_11D.dll" Id="XalanMessages_1_11D.dll_64"/>
+                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC12\Debug\xsec_1_7D.dll" Id="xsec_1_7D.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.lib" Id="digidocpp.lib_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.pdb" Id="digidocpp.pdb_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.dll" Id="digidocppd.dll_64"/>
