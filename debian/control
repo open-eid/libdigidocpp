@@ -6,7 +6,8 @@ Build-Depends:
  cdbs,
  cmake,
  libxml-security-c-dev,
- xsdcxx (>= 4.0) | xsd (>= 4.0)
+ xsdcxx (>= 4.0) | xsd (>= 4.0),
+ vim-common
 Standards-Version: 3.9.5
 Homepage: https://github.com/open-eid/libdigidocpp
 
@@ -35,9 +36,10 @@ Pre-Depends:
  ${misc:Pre-Depends}
 Depends:
  libdigidocpp-common (= ${binary:Version}),
- opensc,
  ${misc:Depends},
  ${shlibs:Depends}
+Recommends:
+ opensc
 Conflicts:
  libdigidoc2 (<<3.0)
 Description: DigiDoc digital signature library

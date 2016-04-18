@@ -5,7 +5,7 @@ param(
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
 	[string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
 	[string]$vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat", #$env:VCINSTALLDIR
-	[string]$opensslver = "openssl-1.0.2f",
+	[string]$opensslver = "openssl-1.0.2g",
 	[string]$xercesver = "xerces-c-3.1.3",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
@@ -52,10 +52,10 @@ function xerces() {
 
 	Rename-Item $xercesver xerces
 	$xercesproj = "xerces\projects\Win32\VC12\xerces-all\xerces-all.sln"
-	& $msbuild "/p:Configuration=Release;Platform=Win32" $xercesproj
-	& $msbuild "/p:Configuration=Release;Platform=X64" $xercesproj
-	& $msbuild "/p:Configuration=Debug;Platform=Win32" $xercesproj
-	& $msbuild "/p:Configuration=Debug;Platform=X64" $xercesproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=Win32" $xercesproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=X64" $xercesproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=Win32" $xercesproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=X64" $xercesproj
 }
 
 function xmlsec() {
@@ -69,10 +69,10 @@ function xmlsec() {
 	$env:XERCES_PATH = "$target\xerces"
 	Rename-Item $xmlsecver xmlsec
 	$xsecproj = "xmlsec\Projects\VC12.0\xsec\xsec_lib\xsec_lib.vcxproj"
-	& $msbuild "/p:Configuration=Release No Xalan;Platform=Win32" $xsecproj
-	& $msbuild "/p:Configuration=Release No Xalan;Platform=X64" $xsecproj
-	& $msbuild "/p:Configuration=Debug No Xalan;Platform=Win32" $xsecproj
-	& $msbuild "/p:Configuration=Debug No Xalan;Platform=X64" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release No Xalan;Platform=Win32" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release No Xalan;Platform=X64" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug No Xalan;Platform=Win32" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug No Xalan;Platform=X64" $xsecproj
 }
 
 function xsd() {

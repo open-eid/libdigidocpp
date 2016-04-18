@@ -3,7 +3,7 @@
 XERCES_DIR=xerces-c-3.1.3
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.0.2f
+OPENSSL_DIR=openssl-1.0.2g
 LIBXML2_DIR=libxml2-2.9.3
 
 case "$@" in
@@ -78,7 +78,7 @@ function xerces {
         curl -O http://www.eu.apache.org/dist/xerces/c/3/sources/${XERCES_DIR}.zip
     fi
     rm -rf ${XERCES_DIR}
-    unzip ${XERCES_DIR}.zip
+    unzip -qq ${XERCES_DIR}.zip
     cd ${XERCES_DIR}
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE}
     make
@@ -109,7 +109,7 @@ function xml_security {
         curl -O http://www.eu.apache.org/dist/santuario/c-library/${XMLSEC_DIR}.tar.gz
     fi
     rm -rf ${XMLSEC_DIR}
-    tar -vxf ${XMLSEC_DIR}.tar.gz
+    tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${SDK_PATH}/usr
 # --with-xalan=${TARGET_PATH}
@@ -123,7 +123,7 @@ function libxml2 {
         curl -O http://xmlsoft.org/sources/${LIBXML2_DIR}.tar.gz
     fi
     rm -rf ${LIBXML2_DIR}
-    tar -vxf ${LIBXML2_DIR}.tar.gz
+    tar xf ${LIBXML2_DIR}.tar.gz
     cd ${LIBXML2_DIR}
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --without-python
     make
@@ -136,7 +136,7 @@ function xsd {
         curl -O http://www.codesynthesis.com/download/xsd/4.0/macosx/i686/${XSD}.tar.bz2
     fi
     rm -rf ${XSD}
-    tar -vxf ${XSD}.tar.bz2
+    tar xf ${XSD}.tar.bz2
     sudo mkdir -p ${TARGET_PATH}/bin ${TARGET_PATH}/include
     sudo cp ${XSD}/bin/xsd ${TARGET_PATH}/bin/
     sudo cp -Rf ${XSD}/libxsd/xsd ${TARGET_PATH}/include/
@@ -147,7 +147,7 @@ function openssl {
         curl -O http://www.openssl.org/source/${OPENSSL_DIR}.tar.gz
     fi
     rm -rf ${OPENSSL_DIR}
-    tar -vxf ${OPENSSL_DIR}.tar.gz
+    tar xf ${OPENSSL_DIR}.tar.gz
     cd ${OPENSSL_DIR}
 
     if [[ "${ANDROID_DEV}" != "" ]]; then

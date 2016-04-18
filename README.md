@@ -90,7 +90,7 @@
 
 3. Prepare
 
-        powershell -ExecutionPolicy ByPass -File prepare_osx_build_environment.ps1
+        powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1
 
 4. Configure
 
