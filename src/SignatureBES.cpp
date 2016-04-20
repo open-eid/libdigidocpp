@@ -585,32 +585,40 @@ void SignatureBES::validate() const
 
     map<string,string> signatureref;
     string signedPropertiesId;
-    bool signedInfoFound = false, weak = false;
+    bool signedInfoFound = false;
     if(sp.id().present())
         signedPropertiesId = "#" + sp.id().get();
     for(const ReferenceType &ref: signature->signedInfo().reference())
     {
-        if(ref.digestMethod().algorithm() == URI_SHA1 ||
-           ref.digestMethod().algorithm() == URI_SHA224 )
-            weak = true;
-        if(ref.uRI().present() && ref.uRI().get() != signedPropertiesId)
+        if(!ref.uRI().present())
+        {
+            EXCEPTION_ADD(exception, "Reference URI missing");
+            continue;
+        }
+
+        if((ref.digestMethod().algorithm() == URI_SHA1 ||
+           ref.digestMethod().algorithm() == URI_SHA224) &&
+           !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
+        {
+            Exception e(EXCEPTION_PARAMS("Reference '%s' digest weak", ref.uRI().get().c_str()));
+            e.setCode(Exception::ReferenceDigestWeak);
+            exception.addCause(e);
+        }
+
+        if(ref.uRI().get() == signedPropertiesId)
+            signedInfoFound = true;
+        else if(!ref.id().present())
+            EXCEPTION_ADD(exception, "Reference '%s' ID  missing", ref.uRI().get().c_str());
+        else
         {
             string uri = File::fromUriPath(ref.uRI().get());
-            if(strncmp(uri.c_str(), "/", 1) == 0)
+            if(uri[0] == '/')
                 uri.erase(0, 1);
             signatureref.insert({ uri, mimeinfo["#"+ref.id().get()] });
         }
-        if(ref.uRI().present() && ref.uRI().get() == signedPropertiesId)
-            signedInfoFound = true;
     };
     if(!signedInfoFound)
         EXCEPTION_ADD(exception, "SignedProperties not found");
-    if(!Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) && weak)
-    {
-        Exception e(EXCEPTION_PARAMS("Reference digest weak"));
-        e.setCode(Exception::ReferenceDigestWeak);
-        exception.addCause(e);
-    }
 
     for(const DataFile *file: bdoc->dataFiles())
     {
