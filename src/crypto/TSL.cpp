@@ -68,6 +68,8 @@ const set<string> TSL::SERVICESTATUS = {
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionincessation",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accredited",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/setbynationallaw",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/granted",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/recognisedatnationallevel",
 };
 
 const set<string> TSL::SERVICETYPE = {
@@ -126,10 +128,6 @@ TSL::TSL(const string &file)
     }
 }
 
-TSL::~TSL()
-{
-}
-
 bool TSL::activate(const string &territory)
 {
     if(territory.size() != 2)
@@ -162,7 +160,7 @@ vector<X509Cert> TSL::certs() const
                 SERVICETYPE.find(serviceInfo.serviceTypeIdentifier()) == SERVICETYPE.end())
                 continue;
 
-            for(const DigitalIdentityListType::DigitalIdType id:
+            for(const DigitalIdentityListType::DigitalIdType &id:
                 serviceInfo.serviceDigitalIdentity().digitalId())
             {
                 if(!id.x509Certificate().present())
@@ -179,7 +177,7 @@ vector<X509Cert> TSL::certs() const
                     SERVICETYPE.find(history.serviceTypeIdentifier()) == SERVICETYPE.end())
                     continue;
 
-                for(const DigitalIdentityListType::DigitalIdType id:
+                for(const DigitalIdentityListType::DigitalIdType &id:
                     history.serviceDigitalIdentity().digitalId())
                 {
                     if(!id.x509Certificate().present())
@@ -305,7 +303,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
     {
         if(!File::fileExists(cache + "/" + p.territory + ".xml"))
             continue;
-        futures.push_back(async(launch::async, [=](){
+        futures.push_back(async(launch::async, [=]{
             return parse(p.location, p.certs, cache, p.territory + ".xml", timeout);
         }));
     }

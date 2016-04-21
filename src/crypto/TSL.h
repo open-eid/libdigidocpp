@@ -33,7 +33,6 @@ public:
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
 
     TSL(const std::string &file);
-    ~TSL();
     bool isExpired() const;
     void validateRemoteDigest(const std::string &url, int timeout);
     void validate(const std::vector<X509Cert> &certs);
