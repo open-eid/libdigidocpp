@@ -50,18 +50,17 @@ const string ASiC_E::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns
 /**
  * Initialize BDOC container.
  */
-ASiC_E::ASiC_E()
+ASiC_E::ASiC_E(): ASiContainer(MIMETYPE_ASIC_E)
 {
 }
 
 /**
  * Opens BDOC container from a file
  */
-
-ASiC_E::ASiC_E(const string &path)
+ASiC_E::ASiC_E(const string &path): ASiContainer(MIMETYPE_ASIC_E)
 {
-    DEBUG("ASiC_E::ASiC_E(path = '%s')", path.c_str());
-    auto zip = load(path, true);
+    DEBUG("ASiC_E::ASiC_E(%s)", path.c_str());
+    auto zip = load(path, true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
     parseManifestAndLoadFiles(*zip);
 }
 
@@ -112,14 +111,6 @@ Container* ASiC_E::createInternal(const string &path)
     ASiC_E *doc = new ASiC_E();
     doc->zpath(path);
     return doc;
-}
-
-/**
- * @return returns ASiC_E container mimetype.
- */
-string ASiC_E::mediaType() const
-{
-    return ASiContainer::MIMETYPE_ASIC_E;
 }
 
 /**
@@ -212,36 +203,41 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
         unique_ptr<Manifest> manifest(manifest::manifest(manifestdata, xml_schema::Flags::dont_initialize|xml_schema::Flags::dont_validate, properties).release());
 
-        Manifest::File_entrySequence::const_iterator iter = manifest->file_entry().begin();
-        if(iter->full_path() == "/" && mediaType() != iter->media_type())
-            THROW("Manifest has incorrect BDOC container media type defined '%s', expecting '%s'.", iter->media_type().c_str(), mediaType().c_str());
-
         set<string> manifestFiles;
-        for(iter++; iter != manifest->file_entry().end(); ++iter)
+        bool mimeFound = false;
+        for(const File_entry &file: manifest->file_entry())
         {
-            DEBUG("full_path = '%s', media_type = '%s'", iter->full_path().c_str(), iter->media_type().c_str());
+            DEBUG("full_path = '%s', media_type = '%s'", file.full_path().c_str(), file.media_type().c_str());
 
-            if(manifestFiles.find(iter->full_path()) != manifestFiles.end())
-                THROW("Manifest multiple entries defined for file '%s'.", iter->full_path().c_str());
+            if(manifestFiles.find(file.full_path()) != manifestFiles.end())
+                THROW("Manifest multiple entries defined for file '%s'.", file.full_path().c_str());
 
-            size_t fcount = count(list.begin(), list.end(), iter->full_path());
+            // ODF does not specify that mimetype should be first in manifest
+            if(file.full_path() == "/")
+            {
+                if(mediaType() != file.media_type())
+                    THROW("Manifest has incorrect BDOC container media type defined '%s', expecting '%s'.", file.media_type().c_str(), mediaType().c_str());
+                mimeFound = true;
+                continue;
+            }
+            else if(file.full_path().back() == '/') // Skip Directory entries
+                continue;
+
+            size_t fcount = count(list.begin(), list.end(), file.full_path());
             if(fcount < 1)
-                THROW("File described in manifest '%s' does not exist in BDOC container.", iter->full_path().c_str());
+                THROW("File described in manifest '%s' does not exist in BDOC container.", file.full_path().c_str());
             if(fcount > 1)
-                THROW("Found multiple references of file '%s' in zip container.", iter->full_path().c_str());
+                THROW("Found multiple references of file '%s' in zip container.", file.full_path().c_str());
 
-            manifestFiles.insert(iter->full_path());
-            iostream *data = dataStream(iter->full_path(), z);
-            addDataFile(data, iter->full_path(), iter->media_type());
+            manifestFiles.insert(file.full_path());
+            iostream *data = dataStream(file.full_path(), z);
+            addDataFile(data, file.full_path(), file.media_type());
         }
+        if(!mimeFound)
+            THROW("Manifest is missing mediatype file entry.");
 
         for(const string &file: list)
         {
-            if(file == "mimetype" ||
-               file == "META-INF/" ||
-               file == "META-INF/manifest.xml")
-                continue;
-
             /**
              * http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
              * 6.2.2 Contents of Container
@@ -265,6 +261,8 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 continue;
             }
 
+            if(file == "mimetype" || file.compare(0, 8,"META-INF") == 0)
+                continue;
             if(manifestFiles.find(file) == manifestFiles.end())
                 THROW("File '%s' found in BDOC container is not described in manifest.", file.c_str());
         }

@@ -51,8 +51,8 @@ public:
         ZipSerialize::Properties prop = { appInfo(), *filetime, 0 };
         return properties[file] = prop;
     }
-    
-    string path;
+
+    string mimetype, path;
     vector<DataFile*> documents;
     vector<Signature*> signatures;
     map<string, ZipSerialize::Properties> properties;
@@ -68,23 +68,27 @@ const string ASiContainer::BDOC_EXTENSION = "bdoc";
 
 const string ASiContainer::MIMETYPE_ASIC_E = "application/vnd.etsi.asic-e+zip";
 const string ASiContainer::MIMETYPE_ASIC_S = "application/vnd.etsi.asic-s+zip";
+//https://signa.mitsoft.lt/static/signa-web/webResources/docs/ADOC_specification_approved20090907_EN.pdf
+const string ASiContainer::MIMETYPE_ADOC = "application/vnd.lt.archyvai.adoc-2008";
 
 /**
  * Initialize BDOC container.
  */
-ASiContainer::ASiContainer()
+ASiContainer::ASiContainer(const string &mimetype)
  : d(new Private)
 {
+     d->mimetype = mimetype;
 }
 
 /**
- * Loads ASi container from a file.
+ * Loads ASi Container from a file.
  *
  * @param path name of the container file.
  * @param mimetypeRequired flag indicating if the mimetype must be present and checked.
+ * @param supported supported mimetypes.
  * @return returns zip serializer for the container.
  */
-unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeRequired)
+unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeRequired, const set<string> &supported)
 {
     DEBUG("ASiContainer::ASiContainer(path = '%s')", path.c_str());
     unique_ptr<ZipSerialize> z( new ZipSerialize(d->path = path, false) );
@@ -101,15 +105,18 @@ unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeReq
         stringstream data;
         // ETSI TS 102 918: mimetype has to be the first in the archive;
         z->extract(list.front(), data);
-        auto mimetype = readMimetype(data);
-        DEBUG("mimetype = '%s'", mimetype.c_str());
-        if(mimetype != mediaType())
-        {
-            THROW("Incorrect mimetype '%s'", mimetype.c_str());
-        }
+        d->mimetype = readMimetype(data);
+        DEBUG("mimetype = '%s'", d->mimetype.c_str());
+        if(supported.find(d->mimetype) == supported.cend())
+            THROW("Incorrect mimetype '%s'", d->mimetype.c_str());
     }
     
     return z;
+}
+
+string ASiContainer::mediaType() const
+{
+    return d->mimetype;
 }
 
 /**
