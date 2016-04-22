@@ -240,7 +240,11 @@ void BDoc::removeDataFile(unsigned int id)
         THROW("Can not remove document from container which has signatures, remove all signatures before removing document.");
 
     if(d->documents.size() > id)
-        d->documents.erase(d->documents.begin() + id);
+    {
+        vector<DataFile*>::iterator it = (d->documents.begin() + id);
+        delete *it;
+        d->documents.erase(it);
+    }
     else
         THROW("Incorrect document id %u, there are only %u documents in container.", id, d->documents.size());
 }
