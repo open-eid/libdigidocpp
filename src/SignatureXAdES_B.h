@@ -30,7 +30,7 @@ namespace digidoc
     class Signer;
     namespace dsig { class SignatureType; }
     namespace xades { class QualifyingPropertiesType; class SignedSignaturePropertiesType; }
-    namespace asic { class XAdESSignaturesType; }
+    namespace asic { class XAdESSignaturesType; class Document_signatures; }
 
     class SignatureXAdES_B : public Signature
     {
@@ -83,8 +83,10 @@ namespace digidoc
           static const std::string ASIC_NAMESPACE;
           static const std::string XADES_NAMESPACE;
           static const std::string XADESv141_NAMESPACE;
+          static const std::string OPENDOCUMENT_NAMESPACE;
           dsig::SignatureType *signature;
           asic::XAdESSignaturesType *asicsignature;
+          asic::Document_signatures *odfsignature;
           ASiContainer *bdoc;
           std::string sigdata_;
 

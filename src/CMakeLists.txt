@@ -74,6 +74,10 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/en_31916201v010101.xsd
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
     --namespace-map http://uri.etsi.org/02918/v1.2.1\#=digidoc::asic )
+XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/OpenDocument_dsig.xsd
+    --root-element document-signatures
+    --namespace-map urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0=digidoc::asic
+    --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig)
 XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/xml.xsd
     --root-element-none )
 XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
@@ -116,6 +120,7 @@ set( SCHEMA_FILES
     ${SCHEMA_DIR}/en_31916201v010101.xsd
     ${SCHEMA_DIR}/xml.xsd
     ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
+    ${SCHEMA_DIR}/OpenDocument_dsig.xsd
 )
 set( PUBLIC_HEADER
     Conf.h

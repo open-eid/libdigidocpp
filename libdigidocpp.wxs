@@ -77,6 +77,7 @@
                   <File Name="XAdES01903v141-201601.xsd"/>
                   <File Name="ts_119612v020201_201601xsd.xsd"/>
                   <File Name="en_31916201v010101.xsd"/>
+                  <File Name="OpenDocument_dsig.xsd"/>
                 </Component>
               </Directory>
             </Directory>
@@ -135,6 +136,7 @@
                   <File Name="XAdES01903v141-201601.xsd" Id="XAdES01903v141_201601.xsd_64"/>
                   <File Name="ts_119612v020201_201601xsd.xsd" Id="ts_119612v020201_201601xsd.xsd_64"/>
                   <File Name="en_31916201v010101.xsd" Id="en_31916201v010101.xsd_64"/>
+                  <File Name="OpenDocument_dsig.xsd" Id="OpenDocument_dsig.xsd_64"/>
                 </Component>
               </Directory>
             </Directory>

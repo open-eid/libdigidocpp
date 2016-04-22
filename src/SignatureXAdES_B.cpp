@@ -32,6 +32,7 @@
 #include "util/File.h"
 #include "xml/en_31916201v010101.hxx"
 #include "xml/SecureDOMParser.h"
+#include "xml/OpenDocument_dsig.hxx"
 
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
@@ -63,6 +64,7 @@ namespace xml = xsd::cxx::xml;
 const string SignatureXAdES_B::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3.2#";
 const string SignatureXAdES_B::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
 const string SignatureXAdES_B::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.1#";
+const string SignatureXAdES_B::OPENDOCUMENT_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0";
 const map<string,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist = {
     {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.1",{
         "BDOC – FORMAT FOR DIGITAL SIGNATURES",
@@ -169,6 +171,7 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer)
  : signature(nullptr)
  , asicsignature(nullptr)
+ , odfsignature(nullptr)
  , bdoc(bdoc)
 {
     string nr = "S" + to_string(id);
@@ -278,6 +281,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
 SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
  : signature(nullptr)
  , asicsignature(nullptr)
+ , odfsignature(nullptr)
  , bdoc(bdoc)
 {
     try
@@ -292,14 +296,34 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
         properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v141-201601.xsd"));
         properties.schema_location(URI_ID_DSIG, File::fullPathUrl(Conf::instance()->xsdPath() + "/xmldsig-core-schema.xsd"));
         properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/en_31916201v010101.xsd"));
-        unique_ptr<SecureDOMParser> parser(new SecureDOMParser(properties.schema_location()));
-        unique_ptr<DOMDocument> doc(parser->parseIStream(is));
-        asicsignature = xAdESSignatures(*doc, Flags::dont_initialize, properties).release();
-        if(asicsignature->signature().size() > 1)
-            THROW("More than one signature in signatures.xml file is unsupported");
-        if(asicsignature->signature().empty())
-            THROW("Failed to parse signature XML");
-        signature = &asicsignature->signature()[0];
+        properties.schema_location(OPENDOCUMENT_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_dsig.xsd"));
+        unique_ptr<DOMDocument> doc(SecureDOMParser(properties.schema_location()).parseIStream(is));
+        /* http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
+         * 6.2.2
+         * 3) The root element of each "*signatures*.xml" content shall be either:
+         * a) <asic:XAdESSignatures> as specified in clause A.5, the recommended format; or
+         * b) <document-signatures> as specified in OASIS Open Document Format [9]; or
+         *
+         * Case container is ADoc 1.0 then handle document-signatures root element
+         */
+        if(bdoc->mediaType() == ASiC_E::MIMETYPE_ADOC)
+        {
+            odfsignature = document_signatures(*doc, Flags::dont_initialize, properties).release();
+            if(odfsignature->signature().size() > 1)
+                THROW("More than one signature in signatures.xml file is unsupported");
+            if(odfsignature->signature().empty())
+                THROW("Failed to parse signature XML");
+            signature = &odfsignature->signature()[0];
+        }
+        else
+        {
+            asicsignature = xAdESSignatures(*doc, Flags::dont_initialize, properties).release();
+            if(asicsignature->signature().size() > 1)
+                THROW("More than one signature in signatures.xml file is unsupported");
+            if(asicsignature->signature().empty())
+                THROW("Failed to parse signature XML");
+            signature = &asicsignature->signature()[0];
+        }
     }
     catch(const Parsing& e)
     {
@@ -373,6 +397,7 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
 SignatureXAdES_B::~SignatureXAdES_B()
 {
     delete asicsignature;
+    delete odfsignature;
 }
 
 string SignatureXAdES_B::policy() const
