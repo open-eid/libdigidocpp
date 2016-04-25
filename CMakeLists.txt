@@ -3,6 +3,7 @@ project(libdigidocpp)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 set(CMAKE_FIND_ROOT_PATH ${CMAKE_OSX_SYSROOT})
+set(PROJECT_VERSION_PATCH 1)
 
 include(VersionInfo)
 include(GNUInstallDirs)

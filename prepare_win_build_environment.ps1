@@ -29,14 +29,14 @@ $client = new-object System.Net.WebClient
 
 function openssl() {
 	$client.DownloadFile("https://www.openssl.org/source/$opensslver.tar.gz", "$target\$opensslver.tar.gz")
-	& $7zip x "$opensslver.tar.gz"
-	& $7zip x "$opensslver.tar"
+	& $7zip x "$opensslver.tar.gz" > $null
+	& $7zip x "$opensslver.tar" > $null
 	Push-Location -Path $opensslver
 	& $vcvars x86 "&&" perl Configure VC-WIN32 no-asm "&&" ms\do_ms "&&" nmake -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win32 OPENSSLDIR=\OpenSSL-Win32\bin
 	Pop-Location
 	Remove-Item $opensslver -Force -Recurse
 
-	& $7zip x "$opensslver.tar"
+	& $7zip x "$opensslver.tar" > $null
 	Push-Location -Path $opensslver
 	& $vcvars x86_amd64 "&&" perl Configure VC-WIN64A no-asm "&&" ms\do_win64a "&&" nmake -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win64 OPENSSLDIR=\OpenSSL-Win64\bin
 	Pop-Location
@@ -60,8 +60,8 @@ function xerces() {
 
 function xmlsec() {
 	$client.DownloadFile("http://mirrors.advancedhosters.com/apache//santuario/c-library/$xmlsecver.tar.gz", "$target\$xmlsecver.tar.gz")
-	& $7zip x "$xmlsecver.tar.gz"
-	& $7zip x "$xmlsecver.tar"
+	& $7zip x "$xmlsecver.tar.gz" > $null
+	& $7zip x "$xmlsecver.tar" > $null
 	foreach($item in $shell.NameSpace("$libdigidocpp\$xmlsecver-VC12.zip").items()) {
 		$shell.Namespace($target).CopyHere($item,0x14)
 	}
@@ -85,14 +85,14 @@ function xsd() {
 
 function zlib() {
 	$client.DownloadFile("http://zlib.net/$zlibver.tar.gz", "$target\$zlibver.tar.gz")
-	& $7zip x "$zlibver.tar.gz"
-	& $7zip x "$zlibver.tar"
+	& $7zip x "$zlibver.tar.gz" > $null
+	& $7zip x "$zlibver.tar" > $null
 	Push-Location -Path $zlibver
 	& $vcvars x86 "&&" $cmake -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\zlib\x86" "-GNMake Makefiles" . "&&" nmake install
 	Pop-Location
 	Remove-Item $zlibver -Force -Recurse
 
-	& $7zip x "$zlibver.tar"
+	& $7zip x "$zlibver.tar" > $null
 	Push-Location -Path $zlibver
 	& $vcvars x86_amd64 "&&" $cmake -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\zlib\x64" "-GNMake Makefiles" . "&&" nmake install
 	Pop-Location
