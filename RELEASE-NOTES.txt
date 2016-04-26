@@ -1,3 +1,13 @@
+Libdigidocpp library 3.12.1 release notes
+--------------------------------------
+Changes compared to ver 3.12.0
+- Added Container::prepareWebSignature for C# bindings
+- Documentation updates
+- Fix crash parsing References without ID attribute
+- Handle TSL v5 service status parameters
+
+
+
 Libdigidocpp library 3.12.0 release notes
 --------------------------------------
 Changes compared to ver 3.11.1
