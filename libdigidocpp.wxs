@@ -64,8 +64,8 @@
                   <File Name="conf.xsd"/>
                   <File Name="OpenDocument_manifest.xsd"/>
                   <File Name="xmldsig-core-schema.xsd"/>
-                  <File Name="XAdES.xsd"/>
-                  <File Name="XAdESv141.xsd"/>
+                  <File Name="XAdES01903v132-201601.xsd"/>
+                  <File Name="XAdES01903v141-201601.xsd"/>
                   <File Name="ts_119612v010101.xsd"/>
                   <File Name="ts_102918v010201.xsd"/>
                 </Component>
@@ -121,8 +121,8 @@
                   <File Name="conf.xsd" Id="conf.xsd_64"/>
                   <File Name="OpenDocument_manifest.xsd" Id="OpenDocument_manifest.xsd_64"/>
                   <File Name="xmldsig-core-schema.xsd" Id="xmldsig_core_schema.xsd_64"/>
-                  <File Name="XAdES.xsd" Id="XAdES.xsd_64"/>
-                  <File Name="XAdESv141.xsd" Id="XAdESv141.xsd_64"/>
+                  <File Name="XAdES01903v132-201601.xsd" Id="XAdES01903v132_201601.xsd_64"/>
+                  <File Name="XAdES01903v141-201601.xsd" Id="XAdES01903v141_201601.xsd_64"/>
                   <File Name="ts_119612v010101.xsd" Id="ts_119612v010101.xsd_64"/>
                   <File Name="ts_102918v010201.xsd" Id="ts_102918v010201.xsd_64"/>
                 </Component>

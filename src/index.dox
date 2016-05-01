@@ -13,13 +13,13 @@ Additional documentation about the library can be found from GitHub wiki section
 <table>
 <tr><th>Date</th><th>Library's Version</th><th>Changes</th>
 <tr><td>17.02.2015</td><td>3.10</td><td>Updated according to v3.10 of the library</td></tr>
-<tr><td>11.06.2015</td><td>3.11</td><td>Updated according to v3.11 of the library  </td></tr>
+<tr><td>11.06.2015</td><td>3.11</td><td>Updated according to v3.11 of the library</td></tr>
 <tr><td>22.02.2016</td><td>3.12</td><td>Updated according to v3.12 of the library</td></tr>
 </tr>
 </table>
 
 \section introduction Introduction
-Libdigidocpp is the C++ library for creating applications handling digital signatures, their creation and verification. The digitally signed files are created in “DigiDoc format“ (with .ddoc, .bdoc or .asice file extensions), compliant to XML Advanced Electronic Signatures (XAdES), technical standard published by European Telecommunication Standards Institute (ETSI). 
+Libdigidocpp is the C++ library for creating applications handling digital signatures, their creation and verification. The digitally signed files are created in "DigiDoc format" (with .ddoc, .bdoc or .asice file extensions), compliant to XML Advanced Electronic Signatures (XAdES), technical standard published by European Telecommunication Standards Institute (ETSI). 
 
 Development of the library can be monitored in GitHub environment: <a href="https://github.com/open-eid/libdigidocpp">https://github.com/open-eid/libdigidocpp</a>
 
@@ -50,10 +50,10 @@ The following chapters provides an overview of BDOC 2.1 digitally signed file fo
 The ETSI standard TS 102 918 \ref ASiC "ASiC" called Associated Signature Containers (ASiC) defines format of container for encapsulation of signed files and signatures with extra information. The ETSI TS 103 174 \ref ASiC-BP "ASiC Baseline Profile" profiles in further on. The container type used in case of BDOC 2.1 documents is Associated Signature Extended form (ASiC-E).
 
 ASiC-E container is a ZIP file consisting of the following objects:
-- a file named “mimetype”, containing only the following value: application/vnd.etsi.asic-e+zip  
+- a file named "mimetype", containing only the following value: application/vnd.etsi.asic-e+zip  
 - data files in original format.
 - META-INF subdirectory, consisting of:
-	- manifest.xml – a file containing list of all folders and files in the container. The list does not contain the “mimetype” file and files in META-INF subdirectory.
+	- manifest.xml – a file containing list of all folders and files in the container. The list does not contain the "mimetype" file and files in META-INF subdirectory.
 	- signatures*.xml – one file for each signature, ‘*’ in the file’s name denotes the sequence number of a signature (counting starts from zero). The signatures*.xml file also incorporates certificates, validity confirmation and meta-data about the signer.
 
 When BDOC 2.1 container is signed then all files in the container are signed, except of the mimetype file and files in META-INF subdirectory. 
@@ -75,9 +75,9 @@ BDOC 2.1 specification defines two profiles of qualified BDOC signatures: BDOC w
 \paragraph BDOC-TM BDOC signature with time-mark
 The BDOC signature with time-mark is based XAdES-EPES signature (Explicit Policy based Electronic Signature, see \ref XAdES "XAdES"). 
 
-In order to offer long time validation, it is necessary to obtain proof of validity of the signer’s X.509 digital certificate issued by a certificate authority (CA) at the time of signature creation. In case of BDOC with time-marks (TM profile), the proof is obtained with a single OCSP response that has a specific “nonce” field’s value (i.e. the time-mark). 
+In order to offer long time validation, it is necessary to obtain proof of validity of the signer’s X.509 digital certificate issued by a certificate authority (CA) at the time of signature creation. In case of BDOC with time-marks (TM profile), the proof is obtained with a single OCSP response that has a specific "nonce" field’s value (i.e. the time-mark). 
 
-The hash of the created signature (the &lt;SignatureValue&gt; element’s contents) is sent within the OCSP request’s and received back within the response’s “nonce” field. The OCSP request’s and response’s “nonce” field is a DER-encoding of the following ASN.1 data structure:
+The hash of the created signature (the &lt;SignatureValue&gt; element’s contents) is sent within the OCSP request’s and received back within the response’s "nonce" field. The OCSP request’s and response’s "nonce" field is a DER-encoding of the following ASN.1 data structure:
 \code{.cpp}
 	TBSDocumentDigest ::= SEQUENCE {
 		algorithm AlgorithmIdentifier,
@@ -89,7 +89,7 @@ The element digest is a hash value of the binary value of the &lt;SignatureValue
 \note OCSP nonce field’s value is calculated differently in case of DIGIDOC-XML 1.3 and BDOC 2.1 formats. See the specification documents of these file formats for more information.
 
 <b>The time-mark provides proof of the following:</b>
-1. The signature value existed at a certain point of time (issuance time of the OCSP confirmation) – the verifier can calculate the hash of the signature and check its conformance to the OCSP response’s “nonce” field.
+1. The signature value existed at a certain point of time (issuance time of the OCSP confirmation) – the verifier can calculate the hash of the signature and check its conformance to the OCSP response’s "nonce" field.
 2. The signer’s certificate was valid (provided that the OCSP response is positive and does indeed confirm the certificate’s validity) at a certain point of time
 
 It is important to notice that additional time-stamps are not necessary as time of signing and time of obtaining validity information is indicated in the OCSP response (i.e. the time-mark).
@@ -108,9 +108,9 @@ The BDOC signature with time-stamp is based on XAdES-BES signature (Basic Electr
 In order to offer long time validation, it is necessary to obtaining proof of validity of the signer’s X.509 digital certificate issued by a certificate authority (CA) at the time of signature creation. 
 
 In case of BDOC with time-stamp (TS profile), the proof is provided as follows:
-1.	RCF3161 compliant time-stamp is obtained from a time-stamping service. The hash of the created signature (&lt;SignatureValue&gt; element block) is sent to the time-stamping server. The server’s response contains a time-stamp token with the same hash value that can later be used to validate that the time-stamp was indeed issued for the respective signature. The time-stamp token received from the server is added to the signature providing a proof from a trusted source that the signature value existed at a certain point of time.
-2.	RFC 6960 compliant OCSP confirmation is obtained from an OCSP service. The OCSP response received from the server is used as a trusted source to confirm that the signer’s certificate was valid at a certain point of time (producedAt field’s value in the OCSP response). 
-3.	The verifier must check the time-stamp token’s and OCSP confirmation’s time difference. If the difference is acceptable then it can stated that the signer’s certificate was valid at the time of signature creation.
+1. RCF3161 compliant time-stamp is obtained from a time-stamping service. The hash of the created signature (&lt;SignatureValue&gt; element block) is sent to the time-stamping server. The server’s response contains a time-stamp token with the same hash value that can later be used to validate that the time-stamp was indeed issued for the respective signature. The time-stamp token received from the server is added to the signature providing a proof from a trusted source that the signature value existed at a certain point of time.
+2. RFC 6960 compliant OCSP confirmation is obtained from an OCSP service. The OCSP response received from the server is used as a trusted source to confirm that the signer’s certificate was valid at a certain point of time (producedAt field’s value in the OCSP response). 
+3. The verifier must check the time-stamp token’s and OCSP confirmation’s time difference. If the difference is acceptable then it can stated that the signer’s certificate was valid at the time of signature creation.
 
 <b>NB!</b> The issuance time (getTime field’s value) of the time-stamp token (received with the response from time-stamping server) is regarded as the time of signature creation. 
 
@@ -126,9 +126,8 @@ In case of BDOC with time-stamp (TS profile), the proof is provided as follows:
 \section overview Overview
 
 \subsection References References and additional resources
-<table>
-<tr><td>
-\anchor BDOC  BDOC2.1:2013	</td><td>BDOC – Format for Digital Signatures. Version 2.1:2013
+<table><tr><td>\anchor BDOC  BDOC2.1:2013</td><td>
+BDOC – Format for Digital Signatures. Version 2.1:2013
 
 https://www.sk.ee/repository/bdoc-spec21.pdf<br />
 Other releases:<br />
@@ -136,106 +135,107 @@ https://www.sk.ee/repository/bdoc-spec20.pdf<br />
 https://www.sk.ee/repository/bdoc-spec212.pdf<br />
 http://id.ee/public/bdoc-spec21-est.pdf<br />
 http://id.ee/public/bdoc-spec212-est.pdf
-</td></tr><tr><td>
-\anchor DDOC DigiDoc format	</td><td>DigiDoc file format 
+</td></tr><tr><td>\anchor DDOC DigiDoc format</td><td>
+DigiDoc file format 
 
 http://id.ee/public/DigiDoc_format_1.3.pdf
-</td></tr><tr><td>
-\anchor XML-DSIG XML-DSIG	</td><td>IETF RFC 3275: “XML-Signature Syntax and Processing”
+</td></tr><tr><td>\anchor XML-DSIG XML-DSIG</td><td>
+IETF RFC 3275: "XML-Signature Syntax and Processing"
 
 http://www.ietf.org/rfc/rfc3275.txt 
-</td></tr><tr><td>
-\anchor XML-DSIG-1-1 XML-DSIG 1.1	</td><td>XML Signature Syntax and Processing. Version 1.1
+</td></tr><tr><td>\anchor XML-DSIG-1-1 XML-DSIG 1.1</td><td>
+XML Signature Syntax and Processing. Version 1.1
 
 http://www.w3.org/TR/xmldsig-core1/ 
-</td></tr><tr><td>
-\anchor XAdES XAdES	</td><td>ETSI TS 101 903 V1.4.2 (2010-12) – XML Advanced Electronic Signatures 
+</td></tr><tr><td>\anchor XAdES XAdES</td><td>
+ETSI TS 101 903 V1.4.2 (2010-12) – XML Advanced Electronic Signatures 
 
 http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.04.02_60/ts_101903v010402p.pdf<br />
 Other versions:<br />
 http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.04.01_60/ts_101903v010401p.pdf<br />
 http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.03.02_60/ts_101903v010302p.pdf
-</td></tr><tr><td>
-\anchor XAdES-BP XAdES Baseline Profile	</td><td>ETSI TS 103 171 V2.1.1 (2012-03)
+</td></tr><tr><td>\anchor XAdES-BP XAdES Baseline Profile</td><td>
+ETSI TS 103 171 V2.1.1 (2012-03) - XAdES Baseline Profile
 
-http://www.etsi.org/deliver/etsi_ts/103100_103199/103171/02.01.01_60/ts_103171v020101p.pdf 
-</td></tr><tr><td>
-\anchor XAdES-Validation XAdES Validation	</td><td>ETSI TS 102 853 V1.1.2 (2012-10) – Signature validation procedures and policies
+http://www.etsi.org/deliver/etsi_ts/103100_103199/103171/02.01.01_60/ts_103171v020101p.pdf
+</td></tr><tr><td>\anchor XAdES_EN XAdES EN</td><td>
+ETSI EN 319 132-1 V1.1.1 (2016-04) - XAdES digital signatures
+
+http://www.etsi.org/deliver/etsi_en/319100_319199/31913201/01.01.01_60/en_31913201v010101p.pdf
+</td></tr><tr><td>\anchor XAdES-Validation XAdES Validation</td><td>
+ETSI TS 102 853 V1.1.2 (2012-10) – Signature validation procedures and policies
 
 http://www.etsi.org/deliver/etsi_ts/102800_102899/102853/01.01.02_60/ts_102853v010102p.pdf
-</td></tr><tr><td>
-\anchor ZIP PKWARE ZIP</td><td>ZIP File Format Specification
+</td></tr><tr><td>\anchor ZIP PKWARE ZIP</td><td>
+ZIP File Format Specification
 
 http://www.pkware.com/documents/casestudies/APPNOTE.TXT
-</td></tr><tr><td>
-\anchor OpenDocument OpenDocument</td><td>OASIS "Open Document Format for Office Applications. Version 1.2 Part 3: Packages"
+</td></tr><tr><td>\anchor OpenDocument OpenDocument</td><td>
+OASIS "Open Document Format for Office Applications. Version 1.2 Part 3: Packages"
 
 http://docs.oasis-open.org/office/v1.2/cs01/OpenDocument-v1.2-cs01-part3.html#__RefHeading__752803_826425813<br />
 Other versions:<br />
-http://docs.oasis-open.org/office/v1.0/OpenDocument-v1.0-os.pdf<br />
-</td></tr><tr><td>
-\anchor ASiC ASiC </td><td>ETSI TS 102 918 V1.3.1 (2013-06) - Associated Signature Containers
+http://docs.oasis-open.org/office/v1.0/OpenDocument-v1.0-os.pdf
+</td></tr><tr><td>\anchor ASiC ASiC</td><td>
+ETSI TS 102 918 V1.3.1 (2013-06) - Associated Signature Containers
 
 http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf<br />
 Other versions:<br />
 http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.01.01_60/ts_102918v010101p.pdf<br />
 http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.02.01_60/ts_102918v010201p.pdf 
-</td></tr><tr><td>
-\anchor ASiC-BP ASiC Baseline Profile</td><td>ETSI TS 103 174 V2.1.1 (2012-03)
+</td></tr><tr><td>\anchor ASiC-BP ASiC Baseline Profile</td><td>
+ETSI TS 103 174 V2.1.1 (2012-03)
 
 http://www.etsi.org/deliver/etsi_ts/103100_103199/103174/02.02.01_60/ts_103174v020201p.pdf<br />
 Other versions:<br />
 http://www.etsi.org/deliver/etsi_ts/103100_103199/103174/02.01.01_60/ts_103174v020101p.pdf
-</td></tr><tr><td>
-\anchor RFC6960 RFC6960	</td><td>X.509 Internet Public Key Infrastructure Online Certificate Status Protocol – OCSP
+</td></tr><tr><td>\anchor RFC6960 RFC6960</td><td>
+X.509 Internet Public Key Infrastructure Online Certificate Status Protocol – OCSP
 
 http://tools.ietf.org/html/rfc6960
-</td></tr><tr><td>
-\anchor RFC3161 RFC3161	</td><td>Internet X.509 Public Key Infrastructure Time-Stamp protocol
+</td></tr><tr><td>\anchor RFC3161 RFC3161</td><td>
+Internet X.509 Public Key Infrastructure Time-Stamp protocol
 
 http://tools.ietf.org/html/rfc3161
-</td></tr><tr><td>
-\anchor RFC5280 RFC5280	</td><td>Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
+</td></tr><tr><td>\anchor RFC5280 RFC5280</td><td>
+Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
 
 http://tools.ietf.org/html/rfc5280
-</td></tr><tr><td>
-\anchor TSL Trusted Lists </td><td>ETSI TS 119 612 V1.1.1 (2013-06)
+</td></tr><tr><td>\anchor TSL Trusted Lists</td><td>
+ETSI TS 119 612 V1.1.1 (2013-06)
 
 http://www.etsi.org/deliver/etsi_ts/119600_119699/119612/01.01.01_60/ts_119612v010101p.pdf<br />
 Other versions:<br />
 http://www.etsi.org/deliver/etsi_ts/102200_102299/102231/03.01.02_60/ts_102231v030102p.pdf
-</td></tr><tr><td>
-\anchor DSA DSA	</td><td>Estonian Digital Signature Act 
+</td></tr><tr><td>\anchor DSA DSA</td><td>
+Estonian Digital Signature Act 
 
 http://www.legaltext.ee/et/andmebaas/tekst.asp?loc=text&dok=X30081K6&keel=en&pg=1&ptyyp=RT&tyyp=X&query=digitaalallkirja
-</td></tr><tr><td>
-\anchor rel-notes Release notes	</td><td>Libdigidocpp library’s release notes 
-</td></tr><tr><td>
-\anchor CDigiDoc CDigiDoc	</td><td>CDigiDoc Programmer’s Guide 
+</td></tr><tr><td>\anchor rel-notes Release notes</td><td>
+Libdigidocpp library’s release notes 
+</td></tr><tr><td>\anchor CDigiDoc CDigiDoc</td><td>
+CDigiDoc Programmer’s Guide 
 
 http://id.ee/public/SK-CDD-PRG-GUIDE.pdf
-</td></tr><tr><td>
-\anchor nat-cert ETSI TS 102 280 (V1.1.1)	</td><td>X.509 V3 Certificate Profile for Certificates Issued to Natural Persons
+</td></tr><tr><td>\anchor nat-cert ETSI TS 102 280 (V1.1.1)</td><td>
+X.509 V3 Certificate Profile for Certificates Issued to Natural Persons
 
 http://www.etsi.org/deliver/etsi_ts/102200_102299/102280/01.01.01_60/ts_102280v010101p.pdf
-</td></tr><tr><td>
-\anchor sknatcert ESTEID profile	</td><td>Certificates on identity card of Republic of Estonia, version 3.3
+</td></tr><tr><td>\anchor sknatcert ESTEID profile</td><td>
+Certificates on identity card of Republic of Estonia, version 3.3
 
 https://sk.ee/upload/files/ESTEID_profiil_en-3_3.pdf
-</td></tr><tr><td>
-\anchor skinstcert Institution certificate profile	</td><td>Profile of institution certificates and Certificate Revocation Lists, version 1.3
+</td></tr><tr><td>\anchor skinstcert Institution certificate profile</td><td>
+Profile of institution certificates and Certificate Revocation Lists, version 1.3
 
 https://sk.ee/upload/files/SK_Profile%20of%20institution%20certificates%20and%20Revocation%20List.pdf
-</td></tr><tr><td>
-\anchor DD-libs DigiDoc libraries</td><td>	http://id.ee/index.php?id=30486
-</td></tr>
-<tr><td>
-\anchor openeid-github ID-software GitHub project	</td><td>https://github.com/open-eid
-</td></tr>
-<tr><td>
-\anchor cpp-github Libdigidocpp GitHub project	</td><td>https://github.com/open-eid/libdigidocpp
-</td></tr>
-</table>
+</td></tr><tr><td>\anchor DD-libs DigiDoc libraries</td><td>
+http://id.ee/index.php?id=30486
+</td></tr><tr><td>\anchor openeid-github ID-software GitHub project</td><td>
+https://github.com/open-eid
+</td></tr><tr><td>\anchor cpp-github Libdigidocpp GitHub project</td><td>
+https://github.com/open-eid/libdigidocpp
+</td></tr></table>
 
 
 
@@ -263,7 +263,7 @@ SK	</td><td>AS Sertifitseerimiskeskus (Certification Centre Ltd.). Certificate A
 </td></tr>
 <tr><td>
 time-mark	</td><td>Mechanism used for adding certificate validity and signing time information with the signature. 
-The information is provided with a special OCSP confirmation (also referred to as time-mark) - hash value of the binary value of the signature (along with hash algorithm identifier in case of BDOC 2.1 document format) must be present in the “nonce” field of the OCSP confirmation. In this case, signature creation time is the issuance time of the OCSP confirmation (producedAt value in the confirmation), additional time-stamp service is not required. The respective signature profile is TM profile (supported in case of DIGIDOC-XML 1.3 and BDOC 2.1 document formats).
+The information is provided with a special OCSP confirmation (also referred to as time-mark) - hash value of the binary value of the signature (along with hash algorithm identifier in case of BDOC 2.1 document format) must be present in the "nonce" field of the OCSP confirmation. In this case, signature creation time is the issuance time of the OCSP confirmation (producedAt value in the confirmation), additional time-stamp service is not required. The respective signature profile is TM profile (supported in case of DIGIDOC-XML 1.3 and BDOC 2.1 document formats).
 </td></tr><tr><td>
 time-stamp	</td><td>Mechanism used for adding certificate validity and signing time information with the signature. The certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token retrieved form a time-stamping service. In this case, signature creation time is the issuance time (genTime value in the time-stamp) of the time-stamp token. The respective signature profile is TS profile (supported only in case of BDOC 2.1 document format).
 </td></tr>
@@ -287,7 +287,7 @@ XML-DSIG	</td><td>a general framework for digitally signing documents, defines a
 
 
 
-\subsection	Supported Supported functional properties
+\subsection Supported Supported functional properties
 Libdigidocpp is a library of C++ classes offering the functionality of handling digitally signed files in supported DigiDoc formats. The following functions are implemented:
 - creating containers in supported DigiDoc formats and adding data files;
 - creating digital signatures using smart cards or other supported cryptographic tokens;
@@ -317,8 +317,8 @@ The following table gives overview of functional features that are supported wit
 </tr>
 <tr><td>Signature profile</td>
 <td>Signature profiles are based on the profiles defined by XAdES (\ref XAdES "XAdES").
-- time-stamp (TS) - signature profile in case of which the certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token (see also \ref RFC6960 "RFC6960") retrieved from a time-stamping service. In this case, signature creation time is regarded as the issuance time of the time-stamp token (genTime value in the time-stamp). The profile is supported only in case of BDOC 2.1 document format, the “SignatureTimeStamp” element is added to the signature (see also \ref BDOC "BDOC2.1:2013"). Supported since v3.9 of the library.
-- time-mark (TM) - certificate validity and signing time information is added to the signature with a time-mark - a special OCSP confirmation in case of which the hash value of the binary value of the signature (along with hash algorithm identifier in case of BDOC 2.1 document format) must be present in the “nonce” field of the OCSP confirmation. In this case, signature creation time is regarded as the issuance time of the OCSP confirmation (producedAt value in the confirmation), additional time-stamp token is not required. 
+- time-stamp (TS) - signature profile in case of which the certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token (see also \ref RFC6960 "RFC6960") retrieved from a time-stamping service. In this case, signature creation time is regarded as the issuance time of the time-stamp token (genTime value in the time-stamp). The profile is supported only in case of BDOC 2.1 document format, the "SignatureTimeStamp" element is added to the signature (see also \ref BDOC "BDOC2.1:2013"). Supported since v3.9 of the library.
+- time-mark (TM) - certificate validity and signing time information is added to the signature with a time-mark - a special OCSP confirmation in case of which the hash value of the binary value of the signature (along with hash algorithm identifier in case of BDOC 2.1 document format) must be present in the "nonce" field of the OCSP confirmation. In this case, signature creation time is regarded as the issuance time of the OCSP confirmation (producedAt value in the confirmation), additional time-stamp token is not required. 
 - archive time-stamp (LTA) - the signature and all the accompanying validation data is time-stamped in order to provide long term validity. The profile is supported only in case of BDOC 2.1 document format, the "ArchiveTimeStamp" element is added to the time-stamp or time-mark signature (see also \ref BDOC "BDOC2.1:2013").
 In Libdigidocpp, validation of BDOC 2.1 time-stamp signatures with archive time-stamps is supported since v3.11 of the library.
 </td>
@@ -331,8 +331,8 @@ In Libdigidocpp, validation of BDOC 2.1 time-stamp signatures with archive time-
 </tr>
 <tr><td>Signature creation module</td>
 <td>
--	PKCS#11 – in Linux and OS X environments, the default module for singing with smart card (e.g. Estonian ID card or  any other smartcard provided that you have the external native PKCS#11 driver for it).
--	Windows CryptoAPI – the default module for signing with smart card in Windows environment. By default, a dialog window is opened for the user to choose the signing certificate and enter PIN code.
+- PKCS#11 – in Linux and OS X environments, the default module for singing with smart card (e.g. Estonian ID card or  any other smartcard provided that you have the external native PKCS#11 driver for it).
+- Windows CryptoAPI – the default module for signing with smart card in Windows environment. By default, a dialog window is opened for the user to choose the signing certificate and enter PIN code.
 </td>
 <tr>
 <td>Cryptographic token type</td>
@@ -343,8 +343,8 @@ In Libdigidocpp, validation of BDOC 2.1 time-stamp signatures with archive time-
 </tr>
 <tr><td>Public-key algorithm</td>
 <td>
--	RSA
--	ECDSA - support for ECDSA algorithm has only been tested with 256 bit keys prime256v1(secp256r1). Testing has been carried out with PKCS#12 software tokens (via PKCS#12 signature creation module in digidoc-tool.cpp utility program).
+- RSA
+- ECDSA - support for ECDSA algorithm has only been tested with 256 bit keys prime256v1(secp256r1). Testing has been carried out with PKCS#12 software tokens (via PKCS#12 signature creation module in digidoc-tool.cpp utility program).
 </td>
 </tr>
 </table>
@@ -352,7 +352,7 @@ In Libdigidocpp, validation of BDOC 2.1 time-stamp signatures with archive time-
 
 
 
-\subsection	Component Component model
+\subsection Component Component model
 The figure below describes the architecture of software and hardware components that are used when creating signatures with Libdigidocpp library.
 \image html components.png "Components used in Libdigidocpp implementation when signing with smart card"
 <table>
@@ -408,22 +408,22 @@ Several XML schemas are used when creating digitally signed documents in BDOC 2.
 
 <table>
 <tr><th>Schema file</th><th>Description</th>
-</tr><tr><td>OpenDocument_manifest.xsd	</td><td>OASIS OpenDocument v1.0 (\ref OpenDocument "OpenDocument")
+</tr><tr><td>OpenDocument_manifest.xsd</td><td>OASIS OpenDocument v1.0 (\ref OpenDocument "OpenDocument")
 Defines the structure of META-INF/manifest.xml file in BDOC container. 
 https://www.oasis-open.org/committees/download.php/12570/OpenDocument-manifest-schema-v1.0-os.rng 
-</td></tr><tr><td>ts_102918v010201.xsd	</td><td>Associated Signature Containers (ASiC) (\ref ASiC "ASiC") 
+</td></tr><tr><td>ts_102918v010201.xsd</td><td>Associated Signature Containers (\ref ASiC "ASiC") 
 Defines the format of container for encapsulating the signed documents, signatures and additional information. http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.02.01_60/
-</td></tr><tr><td>xmldsig-core-schema.xsd	</td><td>XML Signature Core Schema Instance (XML-DSIG) (\ref XML-DSIG "XML-DSIG")
+</td></tr><tr><td>xmldsig-core-schema.xsd</td><td>XML Signature Core Schema Instance (\ref XML-DSIG "XML-DSIG")
 Defines XML syntax for digital signatures.
 http://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd
-</td></tr><tr><td>XAdES.xsd	</td><td>XML Advanced Electronic Signatures (XAdES) (\ref XAdES "XAdES") 
+</td></tr><tr><td>XAdES01903v132-201601.xsd</td><td>XML Advanced Electronic Signatures (\ref XAdES_EN "XAdES EN") 
 Defines a set of extensions to XML-DSIG making it suitable for advanced electronic signature.
-http://uri.etsi.org/01903/v1.3.2/old/XAdES.xsd 
-</tr><tr><td>XAdESv141.xsd </td><td>Defines XML syntax for additional elements of XAdES signatures that were added with version 1.4.1 of the XAdES standard (\ref XAdES). Needed for implementing archive time-stamp support in the future.
-http://uri.etsi.org/01903/v1.4.1/XAdESv141.xsd
+http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd
+</tr><tr><td>XAdES01903v141-201601.xsd</td><td>Defines XML syntax for additional elements of XAdES signatures that were added with version 1.4.1 of the (\ref XAdES_EN "XAdES EN") standard. Needed for implementing archive time-stamp support in the future.
+http://uri.etsi.org/01903/v1.4.1/XAdES01903v141-201601.xsd
 </td></tr><tr><td>ts_119612v010101.xsd</td><td>Defines the format of Trust Service status Lists (\ref TSL) that contain information about trusted CA, OCSP and TSA certificates.
 http://uri.etsi.org/02231/v3.1.2/ts_102231v030102_xsd.xsd
-</td></tr><tr><td>conf.xsd	</td><td>Configuration properties’ schema. Defines the Libdigidocpp configuration file’s digidocpp.conf structure (see also \ref conf).
+</td></tr><tr><td>conf.xsd</td><td>Configuration properties’ schema. Defines the Libdigidocpp configuration file’s digidocpp.conf structure (see also \ref conf).
 </td></tr>
 </table>
 
@@ -477,14 +477,14 @@ schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR
 </complexType>
 \endcode
 
-<b>Schema XAdES.xsd</b>
+<b>Schema XAdES01903v132-201601.xsd</b>
 
 1) The schema’s location has been modified so that the file is looked up from the local file system.
 \code{.xml}
   <xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" 
 schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
 \endcode
-2) The “type” attribute has been added, otherwise a warning message would be produced.
+2) The "type" attribute has been added, otherwise a warning message would be produced.
 \code{.xml}
   <xsd:complexType name="SignaturePolicyIdentifierType">
     <xsd:choice>
@@ -493,7 +493,7 @@ schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR
     </xsd:choice>
   </xsd:complexType>
 \endcode
-3) The “type” attribute has been added, otherwise a warning message would be produced.
+3) The "type" attribute has been added, otherwise a warning message would be produced.
 \code{.xml}
   <xsd:complexType name="CommitmentTypeIndicationType">
     <xsd:sequence>
@@ -517,19 +517,19 @@ schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR
 </xsd:complexType>
 \endcode
 
-<b>Schema XAdESv141.xsd</b>
+<b>Schema XAdES01903v141-201601.xsd</b>
 
 1) The schema's location has been modified so that the file is looked up from the local file system.
 \code{.xml}
-  	<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES.xsd"/> <!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES.xsd" -->
+    <xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/> <!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd" -->
 \endcode
 
 <b>Schema ts_119612v010101.xsd</b>
 
 1) The schemas' locations have been modified so that the file is looked up from the local file system.
 \code{.xml}
-  	<xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/> <!-- originally "http://www.w3.org/2001/xml.xsd" -->
-	<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally  http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/> <!-- originally "http://www.w3.org/2001/xml.xsd" -->
+    <xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally  http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
 \endcode
 
 
@@ -910,12 +910,12 @@ Note that in order to add a data file to a container, the container has to be un
 \warning - In case of BDOC 2.1 documents, it is important to pay attention that the data file's mime type value in manifest.xml file and in signatures*.xml file's &lt;DataObjectFormat&gt;&lt;MimeType&lt; element are the same, otherwise the signature is invalid! In case of the ordinary signature creation process, the library sets the correct value automatically. However, if you create a BDOC 2.1 container with Libdigidocpp library and want to add signatures*.xml file that you have received from another source (e.g. from DigiDocService) then make sure that the data files' mime-type values in manifest-xml file and in signatures*.xml file are the same.
 
 
-\warning - Data file’s mime-type value must be formatted as specified in RFC2045, section 5.1 (https://tools.ietf.org/html/rfc2045#section-5.1), i.e. the “type” and “subtype” values must be separated with a forward slash character. 
+\warning - Data file’s mime-type value must be formatted as specified in RFC2045, section 5.1 (https://tools.ietf.org/html/rfc2045#section-5.1), i.e. the "type" and "subtype" values must be separated with a forward slash character. 
 
 
-\warning - It is recommended not to use special characters in the data file’s name, i.e. it is suggested to only use the characters that are categorized as “unreserved” according to RFC3986 (http://tools.ietf.org/html/rfc3986).
+\warning - It is recommended not to use special characters in the data file’s name, i.e. it is suggested to only use the characters that are categorized as "unreserved" according to RFC3986 (http://tools.ietf.org/html/rfc3986).
 
-\note By default, it is recommended to use data file mime-type value “application/octet-stream” for all file types. 
+\note By default, it is recommended to use data file mime-type value "application/octet-stream" for all file types. 
 
 
 
@@ -1245,11 +1245,11 @@ http://www.id.ee/index.php?id=36161
 \subsubsection validation-info	Additional information about validation
 \paragraph validation-overview Overview of validation activities
 Overview of validation activities is as follows: 
-1.	checking that all the data files and signature’s meta-data (signer’s role, etc.) are included in the signature by calculating the data objects’ digest values and comparing them with the &lt;Reference&gt; element values in the signature; 
-2.	checking that the claimed signer’s certificate is the actual certificate that was used for signing; checking that the “Non-repudiaton” value is set in the “Key Usage” extension of the signer’s certificate;
-3.	checking that the signature value is correct by decrypting the value with the signer’s public key and comparing the result with digest calculated from &lt;SignedInfo&gt; element block;
-4.	checking that the OCSP response confirms the signer certificate’s validity and corresponds to the signature value (by comparing the digest value of &lt;SignatureValue&gt; element’s value and OCSP response’s nonce value);
-5.	checking that the signer’s and OCSP responder’s certificates are trusted (i.e. the certificates’ issuers are registered in trust store).
+1. checking that all the data files and signature’s meta-data (signer’s role, etc.) are included in the signature by calculating the data objects’ digest values and comparing them with the &lt;Reference&gt; element values in the signature; 
+2. checking that the claimed signer’s certificate is the actual certificate that was used for signing; checking that the "Non-repudiaton" value is set in the "Key Usage" extension of the signer’s certificate;
+3. checking that the signature value is correct by decrypting the value with the signer’s public key and comparing the result with digest calculated from &lt;SignedInfo&gt; element block;
+4. checking that the OCSP response confirms the signer certificate’s validity and corresponds to the signature value (by comparing the digest value of &lt;SignatureValue&gt; element’s value and OCSP response’s nonce value);
+5. checking that the signer’s and OCSP responder’s certificates are trusted (i.e. the certificates’ issuers are registered in trust store).
 
 \note In case of BDOC 2.1 documents, Libdigidocpp library uses TSL lists (Trust Service Status list) to obtain information about trusted certificates during signature validation process. See also \ref TSL-overview "TSL overview", \ref TSL "TSL standard" and \ref CA-settings "Configuring TSL settings". 
 \note In case of DIGIDOC-XML 1.3 documents, the \ref CDigiDoc "CDigiDoc library's" trust store mechanism is used.
@@ -1295,7 +1295,7 @@ Data files can be removed from a container only after all of its signatures have
 void digidoc::Container::removeDataFile(unsigned int id);
 \endcode
 
-“Id” parameters of the abovementioned methods represent the signature’s and data file’s sequence numbers in the container. The identifiers are determined when a data file or signature is added to the container, counting starts from zero. 
+"Id" parameters of the abovementioned methods represent the signature’s and data file’s sequence numbers in the container. The identifiers are determined when a data file or signature is added to the container, counting starts from zero. 
 \note The functionality of modifying files in DigiDoc file formats SK-XML, DIGIDOC-XML 1.1 and DIGIDOC-XML 1.2 is not supported.
 
 
@@ -1359,14 +1359,14 @@ Available options:
 
 Data file(s) to be signed. The option can occur multiple times. 
 
-\warning It is recommended not to use special characters in the data file’s name, i.e. it is suggested to only use the characters that are categorized as “unreserved” according to RFC3986 (http://tools.ietf.org/html/rfc3986).
+\warning It is recommended not to use special characters in the data file’s name, i.e. it is suggested to only use the characters that are categorized as "unreserved" according to RFC3986 (http://tools.ietf.org/html/rfc3986).
 
 </td></tr><tr><td>
 \-\-mime=	</td><td>Optional
 
 Specifies the data file's mime-type value. When used then must be written right after the "--file" parameter. If left unspecified then the default mime-type value "application/octet-stream" is used.
 
-\warning Data file’s mime-type value must be formatted as specified in RFC2045, section 5.1 (https://tools.ietf.org/html/rfc2045#section-5.1), i.e. the “type” and “subtype” values must be separated with a forward slash character. 
+\warning Data file’s mime-type value must be formatted as specified in RFC2045, section 5.1 (https://tools.ietf.org/html/rfc2045#section-5.1), i.e. the "type" and "subtype" values must be separated with a forward slash character. 
 
 </td></tr>
 </table>

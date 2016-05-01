@@ -83,7 +83,7 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/xmldsig-core-schema.xsd
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --custom-type ObjectType=/ObjectTypeBase
     --hxx-epilogue \"\#include <xml/ObjectType.h>\" )
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdES.xsd
+XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdES01903v132-201601.xsd
     --root-element-none
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
@@ -92,7 +92,7 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdES.xsd
     --ordered-type UnsignedSignaturePropertiesType
     --hxx-epilogue \"\#include <xml/AnyType.h>\"
     --hxx-epilogue \"\#include <xml/UnsignedSignaturePropertiesType.h>\" )
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdESv141.xsd
+XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdES01903v141-201601.xsd
     --root-element-none
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
@@ -147,8 +147,8 @@ set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd
     ${SCHEMA_DIR}/OpenDocument_manifest.xsd
     ${SCHEMA_DIR}/xmldsig-core-schema.xsd
-    ${SCHEMA_DIR}/XAdES.xsd
-    ${SCHEMA_DIR}/XAdESv141.xsd
+    ${SCHEMA_DIR}/XAdES01903v132-201601.xsd
+    ${SCHEMA_DIR}/XAdES01903v141-201601.xsd
     ${SCHEMA_DIR}/ts_102918v010201.xsd
     ${SCHEMA_DIR}/xml.xsd
     ${SCHEMA_DIR}/ts_119612v010101.xsd

@@ -28,7 +28,7 @@
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
-#include "xml/XAdES.hxx"
+#include "xml/XAdES01903v132-201601.hxx"
 
 #include <xsec/dsig/DSIGConstants.hpp>
 
