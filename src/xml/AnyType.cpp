@@ -41,12 +41,23 @@ AnyType::AnyType()
 {
 }
 
+AnyType::AnyType(const std::string &text)
+    : AnyTypeBase()
+    , SPURI_(this)
+#ifdef SPUSERNOTICE
+    , SPUserNotice_(this)
+#endif
+    , text_(text)
+{
+}
+
 AnyType::AnyType(const AnyType &x, Flags f, Container *c)
     : AnyTypeBase(x, f, c)
     , SPURI_(x.SPURI_, f, this)
 #ifdef SPUSERNOTICE
     , SPUserNotice_(x.SPUserNotice_, f, this)
 #endif
+    , text_(x.text_)
 {
 }
 
@@ -57,8 +68,9 @@ AnyType::AnyType(const DOMElement &e, Flags f, Container *c)
     , SPUserNotice_(this)
 #endif
 {
-    parser<char> p(e, true, false, true);
-    for (; p.more_content(); p.next_content(false))
+    parser<char> p(e, true, true, true);
+    bool isText = false;
+    for (; p.more_content(); p.next_content(isText))
     {
         const DOMElement &i(p.cur_element());
         const qualified_name<char> n(name<char>(i));
@@ -80,6 +92,16 @@ AnyType::AnyType(const DOMElement &e, Flags f, Container *c)
             continue;
         }
 #endif
+
+        if(p.cur_is_text())
+        {
+            const XMLCh *text = p.cur_text().getWholeText();
+            char *outbuf = XMLString::transcode(text);
+            text_ = std::string(outbuf);
+            XMLString::release(&outbuf);
+            isText = true;
+            continue;
+        }
 
         break;
     }
@@ -104,11 +126,21 @@ void AnyType::sPURI(const SPURIType &x)
     SPURI_ = x;
 }
 
+std::string AnyType::text() const
+{
+    return text_;
+}
+
 
 
 void digidoc::xades::operator<< (DOMElement &e, const AnyType &i)
 {
     e << static_cast<const Type&>(i);
+
+    if(!i.text().empty())
+    {
+        e << i.text();
+    }
 
     if(i.sPURI())
     {

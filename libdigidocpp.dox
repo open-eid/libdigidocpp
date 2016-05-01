@@ -508,14 +508,6 @@ schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR
     </xsd:sequence>
   </xsd:complexType>
 \endcode
-4) The data type of signer’s role has been changed to string due to implementation issues (otherwise the source code generated from the schema would later have to be altered).
-\code{.xml}
-<xsd:complexType name="ClaimedRolesListType">
-  <xsd:sequence>
-    <xsd:element name="ClaimedRole" type="xsd:string" maxOccurs="unbounded"/> <!-- originally type="AnyType" -->
-  </xsd:sequence>
-</xsd:complexType>
-\endcode
 
 <b>Schema XAdES01903v141-201601.xsd</b>
 
