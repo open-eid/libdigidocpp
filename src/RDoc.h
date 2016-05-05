@@ -49,7 +49,7 @@ private:
 
     std::shared_ptr<std::istream> _is;
     std::string _id, _fileName, _mediaType;
-    unsigned long _fileSize;
+    unsigned long _fileSize = 0;
     friend class RDoc;
 };
 
