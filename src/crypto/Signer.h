@@ -24,7 +24,6 @@
 namespace digidoc
 {
     class X509Cert;
-    class SignerPrivate;
     class EXP_DIGIDOC Signer
     {
 
@@ -35,16 +34,21 @@ namespace digidoc
           virtual std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const = 0;
           std::string method() const;
           std::string profile() const;
+          bool usingENProfile() const;
 
           std::string city() const;
+          std::string streetAddress() const;
           std::string stateOrProvince() const;
           std::string postalCode() const;
           std::string countryName() const;
           std::vector<std::string> signerRoles() const;
           void setMethod(const std::string &method);
           void setProfile(const std::string &profile);
+          void setENProfile(bool enable);
           void setSignatureProductionPlace(const std::string &city, const std::string &stateOrProvince,
               const std::string &postalCode, const std::string &countryName);
+          void setSignatureProductionPlaceV2(const std::string &city, const std::string &streetAddress,
+               const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
           void setSignerRoles(const std::vector<std::string>& signerRoles);
 
       protected:
@@ -52,7 +56,8 @@ namespace digidoc
 
       private:
           DISABLE_COPY(Signer);
-          SignerPrivate *d;
+          class Private;
+          Private *d;
 
     };
 }

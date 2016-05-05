@@ -28,17 +28,15 @@
 using namespace digidoc;
 using namespace std;
 
-namespace digidoc
-{
-class SignerPrivate
+class Signer::Private
 {
 public:
     string method = CONF(signatureDigestUri);
     string profile = "time-stamp";
-    string city, stateOrProvince, postalCode, countryName;
+    bool ENProfile = false;
+    string city, streetAddress, stateOrProvince, postalCode, countryName;
     vector<string> signerRoles;
 };
-}
 
 /**
  * @class digidoc::Signer
@@ -53,7 +51,7 @@ public:
  * Constructor
  */
 Signer::Signer()
-    : d(new SignerPrivate)
+    : d(new Signer::Private)
 {}
 
 /**
@@ -81,6 +79,24 @@ void Signer::setSignatureProductionPlace(const string &city,
 }
 
 /**
+ * Sets signature production place according XAdES EN standard. Note that setting the signature production place is optional.
+ * @param city
+ * @param streetAddress
+ * @param stateOrProvince
+ * @param postalCode
+ * @param countryName
+ */
+void Signer::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
+    const string &stateOrProvince, const string &postalCode, const string &countryName)
+{
+    d->city = city;
+    d->streetAddress = streetAddress;
+    d->stateOrProvince = stateOrProvince;
+    d->postalCode = postalCode;
+    d->countryName = countryName;
+}
+
+/**
  * @fn digidoc::Signer::cert
  *
  * Returns signer certificate. Must be reimplemented when subclassing
@@ -92,6 +108,14 @@ void Signer::setSignatureProductionPlace(const string &city,
 string Signer::city() const
 {
     return d->city;
+}
+
+/**
+ * Returns streetAddress from signature production place
+ */
+string Signer::streetAddress() const
+{
+    return d->streetAddress;
 }
 
 /**
@@ -175,6 +199,14 @@ void Signer::setMethod(const string &method)
 }
 
 /**
+ * Toggle XAdES EN profile usage on signing
+ */
+void Signer::setENProfile(bool enable)
+{
+    d->ENProfile = enable;
+}
+
+/**
  * Gets signature method
  */
 string Signer::method() const
@@ -192,4 +224,12 @@ string Signer::method() const
         }
     }
     return d->method;
+}
+
+/**
+ * Use XAdES EN profile
+ */
+bool Signer::usingENProfile() const
+{
+    return d->ENProfile;
 }

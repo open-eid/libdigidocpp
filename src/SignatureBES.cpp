@@ -245,12 +245,21 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
 
     //Fill XML-DSIG/XAdES properties
     X509Cert c = signer->cert();
-    setSigningCertificate(c);
+    setKeyInfo(c);
+    if(signer->usingENProfile())
+    {
+        setSigningCertificateV2(c);
+        setSignatureProductionPlaceV2(signer->city(), signer->streetAddress(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
+        setSignerRolesV2(signer->signerRoles());
+    }
+    else
+    {
+        setSigningCertificate(c);
+        setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
+        setSignerRoles(signer->signerRoles());
+    }
     signature->signedInfo().signatureMethod(Uri( X509Crypto(c).rsaModulus().empty() ?
         Digest::toEcUri(signer->method()) : Digest::toRsaUri(signer->method()) ));
-
-    setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
-    setSignerRoles(signer->signerRoles());
     time_t t = time(0);
     setSigningTime(gmtime(&t));
 
@@ -305,11 +314,6 @@ SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc)
         THROW("Failed to parse signature XML: %s", e.what());
     }
 
-#if 0
-    for(const ReferenceType &ref: signature->signedInfo().reference())
-        if(ref.transforms().present())
-            THROW("Transforms are not supported");
-#endif
     const QualifyingPropertiesType::SignedPropertiesOptional &sp = qualifyingProperties().signedProperties();
     if(sp.present())
     {
@@ -655,6 +659,7 @@ void SignatureBES::validate() const
 
 vector<unsigned char> SignatureBES::dataToSign() const
 {
+    // Calculate SHA digest of the Signature->SignedInfo node.
     Digest calc(signatureMethod());
     calcDigestOnNode(&calc, URI_ID_DSIG, "SignedInfo");
     return calc.result();
@@ -760,12 +765,8 @@ void SignatureBES::checkSignatureValue() const
     DEBUG("SignatureBES::checkSignatureValue()");
     try
     {
-        // Calculate SHA digest of the Signature->SignedInfo node.
-        Digest calc(signatureMethod());
-        calcDigestOnNode(&calc, URI_ID_DSIG, "SignedInfo");
-        vector<unsigned char> sha = calc.result();
+        vector<unsigned char> sha = dataToSign();
         DEBUGMEM("Digest", sha.data(), sha.size());
-
         if(!X509Crypto(signingCertificate()).verify(signatureMethod(), sha, getSignatureValue()))
             THROW_CAUSE(OpenSSLException(), "Signature is not valid.");
     }
@@ -818,15 +819,12 @@ string SignatureBES::addReference(const string& uri, const string& digestUri,
 
 /**
  * Adds signing certificate to the signature XML. The DER encoded X.509 certificate is added to
- * Signature->KeyInfo->X509Data->X509Certificate. Certificate info is also added to
- * Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties->SigningCertificate.
+ * Signature->KeyInfo->X509Data->X509Certificate.
  *
  * @param cert certificate that is used for signing the signature XML.
  */
-void SignatureBES::setSigningCertificate(const X509Cert& x509)
+void SignatureBES::setKeyInfo(const X509Cert& x509)
 {
-    DEBUG("SignatureBES::setSigningCertificate()");
-    // Signature->KeyInfo->X509Data->X509Certificate
     // BASE64 encoding of a DER-encoded X.509 certificate = PEM encoded.
     X509DataType x509Data;
     x509Data.x509Certificate().push_back(toBase64(x509));
@@ -834,8 +832,16 @@ void SignatureBES::setSigningCertificate(const X509Cert& x509)
     KeyInfoType keyInfo;
     keyInfo.x509Data().push_back(x509Data);
     signature->keyInfo(keyInfo);
+}
 
-    // Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties->SigningCertificate
+/**
+ * Adds signing certificate to the signature XML. Certificate info is added to
+ * Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties->SigningCertificate.
+ *
+ * @param cert certificate that is used for signing the signature XML.
+ */
+void SignatureBES::setSigningCertificate(const X509Cert& x509)
+{
     // Calculate digest of the X.509 certificate.
     Digest digest;
     digest.update(x509);
@@ -843,8 +849,24 @@ void SignatureBES::setSigningCertificate(const X509Cert& x509)
     signingCertificate.cert().push_back(CertIDType(
         DigestAlgAndValueType(DigestMethodType(digest.uri()), toBase64(digest.result())),
         X509IssuerSerialType(x509.issuerName(), x509.serial())));
-
     getSignedSignatureProperties().signingCertificate(signingCertificate);
+}
+
+/**
+ * Adds signing certificate to the signature XML. Certificate info is added to
+ * Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties->SigningCertificateV2.
+ *
+ * @param cert certificate that is used for signing the signature XML.
+ */
+void SignatureBES::setSigningCertificateV2(const X509Cert& x509)
+{
+    // Calculate digest of the X.509 certificate.
+    Digest digest;
+    digest.update(x509);
+    CertIDListV2Type signingCertificate;
+    signingCertificate.cert().push_back(CertIDTypeV2(
+        DigestAlgAndValueType(DigestMethodType(digest.uri()), toBase64(digest.result()))));
+    getSignedSignatureProperties().signingCertificateV2(signingCertificate);
 }
 
 /**
@@ -873,6 +895,33 @@ void SignatureBES::setSignatureProductionPlace(const string &city,
 }
 
 /**
+ * Sets signature production place.
+ *
+ * @param spp signature production place.
+ */
+void SignatureBES::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
+    const string &stateOrProvince, const string &postalCode, const string &countryName)
+{
+    if(city.empty() && streetAddress.empty() && stateOrProvince.empty() &&
+        postalCode.empty() && countryName.empty())
+        return;
+
+    SignatureProductionPlaceV2Type signatureProductionPlace;
+    if(!city.empty())
+        signatureProductionPlace.city(city);
+    if(!streetAddress.empty())
+        signatureProductionPlace.streetAddress(streetAddress);
+    if(!stateOrProvince.empty())
+        signatureProductionPlace.stateOrProvince(stateOrProvince);
+    if(!postalCode.empty())
+        signatureProductionPlace.postalCode(postalCode);
+    if(!countryName.empty())
+        signatureProductionPlace.countryName(countryName);
+
+    getSignedSignatureProperties().signatureProductionPlaceV2(signatureProductionPlace);
+}
+
+/**
  * Sets signer claimed roles to the signature.
  * NB! Only ClaimedRoles are supported. CerifiedRoles are not supported.
  *
@@ -890,6 +939,26 @@ void SignatureBES::setSignerRoles(const vector<string> &roles)
     SignerRoleType signerRole;
     signerRole.claimedRoles(claimedRoles);
     getSignedSignatureProperties().signerRole(signerRole);
+}
+
+/**
+ * Sets signer claimed roles to the signature.
+ * NB! Only ClaimedRoles are supported. CerifiedRoles are not supported.
+ *
+ * @param roles signer roles.
+ */
+void SignatureBES::setSignerRolesV2(const vector<string> &roles)
+{
+    if(roles.empty())
+        return;
+
+    ClaimedRolesListType claimedRoles;
+    for(const string &role: roles)
+        claimedRoles.claimedRole().push_back(role);
+
+    SignerRoleV2Type signerRole;
+    signerRole.claimedRoles(claimedRoles);
+    getSignedSignatureProperties().signerRoleV2(signerRole);
 }
 
 /**
@@ -1205,7 +1274,7 @@ X509Cert SignatureBES::signingCertificate() const
     try
     {
         const X509DataType::X509CertificateType& data = x509CertSeq.back();
-        return X509Cert(vector<unsigned char>(data.data(), data.data()+data.size()));
+        return X509Cert((const unsigned char*)data.data(), data.size());
     }
     catch(const Exception &e)
     {

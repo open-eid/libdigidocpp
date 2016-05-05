@@ -91,10 +91,15 @@ namespace digidoc
       private:
           DISABLE_COPY(SignatureBES);
 
+          void setKeyInfo(const X509Cert& cert);
           void setSigningCertificate(const X509Cert& cert);
+          void setSigningCertificateV2(const X509Cert& cert);
           void setSignatureProductionPlace(const std::string &city,
               const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
+          void setSignatureProductionPlaceV2(const std::string &city, const std::string &streetAddress,
+              const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
           void setSignerRoles(const std::vector<std::string>& signerRoles);
+          void setSignerRolesV2(const std::vector<std::string>& signerRoles);
           void setSigningTime(const struct tm *signingTime);
 
           // offline checks
