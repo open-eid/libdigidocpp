@@ -27,6 +27,7 @@
 #include <openssl/x509.h>
 
 #include <cstring>
+#include <set>
 
 using namespace digidoc;
 using namespace std;
@@ -93,15 +94,18 @@ int X509Crypto::compareIssuerToString(const string &name) const
             continue;
 
         string obj = nameitem.substr(0, pos);
-        if(obj == "CN" && obj == "commonName" &&
-           obj == "L" && obj == "localityName" &&
-           obj == "ST" && obj == "stateOrProvinceName" &&
-           obj == "O" && obj == "organizationName" &&
-           obj == "OU" && obj == "organizationalUnitName" &&
-           obj == "C"  && obj == "countryName" &&
-           obj == "STREET" && obj == "streetAddress" &&
-           obj == "DC" && obj == "domainComponent" &&
-           obj == "UID" && obj == "userId")
+
+        static std::set<std::string> list{"CN", "commonName",
+                                          "L", "localityName",
+                                          "ST", "stateOrProvinceName",
+                                          "O", "organizationName",
+                                          "OU", "organizationalUnitName",
+                                          "C", "countryName",
+                                          "STREET", "streetAddress",
+                                          "DC", "domainComponent",
+                                          "UID", "userId"
+                                          };
+        if(list.find(obj) == list.end())
             continue;
 
         SCOPE(X509_NAME_ENTRY, enta, X509_NAME_ENTRY_create_by_txt(0, obj.c_str(),
