@@ -64,6 +64,7 @@ if( OPENSSL_VERSION LESS "1.0.0" )
     #ignore openssl code warnings
     set_source_files_properties( ${openssl_SRCS} PROPERTIES COMPILE_FLAGS ${OPENSSL_IGNORE} )
     list( APPEND digidocpp_SRCS ${openssl_SRCS} )
+    list( APPEND digidocpp_DEFS OPENSSL_NO_CMS )
 endif()
 
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
