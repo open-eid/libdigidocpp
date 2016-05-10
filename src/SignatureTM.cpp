@@ -117,7 +117,6 @@ void SignatureTM::validate() const
         const QualifyingPropertiesType::UnsignedPropertiesOptional &uProps = qualifyingProperties().unsignedProperties();
         if(!uProps.present())
             THROW_MAIN(exception, "QualifyingProperties must contain UnsignedProperties");
-
         if(uProps->unsignedDataObjectProperties().present())
             EXCEPTION_ADD(exception, "unexpected UnsignedDataObjectProperties in Signature");
         if(!uProps->unsignedSignatureProperties().present())
@@ -129,37 +128,51 @@ void SignatureTM::validate() const
         const RevocationValuesType &t = uProps->unsignedSignatureProperties()->revocationValues().front();
         if(!t.oCSPValues().present())
             THROW_MAIN(exception, "OCSPValues is missing");
-        if(t.oCSPValues()->encapsulatedOCSPValue().size() != 1)
-            THROW_MAIN(exception, "More than one EncapsulatedOCSPValue object is not supported");
 
-        const OCSPValuesType::EncapsulatedOCSPValueType &resp = t.oCSPValues()->encapsulatedOCSPValue().front();
-        OCSP ocsp(vector<unsigned char>(resp.data(), resp.data()+resp.size()));
-        try {
-            ocsp.verifyResponse(signingCertificate());
-        } catch(const Exception &e) {
-            exception.addCause(e);
-        }
-
-        struct tm producedAt = ASN1TimeToTM(ocsp.producedAt());
-        time_t producedAt_t = mktime(&producedAt);
-        if(!X509CertStore::instance()->verify(ocsp.responderCert(), &producedAt_t))
-            EXCEPTION_ADD(exception, "Unable to verify responder certificate");
-
-        if(profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
+        /*
+         * Find OCSP response that matches with signingCertificate.
+         * If none is found throw all OCSP validation exceptions.
+         */
+        bool foundSignerOCSP = false;
+        vector<Exception> ocspExceptions;
+        for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
         {
-            string method = Digest::digestInfoUri(ocsp.nonce());
-            if(method.empty())
-                THROW("Nonce digest method is missing");
-            Digest calc(method);
-            calc.update(getSignatureValue());
-            vector<unsigned char> digest = calc.result();
-            vector<unsigned char> respDigest = Digest::digestInfoDigest(ocsp.nonce());
-            if(digest != respDigest)
-            {
-                DEBUGMEM("Calculated signature HASH", digest.data(), digest.size());
-                DEBUGMEM("Response nonce", respDigest.data(), respDigest.size());
-                EXCEPTION_ADD(exception, "Calculated signature hash doesn't match to OCSP responder nonce field");
+            OCSP ocsp(vector<unsigned char>(resp.data(), resp.data()+resp.size()));
+            try {
+                ocsp.verifyResponse(signingCertificate());
+                foundSignerOCSP = true;
+            } catch(const Exception &e) {
+                ocspExceptions.push_back(e);
+                continue;
             }
+
+            struct tm producedAt = ASN1TimeToTM(ocsp.producedAt());
+            time_t producedAt_t = mktime(&producedAt);
+            if(!X509CertStore::instance()->verify(ocsp.responderCert(), &producedAt_t))
+                EXCEPTION_ADD(exception, "Unable to verify responder certificate");
+
+            if(profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
+            {
+                string method = Digest::digestInfoUri(ocsp.nonce());
+                if(method.empty())
+                    THROW("Nonce digest method is missing");
+                Digest calc(method);
+                calc.update(getSignatureValue());
+                vector<unsigned char> digest = calc.result();
+                vector<unsigned char> respDigest = Digest::digestInfoDigest(ocsp.nonce());
+                if(digest != respDigest)
+                {
+                    DEBUGMEM("Calculated signature HASH", digest.data(), digest.size());
+                    DEBUGMEM("Response nonce", respDigest.data(), respDigest.size());
+                    EXCEPTION_ADD(exception, "Calculated signature hash doesn't match to OCSP responder nonce field");
+                }
+            }
+            break;
+        }
+        if(!foundSignerOCSP)
+        {
+            for(const Exception &e: ocspExceptions)
+                exception.addCause(e);
         }
     } catch(const Exception &e) {
         exception.addCause(e);
@@ -266,11 +279,16 @@ vector<unsigned char> SignatureTM::getOCSPResponseValue() const
         const RevocationValuesType &t = unsignedSignatureProperties().revocationValues().front();
         if(!t.oCSPValues().present())
             return vector<unsigned char>();
-        const OCSPValuesType &tt = t.oCSPValues().get();
-        if(tt.encapsulatedOCSPValue().empty())
-            return vector<unsigned char>();
-        const OCSPValuesType::EncapsulatedOCSPValueType &resp = tt.encapsulatedOCSPValue().front();
-        return vector<unsigned char>(resp.data(), resp.data()+resp.size());
+        // Return OCSP response that matches with signingCertificate
+        for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
+        {
+            try {
+                vector<unsigned char> data(resp.data(), resp.data()+resp.size());
+                OCSP(data).verifyResponse(signingCertificate());
+                return data;
+            } catch(const Exception &) {
+            }
+        }
     }
     catch(const Exception &)
     {}

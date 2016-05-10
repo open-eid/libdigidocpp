@@ -460,7 +460,7 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         /*result =*/ OCSP_resp_find_status(basic, certId.get(), &status, &reason, 0, 0, 0);
         switch(status)
         {
-        case V_OCSP_CERTSTATUS_GOOD: DEBUG("OCSP status: GOOD"); break;
+        case V_OCSP_CERTSTATUS_GOOD: break;
         case V_OCSP_CERTSTATUS_REVOKED:
         {
             DEBUG("OCSP status: REVOKED");
