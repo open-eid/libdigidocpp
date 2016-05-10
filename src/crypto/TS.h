@@ -23,6 +23,8 @@
 #include <memory>
 
 typedef struct pkcs7_st PKCS7;
+typedef struct CMS_ContentInfo_st CMS_ContentInfo;
+typedef struct TS_tst_info_st TS_TST_INFO;
 namespace digidoc {
 
 class X509Cert;
@@ -41,7 +43,9 @@ public:
     operator std::vector<unsigned char>() const;
 
 private:
+    TS_TST_INFO* tstInfo() const;
     std::shared_ptr<PKCS7> d;
+    std::shared_ptr<CMS_ContentInfo> cms;
 };
 
 }

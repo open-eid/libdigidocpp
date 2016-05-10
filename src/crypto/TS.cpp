@@ -26,6 +26,9 @@
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509CertStore.h"
 
+#ifndef OPENSSL_NO_CMS
+#include <openssl/cms.h>
+#endif
 #include <openssl/rand.h>
 #include <openssl/ts.h>
 
@@ -69,7 +72,7 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
     TS_REQ_set_nonce(req.get(), nonce.get());
 
     int len = i2d_TS_REQ(req.get(), 0);
-    vector<unsigned char> data(len, 0);
+    vector<unsigned char> data(size_t(len), 0);
     unsigned char *p = data.data();
     i2d_TS_REQ(req.get(), &p);
 
@@ -101,14 +104,36 @@ TS::TS(const std::vector<unsigned char> &data)
         return;
     const unsigned char *p = data.data();
     d.reset(d2i_PKCS7(0, &p, long(data.size())), function<void(PKCS7*)>(PKCS7_free));
+#ifndef OPENSSL_NO_CMS
+    if(d)
+        return;
+    /**
+     * Handle CMS based TimeStamp tokens
+     * https://rt.openssl.org/Ticket/Display.html?id=4519
+     * https://github.com/openssl/openssl/issues/993
+     *
+     * If PKCS7 wrapped TimeStamp parsing fails, try with CMS wrapping
+     */
+    SCOPE2(BIO, bio, BIO_new_mem_buf((void*)data.data(), int(data.size())), BIO_free_all);
+    cms.reset(d2i_CMS_bio(bio.get(), NULL), CMS_ContentInfo_free);
+    if(!cms || OBJ_obj2nid(CMS_get0_eContentType(cms.get())) != NID_id_smime_ct_TSTInfo)
+        cms.reset();
+#endif
 }
 
 X509Cert TS::cert() const
 {
-    if(!d || !PKCS7_type_is_signed(d.get()))
-        return X509Cert();
+    STACK_OF(X509) *signers = [&]() -> STACK_OF(X509)* {
+        if(d && PKCS7_type_is_signed(d.get()))
+            return PKCS7_get0_signers(d.get(), 0, 0);
+#ifndef OPENSSL_NO_CMS
+        else if(cms)
+            return CMS_get1_certs(cms.get());
+#endif
+        else
+            return nullptr;
+    }();
 
-    STACK_OF(X509) *signers = PKCS7_get0_signers(d.get(), 0, 0);
     if(!signers || sk_X509_num(signers) != 1)
         return X509Cert();
 
@@ -119,9 +144,9 @@ X509Cert TS::cert() const
 
 string TS::digestMethod() const
 {
-    if(!d)
+    SCOPE(TS_TST_INFO, info, tstInfo());
+    if(!info)
         return string();
-    SCOPE(TS_TST_INFO, info, PKCS7_to_TS_TST_INFO(d.get()));
     switch(OBJ_obj2nid(info->msg_imprint->hash_algo->algorithm))
     {
     case NID_sha1: return URI_SHA1;
@@ -135,39 +160,45 @@ string TS::digestMethod() const
 
 string TS::time() const
 {
-    if(!d)
-        return string();
-    SCOPE(TS_TST_INFO, info, PKCS7_to_TS_TST_INFO(d.get()));
-    if(!info)
-        return string();
-    return string((char*)info->time->data, info->time->length);
+    SCOPE(TS_TST_INFO, info, tstInfo());
+    return info ? string((char*)info->time->data, size_t(info->time->length)) : string();
+}
+
+TS_TST_INFO* TS::tstInfo() const
+{
+    if(d)
+        return PKCS7_to_TS_TST_INFO(d.get());
+#ifndef OPENSSL_NO_CMS
+    else if(cms)
+    {
+        BIO *out = CMS_dataInit(cms.get(), NULL);
+        TS_TST_INFO *info =  d2i_TS_TST_INFO_bio(out, NULL);
+        BIO_free(out);
+        return info;
+    }
+#endif
+    else
+        return nullptr;
 }
 
 void TS::verify(const Digest &digest)
 {
-    if(!d)
-        THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
-
     vector<unsigned char> data = digest.result();
-    SCOPE(TS_VERIFY_CTX, ctx, TS_VERIFY_CTX_new());
-    ctx->flags = TS_VFY_IMPRINT|TS_VFY_VERSION|TS_VFY_SIGNATURE;
-    ctx->imprint = data.data();
-    ctx->imprint_len = (unsigned int)data.size();
 
-    ctx->store = X509_STORE_new();
+    SCOPE(X509_STORE, store, X509_STORE_new());
     X509CertStore::instance()->activate(cert().issuerName("C"));
     for(const X509Cert &i: X509CertStore::instance()->certs())
-        X509_STORE_add_cert(ctx->store, i.handle());
+        X509_STORE_add_cert(store.get(), i.handle());
     OpenSSLException(); // Clear errors
 
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
     if (!csc)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
 
-    if(!X509_STORE_CTX_init(csc.get(), ctx->store, 0, 0))
+    if(!X509_STORE_CTX_init(csc.get(), store.get(), 0, 0))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
 
-    X509_STORE_set_verify_cb_func(ctx->store, [](int ok, X509_STORE_CTX *ctx) -> int {
+    X509_STORE_set_verify_cb_func(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int {
         switch(X509_STORE_CTX_get_error(ctx))
         {
         case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
@@ -177,38 +208,77 @@ void TS::verify(const Digest &digest)
         {
             const vector<X509Cert> &list = X509CertStore::instance()->certs();
             if(find(list.begin(), list.end(), X509Cert(ctx->current_cert)) != list.end())
-                return 1;
-            return ok;
+                ok = 1;
+            break;
         }
-        default: return ok;
+        case X509_V_ERR_INVALID_PURPOSE: ok = 1; break;
+        default: break;
         }
+        return ok;
     });
 
-    int err = TS_RESP_verify_token(ctx.get(), d.get());
-    //Avoid CRYPTO_free
-    ctx->imprint = nullptr;
-    ctx->imprint_len = 0;
-    if(err != 1)
+    if(d)
     {
-        long err = ERR_get_error();
-        if(ERR_GET_LIB(err) == 47 && ERR_GET_REASON(err) == TS_R_CERTIFICATE_VERIFY_ERROR)
+        SCOPE(TS_VERIFY_CTX, ctx, TS_VERIFY_CTX_new());
+        ctx->flags = TS_VFY_IMPRINT|TS_VFY_VERSION|TS_VFY_SIGNATURE;
+        ctx->imprint = data.data();
+        ctx->imprint_len = (unsigned int)data.size();
+        ctx->store = store.release();
+        int err = TS_RESP_verify_token(ctx.get(), d.get());
+        ctx->imprint = nullptr; //Avoid CRYPTO_free
+        ctx->imprint_len = 0;
+        if(err != 1)
         {
-            Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
-            e.setCode( Exception::CertificateUnknown );
-            throw e;
+            unsigned long err = ERR_get_error();
+            if(ERR_GET_LIB(err) == 47 && ERR_GET_REASON(err) == TS_R_CERTIFICATE_VERIFY_ERROR)
+            {
+                Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
+                e.setCode( Exception::CertificateUnknown );
+                throw e;
+            }
+            THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
         }
-        THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
     }
+#ifndef OPENSSL_NO_CMS
+    else if(cms)
+    {
+        SCOPE2(BIO, out, BIO_new(BIO_s_mem()), BIO_free_all);
+        int err = CMS_verify(cms.get(), NULL, store.get(), NULL, out.get(), 0);
+        if(err != 1)
+            THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
+
+        SCOPE(TS_TST_INFO, info, d2i_TS_TST_INFO_bio(out.get(), NULL));
+        TS_MSG_IMPRINT *b = TS_TST_INFO_get_msg_imprint(info.get());
+        if(data.size() != size_t(ASN1_STRING_length(b->hashed_msg)) ||
+            memcmp(data.data(), ASN1_STRING_data(b->hashed_msg), data.size()))
+            THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
+    }
+#endif
+    else
+        THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 }
 
 TS::operator vector<unsigned char>() const
 {
-    if(!d)
-        return vector<unsigned char>();
-    vector<unsigned char> der(i2d_PKCS7(d.get(), 0), 0);
-    if(der.empty())
+    if(d)
+    {
+        vector<unsigned char> der(i2d_PKCS7(d.get(), 0), 0);
+        if(der.empty())
+            return der;
+        unsigned char *p = der.data();
+        i2d_PKCS7(d.get(), &p);
         return der;
-    unsigned char *p = der.data();
-    i2d_PKCS7(d.get(), &p);
-    return der;
+    }
+#ifndef OPENSSL_NO_CMS
+    else if(cms)
+    {
+        vector<unsigned char> der(i2d_CMS_ContentInfo(cms.get(), 0), 0);
+        if(der.empty())
+            return der;
+        unsigned char *p = der.data();
+        i2d_CMS_ContentInfo(cms.get(), &p);
+        return der;
+    }
+#endif
+    return vector<unsigned char>();
 }
