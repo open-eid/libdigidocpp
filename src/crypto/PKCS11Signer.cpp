@@ -328,6 +328,7 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
         switch(rv)
         {
         case CKR_OK: break;
+        case CKR_USER_ALREADY_LOGGED_IN: break;
         case CKR_CANCEL:
         case CKR_FUNCTION_CANCELED:
         {
