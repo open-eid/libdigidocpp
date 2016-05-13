@@ -229,7 +229,8 @@ public:
                     s->_signatureMethod += toString(chars);
                 if(s && compare(el, _W("DigestAlgoUsedToSignThisToken")))
                     s->_signatureMethod += toString(chars);
-                trim(s->_signatureMethod);
+                if(s)
+                    trim(s->_signatureMethod);
                 break;
             case TS:
                 if(s && compare(el, _W("ProductionTime")))
@@ -381,7 +382,7 @@ RDoc::RDoc(const string &path)
         "</SOAP-ENV:Body>"
         "</SOAP-ENV:Envelope>";
 
-    Connect::Result r = Connect(CONF(verifyServiceUri), "POST", 0).exec({
+    Connect::Result r = Connect(CONF(verifyServiceUri), "POST", 0, "", CONF(verifyServiceCert)).exec({
         {"Content-Type", "text/xml;charset=UTF-8"},
         {"SOAPAction", "\"\""}
     }, vector<unsigned char>(req.c_str(), req.c_str()+req.size()));

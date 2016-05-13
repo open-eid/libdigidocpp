@@ -26,53 +26,66 @@
 
 namespace digidoc
 {
-    class X509Cert;
-    class EXP_DIGIDOC Conf
-    {
+class X509Cert;
+class EXP_DIGIDOC Conf
+{
+public:
+    Conf();
+    virtual ~Conf();
+    static void init(Conf *conf);
+    static Conf* instance();
 
-      public:
-          Conf();
-          virtual ~Conf();
-          static void init(Conf *conf);
-          static Conf* instance();
+    virtual int logLevel() const;
+    virtual std::string logFile() const;
+    DEPRECATED_DIGIDOCPP virtual std::string libdigidocConf() const;
+    DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
+    virtual std::string xsdPath() const;
+    virtual std::string PKCS11Driver() const;
 
-          virtual int logLevel() const;
-          virtual std::string logFile() const;
-          DEPRECATED_DIGIDOCPP virtual std::string libdigidocConf() const;
-          DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
-          virtual std::string xsdPath() const;
-          virtual std::string PKCS11Driver() const;
+    virtual std::string proxyHost() const;
+    virtual std::string proxyPort() const;
+    virtual std::string proxyUser() const;
+    virtual std::string proxyPass() const;
+    virtual bool proxyForceSSL() const;
+    virtual bool proxyTunnelSSL() const;
 
-          virtual std::string proxyHost() const;
-          virtual std::string proxyPort() const;
-          virtual std::string proxyUser() const;
-          virtual std::string proxyPass() const;
-          virtual bool proxyForceSSL() const;
-          virtual bool proxyTunnelSSL() const;
+    virtual std::string digestUri() const;
+    virtual std::string signatureDigestUri() const;
+    virtual std::string ocsp(const std::string &issuer) const;
+    virtual std::string TSUrl() const;
+    virtual std::string verifyServiceUri() const;
 
-          virtual std::string digestUri() const;
-          virtual std::string signatureDigestUri() const;
-          virtual std::string ocsp(const std::string &issuer) const;
-          virtual std::string TSUrl() const;
-          virtual std::string verifyServiceUri() const;
+    virtual std::string PKCS12Cert() const;
+    virtual std::string PKCS12Pass() const;
+    virtual bool PKCS12Disable() const;
 
-          virtual std::string PKCS12Cert() const;
-          virtual std::string PKCS12Pass() const;
-          virtual bool PKCS12Disable() const;
+    virtual bool TSLAllowExpired() const;
+    virtual bool TSLAutoUpdate() const;
+    virtual std::string TSLCache() const;
+    virtual std::vector<X509Cert> TSLCerts() const;
+    virtual bool TSLOnlineDigest() const;
+    virtual int TSLTimeOut() const;
+    virtual std::string TSLUrl() const;
 
-          virtual bool TSLAllowExpired() const;
-          virtual bool TSLAutoUpdate() const;
-          virtual std::string TSLCache() const;
-          virtual std::vector<X509Cert> TSLCerts() const;
-          virtual bool TSLOnlineDigest() const;
-          virtual int TSLTimeOut() const;
-          virtual std::string TSLUrl() const;
+private:
+    DISABLE_COPY(Conf);
 
-      private:
-          DISABLE_COPY(Conf);
+    static Conf *INSTANCE;
+};
 
-          static Conf *INSTANCE;
-    };
+class EXP_DIGIDOC ConfV2: public Conf
+{
+public:
+    ConfV2();
+    virtual ~ConfV2();
+    static ConfV2* instance();
 
-#define CONF(method) Conf::instance() ? Conf::instance()->method() : Conf().method()
+    virtual X509Cert verifyServiceCert() const;
+
+private:
+    DISABLE_COPY(ConfV2);
+};
+
+typedef ConfV2 ConfCurrent;
+#define CONF(method) ConfCurrent::instance() ? ConfCurrent::instance()->method() : ConfCurrent().method()
 }

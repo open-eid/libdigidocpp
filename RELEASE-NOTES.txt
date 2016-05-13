@@ -3,6 +3,7 @@ Libdigidocpp library 3.12.2 release notes
 Changes compared to ver 3.12.1
 - Fix issues found by coverity
 - digidoc-tool improvements
+- API option to verify PDF validator service SSL certificate
 
 
 

@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "crypto/X509Cert.h"
+
 #include <map>
 #include <memory>
 #include <string>
@@ -47,7 +49,7 @@ public:
     };
 
     Connect(const std::string &url, const std::string &method = "POST",
-        int timeout = 0, const std::string &useragent = std::string());
+        int timeout = 0, const std::string &useragent = std::string(), const X509Cert &cert = X509Cert());
     ~Connect();
     void addHeader(const std::string &key, const std::string &value);
     void addHeaders(std::initializer_list<std::pair<std::string,std::string>> list);
@@ -56,8 +58,7 @@ public:
         const std::vector<unsigned char> &data);
 
 private:
-    Connect(const Connect &) = delete;
-    Connect& operator=(const Connect&) = delete;
+    DISABLE_COPY(Connect);
 
     enum Wait {
         Read,

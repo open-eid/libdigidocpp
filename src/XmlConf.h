@@ -24,7 +24,6 @@
 namespace digidoc
 {
 
-class XmlConfPrivate;
 class EXP_DIGIDOC XmlConf: public Conf
 {
 public:
@@ -72,6 +71,61 @@ public:
 private:
     DISABLE_COPY(XmlConf);
 
-    XmlConfPrivate *d;
+    class Private;
+    Private *d;
+    friend class XmlConfV2;
 };
+
+class EXP_DIGIDOC XmlConfV2: public ConfV2
+{
+public:
+    explicit XmlConfV2(const std::string &path = "", const std::string &schema = "");
+    virtual ~XmlConfV2();
+
+    virtual int logLevel() const override;
+    virtual std::string logFile() const override;
+    virtual std::string PKCS11Driver() const override;
+
+    virtual std::string proxyHost() const override;
+    virtual std::string proxyPort() const override;
+    virtual std::string proxyUser() const override;
+    virtual std::string proxyPass() const override;
+    virtual bool proxyForceSSL() const override;
+    virtual bool proxyTunnelSSL() const override;
+
+    virtual std::string digestUri() const override;
+    virtual std::string signatureDigestUri() const override;
+    virtual std::string ocsp(const std::string &issuer) const override;
+    virtual std::string TSUrl() const override;
+    virtual X509Cert verifyServiceCert() const override;
+    virtual std::string verifyServiceUri() const override;
+
+    virtual std::string PKCS12Cert() const override;
+    virtual std::string PKCS12Pass() const override;
+    virtual bool PKCS12Disable() const override;
+
+    virtual bool TSLAutoUpdate() const override;
+    virtual std::string TSLCache() const override;
+    virtual bool TSLOnlineDigest() const override;
+    virtual int TSLTimeOut() const override;
+
+    virtual void setProxyHost( const std::string &host );
+    virtual void setProxyPort( const std::string &port );
+    virtual void setProxyUser( const std::string &user );
+    virtual void setProxyPass( const std::string &pass );
+    virtual void setProxyTunnelSSL( bool enable );
+    virtual void setPKCS12Cert( const std::string &cert );
+    virtual void setPKCS12Pass( const std::string &pass );
+    virtual void setPKCS12Disable( bool disable );
+
+    virtual void setTSLOnlineDigest( bool enable );
+    virtual void setTSLTimeOut( int timeOut );
+
+private:
+    DISABLE_COPY(XmlConfV2);
+
+    XmlConf::Private *d;
+};
+
+typedef XmlConfV2 XmlConfCurrent;
 }

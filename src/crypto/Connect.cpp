@@ -45,7 +45,7 @@ static string to_string(T value)
 }
 #endif
 
-Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent)
+Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent, const X509Cert &cert)
     : _timeout(timeout)
 {
     DEBUG("Connecting to URL: %s", _url.c_str());
@@ -100,6 +100,13 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
             THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
         SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
         SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
+        if(cert.handle())
+        {
+            SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, 0);
+            SSL_CTX_set_cert_verify_callback(ssl.get(), [](X509_STORE_CTX *store, void *cert) -> int {
+                return store->cert && X509_cmp(store->cert, (X509*)cert) == 0 ? 1 : 0;
+            }, cert.handle());
+        }
         BIO *sbio = BIO_new_ssl(ssl.get(), 1);
         if(!sbio)
             THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
@@ -112,6 +119,8 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
                 THROW("Failed to create ssl connection with host: '%s'", hostname.c_str());
             this_thread::sleep_for(chrono::milliseconds(1000));
         }
+        if(timeout == 0 && BIO_do_handshake(d) != 1)
+            THROW("Failed to create ssl connection with host: '%s'", hostname.c_str());
     }
 
     BIO_printf(d, "%s %s HTTP/1.0\r\n", method.c_str(), path.c_str());

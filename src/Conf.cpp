@@ -264,3 +264,32 @@ string Conf::signatureDigestUri() const { return digestUri(); }
  * Gets verify service URI
  */
 string Conf::verifyServiceUri() const { return PDF_URL; }
+
+
+
+/**
+ * @class digidoc::ConfV2
+ * @brief Verison 2 of configuration class to add additonial parameters.
+ *
+ * Conf contains virtual members and is not leaf class we need create
+ * subclasses to keep binary compatibility
+ * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
+ * @see digidoc::Conf
+ * @see @ref parameters
+ */
+/**
+ * Version 2 config with new parameters
+ */
+ConfV2::ConfV2() {}
+
+ConfV2::~ConfV2() {}
+
+/**
+ * Return global instance object
+ */
+ConfV2* ConfV2::instance() { return dynamic_cast<ConfV2*>(Conf::instance()); }
+
+/**
+ * Gets verify service Cert
+ */
+X509Cert ConfV2::verifyServiceCert() const { return X509Cert(); }

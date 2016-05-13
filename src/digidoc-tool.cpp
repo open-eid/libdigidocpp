@@ -280,15 +280,15 @@ private:
 };
 
 
-class ToolConfig: public XmlConf
+class ToolConfig: public XmlConfCurrent
 {
 public:
-    ToolConfig(): XmlConf()
-      , expired(XmlConf::TSLAllowExpired())
-      , tslcerts(XmlConf::TSLCerts())
-      , tslurl(XmlConf::TSLUrl())
-      , uri(XmlConf::digestUri())
-      , siguri(XmlConf::signatureDigestUri()) {}
+    ToolConfig(): XmlConfCurrent()
+      , expired(XmlConfCurrent::TSLAllowExpired())
+      , tslcerts(XmlConfCurrent::TSLCerts())
+      , tslurl(XmlConfCurrent::TSLUrl())
+      , uri(XmlConfCurrent::digestUri())
+      , siguri(XmlConfCurrent::signatureDigestUri()) {}
     string digestUri() const override { return uri; }
     string signatureDigestUri() const override { return siguri; }
     bool TSLAllowExpired() const override { return expired; }

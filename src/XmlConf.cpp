@@ -85,10 +85,10 @@ public:
     bool locked;
 };
 
-class XmlConfPrivate
+class XmlConf::Private
 {
 public:
-    XmlConfPrivate(const string &path = "", const string &schema = "");
+    Private(const string &path = "", const string &schema = "");
 
     void init(const string &path, bool global);
     unique_ptr<Configuration> read(const string &path);
@@ -128,7 +128,7 @@ public:
 
 using namespace digidoc;
 
-XmlConfPrivate::XmlConfPrivate(const string &path, const string &schema)
+XmlConf::Private::Private(const string &path, const string &schema)
     : logLevel("log.level")
     , logFile("log.file")
     , digestUri("signer.digestUri")
@@ -184,7 +184,7 @@ XmlConfPrivate::XmlConfPrivate(const string &path, const string &schema)
  * Load and parse xml from path. Initialize XmlConf member variables from xml.
  * @param path to use for initializing conf
  */
-void XmlConfPrivate::init(const string& path, bool global)
+void XmlConf::Private::init(const string& path, bool global)
 {
     DEBUG("XmlConfPrivate::init(%s, %u)", path.c_str(), global);
     try
@@ -257,7 +257,7 @@ void XmlConfPrivate::init(const string& path, bool global)
  * @param path to parse xml config
  * @return returns parsed xml configuration
  */
-unique_ptr<Configuration> XmlConfPrivate::read(const string &path)
+unique_ptr<Configuration> XmlConf::Private::read(const string &path)
 {
     try
     {
@@ -285,7 +285,7 @@ unique_ptr<Configuration> XmlConfPrivate::read(const string &path)
  * @throws Exception exception is thrown if reading, writing or creating of a user configuration file fails.
  */
 template<class A>
-void XmlConfPrivate::setUserConf(XmlConfParam<A> &param, const A &defined, const A &value)
+void XmlConf::Private::setUserConf(XmlConfParam<A> &param, const A &defined, const A &value)
 {
     if(param.locked)
         return;
@@ -323,25 +323,49 @@ void XmlConfPrivate::setUserConf(XmlConfParam<A> &param, const A &defined, const
 }
 
 
+
 /**
  * @class digidoc::XmlConf
  * @brief XML Configuration class
+ * @deprecated See digidoc::XmlConfV2
  * @see digidoc::Conf
  */
+/**
+ * @class digidoc::XmlConfV2
+ * @brief Version 2 of XML Configuration class
+ * @see digidoc::ConfV2
+ */
+/**
+ * @deprecated See digidoc::XmlConfV2::XmlConfV2
+ */
 XmlConf::XmlConf(const string &path, const string &schema)
-    : d(new XmlConfPrivate(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
+    : d(new XmlConf::Private(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
 {}
 XmlConf::~XmlConf() { delete d; }
 
+/**
+ * Initialize xml conf from path
+ */
+XmlConfV2::XmlConfV2(const string &path, const string &schema)
+    : d(new XmlConf::Private(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
+{}
+XmlConfV2::~XmlConfV2() { delete d; }
+
+
 #define GET1(TYPE, PROP) \
-TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); }
+TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); } \
+TYPE XmlConfV2::PROP() const { return d->PROP.value(Conf::PROP()); }
 
 #define SET1(TYPE, SET, PROP) \
 void XmlConf::SET(TYPE PROP) \
+{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+void XmlConfV2::SET(TYPE PROP) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
 
 #define SET1CONST(TYPE, SET, PROP) \
 void XmlConf::SET(const TYPE &PROP) \
+{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+void XmlConfV2::SET(const TYPE &PROP) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
 
 GET1(int, logLevel)
@@ -366,6 +390,12 @@ GET1(int, TSLTimeOut)
 GET1(string, verifyServiceUri)
 
 string XmlConf::ocsp(const string &issuer) const
+{
+    auto i = d->ocsp.find(issuer);
+    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
+}
+
+string XmlConfV2::ocsp(const string &issuer) const
 {
     auto i = d->ocsp.find(issuer);
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
@@ -454,7 +484,10 @@ SET1(bool, setPKCS12Disable, PKCS12Disable)
  * Enables SSL proxy connections
  * @throws Exception exception is thrown if saving into a user configuration file fails.
  */
-void XmlConf::setProxyTunnelSSL(bool enable)
+SET1(bool, setProxyTunnelSSL, proxyTunnelSSL)
+
+
+X509Cert XmlConfV2::verifyServiceCert() const
 {
-    d->setUserConf<bool>(d->proxyTunnelSSL, Conf::proxyTunnelSSL(), enable);
+    return ConfV2::verifyServiceCert();
 }

@@ -86,11 +86,11 @@ extern "C"
 #endif
 
 #ifdef SWIGJAVA
-class DigiDocConf: public digidoc::XmlConf
+class DigiDocConf: public digidoc::XmlConfCurrent
 {
 public:
     DigiDocConf(const std::string &_cache)
-        : digidoc::XmlConf(), cache(_cache), xsd(_cache) {}
+        : digidoc::XmlConfCurrent(), cache(_cache), xsd(_cache) {}
     std::string TSLCache() const { return cache; }
     std::string xsdPath() const { return xsd; }
 
