@@ -319,6 +319,7 @@ unsigned long File::fileSize(const string &path)
     return fileInfo.st_size;
 }
 
+
 /**
  * Parses file path and returns file name from file full path.
  *
