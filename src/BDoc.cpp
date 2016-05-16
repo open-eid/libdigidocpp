@@ -33,6 +33,8 @@
 #include <fstream>
 #include <set>
 
+#define MAX_MEM_FILE 500*1024*1024
+
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
@@ -51,14 +53,14 @@ public:
 
         time_t t = time(0);
         tm *filetime = gmtime(&t);
-        ZipSerialize::Properties prop = { appInfo(), *filetime };
+        ZipSerialize::Properties prop = { appInfo(), *filetime, 0 };
         return properties[file] = prop;
     }
 
     static const string MANIFEST_NAMESPACE;
 
     string path;
-    std::vector<DataFile*> documents;
+    vector<DataFile*> documents;
     vector<Signature*> signatures;
     map<string, ZipSerialize::Properties> properties;
 };
@@ -181,19 +183,22 @@ void BDoc::addDataFile(const string &path, const string &mediaType)
     }
 
     tm *filetime = File::modifiedTime(path);
-    ZipSerialize::Properties prop = { appInfo(), *filetime };
+    ZipSerialize::Properties prop = { appInfo(), *filetime, File::fileSize(path) };
     d->properties[File::fileName(path)] = prop;
-#if 0
-    d->documents.push_back(DataFile(new std::ifstream(File::encodeName(path).c_str(), std::ifstream::binary),
-        File::fileName(path), mediaType));
-#else
-    std::ifstream file(File::encodeName(path).c_str(), std::ifstream::binary);
-    stringstream *data = new stringstream;
-    if(file)
-        *data << file.rdbuf();
-    file.close();
-    d->documents.push_back(new DataFilePrivate(data, File::fileName(path), mediaType));
-#endif
+    if(prop.size > MAX_MEM_FILE)
+    {
+        d->documents.push_back(new DataFilePrivate(new ifstream(File::encodeName(path).c_str(), ifstream::binary),
+            File::fileName(path), mediaType));
+    }
+    else
+    {
+        ifstream file(File::encodeName(path).c_str(), ifstream::binary);
+        stringstream *data = new stringstream;
+        if(file)
+            *data << file.rdbuf();
+        file.close();
+        d->documents.push_back(new DataFilePrivate(data, File::fileName(path), mediaType));
+    }
 }
 
 void BDoc::addDataFile(istream *is, const string &fileName, const string &mediaType)
@@ -222,7 +227,7 @@ Container* BDoc::createInternal(const string &path)
  *
  * @return returns dataFiles.
  */
-std::vector<DataFile*> BDoc::dataFiles() const
+vector<DataFile*> BDoc::dataFiles() const
 {
     return d->documents;
 }
@@ -291,7 +296,7 @@ Container* BDoc::openInternal(const string &path)
  * @return returns signature referenced by signature id.
  * @throws ContainerException throws exception if the signature id is incorrect.
  */
-std::vector<Signature *> BDoc::signatures() const
+vector<Signature *> BDoc::signatures() const
 {
     return d->signatures;
 }
@@ -426,11 +431,11 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
                 THROW("Found multiple references of file '%s' in zip container.", iter->full_path().c_str());
 
             manifestFiles.insert(iter->full_path());
-#if 0
-            fstream *data = new fstream(File::encodeName(File::tempFileName()).c_str(), fstream::binary);
-#else
-            stringstream *data = new stringstream;
-#endif
+            iostream *data = nullptr;
+            if(d->properties[iter->full_path()].size > MAX_MEM_FILE)
+                data = new fstream(File::encodeName(File::tempFileName()).c_str(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
+            else
+                data = new stringstream;
             z.extract(iter->full_path(), *data);
             d->documents.push_back(new DataFilePrivate(data, iter->full_path(), iter->media_type()));
         }
@@ -509,7 +514,7 @@ Signature *BDoc::sign(Signer* signer)
     }
     catch(const Exception& e)
     {
-        std::vector<Signature*>::iterator i = find(d->signatures.begin(), d->signatures.end(), s);
+        vector<Signature*>::iterator i = find(d->signatures.begin(), d->signatures.end(), s);
         if(i != d->signatures.end())
             d->signatures.erase(i);
         delete s;

@@ -245,10 +245,7 @@ bool File::fileExists(const string& path)
         return false;
 
     // XXX: != S_IFREG
-    if((fileInfo.st_mode & S_IFMT) == S_IFDIR)
-        return false;
-
-    return true;
+    return !((fileInfo.st_mode & S_IFMT) == S_IFDIR);
 }
 
 /**
@@ -272,10 +269,7 @@ bool File::directoryExists(const string& path)
     if(f_stat(_path.c_str(), &fileInfo) != 0)
         return false;
 
-    if((fileInfo.st_mode & S_IFMT) != S_IFDIR)
-        return false;
-
-    return true;
+    return (fileInfo.st_mode & S_IFMT) == S_IFDIR;
 }
 
 #ifdef _WIN32
@@ -312,6 +306,17 @@ string File::fileExtension(const std::string &path)
     string ext = path.substr(pos + 1);
     transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
     return ext;
+}
+
+/**
+ * Returns file size
+ */
+unsigned long File::fileSize(const string &path)
+{
+    f_statbuf fileInfo;
+    if(f_stat(encodeName(path).c_str(), &fileInfo) != 0)
+        return 0;
+    return fileInfo.st_size;
 }
 
 /**

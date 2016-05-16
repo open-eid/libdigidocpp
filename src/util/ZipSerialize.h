@@ -39,7 +39,7 @@ namespace digidoc
     class ZipSerialize
     {
       public:
-          struct Properties { std::string comment; tm time; };
+          struct Properties { std::string comment; tm time; unsigned long size; };
           enum {
               DontCompress = 1
           };
