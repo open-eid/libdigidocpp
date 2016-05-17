@@ -110,6 +110,9 @@ string Signer::postalCode() const
     return d->postalCode;
 }
 
+/**
+ * Returns signing profile
+ */
 string Signer::profile() const
 {
     return d->profile;
@@ -123,6 +126,14 @@ string Signer::countryName() const
     return d->countryName;
 }
 
+/**
+ * Set signing profile
+ *
+ * - time-mark
+ * - time-stamp
+ * - time-mark-archive
+ * - time-stamp-archive
+ */
 void Signer::setProfile(const string &profile)
 {
     d->profile = profile;

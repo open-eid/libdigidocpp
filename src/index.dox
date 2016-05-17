@@ -638,7 +638,7 @@ Libdigidocpp library uses Trust Service Status List (TSL) as a source of trust a
 
 By default, the trusted certificates' information is obtained from European Commission's official TSL list (https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml). The default TSL behaviour can be changed by altering the configuration parameters listed below. 
 
-\note - The TSL URL and TSL signing certificate values are not configurable via the digidocpp.conf configuration file. The default values are fixed in source code and can be accessed via methods digidoc::Conf::TSLCert() and digidoc::Conf::TSLUrl(). The library's user has to create a subclass and override the methods in order to define other values. See also \ref initialization. 
+\note - The TSL URL and TSL signing certificate values are not configurable via the digidocpp.conf configuration file. The default values are fixed in source code and can be accessed via methods digidoc::Conf::TSLCerts() and digidoc::Conf::TSLUrl(). The library's user has to create a subclass and override the methods in order to define other values. See also \ref initialization. 
 \note - When using digidoc-tool utility program then it is possible to specify necessary TSL parameters on the command line. See also \ref utility.
 \note - For information about using test TSL lists with Libdigidocpp library, please refer to   https://github.com/open-eid/libdigidocpp/wiki/Using-test-TSL-lists
 
