@@ -137,8 +137,8 @@ function xml_security {
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
-    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${SDK_PATH}/usr --with-xalan=${TARGET_PATH}
-    make
+    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${TARGET_PATH} --with-xalan=${TARGET_PATH}
+    make -s
     sudo make install
     cd ..
 }
@@ -151,7 +151,7 @@ function libxml2 {
     tar xf ${LIBXML2_DIR}.tar.gz
     cd ${LIBXML2_DIR}
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --without-python
-    make
+    make -s
     sudo make install
     cd ..
 }
@@ -208,8 +208,13 @@ function openssl {
         sudo lipo -create ${SSL} -output ${TARGET_PATH}/lib/libssl.a
         ;;
     *)
+        KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared
+        sed -ie 's!^CFLAG=!CFLAG=${CFLAGS} !' Makefile
+        make -s
+        sudo make install
         ;;
     esac
+
     cd ..
 }
 
@@ -222,8 +227,9 @@ case "$@" in
 *openssl*) openssl ;;
 *all*)
     xerces
+    openssl
     case "$@" in
-    *ios*|*simulator*|*android*) openssl ;;
+    *ios*|*simulator*|*android*) ;;
     *) xalan ;;
     esac
     xml_security
