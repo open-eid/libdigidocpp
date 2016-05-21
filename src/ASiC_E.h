@@ -32,12 +32,9 @@ namespace digidoc
      * Documents can be added and removed from container only if the container is
      * not signed. To add or remove documents from signed container remove all the
      * signatures before modifying documents list in container.
-     *
-     * @author Janari Põld
      */
     class ASiC_E: public ASiContainer
     {
-
       public:
           static const std::string BES_PROFILE;
           static const std::string EPES_PROFILE;
@@ -47,7 +44,9 @@ namespace digidoc
           static const std::string ASIC_TSA_PROFILE;
           static const std::string MANIFEST_NAMESPACE;
 
+          ~ASiC_E();
           void save(const std::string &path = "") override;
+          std::vector<DataFile*> metaFiles() const;
 
           void addAdESSignature(std::istream &sigdata) override;
           Signature* prepareSignature(Signer *signer) override;
@@ -62,5 +61,8 @@ namespace digidoc
           DISABLE_COPY(ASiC_E);
           void createManifest(std::ostream &os);
           void parseManifestAndLoadFiles(const ZipSerialize &z);
+
+          class Private;
+          Private *d;
     };
 }
