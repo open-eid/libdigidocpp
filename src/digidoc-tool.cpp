@@ -321,6 +321,10 @@ static void printUsage(const char *executable)
     << "    Available options:" << endl
     << "      --warnings=(ignore,warning,error) - warning handling" << endl
     << "      --extractAll[=path] - extracts documents (to path when provided)" << endl << endl
+    << "  Command add:" << endl
+    << "    Example: " << executable << " add --file=file1.txt container-file.bdoc" << endl
+    << "    Available options:" << endl
+    << "      --file=        - The option can occur multiple times. File(s) to be added to the container" << endl
     << "  Command remove:" << endl
     << "    Example: " << executable << " remove --document=0 --document=1 --signature=1 container-file.bdoc" << endl
     << "    Available options:" << endl
@@ -703,6 +707,44 @@ static int remove(int argc, char *argv[])
 
 
 /**
+ * Add items to the container.
+ *
+ * @param argc number of command line arguments.
+ * @param argv command line arguments.
+ * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
+ */
+static int add(int argc, char *argv[])
+{
+    Params p(argc, argv);
+    if(p.path.empty() || p.files.empty())
+    {
+        printUsage(argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    unique_ptr<Container> doc;
+    try {
+        doc.reset(Container::open(p.path));
+    } catch(const Exception &e) {
+        printf("Failed to parse container");
+        parseException(e, "  Exception:");
+        return EXIT_FAILURE;
+    }
+
+    try {
+        for(const pair<string,string> &file: p.files)
+            doc->addDataFile(file.first, file.second);
+
+        doc->save();
+
+        return EXIT_SUCCESS;
+    } catch(const Exception &e) { parseException(e, "Caught Exception:"); }
+
+    return EXIT_FAILURE;
+}
+
+
+/**
  * Sign the container.
  *
  * @param p Params object containing the info needed for signature creation
@@ -974,6 +1016,8 @@ int main(int argc, char *argv[])
         returnCode = open(argc, argv);
     else if(command == "create")
         returnCode = create(argc, argv);
+    else if(command == "add")
+        returnCode = add(argc, argv);
     else if(command == "remove")
         returnCode = remove(argc, argv);
     else if(command == "sign")
