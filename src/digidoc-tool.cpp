@@ -314,12 +314,17 @@ static void printUsage(const char *executable)
     << "    Available options:" << endl
     << "      --file=        - The option can occur multiple times. File(s) to be signed" << endl
     << "      --mime=        - can be after --file parameter. Default value is application/octet-stream" << endl
+    << "      --dontsign     - Don't sign the newly created container." << endl
     << "      for additional options look sign command" << endl << endl
     << "  Command open:" << endl
     << "    Example: " << executable << " open container-file.bdoc" << endl
     << "    Available options:" << endl
     << "      --warnings=(ignore,warning,error) - warning handling" << endl
     << "      --extractAll[=path] - extracts documents (to path when provided)" << endl << endl
+    << "  Command add:" << endl
+    << "    Example: " << executable << " add --file=file1.txt container-file.bdoc" << endl
+    << "    Available options:" << endl
+    << "      --file=        - The option can occur multiple times. File(s) to be added to the container" << endl
     << "  Command remove:" << endl
     << "    Example: " << executable << " remove --document=0 --document=1 --signature=1 container-file.bdoc" << endl
     << "    Available options:" << endl
@@ -356,7 +361,7 @@ struct Params
     string path, profile, pkcs11, pkcs12, pin, city, state, postalCode, country, cert;
     vector<pair<string,string> > files;
     vector<string> roles;
-    bool cng = true, selectFirst = false;
+    bool cng = true, selectFirst = false, doSign = true;
     static const map<string,string> profiles;
 };
 
@@ -423,6 +428,7 @@ Params::Params(int argc, char *argv[])
         else if(arg.find("--tslurl=") == 0) conf->tslurl = arg.substr(9);
         else if(arg.find("--tslcert=") == 0) conf->tslcerts = { X509Cert(arg.substr(10)) };
         else if(arg == "--TSLAllowExpired") conf->expired = true;
+        else if(arg == "--dontsign") doSign = false;
         else path = arg;
     }
 }
@@ -699,8 +705,88 @@ static int remove(int argc, char *argv[])
     return EXIT_FAILURE;
 }
 
+
 /**
- * Create new container.
+ * Add items to the container.
+ *
+ * @param argc number of command line arguments.
+ * @param argv command line arguments.
+ * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
+ */
+static int add(int argc, char *argv[])
+{
+    Params p(argc, argv);
+    if(p.path.empty() || p.files.empty())
+    {
+        printUsage(argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    unique_ptr<Container> doc;
+    try {
+        doc.reset(Container::open(p.path));
+    } catch(const Exception &e) {
+        printf("Failed to parse container");
+        parseException(e, "  Exception:");
+        return EXIT_FAILURE;
+    }
+
+    try {
+        for(const pair<string,string> &file: p.files)
+            doc->addDataFile(file.first, file.second);
+
+        doc->save();
+
+        return EXIT_SUCCESS;
+    } catch(const Exception &e) { parseException(e, "Caught Exception:"); }
+
+    return EXIT_FAILURE;
+}
+
+
+/**
+ * Sign the container.
+ *
+ * @param p Params object containing the info needed for signature creation
+ * @param doc the container that is to be signed
+ * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
+ */
+static int signContainer(Params p, Container* doc)
+{
+    unique_ptr<Signer> signer;
+#ifdef _WIN32
+    if(p.cng)
+        signer.reset(new WinSigner(p.pin, p.selectFirst));
+    else
+#endif
+    if(!p.pkcs12.empty())
+    {
+        signer.reset(new PKCS12Signer(p.pkcs12, p.pin));
+    }
+    else
+    {
+        signer.reset(new ConsolePinSigner(p.pkcs11, p.pin));
+    }
+    signer->setSignatureProductionPlace(p.city, p.state, p.postalCode, p.country);
+    signer->setSignerRoles(p.roles);
+    signer->setProfile(p.profile);
+    if(Signature *signature = doc->sign(signer.get()))
+    {
+        try {
+            signature->validate();
+            printf("    Validation: OK\n");
+        } catch(const Exception &e) {
+            printf("    Validation: FAILED\n");
+            parseException(e, "     Exception:");
+            return EXIT_FAILURE;
+        }
+    }
+    return EXIT_SUCCESS;
+}
+
+
+/**
+ * Create new container and sign unless explicitly requested not to sign
  *
  * @param argc number of command line arguments.
  * @param argv command line arguments.
@@ -724,43 +810,23 @@ static int create(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    int returnCode = EXIT_SUCCESS;
     try {
         for(const pair<string,string> &file: p.files)
             doc->addDataFile(file.first, file.second);
 
-        unique_ptr<Signer> signer;
-#ifdef _WIN32
-        if(p.cng)
-            signer.reset(new WinSigner(p.pin, p.selectFirst));
-        else
-#endif
-        if(!p.pkcs12.empty())
-            signer.reset(new PKCS12Signer(p.pkcs12, p.pin));
-        else
-            signer.reset(new ConsolePinSigner(p.pkcs11, p.pin));
-        signer->setSignatureProductionPlace(p.city, p.state, p.postalCode, p.country);
-        signer->setSignerRoles(p.roles);
-        signer->setProfile(p.profile);
-        if(Signature *signature = doc->sign(signer.get()))
+        int returnCode = EXIT_SUCCESS;
+        if(true == p.doSign)
         {
-            try {
-                signature->validate();
-                printf("    Validation: OK\n");
-            } catch(const Exception &e) {
-                printf("    Validation: FAILED\n");
-                parseException(e, "     Exception:");
-                returnCode = EXIT_FAILURE;
-            }
+            returnCode = signContainer(p, doc.get());
         }
-        doc->save(p.path);
+        doc->save();
+        return returnCode;
     } catch(const Exception &e) {
         parseException(e, "Caught Exception:");
-        returnCode = EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
-
-    return returnCode;
 }
+
 
 /**
  * Sign container.
@@ -787,39 +853,14 @@ static int sign(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    int returnCode = EXIT_SUCCESS;
     try {
-        unique_ptr<Signer> signer;
-#ifdef _WIN32
-        if(p.cng)
-            signer.reset(new WinSigner(p.pin, p.selectFirst));
-        else
-#endif
-        if(!p.pkcs12.empty())
-            signer.reset(new PKCS12Signer(p.pkcs12, p.pin));
-        else
-            signer.reset(new ConsolePinSigner(p.pkcs11, p.pin));
-        signer->setSignatureProductionPlace(p.city, p.state, p.postalCode, p.country);
-        signer->setSignerRoles(p.roles);
-        signer->setProfile(p.profile);
-        if(Signature *signature = doc->sign(signer.get()))
-        {
-            try {
-                signature->validate();
-                printf("    Validation: OK\n");
-            } catch(const Exception &e) {
-                printf("    Validation: FAILED\n");
-                parseException(e, "     Exception:");
-                returnCode = EXIT_FAILURE;
-            }
-        }
+        int returnCode = signContainer(p, doc.get());
         doc->save();
+        return returnCode;
     } catch(const Exception &e) {
         parseException(e, "Caught Exception:");
-        returnCode = EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
-
-    return returnCode;
 }
 
 static int websign(int argc, char* argv[])
@@ -975,6 +1016,8 @@ int main(int argc, char *argv[])
         returnCode = open(argc, argv);
     else if(command == "create")
         returnCode = create(argc, argv);
+    else if(command == "add")
+        returnCode = add(argc, argv);
     else if(command == "remove")
         returnCode = remove(argc, argv);
     else if(command == "sign")
