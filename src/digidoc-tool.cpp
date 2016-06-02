@@ -325,6 +325,7 @@ static void printUsage(const char *executable)
     << "    Example: " << executable << " add --file=file1.txt container-file.bdoc" << endl
     << "    Available options:" << endl
     << "      --file=        - The option can occur multiple times. File(s) to be added to the container" << endl
+    << "      --mime=        - can be after --file parameter. Default value is application/octet-stream" << endl
     << "  Command remove:" << endl
     << "    Example: " << executable << " remove --document=0 --document=1 --signature=1 container-file.bdoc" << endl
     << "    Available options:" << endl
