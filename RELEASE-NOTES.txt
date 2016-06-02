@@ -1,3 +1,11 @@
+Libdigidocpp library 3.12.2 release notes
+--------------------------------------
+Changes compared to ver 3.12.1
+- Fix issues found by coverity
+- digidoc-tool improvements
+
+
+
 Libdigidocpp library 3.12.1 release notes
 --------------------------------------
 Changes compared to ver 3.12.0
