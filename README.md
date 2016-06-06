@@ -73,8 +73,10 @@
 
 ### Windows
 
-1. Install dependencies from
+1. Install dependencies and necessary tools from
 	* [Visual Studio Express 2013 for Windows Desktop](http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx)
+	* [Perl] (https://www.perl.org/get.html)
+	* [7-zip] (http://www.7-zip.org)
 	* [http://www.cmake.org](http://www.cmake.org)
 	* [Xerces-c](http://mirror.cogentco.com/pub/apache//xerces/c/3/sources/xerces-c-3.1.1.zip)
 	* [Xerces-c MSVC2012 Project files](https://issues.apache.org/jira/secure/attachment/12548623/xerces_vc11proj.zip)
