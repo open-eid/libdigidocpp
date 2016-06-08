@@ -643,13 +643,15 @@ string File::fromUriPath(const string &path)
     char data[] = "0x00";
     for(string::const_iterator i = path.begin(); i != path.end(); ++i)
     {
-        if(*i == '%' && isxdigit(*(i+1)) && isxdigit(*(i+2)))
+        if(*i == '%' && (std::distance(i, path.end()) > 2) && isxdigit(*(i+1)) && isxdigit(*(i+2)))
         {
             data[2] = *(++i);
             data[3] = *(++i);
             ret += static_cast<char>(strtoul(data, 0, 16));
-        } else
+        }
+        else {
             ret += *i;
+        }
     }
     return ret;
 }

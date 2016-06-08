@@ -503,8 +503,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(ConfSuite)
-BOOST_AUTO_TEST_CASE(XmlConfCase)
-{
+BOOST_AUTO_TEST_CASE(XmlConfCase) {
     XmlConf c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "/conf.xsd"));
     BOOST_CHECK_EQUAL(c.logLevel(), 2);
     BOOST_CHECK_EQUAL(c.logFile(), "digidocpp.log");
@@ -519,5 +518,37 @@ BOOST_AUTO_TEST_CASE(XmlConfCase)
     BOOST_CHECK_EQUAL(c.PKCS12Pass(), "pass");
     BOOST_CHECK_EQUAL(c.PKCS12Disable(), true);
     BOOST_CHECK_EQUAL(c.ocsp("ESTEID-SK 2007"), "http://ocsp.sk.ee");
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(FileUtilSuite)
+BOOST_AUTO_TEST_CASE(FromUriPathConvertsAsciiEncodingToCharacters)
+{
+    const std::string asciiEncodedStr = "%3dtest%20%40";
+    const std::string expectedDecodedStr = "=test @";
+
+    string result = util::File::fromUriPath(asciiEncodedStr);
+
+    BOOST_CHECK_EQUAL(expectedDecodedStr, result);
+}
+
+BOOST_AUTO_TEST_CASE(FromUriPathDoesNotConvertIncompleteAsciiCode)
+{
+    const std::string asciiEncodedStr = "%3dtest%20%4";
+    const std::string expectedDecodedStr = "=test %4";
+
+    string result = util::File::fromUriPath(asciiEncodedStr);
+
+    BOOST_CHECK_EQUAL(expectedDecodedStr, result);
+}
+
+BOOST_AUTO_TEST_CASE(FromUriPathPreservesTrailingPercentageSign)
+{
+    const std::string asciiEncodedStr = "%3dtest%20%";
+    const std::string expectedDecodedStr = "=test %";
+
+    string result = util::File::fromUriPath(asciiEncodedStr);
+
+    BOOST_CHECK_EQUAL(expectedDecodedStr, result);
 }
 BOOST_AUTO_TEST_SUITE_END()
