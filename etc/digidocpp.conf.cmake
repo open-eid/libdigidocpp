@@ -31,4 +31,5 @@
     <!--<ocsp issuer="TEST of ESTEID-SK 2011">http://demo.sk.ee/ocsp</ocsp>-->
     <!--<ocsp issuer="TEST of ESTEID-SK 2015">http://demo.sk.ee/ocsp</ocsp>-->
     <!--<ocsp issuer="TEST of KLASS3-SK 2010">http://demo.sk.ee/ocsp</ocsp>-->
+    <!--<ocsp issuer="TEST of EID-SK 2011">http://demo.sk.ee/ocsp</ocsp>-->
 </configuration>
