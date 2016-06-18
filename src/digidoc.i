@@ -120,6 +120,8 @@ SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jen
   try {
     digidoc::Conf::init(new DigiDocConf(path_str));
     digidoc::initialize();
+    digidoc::Exception::addWarningIgnore(digidoc::Exception::ReferenceDigestWeak);
+    digidoc::Exception::addWarningIgnore(digidoc::Exception::SignatureDigestWeak);
   } catch (const digidoc::Exception &e) {
     SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, parseException(e).c_str());
     return;
