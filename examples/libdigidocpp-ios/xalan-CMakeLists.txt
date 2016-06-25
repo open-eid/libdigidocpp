@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 3.0)
+find_package(XercesC REQUIRED)
+
+include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${XERCESC_INCLUDE_DIR})
+
+#file(GLOB MSGCREATOR_SOURCES xalanc/Utils/MsgCreator/*.cpp)
+#add_executable(MsgCreator ${MSGCREATOR_SOURCES})
+#target_link_libraries(MsgCreator ${XERCESC_LIBRARIES})
+add_custom_command(OUTPUT LocalMsgIndex.hpp LocalMsgData.hpp COMMENT "Generating LocalMsgIndex.hpp"
+	COMMAND ${CMAKE_SOURCE_DIR}/MsgCreator -TYPE inmem -LOCALE en_US -OUTDIR ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/xalanc/NLS/en_US/XalanMsg_en_US.xlf
+)
+
+add_library(xalanMsg STATIC xalanc/Utils/XalanMsgLib/XalanMsgLib.cpp LocalMsgIndex.hpp)
+
+add_definitions(-DXALAN_INMEM_MSG_LOADER -DXALAN_USE_XERCES_LOCAL_CODEPAGE_TRANSCODERS)
+file(GLOB SOURCES
+	xalanc/XPath/*.cpp
+	xalanc/PlatformSupport/*.cpp
+	xalanc/DOMSupport/*.cpp
+	xalanc/XalanDOM/*.cpp
+	xalanc/XalanTransformer/*.cpp
+	xalanc/XSLT/*.cpp
+	xalanc/XMLSupport/*.cpp
+	xalanc/XercesParserLiaison/*.cpp
+	xalanc/XalanSourceTree/*.cpp
+	xalanc/XalanExtensions/*.cpp
+	xalanc/XalanEXSLT/*.cpp
+)
+add_library(xalan-c STATIC ${SOURCES})
+target_link_libraries(xalan-c xalanMsg ${XERCESC_LIBRARIES})
+
+install(DIRECTORY xalanc DESTINATION include FILES_MATCHING PATTERN "*.hpp")
+install(FILES ${CMAKE_BINARY_DIR}/LocalMsgIndex.hpp DESTINATION include/xalanc/PlatformSupport)
+install(TARGETS xalan-c xalanMsg
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)

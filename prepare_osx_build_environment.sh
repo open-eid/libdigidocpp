@@ -65,6 +65,7 @@ case "$@" in
   ;;
 *ios*)
   echo "Building for iOS"
+  TARGET=iphoneos
   TARGET_PATH=/Library/EstonianIDCard.iphoneos
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
   export SDK_PATH=$(xcrun -sdk iphoneos --show-sdk-path)
@@ -74,6 +75,7 @@ case "$@" in
   ;;
 *simulator*)
   echo "Building for iOS Simulator"
+  TARGET=iphonesimulator
   TARGET_PATH=/Library/EstonianIDCard.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
   export SDK_PATH=$(xcrun -sdk iphonesimulator --show-sdk-path)
@@ -128,6 +130,24 @@ function xalan {
       ./runConfigure -p linux -P ${TARGET_PATH} -c ${CC} -x ${CXX} -r none -C --host=arm-unknown-linux
       make -s
       sudo XALANCROOT=${PWD} make install
+      ;;
+    *ios*|*simulator*)
+      cp ../../examples/libdigidocpp-ios/xalan-CMakeLists.txt src/CMakeLists.txt
+      cmake \
+        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+        -DCMAKE_C_COMPILER_WORKS=yes \
+        -DCMAKE_CXX_COMPILER_WORKS=yes \
+        -DCMAKE_C_FLAGS="-miphoneos-version-min=8.0" \
+        -DCMAKE_CXX_FLAGS="-miphoneos-version-min=8.0" \
+        -DCMAKE_BUILD_TYPE="Release" \
+        -DCMAKE_OSX_SYSROOT=${SDK_PATH} \
+        -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
+        -DXERCESC_INCLUDE_DIR=${TARGET_PATH}/include \
+        -DXercesC_LIBRARY_RELEASE=${TARGET_PATH}/lib/libxerces-c.a \
+        src
+      cp ../../examples/libdigidocpp-android/MsgCreator src
+      make -s
+      sudo make install
       ;;
     *)
       export LDFLAGS="-headerpad_max_install_names"
@@ -244,10 +264,7 @@ case "$@" in
 *all*)
     xerces
     openssl
-    case "$@" in
-    *ios*|*simulator*) ;;
-    *) xalan ;;
-    esac
+    xalan
     xml_security
     xsd
     ;;
