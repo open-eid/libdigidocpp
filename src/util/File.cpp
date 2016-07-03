@@ -146,7 +146,7 @@ string File::confPath()
 #elif defined(_WIN32)
     return dllPath("digidocpp.dll");
 #else
-    return DIGIDOCPP_CONFIG_DIR "/";
+    return env("SNAP") + DIGIDOCPP_CONFIG_DIR "/";
 #endif
 }
 
