@@ -752,25 +752,25 @@ static int add(int argc, char *argv[])
  * @param doc the container that is to be signed
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int signContainer(Params p, Container* doc)
+static int signContainer(const Params* p, Container* doc)
 {
     unique_ptr<Signer> signer;
 #ifdef _WIN32
-    if(p.cng)
-        signer.reset(new WinSigner(p.pin, p.selectFirst));
+    if(p->cng)
+        signer.reset(new WinSigner(p->pin, p->selectFirst));
     else
 #endif
-    if(!p.pkcs12.empty())
+    if(!p->pkcs12.empty())
     {
-        signer.reset(new PKCS12Signer(p.pkcs12, p.pin));
+        signer.reset(new PKCS12Signer(p->pkcs12, p->pin));
     }
     else
     {
-        signer.reset(new ConsolePinSigner(p.pkcs11, p.pin));
+        signer.reset(new ConsolePinSigner(p->pkcs11, p->pin));
     }
-    signer->setSignatureProductionPlace(p.city, p.state, p.postalCode, p.country);
-    signer->setSignerRoles(p.roles);
-    signer->setProfile(p.profile);
+    signer->setSignatureProductionPlace(p->city, p->state, p->postalCode, p->country);
+    signer->setSignerRoles(p->roles);
+    signer->setProfile(p->profile);
     if(Signature *signature = doc->sign(signer.get()))
     {
         try {
@@ -818,7 +818,7 @@ static int create(int argc, char* argv[])
         int returnCode = EXIT_SUCCESS;
         if(true == p.doSign)
         {
-            returnCode = signContainer(p, doc.get());
+            returnCode = signContainer(&p, doc.get());
         }
         doc->save();
         return returnCode;
@@ -855,7 +855,7 @@ static int sign(int argc, char* argv[])
     }
 
     try {
-        int returnCode = signContainer(p, doc.get());
+        int returnCode = signContainer(&p, doc.get());
         doc->save();
         return returnCode;
     } catch(const Exception &e) {
