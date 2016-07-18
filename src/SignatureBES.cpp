@@ -200,7 +200,8 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
     SignedPropertiesType signedProperties;
     signedProperties.signedSignatureProperties(SignedSignaturePropertiesType());
     signedProperties.id(nr + "-SignedProperties");
-    if(signer->profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
+    if(signer->profile().find(BDoc::ASIC_TM_PROFILE) != string::npos ||
+       signer->profile().find(BDoc::EPES_PROFILE) != string::npos)
     {
         map<string,Policy>::const_iterator p = policylist.cbegin();
         IdentifierType identifierid(p->first);

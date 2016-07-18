@@ -372,6 +372,8 @@ struct Params
 };
 
 const map<string,string> Params::profiles = {
+    {"BES", "BES"},
+    {"EPES", "EPES"},
     {"TM", "time-mark"},
     {"TS", "time-stamp"},
     {"TMA", "time-mark-archive"},
