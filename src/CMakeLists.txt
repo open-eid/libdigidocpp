@@ -184,6 +184,17 @@ include_directories(
     ${MINIZIP_INCLUDE_DIR}
 )
 
+if( PODOFO_FOUND )
+    list( APPEND digidocpp_SRCS
+        PDF.cpp
+        SignatureCAdES_B.cpp
+        SignatureCAdES_T.cpp
+    )
+    list( APPEND TARGET_LIBRARIES ${PODOFO_LIBRARIES} )
+    list( APPEND digidocpp_DEFS PDF_SUPPORT )
+    include_directories( ${PODOFO_INCLUDE_DIR} )
+endif()
+
 add_library(digidocpp_priv STATIC
     ${xsd_SRCS}
     log.cpp

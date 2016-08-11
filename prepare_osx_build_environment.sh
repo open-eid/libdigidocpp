@@ -8,6 +8,9 @@ OPENSSL_DIR=openssl-1.0.2n
 #OPENSSL_DIR=openssl-1.1.0g
 LIBXML2_DIR=libxml2-2.9.7
 ANDROID_NDK=android-ndk-r14b
+FREETYPE_DIR=freetype-2.9
+FONTCONFIG_DIR=fontconfig-2.12.6
+PODOFO_DIR=podofo-0.9.4
 ARGS="$@"
 
 case "$@" in
@@ -43,6 +46,7 @@ case "$@" in
   export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking"
+  ARCHS=${ARCH}
 
   if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
     curl -O https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
@@ -276,6 +280,117 @@ function openssl {
     cd ..
 }
 
+function freetype {
+    echo Building ${FREETYPE_DIR}
+    if [ ! -f ${FREETYPE_DIR}.tar.bz2 ]; then
+        curl -O -L http://download.savannah.gnu.org/releases/freetype/${FREETYPE_DIR}.tar.bz2
+    fi
+    rm -rf ${FREETYPE_DIR}
+    tar xf ${FREETYPE_DIR}.tar.bz2
+    cd ${FREETYPE_DIR}
+    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-png=no --with-bzip2=no
+    make -s
+    sudo make install
+    cd ..
+}
+
+function fontconfig {
+    echo Building ${FONTCONFIG_DIR}
+    if [ ! -f ${FONTCONFIG_DIR}.tar.bz2 ]; then
+        curl -O https://www.freedesktop.org/software/fontconfig/release//${FONTCONFIG_DIR}.tar.bz2
+    fi
+    rm -rf ${FONTCONFIG_DIR}
+    tar xf ${FONTCONFIG_DIR}.tar.bz2
+    cd ${FONTCONFIG_DIR}
+    case "${ARGS}" in
+    *android*)
+      ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --enable-libxml2 \
+        FREETYPE_CFLAGS="-I${TARGET_PATH}/include/freetype2" FREETYPE_LIBS="-L${TARGET_PATH}/lib -lfreetype" \
+        LIBXML2_CFLAGS="-I${TARGET_PATH}/include/libxml2" LIBXML2_LIBS="-L${TARGET_PATH}/lib -lxml2"
+      ;;
+    *)
+      ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --enable-libxml2 \
+        FREETYPE_CFLAGS="-I${TARGET_PATH}/include/freetype2" FREETYPE_LIBS="-L${TARGET_PATH}/lib -lfreetype" \
+        LIBXML2_CFLAGS="-I${SYSROOT}/usr/include/libxml2" LIBXML2_LIBS="-L${SYSROOT}/usr/lib -lxml2"
+      ;;
+    esac
+    make -s
+    sudo make install
+    cd ..
+}
+
+function podofo {
+    echo Building ${PODOFO_DIR}
+    if [ ! -f ${PODOFO_DIR}.tar.gz ]; then
+        curl -O -L http://downloads.sourceforge.net/project/podofo/podofo/0.9.4/${PODOFO_DIR}.tar.gz
+    fi
+    rm -rf ${PODOFO_DIR}
+    tar xf ${PODOFO_DIR}.tar.gz
+    cd ${PODOFO_DIR}
+    rm cmake/modules/FindFREETYPE.cmake
+    rm cmake/modules/FindOpenSSL.cmake
+    rm cmake/modules/FindZLIB.cmake
+    sed -ie 's!${PNG_LIBRARIES}!!' CMakeLists.txt
+    sed -ie 's!adbe.pkcs7.detached!ETSI.CAdES.detached!' src/doc/PdfSignatureField.cpp 
+    PODOFO=""
+    for ARCH in ${ARCHS}
+    do
+        case "${ARGS}" in
+        *android*)
+            PARAMS="-DCMAKE_SYSTEM_NAME=Android
+                    -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN=${TARGET_PATH}
+                    -DCMAKE_ANDROID_ARCH_ABI=${ARCH_ABI}
+                    -DLIBCRYPTO_LIBRARY_RELEASE=${TARGET_PATH}/lib/libcrypto.a
+                    -DPODOFO_BUILD_STATIC=NO
+                    -DPODOFO_BUILD_SHARED=YES
+                    -DFONTCONFIG_LIBRARIES=${TARGET_PATH}/lib/libfontconfig.a;${TARGET_PATH}/lib/libxml2.a
+                    -DZLIB_INCLUDE_DIR=${SYSROOT}/usr/include
+                    -DZLIB_LIBRARY=${SYSROOT}/usr/lib/libz.so"
+            ;;
+        *ios*|*simulator*)
+            PARAMS="-DLIBCRYPTO_LIBRARY_RELEASE=${TARGET_PATH}/lib/libcrypto.a
+                    -DPODOFO_BUILD_STATIC=YES
+                    -DPODOFO_BUILD_SHARED=NO
+                    -DCMAKE_OSX_SYSROOT=${SYSROOT}
+                    -DCMAKE_OSX_ARCHITECTURES=${ARCH}"
+            ;;
+        *)
+            PARAMS="-DLIBCRYPTO_LIBRARY_RELEASE=${TARGET_PATH}/lib/libcrypto.dylib
+                    -DPODOFO_BUILD_STATIC=YES
+                    -DPODOFO_BUILD_SHARED=NO
+                    -DCMAKE_OSX_SYSROOT=${SYSROOT}
+                    -DCMAKE_OSX_ARCHITECTURES=${ARCH}"
+            ;;
+        esac
+        cmake \
+            -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+            -DCMAKE_C_COMPILER_WORKS=yes \
+            -DCMAKE_CXX_COMPILER_WORKS=yes \
+            -DCMAKE_C_FLAGS="${SDK_CFLAGS}" \
+            -DCMAKE_CXX_FLAGS="${SDK_CFLAGS} -I${TARGET_PATH}/include/freetype2" \
+            -DCMAKE_BUILD_TYPE="Release" \
+            -DPODOFO_BUILD_LIB_ONLY=YES \
+            -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
+            -DLIBCRYPTO_INCLUDE_DIR=${TARGET_PATH}/include \
+            -DPNG_PNG_INCLUDE_DIR=PNG_PNG_INCLUDE_DIR-NOTFOUND \
+            -DPNG_LIBRARY_RELEASE=PNG_LIBRARY_RELEASE-NOTFOUND \
+            -DLIBJPEG_LIBRARY_RELEASE=LIBJPEG_LIBRARY_RELEASE-NOTFOUND \
+            -DTIFF_INCLUDE_DIR=TIFF_INCLUDE_DIR-NOTFOUND \
+            -DTIFF_LIBRARY_RELEASE=TIFF_LIBRARY_RELEASE-NOTFOUND \
+            ${PARAMS} .
+        make -s
+        make install DESTDIR=${ARCH}
+        PODOFO="${PODOFO} ${ARCH}/${TARGET_PATH}/lib/libpodofo.a"
+    done
+    sudo make install
+    tmp=(${ARCHS})
+    if [ "${#tmp[@]}" -ne "1" ]; then
+        echo lipo
+        sudo lipo -create ${PODOFO} -output ${TARGET_PATH}/lib/libpodofo.a
+    fi
+    cd ..
+}
+
 case "$@" in
 *xerces*) xerces ;;
 *xalan*) xalan ;;
@@ -283,6 +398,9 @@ case "$@" in
 *libxml2*) libxml2 ;;
 *xsd*) xsd ;;
 *openssl*) openssl ;;
+*freetype*) freetype ;;
+*fontconfig*) fontconfig ;;
+*podofo*) podofo ;;
 *all*)
     xerces
     openssl

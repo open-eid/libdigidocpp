@@ -23,6 +23,7 @@
 #include "ASiC_S.h"
 #include "DDoc.h"
 #include "SiVaContainer.h"
+#include "PDF.h"
 #include "DataFile.h"
 #include "Exception.h"
 #include "log.h"
@@ -124,12 +125,15 @@ void digidoc::initialize(const string &appInfo, initCallBack callBack)
 #if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
     Container::addContainerImplementation<DDoc>();
 #endif
+#ifdef PDF_SUPPORT
+    Container::addContainerImplementation<PDF>();
+#endif
     Container::addContainerImplementation<SiVaContainer>();
     Container::addContainerImplementation<ASiC_S>();
 
     if(callBack)
     {
-        thread([=](){
+        thread([=]{
             try {
                 X509CertStore::instance();
                 callBack(nullptr);
@@ -166,16 +170,12 @@ void digidoc::terminate()
 /**
  * Create a new container object and specify the DigiDoc container type
  */
-Container::Container()
-{
-}
+Container::Container() = default;
 
 /**
  * Releases resources.
  */
-Container::~Container()
-{
-}
+Container::~Container() = default;
 
 /**
  * @fn digidoc::Container::addDataFile(const std::string &path, const std::string &mediaType)
@@ -210,7 +210,7 @@ Container::~Container()
  */
 void Container::addAdESSignature(const std::vector<unsigned char> &signature)
 {
-    std::stringstream s(std::string(&signature[0], &signature[0] + signature.size()));
+    stringstream s(string(signature.begin(), signature.end()));
     addAdESSignature(s);
 }
 
@@ -250,23 +250,10 @@ Container* Container::create(const std::string &path)
  */
 unsigned int Container::newSignatureId() const
 {
-    unsigned int id = 0;
-    while(true)
-    {
-        bool found = false;
-        for(Signature *s: signatures())
-        {
-            if(s->id() == Log::format("S%u", id))
-            {
-                found = true;
-                break;
-            }
-        }
-        if(!found)
+    vector<Signature*> list = signatures();
+    for(unsigned int id = 0; ; ++id)
+        if(!any_of(list.cbegin(), list.cend(), [&](Signature *s){ return s->id() == Log::format("S%u", id); }))
             return id;
-        ++id;
-    }
-    return id;
 }
 
 /**
