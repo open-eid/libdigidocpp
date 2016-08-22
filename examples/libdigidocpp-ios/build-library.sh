@@ -20,8 +20,8 @@ cd ${TARGET}
 cmake \
     -DCMAKE_C_COMPILER_WORKS=yes \
     -DCMAKE_CXX_COMPILER_WORKS=yes \
-    -DCMAKE_C_FLAGS="-miphoneos-version-min=8.0 -std=gnu89 -Wno-implicit-function-declaration" \
-    -DCMAKE_CXX_FLAGS="-miphoneos-version-min=8.0" \
+    -DCMAKE_C_FLAGS="-miphoneos-version-min=9.0 -std=gnu89 -Wno-implicit-function-declaration" \
+    -DCMAKE_CXX_FLAGS="-miphoneos-version-min=9.0" \
     -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
     -DCMAKE_OSX_SYSROOT=$(xcrun -sdk ${TARGET} --show-sdk-path) \
     -DCMAKE_OSX_ARCHITECTURES="${ARCHS}" \
