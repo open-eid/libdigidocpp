@@ -1,0 +1,38 @@
+--- xalan-c-1.11/c/src/xalanc/PlatformSupport/DoubleSupport.cpp	2012-03-19 18:18:10.000000000 +0200
++++ xalan-c-1.11/c/src/xalanc/PlatformSupport/DoubleSupport.cpp.bkp	2016-06-18 10:58:12.000000000 +0300
+@@ -609,7 +609,7 @@
+ #endif
+ 
+         const char  theDecimalPointChar =
+-            localeconv()->decimal_point[0];
++            '.';//localeconv()->decimal_point[0];
+ 
+         // trim any whitespace
+         consumeWhitespace(theString, theLength);
+--- xalan-c-1.11/c/runConfigure	2012-10-02 20:06:36.000000000 +0300
++++ xalan-c-1.11/c/runConfigure.bkp	2016-06-18 11:12:07.000000000 +0300
+@@ -667,7 +667,7 @@
+ LDFLAGS="$LDFLAGS $linkeroptions $bitstobuildLink $threadingDefines"
+ export LDFLAGS
+ 
+-LIBS="$transcodingLibs $threadingLibs "
++LIBS="$LIBS $transcodingLibs $threadingLibs "
+ export LIBS
+ 
+ 
+--- xalan-c-1.11/c/Makefile.incl.in	2016-06-18 12:00:53.000000000 +0300
++++ xalan-c-1.11/c/Makefile.incl.in.bkp	2016-06-18 12:01:25.000000000 +0300
+@@ -265,11 +265,11 @@
+ 		  CC1 = $(CXX) $(CXXFLAGS) $(PLATFORM_COMPILE_OPTIONS)
+ 		  CC4 = $(CC) $(CFLAGS) $(PLATFORM_COMPILE_OPTIONS)
+ 		  MAKE_SHARED = ${CXX} $(CXXFLAGS) -D${PLATFORM} -shared ${PIC_OPTION} ${LDFLAGS}
+-		  LINK_SONAME = -Wl,-soname,$(SO_NAME)
++		  LINK_SONAME = 
+ 		  LINK = $(CXX) -D${PLATFORM} ${PIC_OPTION} ${LDFLAGS}
+ 		  
+ 		  export LD_LIBRARY_PATH := $(XERCESCROOT)/lib:$(ICULIB_LOC):$(LD_LIBRARY_PATH)
+-		  MAKE_SHARED_LOC = ${CXX} $(CXXFLAGS) -Wl,-soname,$(LOC_SONAME) -D${PLATFORM} -shared ${PIC_OPTION} ${LDFLAGS}
++		  MAKE_SHARED_LOC = ${CXX} $(CXXFLAGS) -D${PLATFORM} -shared ${PIC_OPTION} ${LDFLAGS}
+ 	
+ 	 ## End of other compilers
+ 	endif
