@@ -51,6 +51,11 @@ public class MainActivity extends Activity {
 
 		try {
 			TextView content = (TextView) findViewById(R.id.content);
+			System.loadLibrary("gnustl_shared");
+			System.loadLibrary("xerces-c-3.1");
+			System.loadLibrary("xalanMsg");
+			System.loadLibrary("xalan-c");
+			System.loadLibrary("xml-security-c");
 			System.loadLibrary("digidoc_java");
 			digidoc.initJava(getCacheDir().getAbsolutePath());
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");

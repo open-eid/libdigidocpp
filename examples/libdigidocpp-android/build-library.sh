@@ -28,9 +28,9 @@ cmake \
     -DCMAKE_CXX_FLAGS=-DIOAPI_NO_64 \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
     -DXERCESC_INCLUDE_DIR=${TARGET_PATH}/include \
-    -DXERCESC_LIBRARY=${TARGET_PATH}/lib/libxerces-c.a \
+    -DXERCESC_LIBRARY=${TARGET_PATH}/lib/libxerces-c.so \
     -DXMLSECURITYC_INCLUDE_DIR=${TARGET_PATH}/include \
-    -DXMLSECURITYC_LIBRARY=${TARGET_PATH}/lib/libxml-security-c.a \
+    -DXMLSECURITYC_LIBRARY=${TARGET_PATH}/lib/libxml-security-c.so \
     -DXSD_INCLUDE_DIR=${TARGET_PATH}/include \
     -DXSD_EXECUTABLE=${TARGET_PATH}/bin/xsd \
     -DZLIB_INCLUDE_DIR=${TARGET_PATH}/sysroot/usr/include \

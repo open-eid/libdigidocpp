@@ -61,7 +61,7 @@ case "$@" in
   sudo ${CC} ${CFLAGS} -std=c99 -o ${TARGET_PATH}/lib/libglob.o -c glob.c
   sudo ${CROSS_COMPILE}-ar rcs ${TARGET_PATH}/lib/libglob.a ${TARGET_PATH}/lib/libglob.o
 
-  CONFIGURE="--host=${ARCH} --enable-static --disable-shared --with-sysroot=${SYSROOT}"
+  CONFIGURE="--host=${ARCH}-unknown-linux --disable-static --enable-shared --with-sysroot=${SYSROOT}"
   ;;
 *ios*)
   echo "Building for iOS"
@@ -120,13 +120,25 @@ function xalan {
     cd xalan-c-1.11/c
     export XERCESCROOT=${TARGET_PATH}
     export XALANCROOT=${PWD}
-    export LDFLAGS="-headerpad_max_install_names"
-    ./runConfigure -p macosx -b 64 -P ${TARGET_PATH}
-    make -s
-    sudo XALANCROOT=${PWD} make install
-    sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.dylib
-    sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
-    sudo install_name_tool -change libxalanMsg.dylib ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib 
+    case "${ARGS}" in
+    *android*)
+      patch -Np2 -i ../../examples/libdigidocpp-android/xalan-android.patch
+      mkdir bin
+      cp ../../examples/libdigidocpp-android/MsgCreator bin
+      ./runConfigure -p linux -P ${TARGET_PATH} -c ${CC} -x ${CXX} -r none -C --host=arm-unknown-linux
+      make -s
+      sudo XALANCROOT=${PWD} make install
+      ;;
+    *)
+      export LDFLAGS="-headerpad_max_install_names"
+      ./runConfigure -p macosx -b 64 -P ${TARGET_PATH}
+      make -s
+      sudo XALANCROOT=${PWD} make install
+      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.dylib
+      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
+      sudo install_name_tool -change libxalanMsg.dylib ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
+      ;;
+    esac
     cd ../..
 }
 
@@ -137,6 +149,10 @@ function xml_security {
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
+    case "${ARGS}" in
+    *android*) patch -Np1 -i ../examples/libdigidocpp-android/xmlsec.patch ;;
+    *) ;;
+    esac
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${TARGET_PATH} --with-xalan=${TARGET_PATH}
     make -s
     sudo make install
@@ -229,7 +245,7 @@ case "$@" in
     xerces
     openssl
     case "$@" in
-    *ios*|*simulator*|*android*) ;;
+    *ios*|*simulator*) ;;
     *) xalan ;;
     esac
     xml_security
