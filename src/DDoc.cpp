@@ -630,12 +630,7 @@ void DDoc::addAdESSignature(istream &sigdata)
 
 Container* DDoc::createInternal(const string &path)
 {
-    size_t pos = path.find_last_of(".");
-    if(pos == string::npos)
-        return nullptr;
-    string ext = path.substr(pos + 1);
-    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-    if(ext != "ddoc")
+    if(File::fileExtension(path) != "ddoc")
         return nullptr;
     DDoc *doc = new DDoc();
     doc->d->filename = path;
@@ -667,15 +662,7 @@ std::vector<digidoc::DataFile*> DDoc::dataFiles() const
 
 Container* DDoc::openInternal(const string &path)
 {
-    size_t pos = path.find_last_of(".");
-    if(pos == string::npos)
-        return nullptr;
-    string ext = path.substr(pos + 1);
-    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-    if(ext != "ddoc")
-        return nullptr;
-    DDoc *doc = new DDoc(path);
-    return doc;
+    return File::fileExtension(path) == "ddoc" ? new DDoc(path) : nullptr;
 }
 
 /**

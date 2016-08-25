@@ -464,14 +464,7 @@ vector<DataFile *> RDoc::dataFiles() const
 
 Container* RDoc::openInternal(const string &path)
 {
-    size_t pos = path.find_last_of(".");
-    if(pos == string::npos)
-        return nullptr;
-    string ext = path.substr(pos + 1);
-    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-    if(ext != "pdf")
-        return nullptr;
-    return new RDoc(path);
+    return File::fileExtension(path) == "pdf" ? new RDoc(path) : nullptr;
 }
 
 Signature* RDoc::prepareSignature(Signer *)
