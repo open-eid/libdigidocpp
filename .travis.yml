@@ -13,7 +13,7 @@ before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
     wget http://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd_4.0.0-1_amd64.deb && sudo dpkg -i xsd_4.0.0-1_amd64.deb;
   fi
 script: export BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} && if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-    mkdir build && cd build && cmake -DOPENSSL_ROOT_DIR=/Library/EstonianIDCard ..;
+    mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/Library/EstonianIDCard -DOPENSSL_ROOT_DIR=/Library/EstonianIDCard ..;
     make zipdebug embedlibs pkgbuild && cd ..;
   else
     VERSION=3.12.2.${TRAVIS_BUILD_NUMBER};
