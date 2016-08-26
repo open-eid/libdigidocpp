@@ -29,8 +29,6 @@ cmake \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
     -DZLIB_INCLUDE_DIR=${TARGET_PATH}/sysroot/usr/include \
     -DZLIB_LIBRARY=${TARGET_PATH}/sysroot/usr/lib/libz.so \
-    -DLIBXML2_INCLUDE_DIR=${TARGET_PATH}/include/libxml2 \
-    -DLIBXML2_LIBRARIES=${TARGET_PATH}/lib/libxml2.a \
     -DBUILD_TOOLS=off \
     -DBUILD_TYPE=STATIC \
     ../../..
