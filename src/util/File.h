@@ -51,6 +51,7 @@ namespace digidoc
               static std::string decodeName(const f_string &localFileName);
               static bool isRelative(const std::string &path);
               static tm* modifiedTime(const std::string &path);
+              static std::string fileExtension(const std::string &path);
               static std::string fileName(const std::string& path);
               static std::string directory(const std::string& path);
               static std::string path(const std::string& directory, const std::string& relativePath);

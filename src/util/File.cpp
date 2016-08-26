@@ -304,6 +304,16 @@ tm* File::modifiedTime(const string &path)
     return gmtime((const time_t*)&fileInfo.st_mtime);
 }
 
+string File::fileExtension(const std::string &path)
+{
+    size_t pos = path.find_last_of(".");
+    if(pos == string::npos)
+        return string();
+    string ext = path.substr(pos + 1);
+    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    return ext;
+}
+
 /**
  * Parses file path and returns file name from file full path.
  *
