@@ -25,7 +25,7 @@ if($swig) {
   $candleext += "-dswig=$swig"
 }
 if($doxygen) {
-  $cmakeext += "-DINSTALL_DOC=YES", "-DDOXYGEN_EXECUTABLE=$doxygen"
+  $cmakeext += "-DDOXYGEN_EXECUTABLE=$doxygen"
   $candleext += "-ddocLocation=x86/share/doc/libdigidocpp", "DocFilesFragment.wxs"
   $lightext += "DocFilesFragment.wixobj"
 }

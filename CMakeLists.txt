@@ -19,7 +19,6 @@ set_ex( TSL_CERT4 "$ENV{TSL_CERT4}" "${CMAKE_SOURCE_DIR}/etc/tl-mp4.crt" CACHE F
 set_ex( TSA_URL "$ENV{TSA_URL}" "http://tsa.sk.ee" CACHE STRING "Default TSA url" )
 set_ex( PDF_URL "$ENV{PDF_URL}" "" CACHE STRING "Default PDF validation url" )
 set( LIBDIGIDOC_LINKED true CACHE BOOL "Link with libdigidoc" )
-set( INSTALL_DOC false CACHE BOOL "Install documentation" )
 set( BUILD_TOOLS true CACHE BOOL "Build digidoc-tool" )
 set( BUILD_TYPE "SHARED" CACHE STRING "Build library as SHARED/STATIC" )
 set( SIGNCERT "" CACHE STRING "Common name of certificate to used sign binaries, empty skip signing" )
@@ -41,16 +40,14 @@ find_package(ZLIB REQUIRED)
 find_package(MiniZip QUIET)
 find_package(SWIG)
 
-if( INSTALL_DOC )
-    if( DOXYGEN_FOUND )
-        configure_file( ${CMAKE_SOURCE_DIR}/etc/Doxyfile.in Doxyfile @ONLY )
-        add_custom_target( docs ALL
-            ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMENT "Generating API documentation with Doxygen" VERBATIM
-        )
-        install( DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} )
-    endif()
+if( DOXYGEN_FOUND )
+    configure_file( ${CMAKE_SOURCE_DIR}/etc/Doxyfile.in Doxyfile @ONLY )
+    add_custom_target( docs ALL
+        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen" VERBATIM
+    )
+    install( DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} )
     install( DIRECTORY doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} )
 endif()
 
