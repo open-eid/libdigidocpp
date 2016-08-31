@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(libdigidocpp)
+if(POLICY CMP0063)
+    cmake_policy(SET CMP0063 NEW)
+endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 set(CMAKE_FIND_ROOT_PATH ${CMAKE_OSX_SYSROOT})
