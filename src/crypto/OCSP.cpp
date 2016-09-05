@@ -112,7 +112,7 @@ OCSP::OCSP(const vector<unsigned char> &ocspResponseDER)
     if(ocspResponseDER.empty())
         THROW("Response is empty");
 
-    const unsigned char *p = &ocspResponseDER[0];
+    const unsigned char *p = ocspResponseDER.data();
     resp = d2i_OCSP_RESPONSE(0, &p, (unsigned int)ocspResponseDER.size());
     if(!resp)
         THROW("Failed to parse reponse is empty");
@@ -166,23 +166,21 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
         THROW_OPENSSLEXCEPTION("Failed to add certificate ID to OCSP request.");
 
 #ifdef OCSP_NATIVE_NONCE
-    if(OCSP_request_add1_nonce(req.get(), const_cast<unsigned char*>(&nonce[0]), int(nonce.size())) <= 0)
+    if(OCSP_request_add1_nonce(req.get(), const_cast<unsigned char*>(nonce.data()), int(nonce.size())) <= 0)
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 #else
-    ASN1_OCTET_STRING *st = M_ASN1_OCTET_STRING_new();
+    ASN1_OCTET_STRING *st = ASN1_OCTET_STRING_new();
     if(nonce.empty())
     {
         st->length = 20;
-        st->data = (unsigned char*)OPENSSL_malloc(st->length + 1);
+        st->data = (unsigned char*)OPENSSL_malloc(st->length);
         RAND_bytes(st->data, st->length);
     }
     else
-    {
-        st->data = (unsigned char*)&nonce[0];
-        st->length = int(nonce.size());
-    }
+        ASN1_OCTET_STRING_set(st, nonce.data(), nonce.size());
     X509_EXTENSION *ex = X509_EXTENSION_create_by_NID(0, NID_id_pkix_OCSP_Nonce, 0, st);
-    if(!X509v3_add_ext(&req->tbsRequest->requestExtensions, ex, 0))
+    ASN1_OCTET_STRING_free(st);
+    if(!OCSP_REQUEST_add_ext(req.get(), ex, 0))
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 #endif
 
@@ -389,7 +387,7 @@ vector<unsigned char> OCSP::toDer() const
     if(size < 0)
         return vector<unsigned char>();
     vector<unsigned char> result(size, 0);
-    unsigned char *p = &result[0];
+    unsigned char *p = result.data();
     size = i2d_OCSP_RESPONSE(resp, &p);
     if(size < 0)
         return vector<unsigned char>();
