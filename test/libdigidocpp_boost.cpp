@@ -90,7 +90,7 @@ ostream &operator<<(ostream &os, const vector<X509Cert::KeyUsage> &usage)
 namespace digidoc
 {
 
-class TestConfig: public Conf
+class TestConfig: public ConfCurrent
 {
 public:
     string libdigidocConf() const override { return "digidoc.conf"; }
