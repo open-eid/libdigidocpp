@@ -1123,8 +1123,8 @@ vector<string> SignatureBES::signerRoles() const
     if ( !claimedRoleOpt.present() )
         return roles;
 
-    const ClaimedRolesListType::ClaimedRoleSequence& claimedRolesSequence = claimedRoleOpt->claimedRole();
-    roles.insert( roles.end(), claimedRolesSequence.begin(), claimedRolesSequence.end() );
+    for(const xades::AnyType &type: claimedRoleOpt->claimedRole())
+        roles.push_back(type.text());
     return roles;
 }
 

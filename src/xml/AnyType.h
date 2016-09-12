@@ -42,17 +42,21 @@ public:
 #endif
 
     AnyType();
+    AnyType(const std::string &text);
     AnyType(const xercesc::DOMElement& e, xml_schema::Flags f = 0, xml_schema::Container* c = 0);
     AnyType(const AnyType& x, xml_schema::Flags f = 0, xml_schema::Container* c = 0);
     virtual ~AnyType();
 
     virtual AnyType* _clone(xml_schema::Flags f = 0, xml_schema::Container* c = 0) const;
 
+    std::string text() const;
+
 protected:
     SPURIOptional SPURI_;
 #ifdef SPUSERNOTICE
     SPUserNoticeOptional SPUserNotice_;
 #endif
+    std::string text_;
 };
 
 void operator<< (xercesc::DOMElement&, const AnyType&);
