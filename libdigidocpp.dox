@@ -782,7 +782,7 @@ You change the default behaviour in the configuration file with the following pa
 </table>
 
 \subsection sample-conf Sample configuration file
-\code{.html}
+\code{.xml}
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
 xsi:noNamespaceSchemaLocation="schema/conf.xsd">

@@ -75,15 +75,10 @@
 
 1. Install dependencies and necessary tools from
 	* [Visual Studio Express 2013 for Windows Desktop](http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx)
-	* [Perl] (https://www.perl.org/get.html)
-	* [7-zip] (http://www.7-zip.org)
+	* [Perl](https://www.perl.org/get.html)
+	* [7-zip](http://www.7-zip.org)
 	* [http://www.cmake.org](http://www.cmake.org)
-	* [Xerces-c](http://mirror.cogentco.com/pub/apache//xerces/c/3/sources/xerces-c-3.1.1.zip)
-	* [Xerces-c MSVC2012 Project files](https://issues.apache.org/jira/secure/attachment/12548623/xerces_vc11proj.zip)
-	* [XML-Security-C](http://www.apache.org/dyn/closer.cgi?path=/santuario/c-library/xml-security-c-1.7.2.tar.gz)
-	* [OpenSSL Win32 binaries](https://slproweb.com/products/Win32OpenSSL.html) or [OpenSSL source](https://www.openssl.org/source/)
-	* [ZLib source](http://zlib.net/zlib128.zip)
-	* [swigwin-3.0.5.zip](http://swig.org/download.html) - Optional, for C# bindings
+	* [swigwin-3.0.10.zip](http://swig.org/download.html) - Optional, for C# bindings
 
 2. Fetch the source
 
@@ -102,10 +97,10 @@
 
    Optional CMake parameters:
 
-       -DSWIG_EXECUTABLE=C:/swigwin-3.0.5/swig.exe
+       -DSWIG_EXECUTABLE=C:/swigwin-3.0.10/swig.exe
 
    After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
-   [README.md](https://github.com/open-eid/libdigidocpp/blob/master/examples/DigiDocCSharp/README.md).
+   [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
 
 
 5. Build
@@ -115,6 +110,12 @@
 6. Execute
 
         src/digidoc-tool.exe
+
+### iOS Experimental
+[examples/libdigidocpp-ios/README.md](examples/libdigidocpp-ios/README.md)
+
+### Android Experimental
+[examples/libdigidocpp-android/README.md](examples/libdigidocpp-android/README.md)
 
 ## Support
 Official builds are provided through official distribution point [installer.id.ee](https://installer.id.ee). If you want support, you need to be using official builds. Contact for assistance by email [abi@id.ee](mailto:abi@id.ee) or [www.id.ee](http://www.id.ee).
