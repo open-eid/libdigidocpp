@@ -283,8 +283,8 @@ SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc)
         sigdata_ = is.str();
 
         Properties properties;
-        properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES.xsd"));
-        properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdESv141.xsd"));
+        properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v132-201601.xsd"));
+        properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v141-201601.xsd"));
         properties.schema_location(URI_ID_DSIG, File::fullPathUrl(Conf::instance()->xsdPath() + "/xmldsig-core-schema.xsd"));
         properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/ts_102918v010201.xsd"));
         asicsignature = xAdESSignatures(is, Flags::dont_initialize, properties).release();

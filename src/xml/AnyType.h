@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "xml/XAdES.hxx"
+#include "xml/XAdES01903v132-201601.hxx"
 
 namespace digidoc {
 namespace xades {

@@ -125,8 +125,8 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 	<xsd:element name="QualifyingProperties" type="QualifyingPropertiesType"/>
 	<xsd:complexType name="QualifyingPropertiesType">
 		<xsd:sequence>
-			<xsd:element name="SignedProperties" type="SignedPropertiesType" minOccurs="0"/>
-			<xsd:element name="UnsignedProperties" type="UnsignedPropertiesType" minOccurs="0"/>
+			<xsd:element ref="SignedProperties" minOccurs="0"/>
+			<xsd:element ref="UnsignedProperties" minOccurs="0"/>
 		</xsd:sequence>
 		<xsd:attribute name="Target" type="xsd:anyURI" use="required"/>
 		<xsd:attribute name="Id" type="xsd:ID" use="optional"/>
@@ -136,8 +136,8 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 	<xsd:element name="SignedProperties" type="SignedPropertiesType"/>
 	<xsd:complexType name="SignedPropertiesType">
 		<xsd:sequence>
-			<xsd:element name="SignedSignatureProperties" type="SignedSignaturePropertiesType" minOccurs="0"/>
-			<xsd:element name="SignedDataObjectProperties" type="SignedDataObjectPropertiesType" minOccurs="0"/>
+			<xsd:element ref="SignedSignatureProperties" minOccurs="0"/>
+			<xsd:element ref="SignedDataObjectProperties" minOccurs="0"/>
 		</xsd:sequence>
 		<xsd:attribute name="Id" type="xsd:ID" use="optional"/>
 	</xsd:complexType>
@@ -146,21 +146,26 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 	<xsd:element name="UnsignedProperties" type="UnsignedPropertiesType"/>
 	<xsd:complexType name="UnsignedPropertiesType">
 		<xsd:sequence>
-			<xsd:element name="UnsignedSignatureProperties" type="UnsignedSignaturePropertiesType" minOccurs="0"/>
-			<xsd:element name="UnsignedDataObjectProperties" type="UnsignedDataObjectPropertiesType" minOccurs="0"/>
+			<xsd:element ref="UnsignedSignatureProperties" minOccurs="0"/>
+			<xsd:element ref="UnsignedDataObjectProperties" minOccurs="0"/>
 		</xsd:sequence>
 		<xsd:attribute name="Id" type="xsd:ID" use="optional"/>
 	</xsd:complexType>
 	<!-- End UnsignedProperties-->
 	<!-- Start SignedSignatureProperties-->
+	<!-- Definition changed: added new optional children for EN -->
 	<xsd:element name="SignedSignatureProperties" type="SignedSignaturePropertiesType"/>
 	<xsd:complexType name="SignedSignaturePropertiesType">
 		<xsd:sequence>
-			<xsd:element name="SigningTime" type="xsd:dateTime" minOccurs="0"/>
-			<xsd:element name="SigningCertificate" type="CertIDListType" minOccurs="0"/>
-			<xsd:element name="SignaturePolicyIdentifier" type="SignaturePolicyIdentifierType" minOccurs="0"/>
-			<xsd:element name="SignatureProductionPlace" type="SignatureProductionPlaceType" minOccurs="0"/>
-			<xsd:element name="SignerRole" type="SignerRoleType" minOccurs="0"/>
+			<xsd:element ref="SigningTime" minOccurs="0"/>
+			<xsd:element ref="SigningCertificate" minOccurs="0"/>
+			<xsd:element ref="SigningCertificateV2" minOccurs="0"/>
+			<xsd:element ref="SignaturePolicyIdentifier" minOccurs="0"/>
+			<xsd:element ref="SignatureProductionPlace" minOccurs="0"/>
+			<xsd:element ref="SignatureProductionPlaceV2" minOccurs="0"/>
+			<xsd:element ref="SignerRole" minOccurs="0"/>
+			<xsd:element ref="SignerRoleV2" minOccurs="0"/>
+			<xsd:any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
 		</xsd:sequence>
 		<xsd:attribute name="Id" type="xsd:ID" use="optional"/>
 	</xsd:complexType>
@@ -169,10 +174,11 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 	<xsd:element name="SignedDataObjectProperties" type="SignedDataObjectPropertiesType"/>
 	<xsd:complexType name="SignedDataObjectPropertiesType">
 		<xsd:sequence>
-			<xsd:element name="DataObjectFormat" type="DataObjectFormatType" minOccurs="0" maxOccurs="unbounded"/>
-			<xsd:element name="CommitmentTypeIndication" type="CommitmentTypeIndicationType" minOccurs="0" maxOccurs="unbounded"/>
-			<xsd:element name="AllDataObjectsTimeStamp" type="XAdESTimeStampType" minOccurs="0" maxOccurs="unbounded"/>
-			<xsd:element name="IndividualDataObjectsTimeStamp" type="XAdESTimeStampType" minOccurs="0" maxOccurs="unbounded"/>
+			<xsd:element ref="DataObjectFormat" minOccurs="0" maxOccurs="unbounded"/>
+			<xsd:element ref="CommitmentTypeIndication" minOccurs="0" maxOccurs="unbounded"/>
+			<xsd:element ref="AllDataObjectsTimeStamp" minOccurs="0" maxOccurs="unbounded"/>
+			<xsd:element ref="IndividualDataObjectsTimeStamp" minOccurs="0" maxOccurs="unbounded"/>
+			<xsd:any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
 		</xsd:sequence>
 		<xsd:attribute name="Id" type="xsd:ID" use="optional"/>
 	</xsd:complexType>
@@ -181,19 +187,19 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 	<xsd:element name="UnsignedSignatureProperties" type="UnsignedSignaturePropertiesType"/>
 	<xsd:complexType name="UnsignedSignaturePropertiesType">
 		<xsd:choice maxOccurs="unbounded">
-			<xsd:element name="CounterSignature" type="CounterSignatureType"/>
-			<xsd:element name="SignatureTimeStamp" type="XAdESTimeStampType"/>
-			<xsd:element name="CompleteCertificateRefs" type="CompleteCertificateRefsType"/>
-			<xsd:element name="CompleteRevocationRefs" type="CompleteRevocationRefsType"/>
-			<xsd:element name="AttributeCertificateRefs" type="CompleteCertificateRefsType"/>
-			<xsd:element name="AttributeRevocationRefs" type="CompleteRevocationRefsType"/>
-			<xsd:element name="SigAndRefsTimeStamp" type="XAdESTimeStampType"/>
-			<xsd:element name="RefsOnlyTimeStamp" type="XAdESTimeStampType"/>
-			<xsd:element name="CertificateValues" type="CertificateValuesType"/>
-			<xsd:element name="RevocationValues" type="RevocationValuesType"/>
-			<xsd:element name="AttrAuthoritiesCertValues" type="CertificateValuesType"/>
-			<xsd:element name="AttributeRevocationValues" type="RevocationValuesType"/>
-			<xsd:element name="ArchiveTimeStamp" type="XAdESTimeStampType"/>
+			<xsd:element ref="CounterSignature"/>
+			<xsd:element ref="SignatureTimeStamp"/>
+			<xsd:element ref="CompleteCertificateRefs"/>
+			<xsd:element ref="CompleteRevocationRefs"/>
+			<xsd:element ref="AttributeCertificateRefs"/>
+			<xsd:element ref="AttributeRevocationRefs"/>
+			<xsd:element ref="SigAndRefsTimeStamp"/>
+			<xsd:element ref="RefsOnlyTimeStamp"/>
+			<xsd:element ref="CertificateValues"/>
+			<xsd:element ref="RevocationValues"/>
+			<xsd:element ref="AttrAuthoritiesCertValues"/>
+			<xsd:element ref="AttributeRevocationValues"/>
+			<xsd:element ref="ArchiveTimeStamp"/>
 			<xsd:any namespace="##other"/>
 		</xsd:choice>
 		<xsd:attribute name="Id" type="xsd:ID" use="optional"/>
@@ -240,6 +246,21 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 		</xsd:sequence>
 	</xsd:complexType>
 	<!-- End SigningCertificate -->
+	<!-- Start SigningCertificateV2 and CertIDListV2Type -->
+	<xsd:element name="SigningCertificateV2" type="CertIDListV2Type"/>
+	<xsd:complexType name="CertIDListV2Type">
+		<xsd:sequence>
+			<xsd:element name="Cert" type="CertIDTypeV2" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="CertIDTypeV2">
+		<xsd:sequence>
+			<xsd:element name="CertDigest" type="DigestAlgAndValueType"/>
+			<xsd:element name="IssuerSerialV2" type="xsd:base64Binary" minOccurs="0"/>
+		</xsd:sequence>
+		<xsd:attribute name="URI" type="xsd:anyURI" use="optional"/>
+	</xsd:complexType>
+	<!-- End SigningCertificateV2 and CertIDListV2Type -->
 	<!-- Start SignaturePolicyIdentifier -->
 	<xsd:element name="SignaturePolicyIdentifier" type="SignaturePolicyIdentifierType"/>
 	<xsd:complexType name="SignaturePolicyIdentifierType">
@@ -287,6 +308,7 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 		<xsd:sequence>
 			<xsd:element ref="ds:Signature"/>
 		</xsd:sequence>
+		<xsd:attribute name="Id" type="xsd:ID" use="optional"/>
 	</xsd:complexType>
 	<!-- End CounterSignature -->
 	<!-- Start DataObjectFormat -->
@@ -330,6 +352,18 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 		</xsd:sequence>
 	</xsd:complexType>
 	<!-- End SignatureProductionPlace -->
+	<!-- Start SignatureProductionPlaceV2 and SignatureProductionPlaceV2Type -->
+	<xsd:element name="SignatureProductionPlaceV2" type="SignatureProductionPlaceV2Type"/>
+	<xsd:complexType name="SignatureProductionPlaceV2Type">
+		<xsd:sequence>
+			<xsd:element name="City" type="xsd:string" minOccurs="0"/>
+			<xsd:element name="StreetAddress" type="xsd:string" minOccurs="0"/>
+			<xsd:element name="StateOrProvince" type="xsd:string" minOccurs="0"/>
+			<xsd:element name="PostalCode" type="xsd:string" minOccurs="0"/>
+			<xsd:element name="CountryName" type="xsd:string" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<!-- End SignatureProductionPlace -->
 	<!-- Start SignerRole -->
 	<xsd:element name="SignerRole" type="SignerRoleType"/>
 	<xsd:complexType name="SignerRoleType">
@@ -349,6 +383,38 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 		</xsd:sequence>
 	</xsd:complexType>
 	<!-- End SignerRole -->
+	<!-- Start SignerRoleV2 and SignerRoleV2Type -->
+	<xsd:element name="SignerRoleV2" type="SignerRoleV2Type"/>
+	<xsd:complexType name="SignerRoleV2Type">
+		<xsd:sequence>
+			<xsd:element ref="ClaimedRoles" minOccurs="0"/>
+			<xsd:element ref="CertifiedRolesV2" minOccurs="0"/>
+			<xsd:element ref="SignedAssertions" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="ClaimedRoles" type="ClaimedRolesListType"/>
+	<xsd:element name="CertifiedRolesV2" type="CertifiedRolesListTypeV2"/>
+	<xsd:element name="SignedAssertions" type="SignedAssertionsListType"/>
+	<xsd:complexType name="CertifiedRolesListTypeV2">
+		<xsd:sequence>
+			<xsd:element name="CertifiedRole" type="CertifiedRoleTypeV2" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="CertifiedRoleTypeV2">
+		<xsd:choice>
+			<xsd:element ref="X509AttributeCertificate"/>
+			<xsd:element ref="OtherAttributeCertificate"/>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:element name="X509AttributeCertificate" type="EncapsulatedPKIDataType"/>
+	<xsd:element name="OtherAttributeCertificate" type="AnyType"/>
+	<xsd:complexType name="SignedAssertionsListType">
+		<xsd:sequence>
+			<xsd:element ref="SignedAssertion" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="SignedAssertion" type="AnyType"/>
+	<!-- End SignerRoleV2 and SignerRoleV2Type -->
 	<xsd:element name="AllDataObjectsTimeStamp" type="XAdESTimeStampType"/>
 	<xsd:element name="IndividualDataObjectsTimeStamp" type="XAdESTimeStampType"/>
 	<xsd:element name="SignatureTimeStamp" type="XAdESTimeStampType"/>
