@@ -25,6 +25,7 @@
 
 #include <openssl/err.h>
 #include <openssl/x509.h>
+#include <openssl/ts.h>
 
 #include <cstring>
 #include <set>
@@ -40,6 +41,20 @@ using namespace std;
 X509Crypto::X509Crypto(const X509Cert &cert)
  : cert(cert)
 {
+}
+
+bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
+{
+    // DER-encoded instance of type IssuerSerial type defined in IETF RFC 5035 [17].
+    const unsigned char *p = data.data();
+    SCOPE(ESS_ISSUER_SERIAL, is, d2i_ESS_ISSUER_SERIAL(nullptr, &p, data.size()));
+    if(!is || sk_GENERAL_NAME_num(is->issuer) != 1)
+        return false;
+
+    GENERAL_NAME *issuer = sk_GENERAL_NAME_value(is->issuer, 0);
+    return issuer->type == GEN_DIRNAME &&
+        X509_NAME_cmp(issuer->d.dirn, cert.handle()->cert_info->issuer) == 0 &&
+        ASN1_INTEGER_cmp(is->serial, cert.handle()->cert_info->serialNumber) == 0;
 }
 
 /**
@@ -95,16 +110,17 @@ int X509Crypto::compareIssuerToString(const string &name) const
 
         string obj = nameitem.substr(0, pos);
 
-        static std::set<std::string> list{"CN", "commonName",
-                                          "L", "localityName",
-                                          "ST", "stateOrProvinceName",
-                                          "O", "organizationName",
-                                          "OU", "organizationalUnitName",
-                                          "C", "countryName",
-                                          "STREET", "streetAddress",
-                                          "DC", "domainComponent",
-                                          "UID", "userId"
-                                          };
+        static const std::set<std::string> list{
+            "CN", "commonName",
+            "L", "localityName",
+            "ST", "stateOrProvinceName",
+            "O", "organizationName",
+            "OU", "organizationalUnitName",
+            "C", "countryName",
+            "STREET", "streetAddress",
+            "DC", "domainComponent",
+            "UID", "userId"
+        };
         if(list.find(obj) == list.end())
             continue;
 

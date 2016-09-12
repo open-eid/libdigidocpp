@@ -75,6 +75,12 @@ Signature::~Signature()
  */
 
 /**
+ * @fn digidoc::Signature::streetAddress
+ *
+ * Returns signature production street address.
+ */
+
+/**
  * @fn digidoc::Signature::signerRoles
  *
  * Returns signer's roles.

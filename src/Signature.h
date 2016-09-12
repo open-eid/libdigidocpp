@@ -66,6 +66,9 @@ namespace digidoc
           virtual X509Cert ArchiveTimeStampCertificate() const;
           virtual std::string ArchiveTimeStampTime() const;
 
+          // Xades properties
+          virtual std::string streetAddress() const = 0;
+
       protected:
           Signature();
 

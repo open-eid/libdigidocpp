@@ -378,15 +378,15 @@ string SignatureBES::policy() const
     const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
             getSignedSignatureProperties().signaturePolicyIdentifier();
     if(!identifier.present())
-        return "";
+        return string();
 
     const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
     if(!id.present())
-        return "";
+        return string();
 
     const ObjectIdentifierType::IdentifierType &objid = id->sigPolicyId().identifier();
     if(!objid.qualifier().present() || objid.qualifier().get() != QualifierType::OIDAsURN)
-        return "";
+        return string();
 
     return objid;
 }
@@ -432,22 +432,21 @@ string SignatureBES::SPUri() const
     const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
             getSignedSignatureProperties().signaturePolicyIdentifier();
     if(!identifier.present())
-        return "";
+        return string();
 
     const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
     if(!id.present())
-        return "";
+        return string();
 
     const SignaturePolicyIdType::SigPolicyQualifiersOptional &qual = id->sigPolicyQualifiers();
     if(!qual.present())
-        return "";
+        return string();
 
-    const SigPolicyQualifiersListType::SigPolicyQualifierSequence &list = qual->sigPolicyQualifier();
-    for(SigPolicyQualifiersListType::SigPolicyQualifierConstIterator i = list.begin(); i != list.end(); ++i)
-        if(i->sPURI().present())
-            return i->sPURI().get();
+    for(const SigPolicyQualifiersListType::SigPolicyQualifierType &i: qual->sigPolicyQualifier())
+        if(i.sPURI().present())
+            return i.sPURI().get();
 
-    return "";
+    return string();
 }
 
 /**
@@ -661,42 +660,68 @@ vector<unsigned char> SignatureBES::dataToSign() const
     return calc.result();
 }
 
-/// TODO: comment
-///
-/// @throws SignatureException on a problem in signature
+/**
+ * Verify if SigningCertificate matches with
+ * XAdES::SigningCertificate/SigningCertificateV2 Digest and IssuerSerial info
+ */
 void SignatureBES::checkKeyInfo() const
 {
     X509Cert x509 = signingCertificate();
 
     const SignedSignaturePropertiesType::SigningCertificateOptional &sigCertOpt =
             getSignedSignatureProperties().signingCertificate();
-    if ( !sigCertOpt.present() )
-        THROW("SigningCertificate not found");
+    const SignedSignaturePropertiesType::SigningCertificateV2Optional &sigCertV2Opt =
+            getSignedSignatureProperties().signingCertificateV2();
+    const DigestAlgAndValueType &certDigest = [&]{
+        if(sigCertOpt.present())
+        {
+            const CertIDListType::CertSequence &certs = sigCertOpt->cert();
+            if(certs.size() != 1)
+                THROW("Number of SigningCertificates is %d, must be 1", certs.size());
 
-    const CertIDListType::CertSequence &certs = sigCertOpt->cert();
-    if ( certs.size() != 1 )
-        THROW("Number of SigningCertificates is %d, must be 1", certs.size());
+            // Verify Issuer Name
+            const X509IssuerSerialType::X509IssuerNameType &certIssuerName = certs[0].issuerSerial().x509IssuerName();
+            const X509IssuerSerialType::X509SerialNumberType &certSerialNumber = certs[0].issuerSerial().x509SerialNumber();
+            if(X509Crypto(x509).compareIssuerToString(certIssuerName) != 0 || x509.serial() != certSerialNumber)
+            {
+                DEBUG("certIssuerName: \"%s\"", certIssuerName.c_str());
+                DEBUG("x509.getCertIssuerName() \"%s\"", x509.issuerName().c_str());
+                DEBUG("sertCerials = %s %s", x509.serial().c_str(), certSerialNumber.c_str());
+                THROW("Signing certificate issuer information does not match");
+            }
 
-    X509IssuerSerialType::X509IssuerNameType certIssuerName = certs[0].issuerSerial().x509IssuerName();
-    X509IssuerSerialType::X509SerialNumberType certSerialNumber = certs[0].issuerSerial().x509SerialNumber();
-    if(X509Crypto(x509).compareIssuerToString(certIssuerName) != 0 || x509.serial() != certSerialNumber)
-    {
-        DEBUG("certIssuerName: \"%s\"", certIssuerName.c_str());
-        DEBUG("x509.getCertIssuerName() \"%s\"", x509.issuerName().c_str());
-        DEBUG("sertCerials = %s %s", x509.serial().c_str(), certSerialNumber.c_str());
-        THROW("Signing certificate issuer information does not match");
-    }
+            return certs[0].certDigest();
+        }
+        else if(sigCertV2Opt.present())
+        {
+            const CertIDListV2Type::CertSequence &certs = sigCertV2Opt->cert();
+            if(certs.size() != 1)
+                THROW("Number of SigningCertificatesV2 is %d, must be 1", certs.size());
+
+            // Verify IssuerSerialV2, optional parameter
+            if(certs[0].issuerSerialV2().present())
+            {
+                vector<unsigned char> issuerSerial(certs[0].issuerSerialV2()->data(),
+                        certs[0].issuerSerialV2()->data() + certs[0].issuerSerialV2()->size());
+                if(!X509Crypto(x509).compareIssuerToDer(issuerSerial))
+                    THROW("Signing certificate issuer information does not match");
+            }
+
+            return certs[0].certDigest();
+        }
+        else
+            THROW("SigningCertificate/SigningCertificateV2 not found");
+    }();
 
     // lets check digest with x509 that was in keyInfo
-    Digest certDigestCalc(certs[0].certDigest().digestMethod().algorithm());
+    Digest certDigestCalc(certDigest.digestMethod().algorithm());
     certDigestCalc.update(x509);
     vector<unsigned char> calcDigest = certDigestCalc.result();
 
-    DigestAlgAndValueType::DigestValueType const& certDigestValue = certs[0].certDigest().digestValue();
-    if(certDigestValue.size() != calcDigest.size() ||
-       memcmp(calcDigest.data(), certDigestValue.data(), certDigestValue.size()) != 0)
+    if(certDigest.digestValue().size() != calcDigest.size() ||
+       memcmp(calcDigest.data(), certDigest.digestValue().data(), certDigest.digestValue().size()) != 0)
     {
-        DEBUGMEM("Document cert digest", certDigestValue.data(), certDigestValue.size());
+        DEBUGMEM("Document cert digest", certDigest.digestValue().data(), certDigest.digestValue().size());
         DEBUGMEM("Calculated cert digest", calcDigest.data(), calcDigest.size());
         THROW("Signing certificate digest does not match");
     }
@@ -1065,92 +1090,101 @@ void SignatureBES::saveToXml(ostream &os) const
         THROW("Failed to create signature XML file.");
 }
 
-/**
- * The address where was the signature given.
- *
- * @return returns structure containing the address of signing place.
- */
 string SignatureBES::city() const
 {
+    // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
         getSignedSignatureProperties().signatureProductionPlace();
     if(sigProdPlaceOptional.present() && sigProdPlaceOptional->city().present())
         return sigProdPlaceOptional->city().get();
-    return "";
+    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
+            getSignedSignatureProperties().signatureProductionPlaceV2();
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->city().present())
+        return sigProdPlaceV2Optional->city().get();
+    return string();
 }
 
 string SignatureBES::stateOrProvince() const
 {
+    // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
         getSignedSignatureProperties().signatureProductionPlace();
     if(sigProdPlaceOptional.present() && sigProdPlaceOptional->stateOrProvince().present())
         return sigProdPlaceOptional->stateOrProvince().get();
-    return "";
+    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
+            getSignedSignatureProperties().signatureProductionPlaceV2();
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->stateOrProvince().present())
+        return sigProdPlaceV2Optional->stateOrProvince().get();
+    return string();
+}
+
+string SignatureBES::streetAddress() const
+{
+    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
+            getSignedSignatureProperties().signatureProductionPlaceV2();
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->streetAddress().present())
+        return sigProdPlaceV2Optional->streetAddress().get();
+    return string();
 }
 
 string SignatureBES::postalCode() const
 {
+    // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
         getSignedSignatureProperties().signatureProductionPlace();
     if(sigProdPlaceOptional.present() && sigProdPlaceOptional->postalCode().present())
         return sigProdPlaceOptional->postalCode().get();
-    return "";
+    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
+            getSignedSignatureProperties().signatureProductionPlaceV2();
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->postalCode().present())
+        return sigProdPlaceV2Optional->postalCode().get();
+    return string();
 }
 
 string SignatureBES::countryName() const
 {
-    const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
+    // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
+    const SignedSignaturePropertiesType::SignatureProductionPlaceOptional &sigProdPlaceOptional =
         getSignedSignatureProperties().signatureProductionPlace();
     if(sigProdPlaceOptional.present() && sigProdPlaceOptional->countryName().present())
         return sigProdPlaceOptional->countryName().get();
-    return "";
+    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
+            getSignedSignatureProperties().signatureProductionPlaceV2();
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->countryName().present())
+        return sigProdPlaceV2Optional->countryName().get();
+    return string();
 }
 
-/**
- * The role that signer claims to hold while signing.
- *
- * @return returns the claimed role of the signer.
- */
 vector<string> SignatureBES::signerRoles() const
 {
     vector<string> roles;
-    const SignedSignaturePropertiesType::SignerRoleOptional& roleOpt =
+    const SignedSignaturePropertiesType::SignerRoleOptional &roleOpt =
         getSignedSignatureProperties().signerRole();
-    if ( !roleOpt.present() )
-        return roles;
-
-    const SignerRoleType::ClaimedRolesOptional& claimedRoleOpt = roleOpt->claimedRoles();
-    if ( !claimedRoleOpt.present() )
-        return roles;
-
-    for(const xades::AnyType &type: claimedRoleOpt->claimedRole())
+    const SignedSignaturePropertiesType::SignerRoleV2Optional &roleV2Opt =
+        getSignedSignatureProperties().signerRoleV2();
+    auto claimedRoleSequence = [&]() -> ClaimedRolesListType::ClaimedRoleSequence const {
+        // return elements from SignerRole element or SignerRoleV2 when available
+        if(roleOpt.present())
+            return roleOpt->claimedRoles()->claimedRole();
+        else if(roleV2Opt.present())
+            return roleV2Opt->claimedRoles()->claimedRole();
+        else
+            return ClaimedRolesListType::ClaimedRoleSequence();
+    };
+    for(const ClaimedRolesListType::ClaimedRoleType &type: claimedRoleSequence())
         roles.push_back(type.text());
     return roles;
 }
 
-// FIXME: return date object not string.
-// FIXME: wrong comments
-/**
-* The role that signer claims to hold while signing.
-*
-* @return returns the claimed role of the signer.
-*/
 string SignatureBES::claimedSigningTime() const
 {
     const SignedSignaturePropertiesType::SigningTimeOptional& sigTimeOpt =
         getSignedSignatureProperties().signingTime();
     if ( !sigTimeOpt.present() )
-        return "";
+        return string();
     return util::date::xsd2string(sigTimeOpt.get());
 }
 
-
-/**
- * Signer certificate taken from current signature.
- *
- * @return returns the SignedSignaturePropertiesType object.
- * @throws SignatureException
-*/
 X509Cert SignatureBES::signingCertificate() const
 {
     const SignatureType::KeyInfoOptional& keyInfoOptional = signature->keyInfo();
@@ -1180,21 +1214,11 @@ X509Cert SignatureBES::signingCertificate() const
     return X509Cert();
 }
 
-/**
- * Signature id
- *
- * @return returns signature id
- */
 string SignatureBES::id() const
 {
     return signature->id().present() ? signature->id().get() : string();
 }
 
-/**
- * Signer signature method
- *
- * @return returns the signature method.
- */
 string SignatureBES::signatureMethod() const
 {
     return signature->signedInfo().signatureMethod().algorithm();

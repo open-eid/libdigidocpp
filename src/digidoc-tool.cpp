@@ -600,11 +600,12 @@ static int open(int argc, char* argv[])
             }
 
             // Get signature production place info.
-            if(!s->city().empty() || !s->stateOrProvince().empty() || !s->postalCode().empty() || !s->countryName().empty())
+            if(!s->city().empty() || !s->stateOrProvince().empty() || !s->streetAddress().empty() || !s->postalCode().empty() || !s->countryName().empty())
             {
                 cout << "    Signature production place:" << endl
                      << "      City:              " << s->city() << endl
                      << "      State or Province: " << s->stateOrProvince() << endl
+                     << "      Street address:    " << s->streetAddress() << endl
                      << "      Postal code:       " << s->postalCode() << endl
                      << "      Country:           " << s->countryName() << endl;
             }
