@@ -21,28 +21,45 @@
 
 #include "ASiC_E.h"
 #include "Conf.h"
-#include "DataFile_p.h"
 #include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
-#include "util/File.h"
+#include "xml/SecureDOMParser.h"
+#include "xml/URIResolver.h"
 #include "xml/XAdES01903v141-201601.hxx"
 
-#include <xsec/dsig/DSIGConstants.hpp>
+#ifdef __APPLE__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wnull-conversion"
+#endif
+#include <xsec/dsig/DSIGReference.hpp>
+#include <xsec/enc/XSECKeyInfoResolverDefault.hpp>
+#ifdef __APPLE__
+#pragma GCC diagnostic pop
+#endif
+#include <xsec/framework/XSECException.hpp>
+#include <xsec/framework/XSECProvider.hpp>
+#include <xsec/utils/XSECBinTXFMInputStream.hpp>
 
 using namespace digidoc;
 using namespace digidoc::dsig;
 using namespace digidoc::util;
 using namespace digidoc::util::date;
 using namespace digidoc::xades;
+using namespace xercesc;
 using namespace xml_schema;
 using namespace std;
+
+namespace digidoc {
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
 {
     return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
+}
+
 }
 
 SignatureXAdES_LTA::SignatureXAdES_LTA(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_LT(id, bdoc, signer) {}
@@ -51,20 +68,50 @@ SignatureXAdES_LTA::SignatureXAdES_LTA(std::istream &sigdata, ASiContainer *bdoc
 
 void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
 {
-    string signedPropertiesId;
-    if(qualifyingProperties().signedProperties()->id().present())
-        signedPropertiesId = "#" + qualifyingProperties().signedProperties()->id().get();
-    for(const ReferenceType &ref: signature->signedInfo().reference())
-    {
-        if(ref.uRI().present() && ref.uRI().get() != signedPropertiesId)
+    try {
+        stringstream ofs;
+        saveToXml(ofs);
+        XSECProvider prov;
+        DSIGSignature *sig = prov.newSignatureFromDOM(SecureDOMParser().parseIStream(ofs).release());
+        unique_ptr<URIResolver> uriresolver(new URIResolver(bdoc));
+        unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
+        sig->setURIResolver(uriresolver.get());
+        sig->setKeyInfoResolver(keyresolver.get());
+        sig->load();
+
+        safeBuffer m_errStr;
+        m_errStr.sbXMLChIn(DSIGConstants::s_unicodeStrEmpty);
+
+        XMLByte buf[1024];
+        DSIGReferenceList *list = sig->getReferenceList();
+        for(size_t i = 0; i < list->getSize(); ++i)
         {
-            for(const DataFile *file: bdoc->dataFiles())
-                if(file->fileName() == File::fromUriPath(ref.uRI().get()))
-                    static_cast<const DataFilePrivate*>(file)->calcDigest(digest);
+            XSECBinTXFMInputStream *stream = list->item(i)->makeBinInputStream();
+            for(int size = stream->readBytes(buf, 1024); size > 0; size = stream->readBytes(buf, 1024))
+                digest->update(buf, size);
+            delete stream;
         }
-        else
-            calcDigestOnNode(digest, XADES_NAMESPACE, "SignedProperties");
-    };
+    }
+    catch(const Parsing &e)
+    {
+        stringstream s;
+        s << e;
+        THROW("Failed to validate signature: %s", s.str().c_str());
+    }
+    catch(XSECException &e)
+    {
+        string s = xsd::cxx::xml::transcode<char>(e.getMsg());
+        THROW("Failed to validate signature: %s", s.c_str());
+    }
+    catch(XMLException &e)
+    {
+        string s = xsd::cxx::xml::transcode<char>(e.getMessage());
+        THROW("Failed to validate signature: %s", s.c_str());
+    }
+    catch(...)
+    {
+        THROW("Failed to validate signature");
+    }
 
     vector<string> list = {"SignedInfo", "SignatureValue", "KeyInfo"};
     for(const string &name: list)
