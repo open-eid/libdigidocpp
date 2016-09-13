@@ -316,6 +316,11 @@ string SignatureDDOC::stateOrProvince() const
     return s->sigProdPlace.szStateOrProvince ? s->sigProdPlace.szStateOrProvince : "";
 }
 
+string SignatureDDOC::streetAddress() const
+{
+    return string();
+}
+
 string SignatureDDOC::postalCode() const
 {
     return s->sigProdPlace.szPostalCode ? s->sigProdPlace.szPostalCode : "";

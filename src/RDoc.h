@@ -71,6 +71,7 @@ public:
     std::string profile() const override { return _profile; }
     std::string city() const override { return std::string(); }
     std::string stateOrProvince() const override { return std::string(); }
+    std::string streetAddress() const override { return std::string(); }
     std::string postalCode() const override { return std::string(); }
     std::string countryName() const override { return std::string(); }
     std::vector<std::string> signerRoles() const override { return std::vector<std::string>(); }

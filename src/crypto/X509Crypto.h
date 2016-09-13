@@ -35,6 +35,7 @@ namespace digidoc
       public:
           X509Crypto(const X509Cert &cert);
 
+          bool compareIssuerToDer(const std::vector<unsigned char> &issuer) const;
           int compareIssuerToString(const std::string &name) const;
           std::vector<unsigned char> rsaModulus() const;
 
