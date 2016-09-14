@@ -31,24 +31,6 @@ using namespace digidoc::util;
 using namespace xercesc;
 using namespace xml_schema;
 
-#ifdef ANDROID
-template <typename T>
-static string to_string(T value)
-{
-    ostringstream os;
-    os << value;
-    return os.str();
-}
-
-static int stoi(const string &value)
-{
-    int result = 0;
-    stringstream ss(value);
-    ss >> result;
-    return result;
-}
-#endif
-
 namespace digidoc
 {
 

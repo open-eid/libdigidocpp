@@ -23,6 +23,9 @@
 
 #include <string>
 #include <vector>
+#ifdef ANDROID
+#include <time.h>
+#endif
 
 namespace digidoc
 {

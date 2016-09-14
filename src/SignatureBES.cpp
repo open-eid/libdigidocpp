@@ -60,16 +60,6 @@ using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
 
-#ifdef ANDROID
-template <typename T>
-static string to_string(T value)
-{
-    ostringstream os;
-    os << value;
-    return os.str();
-}
-#endif
-
 const string SignatureBES::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3.2#";
 const string SignatureBES::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
 const string SignatureBES::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.1#";

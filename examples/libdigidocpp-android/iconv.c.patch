@@ -1,10 +1,18 @@
---- android-ndk-r10e/sources/android/support/src/musl-locale/iconv.c.orig	2016-05-26 15:32:10.000000000 +0300
-+++ android-ndk-r10e/sources/android/support/src/musl-locale/iconv.c	2016-05-26 15:32:41.000000000 +0300
-@@ -152,6 +152,7 @@
- }
+--- android-ndk-r12b/sources/android/support/include/iconv.h.bkp	2016-09-14 23:12:02.000000000 +0300
++++ android-ndk-r12b/sources/android/support/include/iconv.h	2016-09-14 23:11:50.000000000 +0300
+@@ -28,8 +28,6 @@
+ #ifndef NDK_ANDROID_SUPPORT_ICONV_H
+ #define NDK_ANDROID_SUPPORT_ICONV_H
  
- /* Adapt as needed */
-+int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
- #define mbrtowc_utf8 mbrtowc
- #define wctomb_utf8 wctomb
+-#if !defined(__LP64__)
+-
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -46,6 +44,4 @@
+ }  // extern "C"
+ #endif
  
+-#endif // !__LP64__
+-
+ #endif  // NDK_ANDROID_SUPPORT_ICONV_H

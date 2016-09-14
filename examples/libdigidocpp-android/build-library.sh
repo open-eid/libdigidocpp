@@ -1,16 +1,20 @@
 #!/bin/bash
 
-echo "Building for android"
 case "$@" in
 *x86*)
-  TOOLCHAIN=x86-4.9
-  ANDROID_ABI=x86
+  echo "Building for android X86"
   TARGET_PATH=/Library/EstonianIDCard.androidx86
+  CROSS_COMPILE=i686-linux-android
+  ;;
+*arm64*)
+  echo "Building for android ARM64"
+  TARGET_PATH=/Library/EstonianIDCard.androidarm64
+  CROSS_COMPILE=aarch64-linux-android
   ;;
 *)
-  TOOLCHAIN=arm-linux-androideabi-4.9
-  ANDROID_ABI=armeabi-v7a
+  echo "Building for android ARM"
   TARGET_PATH=/Library/EstonianIDCard.androidarm
+  CROSS_COMPILE=arm-linux-androideabi
   ;;
 esac
 
@@ -18,10 +22,9 @@ rm -rf build
 mkdir -p build
 cd build
 cmake \
-    -DCMAKE_TOOLCHAIN_FILE=../android.toolchain.cmake \
-    -DANDROID_NATIVE_API_LEVEL=19 \
-    -DANDROID_TOOLCHAIN_NAME=${TOOLCHAIN} \
-    -DANDROID_ABI=${ANDROID_ABI} \
+    -DCMAKE_SYSTEM_NAME=Android \
+    -DCMAKE_C_COMPILER=${TARGET_PATH}/bin/${CROSS_COMPILE}-clang \
+    -DCMAKE_CXX_COMPILER=${TARGET_PATH}/bin/${CROSS_COMPILE}-clang++ \
     -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
     -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
     -DCMAKE_C_FLAGS=-DIOAPI_NO_64 \
@@ -29,6 +32,8 @@ cmake \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
     -DZLIB_INCLUDE_DIR=${TARGET_PATH}/sysroot/usr/include \
     -DZLIB_LIBRARY=${TARGET_PATH}/sysroot/usr/lib/libz.so \
+    -DICONV_LIBRARIES=${TARGET_PATH}/sysroot/usr/lib/libiconv.a \
+    -DANDROID=YES \
     -DBUILD_TOOLS=off \
     -DBUILD_TYPE=STATIC \
     ../../..
