@@ -4,8 +4,9 @@ param(
 	[string]$msbuild = "C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe",
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
 	[string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
-	[string]$devenv = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\devenv.exe",
-	[string]$vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat", #$env:VCINSTALLDIR
+	[string]$VSINSTALLDIR = "C:\Program Files (x86)\Microsoft Visual Studio 12.0",
+	[string]$devenv = "$VSINSTALLDIR\Common7\IDE\devenv.exe",
+	[string]$vcvars = "$VSINSTALLDIR\VC\vcvarsall.bat",
 	[string]$opensslver = "openssl-1.0.2h",
 	[string]$xercesver = "xerces-c-3.1.4",
 	[string]$xalanver = "xalan_c-1.11",
@@ -55,6 +56,7 @@ function xerces() {
 
 	Rename-Item $xercesver xerces
 	$xercesproj = "xerces\projects\Win32\VC12\xerces-all\xerces-all.sln"
+	& $devenv /upgrade $xercesproj
 	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=Win32" $xercesproj
 	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=X64" $xercesproj
 	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=Win32" $xercesproj
@@ -68,7 +70,7 @@ function xalan() {
 	}
 	Rename-Item "xalan-c-1.11" xalan
 	$xalanproj = "xalan\c\Projects\Win32\VC10\Xalan.sln"
-	& $devenv /upgrade "xalan\c\Projects\Win32\VC10\Xalan.sln"
+	& $devenv /upgrade $xalanproj
 	$Env:XERCESCROOT="$target\xerces"
 	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12" "$Env:XERCESCROOT\Build\Win32\VC10" -Recurse -Force
 	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12" "$Env:XERCESCROOT\Build\Win64\VC10" -Recurse -Force
@@ -99,6 +101,7 @@ function xmlsec() {
 	$env:XALAN_PATH = "$target\xalan\c"
 	Rename-Item $xmlsecver xmlsec
 	$xsecproj = "xmlsec\Projects\VC12.0\xsec\xsec_lib\xsec_lib.vcxproj"
+	& $devenv /upgrade $xsecproj
 	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=Win32" $xsecproj
 	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=X64" $xsecproj
 	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=Win32" $xsecproj
