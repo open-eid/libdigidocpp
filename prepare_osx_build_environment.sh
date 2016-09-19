@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 XERCES_DIR=xerces-c-3.1.4
 XMLSEC_DIR=xml-security-c-1.7.2
@@ -9,56 +10,50 @@ ARGS="$@"
 
 case "$@" in
 *android*)
-  echo "Building for Android"
   case "$@" in
   *x86*)
     ARCH=x86
-    TOOLCHAIN=x86-4.9
+    API=19
     CROSS_COMPILE=i686-linux-android
+    ;;
+  *arm64*)
+    ARCH=arm64
+    API=21
+    CROSS_COMPILE=aarch64-linux-android
+    export LIBS="-liconv"
     ;;
   *)
     ARCH=arm
-    TOOLCHAIN=arm-linux-androideabi-4.9
+    API=19
     CROSS_COMPILE=arm-linux-androideabi
     ;;
   esac
+  echo "Building for Android ${ARCH} ${API}"
 
   TARGET_PATH=/Library/EstonianIDCard.android${ARCH}
-  CONFIGURE="--host=${ARCH}-unknown-linux --disable-static --enable-shared --with-sysroot=${SYSROOT}"
-  export ANDROID_NDK=$PWD/android-ndk-r10e
+  export ANDROID_NDK=$PWD/android-ndk-r12b
   export SYSROOT=${TARGET_PATH}/sysroot
-  export ANDROID_PREFIX=${TARGET_PATH}/${CROSS_COMPILE}
-  export ANDROID_DEV=${SYSROOT}/usr
-  export PATH=${TARGET_PATH}/bin:${ANDROID_PREFIX}/bin:$PATH
+  export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
   export CC=${CROSS_COMPILE}-gcc
-  export CXX=${CROSS_COMPILE}-g++
-  export CFLAGS="-I${TARGET_PATH}/include --sysroot=${SYSROOT} -I${SYSROOT}/usr/include -I${ANDROID_PREFIX}/include"
+  export CXX=${CROSS_COMPILE}-clang++
+  export CFLAGS="-Wno-null-conversion"
   export CXXFLAGS="${CFLAGS}"
-  export LDFLAGS="-L${TARGET_PATH}/lib -L${SYSROOT}/usr/lib -L${ANDROID_PREFIX}/lib"
-  export LIBS="-liconv -lsupc++ -lstdc++ -lgnustl_shared -lglob -lz"
+  CONFIGURE="--host=${ARCH}-unknown-linux --disable-static --enable-shared --with-sysroot=${SYSROOT}"
 
-  if [ ! -f android-ndk-r10e-darwin-x86_64.bin ]; then
-    curl -O http://dl.google.com/android/ndk/android-ndk-r10e-darwin-x86_64.bin
+  if [ ! -f android-ndk-r12b-darwin-x86_64.zip ]; then
+    curl -O https://dl.google.com/android/repository/android-ndk-r12b-darwin-x86_64.zip
   fi
   if [ ! -d ${TARGET_PATH} ]; then
-    rm -rf android-ndk-r10e
-    chmod +x android-ndk-r10e-darwin-x86_64.bin;
-    ./android-ndk-r10e-darwin-x86_64.bin | egrep -v ^Extracting;
-    sudo ${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh \
-      --toolchain=${TOOLCHAIN} --platform=android-19 --install-dir=${TARGET_PATH}
+    rm -rf ${ANDROID_NDK}
+    unzip -qq android-ndk-r12b-darwin-x86_64.zip
+    patch -Np0 -i examples/libdigidocpp-android/iconv.c.patch
+    sudo ${ANDROID_NDK}/build/tools/make_standalone_toolchain.py \
+      --arch=${ARCH} --api=${API} --stl=libc++ --install-dir=${TARGET_PATH}
 
     #iconv for xerces
-    sudo cp ${ANDROID_NDK}/sources/android/support/include/iconv.h ${TARGET_PATH}/include/
-    patch -Np0 -i examples/libdigidocpp-android/iconv.c.patch
-    sudo ${CC} ${CFLAGS} -std=c99 -o ${TARGET_PATH}/lib/libiconv.o -c ${ANDROID_NDK}/sources/android/support/src/musl-locale/iconv.c
-    sudo ${CROSS_COMPILE}-ar rcs ${TARGET_PATH}/lib/libiconv.a ${TARGET_PATH}/lib/libiconv.o
-
-    #glob for xml-security-c
-    curl -O https://raw.githubusercontent.com/white-gecko/TokyoCabinet/master/glob.c
-    curl -O https://raw.githubusercontent.com/white-gecko/TokyoCabinet/master/glob.h
-    sudo cp glob.h ${TARGET_PATH}/include/
-    sudo ${CC} ${CFLAGS} -std=c99 -o ${TARGET_PATH}/lib/libglob.o -c glob.c
-    sudo ${CROSS_COMPILE}-ar rcs ${TARGET_PATH}/lib/libglob.a ${TARGET_PATH}/lib/libglob.o
+    sudo cp ${ANDROID_NDK}/sources/android/support/include/iconv.h ${SYSROOT}/usr/include/
+    sudo ${CC} -I${SYSROOT}/usr/include -std=c99 -o ${SYSROOT}/usr/lib/libiconv.o -c ${ANDROID_NDK}/sources/android/support/src/musl-locale/iconv.c
+    sudo ${CROSS_COMPILE}-ar rcs ${SYSROOT}/usr/lib/libiconv.a ${SYSROOT}/usr/lib/libiconv.o
   fi
   ;;
 *ios*)
@@ -96,8 +91,6 @@ case "$@" in
   ;;
 esac
 
-set -e
-
 function xerces {
     echo Building ${XERCES_DIR}
     if [ ! -f ${XERCES_DIR}.zip ]; then
@@ -106,10 +99,6 @@ function xerces {
     rm -rf ${XERCES_DIR}
     unzip -qq ${XERCES_DIR}.zip
     cd ${XERCES_DIR}
-    case "${ARGS}" in
-    *android*) patch -Np1 -i ../examples/libdigidocpp-android/XMLAbstractDoubleFloat.cpp.patch ;;
-    *) ;;
-    esac
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE}
     make -s
     sudo make install
@@ -224,6 +213,10 @@ function openssl {
         unset CROSS_COMPILE
         case "${ARGS}" in
         *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} ;;
+        *arm64*)
+          ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-shared -DB_ENDIAN  \
+             -fPIC -DOPENSSL_PIC -DDSO_DLFCN -DHAVE_DLFCN_H -mandroid -O3 -fomit-frame-pointer -Wall
+          ;;
         *) ./Configure android-armv7 --openssldir=${TARGET_PATH} ;;
         esac
         make -s
@@ -277,9 +270,8 @@ case "$@" in
     ;;
 *)
     echo "Usage:"
-    echo "  $0 [target] [host] [task]"
-    echo "  target: osx ios simulator android"
-    echo "  host: arm x86"
+    echo "  $0 [target] [task]"
+    echo "  target: osx ios simulator androidarm androidarm64 androidx86"
     echo "  tasks: xerces, xalan, xmlsec, xsd, all, help"
     ;;
 esac

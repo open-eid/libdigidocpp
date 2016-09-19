@@ -11,3 +11,94 @@
    finish_cmds='PATH="\$PATH:/sbin" ldconfig -n $libdir'
    shlibpath_var=LD_LIBRARY_PATH
    shlibpath_overrides_runpath=no
+--- xml-security-c-1.7.2/xsec/tools/checksig/InteropResolver.hpp.bkp	2016-09-15 09:33:25.000000000 +0300
++++ xml-security-c-1.7.2/xsec/tools/checksig/InteropResolver.hpp	2016-09-15 09:33:54.000000000 +0300
+@@ -36,7 +36,7 @@
+ 
+ #if defined (_WIN32)
+ #    include <io.h>
+-#else
++#elif 0
+ #    include <glob.h>
+ #endif
+ 
+@@ -69,7 +69,7 @@
+ #if defined (_WIN32)
+ 	_finddata_t		m_finder;
+ 	long			m_handle;
+-#else
++#elif 0
+     glob_t          m_globbuf;
+     int             m_fcount;
+ #endif
+--- xml-security-c-1.7.2/xsec/tools/checksig/InteropResolver.cpp.bkp	2016-09-15 09:33:07.000000000 +0300
++++ xml-security-c-1.7.2/xsec/tools/checksig/InteropResolver.cpp	2016-09-15 09:34:21.000000000 +0300
+@@ -113,7 +113,7 @@
+ 
+ 		m_handle = (long) _findfirst(path.rawCharBuffer(), &m_finder);
+ 		res = m_handle;
+-#else
++#elif 0
+ 		if (glob(path.rawCharBuffer(), 0, NULL, &m_globbuf) != 0)
+ 			res = -1;
+ 		else
+@@ -127,7 +127,7 @@
+ 
+ #if defined(_WIN32)
+ 		res = _findnext(m_handle, &m_finder);
+-#else
++#elif 0
+ 		if (m_fcount == (int) m_globbuf.gl_pathc)
+ 			res = -1;
+ 		else
+@@ -162,7 +162,7 @@
+ 	fname.sbStrcatIn("/certs/");
+ 	fname.sbStrcatIn(m_finder.name);
+ 	reverseSlash(fname);
+-#else
++#elif 0
+ 	fname.sbStrcpyIn(m_globbuf.gl_pathv[m_fcount++]);
+ #endif
+ 
+--- xml-security-c-1.7.2/xsec/tools/checksig/InteropResolver.cpp.bkp	2016-09-15 09:38:28.000000000 +0300
++++ xml-security-c-1.7.2/xsec/tools/checksig/InteropResolver.cpp	2016-09-15 09:39:10.000000000 +0300
+@@ -59,7 +59,7 @@
+ 	m_searchStarted = false;
+ 	m_searchFinished = false;
+ 
+-#if !defined(_WIN32)
++#if 0
+ 	m_fcount = 0;
+ #endif
+ 
+--- xml-security-c-1.7.2/xsec/tools/cipher/XencInteropResolver.hpp.bkp	2016-09-15 09:42:13.000000000 +0300
++++ xml-security-c-1.7.2/xsec/tools/cipher/XencInteropResolver.hpp	2016-09-15 09:43:28.000000000 +0300
+@@ -37,7 +37,7 @@
+ 
+ #if defined (_WIN32)
+ #    include <io.h>
+-#else
++#elif 0
+ #    include <glob.h>
+ #endif
+ 
+@@ -66,7 +66,7 @@
+ #if defined (_WIN32)
+ 	_finddata_t		m_finder;
+ 	long			m_handle;
+-#else
++#elif 0
+     glob_t          m_globbuf;
+     int             m_fcount;
+ #endif
+--- xml-security-c-1.7.2/xsec/tools/cipher/XencInteropResolver.cpp.bkp	2016-09-15 09:45:47.000000000 +0300
++++ xml-security-c-1.7.2/xsec/tools/cipher/XencInteropResolver.cpp	2016-09-15 09:46:14.000000000 +0300
+@@ -253,7 +253,7 @@
+ 	else
+ 		mp_baseURI = NULL;
+ 
+-#if !defined(_WIN32)
++#if 0
+ 	m_fcount = 0;
+ #endif
+ 

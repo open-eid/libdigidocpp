@@ -43,6 +43,7 @@ endif()
 if(ANDROID)
     find_package(Iconv)
     list( APPEND TARGET_LIBRARIES ${ICONV_LIBRARIES} )
+    list( APPEND digidocpp_DEFS ANDROID )
 endif()
 
 if( OPENSSL_VERSION LESS "1.0.0" )
