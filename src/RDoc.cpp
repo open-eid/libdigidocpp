@@ -65,9 +65,12 @@ public:
 
     inline static string toString(const XMLCh *chars)
     {
-#if defined(__APPLE__) || defined(_WIN32)
+#if defined(__APPLE__)
         static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> utf8;
         return utf8.to_bytes((char16_t*)chars);
+#elif defined(_WIN32)
+        static wstring_convert<codecvt_utf8_utf16<unsigned short>, unsigned short> utf8;
+        return utf8.to_bytes((unsigned short*)chars);
 #else // Older gcc-s do not support codecvt
         char *outbuf = XMLString::transcode(chars);
         string out(outbuf);
