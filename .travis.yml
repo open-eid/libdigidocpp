@@ -18,6 +18,12 @@ matrix:
 sudo: required
 dist: trusty
 osx_image: xcode7.3
+cache: ccache
+env:
+  global:
+  - BUILD_NUMBER=${TRAVIS_BUILD_NUMBER}
+  - VERSION=3.12.2.${TRAVIS_BUILD_NUMBER} 
+  - secure: VTpLjRFkVZeqSiP/tea7b5WiMU+PjQJlpny8/QEYazRNhn/uie69aT8VvEdkpsUM1AEx8yPnNmVGShvoNNaOi/AoqynTIKgeGPCj44h6lCnPpByGVur0avc5WrRj2xBbPBBUw1rsL65wZ13MufmRLUwnmmVYQZ3qDBdpgZvCEhA=
 
 before_install: case ${TARGET} in
   *ios*|*simulator*|*osx*)
@@ -50,15 +56,11 @@ script: export BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} && case ${TARGET} in
     make zipdebug embedlibs pkgbuild && cd ..;
     ;;
   *linux*)
-    VERSION=3.12.2.${TRAVIS_BUILD_NUMBER};
     yes | dh_make --createorig --addmissing --defaultless -p libdigidocpp_${VERSION};
     dch --distribution $(lsb_release -cs) -v ${VERSION} "Release ${VERSION}.";
     dpkg-buildpackage -rfakeroot -us -uc;
   esac
 
-env:
-  global:
-  - secure: VTpLjRFkVZeqSiP/tea7b5WiMU+PjQJlpny8/QEYazRNhn/uie69aT8VvEdkpsUM1AEx8yPnNmVGShvoNNaOi/AoqynTIKgeGPCj44h6lCnPpByGVur0avc5WrRj2xBbPBBUw1rsL65wZ13MufmRLUwnmmVYQZ3qDBdpgZvCEhA=
 addons:
   coverity_scan:
     project:
