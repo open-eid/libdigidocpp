@@ -25,7 +25,7 @@
 #include "crypto/Digest.h"
 #include "util/DateTime.h"
 #include "util/File.h"
-#include "xml/ts_119612v010101.hxx"
+#include "xml/ts_119612v020201_201601xsd.hxx"
 
 #ifdef __APPLE__
 #pragma GCC diagnostic push
@@ -99,7 +99,7 @@ TSL::TSL(const string &file)
     try {
         Properties properties;
         properties.schema_location("http://uri.etsi.org/02231/v2#",
-            Conf::instance()->xsdPath() + "/ts_119612v010101.xsd");
+            Conf::instance()->xsdPath() + "/ts_119612v020201_201601xsd.xsd");
         tsl = trustServiceStatusList(path,
             Flags::keep_dom|Flags::dont_initialize|Flags::dont_validate, properties);
     }
