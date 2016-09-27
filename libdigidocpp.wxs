@@ -75,7 +75,7 @@
                   <File Name="XAdES01903v132-201601.xsd"/>
                   <File Name="XAdES01903v141-201601.xsd"/>
                   <File Name="ts_119612v010101.xsd"/>
-                  <File Name="ts_102918v010201.xsd"/>
+                  <File Name="en_31916201v010101.xsd"/>
                 </Component>
               </Directory>
             </Directory>
@@ -132,7 +132,7 @@
                   <File Name="XAdES01903v132-201601.xsd" Id="XAdES01903v132_201601.xsd_64"/>
                   <File Name="XAdES01903v141-201601.xsd" Id="XAdES01903v141_201601.xsd_64"/>
                   <File Name="ts_119612v010101.xsd" Id="ts_119612v010101.xsd_64"/>
-                  <File Name="ts_102918v010201.xsd" Id="ts_102918v010201.xsd_64"/>
+                  <File Name="en_31916201v010101.xsd" Id="en_31916201v010101.xsd_64"/>
                 </Component>
               </Directory>
             </Directory>

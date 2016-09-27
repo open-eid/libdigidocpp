@@ -1,6 +1,6 @@
 /*! @mainpage
 
-Libdigidocpp is the C++ library offering creating, signing and verification of digitally signed documents, according to <a href="http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.04.02_60/ts_101903v010402p.pdf">XAdES</a> and <a href="http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.02.01_60/ts_102918v010201p.pdf">ASiC</a> standards.  
+Libdigidocpp is the C++ library offering creating, signing and verification of digitally signed documents, according to <a href="http://www.etsi.org/deliver/etsi_en/319100_319199/31913201/01.01.01_60/en_31913201v010101p.pdf">XAdES</a> and <a href="http://www.etsi.org/deliver/etsi_en/319100_319199/31916201/01.01.01_60/en_31916201v010101p.pdf">ASiC</a> standards.  
 
 Development of the library can be monitored in GitHub environment: <a href="https://github.com/open-eid/libdigidocpp">https://github.com/open-eid/libdigidocpp</a>
 
@@ -177,10 +177,11 @@ http://docs.oasis-open.org/office/v1.2/cs01/OpenDocument-v1.2-cs01-part3.html#__
 Other versions:<br />
 http://docs.oasis-open.org/office/v1.0/OpenDocument-v1.0-os.pdf
 </td></tr><tr><td>\anchor ASiC ASiC</td><td>
-ETSI TS 102 918 V1.3.1 (2013-06) - Associated Signature Containers
+ETSI EN 319 162-1 V1.1.1 (2016-04) - Associated Signature Containers
 
-http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf<br />
+http://www.etsi.org/deliver/etsi_en/319100_319199/31916201/01.01.01_60/en_31916201v010101p.pdf<br />
 Other versions:<br />
+http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf<br />
 http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.01.01_60/ts_102918v010101p.pdf<br />
 http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.02.01_60/ts_102918v010201p.pdf 
 </td></tr><tr><td>\anchor ASiC-BP ASiC Baseline Profile</td><td>
@@ -240,49 +241,44 @@ https://github.com/open-eid/libdigidocpp
 
 
 
-\subsection	Terms Terms and acronyms
-<table><tr><td>
-ASiC	</td><td>Associated Signature Containers
-</td></tr><tr><td>
-ASiC-E	</td><td>Extended Associated Signature Containers. A type of ASiC container.
-</td></tr><tr><td>
-BDOC 2.1 (.bdoc)	</td><td>Term is used to denote a digitally signed file format which is a profile of XAdES and follows container packaging rules based on
+\subsection Terms Terms and acronyms
+<table><tr><td>ASiC</td><td>
+Associated Signature Containers
+</td></tr><tr><td>ASiC-E</td><td>
+Extended Associated Signature Containers. A type of ASiC container.
+</td></tr><tr><td>BDOC 2.1 (.bdoc)</td><td>
+Term is used to denote a digitally signed file format which is a profile of XAdES and follows container packaging rules based on
 OpenDocument and ASiC standards. The document format has been defined in \ref BDOC "BDOC2.1:2013", an overview is provided in chapter \ref format of the current document.
-</td></tr><tr><td>
-CRL	</td><td>Certificate Revocation List, a list of certificates (or more specifically, a list of serial numbers for certificates) that have been revoked, and therefore should not be relied upon.
-</td></tr><tr><td>
-DIGIDOC-XML (.ddoc)	</td><td>The term is used to denote a DigiDoc document format that is based on the XAdES standard and is a profile of that standard. The current version is 1.3 which has been described in \ref DDOC "DigiDoc format".
-</td></tr><tr><td>
-ECDSA	</td><td>Elliptic Curve Digital Signature Algorithm. Digital Signature Algorithm (DSA) which uses elliptic curve cryptography. Used as an alternative to RSA algorithm.
-</td></tr><tr><td>
-OCSP	</td><td>Online Certificate Status Protocol, an Internet protocol used for obtaining the revocation status of an X.509 digital certificate
-</td></tr><tr><td>
-OCSP Responder	</td><td>OCSP Server, maintains a store of CA-published CRLs and an up-to-date list of valid and invalid certificates. After the OCSP responder receives a validation request (typically an HTTP or HTTPS transmission), the OCSP responder either validates the status of the certificate using its own authentication database or calls upon the OCSP responder that originally issued the certificate to validate the request. After formulating a response, the OCSP responder returns the signed response, and the original certificate is either approved or rejected, based on whether or not the OCSP responder validates the certificate.
-</td></tr><tr><td>
-SK	</td><td>AS Sertifitseerimiskeskus (Certification Centre Ltd.). Certificate Authority in Estonia
-</td></tr>
-<tr><td>
-time-mark	</td><td>Mechanism used for adding certificate validity and signing time information with the signature. 
+</td></tr><tr><td>CRL</td><td>
+Certificate Revocation List, a list of certificates (or more specifically, a list of serial numbers for certificates) that have been revoked, and therefore should not be relied upon.
+</td></tr><tr><td>DIGIDOC-XML (.ddoc)</td><td>
+The term is used to denote a DigiDoc document format that is based on the XAdES standard and is a profile of that standard. The current version is 1.3 which has been described in \ref DDOC "DigiDoc format".
+</td></tr><tr><td>ECDSA</td><td>
+Elliptic Curve Digital Signature Algorithm. Digital Signature Algorithm (DSA) which uses elliptic curve cryptography. Used as an alternative to RSA algorithm.
+</td></tr><tr><td>OCSP</td><td>
+Online Certificate Status Protocol, an Internet protocol used for obtaining the revocation status of an X.509 digital certificate
+</td></tr><tr><td>OCSP Responder</td><td>
+OCSP Server, maintains a store of CA-published CRLs and an up-to-date list of valid and invalid certificates. After the OCSP responder receives a validation request (typically an HTTP or HTTPS transmission), the OCSP responder either validates the status of the certificate using its own authentication database or calls upon the OCSP responder that originally issued the certificate to validate the request. After formulating a response, the OCSP responder returns the signed response, and the original certificate is either approved or rejected, based on whether or not the OCSP responder validates the certificate.
+</td></tr><tr><td>SK</td><td>
+AS Sertifitseerimiskeskus (Certification Centre Ltd.). Certificate Authority in Estonia
+</td></tr><tr><td>time-mark</td><td>
+Mechanism used for adding certificate validity and signing time information with the signature. 
 The information is provided with a special OCSP confirmation (also referred to as time-mark) - hash value of the binary value of the signature (along with hash algorithm identifier in case of BDOC 2.1 document format) must be present in the "nonce" field of the OCSP confirmation. In this case, signature creation time is the issuance time of the OCSP confirmation (producedAt value in the confirmation), additional time-stamp service is not required. The respective signature profile is TM profile (supported in case of DIGIDOC-XML 1.3 and BDOC 2.1 document formats).
-</td></tr><tr><td>
-time-stamp	</td><td>Mechanism used for adding certificate validity and signing time information with the signature. The certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token retrieved form a time-stamping service. In this case, signature creation time is the issuance time (genTime value in the time-stamp) of the time-stamp token. The respective signature profile is TS profile (supported only in case of BDOC 2.1 document format).
-</td></tr>
-<tr><td>
-archive time-stamp	</td><td>Mechanism used for providing long term validity of a XAdES signature. The signature and validation data values are time-stamped. The respective signature profile is TSA profile (supported only in case of BDOC 2.1 document format).
-</td></tr>
-<tr><td>
-TSA	</td><td>Time-Stamping Authority. Time-stamping service provider.
-</td></tr>
-<tr><td>
-TSL	</td><td>Trust Service status List. Signed list that provides information about the status and the status history of the trust services (including certification, OCSP confirmation and time-stamping services). Used as a trust anchor in case of signature creation and validation to check the trustworthiness of the certificates that are included in the signature. See also \ref TSL "Trusted Lists"
-</td></tr><tr><td>
-X.509	</td><td>an ITU-T standard for a public key infrastructure (PKI) and Privilege Management Infrastructure (PMI) which specifies standard formats for public key certificates, certificate revocation lists, attribute certificates, and a certification path validation algorithm
-</td></tr><tr><td>
-XAdES	</td><td>XML Advanced Electronic Signatures, a set of extensions to XML-DSIG recommendation making it suitable for advanced electronic signature. Specifies precise profiles of XML-DSIG for use with advanced electronic signature in the meaning of European Union Directive 1999/93/EC.
-</td></tr><tr><td>
-XML-DSIG	</td><td>a general framework for digitally signing documents, defines an XML syntax for digital signatures and is defined in the W3C recommendation XML Signature Syntax and Processing
-</td></tr>
-</table>
+</td></tr><tr><td>time-stamp</td><td>
+Mechanism used for adding certificate validity and signing time information with the signature. The certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token retrieved form a time-stamping service. In this case, signature creation time is the issuance time (genTime value in the time-stamp) of the time-stamp token. The respective signature profile is TS profile (supported only in case of BDOC 2.1 document format).
+</td></tr><tr><td>archive time-stamp</td><td>
+Mechanism used for providing long term validity of a XAdES signature. The signature and validation data values are time-stamped. The respective signature profile is TSA profile (supported only in case of BDOC 2.1 document format).
+</td></tr><tr><td>TSA</td><td>
+Time-Stamping Authority. Time-stamping service provider.
+</td></tr><tr><td>TSL</td><td>
+Trust Service status List. Signed list that provides information about the status and the status history of the trust services (including certification, OCSP confirmation and time-stamping services). Used as a trust anchor in case of signature creation and validation to check the trustworthiness of the certificates that are included in the signature. See also \ref TSL "Trusted Lists"
+</td></tr><tr><td>X.509</td><td>
+an ITU-T standard for a public key infrastructure (PKI) and Privilege Management Infrastructure (PMI) which specifies standard formats for public key certificates, certificate revocation lists, attribute certificates, and a certification path validation algorithm
+</td></tr><tr><td>XAdES</td><td>
+XML Advanced Electronic Signatures, a set of extensions to XML-DSIG recommendation making it suitable for advanced electronic signature. Specifies precise profiles of XML-DSIG for use with advanced electronic signature in the meaning of European Union Directive 1999/93/EC.
+</td></tr><tr><td>XML-DSIG</td><td>
+a general framework for digitally signing documents, defines an XML syntax for digital signatures and is defined in the W3C recommendation XML Signature Syntax and Processing
+</td></tr></table>
 
 
 
@@ -411,7 +407,7 @@ Several XML schemas are used when creating digitally signed documents in BDOC 2.
 </tr><tr><td>OpenDocument_manifest.xsd</td><td>OASIS OpenDocument v1.0 (\ref OpenDocument "OpenDocument")
 Defines the structure of META-INF/manifest.xml file in BDOC container. 
 https://www.oasis-open.org/committees/download.php/12570/OpenDocument-manifest-schema-v1.0-os.rng 
-</td></tr><tr><td>ts_102918v010201.xsd</td><td>Associated Signature Containers (\ref ASiC "ASiC") 
+</td></tr><tr><td>en_31916201v010101.xsd</td><td>Associated Signature Containers (\ref ASiC "ASiC") 
 Defines the format of container for encapsulating the signed documents, signatures and additional information. http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.02.01_60/
 </td></tr><tr><td>xmldsig-core-schema.xsd</td><td>XML Signature Core Schema Instance (\ref XML-DSIG "XML-DSIG")
 Defines XML syntax for digital signatures.
@@ -435,17 +431,9 @@ The following section describes modifications that have been made to XML schemas
 
 Modifications are marked between xml comment tags.
 
-<b>Schema ts_102918v010201.xsd</b>
+<b>Schema en_31916201v010101.xsd</b>
 
-1) The namespace value has been changed as the initial value in the original schema was incorrect. The value in original schema will be corrected with the next version of the ASiC standard.
-\code{.xml}
-<xsd:schema targetNamespace="http://uri.etsi.org/02918/v1.2.1#"  <!-- originally "http://uri.etsi.org/2918/v1.2.1#" -->
-	xmlns:ds="http://www.w3.org/2000/09/xmldsig#" 
-xmlns="http://uri.etsi.org/02918/v1.2.1#" <!--  originally "http://uri.etsi.org/2918/v1.2.1#" -->
-	xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
-	attributeFormDefault="unqualified">
-\endcode
-2) The schema’s location has been altered so that the imported schema file is looked up from the local file system.
+1) The schema’s location has been altered so that the imported schema file is looked up from the local file system.
 \code{.xml}
 <xsd:import namespace="http://www.w3.org/2000/09/xmldsig#"
 schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->

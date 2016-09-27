@@ -7,7 +7,7 @@
 		schemaLocation="xmldsig-core-schema.xsd"/>
 	<xsd:element name="ASiCManifest" type="ASiCManifestType">
 		<xsd:annotation>
-			<xsd:documentation>Schema for ASiC-E with CAdES specifying content for ASiCManifest.xml</xsd:documentation>
+			<xsd:documentation>Schema for ASiCManifest – See ETSI EN 319 162</xsd:documentation>
 		</xsd:annotation>
 	</xsd:element>
 	<xsd:complexType name="ASiCManifestType">
@@ -54,7 +54,7 @@
 	</xsd:complexType>
 	<xsd:element name="XAdESSignatures" type="XAdESSignaturesType">
 		<xsd:annotation>
-			<xsd:documentation>Schema for ASiC-E with XAdES to include one or more XML signatures in *signatures*.xml</xsd:documentation>
+			<xsd:documentation>Schema for parallel detached XAdES Signatures</xsd:documentation>
 		</xsd:annotation>
 	</xsd:element>
 	<xsd:complexType name="XAdESSignaturesType">

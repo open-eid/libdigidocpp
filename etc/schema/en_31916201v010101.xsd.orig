@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema targetNamespace="http://uri.etsi.org/2918/v1.2.1#"
-	xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns="http://uri.etsi.org/2918/v1.2.1#"
+<xsd:schema targetNamespace="http://uri.etsi.org/02918/v1.2.1#"
+	xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns="http://uri.etsi.org/02918/v1.2.1#"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
 	attributeFormDefault="unqualified">
 	<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#"
 		schemaLocation="http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd"/>
 	<xsd:element name="ASiCManifest" type="ASiCManifestType">
 		<xsd:annotation>
-			<xsd:documentation>Schema for ASiC-E with CAdES specifying content for ASiCManifest.xml</xsd:documentation>
+			<xsd:documentation>Schema for ASiCManifest – See ETSI EN 319 162</xsd:documentation>
 		</xsd:annotation>
 	</xsd:element>
 	<xsd:complexType name="ASiCManifestType">
@@ -54,7 +54,7 @@
 	</xsd:complexType>
 	<xsd:element name="XAdESSignatures" type="XAdESSignaturesType">
 		<xsd:annotation>
-			<xsd:documentation>Schema for ASiC-E with XAdES to include one or more XML signatures in *signatures*.xml</xsd:documentation>
+			<xsd:documentation>Schema for parallel detached XAdES Signatures</xsd:documentation>
 		</xsd:annotation>
 	</xsd:element>
 	<xsd:complexType name="XAdESSignaturesType">
