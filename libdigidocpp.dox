@@ -365,40 +365,27 @@ The figure below describes the architecture of software and hardware components 
 
 
 
-\subsection	Dependencies Dependencies
-\subsubsection	libraries Software libraries
+\subsection Dependencies Dependencies
+\subsubsection libraries Software libraries
 Libdigidocpp library depends on the software libraries listed below.
 <table>
-
-<tr><th>Base Component</th>	<th>Required/optional</th>	<th>Description</th>
-</tr>
-<tr><td>OpenSSL</td><td>	required	</td><td>Used for validating certificates and digest values.</td>
-</tr>
-<tr><td>XercesC	</td><td>required	</td><td>Used in case of BDOC documents: for validating the documents according to XML Schema, reading and writing XML.</td>
-</tr>
-<tr><td>XmlSecurityC	</td><td>required	</td><td>Used in case of BDOC documents (as an extension for XercesC): for handling signature related components. </td>
-</tr>
-<tr><td>XalanC	</td><td>Depends on XmlSecurityC 	</td><td>Used for processing TSL documents with XPath references</td>
-</tr>
-<tr><td>XSD	</td><td>required 	</td><td>Used for dynamically generating C++ source code according to XML Schemas, only used during building process of the library. Required when building the library from source code.</td>
-</tr>
-<tr><td>ZLIB	</td><td>required	</td><td>Used when generating BDOC files in ZIP format.</td>
-</tr>
-<tr><td>Minizip	</td><td>required</td><td>	Used when creating ZIP container for BDOC file. If the component is not found from system then bundled version with source code is used. Forms a part of ZLIB component.</td>
-</tr>
-<tr><td>CDigiDoc/ Libdigidoc	</td><td>optional	</td><td>Used for handling digitally signed files in DIGIDOC-XML format (with .ddoc extension). Libdigidocpp acts as a wrapper for CDigiDoc library. See also \ref CDigiDoc "CDigiDoc Programmer's Guide".</td>
-</tr>
-<tr><td>PKCS11	</td><td>optional</td><td>	Used for searching for default PKCS#11 driver in the system so that its path could be registered in configuration entries.</td>
-</tr>
-<tr><td>Doxygen	</td><td>optional	</td><td>Used for generating API documentation from source code.</td>
-</tr>
-<tr><td>SWIG	</td><td>optional	</td><td>Used for creating C# bindings.</td>
-</tr>
+<tr><th>Base Component</th><th>Required/optional</th><th>Description</th></tr>
+<tr><td>OpenSSL</td><td>required</td><td>Used for validating certificates and digest values.</td></tr>
+<tr><td>XercesC</td><td>required</td><td>Used in case of BDOC documents: for validating the documents according to XML Schema, reading and writing XML.</td></tr>
+<tr><td>XmlSecurityC</td><td>required</td><td>Used in case of BDOC documents (as an extension for XercesC): for handling signature related components. </td></tr>
+<tr><td>XalanC</td><td>Depends on XmlSecurityC</td><td>Used for processing TSL documents with XPath references</td></tr>
+<tr><td>XSD</td><td>required</td><td>Used for dynamically generating C++ source code according to XML Schemas, only used during building process of the library. Required when building the library from source code.</td></tr>
+<tr><td>ZLIB</td><td>required</td><td>Used when generating BDOC files in ZIP format.</td></tr>
+<tr><td>Minizip</td><td>required</td><td>Used when creating ZIP container for BDOC file. If the component is not found from system then bundled version with source code is used. Forms a part of ZLIB component.</td></tr>
+<tr><td>CDigiDoc/ Libdigidoc</td><td>optional</td><td>Used for handling digitally signed files in DIGIDOC-XML format (with .ddoc extension). Libdigidocpp acts as a wrapper for CDigiDoc library. See also \ref CDigiDoc "CDigiDoc Programmer's Guide".</td></tr>
+<tr><td>PKCS11</td><td>optional</td><td>Used for searching for default PKCS#11 driver in the system so that its path could be registered in configuration entries.</td></tr>
+<tr><td>Doxygen</td><td>optional</td><td>Used for generating API documentation from source code.</td></tr>
+<tr><td>SWIG</td><td>optional</td><td>Used for creating C# bindings.</td></tr>
 </table>
 
 
 
-\subsubsection	Schemas XML Schemas
+\subsubsection Schemas XML Schemas
 Several XML schemas are used when creating digitally signed documents in BDOC 2.1 file format and validating their structure. The schemas are included in etc/schema/ subdirectory of the Libdigidocpp distribution package, their description is given in the table below.
 
 \note Some modifications have been made to some of the schemas. Differences in comparison with the original schemas are listed in section \ref schema-modification of the current document.
@@ -762,66 +749,8 @@ You change the default behaviour in the configuration file with the following pa
 </table>
 
 \subsection sample-conf Sample configuration file
-\code{.xml}
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-xsi:noNamespaceSchemaLocation="schema/conf.xsd">
+\includelineno src/digidocpp.conf
 
-<!--Logging settings-->
-<param name="log.level" lock="false">2</param>
-<!--<param name="log.file" lock="false">/tmp/digidocpp.log</param>-->
-<param name="log.file" lock="false">C:\\Documents and Settings\\All Users\\Documents\\digidocpp.log</param>
-
-<!--PKCS#11 driver’s location, if not using default driver-->
-<param name="pkcs11.driver.path" lock="false">opensc-pkcs11.dll</param>
-<!--<param name="pkcs11.driver.path" lock="false">opensc-pkcs11.so</param>-->
-   
-<!--HTTP proxy settings, if needed-->
-<!--<param name="proxy.host" lock="false"></param>-->
-<!--<param name="proxy.port" lock="false"></param>-->
-<!--<param name="proxy.user" lock="false"></param>-->
-<!--<param name="proxy.pass" lock="false"></param>-->
-<!--<param name="proxy.forceSSL" lock="false">false</param>-->
-<!--<param name="proxy.tunnelSSL" lock="false">true</param>-->
-
-<!--OCSP request signing options-->
-<param name="pkcs12.cert" lock="false"></param>
-<param name="pkcs12.pass" lock="false"></param>
-<param name="pkcs12.disable" lock="false">false</param>-->
-
-<!--Time-stamping service settings-->
-<!--<param name="ts.url" lock="false">http://tsa.sk.ee/</param>-->
-
-<!--TSL settings-->
-<!--<param name="tsl.autoupdate" lock="false">true</param>-->
-<!--<param name="tsl.cache" lock="false"></param>-->
-<!--<param name="tsl.onlineDigest" lock="false">true</param>-->
-<!--<param name="tsl.timeOut" lock="false">10</param>-->
-
-<!-- OCSP responder url. Used for validating signing certificates and generating BDoc-TM signatures-->
-<!--<ocsp issuer="ESTEID-SK 2007">http://ocsp.sk.ee</ocsp>-->
-<!--<ocsp issuer="ESTEID-SK 2011">http://ocsp.sk.ee</ocsp>-->
-<!--<ocsp issuer="ESTEID-SK 2015">http://ocsp.sk.ee</ocsp>-->
-<!--<ocsp issuer="EID-SK 2011">http://ocsp.sk.ee</ocsp>-->
-<!--<ocsp issuer="KLASS3-SK 2010">http://ocsp.sk.ee</ocsp>-->
-
-<!--OCSP responder settings for test OCSP service-->
-<!--<ocsp issuer="TEST of ESTEID-SK 2011">http://demo.sk.ee/ocsp</ocsp>-->
-<!--<ocsp issuer="TEST of ESTEID-SK 2015">http://demo.sk.ee/ocsp</ocsp>-->
-<!--<ocsp issuer="TEST of KLASS3-SK 2010">http://demo.sk.ee/ocsp</ocsp>-->
-
-<!--Digest algorithm settings-->
-<!--<param name="signer.digestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
-<!--<param name="signer.signatureDigestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
-  
-
-<!--Digest algorithm settings-->
-<!--<param name="signer.digestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
-<!--<param name="signer.signatureDigestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
-  
-
-</configuration>	
-\endcode
 
 
 
