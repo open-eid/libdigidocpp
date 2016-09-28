@@ -4,7 +4,7 @@ set -e
 XERCES_DIR=xerces-c-3.1.4
 XMLSEC_DIR=xml-security-c-1.7.2
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.0.2h
+OPENSSL_DIR=openssl-1.0.2j
 LIBXML2_DIR=libxml2-2.9.3
 ARGS="$@"
 
