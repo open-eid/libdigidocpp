@@ -98,7 +98,7 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdES01903v141-201601.x
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
     --namespace-map http://uri.etsi.org/01903/v1.4.1\#=digidoc::xadesv141)
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_102918v010201.xsd
+XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/en_31916201v010101.xsd
     --root-element XAdESSignatures
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
@@ -145,7 +145,7 @@ set( SCHEMA_FILES
     ${SCHEMA_DIR}/xmldsig-core-schema.xsd
     ${SCHEMA_DIR}/XAdES01903v132-201601.xsd
     ${SCHEMA_DIR}/XAdES01903v141-201601.xsd
-    ${SCHEMA_DIR}/ts_102918v010201.xsd
+    ${SCHEMA_DIR}/en_31916201v010101.xsd
     ${SCHEMA_DIR}/xml.xsd
     ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
 )

@@ -30,7 +30,7 @@
 #include "crypto/X509Crypto.h"
 #include "util/DateTime.h"
 #include "util/File.h"
-#include "xml/ts_102918v010201.hxx"
+#include "xml/en_31916201v010101.hxx"
 
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/framework/MemBufInputSource.hpp>
@@ -167,8 +167,8 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
  * Creates an empty BDOC-BES signature with mandatory XML nodes.
  */
 SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
- : signature(0)
- , asicsignature(0)
+ : signature(nullptr)
+ , asicsignature(nullptr)
  , bdoc(bdoc)
 {
     string nr = "S" + to_string(id);
@@ -276,7 +276,7 @@ SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc)
         properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v132-201601.xsd"));
         properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v141-201601.xsd"));
         properties.schema_location(URI_ID_DSIG, File::fullPathUrl(Conf::instance()->xsdPath() + "/xmldsig-core-schema.xsd"));
-        properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/ts_102918v010201.xsd"));
+        properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/en_31916201v010101.xsd"));
         asicsignature = xAdESSignatures(is, Flags::dont_initialize, properties).release();
         if(asicsignature->signature().size() > 1)
             THROW("More than one signature in signatures.xml file is unsupported");
