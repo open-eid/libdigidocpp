@@ -23,7 +23,7 @@ param(
 
 $libdigidocpp = split-path -parent $MyInvocation.MyCommand.Definition
 if(!(Test-Path -Path $target)){
-	New-Item -ItemType directory -Path $target
+	New-Item -ItemType directory -Path $target > $null
 }
 Push-Location -Path $target
 
@@ -36,13 +36,13 @@ function openssl() {
 	& $7zip x "$opensslver.tar.gz" > $null
 	& $7zip x "$opensslver.tar" > $null
 	Push-Location -Path $opensslver
-	& $vcvars x86 "&&" perl Configure VC-WIN32 no-asm "&&" ms\do_ms "&&" nmake -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win32 OPENSSLDIR=\OpenSSL-Win32\bin
+	& $vcvars x86 "&&" perl Configure VC-WIN32 no-asm "&&" ms\do_ms "&&" nmake /nologo -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win32 OPENSSLDIR=\OpenSSL-Win32\bin
 	Pop-Location
 	Remove-Item $opensslver -Force -Recurse
 
 	& $7zip x "$opensslver.tar" > $null
 	Push-Location -Path $opensslver
-	& $vcvars x86_amd64 "&&" perl Configure VC-WIN64A no-asm "&&" ms\do_win64a "&&" nmake -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win64 OPENSSLDIR=\OpenSSL-Win64\bin
+	& $vcvars x86_amd64 "&&" perl Configure VC-WIN64A no-asm "&&" ms\do_win64a "&&" nmake /nologo -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win64 OPENSSLDIR=\OpenSSL-Win64\bin
 	Pop-Location
 	Remove-Item $opensslver -Force -Recurse
 	Remove-Item "$opensslver.tar"
@@ -74,10 +74,10 @@ function xalan() {
 	$Env:XERCESCROOT="$target\xerces"
 	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12" "$Env:XERCESCROOT\Build\Win32\VC10" -Recurse -Force
 	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12" "$Env:XERCESCROOT\Build\Win64\VC10" -Recurse -Force
-	New-Item -ItemType directory -Path "xalan\c\Build\Win32\VC10\Release" -Force
-	New-Item -ItemType directory -Path "xalan\c\Build\Win64\VC10\Release" -Force
-	New-Item -ItemType directory -Path "xalan\c\Build\Win32\VC10\Debug" -Force
-	New-Item -ItemType directory -Path "xalan\c\Build\Win64\VC10\Debug" -Force
+	New-Item -ItemType directory -Path "xalan\c\Build\Win32\VC10\Release" -Force > $null
+	New-Item -ItemType directory -Path "xalan\c\Build\Win64\VC10\Release" -Force > $null
+	New-Item -ItemType directory -Path "xalan\c\Build\Win32\VC10\Debug" -Force > $null
+	New-Item -ItemType directory -Path "xalan\c\Build\Win64\VC10\Debug" -Force > $null
 	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12\Release\*.dll" "xalan\c\Build\Win32\VC10\Release"
 	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12\Release\*.dll" "xalan\c\Build\Win64\VC10\Release"
 	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12\Debug\*.dll" "xalan\c\Build\Win32\VC10\Debug"
@@ -119,17 +119,14 @@ function xsd() {
 function zlib() {
 	$client.DownloadFile("http://zlib.net/$zlibver.tar.gz", "$target\$zlibver.tar.gz")
 	& $7zip x "$zlibver.tar.gz" > $null
-	& $7zip x "$zlibver.tar" > $null
-	Push-Location -Path $zlibver
-	& $vcvars x86 "&&" $cmake -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\zlib\x86" "-GNMake Makefiles" . "&&" nmake install
-	Pop-Location
-	Remove-Item $zlibver -Force -Recurse
-
-	& $7zip x "$zlibver.tar" > $null
-	Push-Location -Path $zlibver
-	& $vcvars x86_amd64 "&&" $cmake -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\zlib\x64" "-GNMake Makefiles" . "&&" nmake install
-	Pop-Location
-	Remove-Item $zlibver -Force -Recurse
+	foreach($platform in @("x86", "x64")) {
+		& $7zip x "$zlibver.tar" > $null
+		Push-Location -Path $zlibver
+		$arch = If ($platform -ne "x86") {"x86_amd64"} Else {"x86"}
+		& $vcvars $arch "&&" $cmake -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\zlib\$platform" "-GNMake Makefiles" . "&&" nmake /nologo install
+		Pop-Location
+		Remove-Item $zlibver -Force -Recurse
+	}
 	Remove-Item "$zlibver.tar"
 }
 

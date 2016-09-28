@@ -34,10 +34,10 @@ case "$@" in
   export ANDROID_NDK=$PWD/android-ndk-r12b
   export SYSROOT=${TARGET_PATH}/sysroot
   export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
-  export CC=${CROSS_COMPILE}-gcc
+  export CC=${CROSS_COMPILE}-clang
   export CXX=${CROSS_COMPILE}-clang++
-  export CFLAGS="-Wno-null-conversion"
-  export CXXFLAGS="${CFLAGS}"
+  export CFLAGS=""
+  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   CONFIGURE="--host=${ARCH}-unknown-linux --disable-static --enable-shared --with-sysroot=${SYSROOT}"
 
   if [ ! -f android-ndk-r12b-darwin-x86_64.zip ]; then
@@ -52,7 +52,7 @@ case "$@" in
 
     #iconv for xerces
     sudo cp ${ANDROID_NDK}/sources/android/support/include/iconv.h ${SYSROOT}/usr/include/
-    sudo ${CC} -I${SYSROOT}/usr/include -std=c99 -o ${SYSROOT}/usr/lib/libiconv.o -c ${ANDROID_NDK}/sources/android/support/src/musl-locale/iconv.c
+    sudo ${CROSS_COMPILE}-gcc -I${SYSROOT}/usr/include -std=c99 -o ${SYSROOT}/usr/lib/libiconv.o -c ${ANDROID_NDK}/sources/android/support/src/musl-locale/iconv.c
     sudo ${CROSS_COMPILE}-ar rcs ${SYSROOT}/usr/lib/libiconv.a ${SYSROOT}/usr/lib/libiconv.o
   fi
   ;;
@@ -63,8 +63,8 @@ case "$@" in
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
   SDK_PATH=$(xcrun -sdk iphoneos --show-sdk-path)
   SDK_CFLAGS="-miphoneos-version-min=9.0"
-  export CFLAGS="-arch armv7 -arch armv7s -arch arm64 ${SDK_CFLAGS} -isysroot ${SDK_PATH} -Wno-null-conversion"
-  export CXXFLAGS="${CFLAGS}"
+  export CFLAGS="-arch armv7 -arch armv7s -arch arm64 ${SDK_CFLAGS} -isysroot ${SDK_PATH}"
+  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ARCHS="armv7 armv7s arm64"
   ;;
 *simulator*)
@@ -74,8 +74,8 @@ case "$@" in
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
   SDK_PATH=$(xcrun -sdk iphonesimulator --show-sdk-path)
   SDK_CFLAGS="-miphoneos-version-min=9.0"
-  export CFLAGS="-arch i386 -arch x86_64 ${SDK_CFLAGS} -isysroot ${SDK_PATH} -Wno-null-conversion"
-  export CXXFLAGS="${CFLAGS}"
+  export CFLAGS="-arch i386 -arch x86_64 ${SDK_CFLAGS} -isysroot ${SDK_PATH}"
+  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ARCHS="i386 x86_64"
   ;;
 *)
@@ -85,8 +85,8 @@ case "$@" in
   CONFIGURE="--disable-static"
   SDK_PATH=$(xcrun -sdk macosx --show-sdk-path)
   SDK_CFLAGS="-mmacosx-version-min=10.9"
-  export CFLAGS="${SDK_CFLAGS} -Wno-null-conversion"
-  export CXXFLAGS="${CFLAGS}"
+  export CFLAGS="${SDK_CFLAGS}"
+  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ARCHS="x86_64"
   ;;
 esac
@@ -210,6 +210,8 @@ function openssl {
 
     case "${ARGS}" in
     *android*)
+        CCOLD=${CC}
+        export CC=${CROSS_COMPILE}-gcc
         unset CROSS_COMPILE
         case "${ARGS}" in
         *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} ;;
@@ -221,6 +223,7 @@ function openssl {
         esac
         make -s
         sudo make install
+        export CC=${CCOLD}
         ;;
     *ios*|*simulator*)
         CRYPTO=""

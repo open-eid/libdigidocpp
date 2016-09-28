@@ -30,6 +30,7 @@ cmake \
     -DCMAKE_C_FLAGS=-DIOAPI_NO_64 \
     -DCMAKE_CXX_FLAGS=-DIOAPI_NO_64 \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
+    -DBoost_INCLUDE_DIR="" \
     -DZLIB_INCLUDE_DIR=${TARGET_PATH}/sysroot/usr/include \
     -DZLIB_LIBRARY=${TARGET_PATH}/sysroot/usr/lib/libz.so \
     -DICONV_LIBRARIES=${TARGET_PATH}/sysroot/usr/lib/libiconv.a \

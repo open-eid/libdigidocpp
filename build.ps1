@@ -39,14 +39,14 @@ if($boost) {
 }
 if($source) {
   Remove-Item source -Force -Recurse
-  New-Item -ItemType directory -Path source
+  New-Item -ItemType directory -Path source > $null
   Get-ChildItem -Path $libdigidocpp | % { Copy-Item $_.fullname source -Recurse -Force -Exclude build,doc,.git }
   & $heat dir source -nologo -cg Source -gg -scom -sreg -sfrag -srd -dr SourceFolder -var var.sourceLocation -out SourceFilesFragment.wxs
   $candleext += "-dsourceLocation=source", "SourceFilesFragment.wxs"
   $lightext += "SourceFilesFragment.wixobj"
 }
 
-Remove-Item build -Force -Recurse
+Remove-Item build -Force -Recurse > $null
 foreach($platform in @("x86", "x64")) {
   foreach($type in @("Debug", "RelWithDebInfo")) {
     switch ($platform+$type)
@@ -95,10 +95,10 @@ foreach($platform in @("x86", "x64")) {
       $cmakeext += "-DLIBDIGIDOC_LIBRARY=$libdigidoc/$platform/bin/digidoc.lib"
       $cmakeext += "-DLIBDIGIDOC_INCLUDE_DIR=$libdigidoc/$platform/include"
     }
-    New-Item -ItemType directory -Path build
+    New-Item -ItemType directory -Path build > $null
     Push-Location -Path build
     if($boost) {
-      New-Item -ItemType directory -Path test
+      New-Item -ItemType directory -Path test > $null
       Copy-Item "$target/xerces/Build/$xerces_dll" test
       Copy-Item "$target/xalan/c/Build/$xalanmsg_dll" test
       Copy-Item "$target/xalan/c/Build/$xalanc_dll" test
@@ -124,9 +124,9 @@ foreach($platform in @("x86", "x64")) {
       "-DXSD_EXECUTABLE=$target/xsd/bin/xsd.exe" `
       "-DZLIB_LIBRARY=$target/zlib/$platform/lib/zlib.lib" `
       "-DZLIB_INCLUDE_DIR=$target/zlib/$platform/include" `
-      $cmakeext $libdigidocpp "&&" nmake install
+      $cmakeext $libdigidocpp "&&" nmake /nologo install
     Pop-Location
-    Remove-Item build -Force -Recurse
+    Remove-Item build -Force -Recurse > $null
   }
 }
 
