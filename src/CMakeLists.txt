@@ -107,17 +107,12 @@ list( APPEND xsd_SRCS xml/ObjectType.cpp xml/AnyType.cpp xml/UnsignedSignaturePr
 
 XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/xml.xsd
     --root-element-none )
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101.xsd
+XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
     --root-element TrustServiceStatusList
     --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --custom-type AdditionalInformationType=/AdditionalInformationTypeBase
     --hxx-epilogue \"\#include <xml/AdditionalInformationType.h>\" )
-#XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v010101_additionaltypes.xsd
-#    --root-element-none
-#    --namespace-map http://uri.etsi.org/02231/v2/additionaltypes\#=digidoc::tslx
-#    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
-#    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
 list( APPEND xsd_SRCS xml/AdditionalInformationType.cpp )
 if( WIN32 )
     add_executable( embedfile embedfile.cpp )
@@ -152,8 +147,7 @@ set( SCHEMA_FILES
     ${SCHEMA_DIR}/XAdES01903v141-201601.xsd
     ${SCHEMA_DIR}/ts_102918v010201.xsd
     ${SCHEMA_DIR}/xml.xsd
-    ${SCHEMA_DIR}/ts_119612v010101.xsd
-#    ${SCHEMA_DIR}/ts_119612v010101_additionaltypes.xsd
+    ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
 )
 set( PUBLIC_HEADER
     Conf.h

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "xml/ts_119612v010101.hxx"
+#include "xml/ts_119612v020201_201601xsd.hxx"
 
 namespace digidoc {
 namespace tsl {

@@ -204,8 +204,9 @@ http://tools.ietf.org/html/rfc5280
 </td></tr><tr><td>\anchor TSL Trusted Lists</td><td>
 ETSI TS 119 612 V1.1.1 (2013-06)
 
-http://www.etsi.org/deliver/etsi_ts/119600_119699/119612/01.01.01_60/ts_119612v010101p.pdf<br />
+http://www.etsi.org/deliver/etsi_ts/119600_119699/119612/02.02.01_60/ts_119612v020201p.pdf<br />
 Other versions:<br />
+http://www.etsi.org/deliver/etsi_ts/119600_119699/119612/01.01.01_60/ts_119612v010101p.pdf<br />
 http://www.etsi.org/deliver/etsi_ts/102200_102299/102231/03.01.02_60/ts_102231v030102p.pdf
 </td></tr><tr><td>\anchor DSA DSA</td><td>
 Estonian Digital Signature Act 
@@ -421,8 +422,7 @@ Defines a set of extensions to XML-DSIG making it suitable for advanced electron
 http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd
 </tr><tr><td>XAdES01903v141-201601.xsd</td><td>Defines XML syntax for additional elements of XAdES signatures that were added with version 1.4.1 of the (\ref XAdES_EN "XAdES EN") standard. Needed for implementing archive time-stamp support in the future.
 http://uri.etsi.org/01903/v1.4.1/XAdES01903v141-201601.xsd
-</td></tr><tr><td>ts_119612v010101.xsd</td><td>Defines the format of Trust Service status Lists (\ref TSL) that contain information about trusted CA, OCSP and TSA certificates.
-http://uri.etsi.org/02231/v3.1.2/ts_102231v030102_xsd.xsd
+</td></tr><tr><td>ts_119612v020201_201601xsd.xsd</td><td>Defines the format of Trust Service status Lists (\ref TSL) that contain information about trusted CA, OCSP and TSA certificates.
 </td></tr><tr><td>conf.xsd</td><td>Configuration properties’ schema. Defines the Libdigidocpp configuration file’s digidocpp.conf structure (see also \ref conf).
 </td></tr>
 </table>
@@ -516,7 +516,7 @@ schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR
     <xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/> <!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd" -->
 \endcode
 
-<b>Schema ts_119612v010101.xsd</b>
+<b>Schema ts_119612v020201_201601xsd.xsd</b>
 
 1) The schemas' locations have been modified so that the file is looked up from the local file system.
 \code{.xml}
