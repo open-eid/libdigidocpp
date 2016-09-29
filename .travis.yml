@@ -39,7 +39,7 @@ before_install: case ${TARGET} in
     wget http://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd_4.0.0-1_amd64.deb && sudo dpkg -i xsd_4.0.0-1_amd64.deb;
     ;;
   esac
-script: export BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} && case ${TARGET} in
+script: case ${TARGET} in
   *ios*)
     cd examples/libdigidocpp-ios && ./build-library.sh ${TARGET} && cd ../..;
     ;;
