@@ -48,8 +48,8 @@ SignatureTM::SignatureTM(unsigned int id, BDoc *bdoc, Signer *signer)
 {
 }
 
-SignatureTM::SignatureTM(istream &sigdata, BDoc *bdoc)
-: SignatureBES(sigdata, bdoc)
+SignatureTM::SignatureTM(istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation)
+: SignatureBES(sigdata, bdoc, relaxSchemaValidation)
 {
 }
 

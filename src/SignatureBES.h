@@ -44,7 +44,7 @@ namespace digidoc
           static const std::map<std::string,Policy> policylist;
 
           SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer);
-          SignatureBES(std::istream &sigdata, BDoc *bdoc);
+          SignatureBES(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation = false);
           virtual ~SignatureBES();
 
           std::string id() const override;
