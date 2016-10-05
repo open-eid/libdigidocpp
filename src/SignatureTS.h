@@ -28,8 +28,7 @@ class SignatureTS: public SignatureTM
 {
 public:
     SignatureTS(unsigned int id, BDoc *bdoc, Signer *signer);
-    SignatureTS(std::istream &sigdata, BDoc *bdoc);
-    SignatureTS(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation);
+    SignatureTS(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation = false);
     virtual ~SignatureTS();
 
     virtual std::string trustedSigningTime() const override;

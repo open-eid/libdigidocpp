@@ -31,8 +31,7 @@ class SignatureTM: public SignatureBES
 {
 public:
     SignatureTM(unsigned int id, BDoc *bdoc, Signer *signer);
-    SignatureTM(std::istream &sigdata, BDoc *bdoc);
-    SignatureTM(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation);
+    SignatureTM(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation = false);
     virtual ~SignatureTM();
 
     virtual std::string trustedSigningTime() const override;

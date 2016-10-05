@@ -46,7 +46,6 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 
 SignatureTS::SignatureTS(unsigned int id, BDoc *bdoc, Signer *signer): SignatureTM(id, bdoc, signer) {}
 
-SignatureTS::SignatureTS(std::istream &sigdata, BDoc *bdoc): SignatureTM(sigdata, bdoc) {}
 SignatureTS::SignatureTS(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation): SignatureTM(sigdata, bdoc, relaxSchemaValidation) {}
 
 SignatureTS::~SignatureTS() {}

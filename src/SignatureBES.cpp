@@ -257,23 +257,13 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
 }
 
 /**
- *
- * @param path
- * @throws SignatureException
- */
-SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc)
- : SignatureBES(sigdata, bdoc, false)
-{
-}
-
-/**
  * Load signature from the input stream.
  *
  * @param sigdata Input stream
  * @param bdoc BDOC container
  * @param relaxSchemaValidation Flag indicating if relaxed schema should be used for validation -
  *                              elements of SignatureProductionPlaceType can be in any order in signatures
- *                              produced by other systems
+ *                              produced by other systems; default = false
  * @throws SignatureException
  */
 SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation)
