@@ -456,7 +456,7 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
                 {
                     stringstream data;
                     z.extract(file, data);
-                    d->signatures.push_back(new SignatureA(data, this));
+                    d->signatures.push_back(new SignatureA(data, this, true));
                 }
                 catch(const Exception &e)
                 {

@@ -53,6 +53,11 @@ SignatureTM::SignatureTM(istream &sigdata, BDoc *bdoc)
 {
 }
 
+SignatureTM::SignatureTM(istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation)
+: SignatureBES(sigdata, bdoc, relaxSchemaValidation)
+{
+}
+
 SignatureTM::~SignatureTM()
 {
 }

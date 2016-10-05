@@ -144,6 +144,7 @@ set( SCHEMA_FILES
     ${SCHEMA_DIR}/OpenDocument_manifest.xsd
     ${SCHEMA_DIR}/xmldsig-core-schema.xsd
     ${SCHEMA_DIR}/XAdES01903v132-201601.xsd
+    ${SCHEMA_DIR}/XAdES01903v132-201601-relaxed.xsd
     ${SCHEMA_DIR}/XAdES01903v141-201601.xsd
     ${SCHEMA_DIR}/en_31916201v010101.xsd
     ${SCHEMA_DIR}/xml.xsd

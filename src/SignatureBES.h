@@ -45,6 +45,7 @@ namespace digidoc
 
           SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer);
           SignatureBES(std::istream &sigdata, BDoc *bdoc);
+          SignatureBES(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation);
           virtual ~SignatureBES();
 
           std::string id() const override;
