@@ -262,6 +262,21 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
  * @throws SignatureException
  */
 SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc)
+ : SignatureBES(sigdata, bdoc, false)
+{
+}
+
+/**
+ * Load signature from the input stream.
+ *
+ * @param sigdata Input stream
+ * @param bdoc BDOC container
+ * @param relaxSchemaValidation Flag indicating if relaxed schema should be used for validation -
+ *                              elements of SignatureProductionPlaceType can be in any order in signatures
+ *                              produced by other systems
+ * @throws SignatureException
+ */
+SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation)
  : signature(nullptr)
  , asicsignature(nullptr)
  , bdoc(bdoc)
@@ -273,7 +288,8 @@ SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc)
         sigdata_ = is.str();
 
         Properties properties;
-        properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v132-201601.xsd"));
+        const auto xadesShema = relaxSchemaValidation ? "/XAdES01903v132-201601-relaxed.xsd" : "/XAdES01903v132-201601.xsd";
+        properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + xadesShema));
         properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v141-201601.xsd"));
         properties.schema_location(URI_ID_DSIG, File::fullPathUrl(Conf::instance()->xsdPath() + "/xmldsig-core-schema.xsd"));
         properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/en_31916201v010101.xsd"));

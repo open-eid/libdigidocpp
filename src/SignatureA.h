@@ -29,6 +29,7 @@ class SignatureA: public SignatureTS
 public:
     SignatureA(unsigned int id, BDoc *bdoc, Signer *signer);
     SignatureA(std::istream &sigdata, BDoc *bdoc);
+    SignatureA(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation);
     virtual ~SignatureA();
 
     X509Cert ArchiveTimeStampCertificate() const override;
