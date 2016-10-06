@@ -22,33 +22,26 @@ cache: ccache
 env:
   global:
   - BUILD_NUMBER=${TRAVIS_BUILD_NUMBER}
-  - VERSION=3.12.2.${TRAVIS_BUILD_NUMBER} 
+  - VERSION=3.12.2.${TRAVIS_BUILD_NUMBER}
   - secure: VTpLjRFkVZeqSiP/tea7b5WiMU+PjQJlpny8/QEYazRNhn/uie69aT8VvEdkpsUM1AEx8yPnNmVGShvoNNaOi/AoqynTIKgeGPCj44h6lCnPpByGVur0avc5WrRj2xBbPBBUw1rsL65wZ13MufmRLUwnmmVYQZ3qDBdpgZvCEhA=
 
 before_install: case ${TARGET} in
-  *ios*|*simulator*|*osx*)
-    ./prepare_osx_build_environment.sh all ${TARGET};
-    ;;
-  *android*)
-    brew update;
-    brew install swig;
-    ./prepare_osx_build_environment.sh all ${TARGET};
-    ;;
   *linux*)
     sudo apt-get update -qq && sudo apt-get install -y libxml-security-c-dev dh-make devscripts dpkg-dev cdbs doxygen;
     wget http://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd_4.0.0-1_amd64.deb && sudo dpkg -i xsd_4.0.0-1_amd64.deb;
     ;;
+  *)
+    brew update;
+    brew install swig;
+    export PATH=$PATH:/usr/local/Cellar/swig/3.0.8/bin;
+    ./prepare_osx_build_environment.sh all ${TARGET};
+    ;;
   esac
 script: case ${TARGET} in
-  *ios*)
-    cd examples/libdigidocpp-ios && ./build-library.sh ${TARGET} && cd ../..;
-    ;;
-  *simulator*)
+  *ios*|*simulator*)
     cd examples/libdigidocpp-ios && ./build-library.sh ${TARGET} && cd ../..;
     ;;
   *android*)
-    export ANDROID_NDK=$PWD/android-ndk-r10e;
-    export PATH=$PATH:/usr/local/Cellar/swig/3.0.8/bin;
     cd examples/libdigidocpp-android && ./build-library.sh ${TARGET} && cd ../..;
     ;;
   *osx*)
