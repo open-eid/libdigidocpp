@@ -243,6 +243,7 @@ ZipSerialize::Properties ZipSerialize::properties(const string &file) const
     };
     ZipSerialize::Properties prop;
     prop.time = time;
+    prop.size = info.uncompressed_size;
 
     if(info.size_file_comment == 0)
         return prop;
