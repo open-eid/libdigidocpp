@@ -73,6 +73,7 @@
                   <File Name="OpenDocument_manifest.xsd"/>
                   <File Name="xmldsig-core-schema.xsd"/>
                   <File Name="XAdES01903v132-201601.xsd"/>
+                  <File Name="XAdES01903v132-201601-relaxed.xsd"/>
                   <File Name="XAdES01903v141-201601.xsd"/>
                   <File Name="ts_119612v020201_201601xsd.xsd"/>
                   <File Name="en_31916201v010101.xsd"/>
@@ -130,6 +131,7 @@
                   <File Name="OpenDocument_manifest.xsd" Id="OpenDocument_manifest.xsd_64"/>
                   <File Name="xmldsig-core-schema.xsd" Id="xmldsig_core_schema.xsd_64"/>
                   <File Name="XAdES01903v132-201601.xsd" Id="XAdES01903v132_201601.xsd_64"/>
+                  <File Name="XAdES01903v132-201601-relaxed.xsd" Id="XAdES01903v132_201601_relaxed.xsd_64"/>
                   <File Name="XAdES01903v141-201601.xsd" Id="XAdES01903v141_201601.xsd_64"/>
                   <File Name="ts_119612v020201_201601xsd.xsd" Id="ts_119612v020201_201601xsd.xsd_64"/>
                   <File Name="en_31916201v010101.xsd" Id="en_31916201v010101.xsd_64"/>
