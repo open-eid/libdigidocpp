@@ -404,7 +404,7 @@ http://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd
 Defines a set of extensions to XML-DSIG making it suitable for advanced electronic signature.
 http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd
 </tr><tr><td>XAdES01903v132-201601-relaxed.xsd</td><td>Relaxed version of XML Advanced Electronic Signatures (\ref XAdES_EN "XAdES EN")
-Allows to list child elements of the SignatureProductionPlace element in any sequence. Schema is used when validating the BDOC documents in order to accept documents produced by DigiDoc4j library.
+Allows to list child elements of the SignatureProductionPlace element in any sequence. Schema is used when validating the BDOC documents in order to accept documents produced by DigiDoc4j library version 1.0.3 and earlier.
 </tr><tr><td>XAdES01903v141-201601.xsd</td><td>Defines XML syntax for additional elements of XAdES signatures that were added with version 1.4.1 of the (\ref XAdES_EN "XAdES EN") standard. Needed for implementing archive time-stamp support in the future.
 http://uri.etsi.org/01903/v1.4.1/XAdES01903v141-201601.xsd
 </td></tr><tr><td>ts_119612v020201_201601xsd.xsd</td><td>Defines the format of Trust Service status Lists (\ref TSL) that contain information about trusted CA, OCSP and TSA certificates.
