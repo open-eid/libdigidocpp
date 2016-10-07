@@ -31,8 +31,8 @@ case "$@" in
   echo "Building for Android ${ARCH} ${API}"
 
   TARGET_PATH=/Library/EstonianIDCard.android${ARCH}
-  export ANDROID_NDK=$PWD/android-ndk-r12b
-  export SYSROOT=${TARGET_PATH}/sysroot
+  ANDROID_NDK=$PWD/android-ndk-r12b
+  SYSROOT=${TARGET_PATH}/sysroot
   export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
   export CC=${CROSS_COMPILE}-clang
   export CXX=${CROSS_COMPILE}-clang++
@@ -58,23 +58,21 @@ case "$@" in
   ;;
 *ios*)
   echo "Building for iOS"
-  TARGET=iphoneos
   TARGET_PATH=/Library/EstonianIDCard.iphoneos
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
-  SDK_PATH=$(xcrun -sdk iphoneos --show-sdk-path)
+  SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
   SDK_CFLAGS="-miphoneos-version-min=9.0"
-  export CFLAGS="-arch armv7 -arch armv7s -arch arm64 ${SDK_CFLAGS} -isysroot ${SDK_PATH}"
+  export CFLAGS="-arch armv7 -arch armv7s -arch arm64 ${SDK_CFLAGS} -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ARCHS="armv7 armv7s arm64"
   ;;
 *simulator*)
   echo "Building for iOS Simulator"
-  TARGET=iphonesimulator
   TARGET_PATH=/Library/EstonianIDCard.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
-  SDK_PATH=$(xcrun -sdk iphonesimulator --show-sdk-path)
+  SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
   SDK_CFLAGS="-miphoneos-version-min=9.0"
-  export CFLAGS="-arch i386 -arch x86_64 ${SDK_CFLAGS} -isysroot ${SDK_PATH}"
+  export CFLAGS="-arch i386 -arch x86_64 ${SDK_CFLAGS} -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ARCHS="i386 x86_64"
   ;;
@@ -83,7 +81,7 @@ case "$@" in
   XMLSEC_DIR=xml-security-c-1.7.3
   TARGET_PATH=/Library/EstonianIDCard
   CONFIGURE="--disable-static"
-  SDK_PATH=$(xcrun -sdk macosx --show-sdk-path)
+  SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   SDK_CFLAGS="-mmacosx-version-min=10.9"
   export CFLAGS="${SDK_CFLAGS}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
@@ -133,7 +131,7 @@ function xalan {
         -DCMAKE_C_FLAGS="${SDK_CFLAGS}" \
         -DCMAKE_CXX_FLAGS="${SDK_CFLAGS}" \
         -DCMAKE_BUILD_TYPE="Release" \
-        -DCMAKE_OSX_SYSROOT=${SDK_PATH} \
+        -DCMAKE_OSX_SYSROOT=${SYSROOT} \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
         -DXERCESC_INCLUDE_DIR=${TARGET_PATH}/include \
         -DXercesC_LIBRARY_RELEASE=${TARGET_PATH}/lib/libxerces-c.a \
@@ -214,15 +212,15 @@ function openssl {
         export CC=${CROSS_COMPILE}-gcc
         unset CROSS_COMPILE
         case "${ARGS}" in
-        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} ;;
+        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} no-apps ;;
         *arm64*)
-          ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-shared -DB_ENDIAN  \
+          ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-apps no-shared -DB_ENDIAN  \
              -fPIC -DOPENSSL_PIC -DDSO_DLFCN -DHAVE_DLFCN_H -mandroid -O3 -fomit-frame-pointer -Wall
           ;;
-        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} ;;
+        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} no-apps ;;
         esac
         make -s
-        sudo make install
+        sudo make install_sw
         export CC=${CCOLD}
         ;;
     *ios*|*simulator*)
@@ -231,13 +229,13 @@ function openssl {
         for ARCH in ${ARCHS}
         do
             if [[ "${ARCH}" == "x86_64" ]]; then
-                ./Configure darwin64-x86_64-cc --openssldir=${TARGET_PATH}
-                sed -ie 's!^CFLAG=!CFLAG=-isysroot '${SDK_PATH}' '${SDK_CFLAGS}' !' Makefile
+                ./Configure darwin64-x86_64-cc --openssldir=${TARGET_PATH} no-apps
+                sed -ie 's!^CFLAG=!CFLAG=-isysroot '${SYSROOT}' '${SDK_CFLAGS}' !' Makefile
             else
-                ./Configure iphoneos-cross --openssldir=${TARGET_PATH}
-                sed -ie 's!-isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!-arch '${ARCH}' -isysroot '${SDK_PATH}' '${SDK_CFLAGS}'!' Makefile
+                ./Configure iphoneos-cross --openssldir=${TARGET_PATH} no-apps
+                sed -ie 's!-isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!-arch '${ARCH}' -isysroot '${SYSROOT}' '${SDK_CFLAGS}'!' Makefile
             fi
-            make -s install INSTALL_PREFIX=${PWD}/${ARCH} > /dev/null
+            make -s depend all install_sw INSTALL_PREFIX=${PWD}/${ARCH} > /dev/null
             make clean
             sudo cp -R ${ARCH}/${TARGET_PATH}/include/openssl ${TARGET_PATH}/include
             CRYPTO="${CRYPTO} ${ARCH}/${TARGET_PATH}/lib/libcrypto.a"
@@ -247,10 +245,10 @@ function openssl {
         sudo lipo -create ${SSL} -output ${TARGET_PATH}/lib/libssl.a
         ;;
     *)
-        KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared
+        KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-apps
         sed -ie 's!^CFLAG=!CFLAG='${SDK_CFLAGS}' !' Makefile
         make -s
-        sudo make install
+        sudo make install_sw
         ;;
     esac
 
