@@ -344,7 +344,9 @@ static void printUsage(const char *executable)
     << "    Example: " << executable << " sign demo-container.bdoc" << endl
     << "    Available options:" << endl
     << "      --profile=     - signature profile, TM, time-mark, TS, time-stamp" << endl
+    << "      --XAdESEN      - use XAdES EN profile" << endl
     << "      --city=        - city of production place" << endl
+    << "      --street=      - streetAddress of production place in XAdES profile" << endl
     << "      --state=       - state of production place" << endl
     << "      --postalCode=  - postalCode of production place" << endl
     << "      --country=     - country of production place" << endl
@@ -364,10 +366,10 @@ static void printUsage(const char *executable)
 struct Params
 {
     Params(int argc, char *argv[]);
-    string path, profile, pkcs11, pkcs12, pin, city, state, postalCode, country, cert;
+    string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
     vector<pair<string,string> > files;
     vector<string> roles;
-    bool cng = true, selectFirst = false, doSign = true, dontValidate = false;
+    bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
     static const map<string,string> profiles;
 };
 
@@ -419,9 +421,11 @@ Params::Params(int argc, char *argv[])
             pkcs12 = arg.substr(9);
         }
         else if(arg == "--dontValidate") dontValidate = true;
+        else if(arg == "--XAdESEN") XAdESEN = true;
         else if(arg.find("--pin=") == 0) pin = arg.substr(6);
         else if(arg.find("--cert=") == 0) cert = arg.substr(7);
         else if(arg.find("--city=") == 0) city = arg.substr(7);
+        else if(arg.find("--street=") == 0) street = arg.substr(9);
         else if(arg.find("--state=") == 0) state = arg.substr(8);
         else if(arg.find("--postalCode=") == 0) postalCode = arg.substr(13);
         else if(arg.find("--country=") == 0) country = arg.substr(10);
@@ -771,7 +775,8 @@ static unique_ptr<Signer> getSigner(const Params &p)
         signer.reset(new PKCS12Signer(p.pkcs12, p.pin));
     else
         signer.reset(new ConsolePinSigner(p.pkcs11, p.pin));
-    signer->setSignatureProductionPlace(p.city, p.state, p.postalCode, p.country);
+    signer->setENProfile(p.XAdESEN);
+    signer->setSignatureProductionPlaceV2(p.city, p.street, p.state, p.postalCode, p.country);
     signer->setSignerRoles(p.roles);
     signer->setProfile(p.profile);
     return signer;
@@ -950,7 +955,8 @@ static int websign(int argc, char* argv[])
             doc->addDataFile(file.first, file.second);
 
         unique_ptr<Signer> signer(new WebSigner(X509Cert(p.cert, X509Cert::Pem)));
-        signer->setSignatureProductionPlace(p.city, p.state, p.postalCode, p.country);
+        signer->setENProfile(p.XAdESEN);
+        signer->setSignatureProductionPlaceV2(p.city, p.street, p.state, p.postalCode, p.country);
         signer->setSignerRoles(p.roles);
         signer->setProfile(p.profile);
         if(Signature *signature = doc->prepareSignature(signer.get()))
