@@ -5,7 +5,7 @@ if(POLICY CMP0063)
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
-set(PROJECT_VERSION_PATCH 2)
+set(PROJECT_VERSION_PATCH 3)
 
 include(VersionInfo)
 include(GNUInstallDirs)
