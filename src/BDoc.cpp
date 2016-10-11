@@ -490,6 +490,10 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
     {
         THROW("Failed to parse manifest XML: %s (xsd path: %s)", e.what(), Conf::instance()->xsdPath().c_str());
     }
+    catch (...)
+    {
+        THROW("Failed to parse manifest XML: %s", Conf::instance()->xsdPath().c_str());
+    }
 }
 
 Signature* BDoc::prepareSignature(Signer *signer)
