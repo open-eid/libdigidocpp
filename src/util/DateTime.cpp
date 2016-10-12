@@ -88,6 +88,14 @@ tm digidoc::util::date::ASN1TimeToTM(const std::string &date)
     return time;
 }
 
+string digidoc::util::date::ASN1TimeToXSD(const string &date)
+{
+    if(date.empty())
+        return date;
+    tm datetime = ASN1TimeToTM(date);
+    return xsd2string(makeDateTime(datetime));
+}
+
 /// Dedicated helper for converting xml-schema-style DateTyme into a Zulu-string.
 ///
 /// @param time GMT time as code-synth xml-schema type.

@@ -83,8 +83,7 @@ string SignatureTM::OCSPProducedAt() const
     vector<unsigned char> respBuf = getOCSPResponseValue();
     if(respBuf.empty())
         return "";
-    tm datetime = ASN1TimeToTM(OCSP(respBuf).producedAt());
-    return xsd2string(makeDateTime(datetime));
+    return ASN1TimeToXSD(OCSP(respBuf).producedAt());
 }
 
 string SignatureTM::trustedSigningTime() const
