@@ -57,11 +57,7 @@ X509Cert SignatureTS::TimeStampCertificate() const
 
 string SignatureTS::TimeStampTime() const
 {
-    string time = TS(tsBase64()).time();
-    if(time.empty())
-        return time;
-    tm datetime = ASN1TimeToTM(time);
-    return xsd2string(makeDateTime(datetime));
+    return ASN1TimeToXSD(TS(tsBase64()).time());
 }
 
 string SignatureTS::trustedSigningTime() const

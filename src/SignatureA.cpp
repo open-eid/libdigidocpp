@@ -148,11 +148,7 @@ X509Cert SignatureA::ArchiveTimeStampCertificate() const
 
 string SignatureA::ArchiveTimeStampTime() const
 {
-    string time = TS(tsaBase64()).time();
-    if(time.empty())
-        return time;
-    tm datetime = ASN1TimeToTM(time);
-    return xsd2string(makeDateTime(datetime));
+    return ASN1TimeToXSD(TS(tsaBase64()).time());
 }
 
 void SignatureA::validate() const
