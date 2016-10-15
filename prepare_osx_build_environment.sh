@@ -31,7 +31,7 @@ case "$@" in
   echo "Building for Android ${ARCH} ${API}"
 
   TARGET_PATH=/Library/EstonianIDCard.android${ARCH}
-  ANDROID_NDK=$PWD/android-ndk-r12b
+  ANDROID_NDK=android-ndk-r13
   SYSROOT=${TARGET_PATH}/sysroot
   export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
   export CC=${CROSS_COMPILE}-clang
@@ -40,20 +40,22 @@ case "$@" in
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   CONFIGURE="--host=${ARCH}-unknown-linux --disable-static --enable-shared --with-sysroot=${SYSROOT}"
 
-  if [ ! -f android-ndk-r12b-darwin-x86_64.zip ]; then
-    curl -O https://dl.google.com/android/repository/android-ndk-r12b-darwin-x86_64.zip
+  if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
+    curl -O https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
   fi
   if [ ! -d ${TARGET_PATH} ]; then
     rm -rf ${ANDROID_NDK}
-    unzip -qq android-ndk-r12b-darwin-x86_64.zip
-    patch -Np0 -i examples/libdigidocpp-android/iconv.c.patch
-    sudo ${ANDROID_NDK}/build/tools/make_standalone_toolchain.py \
+    unzip -qq ${ANDROID_NDK}-darwin-x86_64.zip
+    cd ${ANDROID_NDK}
+    patch -Np1 -i ../examples/libdigidocpp-android/iconv.c.patch
+    sudo ./build/tools/make_standalone_toolchain.py \
       --arch=${ARCH} --api=${API} --stl=libc++ --install-dir=${TARGET_PATH}
 
     #iconv for xerces
-    sudo cp ${ANDROID_NDK}/sources/android/support/include/iconv.h ${SYSROOT}/usr/include/
-    sudo ${CROSS_COMPILE}-gcc -I${SYSROOT}/usr/include -std=c99 -o ${SYSROOT}/usr/lib/libiconv.o -c ${ANDROID_NDK}/sources/android/support/src/musl-locale/iconv.c
+    sudo cp sources/android/support/include/iconv.h ${SYSROOT}/usr/include/
+    sudo ${CROSS_COMPILE}-gcc -I${SYSROOT}/usr/include -std=c99 -o ${SYSROOT}/usr/lib/libiconv.o -c sources/android/support/src/musl-locale/iconv.c
     sudo ${CROSS_COMPILE}-ar rcs ${SYSROOT}/usr/lib/libiconv.a ${SYSROOT}/usr/lib/libiconv.o
+    cd ..
   fi
   ;;
 *ios*)
