@@ -1,10 +1,13 @@
 #powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 [-openssl] [-xerces] [-xalan] [-xmlsec] [-xsd] [-zlib]
 param(
 	[string]$target = "C:\build",
-	[string]$msbuild = "C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe",
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
 	[string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
-	[string]$VSINSTALLDIR = "C:\Program Files (x86)\Microsoft Visual Studio 12.0",
+	[string]$vstarget = "12",
+	[string]$vsver = "$($vstarget).0",
+	[string]$msbuildparams = "VisualStudioVersion=$vsver;PlatformToolset=v$($vstarget)0",
+	[string]$msbuild = "C:\Program Files (x86)\MSBuild\$vsver\Bin\MSBuild.exe",
+	[string]$VSINSTALLDIR = "C:\Program Files (x86)\Microsoft Visual Studio $vsver",
 	[string]$devenv = "$VSINSTALLDIR\Common7\IDE\devenv.exe",
 	[string]$vcvars = "$VSINSTALLDIR\VC\vcvarsall.bat",
 	[string]$opensslver = "openssl-1.0.2j",
@@ -57,10 +60,10 @@ function xerces() {
 	Rename-Item $xercesver xerces
 	$xercesproj = "xerces\projects\Win32\VC12\xerces-all\xerces-all.sln"
 	& $devenv /upgrade $xercesproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=Win32" $xercesproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=X64" $xercesproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=Win32" $xercesproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=X64" $xercesproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32" "/t:XercesLib" $xercesproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64" "/t:XercesLib" $xercesproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32" "/t:XercesLib" $xercesproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64" "/t:XercesLib" $xercesproj
 }
 
 function xalan() {
@@ -82,10 +85,13 @@ function xalan() {
 	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12\Release\*.dll" "xalan\c\Build\Win64\VC10\Release"
 	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12\Debug\*.dll" "xalan\c\Build\Win32\VC10\Debug"
 	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12\Debug\*.dll" "xalan\c\Build\Win64\VC10\Debug"
-	& $msbuild /nologo /verbosity:quiet "/p:PlatformToolset=v120;Configuration=Release;Platform=Win32" "/t:AllInOne" $xalanproj
-	& $msbuild /nologo /verbosity:quiet "/p:PlatformToolset=v120;Configuration=Release;Platform=X64" "/t:AllInOne" $xalanproj
-	& $msbuild /nologo /verbosity:quiet "/p:PlatformToolset=v120;Configuration=Debug;Platform=Win32" "/t:AllInOne" $xalanproj
-	& $msbuild /nologo /verbosity:quiet "/p:PlatformToolset=v120;Configuration=Debug;Platform=X64" "/t:AllInOne" $xalanproj
+	Get-ChildItem xalan\c\Projects\Win32\VC10 *.vcxproj -recurse | ForEach {
+		(Get-Content $_.FullName) -replace '\<SmallerTypeCheck\>true\<\/SmallerTypeCheck\>', '' | Set-Content $_.FullName
+	}
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32" "/t:AllInOne" $xalanproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64" "/t:AllInOne" $xalanproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32" "/t:AllInOne" $xalanproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64" "/t:AllInOne" $xalanproj
 	Copy-Item "xalan\c\Build\Win32\VC10\Release\Nls\Include\*" "xalan\c\src\xalanc\PlatformSupport"
 }
 
@@ -102,10 +108,10 @@ function xmlsec() {
 	Rename-Item $xmlsecver xmlsec
 	$xsecproj = "xmlsec\Projects\VC12.0\xsec\xsec_lib\xsec_lib.vcxproj"
 	& $devenv /upgrade $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=Win32" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Release;Platform=X64" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=Win32" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:Configuration=Debug;Platform=X64" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64" $xsecproj
 }
 
 function xsd() {
