@@ -19,11 +19,10 @@
 
 #pragma once
 
-#include "Container.h"
+#include "ASiContainer.h"
 
 namespace digidoc
 {
-    class ASiC_EPrivate;
     class ZipSerialize;
 
     /**
@@ -34,37 +33,25 @@ namespace digidoc
      * not signed. To add or remove documents from signed container remove all the
      * signatures before modifying documents list in container.
      *
-     * Note: If non-ascii characters are present in XML data, we depend on the LANG variable to be set properly
-     * (see iconv --list for the list of supported encoding values for libiconv).
-     *
      * @author Janari Põld
      */
-    class ASiC_E: public Container
+    class ASiC_E: public ASiContainer
     {
 
       public:
-          static const std::string ASIC_MIMETYPE;
-
           static const std::string BES_PROFILE;
           static const std::string EPES_PROFILE;
           static const std::string ASIC_TM_PROFILE;
           static const std::string ASIC_TS_PROFILE;
           static const std::string ASIC_TMA_PROFILE;
           static const std::string ASIC_TSA_PROFILE;
+          static const std::string MANIFEST_NAMESPACE;
 
-          virtual ~ASiC_E();
           void save(const std::string &path = "") override;
           std::string mediaType() const override;
 
-          void addDataFile(const std::string &path, const std::string &mediaType) override;
-          void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType) override;
-          std::vector<DataFile*> dataFiles() const override;
-          void removeDataFile(unsigned int id) override;
-
           void addAdESSignature(std::istream &sigdata) override;
           Signature* prepareSignature(Signer *signer) override;
-          std::vector<Signature*> signatures() const override;
-          void removeSignature(unsigned int id) override;
           Signature* sign(Signer* signer) override;
 
           static Container* createInternal(const std::string &path);
@@ -75,9 +62,6 @@ namespace digidoc
           ASiC_E(const std::string &path);
           DISABLE_COPY(ASiC_E);
           void createManifest(std::ostream &os);
-          void readMimetype(std::istream &path);
-          void parseManifestAndLoadFiles(const ZipSerialize &z, const std::vector<std::string> &list);
-
-          ASiC_EPrivate *d;
+          void parseManifestAndLoadFiles(const ZipSerialize &z);
     };
 }

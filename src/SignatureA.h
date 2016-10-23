@@ -27,8 +27,8 @@ namespace digidoc
 class SignatureA: public SignatureTS
 {
 public:
-    SignatureA(unsigned int id, ASiC_E *bdoc, Signer *signer);
-    SignatureA(std::istream &sigdata, ASiC_E *bdoc, bool relaxSchemaValidation = false);
+    SignatureA(unsigned int id, ASiContainer *bdoc, Signer *signer);
+    SignatureA(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
     virtual ~SignatureA();
 
     X509Cert ArchiveTimeStampCertificate() const override;

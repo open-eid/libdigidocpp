@@ -222,6 +222,8 @@ add_library(digidocpp ${BUILD_TYPE}
     ${XML_HEADER}
     libdigidocpp.rc
     ASiC_E.cpp
+    ASiC_S.cpp
+    ASiContainer.cpp
     Conf.cpp
     Container.cpp
     XmlConf.cpp
@@ -233,6 +235,7 @@ add_library(digidocpp ${BUILD_TYPE}
     SignatureTM.cpp
     SignatureTS.cpp
     SignatureA.cpp
+    SignatureTST.cpp
     crypto/PKCS11Signer.cpp
     crypto/Signer.cpp
     util/ZipSerialize.cpp

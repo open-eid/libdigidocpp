@@ -25,7 +25,7 @@
 
 namespace digidoc
 {
-    class ASiC_E;
+    class ASiContainer;
     class Digest;
     class Signer;
     namespace dsig { class SignatureType; }
@@ -43,8 +43,8 @@ namespace digidoc
           };
           static const std::map<std::string,Policy> policylist;
 
-          SignatureBES(unsigned int id, ASiC_E *bdoc, Signer *signer);
-          SignatureBES(std::istream &sigdata, ASiC_E *bdoc, bool relaxSchemaValidation = false);
+          SignatureBES(unsigned int id, ASiContainer *bdoc, Signer *signer);
+          SignatureBES(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
           virtual ~SignatureBES();
 
           std::string id() const override;
@@ -85,7 +85,7 @@ namespace digidoc
           static const std::string XADESv141_NAMESPACE;
           dsig::SignatureType *signature;
           asic::XAdESSignaturesType *asicsignature;
-          ASiC_E *bdoc;
+          ASiContainer *bdoc;
           std::string sigdata_;
 
       private:

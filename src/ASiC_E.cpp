@@ -19,7 +19,6 @@
 
 #include "ASiC_E.h"
 
-#include "Container.h"
 #include "Conf.h"
 #include "DataFile_p.h"
 #include "SignatureA.h"
@@ -32,43 +31,13 @@
 #include "xercesc/util/OutOfMemoryException.hpp"
 
 #include <fstream>
+#include <istream>
 #include <set>
-
-#define MAX_MEM_FILE 500*1024*1024
 
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 using namespace manifest;
-
-namespace digidoc
-{
-class ASiC_EPrivate
-{
-public:
-    ZipSerialize::Properties propertie(const string &file)
-    {
-        map<string, ZipSerialize::Properties>::const_iterator i = properties.find(file);
-        if(i != properties.end())
-            return i->second;
-
-        time_t t = time(0);
-        tm *filetime = gmtime(&t);
-        ZipSerialize::Properties prop = { appInfo(), *filetime, 0 };
-        return properties[file] = prop;
-    }
-
-    static const string MANIFEST_NAMESPACE;
-
-    string path;
-    vector<DataFile*> documents;
-    vector<Signature*> signatures;
-    map<string, ZipSerialize::Properties> properties;
-};
-}
-
-const string ASiC_E::ASIC_MIMETYPE = "application/vnd.etsi.asic-e+zip";
-const string ASiC_EPrivate::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 
 const string ASiC_E::BES_PROFILE = "BES";
 const string ASiC_E::EPES_PROFILE = "EPES";
@@ -76,12 +45,12 @@ const string ASiC_E::ASIC_TM_PROFILE = "time-mark";
 const string ASiC_E::ASIC_TS_PROFILE = "time-stamp";
 const string ASiC_E::ASIC_TSA_PROFILE = ASIC_TS_PROFILE + "-archive";
 const string ASiC_E::ASIC_TMA_PROFILE = ASIC_TM_PROFILE + "-archive";
+const string ASiC_E::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 
 /**
  * Initialize BDOC container.
  */
 ASiC_E::ASiC_E()
- : d(new ASiC_EPrivate)
 {
 }
 
@@ -90,32 +59,10 @@ ASiC_E::ASiC_E()
  */
 
 ASiC_E::ASiC_E(const string &path)
- : d(new ASiC_EPrivate)
 {
     DEBUG("ASiC_E::ASiC_E(path = '%s')", path.c_str());
-    ZipSerialize z(d->path = path, false);
-
-    vector<string> list = z.list();
-    if(list.empty())
-        THROW("Failed to parse container");
-
-    for(const string &file: list)
-        d->properties[file] = z.properties(file);
-
-    stringstream mimetype;
-    z.extract(list.front(), mimetype);
-    readMimetype(mimetype);
-    parseManifestAndLoadFiles(z, list);
-}
-
-/**
- * Releases resources.
- */
-ASiC_E::~ASiC_E()
-{
-    for_each(d->signatures.begin(), d->signatures.end(), [](Signature *s){ delete s; });
-    for_each(d->documents.begin(), d->documents.end(), [](DataFile *file){ delete file; });
-    delete d;
+    auto zip = load(path, true);
+    parseManifestAndLoadFiles(*zip);
 }
 
 /**
@@ -128,132 +75,43 @@ ASiC_E::~ASiC_E()
  */
 void ASiC_E::save(const string &path)
 {
-    if(d->documents.empty())
+    if(dataFiles().empty())
         THROW("Can not save, BDoc container is empty.");
 
     if(!path.empty())
-        d->path = path;
-    ZipSerialize s(d->path, true);
+        zpath(path);
+    ZipSerialize s(zpath(), true);
 
     stringstream mimetype;
     mimetype << mediaType();
-    s.addFile("mimetype", mimetype, d->propertie("mimetype"), ZipSerialize::DontCompress);
+    s.addFile("mimetype", mimetype, zproperty("mimetype"), ZipSerialize::DontCompress);
 
     stringstream manifest;
     createManifest(manifest);
-    s.addFile("META-INF/manifest.xml", manifest, d->propertie("META-INF/manifest.xml"));
+    s.addFile("META-INF/manifest.xml", manifest, zproperty("META-INF/manifest.xml"));
 
-    for(const DataFile *file: d->documents)
-        s.addFile(file->fileName(), *(static_cast<const DataFilePrivate*>(file)->m_is.get()), d->propertie(file->fileName()));
+    for(const DataFile *file: dataFiles())
+        s.addFile(file->fileName(), *(static_cast<const DataFilePrivate*>(file)->m_is.get()), zproperty(file->fileName()));
 
     unsigned int i = 0;
-    for(Signature *iter: d->signatures)
+    for(Signature *iter: signatures())
     {
         string file = Log::format("META-INF/signatures%u.xml", i++);
         SignatureBES *signature = static_cast<SignatureBES*>(iter);
 
         stringstream ofs;
         signature->saveToXml(ofs);
-        s.addFile(file, ofs, d->propertie(file));
+        s.addFile(file, ofs, zproperty(file));
     }
 
     s.save();
 }
 
-/**
- * Adds document to the container. Documents can be removed from container only
- * after all signatures are removed.
- *
- * @param document a document, which is added to the container.
- * @throws ContainerException exception is thrown if the document path is incorrect or document
- *         with same file name already exists. Also no document can be added if the
- *         container already has one or more signatures.
- */
-void ASiC_E::addDataFile(const string &path, const string &mediaType)
-{
-    if(!d->signatures.empty())
-        THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
-
-    if(!File::fileExists(path))
-        THROW("Document file '%s' does not exist.", path.c_str());
-
-    for(const DataFile *file: d->documents)
-    {
-        if(path.compare(file->fileName()) == 0)
-            THROW("Document with same file name '%s' already exists '%s'.", path.c_str(), file->fileName().c_str());
-    }
-
-    tm *filetime = File::modifiedTime(path);
-    ZipSerialize::Properties prop = { appInfo(), *filetime, File::fileSize(path) };
-    d->properties[File::fileName(path)] = prop;
-    if(prop.size > MAX_MEM_FILE)
-    {
-        d->documents.push_back(new DataFilePrivate(new ifstream(File::encodeName(path).c_str(), ifstream::binary),
-            File::fileName(path), mediaType));
-    }
-    else
-    {
-        ifstream file(File::encodeName(path).c_str(), ifstream::binary);
-        stringstream *data = new stringstream;
-        if(file)
-            *data << file.rdbuf();
-        file.close();
-        d->documents.push_back(new DataFilePrivate(data, File::fileName(path), mediaType));
-    }
-}
-
-void ASiC_E::addDataFile(istream *is, const string &fileName, const string &mediaType)
-{
-    if(!d->signatures.empty())
-        THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
-
-    for(DataFile *file: d->documents)
-    {
-        if(fileName == file->fileName())
-            THROW("Document with same file name '%s' already exists '%s'.", fileName.c_str(), file->fileName().c_str());
-    }
-
-    d->documents.push_back(new DataFilePrivate(is, fileName, mediaType));
-}
-
 Container* ASiC_E::createInternal(const string &path)
 {
     ASiC_E *doc = new ASiC_E();
-    doc->d->path = path;
+    doc->zpath(path);
     return doc;
-}
-
-/**
- * Returns document referenced by document id.
- *
- * @return returns dataFiles.
- */
-vector<DataFile*> ASiC_E::dataFiles() const
-{
-    return d->documents;
-}
-
-/**
- * Removes document from container by document id. Documents can be
- * removed from container only after all signatures are removed.
- *
- * @param id document's id, which will be removed.
- * @throws ContainerException throws exception if the document id is incorrect or there are
- *         one or more signatures.
- */
-void ASiC_E::removeDataFile(unsigned int id)
-{
-    if(!d->signatures.empty())
-        THROW("Can not remove document from container which has signatures, remove all signatures before removing document.");
-
-    if(d->documents.size() > id)
-    {
-        vector<DataFile*>::iterator it = (d->documents.begin() + id);
-        delete *it;
-        d->documents.erase(it);
-    }
-    else
-        THROW("Incorrect document id %u, there are only %u documents in container.", id, d->documents.size());
 }
 
 /**
@@ -261,23 +119,23 @@ void ASiC_E::removeDataFile(unsigned int id)
  */
 string ASiC_E::mediaType() const
 {
-    return ASiC_E::ASIC_MIMETYPE;
+    return ASiContainer::MIMETYPE_ASIC_E;
 }
 
 /**
  * Adds signature to the container. Default profile is TM
  *
- * @param signature signature, which is added to the container.
+ * @param sigdata signature, which is added to the container.
  * @throws ContainerException throws exception if there are no documents in container.
  */
 void ASiC_E::addAdESSignature(istream &sigdata)
 {
-    if(d->documents.empty())
+    if(dataFiles().empty())
         THROW("No documents in container, can not add signature.");
 
     try
     {
-        d->signatures.push_back(new SignatureA(sigdata, this));
+        addSignature(new SignatureA(sigdata, this));
     }
     catch(const Exception &e)
     {
@@ -288,36 +146,6 @@ void ASiC_E::addAdESSignature(istream &sigdata)
 Container* ASiC_E::openInternal(const string &path)
 {
     return new ASiC_E(path);
-}
-
-/**
- * Returns signature referenced by signature id.
- *
- * @param id signature id.
- * @return returns signature referenced by signature id.
- * @throws ContainerException throws exception if the signature id is incorrect.
- */
-vector<Signature *> ASiC_E::signatures() const
-{
-    return d->signatures;
-}
-
-/**
- * Removes signature from container by signature id.
- *
- * @param id signature's id, which will be removed.
- * @throws ContainerException throws exception if the signature id is incorrect.
- */
-void ASiC_E::removeSignature(unsigned int id)
-{
-    if(d->signatures.size() > id)
-    {
-        vector<Signature*>::iterator it = (d->signatures.begin() + id);
-        delete *it;
-        d->signatures.erase(it);
-    }
-    else
-        THROW("Incorrect signature id %u, there are only %u signatures in container.", id, d->signatures.size());
 }
 
 /**
@@ -338,11 +166,11 @@ void ASiC_E::createManifest(ostream &os)
     {
         Manifest manifest;
         manifest.file_entry().push_back(File_entry("/", mediaType()));
-        for(DataFile *file: d->documents)
+        for(const DataFile *file: dataFiles())
             manifest.file_entry().push_back(File_entry(file->fileName(), file->mediaType()));
 
         xml_schema::NamespaceInfomap map;
-        map["manifest"].name = ASiC_EPrivate::MANIFEST_NAMESPACE;
+        map["manifest"].name = ASiC_E::MANIFEST_NAMESPACE;
         manifest::manifest(os, manifest, map, "", xml_schema::Flags::dont_initialize);
         if(os.fail())
             THROW("Failed to create manifest XML");
@@ -351,37 +179,6 @@ void ASiC_E::createManifest(ostream &os)
     {
         THROW("Failed to create manifest XML file. Error: %s", e.what());
     }
-}
-
-/**
- * Reads and parses container mimetype. Checks that the mimetype is supported.
- *
- * @param path path to container directory.
- * @throws IOException exception is thrown if there was error reading mimetype file from disk.
- * @throws ContainerException exception is thrown if the parsed mimetype is incorrect.
- */
-void ASiC_E::readMimetype(istream &is)
-{
-    DEBUG("ASiC_E::readMimetype()");
-    unsigned char bom[] = { 0, 0, 0 };
-    is.read((char*)bom, sizeof(bom));
-    // Contains UTF-16 BOM
-    if((bom[0] == 0xFF && bom[1] == 0xEF) ||
-       (bom[0] == 0xEF && bom[1] == 0xFF))
-        THROW("Mimetype file must be UTF-8 format.");
-    // does not contain UTF-8 BOM reset pos
-    if(!(bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF))
-        is.seekg(0, ios::beg);
-
-    string mimetype;
-    is >> mimetype;
-    if(is.fail())
-        THROW("Failed to read mimetype.");
-
-    DEBUG("mimetype = '%s'", mimetype.c_str());
-    if(mimetype != ASiC_E::ASIC_MIMETYPE)
-        THROW("Incorrect mimetype '%s'", mimetype.c_str());
-
 }
 
 /**
@@ -395,10 +192,11 @@ void ASiC_E::readMimetype(istream &is)
  * @throws IOException exception is thrown if the manifest.xml file parsing failed.
  * @throws ContainerException
  */
-void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string> &list)
+void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 {
     DEBUG("ASiC_E::readManifest()");
 
+    const vector<string> &list = z.list();
     size_t mcount = count(list.begin(), list.end(), "META-INF/manifest.xml");
     if(mcount < 1)
         THROW("Manifest file is missing");
@@ -410,7 +208,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<strin
         stringstream manifestdata;
         z.extract("META-INF/manifest.xml", manifestdata);
         xml_schema::Properties properties;
-        properties.schema_location(ASiC_EPrivate::MANIFEST_NAMESPACE,
+        properties.schema_location(ASiC_E::MANIFEST_NAMESPACE,
             File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
         unique_ptr<Manifest> manifest(manifest::manifest(manifestdata, xml_schema::Flags::dont_initialize|xml_schema::Flags::dont_validate, properties).release());
 
@@ -433,13 +231,8 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<strin
                 THROW("Found multiple references of file '%s' in zip container.", iter->full_path().c_str());
 
             manifestFiles.insert(iter->full_path());
-            iostream *data = nullptr;
-            if(d->properties[iter->full_path()].size > MAX_MEM_FILE)
-                data = new fstream(File::encodeName(File::tempFileName()).c_str(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
-            else
-                data = new stringstream;
-            z.extract(iter->full_path(), *data);
-            d->documents.push_back(new DataFilePrivate(data, iter->full_path(), iter->media_type()));
+            iostream *data = dataStream(iter->full_path(), z);
+            addDataFile(data, iter->full_path(), iter->media_type());
         }
 
         for(const string &file: list)
@@ -463,7 +256,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<strin
                 {
                     stringstream data;
                     z.extract(file, data);
-                    d->signatures.push_back(new SignatureA(data, this, true));
+                    addSignature(new SignatureA(data, this, true));
                 }
                 catch(const Exception &e)
                 {
@@ -504,14 +297,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<strin
 
 Signature* ASiC_E::prepareSignature(Signer *signer)
 {
-    if(d->documents.empty())
-        THROW("No documents in container, can not sign container.");
-    if(!signer)
-        THROW("Null pointer in ASiC_E::sign");
-
-    SignatureA *signature = new SignatureA(newSignatureId(), this, signer);
-    d->signatures.push_back(signature);
-    return signature;
+    return newSignature<SignatureA>(signer);
 }
 
 Signature *ASiC_E::sign(Signer* signer)
@@ -524,10 +310,7 @@ Signature *ASiC_E::sign(Signer* signer)
     }
     catch(const Exception& e)
     {
-        vector<Signature*>::iterator i = find(d->signatures.begin(), d->signatures.end(), s);
-        if(i != d->signatures.end())
-            d->signatures.erase(i);
-        delete s;
+        deleteSignature(s);
         THROW_CAUSE(e, "Failed to sign BDOC container.");
     }
     return s;

@@ -43,12 +43,12 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
     return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
-SignatureTM::SignatureTM(unsigned int id, ASiC_E *bdoc, Signer *signer)
+SignatureTM::SignatureTM(unsigned int id, ASiContainer *bdoc, Signer *signer)
 : SignatureBES(id, bdoc, signer)
 {
 }
 
-SignatureTM::SignatureTM(istream &sigdata, ASiC_E *bdoc, bool relaxSchemaValidation)
+SignatureTM::SignatureTM(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
 : SignatureBES(sigdata, bdoc, relaxSchemaValidation)
 {
 }

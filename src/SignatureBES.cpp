@@ -122,7 +122,7 @@ public:
 class URIResolver: public XSECURIResolverXerces
 {
 public:
-    URIResolver(ASiC_E *doc):doc_(doc) {}
+    URIResolver(ASiContainer *doc):doc_(doc) {}
 
     BinInputStream *resolveURI(const XMLCh *uri)
     {
@@ -153,7 +153,7 @@ public:
     }
 
 private:
-    ASiC_E *doc_;
+    ASiContainer *doc_;
 };
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
@@ -166,7 +166,7 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 /**
  * Creates an empty BDOC-BES signature with mandatory XML nodes.
  */
-SignatureBES::SignatureBES(unsigned int id, ASiC_E *bdoc, Signer *signer)
+SignatureBES::SignatureBES(unsigned int id, ASiContainer *bdoc, Signer *signer)
  : signature(nullptr)
  , asicsignature(nullptr)
  , bdoc(bdoc)
@@ -275,7 +275,7 @@ SignatureBES::SignatureBES(unsigned int id, ASiC_E *bdoc, Signer *signer)
  *                              produced by other systems; default = false
  * @throws SignatureException
  */
-SignatureBES::SignatureBES(istream &sigdata, ASiC_E *bdoc, bool relaxSchemaValidation)
+SignatureBES::SignatureBES(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
  : signature(nullptr)
  , asicsignature(nullptr)
  , bdoc(bdoc)
