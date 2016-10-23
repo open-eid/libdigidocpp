@@ -20,6 +20,7 @@
 #include "Container.h"
 
 #include "ASiC_E.h"
+#include "ASiC_S.h"
 #include "DDoc.h"
 #include "RDoc.h"
 #include "DataFile.h"
@@ -124,6 +125,7 @@ void digidoc::initialize(const string &appInfo, initCallBack callBack)
     Container::addContainerImplementation<DDoc>();
 #endif
     Container::addContainerImplementation<RDoc>();
+    Container::addContainerImplementation<ASiC_S>();
 
     if(callBack)
     {

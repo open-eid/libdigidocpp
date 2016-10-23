@@ -29,6 +29,7 @@
 #ifndef OPENSSL_NO_CMS
 #include <openssl/cms.h>
 #endif
+#include <openssl/bn.h>
 #include <openssl/rand.h>
 #include <openssl/ts.h>
 
@@ -156,6 +157,28 @@ string TS::digestMethod() const
     case NID_sha512: return URI_SHA512;
     default: return "";
     }
+}
+
+string TS::serial() const
+{
+    SCOPE(TS_TST_INFO, info, tstInfo());
+
+    if (info)
+    {
+        string serial;
+        SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(info->serial, 0), BN_free);
+        if(!!bn)
+        {
+            char *str = BN_bn2dec(bn.get());
+            if(str)
+                serial = str;
+            OPENSSL_free(str);
+        }
+
+        return serial;
+    }
+
+    return string();
 }
 
 string TS::time() const

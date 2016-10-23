@@ -19,30 +19,41 @@
 
 #pragma once
 
-#include "SignatureTM.h"
+#include "ASiC_S.h"
+#include "Signature.h"
+
+#include "crypto/TS.h"
 
 namespace digidoc
 {
 
-class SignatureTS: public SignatureTM
+class SignatureTST: public Signature
 {
 public:
-    SignatureTS(unsigned int id, ASiContainer *bdoc, Signer *signer);
-    SignatureTS(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
-    virtual ~SignatureTS();
+    SignatureTST(std::istream &sigdata, ASiC_S *asicSDoc);
+    virtual ~SignatureTST();
 
     virtual std::string trustedSigningTime() const override;
 
     X509Cert TimeStampCertificate() const override;
     std::string TimeStampTime() const override;
-    virtual void validate() const override;
-    virtual void extendSignatureProfile(const std::string &profile) override;
+
+    // DSig properties
+    std::string id() const override;
+    std::string claimedSigningTime() const override;
+    X509Cert signingCertificate() const override;
+    std::string signatureMethod() const override;
+    void validate() const override;
+    std::vector<unsigned char> dataToSign() const override;
+    void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
+
+    // Xades properties
+    std::string profile() const override;
 
 private:
-    DISABLE_COPY(SignatureTS);
-
-    std::vector<unsigned char> tsBase64() const;
-
+    DISABLE_COPY(SignatureTST);
+    ASiC_S *asicSDoc = nullptr;
+    TS* timestampToken = nullptr;
 };
 
 }
