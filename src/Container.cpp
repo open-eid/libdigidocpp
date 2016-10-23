@@ -19,6 +19,7 @@
 
 #include "Container.h"
 
+#include "ASiCSDoc.h"
 #include "BDoc.h"
 #include "DDoc.h"
 #include "RDoc.h"
@@ -27,6 +28,7 @@
 #include "log.h"
 #include "XmlConf.h"
 #include "crypto/X509CertStore.h"
+#include "util/ASiContainer.h"
 #include "util/File.h"
 
 #include <xercesc/util/XMLString.hpp>
@@ -279,6 +281,10 @@ Container* Container::open(const string &path)
     {
         if(Container *container = open(path))
             return container;
+    }
+    if (digidoc::util::asic::detectContainerFormat(path) == digidoc::util::asic::ASiCFormat::Simple)
+    {
+        return ASiCSDoc::openInternal(path);
     }
     return BDoc::openInternal(path);
 }

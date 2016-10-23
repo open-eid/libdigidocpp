@@ -26,6 +26,7 @@
 #include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/Signer.h"
+#include "util/ASiContainer.h"
 #include "util/File.h"
 #include "util/ZipSerialize.h"
 #include "xml/OpenDocument_manifest.hxx"
@@ -362,21 +363,8 @@ void BDoc::createManifest(ostream &os)
 void BDoc::readMimetype(istream &is)
 {
     DEBUG("BDoc::readMimetype()");
-    unsigned char bom[] = { 0, 0, 0 };
-    is.read((char*)bom, sizeof(bom));
-    // Contains UTF-16 BOM
-    if((bom[0] == 0xFF && bom[1] == 0xEF) ||
-       (bom[0] == 0xEF && bom[1] == 0xFF))
-        THROW("Mimetype file must be UTF-8 format.");
-    // does not contain UTF-8 BOM reset pos
-    if(!(bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF))
-        is.seekg(0, ios::beg);
 
-    string mimetype;
-    is >> mimetype;
-    if(is.fail())
-        THROW("Failed to read mimetype.");
-
+    const string mimetype = digidoc::util::asic::readMimetype(is);
     DEBUG("mimetype = '%s'", mimetype.c_str());
     if(mimetype != BDoc::ASIC_MIMETYPE)
         THROW("Incorrect mimetype '%s'", mimetype.c_str());
