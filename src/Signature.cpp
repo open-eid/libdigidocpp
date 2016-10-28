@@ -51,40 +51,34 @@ Signature::~Signature()
  */
 
 /**
- * @fn digidoc::Signature::city
- *
  * Returns signature production city.
  */
+string Signature::city() const { return string(); }
 
 /**
- * @fn digidoc::Signature::countryName
- *
  * Returns signature production country.
  */
+string Signature::countryName() const { return string(); }
 
 /**
- * @fn digidoc::Signature::postalCode
- *
  * Returns signature production postal code.
  */
+string Signature::postalCode() const { return string(); }
 
 /**
- * @fn digidoc::Signature::stateOrProvince
- *
  * Returns signature production state or province.
  */
+string Signature::stateOrProvince() const { return string(); }
 
 /**
- * @fn digidoc::Signature::streetAddress
- *
  * Returns signature production street address.
  */
+string Signature::streetAddress() const { return string(); }
 
 /**
- * @fn digidoc::Signature::signerRoles
- *
  * Returns signer's roles.
  */
+vector<string> Signature::signerRoles() const { return vector<string>(); }
 
 /**
  * @fn digidoc::Signature::signatureMethod

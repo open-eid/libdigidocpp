@@ -52,7 +52,6 @@ public:
     std::string profile() const override;
     std::string city() const override;
     std::string stateOrProvince() const override;
-    std::string streetAddress() const override;
     std::string postalCode() const override;
     std::string countryName() const override;
     std::vector<std::string> signerRoles() const override;

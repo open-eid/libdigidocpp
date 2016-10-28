@@ -47,11 +47,11 @@ namespace digidoc
           virtual std::string policy() const;
           virtual std::string SPUri() const;
           virtual std::string profile() const = 0;
-          virtual std::string city() const = 0;
-          virtual std::string stateOrProvince() const = 0;
-          virtual std::string postalCode() const = 0;
-          virtual std::string countryName() const = 0;
-          virtual std::vector<std::string> signerRoles() const = 0;
+          virtual std::string city() const;
+          virtual std::string stateOrProvince() const;
+          virtual std::string postalCode() const;
+          virtual std::string countryName() const;
+          virtual std::vector<std::string> signerRoles() const;
 
           //TM profile properties
           virtual std::string OCSPProducedAt() const;
@@ -67,7 +67,7 @@ namespace digidoc
           virtual std::string ArchiveTimeStampTime() const;
 
           // Xades properties
-          virtual std::string streetAddress() const = 0;
+          virtual std::string streetAddress() const;
 
       protected:
           Signature();
