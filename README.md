@@ -77,8 +77,9 @@
 	* [Visual Studio Express 2013 for Windows Desktop](http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx)
 	* [Perl](https://www.perl.org/get.html)
 	* [7-zip](http://www.7-zip.org)
-	* [http://www.cmake.org](http://www.cmake.org)
+	* [http://www.cmake.org](http://www.cmake.org) - NB! Build scripts use 32-bit version of CMake
 	* [swigwin-3.0.10.zip](http://swig.org/download.html) - Optional, for C# bindings
+	* [Wix toolset](http://wixtoolset.org/releases/) - Optional, for creating Windows installation packages
 
 2. Fetch the source
 
@@ -102,12 +103,19 @@
    After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
    [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
 
-
 5. Build
 
-        make
+        nmake
 
-6. Execute
+6. Alternative to steps 4. and 5. -
+
+        Run the build script in PowerShell:
+        ./build.ps1
+
+    The build script builds executables and installation media for all
+    platforms (x86 and x64 / Debug and Release with debug symbols)
+
+7. Execute
 
         src/digidoc-tool.exe
 
