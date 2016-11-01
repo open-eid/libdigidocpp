@@ -19,12 +19,9 @@
 
 #include "SignatureTST.h"
 
-#include "Conf.h"
 #include "DataFile_p.h"
 #include "log.h"
 #include "crypto/Digest.h"
-#include "crypto/OCSP.h"
-#include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
 
@@ -32,7 +29,6 @@
 
 using namespace digidoc;
 using namespace digidoc::util::date;
-using namespace digidoc::xades;
 using namespace std;
 
 SignatureTST::SignatureTST(istream &is, ASiCSDoc *asicSDoc): asicSDoc(asicSDoc)
@@ -69,61 +65,94 @@ string SignatureTST::trustedSigningTime() const
 // DSig properties
 string SignatureTST::id() const
 {
-    return "";
+    return timestampToken->serial();
 }
+
 string SignatureTST::claimedSigningTime() const
 {
-    return "";
+    return string();
 }
+
 X509Cert SignatureTST::signingCertificate() const
 {
     return X509Cert();
 }
+
 string SignatureTST::signatureMethod() const
 {
-    return "";
+    return timestampToken->digestMethod();
 }
+
+vector<unsigned char> SignatureTST::OCSPNonce() const
+{
+    return timestampToken->nonce();
+}
+
 void SignatureTST::validate() const
 {
-    // TODO
-    // Digest digest(timestampToken->digestMethod());
-    // auto dataFile = static_cast<const DataFilePrivate*>(asicSDoc->dataFiles().front());
-    // dataFile->calcDigest(&digest);
+    Exception exception(__FILE__, __LINE__, "Timestamp validation.");
 
-    // timestampToken->verify(digest);
+    if (timestampToken->time().empty())
+    {
+        EXCEPTION_ADD(exception, "Failed to parse timestamp token.");
+    }
+    else
+    {
+        try
+        {
+            Digest digest(timestampToken->digestMethod());
+            auto dataFile = static_cast<const DataFilePrivate*>(asicSDoc->dataFiles().front());
+            dataFile->calcDigest(&digest);
+            timestampToken->verify(digest);
+        }
+        catch (const Exception& e)
+        {
+            exception.addCause(e);
+        }
+    }
+
+    if(!exception.causes().empty())
+        throw exception;
 }
+
 std::vector<unsigned char> SignatureTST::dataToSign() const
 {
     THROW("Not implemented.");
 }
+
 void SignatureTST::setSignatureValue(const std::vector<unsigned char> &signatureValue)
 {
     THROW("Not implemented.");
 }
+
 // Xades properties
 string SignatureTST::profile() const
 {
-    return "";
+    return "TimeStampToken";
 }
+
 string SignatureTST::city() const
 {
-    return "";
+    return string();
 }
+
 string SignatureTST::stateOrProvince() const
 {
-    return "";
+    return string();
 }
+
 string SignatureTST::postalCode() const
 {
-    return "";
+    return string();
 }
+
 string SignatureTST::countryName() const
 {
-    return "";
+    return string();
 }
 
 // Xades properties
 string SignatureTST::streetAddress() const
 {
-    return "";
+    return string();
 }
