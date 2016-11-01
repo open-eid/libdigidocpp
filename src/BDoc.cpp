@@ -29,6 +29,7 @@
 #include "util/File.h"
 #include "util/ZipSerialize.h"
 #include "xml/OpenDocument_manifest.hxx"
+#include "xercesc/util/OutOfMemoryException.hpp"
 
 #include <fstream>
 #include <set>
@@ -489,6 +490,14 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
     catch(const xml_schema::Exception& e)
     {
         THROW("Failed to parse manifest XML: %s (xsd path: %s)", e.what(), Conf::instance()->xsdPath().c_str());
+    }
+    catch (const xercesc::OutOfMemoryException& e)
+    {
+        THROW("Failed to parse manifest XML: out of memory");
+    }
+    catch (...)
+    {
+        THROW("Failed to parse manifest XML: Unknown exception");
     }
 }
 

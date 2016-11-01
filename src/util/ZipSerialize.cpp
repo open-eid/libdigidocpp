@@ -148,6 +148,7 @@ void ZipSerialize::extract(const string &file, ostream &os) const
     if(unzResult != UNZ_OK)
         THROW("Failed to open file inside ZIP container. ZLib error: %d", unzResult);
 
+    double currentStreamSize = 0;
     char buf[10240];
     for( ;; )
     {
@@ -159,11 +160,13 @@ void ZipSerialize::extract(const string &file, ostream &os) const
             unzCloseCurrentFile(d->open);
             THROW("Failed to read bytes from current file inside ZIP container. ZLib error: %d", unzResult);
         }
+        currentStreamSize += unzResult;
+
         os.write(buf, unzResult);
         if(os.fail())
         {
             unzCloseCurrentFile(d->open);
-            THROW("Failed to write file '%s' data to stream. ZLib error: %d", file.c_str(), unzResult);
+            THROW("Failed to write file '%s' data to stream. Stream size: %f", file.c_str(), currentStreamSize);
         }
     }
 
