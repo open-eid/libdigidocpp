@@ -206,7 +206,8 @@ void SignatureTM::extendSignatureProfile(const std::string &profile)
         cert.serial().c_str(), cert.subjectName().c_str(), cert.issuerName().c_str());
 
     DEBUG("Making OCSP request.");
-    OCSP ocsp(cert, issuer, nonce, "format: " + bdoc->mediaType() + " version: " + policy());
+    OCSP ocsp(cert, issuer, nonce, "format: " + bdoc->mediaType() + " profile: " +
+              (policy().empty() ? "ASiC_E_BASELINE_LT" : "ASiC_E_BASELINE_LT_TM"));
     ocsp.verifyResponse(cert);
 
     // Set TM profile signature parameters.
