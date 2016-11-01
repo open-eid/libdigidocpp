@@ -29,6 +29,7 @@
 #ifndef OPENSSL_NO_CMS
 #include <openssl/cms.h>
 #endif
+#include <openssl/bn.h>
 #include <openssl/rand.h>
 #include <openssl/ts.h>
 
@@ -158,10 +159,43 @@ string TS::digestMethod() const
     }
 }
 
+string TS::serial() const
+{
+    SCOPE(TS_TST_INFO, info, tstInfo());
+
+    if (info)
+    {
+        string serial;
+        SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(info->serial, 0), BN_free);
+        if(!!bn)
+        {
+            char *str = BN_bn2dec(bn.get());
+            if(str)
+                serial = str;
+            OPENSSL_free(str);
+        }
+
+        return serial;
+    }
+
+    return string();
+}
+
 string TS::time() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
     return info ? string((char*)info->time->data, size_t(info->time->length)) : string();
+}
+
+vector<unsigned char> TS::nonce() const
+{
+    SCOPE(TS_TST_INFO, info, tstInfo());
+    if (info && info->nonce)
+    {
+        return std::vector<unsigned char>(info->nonce->data, info->nonce->data + info->nonce->length);
+    }
+
+    return vector<unsigned char>();
 }
 
 TS_TST_INFO* TS::tstInfo() const

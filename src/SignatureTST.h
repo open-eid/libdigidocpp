@@ -40,6 +40,7 @@ public:
 
     // DSig properties
     std::string id() const override;
+    std::vector<unsigned char> OCSPNonce() const override;
     std::string claimedSigningTime() const override;
     X509Cert signingCertificate() const override;
     std::string signatureMethod() const override;

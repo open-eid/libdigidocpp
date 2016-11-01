@@ -37,7 +37,9 @@ public:
 
     X509Cert cert() const;
     std::string digestMethod() const;
+    std::string serial() const;
     std::string time() const;
+    std::vector<unsigned char> nonce() const;
     void verify(const Digest &digest);
 
     operator std::vector<unsigned char>() const;
