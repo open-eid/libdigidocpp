@@ -23,7 +23,7 @@
 
 namespace digidoc
 {
-    class ASiCSDocPrivate;
+    class ASiC_SPrivate;
     class ZipSerialize;
 
     /**
@@ -37,11 +37,11 @@ namespace digidoc
     *
     * @author Toomas Uudisaru
     */
-    class ASiCSDoc : public Container
+    class ASiC_S : public Container
     {
 
     public:
-        virtual ~ASiCSDoc();
+        virtual ~ASiC_S();
         void save(const std::string &path = "") override;
         std::string mediaType() const override;
 
@@ -61,9 +61,9 @@ namespace digidoc
         static Container* openInternal(const std::string &path);
 
     private:
-        ASiCSDoc();
-        ASiCSDoc(const std::string &path);
-        DISABLE_COPY(ASiCSDoc);
+        ASiC_S();
+        ASiC_S(const std::string &path);
+        DISABLE_COPY(ASiC_S);
 
         void validateDataObjects();
         void extractTimestamp(const ZipSerialize &z);
@@ -73,6 +73,6 @@ namespace digidoc
 
         static void readMimetype(const ZipSerialize &z);
 
-        ASiCSDocPrivate *d;
+        ASiC_SPrivate *d;
     };
 }

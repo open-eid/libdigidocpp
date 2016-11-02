@@ -19,8 +19,8 @@
 
 #include "Container.h"
 
-#include "ASiCSDoc.h"
-#include "BDoc.h"
+#include "ASiC_E.h"
+#include "ASiC_S.h"
 #include "DDoc.h"
 #include "RDoc.h"
 #include "DataFile.h"
@@ -232,7 +232,7 @@ Container* Container::create(const std::string &path)
         if(Container *container = create(path))
             return container;
     }
-    return BDoc::createInternal(path);
+    return ASiC_E::createInternal(path);
 }
 
 /**
@@ -284,9 +284,9 @@ Container* Container::open(const string &path)
     }
     if (digidoc::util::asic::detectContainerFormat(path) == digidoc::util::asic::ASiCFormat::Simple)
     {
-        return ASiCSDoc::openInternal(path);
+        return ASiC_S::openInternal(path);
     }
-    return BDoc::openInternal(path);
+    return ASiC_E::openInternal(path);
 }
 
 /**

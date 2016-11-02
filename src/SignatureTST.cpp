@@ -31,7 +31,7 @@ using namespace digidoc;
 using namespace digidoc::util::date;
 using namespace std;
 
-SignatureTST::SignatureTST(istream &is, ASiCSDoc *asicSDoc): asicSDoc(asicSDoc)
+SignatureTST::SignatureTST(istream &is, ASiC_S *asicSDoc): asicSDoc(asicSDoc)
 {
     is.seekg(0, istream::end);
     istream::pos_type pos = is.tellg();
