@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "ASiCSDoc.h"
+#include "ASiC_S.h"
 #include "Signature.h"
 
 #include "crypto/TS.h"
@@ -30,7 +30,7 @@ namespace digidoc
 class SignatureTST: public Signature
 {
 public:
-    SignatureTST(std::istream &sigdata, ASiCSDoc *asicSDoc);
+    SignatureTST(std::istream &sigdata, ASiC_S *asicSDoc);
     virtual ~SignatureTST();
 
     virtual std::string trustedSigningTime() const override;
@@ -61,7 +61,7 @@ public:
 
 private:
     DISABLE_COPY(SignatureTST);
-    ASiCSDoc *asicSDoc;
+    ASiC_S *asicSDoc;
     TS* timestampToken;
 };
 
