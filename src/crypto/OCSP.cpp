@@ -49,8 +49,6 @@ using namespace std;
  * Initialize OCSP certificate validator.
  */
 OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned char> &nonce, const string &useragent)
-    : resp(0)
-    , basic(0)
 {
     if(!cert)
         THROW("Can not check X.509 certificate, certificate is NULL pointer.");
@@ -68,9 +66,9 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
 
     OCSP_CERTID *certId = OCSP_cert_to_id(0, cert.handle(), issuer.handle());
     SCOPE(OCSP_REQUEST, req, createRequest(certId, nonce));
-    resp = sendRequest(url, req.get(), useragent);
+    resp.reset(sendRequest(url, req.get(), useragent), function<void(OCSP_RESPONSE*)>(OCSP_RESPONSE_free));
 
-    switch(int respStatus = OCSP_response_status(resp))
+    switch(int respStatus = OCSP_response_status(resp.get()))
     {
     case OCSP_RESPONSE_STATUS_SUCCESSFUL: break;
     case OCSP_RESPONSE_STATUS_UNAUTHORIZED:
@@ -83,16 +81,16 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
         THROW("OCSP request failed, response status: %s", OCSP_response_status_str(respStatus));
     }
 
-    basic = OCSP_response_get1_basic(resp);
+    basic.reset(OCSP_response_get1_basic(resp.get()), function<void(OCSP_BASICRESP*)>(OCSP_BASICRESP_free));
     if(!basic)
         THROW("Incorrect OCSP response.");
 
-    if(OCSP_check_nonce(req.get(), basic) <= 0)
+    if(OCSP_check_nonce(req.get(), basic.get()) <= 0)
         THROW("Incorrect NONCE field value.");
 
     int certStatus = -1; int reason = -1;
     ASN1_GENERALIZEDTIME *producedAt = nullptr, *thisUpdate = nullptr, *nextUpdate = nullptr;
-    if(!OCSP_resp_find_status(basic, certId, &certStatus, &reason, &producedAt, &thisUpdate, &nextUpdate))
+    if(!OCSP_resp_find_status(basic.get(), certId, &certStatus, &reason, &producedAt, &thisUpdate, &nextUpdate))
         THROW("Failed to get status code from OCSP response.");
 
 #if 0
@@ -105,33 +103,21 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
 #endif
 }
 
-OCSP::OCSP(const vector<unsigned char> &ocspResponseDER)
-    : resp(0)
-    , basic(0)
+OCSP::OCSP(const vector<unsigned char> &data)
 {
-    if(ocspResponseDER.empty())
-        THROW("Response is empty");
-
-    const unsigned char *p = ocspResponseDER.data();
-    resp = d2i_OCSP_RESPONSE(0, &p, (unsigned int)ocspResponseDER.size());
-    if(!resp)
-        THROW("Failed to parse reponse is empty");
-    basic = OCSP_response_get1_basic(resp);
-    if(!basic)
-        THROW("Failed to parse reponse is empty");
-}
-
-OCSP::~OCSP()
-{
-    if(basic) OCSP_BASICRESP_free(basic);
-    if(resp) OCSP_RESPONSE_free(resp);
+    if(data.empty())
+        return;
+    const unsigned char *p = data.data();
+    resp.reset(d2i_OCSP_RESPONSE(0, &p, (unsigned int)data.size()), function<void(OCSP_RESPONSE*)>(OCSP_RESPONSE_free));
+    if(resp)
+       basic.reset(OCSP_response_get1_basic(resp.get()), function<void(OCSP_BASICRESP*)>(OCSP_BASICRESP_free));
 }
 
 bool OCSP::compareResponderCert(const X509Cert &cert) const
 {
     if(!basic || !cert)
         return false;
-    OCSP_RESPID *respID =  basic->tbsResponseData->responderId;
+    OCSP_RESPID *respID = basic->tbsResponseData->responderId;
     switch(respID->type)
     {
     case V_OCSP_RESPID_NAME:
@@ -150,11 +136,9 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
 /**
  * Creates OCSP request to check the certificate <code>cert</code> validity.
  *
- * @param cert certificate which validity will be checked.
- * @param issuer issuer of the certificate.
+ * @param certId OCSP_CERTID which validity will be checked.
  * @param nonce NONCE field value in OCSP request.
  * @return returns created OCSP request.
- * @throws IOException exception is thrown if the request creation failed.
  */
 OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned char> &nonce)
 {
@@ -177,11 +161,13 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
         RAND_bytes(st->data, st->length);
     }
     else
+    {
         ASN1_OCTET_STRING_set(st, nonce.data(), nonce.size());
-    X509_EXTENSION *ex = X509_EXTENSION_create_by_NID(0, NID_id_pkix_OCSP_Nonce, 0, st);
-    ASN1_OCTET_STRING_free(st);
-    if(!OCSP_REQUEST_add_ext(req.get(), ex, 0))
-        THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
+        X509_EXTENSION *ex = X509_EXTENSION_create_by_NID(0, NID_id_pkix_OCSP_Nonce, 0, st);
+        ASN1_OCTET_STRING_free(st);
+        if(!OCSP_REQUEST_add_ext(req.get(), ex, 0))
+            THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
+    }
 #endif
 
     Conf *c = Conf::instance();
@@ -383,23 +369,26 @@ OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const st
 
 vector<unsigned char> OCSP::toDer() const
 {
-    int size = i2d_OCSP_RESPONSE(resp, 0);
+    vector<unsigned char> result;
+    if(!resp)
+        return result;
+    int size = i2d_OCSP_RESPONSE(resp.get(), 0);
     if(size < 0)
-        return vector<unsigned char>();
-    vector<unsigned char> result(size, 0);
+        return result;
+    result.resize(size_t(size));
     unsigned char *p = result.data();
-    size = i2d_OCSP_RESPONSE(resp, &p);
-    if(size < 0)
-        return vector<unsigned char>();
+    if(i2d_OCSP_RESPONSE(resp.get(), &p) < 0)
+        result.clear();
     return result;
 }
 
 /**
  * Check that response was signed with trusted OCSP certificate
- * @param ocspResponseDER DER encoded OCSP response bytes
  */
 void OCSP::verifyResponse(const X509Cert &cert) const
 {
+    if(!resp)
+        THROW("Failed to verify OCSP response.");
     SCOPE(X509_STORE, store, X509_STORE_new());
     STACK_OF(X509) *stack = sk_X509_new_null();
     for(const X509Cert &i: X509CertStore::instance()->certs())
@@ -439,7 +428,7 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     //OCSP_NOCHECKS - cancel futurer responder issuer checks and trust bits
     //OCSP_NOEXPLICIT - returns 0 by mistake
     //all checks enabled fails trust bit check, cant use OCSP_NOEXPLICIT instead using OCSP_NOCHECKS
-    int result = OCSP_basic_verify(basic, stack, store.get(), OCSP_NOCHECKS);
+    int result = OCSP_basic_verify(basic.get(), stack, store.get(), OCSP_NOCHECKS);
     sk_X509_free(stack);
     if(result <= 0)
         THROW_OPENSSLEXCEPTION("Failed to verify OCSP response.");
@@ -451,11 +440,11 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         e.setCode( Exception::CertificateUnknown );
         throw e;
     }
-    for(int i = 0; i < OCSP_resp_count(basic); ++i)
+    for(int i = 0; i < OCSP_resp_count(basic.get()); ++i)
     {
         SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(0, cert.handle(), issuer.handle()));
         int status = -1; int reason = -1;
-        /*result =*/ OCSP_resp_find_status(basic, certId.get(), &status, &reason, 0, 0, 0);
+        /*result =*/ OCSP_resp_find_status(basic.get(), certId.get(), &status, &reason, 0, 0, 0);
         switch(status)
         {
         case V_OCSP_CERTSTATUS_GOOD: break;
@@ -479,18 +468,20 @@ void OCSP::verifyResponse(const X509Cert &cert) const
 }
 
 /**
- * Extract nonce field from ocspResponderDER
- * @param ocspResponseDER
- * @return nonce bytes without any encoding
+ * Return OCSP nonce
  */
 vector<unsigned char> OCSP::nonce() const
 {
-    int resp_idx = OCSP_BASICRESP_get_ext_by_NID(basic, NID_id_pkix_OCSP_Nonce, -1);
-    X509_EXTENSION *ext = OCSP_BASICRESP_get_ext(basic, resp_idx);
-    if(!ext)
-        return vector<unsigned char>();
+    vector<unsigned char> nonce;
+    if(!basic)
+        return nonce;
 
-    vector<unsigned char> nonce(ext->value->data, ext->value->data + ext->value->length);
+    int resp_idx = OCSP_BASICRESP_get_ext_by_NID(basic.get(), NID_id_pkix_OCSP_Nonce, -1);
+    X509_EXTENSION *ext = OCSP_BASICRESP_get_ext(basic.get(), resp_idx);
+    if(!ext)
+        return nonce;
+
+    nonce.assign(ext->value->data, ext->value->data + ext->value->length);
 #if 1 //def OCSP_NATIVE_NONCE
     //OpenSSL OCSP created messages NID_id_pkix_OCSP_Nonce field is DER encoded twice, not a problem with java impl
     //XXX: UglyHackTM check if nonceAsn1 contains ASN1_OCTET_STRING
@@ -504,6 +495,10 @@ vector<unsigned char> OCSP::nonce() const
 
 string OCSP::producedAt() const
 {
+    string result;
+    if(!basic)
+        return result;
     ASN1_GENERALIZEDTIME* time = basic->tbsResponseData->producedAt;
-    return string(time->data, time->data+time->length);
+    result.assign(time->data, time->data+time->length);
+    return result;
 }

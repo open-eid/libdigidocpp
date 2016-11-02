@@ -19,42 +19,21 @@
 
 #pragma once
 
-#include "../Exception.h"
+#include <memory>
+#include <string>
+#include <vector>
 
-#include "X509Cert.h"
-
-#ifdef WIN32 //hack for win32 build
-#undef OCSP_REQUEST
-#undef OCSP_RESPONSE
-#endif
-#include <openssl/ocsp.h>
+typedef struct ocsp_response_st OCSP_RESPONSE;
+typedef struct ocsp_basic_response_st OCSP_BASICRESP;
+typedef struct ocsp_cert_id_st OCSP_CERTID;
+typedef struct ocsp_request_st OCSP_REQUEST;
 
 namespace digidoc
 {
-    /**
-     * OCSP exception implementation. Thrown if OCSP response is not valid or
-     * OCSP response status code is not Successful (0x00). OCSP status code can be
-     * accessed with method <code>getResponseStatusMessage()</code>. For example
-     * if the status code is 0x03 (TryLater) the OCSP request can be be made
-     * again (e.g. the OCSP server could be busy at the time).
-     *
-     * @author Janari Põld
-     */
-
-
     class X509Cert;
     /**
      * Implements OCSP request to the OCSP server. This class can be used to
      * check whether the certificate is valid or not.
-     *
-     * If <code>certStore</code> and/or <code>ocspCerts</code> is set, the
-     * OCSP response certificate is checked, whether it comes from the correct
-     * OCSP server or not.
-     *
-     * If <code>signCert</code> and <code>signKey</code> is set the OCSP request
-     * is signed with the certificate provided.
-     *
-     * @author Janari Põld
      */
     class OCSP
     {
@@ -62,8 +41,7 @@ namespace digidoc
       public:
           OCSP(const X509Cert &cert, const X509Cert &issuer,
                const std::vector<unsigned char> &nonce, const std::string &useragent = "");
-          OCSP(const std::vector<unsigned char> &ocspResponseDER);
-          ~OCSP();
+          OCSP(const std::vector<unsigned char> &data);
 
           std::vector<unsigned char> nonce() const;
           std::string producedAt() const;
@@ -76,7 +54,7 @@ namespace digidoc
           OCSP_REQUEST* createRequest(OCSP_CERTID *certId, const std::vector<unsigned char> &nonce);
           OCSP_RESPONSE* sendRequest(const std::string &url, OCSP_REQUEST *req, const std::string &useragent);
 
-          OCSP_RESPONSE *resp;
-          OCSP_BASICRESP *basic;
+          std::shared_ptr<OCSP_RESPONSE> resp;
+          std::shared_ptr<OCSP_BASICRESP> basic;
     };
 }
