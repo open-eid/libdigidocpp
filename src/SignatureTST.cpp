@@ -70,7 +70,7 @@ string SignatureTST::id() const
 
 string SignatureTST::claimedSigningTime() const
 {
-    return string();
+    return TimeStampTime();
 }
 
 X509Cert SignatureTST::signingCertificate() const
@@ -129,30 +129,4 @@ void SignatureTST::setSignatureValue(const std::vector<unsigned char> &signature
 string SignatureTST::profile() const
 {
     return "TimeStampToken";
-}
-
-string SignatureTST::city() const
-{
-    return string();
-}
-
-string SignatureTST::stateOrProvince() const
-{
-    return string();
-}
-
-string SignatureTST::postalCode() const
-{
-    return string();
-}
-
-string SignatureTST::countryName() const
-{
-    return string();
-}
-
-// Xades properties
-string SignatureTST::streetAddress() const
-{
-    return string();
 }
