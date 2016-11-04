@@ -204,6 +204,7 @@ add_library(digidocpp_priv STATIC
     crypto/TSL.cpp
     util/File.cpp
     util/DateTime.cpp
+    util/ASiContainer.cpp
 )
 
 set_target_properties(digidocpp_priv PROPERTIES
@@ -221,7 +222,8 @@ add_library(digidocpp ${BUILD_TYPE}
     ${CRYPTO_SOURCE}
     ${XML_HEADER}
     libdigidocpp.rc
-    BDoc.cpp
+    ASiC_E.cpp
+    ASiC_S.cpp
     Conf.cpp
     Container.cpp
     XmlConf.cpp
@@ -233,6 +235,7 @@ add_library(digidocpp ${BUILD_TYPE}
     SignatureTM.cpp
     SignatureTS.cpp
     SignatureA.cpp
+    SignatureTST.cpp
     crypto/PKCS11Signer.cpp
     crypto/Signer.cpp
     util/ZipSerialize.cpp

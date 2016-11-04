@@ -116,10 +116,17 @@ class DDoc: public Container
 public:
     static const string TYPE, EXT;
 };
+class ASiCS: public Container
+{
+public:
+    static const string TYPE, EXT;
+};
 const string BDoc2::TYPE = "application/vnd.etsi.asic-e+zip";
 const string DDoc::TYPE = "DIGIDOC-XML/1.3";
 const string BDoc2::EXT = "asice";
 const string DDoc::EXT = "ddoc";
+const string ASiCS::TYPE = "application/vnd.etsi.asic-s+zip";
+const string ASiCS::EXT = "asics";
 }
 
 static void translate_exception(const Exception &e)
@@ -550,5 +557,55 @@ BOOST_AUTO_TEST_CASE(FromUriPathPreservesTrailingPercentageSign)
     string result = util::File::fromUriPath(asciiEncodedStr);
 
     BOOST_CHECK_EQUAL(expectedDecodedStr, result);
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(ASiCSTestSuite)
+BOOST_AUTO_TEST_CASE(OpenValidASiCSContainer)
+{
+    unique_ptr<Container> d(Container::open("test.asics"));
+    BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
+
+    const DataFile *doc = d->dataFiles().front();
+    BOOST_CHECK_EQUAL(doc->fileName(), "test1.txt");
+
+    const auto ts = d->signatures().front();
+    BOOST_CHECK_NO_THROW(ts->validate());
+    if(ts)
+    {
+        BOOST_CHECK_EQUAL("8766262679921277358", ts->id()); // Serial number: 0x79A805763478B9AE
+        BOOST_WARN_EQUAL("2016-11-02T11:07:45Z", ts->TimeStampTime().substr(0, 16));
+        BOOST_CHECK_EQUAL("DEMO of SK TSA 2014", ts->TimeStampCertificate().subjectName("CN"));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(OpenValidASiCSContainerWithOtherMeta)
+{
+    unique_ptr<Container> d(Container::open("test-meta.asics"));
+    BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
+
+    const DataFile *doc = d->dataFiles().front();
+    BOOST_CHECK_EQUAL(doc->fileName(), "test1.txt");
+
+    const auto ts = d->signatures().front();
+    BOOST_CHECK_NO_THROW(ts->validate());
+}
+
+BOOST_AUTO_TEST_CASE(OpenInvalidTsASiCSContainer)
+{
+    unique_ptr<Container> d(Container::open("test-invalid.asics"));
+    BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
+
+    const DataFile *doc = d->dataFiles().front();
+    BOOST_CHECK_EQUAL(doc->fileName(), "test2.txt");
+
+    const auto ts = d->signatures().front();
+    BOOST_CHECK_THROW(ts->validate(), Exception);
 }
 BOOST_AUTO_TEST_SUITE_END()

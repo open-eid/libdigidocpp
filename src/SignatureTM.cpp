@@ -19,7 +19,7 @@
 
 #include "SignatureTM.h"
 
-#include "BDoc.h"
+#include "ASiC_E.h"
 #include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/X509CertStore.h"
@@ -43,12 +43,12 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
     return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
-SignatureTM::SignatureTM(unsigned int id, BDoc *bdoc, Signer *signer)
+SignatureTM::SignatureTM(unsigned int id, ASiC_E *bdoc, Signer *signer)
 : SignatureBES(id, bdoc, signer)
 {
 }
 
-SignatureTM::SignatureTM(istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation)
+SignatureTM::SignatureTM(istream &sigdata, ASiC_E *bdoc, bool relaxSchemaValidation)
 : SignatureBES(sigdata, bdoc, relaxSchemaValidation)
 {
 }
@@ -150,7 +150,7 @@ void SignatureTM::validate() const
             if(!X509CertStore::instance()->verify(ocsp.responderCert(), &producedAt_t))
                 EXCEPTION_ADD(exception, "Unable to verify responder certificate");
 
-            if(profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
+            if(profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos)
             {
                 string method = Digest::digestInfoUri(ocsp.nonce());
                 if(method.empty())
@@ -186,7 +186,7 @@ void SignatureTM::validate() const
  */
 void SignatureTM::extendSignatureProfile(const std::string &profile)
 {
-    if(profile == BDoc::BES_PROFILE || profile == BDoc::EPES_PROFILE)
+    if(profile == ASiC_E::BES_PROFILE || profile == ASiC_E::EPES_PROFILE)
         return;
 
     // Calculate NONCE value.

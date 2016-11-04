@@ -19,7 +19,7 @@
 
 #include "SignatureBES.h"
 
-#include "BDoc.h"
+#include "ASiC_E.h"
 #include "log.h"
 #include "Conf.h"
 #include "DataFile_p.h"
@@ -122,7 +122,7 @@ public:
 class URIResolver: public XSECURIResolverXerces
 {
 public:
-    URIResolver(BDoc *doc):doc_(doc) {}
+    URIResolver(ASiC_E *doc):doc_(doc) {}
 
     BinInputStream *resolveURI(const XMLCh *uri)
     {
@@ -153,7 +153,7 @@ public:
     }
 
 private:
-    BDoc *doc_;
+    ASiC_E *doc_;
 };
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
@@ -166,7 +166,7 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 /**
  * Creates an empty BDOC-BES signature with mandatory XML nodes.
  */
-SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
+SignatureBES::SignatureBES(unsigned int id, ASiC_E *bdoc, Signer *signer)
  : signature(nullptr)
  , asicsignature(nullptr)
  , bdoc(bdoc)
@@ -190,8 +190,8 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
     SignedPropertiesType signedProperties;
     signedProperties.signedSignatureProperties(SignedSignaturePropertiesType());
     signedProperties.id(nr + "-SignedProperties");
-    if(signer->profile().find(BDoc::ASIC_TM_PROFILE) != string::npos ||
-       signer->profile().find(BDoc::EPES_PROFILE) != string::npos)
+    if(signer->profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos ||
+       signer->profile().find(ASiC_E::EPES_PROFILE) != string::npos)
     {
         map<string,Policy>::const_iterator p = policylist.cbegin();
         IdentifierType identifierid(p->first);
@@ -275,7 +275,7 @@ SignatureBES::SignatureBES(unsigned int id, BDoc *bdoc, Signer *signer)
  *                              produced by other systems; default = false
  * @throws SignatureException
  */
-SignatureBES::SignatureBES(istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation)
+SignatureBES::SignatureBES(istream &sigdata, ASiC_E *bdoc, bool relaxSchemaValidation)
  : signature(nullptr)
  , asicsignature(nullptr)
  , bdoc(bdoc)
@@ -396,7 +396,7 @@ string SignatureBES::policy() const
  */
 string SignatureBES::profile() const
 {
-    string base = policy().empty() ? BDoc::BES_PROFILE : BDoc::EPES_PROFILE;
+    string base = policy().empty() ? ASiC_E::BES_PROFILE : ASiC_E::EPES_PROFILE;
     try {
         const QualifyingPropertiesType::UnsignedPropertiesOptional &up = qualifyingProperties().unsignedProperties();
         if(!up.present())
@@ -408,14 +408,14 @@ string SignatureBES::profile() const
         if(!usp->signatureTimeStamp().empty())
         {
             if(!usp->archiveTimeStampV141().empty())
-                return base + "/" + BDoc::ASIC_TSA_PROFILE;
-            return base + "/" + BDoc::ASIC_TS_PROFILE;
+                return base + "/" + ASiC_E::ASIC_TSA_PROFILE;
+            return base + "/" + ASiC_E::ASIC_TS_PROFILE;
         }
         if(!usp->revocationValues().empty())
         {
             if(!usp->archiveTimeStampV141().empty())
-                return base + "/" + BDoc::ASIC_TMA_PROFILE;
-            return base + "/" + BDoc::ASIC_TM_PROFILE;
+                return base + "/" + ASiC_E::ASIC_TMA_PROFILE;
+            return base + "/" + ASiC_E::ASIC_TM_PROFILE;
         }
     }
     catch(const Exception &) {}
@@ -474,7 +474,7 @@ void SignatureBES::validate() const
     if(signerRoles().size() > 1)
         EXCEPTION_ADD(exception, "More than 1 signer role is not supported");
 
-    if(profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
+    if(profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos)
     {
         if(SPUri().empty())
             EXCEPTION_ADD(exception, "Signature SPUri is missing");
