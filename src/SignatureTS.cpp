@@ -19,7 +19,7 @@
 
 #include "SignatureTS.h"
 
-#include "BDoc.h"
+#include "ASiC_E.h"
 #include "Conf.h"
 #include "log.h"
 #include "crypto/Digest.h"
@@ -44,9 +44,9 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 }
 
 
-SignatureTS::SignatureTS(unsigned int id, BDoc *bdoc, Signer *signer): SignatureTM(id, bdoc, signer) {}
+SignatureTS::SignatureTS(unsigned int id, ASiC_E *bdoc, Signer *signer): SignatureTM(id, bdoc, signer) {}
 
-SignatureTS::SignatureTS(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation): SignatureTM(sigdata, bdoc, relaxSchemaValidation) {}
+SignatureTS::SignatureTS(std::istream &sigdata, ASiC_E *bdoc, bool relaxSchemaValidation): SignatureTM(sigdata, bdoc, relaxSchemaValidation) {}
 
 SignatureTS::~SignatureTS() {}
 
@@ -68,7 +68,7 @@ string SignatureTS::trustedSigningTime() const
 
 void SignatureTS::extendSignatureProfile(const std::string &profile)
 {
-    if(profile.find(BDoc::ASIC_TS_PROFILE) != string::npos)
+    if(profile.find(ASiC_E::ASIC_TS_PROFILE) != string::npos)
     {
         if(!qualifyingProperties().unsignedProperties().present())
         {
@@ -119,7 +119,7 @@ void SignatureTS::validate() const
         for(const Exception &ex: e.causes())
             exception.addCause(ex);
     }
-    if(profile().find(BDoc::ASIC_TS_PROFILE) == string::npos)
+    if(profile().find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
     {
         if(!exception.causes().empty())
             throw exception;

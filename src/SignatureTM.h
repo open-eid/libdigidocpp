@@ -30,8 +30,8 @@ namespace xades { class OCSPRefType; class UnsignedSignaturePropertiesType; }
 class SignatureTM: public SignatureBES
 {
 public:
-    SignatureTM(unsigned int id, BDoc *bdoc, Signer *signer);
-    SignatureTM(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation = false);
+    SignatureTM(unsigned int id, ASiC_E *bdoc, Signer *signer);
+    SignatureTM(std::istream &sigdata, ASiC_E *bdoc, bool relaxSchemaValidation = false);
     virtual ~SignatureTM();
 
     virtual std::string trustedSigningTime() const override;
