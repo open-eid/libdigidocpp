@@ -27,8 +27,8 @@ namespace digidoc
 class SignatureTS: public SignatureTM
 {
 public:
-    SignatureTS(unsigned int id, BDoc *bdoc, Signer *signer);
-    SignatureTS(std::istream &sigdata, BDoc *bdoc, bool relaxSchemaValidation = false);
+    SignatureTS(unsigned int id, ASiC_E *bdoc, Signer *signer);
+    SignatureTS(std::istream &sigdata, ASiC_E *bdoc, bool relaxSchemaValidation = false);
     virtual ~SignatureTS();
 
     virtual std::string trustedSigningTime() const override;

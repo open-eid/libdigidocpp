@@ -23,7 +23,7 @@
 
 namespace digidoc
 {
-    class BDocPrivate;
+    class ASiC_EPrivate;
     class ZipSerialize;
 
     /**
@@ -39,7 +39,7 @@ namespace digidoc
      *
      * @author Janari Põld
      */
-    class BDoc: public Container
+    class ASiC_E: public Container
     {
 
       public:
@@ -52,7 +52,7 @@ namespace digidoc
           static const std::string ASIC_TMA_PROFILE;
           static const std::string ASIC_TSA_PROFILE;
 
-          virtual ~BDoc();
+          virtual ~ASiC_E();
           void save(const std::string &path = "") override;
           std::string mediaType() const override;
 
@@ -71,13 +71,13 @@ namespace digidoc
           static Container* openInternal(const std::string &path);
 
       private:
-          BDoc();
-          BDoc(const std::string &path);
-          DISABLE_COPY(BDoc);
+          ASiC_E();
+          ASiC_E(const std::string &path);
+          DISABLE_COPY(ASiC_E);
           void createManifest(std::ostream &os);
           void readMimetype(std::istream &path);
           void parseManifestAndLoadFiles(const ZipSerialize &z, const std::vector<std::string> &list);
 
-          BDocPrivate *d;
+          ASiC_EPrivate *d;
     };
 }

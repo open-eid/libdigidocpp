@@ -17,7 +17,7 @@
  *
  */
 
-#include "BDoc.h"
+#include "ASiC_E.h"
 
 #include "Container.h"
 #include "Conf.h"
@@ -43,7 +43,7 @@ using namespace manifest;
 
 namespace digidoc
 {
-class BDocPrivate
+class ASiC_EPrivate
 {
 public:
     ZipSerialize::Properties propertie(const string &file)
@@ -67,21 +67,21 @@ public:
 };
 }
 
-const string BDoc::ASIC_MIMETYPE = "application/vnd.etsi.asic-e+zip";
-const string BDocPrivate::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
+const string ASiC_E::ASIC_MIMETYPE = "application/vnd.etsi.asic-e+zip";
+const string ASiC_EPrivate::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 
-const string BDoc::BES_PROFILE = "BES";
-const string BDoc::EPES_PROFILE = "EPES";
-const string BDoc::ASIC_TM_PROFILE = "time-mark";
-const string BDoc::ASIC_TS_PROFILE = "time-stamp";
-const string BDoc::ASIC_TSA_PROFILE = ASIC_TS_PROFILE + "-archive";
-const string BDoc::ASIC_TMA_PROFILE = ASIC_TM_PROFILE + "-archive";
+const string ASiC_E::BES_PROFILE = "BES";
+const string ASiC_E::EPES_PROFILE = "EPES";
+const string ASiC_E::ASIC_TM_PROFILE = "time-mark";
+const string ASiC_E::ASIC_TS_PROFILE = "time-stamp";
+const string ASiC_E::ASIC_TSA_PROFILE = ASIC_TS_PROFILE + "-archive";
+const string ASiC_E::ASIC_TMA_PROFILE = ASIC_TM_PROFILE + "-archive";
 
 /**
  * Initialize BDOC container.
  */
-BDoc::BDoc()
- : d(new BDocPrivate)
+ASiC_E::ASiC_E()
+ : d(new ASiC_EPrivate)
 {
 }
 
@@ -89,10 +89,10 @@ BDoc::BDoc()
  * Opens BDOC container from a file
  */
 
-BDoc::BDoc(const string &path)
- : d(new BDocPrivate)
+ASiC_E::ASiC_E(const string &path)
+ : d(new ASiC_EPrivate)
 {
-    DEBUG("BDoc::BDoc(path = '%s')", path.c_str());
+    DEBUG("ASiC_E::ASiC_E(path = '%s')", path.c_str());
     ZipSerialize z(d->path = path, false);
 
     vector<string> list = z.list();
@@ -111,7 +111,7 @@ BDoc::BDoc(const string &path)
 /**
  * Releases resources.
  */
-BDoc::~BDoc()
+ASiC_E::~ASiC_E()
 {
     for_each(d->signatures.begin(), d->signatures.end(), [](Signature *s){ delete s; });
     for_each(d->documents.begin(), d->documents.end(), [](DataFile *file){ delete file; });
@@ -124,9 +124,9 @@ BDoc::~BDoc()
  *
  * @throws IOException is thrown if there was a failure saving BDOC container. For example added
  *         document does not exist.
- * @throws ContainerException is thrown if BDoc class is not correctly initialized.
+ * @throws ContainerException is thrown if ASiC_E class is not correctly initialized.
  */
-void BDoc::save(const string &path)
+void ASiC_E::save(const string &path)
 {
     if(d->documents.empty())
         THROW("Can not save, BDoc container is empty.");
@@ -169,7 +169,7 @@ void BDoc::save(const string &path)
  *         with same file name already exists. Also no document can be added if the
  *         container already has one or more signatures.
  */
-void BDoc::addDataFile(const string &path, const string &mediaType)
+void ASiC_E::addDataFile(const string &path, const string &mediaType)
 {
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
@@ -202,7 +202,7 @@ void BDoc::addDataFile(const string &path, const string &mediaType)
     }
 }
 
-void BDoc::addDataFile(istream *is, const string &fileName, const string &mediaType)
+void ASiC_E::addDataFile(istream *is, const string &fileName, const string &mediaType)
 {
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
@@ -216,9 +216,9 @@ void BDoc::addDataFile(istream *is, const string &fileName, const string &mediaT
     d->documents.push_back(new DataFilePrivate(is, fileName, mediaType));
 }
 
-Container* BDoc::createInternal(const string &path)
+Container* ASiC_E::createInternal(const string &path)
 {
-    BDoc *doc = new BDoc();
+    ASiC_E *doc = new ASiC_E();
     doc->d->path = path;
     return doc;
 }
@@ -228,7 +228,7 @@ Container* BDoc::createInternal(const string &path)
  *
  * @return returns dataFiles.
  */
-vector<DataFile*> BDoc::dataFiles() const
+vector<DataFile*> ASiC_E::dataFiles() const
 {
     return d->documents;
 }
@@ -241,7 +241,7 @@ vector<DataFile*> BDoc::dataFiles() const
  * @throws ContainerException throws exception if the document id is incorrect or there are
  *         one or more signatures.
  */
-void BDoc::removeDataFile(unsigned int id)
+void ASiC_E::removeDataFile(unsigned int id)
 {
     if(!d->signatures.empty())
         THROW("Can not remove document from container which has signatures, remove all signatures before removing document.");
@@ -257,11 +257,11 @@ void BDoc::removeDataFile(unsigned int id)
 }
 
 /**
- * @return returns BDoc container mimetype.
+ * @return returns ASiC_E container mimetype.
  */
-string BDoc::mediaType() const
+string ASiC_E::mediaType() const
 {
-    return BDoc::ASIC_MIMETYPE;
+    return ASiC_E::ASIC_MIMETYPE;
 }
 
 /**
@@ -270,7 +270,7 @@ string BDoc::mediaType() const
  * @param signature signature, which is added to the container.
  * @throws ContainerException throws exception if there are no documents in container.
  */
-void BDoc::addAdESSignature(istream &sigdata)
+void ASiC_E::addAdESSignature(istream &sigdata)
 {
     if(d->documents.empty())
         THROW("No documents in container, can not add signature.");
@@ -285,9 +285,9 @@ void BDoc::addAdESSignature(istream &sigdata)
     }
 }
 
-Container* BDoc::openInternal(const string &path)
+Container* ASiC_E::openInternal(const string &path)
 {
-    return new BDoc(path);
+    return new ASiC_E(path);
 }
 
 /**
@@ -297,7 +297,7 @@ Container* BDoc::openInternal(const string &path)
  * @return returns signature referenced by signature id.
  * @throws ContainerException throws exception if the signature id is incorrect.
  */
-vector<Signature *> BDoc::signatures() const
+vector<Signature *> ASiC_E::signatures() const
 {
     return d->signatures;
 }
@@ -308,7 +308,7 @@ vector<Signature *> BDoc::signatures() const
  * @param id signature's id, which will be removed.
  * @throws ContainerException throws exception if the signature id is incorrect.
  */
-void BDoc::removeSignature(unsigned int id)
+void ASiC_E::removeSignature(unsigned int id)
 {
     if(d->signatures.size() > id)
     {
@@ -330,9 +330,9 @@ void BDoc::removeSignature(unsigned int id)
  * @return returns created manifest file path.
  * @throws IOException exception is thrown if manifest file creation failed.
  */
-void BDoc::createManifest(ostream &os)
+void ASiC_E::createManifest(ostream &os)
 {
-    DEBUG("BDoc::createManifest()");
+    DEBUG("ASiC_E::createManifest()");
 
     try
     {
@@ -342,7 +342,7 @@ void BDoc::createManifest(ostream &os)
             manifest.file_entry().push_back(File_entry(file->fileName(), file->mediaType()));
 
         xml_schema::NamespaceInfomap map;
-        map["manifest"].name = BDocPrivate::MANIFEST_NAMESPACE;
+        map["manifest"].name = ASiC_EPrivate::MANIFEST_NAMESPACE;
         manifest::manifest(os, manifest, map, "", xml_schema::Flags::dont_initialize);
         if(os.fail())
             THROW("Failed to create manifest XML");
@@ -360,9 +360,9 @@ void BDoc::createManifest(ostream &os)
  * @throws IOException exception is thrown if there was error reading mimetype file from disk.
  * @throws ContainerException exception is thrown if the parsed mimetype is incorrect.
  */
-void BDoc::readMimetype(istream &is)
+void ASiC_E::readMimetype(istream &is)
 {
-    DEBUG("BDoc::readMimetype()");
+    DEBUG("ASiC_E::readMimetype()");
     unsigned char bom[] = { 0, 0, 0 };
     is.read((char*)bom, sizeof(bom));
     // Contains UTF-16 BOM
@@ -379,8 +379,9 @@ void BDoc::readMimetype(istream &is)
         THROW("Failed to read mimetype.");
 
     DEBUG("mimetype = '%s'", mimetype.c_str());
-    if(mimetype != BDoc::ASIC_MIMETYPE)
+    if(mimetype != ASiC_E::ASIC_MIMETYPE)
         THROW("Incorrect mimetype '%s'", mimetype.c_str());
+
 }
 
 /**
@@ -394,9 +395,9 @@ void BDoc::readMimetype(istream &is)
  * @throws IOException exception is thrown if the manifest.xml file parsing failed.
  * @throws ContainerException
  */
-void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string> &list)
+void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string> &list)
 {
-    DEBUG("BDoc::readManifest()");
+    DEBUG("ASiC_E::readManifest()");
 
     size_t mcount = count(list.begin(), list.end(), "META-INF/manifest.xml");
     if(mcount < 1)
@@ -409,7 +410,7 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
         stringstream manifestdata;
         z.extract("META-INF/manifest.xml", manifestdata);
         xml_schema::Properties properties;
-        properties.schema_location(BDocPrivate::MANIFEST_NAMESPACE,
+        properties.schema_location(ASiC_EPrivate::MANIFEST_NAMESPACE,
             File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
         unique_ptr<Manifest> manifest(manifest::manifest(manifestdata, xml_schema::Flags::dont_initialize|xml_schema::Flags::dont_validate, properties).release());
 
@@ -501,25 +502,25 @@ void BDoc::parseManifestAndLoadFiles(const ZipSerialize &z, const vector<string>
     }
 }
 
-Signature* BDoc::prepareSignature(Signer *signer)
+Signature* ASiC_E::prepareSignature(Signer *signer)
 {
     if(d->documents.empty())
         THROW("No documents in container, can not sign container.");
     if(!signer)
-        THROW("Null pointer in BDoc::sign");
+        THROW("Null pointer in ASiC_E::sign");
 
     SignatureA *signature = new SignatureA(newSignatureId(), this, signer);
     d->signatures.push_back(signature);
     return signature;
 }
 
-Signature *BDoc::sign(Signer* signer)
+Signature *ASiC_E::sign(Signer* signer)
 {
     SignatureA *s = static_cast<SignatureA*>(prepareSignature(signer));
     try
     {
         s->setSignatureValue(signer->sign(s->signatureMethod(), s->dataToSign()));
-        s->extendSignatureProfile(signer->profile().empty() ? BDoc::ASIC_TS_PROFILE : signer->profile());
+        s->extendSignatureProfile(signer->profile().empty() ? ASiC_E::ASIC_TS_PROFILE : signer->profile());
     }
     catch(const Exception& e)
     {

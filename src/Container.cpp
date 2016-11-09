@@ -19,7 +19,7 @@
 
 #include "Container.h"
 
-#include "BDoc.h"
+#include "ASiC_E.h"
 #include "DDoc.h"
 #include "RDoc.h"
 #include "DataFile.h"
@@ -230,7 +230,7 @@ Container* Container::create(const std::string &path)
         if(Container *container = create(path))
             return container;
     }
-    return BDoc::createInternal(path);
+    return ASiC_E::createInternal(path);
 }
 
 /**
@@ -280,7 +280,7 @@ Container* Container::open(const string &path)
         if(Container *container = open(path))
             return container;
     }
-    return BDoc::openInternal(path);
+    return ASiC_E::openInternal(path);
 }
 
 /**

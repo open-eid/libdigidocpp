@@ -221,7 +221,7 @@ add_library(digidocpp ${BUILD_TYPE}
     ${CRYPTO_SOURCE}
     ${XML_HEADER}
     libdigidocpp.rc
-    BDoc.cpp
+    ASiC_E.cpp
     Conf.cpp
     Container.cpp
     XmlConf.cpp
