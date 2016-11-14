@@ -2,7 +2,7 @@
 set -e
 
 XERCES_DIR=xerces-c-3.1.4
-XMLSEC_DIR=xml-security-c-1.7.2
+XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2j
 LIBXML2_DIR=libxml2-2.9.3
@@ -38,7 +38,7 @@ case "$@" in
   export CXX=${CROSS_COMPILE}-clang++
   export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
-  CONFIGURE="--host=${ARCH}-unknown-linux --disable-static --enable-shared --with-sysroot=${SYSROOT}"
+  CONFIGURE="--host=${CROSS_COMPILE} --disable-static --enable-shared --with-sysroot=${SYSROOT}"
 
   if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
     curl -O https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
@@ -80,7 +80,6 @@ case "$@" in
   ;;
 *)
   echo "Building for OSX"
-  XMLSEC_DIR=xml-security-c-1.7.3
   TARGET_PATH=/Library/EstonianIDCard
   CONFIGURE="--disable-static"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
@@ -167,6 +166,7 @@ function xml_security {
     *android*) patch -Np1 -i ../examples/libdigidocpp-android/xmlsec.patch ;;
     *) ;;
     esac
+    sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${TARGET_PATH} --with-xalan=${TARGET_PATH}
     make -s
     sudo make install
