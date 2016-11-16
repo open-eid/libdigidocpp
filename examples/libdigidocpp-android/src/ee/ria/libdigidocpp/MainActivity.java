@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
 			System.loadLibrary("xalan-c");
 			System.loadLibrary("xml-security-c");
 			System.loadLibrary("digidoc_java");
-			digidoc.initJava(getCacheDir().getAbsolutePath());
+			digidoc.initializeLib("libdigidoc Android", getCacheDir().getAbsolutePath());
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 			Container doc = Container.open(getCacheDir().getAbsolutePath() + "/test.bdoc");
 			content.append("DataFiles:\n");

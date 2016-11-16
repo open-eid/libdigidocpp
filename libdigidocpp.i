@@ -49,6 +49,21 @@
 
 #include <vector>
 
+class DigiDocConf: public digidoc::XmlConfCurrent
+{
+public:
+    DigiDocConf(const std::string &_cache)
+        : digidoc::XmlConfCurrent(), cache(_cache) {}
+    int logLevel() const override { return 4; }
+    std::string logFile() const override { return cache + "/digidocpp.log"; }
+    std::string PKCS12Cert() const override { return cache + "/" + digidoc::util::File::fileName(digidoc::XmlConfCurrent::PKCS12Cert()); }
+    std::string TSLCache() const override { return cache; }
+    std::string xsdPath() const override { return cache; }
+
+private:
+    std::string cache;
+};
+
 class WebSignerPrivate: public digidoc::Signer
 {
 public:
@@ -71,6 +86,16 @@ static std::string parseException(const digidoc::Exception &e) {
     return msg;
 }
 
+namespace digidoc {
+    static void initializeLib(const std::string &appName, const std::string &path)
+    {
+        digidoc::Conf::init(new DigiDocConf(path));
+        digidoc::initialize(appName);
+        digidoc::Exception::addWarningIgnore(digidoc::Exception::ReferenceDigestWeak);
+        digidoc::Exception::addWarningIgnore(digidoc::Exception::SignatureDigestWeak);
+    }
+}
+
 #ifdef SWIGCSHARP
 extern "C"
 {
@@ -83,50 +108,6 @@ extern "C"
     SWIGEXPORT void* SWIGSTDCALL ByteVector_to(unsigned char *data, int size) {
        return new std::vector<unsigned char>(data, data + size);
     }
-}
-#endif
-
-#ifdef SWIGJAVA
-class DigiDocConf: public digidoc::XmlConfCurrent
-{
-public:
-    DigiDocConf(const std::string &_cache)
-        : digidoc::XmlConfCurrent(), cache(_cache) {}
-    int logLevel() const override { return 4; }
-    std::string logFile() const override { return cache + "/digidocpp.log"; }
-    std::string PKCS12Cert() const override { return cache + "/" + digidoc::util::File::fileName(digidoc::XmlConfCurrent::PKCS12Cert()); }
-    std::string TSLCache() const override { return cache; }
-    std::string xsdPath() const override { return cache; }
-
-private:
-    std::string cache;
-};
-
-extern "C"
-{
-SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jenv, jclass jcls, jstring path) {
-  (void)jcls;
-  if(!path) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
-    return;
-  }
-
-  const char *path_pstr = (const char *)jenv->GetStringUTFChars(path, 0); 
-  if (!path_pstr)
-    return;
-  std::string path_str(path_pstr);
-  jenv->ReleaseStringUTFChars(path, path_pstr); 
-
-  try {
-    digidoc::Conf::init(new DigiDocConf(path_str));
-    digidoc::initialize();
-    digidoc::Exception::addWarningIgnore(digidoc::Exception::ReferenceDigestWeak);
-    digidoc::Exception::addWarningIgnore(digidoc::Exception::SignatureDigestWeak);
-  } catch (const digidoc::Exception &e) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, parseException(e).c_str());
-    return;
-  }
-}
 }
 #endif
 %}
@@ -142,8 +123,6 @@ SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jen
 %}
 
 #ifdef SWIGJAVA
-%native(initJava) void initJava(char *);
-
 %typemap(in) std::vector<unsigned char> %{
     jbyte *$input_ptr = jenv->GetByteArrayElements($input, NULL);
     jsize $input_size = jenv->GetArrayLength($input);
@@ -226,13 +205,20 @@ SWIGEXPORT void JNICALL Java_ee_ria_libdigidocpp_digidocJNI_initJava(JNIEnv *jen
 %include "crypto/Signer.h"
 %include "crypto/PKCS12Signer.h"
 %include "crypto/PKCS11Signer.h"
-#ifdef SWIGWIN
+#ifdef SWIGCSHARP
 %include "crypto/WinSigner.h"
 #endif
 
 %template(StringVector) std::vector<std::string>;
 %template(DataFiles) std::vector<digidoc::DataFile*>;
 %template(Signatures) std::vector<digidoc::Signature*>;
+
+namespace digidoc {
+    static void initializeLib(const std::string &appName, const std::string &path)
+    {
+        initializeLib(appName, path);
+    }
+}
 
 // override X509Cert methods to return byte array
 %extend digidoc::Signer {
