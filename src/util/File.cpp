@@ -671,3 +671,16 @@ string File::fromUriPath(const string &path)
     }
     return ret;
 }
+
+vector<unsigned char> File::hexToBin(const string &in)
+{
+    vector<unsigned char> out;
+    char data[] = "00";
+    for(string::const_iterator i = in.cbegin(); distance(i, in.cend()) >= 2;)
+    {
+        data[0] = *(i++);
+        data[1] = *(i++);
+        out.push_back(static_cast<unsigned char>(strtoul(data, 0, 16)));
+    }
+    return out;
+}

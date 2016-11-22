@@ -389,47 +389,15 @@ void OCSP::verifyResponse(const X509Cert &cert) const
 {
     if(!resp)
         THROW("Failed to verify OCSP response.");
-    SCOPE(X509_STORE, store, X509_STORE_new());
-    STACK_OF(X509) *stack = sk_X509_new_null();
-    for(const X509Cert &i: X509CertStore::instance()->certs())
-    {
-        X509_STORE_add_cert(store.get(), i.handle());
-        sk_X509_push(stack, i.handle());
-    }
-    OpenSSLException(); // Clear errors
-    X509_STORE_set_verify_cb_func(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int {
-        int err = X509_STORE_CTX_get_error(ctx);
-        switch(err)
-        {
-        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
-        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
-        case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
-        case X509_V_ERR_CERT_UNTRUSTED:
-        {
-            const vector<X509Cert> &list = X509CertStore::instance()->certs();
-            if(find(list.begin(), list.end(), X509Cert(ctx->current_cert)) != list.end())
-                return 1;
-            return ok;
-        }
-        default: return ok;
-        }
-    });
-
-    tm t = util::date::ASN1TimeToTM(producedAt());
-    X509_VERIFY_PARAM_set_time(store->param, util::date::mkgmtime(t));
-    X509_STORE_set_flags(store.get(), X509_V_FLAG_USE_CHECK_TIME);
-
-    //X509_STORE_set_trust(store.get(), X509_TRUST_TRUSTED);
-    //X509_STORE_set_purpose(store.get(), NID_OCSP_sign);
-
+    time_t t = util::date::ASN1TimeToTime_t(producedAt());
+    SCOPE(X509_STORE, store, X509CertStore::createStore(&t));
     //OCSP_TRUSTOTHER - enables OCSP_NOVERIFY
     //OCSP_NOSIGS - does not verify ocsp signatures
     //OCSP_NOVERIFY - ignores signer(responder) cert verification, requires store otherwise crashes
     //OCSP_NOCHECKS - cancel futurer responder issuer checks and trust bits
     //OCSP_NOEXPLICIT - returns 0 by mistake
     //all checks enabled fails trust bit check, cant use OCSP_NOEXPLICIT instead using OCSP_NOCHECKS
-    int result = OCSP_basic_verify(basic.get(), stack, store.get(), OCSP_NOCHECKS);
-    sk_X509_free(stack);
+    int result = OCSP_basic_verify(basic.get(), nullptr, store.get(), OCSP_NOCHECKS);
     if(result <= 0)
         THROW_OPENSSLEXCEPTION("Failed to verify OCSP response.");
 

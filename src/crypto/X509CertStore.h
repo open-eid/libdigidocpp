@@ -21,6 +21,8 @@
 
 #include "X509Cert.h"
 
+typedef struct x509_store_st X509_STORE;
+
 namespace digidoc
 {
     /**
@@ -35,6 +37,7 @@ namespace digidoc
           void activate(const std::string &territory) const;
           std::vector<X509Cert> certs() const;
           X509Cert findIssuer(const X509Cert &cert) const;
+          static X509_STORE* createStore(time_t *t = nullptr);
           bool verify(const X509Cert &cert, time_t *t = nullptr) const;
 
       private:

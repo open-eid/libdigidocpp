@@ -1009,14 +1009,17 @@ static int tslcmd(int , char* [])
         parseException(e, "Caught Exception:");
         returnCode = EXIT_FAILURE;
     }
-    for(const X509Cert &x: t.certs())
-        cout << "    Cert: " << x << endl;
+    for(const TSL::Service &s: t.services())
+    {
+        for(const X509Cert &x: s.certs)
+            cout << "    Cert: " << x << endl;
+    }
     for(const TSL::Pointer &p: t.pointers())
     {
         cout << "    Pointer: " << p.territory << endl
             << "        Url: " << p.location << endl;
         for(const X509Cert &cert: p.certs)
-            cout << "       Cert: " << cert << endl;
+            cout << "     Signer: " << cert << endl;
         TSL tp(cache + "/" + p.territory + ".xml");
         cout << "    TSL: " << p.location << endl
             << "             Type: " << tp.type() << endl
@@ -1033,8 +1036,11 @@ static int tslcmd(int , char* [])
             parseException(e, "Caught Exception:");
             returnCode = EXIT_FAILURE;
         }
-        for(const X509Cert &x: tp.certs())
-            cout << "             Cert: " << x << endl;
+        for(const TSL::Service &s: tp.services())
+        {
+            for(const X509Cert &x: s.certs)
+                cout << "             Cert: " << x << endl;
+        }
     };
     return returnCode;
 }

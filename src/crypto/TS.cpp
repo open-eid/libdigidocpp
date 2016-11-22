@@ -25,6 +25,7 @@
 #include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509CertStore.h"
+#include "util/DateTime.h"
 
 #ifndef OPENSSL_NO_CMS
 #include <openssl/cms.h>
@@ -208,37 +209,14 @@ void TS::verify(const Digest &digest)
 {
     vector<unsigned char> data = digest.result();
 
-    SCOPE(X509_STORE, store, X509_STORE_new());
+    time_t t = util::date::ASN1TimeToTime_t(time());
+    SCOPE(X509_STORE, store, X509CertStore::createStore(&t));
     X509CertStore::instance()->activate(cert().issuerName("C"));
-    for(const X509Cert &i: X509CertStore::instance()->certs())
-        X509_STORE_add_cert(store.get(), i.handle());
-    OpenSSLException(); // Clear errors
-
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
     if (!csc)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
-
     if(!X509_STORE_CTX_init(csc.get(), store.get(), 0, 0))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
-
-    X509_STORE_set_verify_cb_func(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int {
-        switch(X509_STORE_CTX_get_error(ctx))
-        {
-        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
-        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
-        case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
-        case X509_V_ERR_CERT_UNTRUSTED:
-        {
-            const vector<X509Cert> &list = X509CertStore::instance()->certs();
-            if(find(list.begin(), list.end(), X509Cert(ctx->current_cert)) != list.end())
-                ok = 1;
-            break;
-        }
-        case X509_V_ERR_INVALID_PURPOSE: ok = 1; break;
-        default: break;
-        }
-        return ok;
-    });
 
     if(d)
     {

@@ -27,10 +27,13 @@ namespace digidoc
 {
 class Exception;
 namespace tsl { class TrustStatusListType; class InternationalNamesType; }
+
 class TSL
 {
 public:
+    struct Validity { time_t start, end; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
+    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; };
 
     TSL(const std::string &file);
     bool isExpired() const;
@@ -45,15 +48,15 @@ public:
     std::string url() const;
 
     std::vector<Pointer> pointers() const;
-    std::vector<X509Cert> certs() const;
+    std::vector<Service> services() const;
 
     static bool activate(const std::string &territory);
-    static std::vector<X509Cert> parse(int timeout);
+    static std::vector<Service> parse(int timeout);
 
 private:
     struct Result
     {
-        std::vector<X509Cert> certs;
+        std::vector<Service> services;
         bool expired;
     };
 
@@ -64,7 +67,8 @@ private:
     static const std::set<std::string> SCHEMES_URI;
     static const std::set<std::string> GENERIC_URI;
     static const std::set<std::string> SERVICETYPE;
-    static const std::set<std::string> SERVICESTATUS;
+    static const std::set<std::string> SERVICESTATUS_START;
+    static const std::set<std::string> SERVICESTATUS_END;
 
     std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en") const;
     void validateLastModified(const std::string &url, int timeout);
