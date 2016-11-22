@@ -63,14 +63,27 @@ const set<string> TSL::GENERIC_URI = {
     "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric",
 };
 
-const set<string> TSL::SERVICESTATUS = {
+const set<string> TSL::SERVICESTATUS_START = {
     "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/Svcstatus/undersupervision",
+    //ts_119612v010201
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionincessation",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accredited",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/setbynationallaw",
+    //ts_119612v020201
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/granted",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/recognisedatnationallevel",
+};
+
+const set<string> TSL::SERVICESTATUS_END = {
+    //ts_119612v010201
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionceased",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionrevoked",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accreditationceased",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accreditationrevoked",
+    //ts_119612v020201
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/withdrawn",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/deprecatedatnationallevel",
 };
 
 const set<string> TSL::SERVICETYPE = {
@@ -143,53 +156,64 @@ bool TSL::activate(const string &territory)
     return true;
 }
 
-vector<X509Cert> TSL::certs() const
+vector<TSL::Service> TSL::services() const
 {
-    vector<X509Cert> certs;
-    if(GENERIC_URI.find(type()) == GENERIC_URI.end() ||
+    vector<Service> services;
+    if(GENERIC_URI.find(type()) == GENERIC_URI.cend() ||
         !tsl->trustServiceProviderList().present())
-        return certs;
+        return services;
 
-    for(const TrustServiceProviderListType::TrustServiceProviderType &pointer:
-        tsl->trustServiceProviderList()->trustServiceProvider())
+    for(const TSPType &pointer: tsl->trustServiceProviderList()->trustServiceProvider())
     {
-        for(const TSPServicesListType::TSPServiceType &service:
-            pointer.tSPServices().tSPService())
+        for(const TSPServiceType &service: pointer.tSPServices().tSPService())
         {
             const TSPServiceInformationType &serviceInfo = service.serviceInformation();
-            if(SERVICESTATUS.find(serviceInfo.serviceStatus()) == SERVICESTATUS.end() ||
-                SERVICETYPE.find(serviceInfo.serviceTypeIdentifier()) == SERVICETYPE.end())
+            if(SERVICETYPE.find(serviceInfo.serviceTypeIdentifier()) == SERVICETYPE.cend())
                 continue;
 
-            for(const DigitalIdentityListType::DigitalIdType &id:
-                serviceInfo.serviceDigitalIdentity().digitalId())
+            Service s;
+            for(const DigitalIdentityType &id: serviceInfo.serviceDigitalIdentity().digitalId())
             {
                 if(!id.x509Certificate().present())
                     continue;
                 const Base64Binary &base64 = id.x509Certificate().get();
-                certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+                s.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
             }
 
-            if(!service.serviceHistory().present())
-                continue;
-            for(const ServiceHistoryInstanceType &history: service.serviceHistory()->serviceHistoryInstance())
-            {
-                if(SERVICESTATUS.find(history.serviceStatus()) == SERVICESTATUS.end() ||
-                    SERVICETYPE.find(history.serviceTypeIdentifier()) == SERVICETYPE.end())
-                    continue;
+            time_t previousTime = xsd2time_t(serviceInfo.statusStartingTime());
+            if(SERVICESTATUS_START.find(serviceInfo.serviceStatus()) != SERVICESTATUS_START.cend())
+                s.validity.push_back({previousTime, 0});
+            else if(SERVICESTATUS_END.find(serviceInfo.serviceStatus()) == SERVICESTATUS_END.cend())
+                DEBUG("Unknown service status %s", serviceInfo.serviceStatus().c_str());
 
-                for(const DigitalIdentityListType::DigitalIdType &id:
-                    history.serviceDigitalIdentity().digitalId())
+            if(service.serviceHistory().present())
+            {
+                for(const ServiceHistoryInstanceType &history: service.serviceHistory()->serviceHistoryInstance())
                 {
-                    if(!id.x509Certificate().present())
+                    if(SERVICETYPE.find(history.serviceTypeIdentifier()) == SERVICETYPE.cend())
+                    {
+                        DEBUG("History service type is not supported %s", history.serviceTypeIdentifier().c_str());
                         continue;
-                    const Base64Binary &base64 = id.x509Certificate().get();
-                    certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+                    }
+                    if(SERVICESTATUS_START.find(history.serviceStatus()) != SERVICESTATUS_START.cend())
+                        s.validity.push_back({xsd2time_t(history.statusStartingTime()), previousTime});
+                    else if(SERVICESTATUS_END.find(history.serviceStatus()) == SERVICESTATUS_END.cend())
+                        DEBUG("Unknown service status %s", history.serviceStatus().c_str());
+                    previousTime = xsd2time_t(history.statusStartingTime());
+
+                    for(const DigitalIdentityType &id: history.serviceDigitalIdentity().digitalId())
+                    {
+                        if(!id.x509Certificate().present())
+                            continue;
+                        const Base64Binary &base64 = id.x509Certificate().get();
+                        s.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+                    }
                 }
             }
+            services.push_back(s);
         }
     }
-    return certs;
+    return services;
 }
 
 void TSL::debugException(const digidoc::Exception &e)
@@ -201,10 +225,8 @@ void TSL::debugException(const digidoc::Exception &e)
 
 bool TSL::isExpired() const
 {
-    time_t t = time(0);
-    struct tm *time = gmtime(&t);
-    return !tsl || nextUpdate().empty() ||
-        nextUpdate().compare(0, 19, xsd2string(makeDateTime(*time))) <= 0;
+    return !tsl || !tsl->schemeInformation().nextUpdate().dateTime().present() ||
+        xsd2time_t(tsl->schemeInformation().nextUpdate().dateTime().get()) < time(0);
 }
 
 string TSL::issueDate() const
@@ -223,13 +245,13 @@ string TSL::operatorName() const
     return !tsl ? string() : toString(tsl->schemeInformation().schemeOperatorName());
 }
 
-vector<X509Cert> TSL::parse(int timeout)
+vector<TSL::Service> TSL::parse(int timeout)
 {
     string url = CONF(TSLUrl);
     string cache = CONF(TSLCache);
     std::vector<X509Cert> cert = CONF(TSLCerts);
     File::createDirectory(cache);
-    return parse(url, cert, cache, File::fileName(url), timeout).certs;
+    return parse(url, cert, cache, File::fileName(url), timeout).services;
 }
 
 TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
@@ -237,12 +259,12 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
 {
     string path = cache + "/" + territory;
     TSL tsl(path);
-    Result result = { vector<X509Cert>(), false };
+    Result result = { vector<Service>(), false };
     bool valid = false;
     try {
         tsl.validate(certs);
         valid = true;
-        result = { tsl.certs(), tsl.isExpired() };
+        result = { tsl.services(), tsl.isExpired() };
         if(result.expired)
             THROW("TSL is expired");
         tsl.validateRemoteDigest(url, timeout);
@@ -279,7 +301,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
                     ots << r.headers["Last-Modified"];
                     ots.close();
 
-                    result = { tsl.certs(), tsl.isExpired() };
+                    result = { tsl.services(), tsl.isExpired() };
                     DEBUG("TSL %s signature is valid", territory.c_str());
                 } catch(const Exception &e) {
                     debugException(e);
@@ -295,13 +317,13 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
     }
 
     if(!valid)
-        return { vector<X509Cert>(), false };
+        return { vector<Service>(), false };
 
     if(tsl.pointers().empty())
         return result;
 
     if(result.expired && !(CONF(TSLAllowExpired)))
-        return { vector<X509Cert>(), false };
+        return { vector<Service>(), false };
 
     vector< future< Result > > futures;
     for(const TSL::Pointer &p: tsl.pointers())
@@ -312,12 +334,12 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
             return parse(p.location, p.certs, cache, p.territory + ".xml", timeout);
         }));
     }
-    vector<X509Cert> list;
+    vector<Service> list;
     for(auto &f: futures)
     {
         Result data = f.get();
         if(!data.expired || (CONF(TSLAllowExpired)))
-            list.insert(list.end(), data.certs.begin(), data.certs.end());
+            list.insert(list.end(), data.services.cbegin(), data.services.cend());
     }
     return { list, false };
 }
@@ -325,7 +347,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
 std::vector<TSL::Pointer> TSL::pointers() const
 {
     std::vector<Pointer> pointer;
-    if(SCHEMES_URI.find(type()) != SCHEMES_URI.end() &&
+    if(SCHEMES_URI.find(type()) != SCHEMES_URI.cend() &&
         tsl->schemeInformation().pointersToOtherTSL().present())
     {
         for(const OtherTSLPointersType::OtherTSLPointerType &other:
@@ -339,10 +361,9 @@ std::vector<TSL::Pointer> TSL::pointers() const
             Pointer p;
             p.territory = other.additionalInformation()->schemeTerritory();
             p.location = string(other.tSLLocation());
-            for(const ServiceDigitalIdentityListType::ServiceDigitalIdentityType &identity:
-                other.serviceDigitalIdentities()->serviceDigitalIdentity())
+            for(const DigitalIdentityListType &identity: other.serviceDigitalIdentities()->serviceDigitalIdentity())
             {
-                for(const DigitalIdentityListType::DigitalIdType &id: identity.digitalId())
+                for(const DigitalIdentityType &id: identity.digitalId())
                 {
                     if(!id.x509Certificate().present())
                         continue;
@@ -368,8 +389,8 @@ std::vector<TSL::Pointer> TSL::pointers() const
 
 string TSL::territory() const
 {
-    return !tsl || tsl->schemeInformation().schemeTerritory().present() ?
-        string() :tsl->schemeInformation().schemeTerritory().get();
+    return !tsl || !tsl->schemeInformation().schemeTerritory().present() ?
+        string() : tsl->schemeInformation().schemeTerritory().get();
 }
 
 string TSL::toString(const InternationalNamesType &obj, const string &lang) const
@@ -410,7 +431,7 @@ void TSL::validate(const std::vector<X509Cert> &certs)
         signingCert = X509Cert((const unsigned char*)base64.data(), base64.capacity());
     }
 
-    if(find(certs.begin(), certs.end(), signingCert) == certs.end())
+    if(find(certs.cbegin(), certs.cend(), signingCert) == certs.cend())
         THROW("TSL Signature is signed with untrusted certificate");
 
     try {
@@ -532,9 +553,9 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
     ifstream is(path, ifstream::binary);
     while(is)
     {
-        is.read((char*)&buf[0], buf.size());
+        is.read((char*)buf.data(), buf.size());
         if(is.gcount() > 0)
-            sha.update(&buf[0], (unsigned long)is.gcount());
+            sha.update(buf.data(), (unsigned long)is.gcount());
     }
 
     vector<unsigned char> digest;
@@ -545,13 +566,7 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
         r.content.erase(r.content.find_last_not_of(" \n\r\t") + 1);
         if(r.content.size() != 64)
             return;
-        char data[] = "00";
-        for(string::const_iterator i = r.content.cbegin(); i != r.content.end();)
-        {
-            data[0] = *(i++);
-            data[1] = *(i++);
-            digest.push_back(static_cast<unsigned char>(strtoul(data, 0, 16)));
-        }
+        digest = File::hexToBin(r.content);
     }
 
     if(!digest.empty() && digest != sha.result())

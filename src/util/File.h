@@ -65,6 +65,7 @@ namespace digidoc
               static std::string toUri(const std::string &path);
               static std::string toUriPath(const std::string &path);
               static std::string fromUriPath(const std::string &path);
+              static std::vector<unsigned char> hexToBin(const std::string &in);
 #ifdef __APPLE__
               static std::string frameworkResourcesPath(const std::string &name);
 #endif

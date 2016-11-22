@@ -135,11 +135,6 @@ void SignatureXAdES_LT::validate() const
                 continue;
             }
 
-            struct tm producedAt = ASN1TimeToTM(ocsp.producedAt());
-            time_t producedAt_t = util::date::mkgmtime(producedAt);
-            if(!X509CertStore::instance()->verify(ocsp.responderCert(), &producedAt_t))
-                EXCEPTION_ADD(exception, "Unable to verify responder certificate");
-
             if(profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos)
             {
                 string method = Digest::digestInfoUri(ocsp.nonce());
@@ -158,6 +153,8 @@ void SignatureXAdES_LT::validate() const
             }
             else
             {
+                struct tm producedAt = ASN1TimeToTM(ocsp.producedAt());
+                time_t producedAt_t = util::date::mkgmtime(producedAt);
                 time_t timeT = string2time_t(TimeStampTime());
                 if((producedAt_t - timeT > 15 * 60 || timeT - producedAt_t > 15 * 60) &&
                     !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))

@@ -32,9 +32,11 @@ namespace digidoc
         {
             time_t mkgmtime(struct tm &t);
             tm ASN1TimeToTM(const std::string &date);
+            time_t ASN1TimeToTime_t(const std::string &date);
             std::string ASN1TimeToXSD(const std::string &date);
             std::string xsd2string(const xml_schema::DateTime &time);
             time_t string2time_t(const std::string &time);
+            time_t xsd2time_t(const xml_schema::DateTime &time);
             xml_schema::DateTime makeDateTime(const struct tm &lt);
             tm httpTimeToTM(const std::string &date);
         }

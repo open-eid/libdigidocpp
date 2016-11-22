@@ -23,6 +23,7 @@
 #include "log.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/TSL.h"
+#include "util/DateTime.h"
 #include "util/File.h"
 
 #include <openssl/conf.h>
@@ -37,11 +38,11 @@ using namespace std;
 
 namespace digidoc
 {
-class X509CertStorePrivate: public vector<X509Cert> {
+class X509CertStorePrivate: public vector<TSL::Service> {
 public:
     void update()
     {
-        vector<X509Cert> list = TSL::parse(CONF(TSLTimeOut));
+        vector<TSL::Service> list = TSL::parse(CONF(TSLTimeOut));
         swap(list);
         INFO("Loaded %d certificates into TSL certificate store.", size());
     }
@@ -91,7 +92,10 @@ X509CertStore* X509CertStore::instance()
  */
 vector<X509Cert> X509CertStore::certs() const
 {
-    return *d;
+    vector<X509Cert> certs;
+    for(const TSL::Service &s: *d)
+        certs.insert(certs.end(), s.certs.cbegin(), s.certs.cend());
+    return certs;
 }
 
 /**
@@ -106,88 +110,34 @@ vector<X509Cert> X509CertStore::certs() const
 X509Cert X509CertStore::findIssuer(const X509Cert &cert) const
 {
     activate(cert.issuerName("C"));
-
     SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(cert.handle(), NID_authority_key_identifier, 0, 0));
-    for(const X509Cert &i: *d)
+    for(const TSL::Service &s: *d)
     {
-        if(!akid || !akid->keyid)
+        for(const X509Cert &i: s.certs)
         {
-            if(X509_NAME_cmp(X509_get_subject_name(i.handle()), X509_get_issuer_name(cert.handle())))
-                return i;
-        }
-        else
-        {
-            SCOPE(ASN1_OCTET_STRING, skid, (ASN1_OCTET_STRING*)X509_get_ext_d2i(i.handle(), NID_subject_key_identifier, 0, 0));
-            if(skid.get() && ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) == 0)
-                return i;
+            if(!akid || !akid->keyid)
+            {
+                if(X509_NAME_cmp(X509_get_subject_name(i.handle()), X509_get_issuer_name(cert.handle())))
+                    return i;
+            }
+            else
+            {
+                SCOPE(ASN1_OCTET_STRING, skid, (ASN1_OCTET_STRING*)X509_get_ext_d2i(i.handle(), NID_subject_key_identifier, 0, 0));
+                if(skid.get() && ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) == 0)
+                    return i;
+            }
         }
     }
     return X509Cert();
 }
 
-/**
- * Check if X509Cert is signed by trusted issuer
- * @return 0 or openssl error_code. Get human readable cause with X509_verify_cert_error_string(code)
- * @throw IOException if error
- */
-bool X509CertStore::verify(const X509Cert &cert, time_t *t) const
+X509_STORE* X509CertStore::createStore(time_t *t)
 {
-    activate(cert.issuerName("C"));
-
     SCOPE(X509_STORE, store, X509_STORE_new());
-    for(const X509Cert &i: *d)
-        X509_STORE_add_cert(store.get(), i.handle());
-    OpenSSLException(); // Clear Errors
-
-    SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
-    if (!csc)
+    if (!store)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
 
-    if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), 0))
-        THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
-
-#if 0
-    csc.get()->check_issued = [](X509_STORE_CTX *ctx, X509 *x, X509 *issuer) -> int {
-        SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(x, NID_authority_key_identifier, 0, 0));
-        SCOPE(ASN1_OCTET_STRING, skid, (ASN1_OCTET_STRING*)X509_get_ext_d2i(issuer, NID_subject_key_identifier, 0, 0));
-        if(akid.get() && skid.get() && ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) != 0)
-            return X509_V_ERR_AKID_SKID_MISMATCH;
-
-        int ret = X509_check_issued(issuer, x);
-        if (ret == X509_V_OK)
-            return 1;
-        /* If we haven't asked for issuer errors don't set ctx */
-        if (!(ctx->param->flags & X509_V_FLAG_CB_ISSUER_CHECK))
-            return 0;
-
-        ctx->error = ret;
-        ctx->current_cert = x;
-        ctx->current_issuer = issuer;
-        return ctx->verify_cb(0, ctx);
-    };
-
-    csc.get()->get_issuer = [](X509 **issuer, X509_STORE_CTX *ctx, X509 *x) -> int {
-        SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(x, NID_authority_key_identifier, 0, 0));
-        if(!akid || !akid->keyid)
-            return 0;
-
-        STACK_OF(X509) *sk = (STACK_OF(X509)*)ctx->other_ctx;
-        for(int i = 0; i < sk_X509_num(sk); ++i)
-        {
-            X509 *x509 = sk_X509_value(sk, i);
-            SCOPE(ASN1_OCTET_STRING, skid, (ASN1_OCTET_STRING*)X509_get_ext_d2i(x509, NID_subject_key_identifier, 0, 0));
-            if(skid.get() && ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) == 0)
-            {
-                *issuer = x509;
-                CRYPTO_add(&(*issuer)->references,1,CRYPTO_LOCK_X509);
-                return 1;
-            }
-        }
-        return 0;
-    };
-#endif
-
-    X509_STORE_CTX_set_verify_cb(csc.get(), [](int ok, X509_STORE_CTX *ctx) -> int {
+    X509_STORE_set_verify_cb(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int {
         switch(X509_STORE_CTX_get_error(ctx))
         {
         case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
@@ -195,8 +145,40 @@ bool X509CertStore::verify(const X509Cert &cert, time_t *t) const
         case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
         case X509_V_ERR_CERT_UNTRUSTED:
         {
-            if(find(instance()->d->begin(), instance()->d->end(), X509Cert(ctx->current_cert)) != instance()->d->end())
-                return 1;
+            SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(ctx->current_cert, NID_authority_key_identifier, 0, 0));
+            DEBUG("Find %s", X509Cert(ctx->current_cert).subjectName("CN").c_str());
+            for(const TSL::Service &s: *instance()->d)
+            {
+                auto certFound = find_if(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
+                    if(X509_cmp(ctx->current_cert, issuer.handle()) == 0)
+                        return true;
+                    if(!akid || !akid->keyid)
+                    {
+                        if(X509_NAME_cmp(X509_get_subject_name(issuer.handle()), X509_get_issuer_name(ctx->current_cert)) != 0)
+                            return false;
+                    }
+                    else
+                    {
+                        SCOPE(ASN1_OCTET_STRING, skid, (ASN1_OCTET_STRING*)X509_get_ext_d2i(issuer.handle(), NID_subject_key_identifier, 0, 0));
+                        if(!skid.get() || ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) != 0)
+                            return false;
+                    }
+                    SCOPE(EVP_PKEY, pub, X509_get_pubkey(issuer.handle()));
+                    if(X509_verify(ctx->current_cert, pub.get()) == 1)
+                        return true;
+                    OpenSSLException(); //Clear errors
+                    return false;
+                });
+                if(certFound == s.certs.cend())
+                    continue;
+                if(!(ctx->param->flags & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
+                    return 1;
+                for(const TSL::Validity &v: s.validity)
+                {
+                    if(ctx->param->check_time >= v.start && (v.end == 0 || ctx->param->check_time <= v.end))
+                        return 1;
+                }
+            }
             return ok;
         }
         default: return ok;
@@ -205,20 +187,32 @@ bool X509CertStore::verify(const X509Cert &cert, time_t *t) const
 
     if(t)
     {
-        X509_STORE_CTX_set_time(csc.get(), 0, *t);
-        X509_STORE_CTX_set_flags(csc.get(), X509_V_FLAG_USE_CHECK_TIME);
+        X509_VERIFY_PARAM_set_time(store->param, *t);
+        X509_STORE_set_flags(store.get(), X509_V_FLAG_USE_CHECK_TIME);
     }
+    return store.release();
+}
 
+/**
+ * Check if X509Cert is signed by trusted issuer
+ * @throw Exception if error
+ */
+bool X509CertStore::verify(const X509Cert &cert, time_t *t) const
+{
+    activate(cert.issuerName("C"));
+    SCOPE(X509_STORE, store, createStore(t));
+    SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
+    if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))
+        THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
     if(X509_verify_cert(csc.get()) > 0)
         return true;
-
     int err = X509_STORE_CTX_get_error(csc.get());
     Exception e(__FILE__, __LINE__, X509_verify_cert_error_string(err), OpenSSLException());
     switch(err)
     {
-    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY: e.setCode(Exception::CertificateIssuerMissing);
+    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+        e.setCode(Exception::CertificateIssuerMissing);
+        throw e;
     default: throw e;
     }
-
-    return false;
 }

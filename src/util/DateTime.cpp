@@ -91,6 +91,12 @@ tm digidoc::util::date::ASN1TimeToTM(const std::string &date)
     return time;
 }
 
+time_t digidoc::util::date::ASN1TimeToTime_t(const string &date)
+{
+    tm t = ASN1TimeToTM(date);
+    return mkgmtime(t);
+}
+
 string digidoc::util::date::ASN1TimeToXSD(const string &date)
 {
     if(date.empty())
@@ -122,7 +128,11 @@ time_t digidoc::util::date::string2time_t(const string &time)
     {
     public: xsdparse(const string &time) { parse(time); }
     };
-    const xml_schema::DateTime &xml = xsdparse(time);
+    return xsd2time_t(xsdparse(time));
+}
+
+time_t digidoc::util::date::xsd2time_t(const xml_schema::DateTime &xml)
+{
     struct tm t = {
         int(xml.seconds()),
         xml.minutes(),
