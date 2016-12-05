@@ -48,13 +48,13 @@ public:
     virtual void addDataFile(const std::string &path, const std::string &mediaType) = 0;
     virtual void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType) = 0;
     virtual std::vector<DataFile*> dataFiles() const = 0;
-    virtual void removeDataFile(unsigned int id) = 0;
+    virtual void removeDataFile(unsigned int index) = 0;
 
     void addAdESSignature(const std::vector<unsigned char> &signature);
     virtual void addAdESSignature(std::istream &signature) = 0;
     virtual Signature* prepareSignature(Signer *signer) = 0;
     virtual std::vector<Signature*> signatures() const = 0;
-    virtual void removeSignature(unsigned int id) = 0;
+    virtual void removeSignature(unsigned int index) = 0;
     virtual Signature* sign(Signer *signer) = 0;
 
     static Container* create(const std::string &path);

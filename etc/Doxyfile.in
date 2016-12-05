@@ -859,7 +859,11 @@ EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          */SignatureBES.* \
                          */SignatureTM.* \
                          */SignatureTS.* \
+                         */SignatureTST.* \
                          */SignatureA.* \
+                         */*ASiContainer.* \
+                         */*ASiC_S.* \
+                         */*ASiC_E.* \
                          */*Doc.*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
