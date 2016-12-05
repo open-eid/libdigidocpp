@@ -287,20 +287,22 @@ Container* Container::open(const string &path)
 
 /**
  * @fn digidoc::Container::removeDataFile
- * Removes data file from container by data file id. Data files can be
+ * Removes data file from container by data file index. Data files can be
  * removed from container only after all signatures are removed.
  *
- * @param id data file's id, which will be removed.
+ * @param index data file's index, which will be removed.
  * @throws Exception throws exception if the data file id is incorrect or there are
  * one or more signatures.
+ * @see digidoc::Container::dataFiles
  */
 
 /**
  * @fn digidoc::Container::removeSignature
- * Removes signature from container by signature id.
+ * Removes signature from container by signature index.
  *
- * @param id signature's id, which will be removed.
+ * @param index signature's index, which will be removed.
  * @throws Exception throws exception if the signature id is incorrect.
+ * @see digidoc::Container::signatures
  */
 
 /**
