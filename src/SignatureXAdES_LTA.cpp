@@ -17,7 +17,7 @@
  *
  */
 
-#include "SignatureA.h"
+#include "SignatureXAdES_LTA.h"
 
 #include "ASiC_E.h"
 #include "Conf.h"
@@ -45,13 +45,13 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
     return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
-SignatureA::SignatureA(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_T(id, bdoc, signer) {}
+SignatureXAdES_LTA::SignatureXAdES_LTA(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_T(id, bdoc, signer) {}
 
-SignatureA::SignatureA(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_T(sigdata, bdoc, relaxSchemaValidation) {}
+SignatureXAdES_LTA::SignatureXAdES_LTA(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_T(sigdata, bdoc, relaxSchemaValidation) {}
 
-SignatureA::~SignatureA() {}
+SignatureXAdES_LTA::~SignatureXAdES_LTA() {}
 
-void SignatureA::calcArchiveDigest(Digest *digest) const
+void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
 {
     string signedPropertiesId;
     if(qualifyingProperties().signedProperties()->id().present())
@@ -106,7 +106,7 @@ void SignatureA::calcArchiveDigest(Digest *digest) const
     //ds:Object
 }
 
-void SignatureA::extendSignatureProfile(const std::string &profile)
+void SignatureXAdES_LTA::extendSignatureProfile(const std::string &profile)
 {
     SignatureXAdES_T::extendSignatureProfile(profile);
     if(profile != ASiC_E::ASIC_TSA_PROFILE && profile != ASiC_E::ASIC_TMA_PROFILE)
@@ -126,7 +126,7 @@ void SignatureA::extendSignatureProfile(const std::string &profile)
     sigdata_.clear();
 }
 
-vector<unsigned char> SignatureA::tsaBase64() const
+vector<unsigned char> SignatureXAdES_LTA::tsaBase64() const
 {
     try {
         if(unsignedSignatureProperties().archiveTimeStampV141().empty())
@@ -141,17 +141,17 @@ vector<unsigned char> SignatureA::tsaBase64() const
     return vector<unsigned char>();
 }
 
-X509Cert SignatureA::ArchiveTimeStampCertificate() const
+X509Cert SignatureXAdES_LTA::ArchiveTimeStampCertificate() const
 {
     return TS(tsaBase64()).cert();
 }
 
-string SignatureA::ArchiveTimeStampTime() const
+string SignatureXAdES_LTA::ArchiveTimeStampTime() const
 {
     return ASN1TimeToXSD(TS(tsaBase64()).time());
 }
 
-void SignatureA::validate() const
+void SignatureXAdES_LTA::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
