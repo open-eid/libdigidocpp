@@ -19,15 +19,15 @@
 
 #pragma once
 
-#include "SignatureXAdES_B.h"
+#include "SignatureXAdES_T.h"
 
 
 namespace digidoc
 {
 
-namespace xades { class OCSPRefType; class UnsignedSignaturePropertiesType; }
+namespace xades { class OCSPRefType; }
 
-class SignatureXAdES_LT: public SignatureXAdES_B
+class SignatureXAdES_LT: public SignatureXAdES_T
 {
 public:
     SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer);
@@ -42,15 +42,12 @@ public:
     virtual void validate() const override;
     virtual void extendSignatureProfile(const std::string &profile) override;
 
-protected:
-    std::vector<unsigned char> getOCSPResponseValue() const;
-    xades::UnsignedSignaturePropertiesType& unsignedSignatureProperties() const;
-
 private:
     DISABLE_COPY(SignatureXAdES_LT);
 
     void addCertificateValue(const std::string& certId, const X509Cert& x509);
     void setOCSPResponseValue(const std::vector<unsigned char>& data);
+    std::vector<unsigned char> getOCSPResponseValue() const;
 };
 
 }

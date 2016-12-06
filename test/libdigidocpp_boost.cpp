@@ -356,6 +356,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_THROW(d->removeSignature(0U), Exception);
 
     unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
+    signer1->setProfile("time-mark");
     BOOST_CHECK_THROW(d->sign(signer1.get()), Exception);
     if(Doc::EXT == DDoc::EXT)
         return;
@@ -365,7 +366,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_NO_THROW(d->sign(signer1.get()));
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     if(d->signatures().size() == 1)
+    {
         BOOST_CHECK_EQUAL(d->signatures().at(0)->signingCertificate(), signer1->cert());
+        BOOST_CHECK_NO_THROW(d->signatures().at(0)->validate());
+    }
     BOOST_CHECK_NO_THROW(d->save(Doc::EXT + ".tmp"));
 
     // Signed container cannot add and remove documents
@@ -377,7 +381,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_NO_THROW(d->sign(signer2.get()));
     BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
     if(d->signatures().size() == 2)
+    {
         BOOST_CHECK_EQUAL(d->signatures().at(1)->signingCertificate(), signer2->cert());
+        BOOST_CHECK_NO_THROW(d->signatures().at(1)->validate());
+    }
     BOOST_CHECK_NO_THROW(d->save());
 
     // Remove first Signature

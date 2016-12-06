@@ -44,12 +44,12 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 }
 
 SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer)
-: SignatureXAdES_B(id, bdoc, signer)
+: SignatureXAdES_T(id, bdoc, signer)
 {
 }
 
 SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
-: SignatureXAdES_B(sigdata, bdoc, relaxSchemaValidation)
+: SignatureXAdES_T(sigdata, bdoc, relaxSchemaValidation)
 {
 }
 
@@ -89,7 +89,7 @@ string SignatureXAdES_LT::OCSPProducedAt() const
 string SignatureXAdES_LT::trustedSigningTime() const
 {
     string time = OCSPProducedAt();
-    return time.empty() ? claimedSigningTime() : time;
+    return time.empty() || profile().find(ASiC_E::ASIC_TM_PROFILE) == string::npos ? SignatureXAdES_T::trustedSigningTime() : time;
 }
 
 /**
@@ -106,26 +106,20 @@ void SignatureXAdES_LT::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureXAdES_B::validate();
+        SignatureXAdES_T::validate();
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);
     }
 
     try {
-        const QualifyingPropertiesType::UnsignedPropertiesOptional &uProps = qualifyingProperties().unsignedProperties();
-        if(!uProps.present())
-            THROW_MAIN(exception, "QualifyingProperties must contain UnsignedProperties");
-        if(uProps->unsignedDataObjectProperties().present())
-            EXCEPTION_ADD(exception, "unexpected UnsignedDataObjectProperties in Signature");
-        if(!uProps->unsignedSignatureProperties().present())
-            THROW_MAIN(exception, "UnsignedProperties must contain UnsignedSignatureProperties");
-        if(uProps->unsignedSignatureProperties()->revocationValues().empty())
+        const UnsignedSignaturePropertiesType::RevocationValuesSequence &revSeq =
+            unsignedSignatureProperties().revocationValues();
+        if(revSeq.empty())
             THROW_MAIN(exception, "RevocationValues object is missing");
-        if(uProps->unsignedSignatureProperties()->revocationValues().size() > 1)
+        if(revSeq.size() > 1)
             THROW_MAIN(exception, "More than one RevocationValues object is not supported");
-        const RevocationValuesType &t = uProps->unsignedSignatureProperties()->revocationValues().front();
-        if(!t.oCSPValues().present())
+        if(!revSeq.front().oCSPValues().present())
             THROW_MAIN(exception, "OCSPValues is missing");
 
         /*
@@ -134,7 +128,7 @@ void SignatureXAdES_LT::validate() const
          */
         bool foundSignerOCSP = false;
         vector<Exception> ocspExceptions;
-        for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
+        for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: revSeq.front().oCSPValues()->encapsulatedOCSPValue())
         {
             OCSP ocsp(vector<unsigned char>(resp.data(), resp.data()+resp.size()));
             try {
@@ -146,7 +140,7 @@ void SignatureXAdES_LT::validate() const
             }
 
             struct tm producedAt = ASN1TimeToTM(ocsp.producedAt());
-            time_t producedAt_t = mktime(&producedAt);
+            time_t producedAt_t = util::date::mkgmtime(producedAt);
             if(!X509CertStore::instance()->verify(ocsp.responderCert(), &producedAt_t))
                 EXCEPTION_ADD(exception, "Unable to verify responder certificate");
 
@@ -164,6 +158,17 @@ void SignatureXAdES_LT::validate() const
                     DEBUGMEM("Calculated signature HASH", digest.data(), digest.size());
                     DEBUGMEM("Response nonce", respDigest.data(), respDigest.size());
                     EXCEPTION_ADD(exception, "Calculated signature hash doesn't match to OCSP responder nonce field");
+                }
+            }
+            else
+            {
+                time_t timeT = string2time_t(TimeStampTime());
+                if((producedAt_t - timeT > 15 * 60 || timeT - producedAt_t > 15 * 60) &&
+                    !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
+                {
+                    Exception e(EXCEPTION_PARAMS("TimeStamp time and OCSP producedAt are over 15m TS: %s OCSP: %s", ocsp.producedAt().c_str(), TimeStampTime().c_str()));
+                    e.setCode(Exception::ProducedATLateWarning);
+                    exception.addCause(e);
                 }
             }
             break;
@@ -186,6 +191,7 @@ void SignatureXAdES_LT::validate() const
  */
 void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
 {
+    SignatureXAdES_T::extendSignatureProfile(profile);
     if(profile == ASiC_E::BES_PROFILE || profile == ASiC_E::EPES_PROFILE)
         return;
 
@@ -207,7 +213,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
 
     DEBUG("Making OCSP request.");
     OCSP ocsp(cert, issuer, nonce, "format: " + bdoc->mediaType() + " profile: " +
-              (policy().empty() ? "ASiC_E_BASELINE_LT" : "ASiC_E_BASELINE_LT_TM"));
+        (profile.find(ASiC_E::ASIC_TM_PROFILE) == string::npos ? "ASiC_E_BASELINE_LT" : "ASiC_E_BASELINE_LT_TM"));
     ocsp.verifyResponse(cert);
 
     // Set TM profile signature parameters.
@@ -295,17 +301,3 @@ vector<unsigned char> SignatureXAdES_LT::getOCSPResponseValue() const
     return vector<unsigned char>();
 }
 
-UnsignedSignaturePropertiesType &SignatureXAdES_LT::unsignedSignatureProperties() const
-{
-    QualifyingPropertiesType::UnsignedPropertiesOptional &unsignedPropsOptional =
-            qualifyingProperties().unsignedProperties();
-    if(!unsignedPropsOptional.present())
-        THROW("QualifyingProperties block 'UnsignedProperties' is missing.");
-
-    UnsignedPropertiesType::UnsignedSignaturePropertiesOptional &unsignedSigProps =
-    unsignedPropsOptional->unsignedSignatureProperties();
-    if(!unsignedSigProps.present())
-        THROW("QualifyingProperties block 'UnsignedSignatureProperties' is missing.");
-
-    return unsignedSigProps.get();
-}

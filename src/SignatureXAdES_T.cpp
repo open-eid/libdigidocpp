@@ -44,9 +44,9 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 }
 
 
-SignatureXAdES_T::SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_LT(id, bdoc, signer) {}
+SignatureXAdES_T::SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_B(id, bdoc, signer) {}
 
-SignatureXAdES_T::SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_LT(sigdata, bdoc, relaxSchemaValidation) {}
+SignatureXAdES_T::SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_B(sigdata, bdoc, relaxSchemaValidation) {}
 
 SignatureXAdES_T::~SignatureXAdES_T() {}
 
@@ -63,35 +63,34 @@ string SignatureXAdES_T::TimeStampTime() const
 string SignatureXAdES_T::trustedSigningTime() const
 {
     string time = TimeStampTime();
-    return time.empty() ? SignatureXAdES_LT::trustedSigningTime() : time;
+    return time.empty() ? SignatureXAdES_B::trustedSigningTime() : time;
 }
 
 void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
 {
-    if(profile.find(ASiC_E::ASIC_TS_PROFILE) != string::npos)
+    if(profile.find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
+        return;
+
+    if(!qualifyingProperties().unsignedProperties().present())
     {
-        if(!qualifyingProperties().unsignedProperties().present())
-        {
-            UnsignedPropertiesType usProp;
-            usProp.unsignedSignatureProperties(UnsignedSignaturePropertiesType());
-            qualifyingProperties().unsignedProperties(usProp);
-        }
-
-        Digest calc;
-        calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
-
-        TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
-        UnsignedSignaturePropertiesType::SignatureTimeStampType ts;
-        ts.id(id() + Log::format("-T%u", unsignedSignatureProperties().signatureTimeStamp().size()));
-        ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(toBase64(tsa)));
-        unsignedSignatureProperties().signatureTimeStamp().push_back(ts);
-        unsignedSignatureProperties().contentOrder().push_back(
-            UnsignedSignaturePropertiesType::ContentOrderType(
-                UnsignedSignaturePropertiesType::signatureTimeStampId,
-                unsignedSignatureProperties().signatureTimeStamp().size() - 1));
-        sigdata_.clear();
+        UnsignedPropertiesType usProp;
+        usProp.unsignedSignatureProperties(UnsignedSignaturePropertiesType());
+        qualifyingProperties().unsignedProperties(usProp);
     }
-    SignatureXAdES_LT::extendSignatureProfile(profile);
+
+    Digest calc;
+    calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
+
+    TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
+    UnsignedSignaturePropertiesType::SignatureTimeStampType ts;
+    ts.id(id() + Log::format("-T%u", unsignedSignatureProperties().signatureTimeStamp().size()));
+    ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(toBase64(tsa)));
+    unsignedSignatureProperties().signatureTimeStamp().push_back(ts);
+    unsignedSignatureProperties().contentOrder().push_back(
+        UnsignedSignaturePropertiesType::ContentOrderType(
+            UnsignedSignaturePropertiesType::signatureTimeStampId,
+            unsignedSignatureProperties().signatureTimeStamp().size() - 1));
+    sigdata_.clear();
 }
 
 vector<unsigned char> SignatureXAdES_T::tsBase64() const
@@ -114,7 +113,7 @@ void SignatureXAdES_T::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureXAdES_LT::validate();
+        SignatureXAdES_B::validate();
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);
@@ -127,6 +126,14 @@ void SignatureXAdES_T::validate() const
     }
 
     try {
+        const QualifyingPropertiesType::UnsignedPropertiesOptional &uProps = qualifyingProperties().unsignedProperties();
+        if(!uProps.present())
+            THROW_MAIN(exception, "QualifyingProperties must contain UnsignedProperties");
+        if(uProps->unsignedDataObjectProperties().present())
+            EXCEPTION_ADD(exception, "unexpected UnsignedDataObjectProperties in Signature");
+        if(!uProps->unsignedSignatureProperties().present())
+            THROW_MAIN(exception, "UnsignedProperties must contain UnsignedSignatureProperties");
+
         const UnsignedSignaturePropertiesType::SignatureTimeStampSequence &tseq =
             unsignedSignatureProperties().signatureTimeStamp();
         if(tseq.empty())
@@ -147,21 +154,24 @@ void SignatureXAdES_T::validate() const
         Digest calc(tsa.digestMethod());
         calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
         tsa.verify(calc);
-
-        tm producedAt = ASN1TimeToTM(OCSP(getOCSPResponseValue()).producedAt());
-        time_t producedAtT = mktime(&producedAt);
-        tm time = ASN1TimeToTM(tsa.time());
-        time_t timeT = mktime(&time);
-        if((producedAtT - timeT > 15 * 60 || timeT - producedAtT > 15 * 60) &&
-            !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
-        {
-            Exception e(EXCEPTION_PARAMS("TimeStamp time and OCSP producedAt are over 15m"));
-            e.setCode(Exception::ProducedATLateWarning);
-            exception.addCause(e);
-        }
     } catch(const Exception &e) {
         exception.addCause(e);
     }
     if(!exception.causes().empty())
         throw exception;
+}
+
+UnsignedSignaturePropertiesType &SignatureXAdES_T::unsignedSignatureProperties() const
+{
+    QualifyingPropertiesType::UnsignedPropertiesOptional &unsignedPropsOptional =
+            qualifyingProperties().unsignedProperties();
+    if(!unsignedPropsOptional.present())
+        THROW("QualifyingProperties block 'UnsignedProperties' is missing.");
+
+    UnsignedPropertiesType::UnsignedSignaturePropertiesOptional &unsignedSigProps =
+    unsignedPropsOptional->unsignedSignatureProperties();
+    if(!unsignedSigProps.present())
+        THROW("QualifyingProperties block 'UnsignedSignatureProperties' is missing.");
+
+    return unsignedSigProps.get();
 }
