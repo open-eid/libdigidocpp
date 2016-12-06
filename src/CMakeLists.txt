@@ -231,7 +231,7 @@ add_library(digidocpp ${BUILD_TYPE}
     Exception.cpp
     RDoc.cpp
     Signature.cpp
-    SignatureBES.cpp
+    SignatureXAdES_B.cpp
     SignatureTM.cpp
     SignatureTS.cpp
     SignatureA.cpp

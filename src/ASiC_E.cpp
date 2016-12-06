@@ -97,7 +97,7 @@ void ASiC_E::save(const string &path)
     for(Signature *iter: signatures())
     {
         string file = Log::format("META-INF/signatures%u.xml", i++);
-        SignatureBES *signature = static_cast<SignatureBES*>(iter);
+        SignatureXAdES_B *signature = static_cast<SignatureXAdES_B*>(iter);
 
         stringstream ofs;
         signature->saveToXml(ofs);

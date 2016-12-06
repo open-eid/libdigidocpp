@@ -17,7 +17,7 @@
  *
  */
 
-#include "SignatureBES.h"
+#include "SignatureXAdES_B.h"
 
 #include "ASiC_E.h"
 #include "log.h"
@@ -60,10 +60,10 @@ using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
 
-const string SignatureBES::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3.2#";
-const string SignatureBES::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
-const string SignatureBES::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.1#";
-const map<string,SignatureBES::Policy> SignatureBES::policylist = {
+const string SignatureXAdES_B::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3.2#";
+const string SignatureXAdES_B::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
+const string SignatureXAdES_B::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.1#";
+const map<string,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist = {
     {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.1",{
         "BDOC – FORMAT FOR DIGITAL SIGNATURES",
         "https://www.sk.ee/repository/bdoc-spec21.pdf",
@@ -166,7 +166,7 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 /**
  * Creates an empty BDOC-BES signature with mandatory XML nodes.
  */
-SignatureBES::SignatureBES(unsigned int id, ASiContainer *bdoc, Signer *signer)
+SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer)
  : signature(nullptr)
  , asicsignature(nullptr)
  , bdoc(bdoc)
@@ -275,7 +275,7 @@ SignatureBES::SignatureBES(unsigned int id, ASiContainer *bdoc, Signer *signer)
  *                              produced by other systems; default = false
  * @throws SignatureException
  */
-SignatureBES::SignatureBES(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
+SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
  : signature(nullptr)
  , asicsignature(nullptr)
  , bdoc(bdoc)
@@ -368,12 +368,12 @@ SignatureBES::SignatureBES(istream &sigdata, ASiContainer *bdoc, bool relaxSchem
         THROW("Signature element mandatory attribute 'Id' is missing");
 }
 
-SignatureBES::~SignatureBES()
+SignatureXAdES_B::~SignatureXAdES_B()
 {
     delete asicsignature;
 }
 
-string SignatureBES::policy() const
+string SignatureXAdES_B::policy() const
 {
     const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
             getSignedSignatureProperties().signaturePolicyIdentifier();
@@ -394,7 +394,7 @@ string SignatureBES::policy() const
 /**
  * @return returns signature mimetype.
  */
-string SignatureBES::profile() const
+string SignatureXAdES_B::profile() const
 {
     string base = policy().empty() ? ASiC_E::BES_PROFILE : ASiC_E::EPES_PROFILE;
     try {
@@ -422,12 +422,12 @@ string SignatureBES::profile() const
     return base;
 }
 
-string SignatureBES::trustedSigningTime() const
+string SignatureXAdES_B::trustedSigningTime() const
 {
     return claimedSigningTime();
 }
 
-string SignatureBES::SPUri() const
+string SignatureXAdES_B::SPUri() const
 {
     const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
             getSignedSignatureProperties().signaturePolicyIdentifier();
@@ -457,7 +457,7 @@ string SignatureBES::SPUri() const
  *
  * @throws SignatureException containing details on what's wrong in this signature.
 */
-void SignatureBES::validate() const
+void SignatureXAdES_B::validate() const
 {
     // A "master" exception containing all problems (causes) with this signature.
     // It'll be only thrown in case we have a reason (cause).
@@ -653,7 +653,7 @@ void SignatureBES::validate() const
         throw exception;
 }
 
-vector<unsigned char> SignatureBES::dataToSign() const
+vector<unsigned char> SignatureXAdES_B::dataToSign() const
 {
     // Calculate SHA digest of the Signature->SignedInfo node.
     Digest calc(signatureMethod());
@@ -665,7 +665,7 @@ vector<unsigned char> SignatureBES::dataToSign() const
  * Verify if SigningCertificate matches with
  * XAdES::SigningCertificate/SigningCertificateV2 Digest and IssuerSerial info
  */
-void SignatureBES::checkKeyInfo() const
+void SignatureXAdES_B::checkKeyInfo() const
 {
     X509Cert x509 = signingCertificate();
 
@@ -730,7 +730,7 @@ void SignatureBES::checkKeyInfo() const
 
 /// Check if signing certificate was issued by trusted party.
 /// @throws SignatureException on a problem with signing certificate
-void SignatureBES::checkSigningCertificate() const
+void SignatureXAdES_B::checkSigningCertificate() const
 {
     try
     {
@@ -756,9 +756,9 @@ void SignatureBES::checkSigningCertificate() const
  *
  * @throws throws exception if signature value did not match.
  */
-void SignatureBES::checkSignatureValue() const
+void SignatureXAdES_B::checkSignatureValue() const
 {
-    DEBUG("SignatureBES::checkSignatureValue()");
+    DEBUG("SignatureXAdES_B::checkSignatureValue()");
     try
     {
         vector<unsigned char> sha = dataToSign();
@@ -772,7 +772,7 @@ void SignatureBES::checkSignatureValue() const
     }
 }
 
-void SignatureBES::addDataObjectFormat(const string &uri, const string &mime)
+void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime)
 {
     QualifyingPropertiesType::SignedPropertiesOptional& spOpt = qualifyingProperties().signedProperties();
     if(!spOpt.present())
@@ -798,7 +798,7 @@ void SignatureBES::addDataObjectFormat(const string &uri, const string &mime)
  * @returns referenece id
  * @throws SignatureException throws exception if the digest method is not supported.
  */
-string SignatureBES::addReference(const string& uri, const string& digestUri,
+string SignatureXAdES_B::addReference(const string& uri, const string& digestUri,
         const vector<unsigned char> &digestValue, const string& type)
 {
     ReferenceType reference(DigestMethodType(digestUri), toBase64(digestValue));
@@ -819,7 +819,7 @@ string SignatureBES::addReference(const string& uri, const string& digestUri,
  *
  * @param cert certificate that is used for signing the signature XML.
  */
-void SignatureBES::setKeyInfo(const X509Cert& x509)
+void SignatureXAdES_B::setKeyInfo(const X509Cert& x509)
 {
     // BASE64 encoding of a DER-encoded X.509 certificate = PEM encoded.
     X509DataType x509Data;
@@ -836,7 +836,7 @@ void SignatureBES::setKeyInfo(const X509Cert& x509)
  *
  * @param cert certificate that is used for signing the signature XML.
  */
-void SignatureBES::setSigningCertificate(const X509Cert& x509)
+void SignatureXAdES_B::setSigningCertificate(const X509Cert& x509)
 {
     // Calculate digest of the X.509 certificate.
     Digest digest;
@@ -854,7 +854,7 @@ void SignatureBES::setSigningCertificate(const X509Cert& x509)
  *
  * @param cert certificate that is used for signing the signature XML.
  */
-void SignatureBES::setSigningCertificateV2(const X509Cert& x509)
+void SignatureXAdES_B::setSigningCertificateV2(const X509Cert& x509)
 {
     // Calculate digest of the X.509 certificate.
     Digest digest;
@@ -870,7 +870,7 @@ void SignatureBES::setSigningCertificateV2(const X509Cert& x509)
  *
  * @param spp signature production place.
  */
-void SignatureBES::setSignatureProductionPlace(const string &city,
+void SignatureXAdES_B::setSignatureProductionPlace(const string &city,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
 {
     if(city.empty() && stateOrProvince.empty() &&
@@ -895,7 +895,7 @@ void SignatureBES::setSignatureProductionPlace(const string &city,
  *
  * @param spp signature production place.
  */
-void SignatureBES::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
+void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
 {
     if(city.empty() && streetAddress.empty() && stateOrProvince.empty() &&
@@ -923,7 +923,7 @@ void SignatureBES::setSignatureProductionPlaceV2(const string &city, const strin
  *
  * @param roles signer roles.
  */
-void SignatureBES::setSignerRoles(const vector<string> &roles)
+void SignatureXAdES_B::setSignerRoles(const vector<string> &roles)
 {
     if(roles.empty())
         return;
@@ -943,7 +943,7 @@ void SignatureBES::setSignerRoles(const vector<string> &roles)
  *
  * @param roles signer roles.
  */
-void SignatureBES::setSignerRolesV2(const vector<string> &roles)
+void SignatureXAdES_B::setSignerRolesV2(const vector<string> &roles)
 {
     if(roles.empty())
         return;
@@ -962,7 +962,7 @@ void SignatureBES::setSignerRolesV2(const vector<string> &roles)
  *
  * @param signingTime signing time.
  */
-void SignatureBES::setSigningTime(const struct tm *signingTime)
+void SignatureXAdES_B::setSigningTime(const struct tm *signingTime)
 {
     getSignedSignatureProperties().signingTime(util::date::makeDateTime(*signingTime));
 }
@@ -970,15 +970,15 @@ void SignatureBES::setSigningTime(const struct tm *signingTime)
 /**
  * Sets signature value.
  *
- * @param sigValue signature value.
+ * @param signatureValue signature value.
  */
-void SignatureBES::setSignatureValue(const vector<unsigned char> &sigValue)
+void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureValue)
 {
     // Make copy of current signature value id.
     string id = signature->signatureValue().id().get();
 
     // Set new signature value.
-    signature->signatureValue(toBase64(sigValue));
+    signature->signatureValue(toBase64(signatureValue));
 
     // Set signature value id back to its old value.
     signature->signatureValue().id(id);
@@ -987,7 +987,7 @@ void SignatureBES::setSignatureValue(const vector<unsigned char> &sigValue)
 /**
  * @return returns signature value.
  */
-vector<unsigned char> SignatureBES::getSignatureValue() const
+vector<unsigned char> SignatureXAdES_B::getSignatureValue() const
 {
     const SignatureType::SignatureValueType &signatureValueType = signature->signatureValue();
     return vector<unsigned char>(signatureValueType.data(),
@@ -1003,7 +1003,7 @@ vector<unsigned char> SignatureBES::getSignatureValue() const
  * @param ns signature tag namespace.
  * @param tagName signature tag name.
  */
-void SignatureBES::calcDigestOnNode(Digest* calc, const string& ns,
+void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
         const string& tagName, const string &id) const
 {
     try
@@ -1126,10 +1126,10 @@ void SignatureBES::calcDigestOnNode(Digest* calc, const string& ns,
 /**
  * Saves signature to file using XAdES XML format.
  *
- * @param path path, where the signature XML file is saved.
- * @throws IOException throws exception if the signature file creation failed.
+ * @param os out stream, where the signature XML file is saved.
+ * @throws Exception throws exception if the signature file creation failed.
  */
-void SignatureBES::saveToXml(ostream &os) const
+void SignatureXAdES_B::saveToXml(ostream &os) const
 {
     if(!sigdata_.empty())
     {
@@ -1155,7 +1155,7 @@ void SignatureBES::saveToXml(ostream &os) const
         THROW("Failed to create signature XML file.");
 }
 
-string SignatureBES::city() const
+string SignatureXAdES_B::city() const
 {
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
@@ -1169,7 +1169,7 @@ string SignatureBES::city() const
     return string();
 }
 
-string SignatureBES::stateOrProvince() const
+string SignatureXAdES_B::stateOrProvince() const
 {
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
@@ -1183,7 +1183,7 @@ string SignatureBES::stateOrProvince() const
     return string();
 }
 
-string SignatureBES::streetAddress() const
+string SignatureXAdES_B::streetAddress() const
 {
     const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
             getSignedSignatureProperties().signatureProductionPlaceV2();
@@ -1192,7 +1192,7 @@ string SignatureBES::streetAddress() const
     return string();
 }
 
-string SignatureBES::postalCode() const
+string SignatureXAdES_B::postalCode() const
 {
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
@@ -1206,7 +1206,7 @@ string SignatureBES::postalCode() const
     return string();
 }
 
-string SignatureBES::countryName() const
+string SignatureXAdES_B::countryName() const
 {
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional &sigProdPlaceOptional =
@@ -1220,7 +1220,7 @@ string SignatureBES::countryName() const
     return string();
 }
 
-vector<string> SignatureBES::signerRoles() const
+vector<string> SignatureXAdES_B::signerRoles() const
 {
     vector<string> roles;
     const SignedSignaturePropertiesType::SignerRoleOptional &roleOpt =
@@ -1241,7 +1241,7 @@ vector<string> SignatureBES::signerRoles() const
     return roles;
 }
 
-string SignatureBES::claimedSigningTime() const
+string SignatureXAdES_B::claimedSigningTime() const
 {
     const SignedSignaturePropertiesType::SigningTimeOptional& sigTimeOpt =
         getSignedSignatureProperties().signingTime();
@@ -1250,7 +1250,7 @@ string SignatureBES::claimedSigningTime() const
     return util::date::xsd2string(sigTimeOpt.get());
 }
 
-X509Cert SignatureBES::signingCertificate() const
+X509Cert SignatureXAdES_B::signingCertificate() const
 {
     const SignatureType::KeyInfoOptional& keyInfoOptional = signature->keyInfo();
     if(!keyInfoOptional.present())
@@ -1279,17 +1279,17 @@ X509Cert SignatureBES::signingCertificate() const
     return X509Cert();
 }
 
-string SignatureBES::id() const
+string SignatureXAdES_B::id() const
 {
     return signature->id().present() ? signature->id().get() : string();
 }
 
-string SignatureBES::signatureMethod() const
+string SignatureXAdES_B::signatureMethod() const
 {
     return signature->signedInfo().signatureMethod().algorithm();
 }
 
-QualifyingPropertiesType& SignatureBES::qualifyingProperties() const
+QualifyingPropertiesType& SignatureXAdES_B::qualifyingProperties() const
 {
     SignatureType::ObjectSequence& oSeq = signature->object();
     if ( oSeq.empty() )
@@ -1313,7 +1313,7 @@ QualifyingPropertiesType& SignatureBES::qualifyingProperties() const
 *
 * @return returns the SignedSignaturePropertiesType object.
 */
-SignedSignaturePropertiesType& SignatureBES::getSignedSignatureProperties() const
+SignedSignaturePropertiesType& SignatureXAdES_B::getSignedSignatureProperties() const
 {
     QualifyingPropertiesType::SignedPropertiesOptional& spOpt = qualifyingProperties().signedProperties();
     if(!spOpt.present())

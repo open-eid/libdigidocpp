@@ -44,12 +44,12 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 }
 
 SignatureTM::SignatureTM(unsigned int id, ASiContainer *bdoc, Signer *signer)
-: SignatureBES(id, bdoc, signer)
+: SignatureXAdES_B(id, bdoc, signer)
 {
 }
 
 SignatureTM::SignatureTM(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
-: SignatureBES(sigdata, bdoc, relaxSchemaValidation)
+: SignatureXAdES_B(sigdata, bdoc, relaxSchemaValidation)
 {
 }
 
@@ -106,7 +106,7 @@ void SignatureTM::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureBES::validate();
+        SignatureXAdES_B::validate();
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);
