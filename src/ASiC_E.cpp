@@ -21,7 +21,7 @@
 
 #include "Conf.h"
 #include "DataFile_p.h"
-#include "SignatureA.h"
+#include "SignatureXAdES_LTA.h"
 #include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/Signer.h"
@@ -135,7 +135,7 @@ void ASiC_E::addAdESSignature(istream &sigdata)
 
     try
     {
-        addSignature(new SignatureA(sigdata, this));
+        addSignature(new SignatureXAdES_LTA(sigdata, this));
     }
     catch(const Exception &e)
     {
@@ -256,7 +256,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 {
                     stringstream data;
                     z.extract(file, data);
-                    addSignature(new SignatureA(data, this, true));
+                    addSignature(new SignatureXAdES_LTA(data, this, true));
                 }
                 catch(const Exception &e)
                 {
@@ -297,12 +297,12 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 
 Signature* ASiC_E::prepareSignature(Signer *signer)
 {
-    return newSignature<SignatureA>(signer);
+    return newSignature<SignatureXAdES_LTA>(signer);
 }
 
 Signature *ASiC_E::sign(Signer* signer)
 {
-    SignatureA *s = static_cast<SignatureA*>(prepareSignature(signer));
+    SignatureXAdES_LTA *s = static_cast<SignatureXAdES_LTA*>(prepareSignature(signer));
     try
     {
         s->setSignatureValue(signer->sign(s->signatureMethod(), s->dataToSign()));
