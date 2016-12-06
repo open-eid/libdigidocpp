@@ -858,7 +858,6 @@ EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          */log.* \
                          */SignatureXAdES*.* \
                          */SignatureTM.* \
-                         */SignatureTS.* \
                          */SignatureTST.* \
                          */SignatureA.* \
                          */*ASiC*.* \

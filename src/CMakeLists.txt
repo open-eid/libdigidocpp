@@ -232,8 +232,8 @@ add_library(digidocpp ${BUILD_TYPE}
     RDoc.cpp
     Signature.cpp
     SignatureXAdES_B.cpp
+    SignatureXAdES_T.cpp
     SignatureTM.cpp
-    SignatureTS.cpp
     SignatureA.cpp
     SignatureTST.cpp
     crypto/PKCS11Signer.cpp

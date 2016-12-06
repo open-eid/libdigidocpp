@@ -17,7 +17,7 @@
  *
  */
 
-#include "SignatureTS.h"
+#include "SignatureXAdES_T.h"
 
 #include "ASiC_E.h"
 #include "Conf.h"
@@ -44,29 +44,29 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 }
 
 
-SignatureTS::SignatureTS(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureTM(id, bdoc, signer) {}
+SignatureXAdES_T::SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureTM(id, bdoc, signer) {}
 
-SignatureTS::SignatureTS(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureTM(sigdata, bdoc, relaxSchemaValidation) {}
+SignatureXAdES_T::SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureTM(sigdata, bdoc, relaxSchemaValidation) {}
 
-SignatureTS::~SignatureTS() {}
+SignatureXAdES_T::~SignatureXAdES_T() {}
 
-X509Cert SignatureTS::TimeStampCertificate() const
+X509Cert SignatureXAdES_T::TimeStampCertificate() const
 {
     return TS(tsBase64()).cert();
 }
 
-string SignatureTS::TimeStampTime() const
+string SignatureXAdES_T::TimeStampTime() const
 {
     return ASN1TimeToXSD(TS(tsBase64()).time());
 }
 
-string SignatureTS::trustedSigningTime() const
+string SignatureXAdES_T::trustedSigningTime() const
 {
     string time = TimeStampTime();
     return time.empty() ? SignatureTM::trustedSigningTime() : time;
 }
 
-void SignatureTS::extendSignatureProfile(const std::string &profile)
+void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
 {
     if(profile.find(ASiC_E::ASIC_TS_PROFILE) != string::npos)
     {
@@ -94,7 +94,7 @@ void SignatureTS::extendSignatureProfile(const std::string &profile)
     SignatureTM::extendSignatureProfile(profile);
 }
 
-vector<unsigned char> SignatureTS::tsBase64() const
+vector<unsigned char> SignatureXAdES_T::tsBase64() const
 {
     try {
         if(unsignedSignatureProperties().signatureTimeStamp().empty())
@@ -110,7 +110,7 @@ vector<unsigned char> SignatureTS::tsBase64() const
     return vector<unsigned char>();
 }
 
-void SignatureTS::validate() const
+void SignatureXAdES_T::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {

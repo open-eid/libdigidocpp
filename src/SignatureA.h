@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include "SignatureTS.h"
+#include "SignatureXAdES_T.h"
 
 namespace digidoc
 {
 
-class SignatureA: public SignatureTS
+class SignatureA: public SignatureXAdES_T
 {
 public:
     SignatureA(unsigned int id, ASiContainer *bdoc, Signer *signer);
