@@ -45,9 +45,9 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
     return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
-SignatureA::SignatureA(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureTS(id, bdoc, signer) {}
+SignatureA::SignatureA(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_T(id, bdoc, signer) {}
 
-SignatureA::SignatureA(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureTS(sigdata, bdoc, relaxSchemaValidation) {}
+SignatureA::SignatureA(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_T(sigdata, bdoc, relaxSchemaValidation) {}
 
 SignatureA::~SignatureA() {}
 
@@ -108,7 +108,7 @@ void SignatureA::calcArchiveDigest(Digest *digest) const
 
 void SignatureA::extendSignatureProfile(const std::string &profile)
 {
-    SignatureTS::extendSignatureProfile(profile);
+    SignatureXAdES_T::extendSignatureProfile(profile);
     if(profile != ASiC_E::ASIC_TSA_PROFILE && profile != ASiC_E::ASIC_TMA_PROFILE)
         return;
 
@@ -155,7 +155,7 @@ void SignatureA::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureTS::validate();
+        SignatureXAdES_T::validate();
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);

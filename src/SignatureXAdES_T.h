@@ -24,12 +24,12 @@
 namespace digidoc
 {
 
-class SignatureTS: public SignatureTM
+class SignatureXAdES_T: public SignatureTM
 {
 public:
-    SignatureTS(unsigned int id, ASiContainer *bdoc, Signer *signer);
-    SignatureTS(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
-    virtual ~SignatureTS();
+    SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer);
+    SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
+    virtual ~SignatureXAdES_T();
 
     virtual std::string trustedSigningTime() const override;
 
@@ -39,7 +39,7 @@ public:
     virtual void extendSignatureProfile(const std::string &profile) override;
 
 private:
-    DISABLE_COPY(SignatureTS);
+    DISABLE_COPY(SignatureXAdES_T);
 
     std::vector<unsigned char> tsBase64() const;
 
