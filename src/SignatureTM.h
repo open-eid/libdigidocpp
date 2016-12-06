@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "SignatureBES.h"
+#include "SignatureXAdES_B.h"
 
 
 namespace digidoc
@@ -27,7 +27,7 @@ namespace digidoc
 
 namespace xades { class OCSPRefType; class UnsignedSignaturePropertiesType; }
 
-class SignatureTM: public SignatureBES
+class SignatureTM: public SignatureXAdES_B
 {
 public:
     SignatureTM(unsigned int id, ASiContainer *bdoc, Signer *signer);

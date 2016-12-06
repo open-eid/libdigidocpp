@@ -20,7 +20,6 @@
 #include "Conf.h"
 
 #include "log.h"
-#include "SignatureBES.h"
 #include "crypto/Digest.h"
 #include "crypto/X509Cert.h"
 #include "util/File.h"

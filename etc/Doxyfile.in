@@ -856,14 +856,12 @@ EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          **/*_p.h \
                          */digidoc-tool.cpp \
                          */log.* \
-                         */SignatureBES.* \
+                         */SignatureXAdES*.* \
                          */SignatureTM.* \
                          */SignatureTS.* \
                          */SignatureTST.* \
                          */SignatureA.* \
-                         */*ASiContainer.* \
-                         */*ASiC_S.* \
-                         */*ASiC_E.* \
+                         */*ASiC*.* \
                          */*Doc.*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names

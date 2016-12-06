@@ -32,7 +32,7 @@ namespace digidoc
     namespace xades { class QualifyingPropertiesType; class SignedSignaturePropertiesType; }
     namespace asic { class XAdESSignaturesType; }
 
-    class SignatureBES : public Signature
+    class SignatureXAdES_B : public Signature
     {
 
       public:
@@ -43,9 +43,9 @@ namespace digidoc
           };
           static const std::map<std::string,Policy> policylist;
 
-          SignatureBES(unsigned int id, ASiContainer *bdoc, Signer *signer);
-          SignatureBES(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
-          virtual ~SignatureBES();
+          SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer);
+          SignatureXAdES_B(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
+          virtual ~SignatureXAdES_B();
 
           std::string id() const override;
           std::string claimedSigningTime() const override;
@@ -89,7 +89,7 @@ namespace digidoc
           std::string sigdata_;
 
       private:
-          DISABLE_COPY(SignatureBES);
+          DISABLE_COPY(SignatureXAdES_B);
 
           void setKeyInfo(const X509Cert& cert);
           void setSigningCertificate(const X509Cert& cert);
