@@ -233,7 +233,7 @@ add_library(digidocpp ${BUILD_TYPE}
     Signature.cpp
     SignatureXAdES_B.cpp
     SignatureXAdES_T.cpp
-    SignatureTM.cpp
+    SignatureXAdES_LT.cpp
     SignatureA.cpp
     SignatureTST.cpp
     crypto/PKCS11Signer.cpp

@@ -44,9 +44,9 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 }
 
 
-SignatureXAdES_T::SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureTM(id, bdoc, signer) {}
+SignatureXAdES_T::SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_LT(id, bdoc, signer) {}
 
-SignatureXAdES_T::SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureTM(sigdata, bdoc, relaxSchemaValidation) {}
+SignatureXAdES_T::SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_LT(sigdata, bdoc, relaxSchemaValidation) {}
 
 SignatureXAdES_T::~SignatureXAdES_T() {}
 
@@ -63,7 +63,7 @@ string SignatureXAdES_T::TimeStampTime() const
 string SignatureXAdES_T::trustedSigningTime() const
 {
     string time = TimeStampTime();
-    return time.empty() ? SignatureTM::trustedSigningTime() : time;
+    return time.empty() ? SignatureXAdES_LT::trustedSigningTime() : time;
 }
 
 void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
@@ -91,7 +91,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
                 unsignedSignatureProperties().signatureTimeStamp().size() - 1));
         sigdata_.clear();
     }
-    SignatureTM::extendSignatureProfile(profile);
+    SignatureXAdES_LT::extendSignatureProfile(profile);
 }
 
 vector<unsigned char> SignatureXAdES_T::tsBase64() const
@@ -114,7 +114,7 @@ void SignatureXAdES_T::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureTM::validate();
+        SignatureXAdES_LT::validate();
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);

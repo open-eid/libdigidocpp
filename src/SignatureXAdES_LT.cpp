@@ -17,7 +17,7 @@
  *
  */
 
-#include "SignatureTM.h"
+#include "SignatureXAdES_LT.h"
 
 #include "ASiC_E.h"
 #include "Conf.h"
@@ -43,24 +43,24 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
     return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
 }
 
-SignatureTM::SignatureTM(unsigned int id, ASiContainer *bdoc, Signer *signer)
+SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer)
 : SignatureXAdES_B(id, bdoc, signer)
 {
 }
 
-SignatureTM::SignatureTM(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
+SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
 : SignatureXAdES_B(sigdata, bdoc, relaxSchemaValidation)
 {
 }
 
-SignatureTM::~SignatureTM()
+SignatureXAdES_LT::~SignatureXAdES_LT()
 {
 }
 
 /**
  * @return nonce value
  */
-vector<unsigned char> SignatureTM::OCSPNonce() const
+vector<unsigned char> SignatureXAdES_LT::OCSPNonce() const
 {
     vector<unsigned char> respBuf = getOCSPResponseValue();
     return respBuf.empty() ? vector<unsigned char>() : OCSP(respBuf).nonce();
@@ -69,7 +69,7 @@ vector<unsigned char> SignatureTM::OCSPNonce() const
 /**
  * @return returns OCSP certificate
  */
-X509Cert SignatureTM::OCSPCertificate() const
+X509Cert SignatureXAdES_LT::OCSPCertificate() const
 {
     vector<unsigned char> respBuf = getOCSPResponseValue();
     return respBuf.empty() ? X509Cert() : OCSP(respBuf).responderCert();
@@ -78,7 +78,7 @@ X509Cert SignatureTM::OCSPCertificate() const
 /**
  * @return returns OCSP timestamp
  */
-string SignatureTM::OCSPProducedAt() const
+string SignatureXAdES_LT::OCSPProducedAt() const
 {
     vector<unsigned char> respBuf = getOCSPResponseValue();
     if(respBuf.empty())
@@ -86,7 +86,7 @@ string SignatureTM::OCSPProducedAt() const
     return ASN1TimeToXSD(OCSP(respBuf).producedAt());
 }
 
-string SignatureTM::trustedSigningTime() const
+string SignatureXAdES_LT::trustedSigningTime() const
 {
     string time = OCSPProducedAt();
     return time.empty() ? claimedSigningTime() : time;
@@ -102,7 +102,7 @@ string SignatureTM::trustedSigningTime() const
  *
  * @throws SignatureException if signature is not valid
  */
-void SignatureTM::validate() const
+void SignatureXAdES_LT::validate() const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
@@ -184,7 +184,7 @@ void SignatureTM::validate() const
  *
  * @throws SignatureException
  */
-void SignatureTM::extendSignatureProfile(const std::string &profile)
+void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
 {
     if(profile == ASiC_E::BES_PROFILE || profile == ASiC_E::EPES_PROFILE)
         return;
@@ -245,9 +245,9 @@ void SignatureTM::extendSignatureProfile(const std::string &profile)
  * @param certId id attribute of EncapsulatedX509Certificate
  * @param x509 value of EncapsulatedX509Certificate
  */
-void SignatureTM::addCertificateValue(const string& certId, const X509Cert& x509)
+void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert& x509)
 {
-    DEBUG("SignatureTM::setCertificateValue(%s, X509Cert{%s,%s})",
+    DEBUG("SignatureXAdES_LT::setCertificateValue(%s, X509Cert{%s,%s})",
         certId.c_str(), x509.serial().c_str(), x509.subjectName().c_str());
 
     UnsignedSignaturePropertiesType::CertificateValuesSequence &values =
@@ -270,7 +270,7 @@ void SignatureTM::addCertificateValue(const string& certId, const X509Cert& x509
  * which contains whole OCSP response
  * @param data will contain DER encoded OCSP response bytes
  */
-vector<unsigned char> SignatureTM::getOCSPResponseValue() const
+vector<unsigned char> SignatureXAdES_LT::getOCSPResponseValue() const
 {
     try
     {
@@ -295,7 +295,7 @@ vector<unsigned char> SignatureTM::getOCSPResponseValue() const
     return vector<unsigned char>();
 }
 
-UnsignedSignaturePropertiesType &SignatureTM::unsignedSignatureProperties() const
+UnsignedSignaturePropertiesType &SignatureXAdES_LT::unsignedSignatureProperties() const
 {
     QualifyingPropertiesType::UnsignedPropertiesOptional &unsignedPropsOptional =
             qualifyingProperties().unsignedProperties();
