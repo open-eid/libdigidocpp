@@ -857,7 +857,6 @@ EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          */digidoc-tool.cpp \
                          */log.* \
                          */SignatureXAdES*.* \
-                         */SignatureTM.* \
                          */SignatureTST.* \
                          */SignatureA.* \
                          */*ASiC*.* \
