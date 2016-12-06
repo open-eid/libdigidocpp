@@ -19,12 +19,14 @@
 
 #pragma once
 
-#include "SignatureXAdES_LT.h"
+#include "SignatureXAdES_B.h"
 
 namespace digidoc
 {
 
-class SignatureXAdES_T: public SignatureXAdES_LT
+namespace xades { class UnsignedSignaturePropertiesType; }
+
+class SignatureXAdES_T: public SignatureXAdES_B
 {
 public:
     SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer);
@@ -37,6 +39,9 @@ public:
     std::string TimeStampTime() const override;
     virtual void validate() const override;
     virtual void extendSignatureProfile(const std::string &profile) override;
+
+protected:
+    xades::UnsignedSignaturePropertiesType& unsignedSignatureProperties() const;
 
 private:
     DISABLE_COPY(SignatureXAdES_T);
