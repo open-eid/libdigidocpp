@@ -134,8 +134,8 @@ string Conf::ocsp(const string &issuer) const
         //Finland Test
         {"VRK CA for Test Purposes", "http://demo.sk.ee/ocsp"},
         {"VRK CA for Test Purposes - G2", "http://demo.sk.ee/ocsp"},
-        //Latvia Test - disabled, issuer name is identical with live certificates
-        //{"E-ME SI (CA1)", "http://demo.sk.ee/ocsp"},
+        //Latvia Test
+        {"E-ME SI (CA1)", "http://demo.sk.ee/ocsp"},
         //Lithuania Test
         {"Nacionalinis sertifikavimo centras (IssuingCA A)", "http://demo.sk.ee/ocsp"},
     };
