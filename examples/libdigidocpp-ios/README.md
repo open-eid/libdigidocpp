@@ -8,8 +8,6 @@
 
 2. Prepare
 
-   xml-security-c 1.7.3 fails to build, because getcwd autotool configure test (1.7.2 works, requires modifing prepare_osx_build_environment.sh script)
-   
         sh ../../prepare_osx_build_environment.sh ios all
         sh ../../prepare_osx_build_environment.sh simulator all
 

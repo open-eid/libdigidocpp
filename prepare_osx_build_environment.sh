@@ -5,7 +5,7 @@ XERCES_DIR=xerces-c-3.1.4
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2j
-LIBXML2_DIR=libxml2-2.9.3
+LIBXML2_DIR=libxml2-2.9.4
 ARGS="$@"
 
 case "$@" in
@@ -31,7 +31,7 @@ case "$@" in
   echo "Building for Android ${ARCH} ${API}"
 
   TARGET_PATH=/Library/EstonianIDCard.android${ARCH}
-  ANDROID_NDK=android-ndk-r13
+  ANDROID_NDK=android-ndk-r13b
   SYSROOT=${TARGET_PATH}/sysroot
   export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
   export CC=${CROSS_COMPILE}-clang
