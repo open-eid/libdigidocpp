@@ -93,20 +93,24 @@ namespace digidoc
 class TestConfig: public ConfCurrent
 {
 public:
-    string libdigidocConf() const override { return "digidoc.conf"; }
+    string libdigidocConf() const override { return path + "/digidoc.conf"; }
     int logLevel() const override { return 4; }
-    string logFile() const override { return "libdigidocpp.log"; }
+    string logFile() const override { return path + "/libdigidocpp.log"; }
     string xsdPath() const override { return DIGIDOCPPCONF; }
-    string certsPath() const override { return "."; }
     string ocsp(const string &) const override
     { return "http://demo.sk.ee/ocsp"; }
     bool PKCS12Disable() const override { return true; }
     string TSUrl() const override { return "http://demo.sk.ee/tsa/"; }
     bool TSLAutoUpdate() const override { return false; }
+    string TSLCache() const override { return path; }
     bool TSLOnlineDigest() const override { return false; }
+    string TSLUrl() const override { return path + "/TSL.xml"; }
+    vector<X509Cert> TSLCerts() const override { return { X509Cert(path + "/TSL.crt", X509Cert::Pem) }; }
+
+    string path = ".";
 };
 
-class BDoc2: public Container
+class ASiCE: public Container
 {
 public:
     static const string TYPE, EXT;
@@ -121,12 +125,12 @@ class ASiCS: public Container
 public:
     static const string TYPE, EXT;
 };
-const string BDoc2::TYPE = "application/vnd.etsi.asic-e+zip";
-const string DDoc::TYPE = "DIGIDOC-XML/1.3";
-const string BDoc2::EXT = "asice";
-const string DDoc::EXT = "ddoc";
+const string ASiCE::TYPE = "application/vnd.etsi.asic-e+zip";
+const string ASiCE::EXT = "asice";
 const string ASiCS::TYPE = "application/vnd.etsi.asic-s+zip";
 const string ASiCS::EXT = "asics";
+const string DDoc::TYPE = "DIGIDOC-XML/1.3";
+const string DDoc::EXT = "ddoc";
 }
 
 static void translate_exception(const Exception &e)
@@ -143,14 +147,16 @@ struct DigiDocPPFixture
     DigiDocPPFixture()
     {
         //BOOST_MESSAGE("loading libdigidocpp: " + digidoc::version());
+        TestConfig *conf = new TestConfig;
         int argc = boost::unit_test::framework::master_test_suite().argc;
         if(argc > 1)
         {
             //BOOST_MESSAGE("Data path " + string(boost::unit_test::framework::master_test_suite().argv[argc-1]));
             chdir(boost::unit_test::framework::master_test_suite().argv[argc-1]);
+            conf->path = boost::unit_test::framework::master_test_suite().argv[argc-1];
         }
         boost::unit_test::unit_test_monitor.register_exception_translator<Exception>(&translate_exception);
-        Conf::init(new TestConfig);
+        Conf::init(conf);
         digidoc::initialize("untitestboost");
     }
 
@@ -243,9 +249,9 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(DocSuite)
 #ifdef LINKED_LIBDIGIDOC
-typedef boost::mpl::list<BDoc2,DDoc> DocTypes;
+typedef boost::mpl::list<ASiCE,DDoc> DocTypes;
 #else
-typedef boost::mpl::list<BDoc2> DocTypes;
+typedef boost::mpl::list<ASiCE> DocTypes;
 #endif
 BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
 {
@@ -380,7 +386,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     if(d->signatures().size() == 1)
         BOOST_CHECK_EQUAL(d->signatures().at(0)->signingCertificate(), signer2->cert());
 
-    if(d->mediaType() == BDoc2::TYPE)
+    if(d->mediaType() == ASiCE::TYPE)
     {
         unique_ptr<Signer> signer3(new PKCS12Signer("signerEC.p12", "signerEC"));
         Signature *s3 = 0;
