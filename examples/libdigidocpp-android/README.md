@@ -8,8 +8,6 @@
 
 2. Prepare
 
-   xml-security-c 1.7.3 fails to build, because getcwd autotool configure test (1.7.2 works)
-   
         export ANDROID_NDK=$HOME/android-ndk-r10e
         sh ../../prepare_osx_build_environment.sh android all
 
