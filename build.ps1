@@ -46,10 +46,10 @@ if($source) {
   $lightext += "SourceFilesFragment.wixobj"
 }
 
-Remove-Item build -Force -Recurse > $null
 foreach($platform in @("x86", "x64")) {
   foreach($type in @("Debug", "RelWithDebInfo")) {
-    switch ($platform+$type)
+    $buildpath = $platform+$type
+    switch ($buildpath)
     { 'x86Debug' {
       $xerces_lib = 'Win32/VC12/Debug/xerces-c_3D.lib'
       $xerces_dll = 'Win32/VC12/Debug/xerces-c_3_1D.dll'
@@ -95,8 +95,9 @@ foreach($platform in @("x86", "x64")) {
       $cmakeext += "-DLIBDIGIDOC_LIBRARY=$libdigidoc/$platform/bin/digidoc.lib"
       $cmakeext += "-DLIBDIGIDOC_INCLUDE_DIR=$libdigidoc/$platform/include"
     }
-    New-Item -ItemType directory -Path build > $null
-    Push-Location -Path build
+    Remove-Item $buildpath -Force -Recurse > $null
+    New-Item -ItemType directory -Path $buildpath > $null
+    Push-Location -Path $buildpath
     if($boost) {
       New-Item -ItemType directory -Path test > $null
       Copy-Item "$target/xerces/Build/$xerces_dll" test
@@ -126,7 +127,6 @@ foreach($platform in @("x86", "x64")) {
       "-DZLIB_INCLUDE_DIR=$target/zlib/$platform/include" `
       $cmakeext $libdigidocpp "&&" nmake /nologo install
     Pop-Location
-    Remove-Item build -Force -Recurse > $null
   }
 }
 

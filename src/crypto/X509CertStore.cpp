@@ -58,31 +58,6 @@ X509CertStore::X509CertStore()
     SSL_library_init();
     OPENSSL_config(0);
     d->update();
-
-    string path = Conf::instance()->certsPath();
-    if(path.empty())
-        return;
-
-    if(!util::File::directoryExists(path))
-    {
-        WARN("Directory %s does not exists, can not load cert store.", path.c_str());
-        return;
-    }
-
-    for(const std::string &file: util::File::listFiles(path))
-    {
-        string ext = file.substr(file.size() - 3);
-        transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-        if(ext != "pem" && ext != "crt")
-            continue;
-        try {
-            d->push_back(X509Cert(file));
-        } catch(const Exception &e) {
-            WARN("Failed to parse cert '%s': %s", file.c_str(),
-                 e.causes().empty() ? e.msg().c_str() : e.causes().front().msg().c_str());
-        }
-    }
-    INFO("Loaded %d certificates into certificate store.", certs().size());
 }
 
 /**
