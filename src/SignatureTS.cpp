@@ -152,11 +152,8 @@ void SignatureTS::validate() const
         time_t producedAtT = mktime(&producedAt);
         tm time = ASN1TimeToTM(tsa.time());
         time_t timeT = mktime(&time);
-        if(producedAtT < timeT)
-            EXCEPTION_ADD(exception, "TimeStamp is after OCSP response");
-        else if(producedAtT - timeT > 24 * 60 * 60) // 24h
-            EXCEPTION_ADD(exception, "TimeStamp time and OCSP producedAt are over 24h");
-        else if(producedAtT - timeT > 15 * 60 && !Exception::hasWarningIgnore(Exception::ProducedATLateWarning)) // 15m
+        if((producedAtT - timeT > 15 * 60 || timeT - producedAtT > 15 * 60) &&
+            !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
         {
             Exception e(EXCEPTION_PARAMS("TimeStamp time and OCSP producedAt are over 15m"));
             e.setCode(Exception::ProducedATLateWarning);
