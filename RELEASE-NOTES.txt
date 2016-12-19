@@ -4,6 +4,9 @@ Changes compared to ver 3.12.2
 - Relax validation of BDOC to accept sub-elements of SignatureProductionPlace in any order
 - Speed up signing large files by handling them as file stream instead of in-memory
 - Improved compatability with Latvian ASiC-E documents
+- XAdES EN support
+- Better handling of malicious zip files
+- Added ASiC-S validation support
 
 
 
