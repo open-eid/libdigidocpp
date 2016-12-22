@@ -74,8 +74,6 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/en_31916201v010101.xsd
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
     --namespace-map http://uri.etsi.org/02918/v1.2.1\#=digidoc::asic )
-list( APPEND xsd_SRCS xml/ObjectType.cpp xml/AnyType.cpp xml/UnsignedSignaturePropertiesType.cpp )
-
 XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/xml.xsd
     --root-element-none )
 XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
@@ -84,7 +82,6 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020201_201601
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --custom-type AdditionalInformationType=/AdditionalInformationTypeBase
     --hxx-epilogue \"\#include <xml/AdditionalInformationType.h>\" )
-list( APPEND xsd_SRCS xml/AdditionalInformationType.cpp )
 if( WIN32 )
     add_executable( embedfile embedfile.cpp )
     add_custom_command( OUTPUT tslcert1.h tslcert2.h tslcert3.h tslcert4.h
@@ -163,6 +160,11 @@ add_library(digidocpp_priv STATIC
     crypto/TSL.cpp
     util/File.cpp
     util/DateTime.cpp
+    xml/AdditionalInformationType.cpp
+    xml/AnyType.cpp
+    xml/ObjectType.cpp
+    xml/SecureDOMParser.cpp
+    xml/UnsignedSignaturePropertiesType.cpp
 )
 
 set_target_properties(digidocpp_priv PROPERTIES

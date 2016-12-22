@@ -31,9 +31,9 @@
 #include "util/DateTime.h"
 #include "util/File.h"
 #include "xml/en_31916201v010101.hxx"
+#include "xml/SecureDOMParser.h"
 
 #include <xercesc/dom/DOM.hpp>
-#include <xercesc/framework/MemBufInputSource.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/util/BinInputStream.hpp>
 #include <xsec/canon/XSECC14n20010315.hpp>
@@ -59,6 +59,7 @@ using namespace digidoc::xades;
 using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
+namespace xml = xsd::cxx::xml;
 
 const string SignatureXAdES_B::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3.2#";
 const string SignatureXAdES_B::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
@@ -292,7 +293,9 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
         properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v141-201601.xsd"));
         properties.schema_location(URI_ID_DSIG, File::fullPathUrl(Conf::instance()->xsdPath() + "/xmldsig-core-schema.xsd"));
         properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/en_31916201v010101.xsd"));
-        asicsignature = xAdESSignatures(is, Flags::dont_initialize, properties).release();
+        unique_ptr<SecureDOMParser> parser(new SecureDOMParser(properties.schema_location()));
+        unique_ptr<DOMDocument> doc(parser->parseIStream(is));
+        asicsignature = xAdESSignatures(*doc, Flags::dont_initialize, properties).release();
         if(asicsignature->signature().size() > 1)
             THROW("More than one signature in signatures.xml file is unsupported");
         if(asicsignature->signature().empty())
@@ -517,19 +520,13 @@ void SignatureXAdES_B::validate() const
     }
 
     try {
-        unique_ptr<XercesDOMParser> parser(new XercesDOMParser());
-        parser->setDoNamespaces(true);
-        parser->setValidationScheme(XercesDOMParser::Val_Always);
-        parser->setDoSchema(true);
-        parser->setCreateEntityReferenceNodes(false);
         stringstream ofs;
         saveToXml(ofs);
-        string data = ofs.str();
-        MemBufInputSource source((XMLByte*)data.c_str(), data.size(), "temp");
-        parser->parse(source);
+        unique_ptr<SecureDOMParser> parser(new SecureDOMParser);
+        unique_ptr<DOMDocument> doc(parser->parseIStream(ofs));
 
         XSECProvider prov;
-        DSIGSignature *sig = prov.newSignatureFromDOM(parser->getDocument());
+        DSIGSignature *sig = prov.newSignatureFromDOM(doc.get());
         unique_ptr<URIResolver> uriresolver(new URIResolver(bdoc));
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
         sig->setURIResolver(uriresolver.get());
@@ -542,8 +539,8 @@ void SignatureXAdES_B::validate() const
         if(!DSIGReference::verifyReferenceList(sig->getReferenceList(), m_errStr))
         //if(!sig->verify()) does not support URI_ID_C14N11_NOC canonicalization
         {
-            //string s = xsd::cxx::xml::transcode<char>(sig->getErrMsgs());
-            string s = xsd::cxx::xml::transcode<char>(m_errStr.rawXMLChBuffer());
+            //string s = xml::transcode<char>(sig->getErrMsgs());
+            string s = xml::transcode<char>(m_errStr.rawXMLChBuffer());
             EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
         }
     }
@@ -555,12 +552,12 @@ void SignatureXAdES_B::validate() const
     }
     catch(XSECException &e)
     {
-        string s = xsd::cxx::xml::transcode<char>(e.getMsg());
+        string s = xml::transcode<char>(e.getMsg());
         EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
     }
     catch(XMLException &e)
     {
-        string s = xsd::cxx::xml::transcode<char>(e.getMessage());
+        string s = xml::transcode<char>(e.getMessage());
         EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
     }
     catch(...)
@@ -1017,13 +1014,7 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
         // preserve the white spaces you are DOOMED!
 
         // Initialize Xerces parser.
-        unique_ptr<XercesDOMParser> parser(new XercesDOMParser());
-        parser->setDoNamespaces(true);
-        parser->setValidationScheme(XercesDOMParser::Val_Always);
-        parser->setDoSchema(true);
-        parser->setCreateEntityReferenceNodes(false);
-        //ErrorHandler* errorHandler = /*(ErrorHandler*)*/ new HandlerBase();
-        //parser->setErrorHandler(errorHandler);
+        unique_ptr<SecureDOMParser> parser(new SecureDOMParser);
 
         // Parse and return a copy of the Xerces DOM tree.
         // Save to file an parse it again, to make XML Canonicalization work
@@ -1031,36 +1022,25 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
         // Hope, the next Canonical XMl specification fixes the white spaces preserving "bug".
         stringstream ofs;
         saveToXml(ofs);
-        string data = ofs.str();
-        MemBufInputSource source((XMLByte*)data.c_str(), data.size(), "temp");
-        parser->parse(source);
-        DOMDocument *dom = parser->getDocument();
+        unique_ptr<DOMDocument> doc(parser->parseIStream(ofs));
 
         DOMNode *node = nullptr;
         // Select node, on which the digest is calculated.
         if(id.empty())
         {
-            XMLCh *tagNs = XMLString::transcode(ns.c_str());
-            XMLCh *tag = XMLString::transcode(tagName.c_str());
-            DOMNodeList* nodeList = dom->getElementsByTagNameNS(tagNs, tag);
+            DOMNodeList* nodeList = doc->getElementsByTagNameNS(X(ns), X(tagName));
             if(nodeList->getLength() == 1)
                 node = nodeList->item(0);
-            XMLString::release(&tagNs);
-            XMLString::release(&tag);
         }
         else
-        {
-            XMLCh *tagId = XMLString::transcode(id.c_str());
-            node = dom->getElementById(tagId);
-            XMLString::release(&tagId);
-        }
+            node = doc->getElementById(X(id));
 
         // Make sure that exactly one node was found.
         if(!node)
             THROW("Could not find '%s' node which is in '%s' namespace in signature XML.", tagName.c_str(), ns.c_str());
 
         // Canocalize XML using one of the three methods supported by XML-DSIG
-        XSECC14n20010315 canonicalizer(dom, node);
+        XSECC14n20010315 canonicalizer(doc.get(), node);
         canonicalizer.setCommentsProcessing(false);
         canonicalizer.setUseNamespaceStack(true);
 
@@ -1147,7 +1127,7 @@ void SignatureXAdES_B::saveToXml(ostream &os) const
         asic.signature().push_back(*signature);
         xAdESSignatures(os, asic, map, "UTF-8", Flags::dont_initialize);
     }
-    catch ( xsd::cxx::xml::invalid_utf8_string )
+    catch ( xml::invalid_utf8_string )
     {
         THROW("Failed to create signature XML file. Parameters must be in UTF-8.");
     }
