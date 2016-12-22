@@ -289,6 +289,10 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     {
         THROW("Failed to parse manifest XML: out of memory");
     }
+    catch (const Exception &e)
+    {
+        THROW_CAUSE(e, "Failed to parse manifest");
+    }
     catch (...)
     {
         THROW("Failed to parse manifest XML: Unknown exception");
