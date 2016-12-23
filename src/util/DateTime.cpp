@@ -32,17 +32,15 @@ using namespace digidoc;
 using namespace digidoc::util::date;
 using namespace std;
 
-tm digidoc::util::date::ASN1TimeToTM(const std::string &date)
+tm digidoc::util::date::ASN1TimeToTM(const std::string &date, bool generalizedtime)
 {
     const char* t = date.c_str();
+    struct tm time;
+    memset(&time, 0, sizeof(time));
+    size_t i = 0;
 
-    if(date.size() < 12)
+    if(date.size() < (generalizedtime ? 12 : 10))
         THROW("Date time field value shorter than 12 characters: '%s'", t);
-#ifdef _WIN32
-    tm time = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-#else
-    tm time = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-#endif
 
     // Accept only GMT time.
     // XXX: What to do, when the time is not in GMT? The time data does not contain
@@ -57,33 +55,52 @@ tm digidoc::util::date::ASN1TimeToTM(const std::string &date)
     }
 
     // Extract year.
-    time.tm_year = ((t[0]-'0')*1000 + (t[1]-'0')*100 + (t[2]-'0')*10 + (t[3]-'0')) - 1900;
+    if(generalizedtime)
+    {
+        time.tm_year = (t[i++]-'0')*1000;
+        time.tm_year += (t[i++]-'0')*100;
+        time.tm_year += (t[i++]-'0')*10;
+        time.tm_year += (t[i++]-'0');
+        time.tm_year -= 1900;
+    }
+    else
+    {
+        time.tm_year = (t[i++] - '0') * 10;
+        time.tm_year += (t[i++] - '0');
+        if(time.tm_year < 70)
+            time.tm_year += 100;
+    }
 
     // Extract month.
-    time.tm_mon = ((t[4]-'0')*10 + (t[5]-'0')) - 1;
+    time.tm_mon = (t[i++]-'0')*10;
+    time.tm_mon += (t[i++]-'0');
+    time.tm_mon -= 1;
     if(time.tm_mon > 11 || time.tm_mon < 0)
         THROW("Month value incorrect: %d", time.tm_mon + 1);
 
     // Extract day.
-    time.tm_mday = (t[6]-'0')*10 + (t[7]-'0');
+    time.tm_mday = (t[i++]-'0')*10;
+    time.tm_mday += (t[i++]-'0');
     if(time.tm_mday > 31 || time.tm_mday < 1)
         THROW("Day value incorrect: %d", time.tm_mday);
 
     // Extract hour.
-    time.tm_hour = (t[8]-'0')*10 + (t[9]-'0');
+    time.tm_hour = (t[i++]-'0')*10;
+    time.tm_hour += (t[i++]-'0');
     if(time.tm_hour > 23 || time.tm_hour < 0)
         THROW("Hour value incorrect: %d", time.tm_hour);
 
     // Extract minutes.
-    time.tm_min = (t[10]-'0')*10 + (t[11]-'0');
+    time.tm_min = (t[i++]-'0')*10;
+    time.tm_min += (t[i++]-'0');
     if(time.tm_min > 59 || time.tm_min < 0)
         THROW("Minutes value incorrect: %d", time.tm_min);
 
     // Extract seconds.
-    time.tm_sec = 0;
-    if(date.size() >= 14)
+    if(date.size() >= (generalizedtime ? 14 : 12))
     {
-        time.tm_sec = (t[12]-'0')*10 + (t[13]-'0');
+        time.tm_sec = (t[i++]-'0')*10;
+        time.tm_sec += (t[i++]-'0');
         if(time.tm_sec > 59 || time.tm_sec < 0)
             THROW("Seconds value incorrect: %d", time.tm_sec);
     }
@@ -91,17 +108,17 @@ tm digidoc::util::date::ASN1TimeToTM(const std::string &date)
     return time;
 }
 
-time_t digidoc::util::date::ASN1TimeToTime_t(const string &date)
+time_t digidoc::util::date::ASN1TimeToTime_t(const string &date, bool generalizedtime)
 {
-    tm t = ASN1TimeToTM(date);
+    tm t = ASN1TimeToTM(date, generalizedtime);
     return mkgmtime(t);
 }
 
-string digidoc::util::date::ASN1TimeToXSD(const string &date)
+string digidoc::util::date::ASN1TimeToXSD(const string &date, bool generalizedtime)
 {
     if(date.empty())
         return date;
-    tm datetime = ASN1TimeToTM(date);
+    tm datetime = ASN1TimeToTM(date, generalizedtime);
     return xsd2string(makeDateTime(datetime));
 }
 

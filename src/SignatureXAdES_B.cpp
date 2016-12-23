@@ -734,11 +734,7 @@ void SignatureXAdES_B::checkSigningCertificate() const
         vector<X509Cert::KeyUsage> usage = signingCert.keyUsage();
         if(find(usage.begin(), usage.end(), X509Cert::NonRepudiation) == usage.end())
             THROW("Signing certificate does not contain NonRepudiation key usage flag");
-        string time = trustedSigningTime();
-        if(time.empty())
-            THROW("SigningTime missing");
-        time_t signingTime_t = util::date::string2time_t(time);
-        if(!X509CertStore::instance()->verify(signingCert, &signingTime_t))
+        if(!X509CertStore::instance()->verify(signingCert))
             THROW("Unable to verify signing certificate");
     }
     catch(const Exception &e)
