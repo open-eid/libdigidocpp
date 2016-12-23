@@ -197,10 +197,12 @@ X509_STORE* X509CertStore::createStore(time_t *t)
  * Check if X509Cert is signed by trusted issuer
  * @throw Exception if error
  */
-bool X509CertStore::verify(const X509Cert &cert, time_t *t) const
+bool X509CertStore::verify(const X509Cert &cert) const
 {
     activate(cert.issuerName("C"));
-    SCOPE(X509_STORE, store, createStore(t));
+    ASN1_TIME *asn1time = cert.handle()->cert_info->validity->notBefore;
+    time_t time = util::date::ASN1TimeToTime_t(string((const char*)asn1time->data, asn1time->length), asn1time->type == V_ASN1_GENERALIZEDTIME);
+    SCOPE(X509_STORE, store, createStore(&time));
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
     if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
