@@ -210,7 +210,7 @@ void TS::verify(const Digest &digest)
     vector<unsigned char> data = digest.result();
 
     time_t t = util::date::ASN1TimeToTime_t(time());
-    SCOPE(X509_STORE, store, X509CertStore::createStore(&t));
+    SCOPE(X509_STORE, store, X509CertStore::createStore(X509CertStore::TSA, &t));
     X509CertStore::instance()->activate(cert().issuerName("C"));
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
     if (!csc)
