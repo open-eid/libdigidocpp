@@ -256,7 +256,7 @@ X509Cert OCSP::responderCert() const
         if(compareResponderCert(cert))
             return cert;
     }
-    for(const X509Cert &cert: X509CertStore::instance()->certs())
+    for(const X509Cert &cert: X509CertStore::instance()->certs(X509CertStore::OCSP))
     {
         if(compareResponderCert(cert))
             return cert;
@@ -390,7 +390,7 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     if(!resp)
         THROW("Failed to verify OCSP response.");
     time_t t = util::date::ASN1TimeToTime_t(producedAt());
-    SCOPE(X509_STORE, store, X509CertStore::createStore(&t));
+    SCOPE(X509_STORE, store, X509CertStore::createStore(X509CertStore::OCSP, &t));
     //OCSP_TRUSTOTHER - enables OCSP_NOVERIFY
     //OCSP_NOSIGS - does not verify ocsp signatures
     //OCSP_NOVERIFY - ignores signer(responder) cert verification, requires store otherwise crashes

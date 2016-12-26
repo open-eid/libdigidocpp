@@ -86,11 +86,17 @@ const set<string> TSL::SERVICESTATUS_END = {
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/deprecatedatnationallevel",
 };
 
-const set<string> TSL::SERVICETYPE = {
+const set<string> TSL::SERVICETYPE_CA = {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
     "http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC",
+};
+
+const set<string> TSL::SERVICETYPE_OCSP = {
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
+};
+
+const set<string> TSL::SERVICETYPE_TSA = {
     "http://uri.etsi.org/TrstSvc/Svctype/TSA",
     "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
     "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC",
@@ -168,10 +174,15 @@ vector<TSL::Service> TSL::services() const
         for(const TSPServiceType &service: pointer.tSPServices().tSPService())
         {
             const TSPServiceInformationType &serviceInfo = service.serviceInformation();
-            if(SERVICETYPE.find(serviceInfo.serviceTypeIdentifier()) == SERVICETYPE.cend())
-                continue;
-
             Service s;
+            if(SERVICETYPE_CA.find(serviceInfo.serviceTypeIdentifier()) != SERVICETYPE_CA.cend())
+                s.type = CA;
+            else if(SERVICETYPE_OCSP.find(serviceInfo.serviceTypeIdentifier()) != SERVICETYPE_OCSP.cend())
+                s.type = OCSP;
+            else if(SERVICETYPE_TSA.find(serviceInfo.serviceTypeIdentifier()) != SERVICETYPE_TSA.cend())
+                s.type = TSA;
+            else
+                continue;
             for(const DigitalIdentityType &id: serviceInfo.serviceDigitalIdentity().digitalId())
             {
                 if(!id.x509Certificate().present())
@@ -190,7 +201,9 @@ vector<TSL::Service> TSL::services() const
             {
                 for(const ServiceHistoryInstanceType &history: service.serviceHistory()->serviceHistoryInstance())
                 {
-                    if(SERVICETYPE.find(history.serviceTypeIdentifier()) == SERVICETYPE.cend())
+                    if(SERVICETYPE_CA.find(history.serviceTypeIdentifier()) == SERVICETYPE_CA.cend() &&
+                       SERVICETYPE_OCSP.find(history.serviceTypeIdentifier()) == SERVICETYPE_OCSP.cend() &&
+                       SERVICETYPE_TSA.find(history.serviceTypeIdentifier()) == SERVICETYPE_TSA.cend())
                     {
                         DEBUG("History service type is not supported %s", history.serviceTypeIdentifier().c_str());
                         continue;

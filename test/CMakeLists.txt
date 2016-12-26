@@ -30,6 +30,10 @@ if( Boost_INCLUDE_DIR )
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests --build_info=YES --output_format=XML --log_level=all --report_level=no --log_sink=${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
     )
+    add_test(NAME TSLTest_CA-invalid-type
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-invalid-type.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+    )
     add_test(NAME TSLTest_CA-withdrawn
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
@@ -42,6 +46,10 @@ if( Boost_INCLUDE_DIR )
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn-granted-after.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
     )
+    add_test(NAME TSLTest_OCSP-invalid-type
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-invalid-type.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+    )
     add_test(NAME TSLTest_OCSP-withdrawn
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-withdrawn.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
@@ -52,6 +60,10 @@ if( Boost_INCLUDE_DIR )
     )
     add_test(NAME TSLTest_OCSP-withdrawn-granted-after
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-withdrawn-granted-after.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+    )
+    add_test(NAME TSLTest_TSA-invalid-type
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-TSA-invalid-type.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
     )
     add_test(NAME TSLTest_TSA-withdrawn

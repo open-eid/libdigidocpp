@@ -22,22 +22,23 @@
 #include "X509Cert.h"
 
 typedef struct x509_store_st X509_STORE;
+typedef struct x509_store_ctx_st X509_STORE_CTX;
 
 namespace digidoc
 {
     /**
      * X.509 certificate store interface.
      */
-    class X509CertStorePrivate;
     class X509CertStore
     {
       public:
+          enum Type { CA, OCSP, TSA };
           static X509CertStore* instance();
 
           void activate(const std::string &territory) const;
-          std::vector<X509Cert> certs() const;
+          std::vector<X509Cert> certs(Type type) const;
           X509Cert findIssuer(const X509Cert &cert) const;
-          static X509_STORE* createStore(time_t *t = nullptr);
+          static X509_STORE* createStore(Type type, time_t *t = nullptr);
           bool verify(const X509Cert &cert) const;
 
       private:
@@ -45,6 +46,8 @@ namespace digidoc
           ~X509CertStore();
           DISABLE_COPY(X509CertStore);
 
-          X509CertStorePrivate *d;
+          static int validate(int ok, X509_STORE_CTX *ctx, Type type);
+          class Private;
+          Private *d;
     };
 }
