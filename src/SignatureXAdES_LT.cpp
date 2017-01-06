@@ -196,7 +196,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
 
     // Get issuer certificate from certificate store.
     X509Cert cert = signingCertificate();
-    X509Cert issuer = X509CertStore::instance()->findIssuer(cert);
+    X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
     if(!issuer)
         THROW("Could not find certificate issuer '%s' in certificate store.",
             cert.issuerName().c_str());

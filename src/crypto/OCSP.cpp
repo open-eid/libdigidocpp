@@ -401,7 +401,7 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     if(result <= 0)
         THROW_OPENSSLEXCEPTION("Failed to verify OCSP response.");
 
-    X509Cert issuer = X509CertStore::instance()->findIssuer(cert);
+    X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
     if(!issuer)
     {
         Exception e(__FILE__, __LINE__, "Certificate status: unknown");

@@ -86,23 +86,6 @@ const set<string> TSL::SERVICESTATUS_END = {
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/deprecatedatnationallevel",
 };
 
-const set<string> TSL::SERVICETYPE_CA = {
-    "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
-    "http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC",
-};
-
-const set<string> TSL::SERVICETYPE_OCSP = {
-    "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
-    "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
-};
-
-const set<string> TSL::SERVICETYPE_TSA = {
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA",
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC",
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES",
-};
-
 
 
 TSL::TSL(const string &file)
@@ -173,16 +156,22 @@ vector<TSL::Service> TSL::services() const
     {
         for(const TSPServiceType &service: pointer.tSPServices().tSPService())
         {
+            static const set<string> supported{
+                "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
+                //"http://uri.etsi.org/TrstSvc/Svctype/CA/PKC", //???
+                //"http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC", //???
+                "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
+                "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
+                "http://uri.etsi.org/TrstSvc/Svctype/TSA",
+                "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
+                "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC", //???
+                "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES", //???
+            };
             const TSPServiceInformationType &serviceInfo = service.serviceInformation();
-            Service s;
-            if(SERVICETYPE_CA.find(serviceInfo.serviceTypeIdentifier()) != SERVICETYPE_CA.cend())
-                s.type = CA;
-            else if(SERVICETYPE_OCSP.find(serviceInfo.serviceTypeIdentifier()) != SERVICETYPE_OCSP.cend())
-                s.type = OCSP;
-            else if(SERVICETYPE_TSA.find(serviceInfo.serviceTypeIdentifier()) != SERVICETYPE_TSA.cend())
-                s.type = TSA;
-            else
+            if(supported.find(serviceInfo.serviceTypeIdentifier()) == supported.cend())
                 continue;
+            Service s;
+            s.type = serviceInfo.serviceTypeIdentifier();
             for(const DigitalIdentityType &id: serviceInfo.serviceDigitalIdentity().digitalId())
             {
                 if(!id.x509Certificate().present())
@@ -201,9 +190,7 @@ vector<TSL::Service> TSL::services() const
             {
                 for(const ServiceHistoryInstanceType &history: service.serviceHistory()->serviceHistoryInstance())
                 {
-                    if(SERVICETYPE_CA.find(history.serviceTypeIdentifier()) == SERVICETYPE_CA.cend() &&
-                       SERVICETYPE_OCSP.find(history.serviceTypeIdentifier()) == SERVICETYPE_OCSP.cend() &&
-                       SERVICETYPE_TSA.find(history.serviceTypeIdentifier()) == SERVICETYPE_TSA.cend())
+                    if(history.serviceTypeIdentifier() != serviceInfo.serviceTypeIdentifier())
                     {
                         DEBUG("History service type is not supported %s", history.serviceTypeIdentifier().c_str());
                         continue;

@@ -34,6 +34,10 @@ if( Boost_INCLUDE_DIR )
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-invalid-type.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
     )
+    add_test(NAME TSLTest_CA-non-qa
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-non-qa.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+    )
     add_test(NAME TSLTest_CA-withdrawn
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
