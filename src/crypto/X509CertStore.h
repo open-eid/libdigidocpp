@@ -21,6 +21,8 @@
 
 #include "X509Cert.h"
 
+#include <set>
+
 typedef struct x509_store_st X509_STORE;
 typedef struct x509_store_ctx_st X509_STORE_CTX;
 
@@ -32,13 +34,14 @@ namespace digidoc
     class X509CertStore
     {
       public:
-          enum Type { CA, OCSP, TSA };
+          static const std::set<std::string> CA, TSA, OCSP;
+
           static X509CertStore* instance();
 
           void activate(const std::string &territory) const;
-          std::vector<X509Cert> certs(Type type) const;
-          X509Cert findIssuer(const X509Cert &cert) const;
-          static X509_STORE* createStore(Type type, time_t *t = nullptr);
+          std::vector<X509Cert> certs(const std::set<std::string> &type) const;
+          X509Cert findIssuer(const X509Cert &cert, const std::set<std::string> &type) const;
+          static X509_STORE* createStore(const std::set<std::string> &type, time_t *t = nullptr);
           bool verify(const X509Cert &cert) const;
 
       private:
@@ -46,7 +49,7 @@ namespace digidoc
           ~X509CertStore();
           DISABLE_COPY(X509CertStore);
 
-          static int validate(int ok, X509_STORE_CTX *ctx, Type type);
+          static int validate(int ok, X509_STORE_CTX *ctx, const std::set<std::string> &type);
           class Private;
           Private *d;
     };

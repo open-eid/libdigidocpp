@@ -36,6 +36,23 @@
 using namespace digidoc;
 using namespace std;
 
+const set<string> X509CertStore::CA = {
+    "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
+};
+
+const set<string> X509CertStore::TSA = {
+    "http://uri.etsi.org/TrstSvc/Svctype/TSA",
+    "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
+    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC",
+    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES",
+};
+
+const set<string> X509CertStore::OCSP = {
+    "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
+    "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
+    "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
+};
+
 class X509CertStore::Private: public vector<TSL::Service> {
 public:
     void update()
@@ -87,12 +104,12 @@ X509CertStore* X509CertStore::instance()
  * @return STACK_OF(X509) all certs in store.
  * throws IOException
  */
-vector<X509Cert> X509CertStore::certs(Type type) const
+vector<X509Cert> X509CertStore::certs(const set<string> &type) const
 {
     vector<X509Cert> certs;
     for(const TSL::Service &s: *d)
     {
-        if(Type(s.type) == type)
+        if(type.find(s.type) != type.cend())
             certs.insert(certs.end(), s.certs.cbegin(), s.certs.cend());
     }
     return certs;
@@ -107,13 +124,13 @@ vector<X509Cert> X509CertStore::certs(Type type) const
  * @return returns copy of found certificate or <code>NULL</code> if certificate was not found.
  * @throws IOException exception is thrown if copying certificate failed.
  */
-X509Cert X509CertStore::findIssuer(const X509Cert &cert) const
+X509Cert X509CertStore::findIssuer(const X509Cert &cert, const set<string> &type) const
 {
     activate(cert.issuerName("C"));
     SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(cert.handle(), NID_authority_key_identifier, 0, 0));
     for(const TSL::Service &s: *d)
     {
-        if(Type(s.type) != CA)
+        if(type.find(s.type) == type.cend())
             continue;
         for(const X509Cert &i: s.certs)
         {
@@ -133,25 +150,18 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert) const
     return X509Cert();
 }
 
-X509_STORE* X509CertStore::createStore(const Type type, time_t *t)
+X509_STORE* X509CertStore::createStore(const set<string> &type, time_t *t)
 {
     SCOPE(X509_STORE, store, X509_STORE_new());
     if (!store)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
 
-    switch(type)
-    {
-    case CA:
+    if(type == CA)
         X509_STORE_set_verify_cb(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int { return validate(ok, ctx, CA); });
-        break;
-    case OCSP:
+    else if(type == OCSP)
         X509_STORE_set_verify_cb(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int { return validate(ok, ctx, OCSP); });
-        break;
-    case TSA:
+    else if(type == TSA)
         X509_STORE_set_verify_cb(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int { return validate(ok, ctx, TSA); });
-        break;
-    default: break;
-    }
 
     if(t)
     {
@@ -161,7 +171,7 @@ X509_STORE* X509CertStore::createStore(const Type type, time_t *t)
     return store.release();
 }
 
-int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, Type type)
+int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type)
 {
     switch(X509_STORE_CTX_get_error(ctx))
     {
@@ -173,7 +183,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, Type type)
         SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(ctx->current_cert, NID_authority_key_identifier, 0, 0));
         for(const TSL::Service &s: *instance()->d)
         {
-            if(Type(s.type) != type)
+            if(type.find(s.type) == type.cend())
                 continue;
             auto certFound = find_if(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
                 if(X509_cmp(ctx->current_cert, issuer.handle()) == 0)

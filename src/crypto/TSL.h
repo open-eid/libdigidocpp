@@ -31,10 +31,9 @@ namespace tsl { class TrustStatusListType; class InternationalNamesType; }
 class TSL
 {
 public:
-    enum Type { CA, OCSP, TSA };
     struct Validity { time_t start, end; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
-    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; Type type; };
+    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; std::string type; };
 
     TSL(const std::string &file);
     bool isExpired() const;
@@ -67,9 +66,6 @@ private:
 
     static const std::set<std::string> SCHEMES_URI;
     static const std::set<std::string> GENERIC_URI;
-    static const std::set<std::string> SERVICETYPE_CA;
-    static const std::set<std::string> SERVICETYPE_OCSP;
-    static const std::set<std::string> SERVICETYPE_TSA;
     static const std::set<std::string> SERVICESTATUS_START;
     static const std::set<std::string> SERVICESTATUS_END;
 
