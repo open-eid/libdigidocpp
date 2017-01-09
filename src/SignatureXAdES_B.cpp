@@ -66,7 +66,7 @@ const string SignatureXAdES_B::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.
 const map<string,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist = {
     {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.1",{
         "BDOC – FORMAT FOR DIGITAL SIGNATURES",
-        "https://www.sk.ee/repository/bdoc-spec21.pdf",
+        "http://id.ee/public/bdoc-spec212-eng.pdf",
         // SHA-1
         {   0x80,0x81,0xe2,0x69,0xeb,0x44,0x13,0xde,0x20,0x6e,0x40,0x91,0xca,0x04,0x3d,0x5a,
             0xca,0x71,0x51,0xdc},
