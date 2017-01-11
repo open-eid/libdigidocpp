@@ -23,7 +23,7 @@
 
 #include <string>
 #include <vector>
-#ifdef ANDROID
+#ifdef __ANDROID__
 #include <time.h>
 #endif
 
