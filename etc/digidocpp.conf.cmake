@@ -35,7 +35,7 @@
     <!--<param name="tsl.timeOut" lock="false">10</param>-->
 
     <!--Verify service settings-->
-    <!--<param name="verify.serivceUri" lock="false">@PDF_URL@</param>-->
+    <!--<param name="verify.serivceUri" lock="false">@SIVA_URL@</param>-->
 
     <!-- OCSP responder url. Used for validating signing certificates and generating BDoc-TM signatures-->
     <!--<ocsp issuer="ESTEID-SK 2007">http://ocsp.sk.ee</ocsp>-->

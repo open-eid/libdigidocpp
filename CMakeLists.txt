@@ -16,7 +16,7 @@ set_env( TSL_CERT2 "${CMAKE_SOURCE_DIR}/etc/tl-mp2.crt" CACHE FILEPATH "TSL trus
 set_env( TSL_CERT3 "${CMAKE_SOURCE_DIR}/etc/tl-mp3.crt" CACHE FILEPATH "TSL trust list signing certificate" )
 set_env( TSL_CERT4 "${CMAKE_SOURCE_DIR}/etc/tl-mp4.crt" CACHE FILEPATH "TSL trust list signing certificate" )
 set_env( TSA_URL "http://tsa.sk.ee" CACHE STRING "Default TSA URL" )
-set_env( PDF_URL "" CACHE STRING "Default PDF validation URL" )
+set_env( SIVA_URL "https://siva.eesti.ee/validate" CACHE STRING "Default SiVa validation service URL" )
 set( LIBDIGIDOC_LINKED YES CACHE BOOL "Link with libdigidoc or load runtime with dlopen" )
 set( BUILD_TOOLS YES CACHE BOOL "Build digidoc-tool" )
 set( BUILD_TYPE SHARED CACHE STRING "Build library as SHARED/STATIC" )
