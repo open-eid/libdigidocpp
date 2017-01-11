@@ -181,15 +181,15 @@ add_library(digidocpp ${BUILD_TYPE}
     ${CRYPTO_HEADER}
     ${XML_HEADER}
     libdigidocpp.rc
+    Container.cpp
+    ASiContainer.cpp
     ASiC_E.cpp
     ASiC_S.cpp
-    ASiContainer.cpp
+    SiVaContainer.cpp
     Conf.cpp
-    Container.cpp
     XmlConf.cpp
     DataFile.cpp
     Exception.cpp
-    RDoc.cpp
     Signature.cpp
     SignatureXAdES_B.cpp
     SignatureXAdES_T.cpp
@@ -208,7 +208,7 @@ add_library(digidocpp ${BUILD_TYPE}
 )
 
 set_target_properties(digidocpp PROPERTIES
-    COMPILE_DEFINITIONS "PKCS11_MODULE=\"${PKCS11_MODULE}\";TSA_URL=\"${TSA_URL}\";TSL_URL=\"${TSL_URL}\";PDF_URL=\"${PDF_URL}\";${digidocpp_DEFS}"
+    COMPILE_DEFINITIONS "PKCS11_MODULE=\"${PKCS11_MODULE}\";TSA_URL=\"${TSA_URL}\";TSL_URL=\"${TSL_URL}\";SIVA_URL=\"${SIVA_URL}\";${digidocpp_DEFS}"
     VERSION ${MAJOR_VER}.${MINOR_VER}.${RELEASE_VER}
     SOVERSION 1
     PUBLIC_HEADER "${PUBLIC_HEADER}"
@@ -231,10 +231,7 @@ target_link_libraries(digidocpp digidocpp_priv
 
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
-    set_target_properties(digidoc-tool PROPERTIES
-        INSTALL_RPATH "@loader_path/../../../..;@loader_path/../.."
-        LINK_LIBRARIES "digidocpp;digidocpp_priv;${CMAKE_THREAD_LIBS_INIT}"
-    )
+    target_link_libraries(digidoc-tool digidocpp digidocpp_priv ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 if(SWIG_FOUND AND WIN32)

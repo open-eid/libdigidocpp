@@ -37,6 +37,10 @@ public:
     struct Result {
         std::string result, content;
         std::map<std::string,std::string> headers;
+        bool operator !() const
+        {
+            return !isOK();
+        }
         bool isOK() const
         {
             return result.find("200") != std::string::npos;

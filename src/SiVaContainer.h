@@ -20,49 +20,22 @@
 #pragma once
 
 #include "Container.h"
-#include "DataFile.h"
 #include "Signature.h"
 #include "crypto/X509Cert.h"
 
 namespace digidoc
 {
+class SiVaContainer;
+class Exception;
 
-class RDocPrivate;
-
-class DataFileRDOC: public DataFile
+class SignatureSiVa: public Signature
 {
 public:
-    ~DataFileRDOC() {}
-
-    std::string id() const override { return _id; }
-    std::string fileName() const override { return _fileName; }
-    unsigned long fileSize() const override { return _fileSize; }
-    std::string mediaType() const override { return _mediaType; }
-
-    std::vector<unsigned char> calcDigest(const std::string &method) const override;
-    void saveAs(std::ostream &os) const override;
-    void saveAs(const std::string& path) const override;
-
-private:
-    DataFileRDOC() {}
-    DISABLE_COPY(DataFileRDOC);
-
-    std::shared_ptr<std::istream> _is;
-    std::string _id, _fileName, _mediaType;
-    unsigned long _fileSize = 0;
-    friend class RDoc;
-};
-
-class SignatureRDOC: public Signature
-{
-public:
-    ~SignatureRDOC() {}
-
     std::string id() const override { return _id; }
     std::string claimedSigningTime() const override { return _signingTime; }
-    std::string trustedSigningTime() const override;
-    X509Cert signingCertificate() const override { return _signCert; }
-    std::string signatureMethod() const override { return _signatureMethod; }
+    std::string trustedSigningTime() const override { return _bestTime.empty() ? _signingTime : _bestTime; }
+    X509Cert signingCertificate() const override { return X509Cert(); }
+    std::string signatureMethod() const override { return std::string(); }
     void validate() const override;
     std::vector<unsigned char> dataToSign() const override;
     void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
@@ -70,28 +43,20 @@ public:
     // Xades properties
     std::string profile() const override { return _profile; }
 
-    //TS profile properties
-    X509Cert TimeStampCertificate() const override { return _tsCert; }
-    std::string TimeStampTime() const override { return _tsTime; }
-
-    //TSA profile properties
-    X509Cert ArchiveTimeStampCertificate() const override { return _aCert; }
-    std::string ArchiveTimeStampTime() const override { return _aTime; }
-
 private:
-    SignatureRDOC() {}
-    DISABLE_COPY(SignatureRDOC);
+    SignatureSiVa() = default;
+    DISABLE_COPY(SignatureSiVa);
 
-    std::string _id, _profile, _signatureMethod, _signingTime, _tsTime, _aTime, _result, _resultDetails;
-    std::string _sID, _tID, _aID;
-    X509Cert _signCert, _tsCert, _aCert;
-    friend class RDocPrivate;
+    std::string _id, _profile, _signingTime, _bestTime, _indication, _subIndication;
+    std::vector<Exception> _errors;
+
+    friend SiVaContainer;
 };
 
-class RDoc: public Container
+class SiVaContainer: public Container
 {
 public:
-    ~RDoc();
+    ~SiVaContainer();
 
     void save(const std::string &path = "") override;
     std::string mediaType() const override;
@@ -111,10 +76,11 @@ public:
     static Container* openInternal(const std::string &path);
 
 private:
-    RDoc(const std::string &path);
-    DISABLE_COPY(RDoc);
+    SiVaContainer(const std::string &path, const std::string &ext);
+    DISABLE_COPY(SiVaContainer);
 
-    RDocPrivate *d;
+    class Private;
+    Private *d;
 };
 
 }

@@ -22,7 +22,7 @@
 #include "ASiC_E.h"
 #include "ASiC_S.h"
 #include "DDoc.h"
-#include "RDoc.h"
+#include "SiVaContainer.h"
 #include "DataFile.h"
 #include "Exception.h"
 #include "log.h"
@@ -124,7 +124,7 @@ void digidoc::initialize(const string &appInfo, initCallBack callBack)
 #if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
     Container::addContainerImplementation<DDoc>();
 #endif
-    Container::addContainerImplementation<RDoc>();
+    Container::addContainerImplementation<SiVaContainer>();
     Container::addContainerImplementation<ASiC_S>();
 
     if(callBack)

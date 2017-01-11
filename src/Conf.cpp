@@ -265,7 +265,7 @@ string Conf::signatureDigestUri() const { return digestUri(); }
 /**
  * Gets verify service URI
  */
-string Conf::verifyServiceUri() const { return PDF_URL; }
+string Conf::verifyServiceUri() const { return SIVA_URL; }
 
 
 
