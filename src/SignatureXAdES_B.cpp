@@ -36,7 +36,6 @@
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/util/BinInputStream.hpp>
-#include <xsec/canon/XSECC14n20010315.hpp>
 #ifdef __APPLE__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -1039,49 +1038,8 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
         if(!node)
             THROW("Could not find '%s' node which is in '%s' namespace in signature XML.", tagName.c_str(), ns.c_str());
 
-        // Canocalize XML using one of the three methods supported by XML-DSIG
-        XSECC14n20010315 canonicalizer(doc.get(), node);
-        canonicalizer.setCommentsProcessing(false);
-        canonicalizer.setUseNamespaceStack(true);
-
-        // Find the method identifier
-        SignedInfoType& signedInfo = signature->signedInfo();
-        CanonicalizationMethodType& canonMethod = signedInfo.canonicalizationMethod();
-        CanonicalizationMethodType::AlgorithmType& algorithmType = canonMethod.algorithm();
-
-        DEBUG("C14N ns(%s) tagName(%s) algorithmType(%s)", ns.c_str(), tagName.c_str(), algorithmType.c_str());
-
-        // Set processing flags according to algorithm type.
-        if(algorithmType == URI_ID_C14N_NOC) {
-            // Default behaviour, nothing needs to be changed
-        } else if(algorithmType == URI_ID_C14N_COM) {
-            canonicalizer.setCommentsProcessing(true);
-        } else if(algorithmType == URI_ID_EXC_C14N_NOC) {
-            // Exclusive mode needs to include xml-dsig in root element
-            // in order to maintain compatibility with existing implementations
-            canonicalizer.setExclusive();
-        } else if(algorithmType == URI_ID_EXC_C14N_COM) {
-            canonicalizer.setExclusive();
-            canonicalizer.setCommentsProcessing(true);
-        } else if(algorithmType == URI_ID_C14N11_NOC) {
-            canonicalizer.setInclusive11();
-        } else if(algorithmType == URI_ID_C14N11_COM) {
-            canonicalizer.setInclusive11();
-            canonicalizer.setCommentsProcessing(true);
-        } else {
-            // Unknown algorithm.
-            THROW("Unsupported SignedInfo canonicalization method '%s'", algorithmType.c_str());
-        }
-
-        string c14n;
-        unsigned char buffer[1024];
-        xsecsize_t bytes = 0;
-        while((bytes = canonicalizer.outputBuffer(buffer, 1024)) > 0)
-        {
-            calc->update(buffer, (unsigned int)bytes);
-            c14n.append( (char*)&buffer[0], size_t(bytes));
-        }
-        //DEBUG("c14n = \n%s", c14n.c_str());
+        string algorithmType = signature->signedInfo().canonicalizationMethod().algorithm();
+        SecureDOMParser::calcDigestOnNode(calc, algorithmType, doc.get(), node);
     }
     catch(const Exception& e)
     {
