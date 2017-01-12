@@ -64,6 +64,40 @@ SecureDOMParser::SecureDOMParser(const string &schema_location)
     conf->setParameter(XMLUni::fgXercesUserAdoptsDOMDocument, true);
 }
 
+void SecureDOMParser::calcDigestOnNode(Digest *calc,
+    const string &algorithmType, DOMDocument *doc, DOMNode *node)
+{
+    XSECC14n20010315 c14n(doc, node);
+    c14n.setCommentsProcessing(false);
+    c14n.setUseNamespaceStack(true);
+
+    // Set processing flags according to algorithm type.
+    if(algorithmType == URI_ID_C14N_NOC) {
+        // Default behaviour, nothing needs to be changed
+    } else if(algorithmType == URI_ID_C14N_COM) {
+        c14n.setCommentsProcessing(true);
+    } else if(algorithmType == URI_ID_EXC_C14N_NOC) {
+        // Exclusive mode needs to include xml-dsig in root element
+        // in order to maintain compatibility with existing implementations
+        c14n.setExclusive();
+    } else if(algorithmType == URI_ID_EXC_C14N_COM) {
+        c14n.setExclusive();
+        c14n.setCommentsProcessing(true);
+    } else if(algorithmType == URI_ID_C14N11_NOC) {
+        c14n.setInclusive11();
+    } else if(algorithmType == URI_ID_C14N11_COM) {
+        c14n.setInclusive11();
+        c14n.setCommentsProcessing(true);
+    } else {
+        THROW("Unsupported canonicalization method '%s'", algorithmType.c_str());
+    }
+
+    unsigned char buffer[1024];
+    xsecsize_t bytes = 0;
+    while((bytes = c14n.outputBuffer(buffer, 1024)) > 0)
+        calc->update(buffer, (unsigned int)bytes);
+}
+
 void SecureDOMParser::doctypeDecl(const DTDElementDecl& root,
            const XMLCh* const             public_id,
            const XMLCh* const             system_id,

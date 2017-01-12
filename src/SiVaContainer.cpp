@@ -29,10 +29,14 @@
 #include "log.h"
 #include "Signature.h"
 #include "crypto/Connect.h"
+#include "crypto/Digest.h"
 #include "util/File.h"
+#include "xml/SecureDOMParser.h"
 
 #include "jsonxx.cc"
 
+#include <xercesc/dom/DOM.hpp>
+#include <xercesc/framework/MemBufFormatTarget.hpp>
 #include <xercesc/util/Base64.hpp>
 
 #include <algorithm>
@@ -76,12 +80,25 @@ void SignatureSiVa::validate() const
 SiVaContainer::SiVaContainer(const string &path, const string &ext)
     : d(new Private)
 {
-    ifstream *is = new ifstream(File::encodeName(path).c_str(), ifstream::binary);
-    d->dataFiles.push_back(new DataFilePrivate(is, File::fileName(path), "application/pdf", File::fileName(path)));
-    is->clear();
-    is->seekg(0);
+    unique_ptr<istream> ifs(new ifstream(File::encodeName(path).c_str(), ifstream::binary));
+    istream *is = ifs.get();
+    unique_ptr<stringstream> ddoc;
+    if(ext == "DDOC")
+    {
+        d->mediaType = "application/x-ddoc";
+        ddoc.reset(parseDDoc(ifs.get()));
+        is = ddoc.get();
+    }
+    else
+    {
+        d->mediaType = "application/pdf";
+        d->dataFiles.push_back(new DataFilePrivate(ifs.release(), File::fileName(path), "application/pdf", File::fileName(path)));
+    }
+
     XMLByte buf[48*100];
     string b64;
+    is->clear();
+    is->seekg(0);
     while(*is)
     {
         is->read((char*)buf, 48*100);
@@ -121,10 +138,6 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         throw e;
     }
 
-    if(ext == "PDF")
-        d->mediaType = "application/pdf";
-    else if(ext == "DDOC")
-        d->mediaType = "application/x-ddoc";
     for(const jsonxx::Value *obj: result.get<jsonxx::Array>("signatures").values())
     {
         SignatureSiVa *s = new SignatureSiVa;
@@ -189,6 +202,67 @@ Container* SiVaContainer::openInternal(const string &path)
     string ext = File::fileExtension(path);
     transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
     return supported.find(ext) != supported.cend() ? new SiVaContainer(path, ext) : nullptr;
+}
+
+std::stringstream* SiVaContainer::parseDDoc(std::istream *is)
+{
+    try
+    {
+        unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(*is));
+        DOMNodeList *nodeList = dom->getElementsByTagNameNS(X("http://www.sk.ee/DigiDoc/v1.3.0#"), X("DataFile"));
+        for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
+        {
+            DOMElement *item = static_cast<DOMElement*>(nodeList->item(i));
+            if(!item)
+                continue;
+
+            if(XMLString::compareString(item->getAttribute(X("ContentType")), X("HASHCODE")) == 0)
+                continue;
+
+            if(const XMLCh *b64 = item->getTextContent())
+            {
+                XMLSize_t size = 0;
+                XMLByte *data = Base64::decodeToXMLByte(b64, &size);
+                d->dataFiles.push_back(new DataFilePrivate(new stringstream(string((const char*)data, size)),
+                    X(item->getAttribute(X("Filename"))), X(item->getAttribute(X("MimeType"))), X(item->getAttribute(X("Id")))));
+                delete data;
+            }
+
+            Digest calc(URI_SHA1);
+            SecureDOMParser::calcDigestOnNode(&calc, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315", dom.get(), item);
+            vector<unsigned char> digest = calc.result();
+            XMLSize_t size = 0;
+            if(XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))
+            {
+                item->setAttribute(X("ContentType"), X("HASHCODE"));
+                item->setAttribute(X("DigestType"), X("sha1"));
+                item->setAttribute(X("DigestValue"), X((const char*)out));
+                item->setTextContent(nullptr);
+                delete out;
+            }
+        }
+
+        DOMImplementationLS *pImplement = (DOMImplementationLS*)DOMImplementationRegistry::getDOMImplementation(X("LS"));
+        unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
+        unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
+        MemBufFormatTarget out;
+        pDomLsOutput->setByteStream(&out);
+        pSerializer->setNewLine(X("\n"));
+        pSerializer->write(dom.get(), pDomLsOutput.get());
+        return new stringstream(string((const char*)out.getRawBuffer(), out.getLen()));
+    }
+    catch(const XMLException& e)
+    {
+        THROW("Failed to parse DDoc XML: %s", X(e.getMessage()).toString().c_str());
+    }
+    catch(const DOMException& e)
+    {
+        THROW("Failed to parse DDoc XML: %s", X(e.getMessage()).toString().c_str());
+    }
+    catch(...)
+    {
+        THROW("Failed to parse DDoc XML.");
+    }
 }
 
 Signature* SiVaContainer::prepareSignature(Signer *)

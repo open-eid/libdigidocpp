@@ -79,6 +79,8 @@ private:
     SiVaContainer(const std::string &path, const std::string &ext);
     DISABLE_COPY(SiVaContainer);
 
+    std::stringstream* parseDDoc(std::istream *is);
+
     class Private;
     Private *d;
 };
