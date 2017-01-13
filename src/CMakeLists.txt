@@ -46,28 +46,6 @@ if(ANDROID)
     list( APPEND digidocpp_DEFS ANDROID )
 endif()
 
-if( OPENSSL_VERSION LESS "1.0.0" )
-    list( APPEND openssl_SRCS
-        openssl/ts_asn1.c
-        openssl/ts_req_utils.c
-        openssl/ts_rsp_utils.c
-        openssl/ts_rsp_verify.c
-        openssl/ts_verify_ctx.c
-    )
-    set( OPENSSL_IGNORE
-        "-Wno-int-conversion "
-        "-Wno-unused-parameter "
-        "-Wno-deprecated-declarations "
-        "-Wno-incompatible-pointer-types "
-        "-Wno-incompatible-pointer-types-discards-qualifiers "
-        "-Wno-implicit-function-declaration" )
-    string( REPLACE ";" " " OPENSSL_IGNORE ${OPENSSL_IGNORE} )
-    #ignore openssl code warnings
-    set_source_files_properties( ${openssl_SRCS} PROPERTIES COMPILE_FLAGS ${OPENSSL_IGNORE} )
-    list( APPEND digidocpp_SRCS ${openssl_SRCS} )
-    list( APPEND digidocpp_DEFS OPENSSL_NO_CMS )
-endif()
-
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
 configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
 configure_file( ${CMAKE_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf )
@@ -137,7 +115,6 @@ else()
     )
 endif()
 list( APPEND digidocpp_SRCS tslcert1.h tslcert2.h tslcert3.h tslcert4.h )
-list( APPEND digidoc-tool_SRCS crypto/Connect.cpp crypto/Digest.cpp )
 
 set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd
@@ -166,24 +143,11 @@ set( CRYPTO_HEADER
     crypto/X509Cert.h
 )
 
-set( CRYPTO_SOURCE
-    crypto/Connect.cpp
-    crypto/Digest.cpp
-    crypto/OCSP.cpp
-    crypto/PKCS12Signer.cpp
-    crypto/TS.cpp
-    crypto/X509Cert.cpp
-    crypto/X509CertStore.cpp
-    crypto/X509Crypto.cpp
-)
-
 if( WIN32 )
-    list( APPEND CRYPTO_SOURCE crypto/WinSigner.cpp )
+    list( APPEND digidocpp_SRCS crypto/WinSigner.cpp )
     list( APPEND CRYPTO_HEADER crypto/WinSigner.h )
     list( APPEND TARGET_LIBRARIES Crypt32 cryptui ncrypt Ws2_32 )
 elseif( APPLE )
-    #ignore openssl deprecation warnings
-    set_source_files_properties( ${CRYPTO_SOURCE} PROPERTIES COMPILE_FLAGS "-Wno-deprecated-declarations" )
     list( APPEND TARGET_LIBRARIES "-framework CoreFoundation" )
 endif()
 
@@ -201,6 +165,8 @@ include_directories(
 add_library(digidocpp_priv STATIC
     ${xsd_SRCS}
     log.cpp
+    crypto/Connect.cpp
+    crypto/Digest.cpp
     crypto/TSL.cpp
     util/File.cpp
     util/DateTime.cpp
@@ -218,7 +184,6 @@ add_library(digidocpp ${BUILD_TYPE}
     ${SCHEMA_FILES}
     ${PUBLIC_HEADER}
     ${CRYPTO_HEADER}
-    ${CRYPTO_SOURCE}
     ${XML_HEADER}
     libdigidocpp.rc
     ASiC_E.cpp
@@ -236,8 +201,14 @@ add_library(digidocpp ${BUILD_TYPE}
     SignatureXAdES_LT.cpp
     SignatureXAdES_LTA.cpp
     SignatureTST.cpp
+    crypto/OCSP.cpp
     crypto/PKCS11Signer.cpp
+    crypto/PKCS12Signer.cpp
     crypto/Signer.cpp
+    crypto/TS.cpp
+    crypto/X509Crypto.cpp
+    crypto/X509Cert.cpp
+    crypto/X509CertStore.cpp
     util/ZipSerialize.cpp
 )
 
@@ -264,7 +235,7 @@ target_link_libraries(digidocpp digidocpp_priv
 )
 
 if( BUILD_TOOLS )
-    add_executable(digidoc-tool ${digidoc-tool_SRCS} digidoc-tool.rc digidoc-tool.cpp)
+    add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
     set_target_properties(digidoc-tool PROPERTIES
         INSTALL_RPATH "@loader_path/../../../..;@loader_path/../.."
         LINK_LIBRARIES "digidocpp;digidocpp_priv;${CMAKE_THREAD_LIBS_INIT}"

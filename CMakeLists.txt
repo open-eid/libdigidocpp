@@ -29,7 +29,7 @@ endif()
 
 find_package(Doxygen)
 find_package(LibDigiDoc)
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL 1.0.1 REQUIRED)
 find_package(PKCS11)
 find_package(Threads)
 find_package(XercesC REQUIRED)
