@@ -15,7 +15,7 @@ param(
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
-	[string]$zlibver = "zlib-1.2.8",
+	[string]$zlibver = "zlib-1.2.11",
 	[switch]$openssl = $false,
 	[switch]$xerces = $false,
 	[switch]$xalan = $false,
