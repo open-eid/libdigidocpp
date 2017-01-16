@@ -36,3 +36,32 @@
  	
  	 ## End of other compilers
  	endif
+--- xalan-c-1.11/c/src/xalanc/Makefile.in	2012-03-19 18:18:40.000000000 +0200
++++ xalan-c-1.11/c/src/xalanc/Makefile.in.orig	2017-01-13 14:06:16.000000000 +0200
+@@ -123,7 +123,7 @@
+     Harness \
+ 	XPathCAPI
+ 
+-ALL_BINARIES = Xalan$(EXT)
++ALL_BINARIES =
+ 
+ include $(XALANCROOT)/version.incl
+ include ../../Makefile.incl
+@@ -151,7 +151,7 @@
+ ${XSL_OBJ_DIR}/%.o:%.hpp
+ 	$(CC1) $(XSL_BUILD_OPTIONS) -c $(XSL_INCL) $(EXTRA_COMPILE_OPTIONS) -o $@ $(patsubst .hpp,.cpp,$<)
+ 
+-all:	 lib  testXSLT testXPath XalanExe
++all:	 lib
+ 
+ prepare:
+ 	@echo Preparing the directory structure for a build ...
+@@ -243,7 +243,7 @@
+ endif ## OS390                                
+ endif ## OS390BATCH
+ 
+-install: lib XalanExe
++install: lib
+ 	$(MAKE) -C Utils $@
+ 	$(MKINSTALLDIRS) $(DESTDIR)/$(bindir)
+ 	for bin in $(ALL_BINARIES); do \

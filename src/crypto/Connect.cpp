@@ -31,7 +31,7 @@
 
 #include <thread>
 
-#ifdef ANDROID
+#ifdef __ANDROID__
 #include <sys/select.h>
 #endif
 
