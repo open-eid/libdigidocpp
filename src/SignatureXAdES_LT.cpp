@@ -53,10 +53,6 @@ SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool 
 {
 }
 
-SignatureXAdES_LT::~SignatureXAdES_LT()
-{
-}
-
 /**
  * @return nonce value
  */

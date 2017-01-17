@@ -35,6 +35,7 @@ public:
     std::string claimedSigningTime() const override { return _signingTime; }
     std::string trustedSigningTime() const override { return _bestTime.empty() ? _signingTime : _bestTime; }
     X509Cert signingCertificate() const override { return X509Cert(); }
+    std::string signedBy() const override { return _signedBy; }
     std::string signatureMethod() const override { return std::string(); }
     void validate() const override;
     std::vector<unsigned char> dataToSign() const override;
@@ -47,7 +48,7 @@ private:
     SignatureSiVa() = default;
     DISABLE_COPY(SignatureSiVa);
 
-    std::string _id, _profile, _signingTime, _bestTime, _indication, _subIndication;
+    std::string _id, _profile, _signedBy, _signingTime, _bestTime, _indication, _subIndication;
     std::vector<Exception> _errors;
 
     friend SiVaContainer;

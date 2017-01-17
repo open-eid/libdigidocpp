@@ -148,6 +148,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         s->_profile = signature.get<string>("signatureFormat");
         s->_indication = signature.get<string>("indication");
         s->_subIndication = signature.get<string>("subIndication");
+        s->_signedBy = signature.get<string>("signedBy");
         for(const jsonxx::Value *error: signature.get<jsonxx::Array>("errors").values())
         {
             string message = error->get<jsonxx::Object>().get<string>("content");
