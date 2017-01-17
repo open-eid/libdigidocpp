@@ -29,7 +29,7 @@ class SignatureXAdES_LTA: public SignatureXAdES_LT
 public:
     SignatureXAdES_LTA(unsigned int id, ASiContainer *bdoc, Signer *signer);
     SignatureXAdES_LTA(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
-    virtual ~SignatureXAdES_LTA();
+    virtual ~SignatureXAdES_LTA() = default;
 
     X509Cert ArchiveTimeStampCertificate() const override;
     std::string ArchiveTimeStampTime() const override;

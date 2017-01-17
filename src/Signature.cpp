@@ -31,18 +31,16 @@ using namespace std;
  */
 
 /**
+ * @fn digidoc::Signature::Signature
+ *
  * Creates an new empty signature.
  */
-Signature::Signature()
-{
-}
 
 /**
+ * @fn digidoc::Signature::~Signature
+ *
  * Releases signature.
  */
-Signature::~Signature()
-{
-}
 
 /**
  * @fn digidoc::Signature::id
@@ -79,6 +77,11 @@ string Signature::streetAddress() const { return string(); }
  * Returns signer's roles.
  */
 vector<string> Signature::signerRoles() const { return vector<string>(); }
+
+/**
+ * Return signer's certificate common name
+ */
+string Signature::signedBy() const { return signingCertificate().subjectName("CN"); }
 
 /**
  * @fn digidoc::Signature::signatureMethod

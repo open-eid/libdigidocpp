@@ -48,8 +48,6 @@ SignatureXAdES_T::SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *
 
 SignatureXAdES_T::SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_B(sigdata, bdoc, relaxSchemaValidation) {}
 
-SignatureXAdES_T::~SignatureXAdES_T() {}
-
 X509Cert SignatureXAdES_T::TimeStampCertificate() const
 {
     return TS(tsBase64()).cert();

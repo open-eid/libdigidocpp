@@ -49,8 +49,6 @@ SignatureXAdES_LTA::SignatureXAdES_LTA(unsigned int id, ASiContainer *bdoc, Sign
 
 SignatureXAdES_LTA::SignatureXAdES_LTA(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_LT(sigdata, bdoc, relaxSchemaValidation) {}
 
-SignatureXAdES_LTA::~SignatureXAdES_LTA() {}
-
 void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
 {
     string signedPropertiesId;

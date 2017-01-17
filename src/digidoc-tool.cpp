@@ -629,6 +629,7 @@ static int open(int argc, char* argv[])
                 << "    Signature method: " << s->signatureMethod() << endl
                 << "    Signing time: " << s->claimedSigningTime() << endl
                 << "    Signing cert: " << s->signingCertificate() << endl
+                << "    Signed by: " << s->signedBy() << endl
                 << "    Produced At: " << s->OCSPProducedAt() << endl
                 << "    OCSP Responder: " << s->OCSPCertificate() << endl
                 << "    OCSP Nonce (" << nonce.size() << "): " << nonce << endl
