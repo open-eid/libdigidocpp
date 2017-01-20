@@ -11,9 +11,9 @@
 
 #include <digidocpp/Container.h>
 #include <digidocpp/Exception.h>
-#include <digidocpp/XmlConf.h>
+#include <digidocpp/Conf.h>
 
-class DigiDocConf: public digidoc::XmlConf
+class DigiDocConf: public digidoc::ConfCurrent
 {
 public:
     std::string TSLCache() const
