@@ -181,23 +181,23 @@ tm digidoc::util::date::httpTimeToTM(const std::string &date)
     istringstream ss(t);
     ss.imbue(locale("C"));
     ss >> get_time(&tm_struct, "%a, %d %b %Y %H:%M:%S GMT");
+    if (!ss.fail())
+        return tm_struct;
+    
+    // RFC 1036: Sunday, 06-Nov-94 08:49:37 GMT
+    ss.clear();
+    ss.seekg (0, ss.beg);
+    ss >> get_time(&tm_struct, "%A, %d-%b-%y %H:%M:%S GMT");
+    if (!ss.fail())
+        return tm_struct;
+    
+    // ANSI C's asctime(): Sun Nov  6 08:49:37 1994
+    ss.clear();
+    ss.seekg (0, ss.beg);
+    ss >> get_time(&tm_struct, "%A %b %e %H:%M:%S %Y");
     if (ss.fail())
     {
-        // RFC 1036: Sunday, 06-Nov-94 08:49:37 GMT
-        ss.clear();
-        ss.seekg (0, ss.beg);
-        ss >> get_time(&tm_struct, "%A, %d-%b-%y %H:%M:%S GMT");
-        if (ss.fail())
-        {
-            // ANSI C's asctime(): Sun Nov  6 08:49:37 1994
-            ss.clear();
-            ss.seekg (0, ss.beg);
-            ss >> get_time(&tm_struct, "%A %b %e %H:%M:%S %Y");
-            if (ss.fail())
-            {
-                THROW("Invalid HTTP Full Date format: '%s'", t);
-            }
-        }
+        THROW("Invalid HTTP Full Date format: '%s'", t);
     }
     
     return tm_struct;

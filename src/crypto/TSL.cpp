@@ -475,7 +475,7 @@ void TSL::validateLastModified(const string &url, int timeout)
                         failureReason = "Remote timestamp does not match";
                     }
                 }
-                catch (Exception e)
+                catch(const Exception& e)
                 {
                     failureReason = "Cached timestamp does not exist";
                 }
@@ -486,7 +486,7 @@ void TSL::validateLastModified(const string &url, int timeout)
             }
             
         }
-        catch (Exception e)
+        catch(const Exception& e)
         {
             WARN("Failed to parse TSL last modified date: %s", e.msg().c_str());
         }
@@ -511,17 +511,10 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
         r= Connect(url.substr(0, pos) + ".sha2", "GET", timeout).exec();
         if(r.isRedirect())
             r = Connect(r.headers["Location"], "GET", timeout).exec();
-        if(r.result.find("200") == string::npos)
-        {
-            if(r.result.find("404") != string::npos)
-            {
-                checkTimestamp = true;
-            }
-            else
-            {
-                return;
-            }
-        }
+        if(r.result.find("404") != string::npos)
+            checkTimestamp = true;
+        else if(r.result.find("200") == string::npos)
+            return;
     } catch(const Exception &e) {
         debugException(e);
         return DEBUG("Failed to get remote digest %s", url.c_str());
