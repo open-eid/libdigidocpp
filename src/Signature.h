@@ -30,7 +30,7 @@ namespace digidoc
     class EXP_DIGIDOC Signature
     {
       public:
-          virtual ~Signature() = default;
+          virtual ~Signature();
 
           // DSig properties
           virtual std::string id() const = 0;
@@ -73,13 +73,9 @@ namespace digidoc
           virtual std::string signedBy() const;
 
       protected:
-          Signature() = default;
+          Signature();
 
       private:
           DISABLE_COPY(Signature);
-          friend class ASiContainer;
-          friend class SiVaContainer;
-          friend class DDoc;
-          friend class DDocPrivate;
     };
 }

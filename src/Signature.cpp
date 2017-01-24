@@ -31,16 +31,18 @@ using namespace std;
  */
 
 /**
- * @fn digidoc::Signature::Signature
- *
  * Creates an new empty signature.
  */
+Signature::Signature()
+{
+}
 
 /**
- * @fn digidoc::Signature::~Signature
- *
  * Releases signature.
  */
+Signature::~Signature()
+{
+}
 
 /**
  * @fn digidoc::Signature::id
