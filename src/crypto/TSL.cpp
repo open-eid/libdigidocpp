@@ -444,6 +444,7 @@ void TSL::validate(const std::vector<X509Cert> &certs)
 /// Check if HTTP Last-Modified header is the same as timestamp of the cached TSL
 /// @param url Url of the TSL
 /// @param timeout Time to wait for downloading
+/// @throws Exception if Last-Modified does not match cached ts and TSL loading should be triggered
 void TSL::validateLastModified(const string &url, int timeout)
 {
     Connect::Result r = Connect(url, "HEAD", timeout).exec();
