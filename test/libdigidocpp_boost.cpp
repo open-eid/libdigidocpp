@@ -627,3 +627,27 @@ BOOST_AUTO_TEST_CASE(OpenInvalidMimetypeContainer)
     BOOST_CHECK_THROW(Container::open("test-invalid.asics"), Exception);
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(DateUtilSuite)
+BOOST_AUTO_TEST_CASE(HttpDateToTm) {
+    
+    const vector<string> timestamps = {
+        "Sun, 06 Nov 1994 08:49:37 GMT",
+        "Sunday, 06-Nov-94 08:49:37 GMT",
+        "Sun Nov  6 08:49:37 1994"
+    };
+    
+    for(const string &timestamp: timestamps) {
+        const tm ts = digidoc::util::date::httpTimeToTM(timestamp);
+        BOOST_CHECK_EQUAL(1994, ts.tm_year + 1900);
+        BOOST_CHECK_EQUAL(11, ts.tm_mon + 1);
+        BOOST_CHECK_EQUAL(6, ts.tm_mday);
+        
+        BOOST_CHECK_EQUAL(8, ts.tm_hour);
+        BOOST_CHECK_EQUAL(49, ts.tm_min);
+        BOOST_CHECK_EQUAL(37, ts.tm_sec);
+    }
+    
+    BOOST_CHECK_THROW(digidoc::util::date::httpTimeToTM("-Nov-94 08:49:37 GMT"), Exception); // wrong date
+}
+BOOST_AUTO_TEST_SUITE_END()

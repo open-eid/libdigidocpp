@@ -166,3 +166,39 @@ xml_schema::DateTime digidoc::util::date::makeDateTime(const struct tm& lt)
         0, //zone +0h
         0 ); //zone +0min
 }
+
+/// Convert HTTP date/time stamp to time.
+/// See https://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.1 for accepted formats.
+///
+/// @param date GMT (UTC) time encoded in RFC 1123, RFC 1036 or ANSI C's asctime() format.
+/// @return decoded time.
+tm digidoc::util::date::httpTimeToTM(const std::string &date)
+{
+    const char* t = date.c_str();
+    
+    // RFC 1123: Sun, 06 Nov 1994 08:49:37 GMT
+    struct tm tm_struct = { };
+    istringstream ss(t);
+    ss.imbue(locale("C"));
+    ss >> get_time(&tm_struct, "%a, %d %b %Y %H:%M:%S GMT");
+    if (!ss.fail())
+        return tm_struct;
+    
+    // RFC 1036: Sunday, 06-Nov-94 08:49:37 GMT
+    ss.clear();
+    ss.seekg (0, ss.beg);
+    ss >> get_time(&tm_struct, "%A, %d-%b-%y %H:%M:%S GMT");
+    if (!ss.fail())
+        return tm_struct;
+    
+    // ANSI C's asctime(): Sun Nov  6 08:49:37 1994
+    ss.clear();
+    ss.seekg (0, ss.beg);
+    ss >> get_time(&tm_struct, "%A %b %e %H:%M:%S %Y");
+    if (ss.fail())
+    {
+        THROW("Invalid HTTP Full Date format: '%s'", t);
+    }
+    
+    return tm_struct;
+}

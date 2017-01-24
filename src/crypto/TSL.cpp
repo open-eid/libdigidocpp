@@ -40,6 +40,7 @@
 #pragma GCC diagnostic pop
 #endif
 
+#include <cmath>
 #include <fstream>
 #include <future>
 
@@ -273,6 +274,10 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
                     File::removeFile(tmp);
                     tsl = tslnew;
                     valid = true;
+                    
+                    ofstream ots(File::encodeName(path + ".ts").c_str(), ofstream::out|ofstream::trunc);
+                    ots << r.headers["Last-Modified"];
+                    ots.close();
 
                     result = { tsl.certs(), tsl.isExpired() };
                     DEBUG("TSL %s signature is valid", territory.c_str());
@@ -436,6 +441,64 @@ void TSL::validate(const std::vector<X509Cert> &certs)
     }
 }
 
+/// Check if HTTP Last-Modified header is the same as timestamp of the cached TSL
+/// @param url Url of the TSL
+/// @param timeout Time to wait for downloading
+/// @throws Exception if Last-Modified does not match cached ts and TSL loading should be triggered
+void TSL::validateLastModified(const string &url, int timeout)
+{
+    Connect::Result r = Connect(url, "HEAD", timeout).exec();
+    if(r.isRedirect())
+        r = Connect(r.headers["Location"], "HEAD", timeout).exec();
+    if(r.result.find("200") == string::npos)
+        return;
+    
+    map<string,string>::iterator it = r.headers.find("Last-Modified");
+    if(it != r.headers.end())
+    {
+        string failureReason;
+        DEBUG("Last modified: %s", it->second.c_str());
+        try
+        {
+            tm timestamp = httpTimeToTM(it->second);
+            
+            string line;
+            ifstream is(File::encodeName(path + ".ts"));
+            if(is.is_open())
+            {
+                getline(is, line);
+                DEBUG("Cached timestamp: %s", line.c_str());
+                try
+                {
+                    tm time = httpTimeToTM(line);
+                    if ((int)round(difftime(mkgmtime(timestamp), mkgmtime(time))))
+                    {
+                        failureReason = "Remote timestamp does not match";
+                    }
+                }
+                catch(const Exception& e)
+                {
+                    failureReason = "Cached timestamp does not exist";
+                }
+            }
+            else
+            {
+                failureReason = "Cached timestamp does not exist";
+            }
+            
+        }
+        catch(const Exception& e)
+        {
+            WARN("Failed to parse TSL last modified date: %s", e.msg().c_str());
+        }
+        
+        if(!failureReason.empty())
+        {
+            THROW(failureReason.c_str());
+        }
+    }
+}
+
 void TSL::validateRemoteDigest(const std::string &url, int timeout)
 {
     size_t pos = url.find_last_of("/.");
@@ -443,18 +506,27 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
         return;
 
     Connect::Result r;
+    bool checkTimestamp = false;
     try
     {
         r= Connect(url.substr(0, pos) + ".sha2", "GET", timeout).exec();
         if(r.isRedirect())
             r = Connect(r.headers["Location"], "GET", timeout).exec();
-        if(r.result.find("200") == string::npos)
+        if(r.result.find("404") != string::npos)
+            checkTimestamp = true;
+        else if(r.result.find("200") == string::npos)
             return;
     } catch(const Exception &e) {
         debugException(e);
         return DEBUG("Failed to get remote digest %s", url.c_str());
     }
 
+    if(checkTimestamp)
+    {
+        validateLastModified(url, timeout);
+        return;
+    }
+    
     Digest sha(URI_RSA_SHA256);
     vector<unsigned char> buf(10240, 0);
     ifstream is(path, ifstream::binary);
