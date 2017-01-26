@@ -24,6 +24,9 @@
 #include <sstream>
 #include <iomanip>
 #include <cstdlib>
+#if !defined(_WIN32) && !defined(__APPLE__)
+#include <ctime>
+#endif
 
 using namespace digidoc;
 using namespace digidoc::util::date;
@@ -175,9 +178,10 @@ xml_schema::DateTime digidoc::util::date::makeDateTime(const struct tm& lt)
 tm digidoc::util::date::httpTimeToTM(const std::string &date)
 {
     const char* t = date.c_str();
-    
-    // RFC 1123: Sun, 06 Nov 1994 08:49:37 GMT
     struct tm tm_struct = { };
+    
+#if defined(_WIN32) || defined(__APPLE__)
+    // RFC 1123: Sun, 06 Nov 1994 08:49:37 GMT
     istringstream ss(t);
     ss.imbue(locale("C"));
     ss >> get_time(&tm_struct, "%a, %d %b %Y %H:%M:%S GMT");
@@ -199,6 +203,27 @@ tm digidoc::util::date::httpTimeToTM(const std::string &date)
     {
         THROW("Invalid HTTP Full Date format: '%s'", t);
     }
+#else
+    // Use strptime instead of get_time on Linux/Ubuntu because space-padded
+    // date format (%e) does not work with get_time().
+
+    // RFC 1123: Sun, 06 Nov 1994 08:49:37 GMT
+    const char* cp = strptime(date.c_str(), "%a, %d %b %Y %H:%M:%S GMT", &tm_struct);
+    if (cp != nullptr)
+        return tm_struct;
+
+    // RFC 1036: Sunday, 06-Nov-94 08:49:37 GMT
+    cp = strptime(date.c_str(), "%A, %d-%b-%y %H:%M:%S GMT", &tm_struct);
+    if (cp != nullptr)
+        return tm_struct;
+
+    // ANSI C's asctime(): Sun Nov  6 08:49:37 1994
+    cp = strptime(date.c_str(), "%A %b %e %H:%M:%S %Y", &tm_struct);
+    if (cp == nullptr)
+    {
+        THROW("Invalid HTTP Full Date format: '%s'", t);
+    }
+#endif
     
     return tm_struct;
 }
