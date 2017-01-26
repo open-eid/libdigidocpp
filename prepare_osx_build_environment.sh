@@ -34,11 +34,11 @@ case "$@" in
   TARGET_PATH=/Library/EstonianIDCard.android${ARCH}
   SYSROOT=${TARGET_PATH}/sysroot
   export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
-  export CC=${CROSS_COMPILE}-clang
-  export CXX=${CROSS_COMPILE}-clang++
+  export CC=clang
+  export CXX=clang++
   export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
-  CONFIGURE="--host=${CROSS_COMPILE} --disable-static --enable-shared --with-sysroot=${SYSROOT}"
+  CONFIGURE="--host=${CROSS_COMPILE} --disable-static --enable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking"
 
   if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
     curl -O https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
@@ -61,7 +61,7 @@ case "$@" in
 *ios*)
   echo "Building for iOS"
   TARGET_PATH=/Library/EstonianIDCard.iphoneos
-  CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
+  CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
   SDK_CFLAGS="-miphoneos-version-min=9.0"
   export CFLAGS="-arch armv7 -arch armv7s -arch arm64 ${SDK_CFLAGS} -isysroot ${SYSROOT}"
@@ -71,7 +71,7 @@ case "$@" in
 *simulator*)
   echo "Building for iOS Simulator"
   TARGET_PATH=/Library/EstonianIDCard.iphonesimulator
-  CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared"
+  CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
   SDK_CFLAGS="-miphoneos-version-min=9.0"
   export CFLAGS="-arch i386 -arch x86_64 ${SDK_CFLAGS} -isysroot ${SYSROOT}"
@@ -81,7 +81,7 @@ case "$@" in
 *)
   echo "Building for OSX"
   TARGET_PATH=/Library/EstonianIDCard
-  CONFIGURE="--disable-static"
+  CONFIGURE="--disable-static --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   SDK_CFLAGS="-mmacosx-version-min=10.9"
   export CFLAGS="${SDK_CFLAGS}"
