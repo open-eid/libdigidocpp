@@ -21,6 +21,7 @@
 
 #include "X509Cert.h"
 
+#include <map>
 #include <set>
 
 namespace digidoc
@@ -31,9 +32,10 @@ namespace tsl { class TrustStatusListType; class InternationalNamesType; }
 class TSL
 {
 public:
-    struct Validity { time_t start, end; };
+    struct Qualifier { std::vector<std::string> qualifiers; std::vector<std::vector<std::string>> policySet; std::vector<std::map<X509Cert::KeyUsage,bool>> keyUsage; std::string assert_; };
+    struct Validity { time_t start, end; std::vector<Qualifier> qualifiers; };
+    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; std::string type; std::string additional; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
-    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; std::string type; };
 
     TSL(const std::string &file);
     bool isExpired() const;
@@ -63,6 +65,8 @@ private:
     static void debugException(const Exception &e);
     static Result parse(const std::string &url, const std::vector<X509Cert> &certs,
         const std::string &cache, const std::string &territory, int timeout);
+    template<class X>
+    static bool parseInfo(const X &info, Service &s, time_t &previousTime);
 
     static const std::set<std::string> SCHEMES_URI;
     static const std::set<std::string> GENERIC_URI;

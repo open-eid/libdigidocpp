@@ -85,7 +85,21 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020201_201601
     --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
     --custom-type AdditionalInformationType=/AdditionalInformationTypeBase
+    --custom-type ExtensionType=/ExtensionTypeBase
+    --hxx-epilogue \"\#include <xml/ExtensionType.h>\"
     --hxx-epilogue \"\#include <xml/AdditionalInformationType.h>\" )
+XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020101_additionaltypes_xsd.xsd
+    --root-element-none
+    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
+    --namespace-map http://uri.etsi.org/02231/v2/additionaltypes\#=digidoc::tsl
+    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
+XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020101_sie_xsd.xsd
+    --root-element-none
+    --accessor-regex /assert/assert_/
+    --modifier-regex /assert/assert_/
+    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
+    --namespace-map http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/\#=digidoc::tsl
+    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
 if( WIN32 )
     add_executable( embedfile embedfile.cpp )
     add_custom_command( OUTPUT tslcert1.h tslcert2.h tslcert3.h tslcert4.h
@@ -120,6 +134,8 @@ set( SCHEMA_FILES
     ${SCHEMA_DIR}/en_31916201v010101.xsd
     ${SCHEMA_DIR}/xml.xsd
     ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
+    ${SCHEMA_DIR}/ts_119612v020101_additionaltypes_xsd.xsd
+    ${SCHEMA_DIR}/ts_119612v020101_sie_xsd.xsd
     ${SCHEMA_DIR}/OpenDocument_dsig.xsd
 )
 set( PUBLIC_HEADER
@@ -168,6 +184,7 @@ add_library(digidocpp_priv STATIC
     util/DateTime.cpp
     xml/AdditionalInformationType.cpp
     xml/AnyType.cpp
+    xml/ExtensionType.cpp
     xml/ObjectType.cpp
     xml/SecureDOMParser.cpp
     xml/UnsignedSignaturePropertiesType.cpp

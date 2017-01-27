@@ -172,42 +172,17 @@ vector<TSL::Service> TSL::services() const
                 continue;
             Service s;
             s.type = serviceInfo.serviceTypeIdentifier();
-            for(const DigitalIdentityType &id: serviceInfo.serviceDigitalIdentity().digitalId())
-            {
-                if(!id.x509Certificate().present())
-                    continue;
-                const Base64Binary &base64 = id.x509Certificate().get();
-                s.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
-            }
-
-            time_t previousTime = xsd2time_t(serviceInfo.statusStartingTime());
-            if(SERVICESTATUS_START.find(serviceInfo.serviceStatus()) != SERVICESTATUS_START.cend())
-                s.validity.push_back({previousTime, 0});
-            else if(SERVICESTATUS_END.find(serviceInfo.serviceStatus()) == SERVICESTATUS_END.cend())
-                DEBUG("Unknown service status %s", serviceInfo.serviceStatus().c_str());
-
+            time_t previousTime = 0;
+            if(!parseInfo(serviceInfo, s, previousTime))
+                continue;
             if(service.serviceHistory().present())
             {
                 for(const ServiceHistoryInstanceType &history: service.serviceHistory()->serviceHistoryInstance())
                 {
                     if(history.serviceTypeIdentifier() != serviceInfo.serviceTypeIdentifier())
-                    {
                         DEBUG("History service type is not supported %s", history.serviceTypeIdentifier().c_str());
-                        continue;
-                    }
-                    if(SERVICESTATUS_START.find(history.serviceStatus()) != SERVICESTATUS_START.cend())
-                        s.validity.push_back({xsd2time_t(history.statusStartingTime()), previousTime});
-                    else if(SERVICESTATUS_END.find(history.serviceStatus()) == SERVICESTATUS_END.cend())
-                        DEBUG("Unknown service status %s", history.serviceStatus().c_str());
-                    previousTime = xsd2time_t(history.statusStartingTime());
-
-                    for(const DigitalIdentityType &id: history.serviceDigitalIdentity().digitalId())
-                    {
-                        if(!id.x509Certificate().present())
-                            continue;
-                        const Base64Binary &base64 = id.x509Certificate().get();
-                        s.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
-                    }
+                    else
+                        parseInfo(history, s, previousTime);
                 }
             }
             services.push_back(s);
@@ -342,6 +317,99 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
             list.insert(list.end(), data.services.cbegin(), data.services.cend());
     }
     return { list, false };
+}
+
+template<class X>
+bool TSL::parseInfo(const X &info, Service &s, time_t &previousTime)
+{
+    vector<Qualifier> qualifiers;
+    if(info.serviceInformationExtensions().present())
+    {
+        for(const ExtensionType &extension: info.serviceInformationExtensions()->extension())
+        {
+            if(extension.critical())
+            {
+                if(extension.takenOverByType().present())
+                {
+                    WARN("Found critical extension TakenOverByType");
+                    return false;
+                }
+                if(extension.expiredCertsRevocationInfo().present())
+                {
+                    WARN("Found critical extension ExpiredCertsRevocationInfo");
+                    return false;
+                }
+            }
+            if(extension.additionalServiceInformationType().present())
+                s.additional = extension.additionalServiceInformationType()->uRI();
+            if(extension.qualificationsType().present())
+            {
+                for(const QualificationElementType &element: extension.qualificationsType()->qualificationElement())
+                {
+                    Qualifier q;
+                    for(const QualifierType &qualifier: element.qualifiers().qualifier())
+                    {
+                        if(qualifier.uri().present())
+                            q.qualifiers.push_back(qualifier.uri().get());
+                    }
+                    const CriteriaListType &criteria = element.criteriaList();
+                    if(criteria.assert_().present())
+                        q.assert_ = criteria.assert_().get();
+                    for(const KeyUsageType &keyUsage: criteria.keyUsage())
+                    {
+                        map<X509Cert::KeyUsage,bool> usage;
+                        for(const KeyUsageBitType &bit: keyUsage.keyUsageBit())
+                        {
+                            if(!bit.name().present())
+                                continue;
+                            if(bit.name().get() == "digitalSignature")
+                                usage[X509Cert::DigitalSignature] = bit;
+                            if(bit.name().get() == "nonRepudiation")
+                                usage[X509Cert::NonRepudiation] = bit;
+                            if(bit.name().get() == "keyEncipherment")
+                                usage[X509Cert::KeyEncipherment] = bit;
+                            if(bit.name().get() == "dataEncipherment")
+                                usage[X509Cert::DataEncipherment] = bit;
+                            if(bit.name().get() == "keyAgreement")
+                                usage[X509Cert::KeyAgreement] = bit;
+                            if(bit.name().get() == "keyCertSign")
+                                usage[X509Cert::KeyCertificateSign] = bit;
+                            if(bit.name().get() == "crlSign")
+                                usage[X509Cert::CRLSign] = bit;
+                            if(bit.name().get() == "encipherOnly")
+                                usage[X509Cert::EncipherOnly] = bit;
+                            if(bit.name().get() == "decipherOnly")
+                                usage[X509Cert::DecipherOnly] = bit;
+                        }
+                        q.keyUsage.push_back(usage);
+                    }
+                    for(const PoliciesListType &policySet: criteria.policySet())
+                    {
+                        vector<string> policies;
+                        for(const xades::ObjectIdentifierType &policy: policySet.policyIdentifier())
+                            policies.push_back(policy.identifier());
+                        q.policySet.push_back(policies);
+                    }
+                    qualifiers.push_back(q);
+                }
+            }
+        }
+    }
+
+    for(const DigitalIdentityType &id: info.serviceDigitalIdentity().digitalId())
+    {
+        if(!id.x509Certificate().present())
+            continue;
+        const Base64Binary &base64 = id.x509Certificate().get();
+        s.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+    }
+
+    if(SERVICESTATUS_START.find(info.serviceStatus()) != SERVICESTATUS_START.cend())
+        s.validity.push_back({xsd2time_t(info.statusStartingTime()), previousTime, qualifiers});
+    else if(SERVICESTATUS_END.find(info.serviceStatus()) == SERVICESTATUS_END.cend())
+        DEBUG("Unknown service status %s", info.serviceStatus().c_str());
+    previousTime = xsd2time_t(info.statusStartingTime());
+    return true;
 }
 
 std::vector<TSL::Pointer> TSL::pointers() const
