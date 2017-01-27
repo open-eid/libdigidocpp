@@ -35,7 +35,7 @@ namespace digidoc
           void activate(const std::string &territory) const;
           std::vector<X509Cert> certs() const;
           X509Cert findIssuer(const X509Cert &cert) const;
-          bool verify(const X509Cert &cert, time_t *t = nullptr) const;
+          bool verify(const X509Cert &cert, bool ca, time_t *t = nullptr) const;
 
       private:
           X509CertStore();
