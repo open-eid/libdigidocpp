@@ -15,7 +15,7 @@ if( Boost_INCLUDE_DIR )
         -DPKCS11_MODULE="${PKCS11_MODULE}"
     )
     if( LIBDIGIDOC_FOUND AND LIBDIGIDOC_LINKED )
-        add_definitions(LINKED_LIBDIGIDOC)
+        add_definitions(-DLINKED_LIBDIGIDOC)
     endif()
     add_executable(unittests libdigidocpp_boost.cpp)
     add_executable(TSLTests TSLTests.cpp)
