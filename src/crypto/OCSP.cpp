@@ -391,13 +391,18 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         THROW("Failed to verify OCSP response.");
     time_t t = util::date::ASN1TimeToTime_t(producedAt());
     SCOPE(X509_STORE, store, X509CertStore::createStore(X509CertStore::OCSP, &t));
+    STACK_OF(X509) *stack = sk_X509_new_null();
+    for(const X509Cert &i: X509CertStore::instance()->certs(X509CertStore::OCSP))
+        sk_X509_push(stack, i.handle());
+    OpenSSLException(); // Clear errors
     //OCSP_TRUSTOTHER - enables OCSP_NOVERIFY
     //OCSP_NOSIGS - does not verify ocsp signatures
     //OCSP_NOVERIFY - ignores signer(responder) cert verification, requires store otherwise crashes
     //OCSP_NOCHECKS - cancel futurer responder issuer checks and trust bits
     //OCSP_NOEXPLICIT - returns 0 by mistake
     //all checks enabled fails trust bit check, cant use OCSP_NOEXPLICIT instead using OCSP_NOCHECKS
-    int result = OCSP_basic_verify(basic.get(), nullptr, store.get(), OCSP_NOCHECKS);
+    int result = OCSP_basic_verify(basic.get(), stack, store.get(), OCSP_NOCHECKS);
+    sk_X509_free(stack);
     if(result <= 0)
         THROW_OPENSSLEXCEPTION("Failed to verify OCSP response.");
 
