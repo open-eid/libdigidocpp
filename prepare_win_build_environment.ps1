@@ -10,7 +10,7 @@ param(
 	[string]$VSINSTALLDIR = "C:\Program Files (x86)\Microsoft Visual Studio $vsver",
 	[string]$devenv = "$VSINSTALLDIR\Common7\IDE\devenv.exe",
 	[string]$vcvars = "$VSINSTALLDIR\VC\vcvarsall.bat",
-	[string]$opensslver = "openssl-1.0.2j",
+	[string]$opensslver = "openssl-1.0.2k",
 	[string]$xercesver = "xerces-c-3.1.4",
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
@@ -39,13 +39,13 @@ function openssl() {
 	& $7zip x "$opensslver.tar.gz" > $null
 	& $7zip x "$opensslver.tar" > $null
 	Push-Location -Path $opensslver
-	& $vcvars x86 "&&" perl Configure VC-WIN32 no-asm "&&" ms\do_ms "&&" nmake /nologo -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win32 OPENSSLDIR=\OpenSSL-Win32\bin
+	& $vcvars x86 "&&" perl Configure VC-WIN32 no-asm no-hw no-engines "&&" ms\do_ms "&&" nmake /nologo -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win32 OPENSSLDIR=\OpenSSL-Win32\bin
 	Pop-Location
 	Remove-Item $opensslver -Force -Recurse
 
 	& $7zip x "$opensslver.tar" > $null
 	Push-Location -Path $opensslver
-	& $vcvars x86_amd64 "&&" perl Configure VC-WIN64A no-asm "&&" ms\do_win64a "&&" nmake /nologo -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win64 OPENSSLDIR=\OpenSSL-Win64\bin
+	& $vcvars x86_amd64 "&&" perl Configure VC-WIN64A no-asm no-hw no-engines "&&" ms\do_win64a "&&" nmake /nologo -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win64 OPENSSLDIR=\OpenSSL-Win64\bin
 	Pop-Location
 	Remove-Item $opensslver -Force -Recurse
 	Remove-Item "$opensslver.tar"
