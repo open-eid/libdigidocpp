@@ -48,7 +48,6 @@ namespace digidoc
           static const std::string MANIFEST_NAMESPACE;
 
           void save(const std::string &path = "") override;
-          std::string mediaType() const override;
 
           void addAdESSignature(std::istream &sigdata) override;
           Signature* prepareSignature(Signer *signer) override;

@@ -36,21 +36,20 @@ using namespace std;
 /**
  * Initialize ASiCS container.
  */
-ASiC_S::ASiC_S()
+ASiC_S::ASiC_S(): ASiContainer(MIMETYPE_ASIC_S)
 {
 }
 
 /**
  * Opens ASiC-S container from a file
  */
-
-ASiC_S::ASiC_S(const string &path)
+ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
 {
-    auto z = load(path, false);
+    auto z = load(path, false, {MIMETYPE_ASIC_S});
     loadContainer(*z.get());
 }
 
-void ASiC_S::save(const string &path)
+void ASiC_S::save(const string &)
 {
     THROW("Not implemented.");
 }
@@ -71,20 +70,12 @@ void ASiC_S::addDataFile(istream *is, const string &fileName, const string &medi
     ASiContainer::addDataFile(is, fileName, mediaType);
 }
 
-Container* ASiC_S::createInternal(const string &path)
+Container* ASiC_S::createInternal(const string &)
 {
     return nullptr;
 }
 
-/**
- * @return returns ASiC-S container mimetype.
- */
-string ASiC_S::mediaType() const
-{
-    return ASiContainer::MIMETYPE_ASIC_S;
-}
-
-void ASiC_S::addAdESSignature(istream &sigdata)
+void ASiC_S::addAdESSignature(istream &)
 {
     THROW("Not implemented.");
 }
@@ -146,12 +137,12 @@ void ASiC_S::loadContainer(const ZipSerialize &z)
     extractTimestamp(z);
 }
 
-Signature* ASiC_S::prepareSignature(Signer *signer)
+Signature* ASiC_S::prepareSignature(Signer *)
 {
     THROW("Not implemented.");
 }
 
-Signature *ASiC_S::sign(Signer* signer)
+Signature *ASiC_S::sign(Signer *)
 {
     THROW("Not implemented.");
 }
