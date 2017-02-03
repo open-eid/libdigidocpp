@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OASIS OpenDocument v1.2
+  Committee Draft 05 Rev 02, 11 November 2010
+  Digital Signatures Relax-NG Schema
+  
+  Copyright © OASIS Open 2008-2010. All Rights Reserved.
+  
+  All capitalized terms in the following text have the meanings assigned to them
+  in the OASIS Intellectual Property Rights Policy (the "OASIS IPR Policy"). The
+  full Policy may be found at the OASIS website.
+  
+  This document and translations of it may be copied and furnished to others, and
+  derivative works that comment on or otherwise explain it or assist in its
+  implementation may be prepared, copied, published, and distributed, in whole or
+  in part, without restriction of any kind, provided that the above copyright
+  notice and this section are included on all such copies and derivative works.
+  However, this document itself may not be modified in any way, including by
+  removing the copyright notice or references to OASIS, except as needed for the
+  purpose of developing any document or deliverable produced by an OASIS
+  Technical Committee (in which case the rules applicable to copyrights, as set
+  forth in the OASIS IPR Policy, must be followed) or as required to translate it
+  into languages other than English.
+  
+  The limited permissions granted above are perpetual and will not be revoked by
+  OASIS or its successors or assigns.
+  
+  This document and the information contained herein is provided on an "AS IS"
+  basis and OASIS DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+  LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT
+  INFRINGE ANY OWNERSHIP RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR
+  FITNESS FOR A PARTICULAR PURPOSE. 
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:dsig="urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0">
+  <xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
+  <xs:element name="document-signatures">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="ds:Signature"/>
+      </xs:sequence>
+      <!--xs:attributeGroup ref="dsig:dsig-document-signatures-attlist"/-->
+    </xs:complexType>
+  </xs:element>
+  <!--xs:attributeGroup name="dsig-document-signatures-attlist">
+    <xs:attribute name="version" use="required" form="qualified">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="1.2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup-->
+  <!--xs:complexType name="dsMarkup" mixed="true">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+    </xs:sequence>
+    <xs:anyAttribute processContents="skip"/>
+  </xs:complexType-->
+</xs:schema>
