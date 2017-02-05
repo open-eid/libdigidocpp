@@ -47,21 +47,42 @@ const string ASiC_E::ASIC_TSA_PROFILE = ASIC_TS_PROFILE + "-archive";
 const string ASiC_E::ASIC_TMA_PROFILE = ASIC_TM_PROFILE + "-archive";
 const string ASiC_E::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 
+class ASiC_E::Private
+{
+public:
+    std::vector<DataFile*> metadata;
+};
+
 /**
  * Initialize BDOC container.
  */
-ASiC_E::ASiC_E(): ASiContainer(MIMETYPE_ASIC_E)
+ASiC_E::ASiC_E()
+    : ASiContainer(MIMETYPE_ASIC_E)
+    , d(new Private)
 {
 }
 
 /**
  * Opens BDOC container from a file
  */
-ASiC_E::ASiC_E(const string &path): ASiContainer(MIMETYPE_ASIC_E)
+ASiC_E::ASiC_E(const string &path)
+    : ASiContainer(MIMETYPE_ASIC_E)
+    , d(new Private)
 {
     DEBUG("ASiC_E::ASiC_E(%s)", path.c_str());
     auto zip = load(path, true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
     parseManifestAndLoadFiles(*zip);
+}
+
+ASiC_E::~ASiC_E()
+{
+    for_each(d->metadata.begin(), d->metadata.end(), [](DataFile *file){ delete file; });
+    delete d;
+}
+
+vector<DataFile*> ASiC_E::metaFiles() const
+{
+    return d->metadata;
 }
 
 /**
@@ -231,7 +252,12 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 
             manifestFiles.insert(file.full_path());
             iostream *data = dataStream(file.full_path(), z);
-            addDataFile(data, file.full_path(), file.media_type());
+            if(mediaType() == MIMETYPE_ADOC &&
+               (file.full_path().compare(0, 9, "META-INF/") == 0 ||
+                file.full_path().compare(0, 9, "metadata/") == 0))
+                d->metadata.push_back(new DataFilePrivate(data, file.full_path(), file.media_type()));
+            else
+                addDataFile(data, file.full_path(), file.media_type());
         }
         if(!mimeFound)
             THROW("Manifest is missing mediatype file entry.");

@@ -146,6 +146,16 @@ public:
                 return new IStreamInputStream(static_cast<const DataFilePrivate*>(file)->m_is.get());
         }
 
+        if(doc_->mediaType() == ASiC_E::MIMETYPE_ADOC)
+        {
+            ASiC_E *adoc = static_cast<ASiC_E*>(doc_);
+            for(const DataFile *file: adoc->metaFiles())
+            {
+                if(file->fileName() == File::fromUriPath(_uri))
+                    return new IStreamInputStream(static_cast<const DataFilePrivate*>(file)->m_is.get());
+            }
+        }
+
         return XSECURIResolverXerces::resolveURI(uri);
     }
 
