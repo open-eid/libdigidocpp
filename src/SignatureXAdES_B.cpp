@@ -33,10 +33,8 @@
 #include "xml/en_31916201v010101.hxx"
 #include "xml/SecureDOMParser.h"
 #include "xml/OpenDocument_dsig.hxx"
+#include "xml/URIResolver.h"
 
-#include <xercesc/dom/DOM.hpp>
-#include <xercesc/parsers/XercesDOMParser.hpp>
-#include <xercesc/util/BinInputStream.hpp>
 #ifdef __APPLE__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -49,7 +47,6 @@
 #endif
 #include <xsec/framework/XSECException.hpp>
 #include <xsec/framework/XSECProvider.hpp>
-#include <xsec/framework/XSECURIResolverXerces.hpp>
 
 using namespace digidoc;
 using namespace digidoc::asic;
@@ -92,81 +89,6 @@ const map<string,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist = {
 
 namespace digidoc
 {
-
-class IStreamInputStream: public BinInputStream
-{
-public:
-    IStreamInputStream(istream *is): is_(is)
-    {
-        is_->clear();
-        is_->seekg(0);
-    }
-
-    XMLFilePos curPos() const
-    {
-        return is_->tellg();
-    }
-
-    XMLSize_t readBytes(XMLByte * const toFill, const XMLSize_t maxToRead)
-    {
-        is_->read((char*)toFill, maxToRead);
-        return XMLSize_t(is_->gcount());
-    }
-
-    const XMLCh *getContentType() const
-    {
-        return 0;
-    }
-
-    istream *is_;
-};
-
-class URIResolver: public XSECURIResolverXerces
-{
-public:
-    URIResolver(ASiContainer *doc):doc_(doc) {}
-
-    BinInputStream *resolveURI(const XMLCh *uri)
-    {
-        if(!uri)
-            throw XSECException(XSECException::ErrorOpeningURI,
-                "XSECURIResolverXerces - anonymous references not supported in default URI Resolvers");
-
-#ifdef _WIN32
-        string _uri = File::decodeName(uri);
-#else
-        char *enc = XMLString::transcode(uri);
-        string _uri = enc;
-        XMLString::release(&enc);
-#endif
-        if(strncmp(_uri.c_str(), "/", 1) == 0) _uri.erase(0, 1);
-        for(const DataFile *file: doc_->dataFiles())
-        {
-            if(file->fileName() == File::fromUriPath(_uri))
-                return new IStreamInputStream(static_cast<const DataFilePrivate*>(file)->m_is.get());
-        }
-
-        if(doc_->mediaType() == ASiC_E::MIMETYPE_ADOC)
-        {
-            ASiC_E *adoc = static_cast<ASiC_E*>(doc_);
-            for(const DataFile *file: adoc->metaFiles())
-            {
-                if(file->fileName() == File::fromUriPath(_uri))
-                    return new IStreamInputStream(static_cast<const DataFilePrivate*>(file)->m_is.get());
-            }
-        }
-
-        return XSECURIResolverXerces::resolveURI(uri);
-    }
-
-    XSECURIResolver *clone(void)
-    {
-        return new URIResolver(doc_);
-    }
-
-private:
-    ASiContainer *doc_;
-};
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
 {

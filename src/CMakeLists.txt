@@ -170,6 +170,7 @@ add_library(digidocpp_priv STATIC
     xml/ObjectType.cpp
     xml/SecureDOMParser.cpp
     xml/UnsignedSignaturePropertiesType.cpp
+    xml/URIResolver.cpp
 )
 
 set_target_properties(digidocpp_priv PROPERTIES
