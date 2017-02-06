@@ -51,6 +51,21 @@ SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer
 SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
 : SignatureXAdES_T(sigdata, bdoc, relaxSchemaValidation)
 {
+    try {
+        // ADOC files are default T level, take OCSP response to create temporary LT level
+        if(bdoc->mediaType() == ASiContainer::MIMETYPE_ADOC && unsignedSignatureProperties().revocationValues().empty())
+        {
+            X509Cert cert = signingCertificate();
+            X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::OCSP);
+            if(!issuer)
+                THROW("Could not find certificate issuer '%s' in certificate store.",
+                    cert.issuerName().c_str());
+
+            OCSP ocsp(cert, issuer, vector<unsigned char>(), "format: " + bdoc->mediaType() + " version: " + policy());
+            addOCSPValue(id().replace(0, 1, "N"), ocsp);
+        }
+    } catch(const Exception &) {
+    }
 }
 
 /**
@@ -201,41 +216,13 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
         THROW("Could not find certificate issuer '%s' in certificate store.",
             cert.issuerName().c_str());
 
-    DEBUG("Signing with X.509 cert {serial=%s, subject=%s, issuer=%s})",
-        cert.serial().c_str(), cert.subjectName().c_str(), cert.issuerName().c_str());
-
-    DEBUG("Making OCSP request.");
     OCSP ocsp(cert, issuer, nonce, "format: " + bdoc->mediaType() + " profile: " +
         (profile.find(ASiC_E::ASIC_TM_PROFILE) == string::npos ? "ASiC_E_BASELINE_LT" : "ASiC_E_BASELINE_LT_TM"));
     ocsp.verifyResponse(cert);
 
-    // Set TM profile signature parameters.
-    if(!qualifyingProperties().unsignedProperties().present())
-    {
-        UnsignedPropertiesType usProp;
-        usProp.unsignedSignatureProperties(UnsignedSignaturePropertiesType());
-        qualifyingProperties().unsignedProperties(usProp);
-    }
-
+    addOCSPValue(id().replace(0, 1, "N"), ocsp);
     addCertificateValue(id() + "-RESPONDER_CERT", ocsp.responderCert());
     addCertificateValue(id() + "-CA-CERT", issuer);
-
-    vector<unsigned char> ocspResponse = ocsp.toDer();
-    DEBUG("OCSP response size %d", ocspResponse.size());
-    OCSPValuesType::EncapsulatedOCSPValueType ocspValueData(toBase64(ocspResponse));
-    ocspValueData.id(id().replace(0, 1, "N"));
-
-    OCSPValuesType ocspValue;
-    ocspValue.encapsulatedOCSPValue().push_back(ocspValueData);
-
-    RevocationValuesType revocationValues;
-    revocationValues.oCSPValues(ocspValue);
-
-    unsignedSignatureProperties().revocationValues().push_back(revocationValues);
-    unsignedSignatureProperties().contentOrder().push_back(
-        UnsignedSignaturePropertiesType::ContentOrderType(
-            UnsignedSignaturePropertiesType::revocationValuesId,
-            unsignedSignatureProperties().revocationValues().size() - 1));
     sigdata_.clear();
 }
 
@@ -246,7 +233,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
  */
 void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert& x509)
 {
-    DEBUG("SignatureXAdES_LT::setCertificateValue(%s, X509Cert{%s,%s})",
+    DEBUG("SignatureXAdES_LT::addCertificateValue(%s, X509Cert{%s,%s})",
         certId.c_str(), x509.serial().c_str(), x509.subjectName().c_str());
 
     UnsignedSignaturePropertiesType::CertificateValuesSequence &values =
@@ -262,6 +249,33 @@ void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert
     CertificateValuesType::EncapsulatedX509CertificateType certData(toBase64(x509));
     certData.id(certId);
     values[0].encapsulatedX509Certificate().push_back(certData);
+}
+
+void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
+{
+    DEBUG("SignatureXAdES_LT::addOCSPValue(%s, %s)", id.c_str(), ocsp.producedAt().c_str());
+
+    OCSPValuesType::EncapsulatedOCSPValueType ocspValueData(toBase64(ocsp.toDer()));
+    ocspValueData.id(id);
+
+    OCSPValuesType ocspValue;
+    ocspValue.encapsulatedOCSPValue().push_back(ocspValueData);
+
+    RevocationValuesType revocationValues;
+    revocationValues.oCSPValues(ocspValue);
+
+    if(!qualifyingProperties().unsignedProperties().present())
+    {
+        UnsignedPropertiesType usProp;
+        usProp.unsignedSignatureProperties(UnsignedSignaturePropertiesType());
+        qualifyingProperties().unsignedProperties(usProp);
+    }
+
+    unsignedSignatureProperties().revocationValues().push_back(revocationValues);
+    unsignedSignatureProperties().contentOrder().push_back(
+        UnsignedSignaturePropertiesType::ContentOrderType(
+            UnsignedSignaturePropertiesType::revocationValuesId,
+            unsignedSignatureProperties().revocationValues().size() - 1));
 }
 
 /**

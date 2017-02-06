@@ -26,7 +26,7 @@ namespace digidoc
 {
 
 namespace xades { class OCSPRefType; }
-
+class OCSP;
 class SignatureXAdES_LT: public SignatureXAdES_T
 {
 public:
@@ -45,8 +45,8 @@ public:
 private:
     DISABLE_COPY(SignatureXAdES_LT);
 
+    void addOCSPValue(const std::string &id, const OCSP &ocsp);
     void addCertificateValue(const std::string& certId, const X509Cert& x509);
-    void setOCSPResponseValue(const std::vector<unsigned char>& data);
     std::vector<unsigned char> getOCSPResponseValue() const;
 };
 
