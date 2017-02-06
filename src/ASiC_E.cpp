@@ -97,6 +97,8 @@ void ASiC_E::save(const string &path)
 {
     if(dataFiles().empty())
         THROW("Can not save, BDoc container is empty.");
+    if(mediaType() != MIMETYPE_ASIC_E)
+        THROW("'%s' format is not supported", mediaType().c_str());
 
     if(!path.empty())
         zpath(path);
@@ -144,6 +146,8 @@ void ASiC_E::addAdESSignature(istream &sigdata)
 {
     if(dataFiles().empty())
         THROW("No documents in container, can not add signature.");
+    if(mediaType() != MIMETYPE_ASIC_E)
+        THROW("'%s' format is not supported", mediaType().c_str());
 
     try
     {
@@ -325,6 +329,8 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 
 Signature* ASiC_E::prepareSignature(Signer *signer)
 {
+    if(mediaType() != MIMETYPE_ASIC_E)
+        THROW("'%s' format is not supported", mediaType().c_str());
     return newSignature<SignatureXAdES_LTA>(signer);
 }
 
