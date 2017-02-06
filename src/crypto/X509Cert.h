@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+typedef struct asn1_object_st ASN1_OBJECT;
 typedef struct x509_st X509;
 
 namespace digidoc
@@ -52,6 +53,30 @@ namespace digidoc
             DecipherOnly
           };
 
+          static const std::string QC_COMPLIANT;
+          static const std::string QC_SSCD;
+          static const std::string QC_QCP;
+          static const std::string QC_QCT;
+
+          static const std::string QC_SYNTAX1;
+          static const std::string QC_SYNTAX2;
+
+          static const std::string QCS_NATURAL;
+          static const std::string QCS_LEGAL;
+
+          static const std::string QCT_ESIGN;
+          static const std::string QCT_ESEAL;
+          static const std::string QCT_WEB;
+
+          static const std::string QCP_PUBLIC_WITH_SSCD;
+          static const std::string QCP_PUBLIC;
+
+          static const std::string QCP_NATURAL;
+          static const std::string QCP_LEGAL;
+          static const std::string QCP_NATURAL_QSCD;
+          static const std::string QCP_LEGAL_QSCD;
+          static const std::string QCP_WEB;
+
           explicit X509Cert(X509* cert = 0);
           explicit X509Cert(const unsigned char *bytes, size_t size, Format format = Der);
           explicit X509Cert(const std::vector<unsigned char> &bytes, Format format = Der);
@@ -65,6 +90,7 @@ namespace digidoc
           std::string subjectName(const std::string &obj = std::string()) const;
           std::vector<KeyUsage> keyUsage() const;
           std::vector<std::string> certificatePolicies() const;
+          std::vector<std::string> qcStatements() const;
           bool isCA() const;
           bool isValid(time_t *t = 0) const;
 
@@ -77,6 +103,9 @@ namespace digidoc
           bool operator !=(const X509Cert &other) const;
 
       private:
+          std::string toOID(ASN1_OBJECT *obj) const;
+          template<typename Func>
+          std::string toString(Func func, const std::string &obj) const;
           std::shared_ptr<X509> cert;
     };
 }
