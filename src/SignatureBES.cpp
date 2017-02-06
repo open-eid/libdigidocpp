@@ -715,7 +715,7 @@ void SignatureBES::checkSigningCertificate() const
         if(time.empty())
             THROW("SigningTime missing");
         time_t signingTime_t = util::date::string2time_t(time);
-        if(!X509CertStore::instance()->verify(signingCert, &signingTime_t))
+        if(!X509CertStore::instance()->verify(signingCert, true, &signingTime_t))
             THROW("Unable to verify signing certificate");
     }
     catch(const Exception &e)

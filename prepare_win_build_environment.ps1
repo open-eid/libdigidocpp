@@ -5,11 +5,11 @@ param(
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
 	[string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
 	[string]$vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat", #$env:VCINSTALLDIR
-	[string]$opensslver = "openssl-1.0.2h",
+	[string]$opensslver = "openssl-1.0.2j",
 	[string]$xercesver = "xerces-c-3.1.4",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
-	[string]$zlibver = "zlib-1.2.8",
+	[string]$zlibver = "zlib-1.2.11",
 	[switch]$openssl = $false,
 	[switch]$xerces = $false,
 	[switch]$xmlsec = $false,

@@ -155,7 +155,7 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert) const
  * @return 0 or openssl error_code. Get human readable cause with X509_verify_cert_error_string(code)
  * @throw IOException if error
  */
-bool X509CertStore::verify(const X509Cert &cert, time_t *t) const
+bool X509CertStore::verify(const X509Cert &cert, bool ca, time_t *t) const
 {
     activate(cert.issuerName("C"));
 
@@ -235,7 +235,31 @@ bool X509CertStore::verify(const X509Cert &cert, time_t *t) const
     }
 
     if(X509_verify_cert(csc.get()) > 0)
+    {
+        if(!ca)
+            return true;
+
+        if(cert.issuerName("CN") == "EID-SK 2016")
+        {
+            vector<string> policy = cert.certificatePolicies();
+            vector<string> qcstatement = cert.qcStatements();
+            bool policyIdSupportedByQSCD =
+                find(policy.cbegin(), policy.cend(), X509Cert::QCP_PUBLIC_WITH_SSCD) != policy.cend() ||
+                find(policy.cbegin(), policy.cend(), X509Cert::QCP_LEGAL_QSCD) != policy.cend() ||
+                find(policy.cbegin(), policy.cend(), X509Cert::QCP_NATURAL_QSCD) != policy.cend();
+            bool qcStatementSupportedByQSCD =
+                find(qcstatement.cbegin(), qcstatement.cend(), X509Cert::QC_SSCD) != qcstatement.cend();
+
+            if(!(policyIdSupportedByQSCD || qcStatementSupportedByQSCD))
+            {
+                Exception e(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
+                e.setCode(Exception::CertificateIssuerMissing);
+                throw e;
+            }
+        }
+
         return true;
+    }
 
     int err = X509_STORE_CTX_get_error(csc.get());
     Exception e(__FILE__, __LINE__, X509_verify_cert_error_string(err), OpenSSLException());

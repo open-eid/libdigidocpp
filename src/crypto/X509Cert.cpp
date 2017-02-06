@@ -23,6 +23,7 @@
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509Crypto.h"
 
+#include <openssl/asn1t.h>
 #include <openssl/pem.h>
 #include <openssl/x509v3.h>
 
@@ -33,63 +34,47 @@
 using namespace digidoc;
 using namespace std;
 
-namespace digidoc
-{
-class X509CertPrivate
-{
-public:
-    /**
-     * Converts X509_NAME struct to string.
-     *
-     * @param name X509_NAME struct that is converted to string.
-     * @return converted value of X509_NAME.
-     * @throws IOException throws exception if conversion failed.
-     */
-    static string toString(X509_NAME* name, const string &obj)
-    {
-        if(!name)
-            THROW_OPENSSLEXCEPTION("Failed to convert X.509 certificate subject");
+/**
+ * SemanticsInformation ::= SEQUENCE {
+ *        semanticsIdentifier         OBJECT IDENTIFIER OPTIONAL,
+ *        nameRegistrationAuthorities NameRegistrationAuthorities OPTIONAL
+ *        }
+ */
+typedef struct SemanticsInformation_st {
+    ASN1_OBJECT *semanticsIdentifier;
+    //NameRegistrationAuthorities nameRegistrationAuthorities;
+} SemanticsInformation;
+DECLARE_ASN1_FUNCTIONS(SemanticsInformation)
 
-        string str;
-        if(!obj.empty())
-        {
-            for(int i = 0; i < X509_NAME_entry_count(name); ++i)
-            {
-                X509_NAME_ENTRY *e = X509_NAME_get_entry(name, i);
-                if(obj != OBJ_nid2sn(OBJ_obj2nid(X509_NAME_ENTRY_get_object(e))))
-                    continue;
+/**
+ * QcType ::= SEQUENCE OF OBJECT IDENTIFIER
+ */
+typedef STACK_OF(ASN1_OBJECT) QcType;
+DECLARE_ASN1_FUNCTIONS(QcType)
 
-                char *data = nullptr;
-                int size = ASN1_STRING_to_UTF8((unsigned char**)&data, X509_NAME_ENTRY_get_data(e));
-                str.append(data, size);
-                OPENSSL_free(data);
-            }
-        }
-        else
-        {
-            BIO* mem = BIO_new(BIO_s_mem());
-            if(!mem)
-                THROW_OPENSSLEXCEPTION("Failed to allocate memory for X509_NAME conversion");
+/**
+ * QCStatement ::= SEQUENCE {
+ *     statementId        OBJECT IDENTIFIER,
+ *     statementInfo      ANY DEFINED BY statementId OPTIONAL}
+ */
+typedef struct QCStatement_st {
+    ASN1_OBJECT *statementId;
+#ifndef TEMPLATE
+    ASN1_TYPE *statementInfo;
+#else
+    union {
+        SemanticsInformation *semanticsInformation;
+        ASN1_TYPE *other;
+    } statementInfo;
+#endif
+} QCStatement;
+DECLARE_ASN1_FUNCTIONS(QCStatement)
 
-            // Convert the X509_NAME struct to string.
-            if(X509_NAME_print_ex(mem, name, 0, XN_FLAG_RFC2253) < 0)
-            {
-                BIO_free(mem);
-                THROW_OPENSSLEXCEPTION("Failed to convert X509_NAME struct to string");
-            }
-
-            BUF_MEM *data = nullptr;
-            BIO_get_mem_ptr(mem, &data);
-            str.append(data->data, data->length);
-            BIO_free(mem);
-        }
-
-        return str;
-    }
-};
-
-}
-
+/**
+ * QCStatements ::= SEQUENCE OF QCStatement
+ */
+typedef STACK_OF(QCStatement) QCStatements;
+DECLARE_ASN1_FUNCTIONS(QCStatements)
 
 /**
  * @class digidoc::X509Cert
@@ -126,6 +111,79 @@ public:
  */
 
 /**
+ * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcCompliance
+ */
+const string X509Cert::QC_COMPLIANT = "0.4.0.1862.1.1";
+/**
+ * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcSSCD
+ */
+const string X509Cert::QC_SSCD = "0.4.0.1862.1.4";
+/**
+ * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcPDS
+ */
+const string X509Cert::QC_QCP = "0.4.0.1862.1.5";
+/**
+ * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcType
+ */
+const string X509Cert::QC_QCT = "0.4.0.1862.1.6";
+/**
+ * https://www.ietf.org/rfc/rfc3739.txt - id-qcs-pkixQCSyntax-v1
+ */
+const string X509Cert::QC_SYNTAX1 = "1.3.6.1.5.5.7.11.1";
+/**
+ * https://www.ietf.org/rfc/rfc3739.txt - id-qcs-pkixQCSyntax-v2
+ */
+const string X509Cert::QC_SYNTAX2 = "1.3.6.1.5.5.7.11.2";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.01.01_60/en_31941201v010101p.pdf - id-etsi-qcs-semanticsId-natural
+ */
+const string X509Cert::QCS_NATURAL = "0.4.0.194121.1.1";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.01.01_60/en_31941201v010101p.pdf - id-etsi-qcs-semanticsId-legal
+ */
+const string X509Cert::QCS_LEGAL = "0.4.0.194121.1.2";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.01.01_60/en_31941205v020101p.pdf - id-etsi-qct-esign
+ */
+const string X509Cert::QCT_ESIGN = "0.4.0.1862.1.6.1";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.01.01_60/en_31941205v020101p.pdf - id-etsi-qct-eseal
+ */
+const string X509Cert::QCT_ESEAL = "0.4.0.1862.1.6.2";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.01.01_60/en_31941205v020101p.pdf - id-etsi-qct-web
+ */
+const string X509Cert::QCT_WEB = "0.4.0.1862.1.6.3";
+/**
+ * http://www.etsi.org/deliver/etsi_ts/101400_101499/101456/01.04.03_60/ts_101456v010403p.pdf
+ */
+const string X509Cert::QCP_PUBLIC_WITH_SSCD = "0.4.0.1456.1.1";
+/**
+ * http://www.etsi.org/deliver/etsi_ts/101400_101499/101456/01.04.03_60/ts_101456v010403p.pdf
+ */
+const string X509Cert::QCP_PUBLIC = "0.4.0.1456.1.2";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ */
+const string X509Cert::QCP_NATURAL = "0.4.0.194112.1.0";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ */
+const string X509Cert::QCP_LEGAL = "0.4.0.194112.1.1";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ */
+const string X509Cert::QCP_NATURAL_QSCD = "0.4.0.194112.1.2";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ */
+const string X509Cert::QCP_LEGAL_QSCD = "0.4.0.194112.1.3";
+/**
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ */
+const string X509Cert::QCP_WEB = "0.4.0.194112.1.4";
+
+/**
  * Creates copy of the OpenSSL X509 certificate.
  *
  * @param cert X509 certificate structure to be wrapped.
@@ -143,7 +201,7 @@ X509Cert::X509Cert(X509* cert)
  * @throws Exception throws exception if X509 certificate parsing failed.
  */
 X509Cert::X509Cert(const vector<unsigned char> &bytes, Format format)
-    : X509Cert(bytes.size() > 0 ? &bytes[0] : nullptr, bytes.size(), format)
+    : X509Cert(bytes.data(), bytes.size(), format)
 {
 }
 
@@ -199,10 +257,7 @@ X509Cert::X509Cert(const string &path, Format format)
 /**
  * Copy constructor.
  */
-X509Cert::X509Cert(const X509Cert &other)
- : cert(other.cert)
-{
-}
+X509Cert::X509Cert(const X509Cert &other) = default;
 
 /**
  * Move constructor.
@@ -215,21 +270,20 @@ X509Cert::X509Cert(X509Cert &&other)
 /**
  * Clean up underlying X509 data.
  */
-X509Cert::~X509Cert()
-{
-}
+X509Cert::~X509Cert() = default;
 
 /**
  * Encodes the X509 certificate using DER encoding.
  */
 X509Cert::operator vector<unsigned char>() const
 {
+    vector<unsigned char> der;
     if(!cert)
-        return vector<unsigned char>();
-    vector<unsigned char> der(i2d_X509(cert.get(), 0), 0);
+        return der;
+    der.resize(size_t(i2d_X509(cert.get(), 0)), 0);
     if(der.empty())
         return der;
-    unsigned char *p = &der[0];
+    unsigned char *p = der.data();
     i2d_X509(cert.get(), &p);
     return der;
 }
@@ -241,9 +295,9 @@ X509Cert::operator vector<unsigned char>() const
  */
 string X509Cert::serial() const
 {
-    if(!cert)
-        return string();
     string serial;
+    if(!cert)
+        return serial;
     SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), 0), BN_free);
     if(!!bn)
     {
@@ -268,9 +322,7 @@ string X509Cert::serial() const
  */
 string X509Cert::issuerName(const string &obj) const
 {
-    if(!cert)
-        return string();
-    return cert ? X509CertPrivate::toString(X509_get_issuer_name(cert.get()), obj) : string();
+    return toString(X509_get_issuer_name, obj);
 }
 
 /**
@@ -278,13 +330,13 @@ string X509Cert::issuerName(const string &obj) const
  */
 vector<X509Cert::KeyUsage> X509Cert::keyUsage() const
 {
+    vector<KeyUsage> usage;
     if(!cert)
-        return vector<X509Cert::KeyUsage>();
+        return usage;
     SCOPE(ASN1_BIT_STRING, keyusage, (ASN1_BIT_STRING*)X509_get_ext_d2i(cert.get(), NID_key_usage, 0, 0));
     if(!keyusage)
-        return vector<KeyUsage>();
+        return usage;
 
-    vector<KeyUsage> usage;
     for(int n = 0; n < 9; ++n)
     {
         if(ASN1_BIT_STRING_get_bit(keyusage.get(), n))
@@ -298,24 +350,71 @@ vector<X509Cert::KeyUsage> X509Cert::keyUsage() const
  */
 vector<string> X509Cert::certificatePolicies() const
 {
+    vector<string> pol;
     if(!cert)
-        return vector<string>();
+        return pol;
     CERTIFICATEPOLICIES *cp = (CERTIFICATEPOLICIES*)X509_get_ext_d2i(cert.get(), NID_certificate_policies, 0, 0);
     if(!cp)
-        return vector<string>();
-
-    vector<string> pol;
+        return pol;
     for(int i = 0; i < sk_POLICYINFO_num(cp); ++i)
-    {
-        string buf(80, 0);
-        int len = OBJ_obj2txt(&buf[0], int(buf.size()), sk_POLICYINFO_value(cp, i)->policyid, 1);
-        if(len == NID_undef)
-            continue;
-        buf.resize(len);
-        pol.push_back(buf);
-    }
+        pol.push_back(toOID(sk_POLICYINFO_value(cp, i)->policyid));
     sk_POLICYINFO_pop_free(cp, POLICYINFO_free);
     return pol;
+}
+
+/**
+ * Return QCStatements info https://www.ietf.org/rfc/rfc3739.txt
+ */
+vector<string> X509Cert::qcStatements() const
+{
+    vector<string> result;
+    if(!cert)
+        return result;
+    int pos = X509_get_ext_by_NID(cert.get(), NID_qcStatements, -1);
+    if(pos == -1)
+        return result;
+    X509_EXTENSION *ext = X509_get_ext(cert.get(), pos);
+    STACK_OF(QCStatement) *qc = (STACK_OF(QCStatement)*)ASN1_item_unpack(ext->value, ASN1_ITEM_rptr(QCStatements));
+    if(!qc)
+        return result;
+
+    for(int i = 0; i < SKM_sk_num(QCStatement, qc); ++i)
+    {
+        QCStatement *s = SKM_sk_value(QCStatement, qc, i);
+        string oid = toOID(s->statementId);
+        if(oid == QC_SYNTAX2)
+        {
+#ifndef TEMPLATE
+            SemanticsInformation *si = (SemanticsInformation*)ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(SemanticsInformation));
+            if(!si)
+                continue;
+            oid = toOID(si->semanticsIdentifier);
+#else
+            oid = toOID(s->statementInfo.semanticsInformation->semanticsIdentifier);
+#endif
+            result.push_back(oid);
+            SemanticsInformation_free(si);
+        }
+        else if(oid == QC_QCT)
+        {
+#ifndef TEMPLATE
+            STACK_OF(ASN1_OBJECT) *qct = (STACK_OF(ASN1_OBJECT)*)ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(QcType));
+            if(!qct)
+                continue;
+            for(int j = 0; j < sk_ASN1_OBJECT_num(qct); ++j)
+            {
+                oid = toOID(sk_ASN1_OBJECT_value(qct, j));
+#else
+#endif
+                result.push_back(oid);
+            }
+            sk_ASN1_OBJECT_pop_free(qct, ASN1_OBJECT_free);
+        }
+        else
+            result.push_back(oid);
+    }
+    SKM_sk_pop_free(QCStatement, qc, QCStatement_free);
+    return result;
 }
 
 /**
@@ -327,9 +426,68 @@ vector<string> X509Cert::certificatePolicies() const
  */
 string X509Cert::subjectName(const string &obj) const
 {
+    return toString(X509_get_subject_name, obj);
+}
+
+string X509Cert::toOID(ASN1_OBJECT *obj) const
+{
+    string oid(80, 0);
+    oid.resize(size_t(OBJ_obj2txt(&oid[0], int(oid.size()), obj, 1)));
+    return oid;
+};
+
+/**
+ * Converts X509_NAME struct to string.
+ *
+ * @param func X509_NAME struct that is converted to string.
+ * @param obj Optional parameter to get from X509_NAME (default CN).
+ * @return converted value of X509_NAME.
+ * @throws Exception throws exception if conversion failed.
+ */
+template<typename Func>
+string X509Cert::toString(Func func, const string &obj) const
+{
+    string str;
     if(!cert)
-        return string();
-    return cert ? X509CertPrivate::toString(X509_get_subject_name(cert.get()), obj) : string();
+        return str;
+    X509_NAME* name = func(cert.get());
+    if(!name)
+        THROW_OPENSSLEXCEPTION("Failed to convert X.509 certificate subject");
+
+    if(!obj.empty())
+    {
+        for(int i = 0; i < X509_NAME_entry_count(name); ++i)
+        {
+            X509_NAME_ENTRY *e = X509_NAME_get_entry(name, i);
+            if(obj != OBJ_nid2sn(OBJ_obj2nid(X509_NAME_ENTRY_get_object(e))))
+                continue;
+
+            char *data = nullptr;
+            int size = ASN1_STRING_to_UTF8((unsigned char**)&data, X509_NAME_ENTRY_get_data(e));
+            str.append(data, size);
+            OPENSSL_free(data);
+        }
+    }
+    else
+    {
+        BIO* mem = BIO_new(BIO_s_mem());
+        if(!mem)
+            THROW_OPENSSLEXCEPTION("Failed to allocate memory for X509_NAME conversion");
+
+        // Convert the X509_NAME struct to string.
+        if(X509_NAME_print_ex(mem, name, 0, XN_FLAG_RFC2253) < 0)
+        {
+            BIO_free(mem);
+            THROW_OPENSSLEXCEPTION("Failed to convert X509_NAME struct to string");
+        }
+
+        BUF_MEM *data = nullptr;
+        BIO_get_mem_ptr(mem, &data);
+        str.assign(data->data, data->length);
+        BIO_free(mem);
+    }
+
+    return str;
 }
 
 /**
@@ -378,12 +536,7 @@ bool X509Cert::operator !() const
 /**
  * Assign operator to make copy of object
  */
-X509Cert& X509Cert::operator =(const X509Cert &other)
-{
-    if(this != &other)
-        cert = other.cert;
-    return *this;
-}
+X509Cert& X509Cert::operator =(const X509Cert &other) = default;
 
 /**
  * Assign operator to make copy of object
@@ -414,3 +567,34 @@ bool X509Cert::operator !=(const X509Cert &other) const
 {
     return !operator ==(other);
 }
+
+ASN1_SEQUENCE(SemanticsInformation) = {
+    ASN1_OPT(SemanticsInformation, semanticsIdentifier, ASN1_OBJECT)
+    //ASN1_OPT(SemanticsInformation, nameRegistrationAuthorities, NameRegistrationAuthorities)
+} ASN1_SEQUENCE_END(SemanticsInformation)
+IMPLEMENT_ASN1_FUNCTIONS(SemanticsInformation)
+
+ASN1_ITEM_TEMPLATE(QcType) =
+    ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, statements, ASN1_OBJECT)
+ASN1_ITEM_TEMPLATE_END(QcType)
+
+#ifdef TEMPLATE
+ASN1_ADB_TEMPLATE(statementdefault) = ASN1_SIMPLE(QCStatement, statementInfo.other, ASN1_ANY);
+ASN1_ADB(QCStatement) = {
+    ADB_ENTRY(NID_id_qt_cps, ASN1_SIMPLE(QCStatement, statementInfo.semanticsInformation, SemanticsInformation))
+} ASN1_ADB_END(QCStatement, 0, statementId, 0, &statementdefault_tt, NULL);
+#endif
+
+ASN1_SEQUENCE(QCStatement) = {
+    ASN1_SIMPLE(QCStatement, statementId, ASN1_OBJECT),
+#ifndef TEMPLATE
+    ASN1_OPT(QCStatement, statementInfo, ASN1_ANY)
+#else
+    ASN1_ADB_OBJECT(QCStatement)
+#endif
+} ASN1_SEQUENCE_END(QCStatement)
+IMPLEMENT_ASN1_FUNCTIONS(QCStatement)
+
+ASN1_ITEM_TEMPLATE(QCStatements) =
+    ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, statements, QCStatement)
+ASN1_ITEM_TEMPLATE_END(QCStatements)

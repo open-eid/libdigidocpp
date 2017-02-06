@@ -142,7 +142,7 @@ void SignatureTM::validate() const
 
         struct tm producedAt = ASN1TimeToTM(ocsp.producedAt());
         time_t producedAt_t = mktime(&producedAt);
-        if(!X509CertStore::instance()->verify(ocsp.responderCert(), &producedAt_t))
+        if(!X509CertStore::instance()->verify(ocsp.responderCert(), false, &producedAt_t))
             EXCEPTION_ADD(exception, "Unable to verify responder certificate");
 
         if(profile().find(BDoc::ASIC_TM_PROFILE) != string::npos)
