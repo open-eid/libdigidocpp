@@ -207,12 +207,16 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
             });
             if(certFound == s.certs.cend())
                 continue;
+            CRYPTO_set_ex_data(&ctx->ex_data, 0, const_cast<TSL::Validity*>(&s.validity[0]));
             if(!(ctx->param->flags & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
                 return 1;
             for(const TSL::Validity &v: s.validity)
             {
                 if(ctx->param->check_time >= v.start && (v.end == 0 || ctx->param->check_time <= v.end))
+                {
+                    CRYPTO_set_ex_data(&ctx->ex_data, 0, const_cast<TSL::Validity*>(&v));
                     return 1;
+                }
             }
         }
         return ok;
@@ -235,7 +239,85 @@ bool X509CertStore::verify(const X509Cert &cert) const
     if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
     if(X509_verify_cert(csc.get()) > 0)
+    {
+        const TSL::Validity *v = static_cast<const TSL::Validity*>(CRYPTO_get_ex_data(&csc->ex_data, 0));
+        const vector<string> policies = cert.certificatePolicies();
+        const vector<string> qcstatement = cert.qcStatements();
+        const vector<X509Cert::KeyUsage> keyUsage = cert.keyUsage();
+
+        bool isQCCompliant = find(qcstatement.cbegin(), qcstatement.cend(), X509Cert::QC_COMPLIANT) != qcstatement.cend();
+        bool isQSCD =
+            find(policies.cbegin(), policies.cend(), X509Cert::QCP_PUBLIC_WITH_SSCD) != policies.cend() ||
+            find(policies.cbegin(), policies.cend(), X509Cert::QCP_LEGAL_QSCD) != policies.cend() ||
+            find(policies.cbegin(), policies.cend(), X509Cert::QCP_NATURAL_QSCD) != policies.cend() ||
+            find(qcstatement.cbegin(), qcstatement.cend(), X509Cert::QC_SSCD) != qcstatement.cend();
+
+        auto matchPolicySet = [&](const vector<string> &policySet){
+            return all_of(policySet.cbegin(), policySet.cend(), [&](const string &policy){
+                return find(policies.cbegin(), policies.cend(), policy) != policies.cend();
+            });
+        };
+        auto matchKeyUsageSet = [&](const map<X509Cert::KeyUsage,bool> &keyUsageSet){
+            return all_of(keyUsageSet.cbegin(), keyUsageSet.cend(), [&](const pair<X509Cert::KeyUsage,bool> &keyUsageBit){
+                return (find(keyUsage.cbegin(), keyUsage.cend(), keyUsageBit.first) != keyUsage.cend()) == keyUsageBit.second;
+            });
+        };
+
+        for(const TSL::Qualifier &q: v->qualifiers)
+        {
+            if(q.assert_ == "all")
+            {
+                if(!(all_of(q.policySet.cbegin(), q.policySet.cend(), matchPolicySet) &&
+                     all_of(q.keyUsage.cbegin(), q.keyUsage.cend(), matchKeyUsageSet)))
+                    continue;
+            }
+            else if(q.assert_ == "atLeastOne")
+            {
+                if(!(any_of(q.policySet.cbegin(), q.policySet.cend(), matchPolicySet) ||
+                     any_of(q.keyUsage.cbegin(), q.keyUsage.cend(), matchKeyUsageSet) ))
+                    continue;
+            }
+            else
+            {
+                WARN("Unable to handle Qualifier assert '%s'", q.assert_.c_str());
+                continue;
+            }
+
+            for(const string &qc: q.qualifiers)
+            {
+                if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCStatement" ||
+                   qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForESig")
+                    isQCCompliant = true;
+                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/NotQualified")
+                    isQCCompliant = false;
+                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCSSCDStatusAsInCert" ||
+                        qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCQSCDStatusAsInCert")
+                    continue;
+                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCWithSSCD" ||
+                        qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCWithQSCD")
+                    isQSCD = true;
+                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCNoSSCD" ||
+                        qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCNoQSCD")
+                    isQSCD = false;
+                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForLegalPerson")
+                    DEBUG("QCForLegalPerson qualified?");
+                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForESeal")
+                    DEBUG("QCForESeal qualified?");
+                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForWSA")
+                    DEBUG("QCForWSA qualified?");
+            }
+        }
+
+        if(!isQCCompliant || !isQSCD)
+        {
+            Exception e(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
+            e.setCode(Exception::CertificateIssuerMissing);
+            throw e;
+        }
+
         return true;
+    }
+
     int err = X509_STORE_CTX_get_error(csc.get());
     Exception e(__FILE__, __LINE__, X509_verify_cert_error_string(err), OpenSSLException());
     switch(err)
