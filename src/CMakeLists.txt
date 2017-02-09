@@ -163,6 +163,7 @@ add_library(digidocpp_priv STATIC
     crypto/Connect.cpp
     crypto/Digest.cpp
     crypto/TSL.cpp
+    crypto/X509Crypto.cpp
     util/File.cpp
     util/DateTime.cpp
     xml/AdditionalInformationType.cpp
@@ -207,7 +208,6 @@ add_library(digidocpp ${BUILD_TYPE}
     crypto/PKCS12Signer.cpp
     crypto/Signer.cpp
     crypto/TS.cpp
-    crypto/X509Crypto.cpp
     crypto/X509Cert.cpp
     crypto/X509CertStore.cpp
     util/ZipSerialize.cpp

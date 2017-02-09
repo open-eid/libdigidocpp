@@ -85,6 +85,17 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
  */
 int X509Crypto::compareIssuerToString(const string &name) const
 {
+    static const std::set<std::string> list{
+        "CN", "commonName",
+        "L", "localityName",
+        "ST", "stateOrProvinceName",
+        "O", "organizationName",
+        "OU", "organizationalUnitName",
+        "C", "countryName",
+        "STREET", "streetAddress",
+        "DC", "domainComponent",
+        "UID", "userId"
+    };
     size_t old = 0;
     while(true)
     {
@@ -109,39 +120,26 @@ int X509Crypto::compareIssuerToString(const string &name) const
             continue;
 
         string obj = nameitem.substr(0, pos);
-
-        static const std::set<std::string> list{
-            "CN", "commonName",
-            "L", "localityName",
-            "ST", "stateOrProvinceName",
-            "O", "organizationName",
-            "OU", "organizationalUnitName",
-            "C", "countryName",
-            "STREET", "streetAddress",
-            "DC", "domainComponent",
-            "UID", "userId"
-        };
         if(list.find(obj) == list.end())
             continue;
 
-        SCOPE(X509_NAME_ENTRY, enta, X509_NAME_ENTRY_create_by_txt(0, obj.c_str(),
-            MBSTRING_UTF8, (unsigned char*)nameitem.substr(pos+1, pos-old).c_str(), -1));
-        if(!enta)
-            return -1;
-
-        ASN1_OBJECT *obja = X509_NAME_ENTRY_get_object(enta.get());
+        ASN1_OBJECT *obja = OBJ_txt2obj(obj.c_str(), 0);
+        string value = nameitem.substr(pos+1, pos-old);
 
         bool found = false;
-        for(int i = 0; i < X509_NAME_entry_count(X509_get_issuer_name(cert.handle())); ++i)
+        X509_NAME *issuer = X509_get_issuer_name(cert.handle());
+        for(int i = 0; i < X509_NAME_entry_count(issuer); ++i)
         {
-            X509_NAME_ENTRY *entb = X509_NAME_get_entry(X509_get_issuer_name(cert.handle()), i);
-            ASN1_OBJECT *objb = X509_NAME_ENTRY_get_object(entb);
-            if(memcmp(obja->data, objb->data, obja->length) == 0 &&
-                memcmp(enta->value, entb->value, enta->size) == 0)
-            {
-                found = true;
+            X509_NAME_ENTRY *entb = X509_NAME_get_entry(issuer, i);
+            if(OBJ_cmp(obja, X509_NAME_ENTRY_get_object(entb)) != 0)
+                continue;
+
+            char *data = nullptr;
+            int size = ASN1_STRING_to_UTF8((unsigned char**)&data, X509_NAME_ENTRY_get_data(entb));
+            found = value.compare(0, size_t(size), data) == 0;
+            OPENSSL_free(data);
+            if(found)
                 break;
-            }
         }
         if(!found)
             return -1;
