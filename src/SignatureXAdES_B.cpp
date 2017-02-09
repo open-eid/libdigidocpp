@@ -407,16 +407,22 @@ string SignatureXAdES_B::SPUri() const
     return string();
 }
 
+void SignatureXAdES_B::validate() const
+{
+    validate(POLv2);
+}
+
 /**
  * Check if signature is valid according to BDoc-BES format. Performs
  * any off-line checks that prove mathematical correctness.
  * However, there is no warranty against if the signature has expired. On-line
  * validation should be performed to check for signature expiration.
  *
- * @throws SignatureException containing details on what's wrong in this signature.
+ * @throws Exception containing details on what's wrong in this signature.
 */
-void SignatureXAdES_B::validate() const
+void SignatureXAdES_B::validate(const string &policy) const
 {
+    DEBUG("SignatureXAdES_B::validate(%s)", policy.c_str());
     // A "master" exception containing all problems (causes) with this signature.
     // It'll be only thrown in case we have a reason (cause).
     Exception exception(__FILE__, __LINE__, "Signature validation");
@@ -437,7 +443,7 @@ void SignatureXAdES_B::validate() const
         if(SPUri().empty())
             EXCEPTION_ADD(exception, "Signature SPUri is missing");
 
-        map<string,Policy>::const_iterator p = policylist.find(policy());
+        map<string,Policy>::const_iterator p = policylist.find(SignatureXAdES_B::policy());
         if(p != policylist.end())
         {
             const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
@@ -604,7 +610,7 @@ void SignatureXAdES_B::validate() const
     try { checkSignatureValue(); }
     catch(const Exception& e) { exception.addCause(e); }
 
-    try { checkSigningCertificate(); }
+    try { checkSigningCertificate(policy == POLv1); }
     catch(const Exception& e) { exception.addCause(e); }
 
     if(!exception.causes().empty())
@@ -686,9 +692,11 @@ void SignatureXAdES_B::checkKeyInfo() const
     }
 }
 
-/// Check if signing certificate was issued by trusted party.
-/// @throws SignatureException on a problem with signing certificate
-void SignatureXAdES_B::checkSigningCertificate() const
+/**
+ * Check if signing certificate was issued by trusted party.
+ * @throws Exception on a problem with signing certificate
+ */
+void SignatureXAdES_B::checkSigningCertificate(bool noqscd) const
 {
     try
     {
@@ -696,7 +704,7 @@ void SignatureXAdES_B::checkSigningCertificate() const
         vector<X509Cert::KeyUsage> usage = signingCert.keyUsage();
         if(find(usage.begin(), usage.end(), X509Cert::NonRepudiation) == usage.end())
             THROW("Signing certificate does not contain NonRepudiation key usage flag");
-        if(!X509CertStore::instance()->verify(signingCert))
+        if(!X509CertStore::instance()->verify(signingCert, noqscd))
             THROW("Unable to verify signing certificate");
     }
     catch(const Exception &e)
@@ -712,7 +720,6 @@ void SignatureXAdES_B::checkSigningCertificate() const
  */
 void SignatureXAdES_B::checkSignatureValue() const
 {
-    DEBUG("SignatureXAdES_B::checkSignatureValue()");
     try
     {
         vector<unsigned char> sha = dataToSign();

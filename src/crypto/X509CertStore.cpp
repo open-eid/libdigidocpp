@@ -229,7 +229,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
  * Check if X509Cert is signed by trusted issuer
  * @throw Exception if error
  */
-bool X509CertStore::verify(const X509Cert &cert) const
+bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
 {
     activate(cert.issuerName("C"));
     ASN1_TIME *asn1time = cert.handle()->cert_info->validity->notBefore;
@@ -240,6 +240,9 @@ bool X509CertStore::verify(const X509Cert &cert) const
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
     if(X509_verify_cert(csc.get()) > 0)
     {
+        if(noqscd)
+            return true;
+
         const TSL::Validity *v = static_cast<const TSL::Validity*>(CRYPTO_get_ex_data(&csc->ex_data, 0));
         const vector<string> policies = cert.certificatePolicies();
         const vector<string> qcstatement = cert.qcStatements();

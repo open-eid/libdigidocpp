@@ -42,7 +42,7 @@ namespace digidoc
           std::vector<X509Cert> certs(const std::set<std::string> &type) const;
           X509Cert findIssuer(const X509Cert &cert, const std::set<std::string> &type) const;
           static X509_STORE* createStore(const std::set<std::string> &type, time_t *t = nullptr);
-          bool verify(const X509Cert &cert) const;
+          bool verify(const X509Cert &cert, bool qscd) const;
 
       private:
           X509CertStore();

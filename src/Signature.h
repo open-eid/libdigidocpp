@@ -30,6 +30,9 @@ namespace digidoc
     class EXP_DIGIDOC Signature
     {
       public:
+          static const std::string POLv1;
+          static const std::string POLv2;
+
           virtual ~Signature();
 
           // DSig properties
@@ -71,6 +74,9 @@ namespace digidoc
 
           // Other
           virtual std::string signedBy() const;
+
+          // DSig properties
+          virtual void validate(const std::string &policy) const;
 
       protected:
           Signature();

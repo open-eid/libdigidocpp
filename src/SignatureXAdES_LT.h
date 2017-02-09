@@ -39,7 +39,7 @@ public:
     std::vector<unsigned char> OCSPNonce() const override;
     X509Cert OCSPCertificate() const override;
     std::string OCSPProducedAt() const override;
-    virtual void validate() const override;
+    virtual void validate(const std::string &policy) const override;
     virtual void extendSignatureProfile(const std::string &profile) override;
 
 private:

@@ -37,7 +37,7 @@ public:
 
     X509Cert TimeStampCertificate() const override;
     std::string TimeStampTime() const override;
-    virtual void validate() const override;
+    virtual void validate(const std::string &policy) const override;
     virtual void extendSignatureProfile(const std::string &profile) override;
 
 protected:

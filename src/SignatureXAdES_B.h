@@ -52,7 +52,8 @@ namespace digidoc
           virtual std::string trustedSigningTime() const override;
           X509Cert signingCertificate() const override;
           std::string signatureMethod() const override;
-          virtual void validate() const override;
+          void validate() const override final;
+          virtual void validate(const std::string &policy) const override;
           std::vector<unsigned char> dataToSign() const override;
           void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
 
@@ -106,7 +107,7 @@ namespace digidoc
 
           // offline checks
           void checkSignatureValue() const;
-          void checkSigningCertificate() const;
+          void checkSigningCertificate(bool noqscd) const;
           void checkKeyInfo() const;
     };
 }

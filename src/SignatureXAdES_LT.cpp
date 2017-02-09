@@ -113,11 +113,11 @@ string SignatureXAdES_LT::trustedSigningTime() const
  *
  * @throws SignatureException if signature is not valid
  */
-void SignatureXAdES_LT::validate() const
+void SignatureXAdES_LT::validate(const std::string &policy) const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureXAdES_T::validate();
+        SignatureXAdES_T::validate(policy);
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);
