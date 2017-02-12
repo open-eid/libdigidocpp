@@ -26,6 +26,7 @@
 #include <Signature.h>
 #include <XmlConf.h>
 #include <crypto/PKCS12Signer.h>
+#include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
 
 namespace digidoc
@@ -142,6 +143,24 @@ BOOST_AUTO_TEST_CASE(parameters)
     usage.push_back(X509Cert::NonRepudiation);
     BOOST_CHECK_EQUAL(c.keyUsage(), usage);
     BOOST_CHECK_EQUAL(c.isValid(), true);
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(X509Crypto)
+BOOST_AUTO_TEST_CASE(parameters)
+{
+    X509Cert cert("47101010033.cer", X509Cert::Pem);
+    digidoc::X509Crypto crypto(cert);
+    BOOST_CHECK_EQUAL(crypto.rsaModulus().size(), 256U);
+    BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()), 0);
+    BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of ESTEID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
+
+    unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
+    vector<unsigned char> data({'H','e','l','l','o',' ','w','o','r','l','d'});
+    vector<unsigned char> signature = signer1->sign("http://www.w3.org/2001/04/xmlenc#sha256", data);
+    BOOST_CHECK_EQUAL(digidoc::X509Crypto(signer1->cert()).verify("http://www.w3.org/2001/04/xmlenc#sha256", data, signature), true);
+    data.resize(data.size() - 1);
+    BOOST_CHECK_EQUAL(digidoc::X509Crypto(signer1->cert()).verify("http://www.w3.org/2001/04/xmlenc#sha256", data, signature), false);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
