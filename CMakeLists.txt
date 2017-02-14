@@ -1,11 +1,10 @@
-cmake_minimum_required(VERSION 2.8)
-project(libdigidocpp)
+cmake_minimum_required(VERSION 3.0)
+project(libdigidocpp VERSION 3.13.0)
 if(POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)
 endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
-set(PROJECT_VERSION_PATCH 3)
 
 include(VersionInfo)
 include(GNUInstallDirs)

@@ -1,12 +1,19 @@
-Libdigidocpp library 3.12.3 release notes
+Libdigidocpp library 3.13.0 release notes
 --------------------------------------
-Changes compared to ver 3.12.2
 - Relax validation of BDOC to accept sub-elements of SignatureProductionPlace in any order
 - Speed up signing large files by handling them as file stream instead of in-memory
 - Improved compatability with Latvian ASiC-E documents
 - XAdES EN support
 - Better handling of malicious zip files
 - Added ASiC-S validation support
+
+
+
+Libdigidocpp library [3.12.3](https://github.com/open-eid/libdigidocpp/releases/tag/v3.12.3) release notes
+--------------------------------------------
+- Verify signing certificate QCSD OID-s
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.12.2...v3.12.3)
 
 
 
