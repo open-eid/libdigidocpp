@@ -196,11 +196,11 @@ string SignatureXAdES_LTA::ArchiveTimeStampTime() const
     return ASN1TimeToXSD(TS(tsaBase64()).time());
 }
 
-void SignatureXAdES_LTA::validate() const
+void SignatureXAdES_LTA::validate(const string &policy) const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureXAdES_LT::validate();
+        SignatureXAdES_LT::validate(policy);
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);

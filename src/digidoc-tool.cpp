@@ -324,6 +324,8 @@ static void printUsage(const char *executable)
     << "    Example: " << executable << " open container-file.bdoc" << endl
     << "    Available options:" << endl
     << "      --warnings=(ignore,warning,error) - warning handling" << endl
+    << "      --policy=(POLv1,POLv2) - Signature Validation Policy (default POLv2)" << endl
+    << "                               http://open-eid.github.io/SiVa/siva/appendix/validation_policy/" << endl
     << "      --extractAll[=path] - extracts documents (to path when provided)" << endl << endl
     << "  Command add:" << endl
     << "    Example: " << executable << " add --file=file1.txt container-file.bdoc" << endl
@@ -491,7 +493,7 @@ static int open(int argc, char* argv[])
         WWarning,
         WIgnore
     } reportwarnings = WWarning;
-    string path, extractPath;
+    string path, extractPath, policy;
     int returnCode = EXIT_SUCCESS;
 
     // Parse command line arguments.
@@ -512,6 +514,8 @@ static int open(int argc, char* argv[])
             if(pos != string::npos)
                 extractPath = arg.substr(pos + 1);
         }
+        else if(arg.find("--policy=") == 0)
+            policy = arg.substr(9);
         else
             path = arg;
     }
@@ -572,7 +576,7 @@ static int open(int argc, char* argv[])
             // Validate signature. Checks, whether signature format is correct
             // and signed documents checksums are correct.
             try {
-                s->validate();
+                s->validate(policy);
                 cout << "    Validation: OK" << endl;
             } catch(const Exception &e) {
                 function<void (const Exception &e)> validate = [=, &returnCode, &warnings, &validate] (const Exception &e)

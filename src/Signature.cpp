@@ -31,18 +31,28 @@ using namespace std;
  */
 
 /**
+ * http://open-eid.github.io/SiVa/siva/appendix/validation_policy/#POLv1
+ *
+ * @see validate(const std::string &policy) const
+ */
+const string Signature::POLv1 = "POLv1";
+
+/**
+ * http://open-eid.github.io/SiVa/siva/appendix/validation_policy/#POLv2
+ *
+ * @see validate(const std::string &policy) const
+ */
+const string Signature::POLv2 = "POLv2";
+
+/**
  * Creates an new empty signature.
  */
-Signature::Signature()
-{
-}
+Signature::Signature() = default;
 
 /**
  * Releases signature.
  */
-Signature::~Signature()
-{
-}
+Signature::~Signature() = default;
 
 /**
  * @fn digidoc::Signature::id
@@ -104,16 +114,34 @@ string Signature::signedBy() const { return signingCertificate().subjectName("CN
  */
 
 /**
+ * @fn digidoc::Signature::trustedSigningTime
+ *
+ * Time value that is regarded as trusted signing time, denoting the earliest
+ * time when it can be trusted by the validation application (because proven by
+ * some Proof-of-Existence present in the signature) that a signature has existed.
+ */
+
+/**
  * @fn digidoc::Signature::profile
  *
  * Returns signature profile.
  */
 
 /**
- * @fn digidoc::Signature::validate
+ * @fn digidoc::Signature::validate() const
  *
  * Validates signature
  */
+
+/**
+ * Validates signature
+ * @see POLv1
+ * @see POLv2
+ */
+void Signature::validate(const std::string &) const
+{
+    validate();
+}
 
 /**
  * @fn digidoc::Signature::dataToSign

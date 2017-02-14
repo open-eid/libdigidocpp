@@ -107,11 +107,11 @@ vector<unsigned char> SignatureXAdES_T::tsBase64() const
     return vector<unsigned char>();
 }
 
-void SignatureXAdES_T::validate() const
+void SignatureXAdES_T::validate(const std::string &policy) const
 {
     Exception exception(__FILE__, __LINE__, "Signature validation");
     try {
-        SignatureXAdES_B::validate();
+        SignatureXAdES_B::validate(policy);
     } catch(const Exception &e) {
         for(const Exception &ex: e.causes())
             exception.addCause(ex);

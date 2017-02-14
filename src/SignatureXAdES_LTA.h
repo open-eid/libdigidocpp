@@ -33,7 +33,7 @@ public:
 
     X509Cert ArchiveTimeStampCertificate() const override;
     std::string ArchiveTimeStampTime() const override;
-    virtual void validate() const override;
+    virtual void validate(const std::string &policy) const override;
     virtual void extendSignatureProfile(const std::string &profile) override;
 
 private:
