@@ -1,3 +1,11 @@
+Libdigidocpp library [3.12.3](https://github.com/open-eid/libdigidocpp/releases/tag/v3.12.3) release notes
+--------------------------------------------
+- Verify signing certificate QCSD OID-s
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.12.2...v3.12.3)
+
+
+
 Libdigidocpp library 3.12.2 release notes
 --------------------------------------
 Changes compared to ver 3.12.1
