@@ -32,7 +32,7 @@ cache: ccache
 env:
   global:
   - BUILD_NUMBER=${TRAVIS_BUILD_NUMBER}
-  - VERSION=3.12.3.${TRAVIS_BUILD_NUMBER}
+  - VERSION=3.13.0.${TRAVIS_BUILD_NUMBER}
   - PATH=${PATH}:/usr/local/Cellar/swig/3.0.8/bin;
   - RUN_TESTS=ALL
   - secure: VTpLjRFkVZeqSiP/tea7b5WiMU+PjQJlpny8/QEYazRNhn/uie69aT8VvEdkpsUM1AEx8yPnNmVGShvoNNaOi/AoqynTIKgeGPCj44h6lCnPpByGVur0avc5WrRj2xBbPBBUw1rsL65wZ13MufmRLUwnmmVYQZ3qDBdpgZvCEhA=
@@ -73,7 +73,7 @@ addons:
 
 before_deploy:
 - export VERSION=${TRAVIS_TAG:1}
-- rm -rf build
+- git clean -dfx
 - cd ..
 - mv libdigidocpp libdigidocpp-${VERSION}
 - tar czf libdigidocpp-${VERSION}.tar.gz --exclude-vcs libdigidocpp-${VERSION}

@@ -118,7 +118,7 @@ In case of BDOC with time-stamp (TS profile), the proof is provided as follows:
 
 \section releasenotes Release Notes
 
-\include RELEASE-NOTES.txt
+\include RELEASE-NOTES.md
 
 
 
