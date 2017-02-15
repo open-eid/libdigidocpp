@@ -197,11 +197,11 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
                 THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate");
 
             CFDataRef keydata = nullptr;
-            SecKeyImportExportParameters params;
+            SecItemImportExportKeyParameters params;
             memset( &params, 0, sizeof(params) );
             params.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
             params.passphrase = CFSTR("pass");
-            SecKeychainItemExport(keyref, kSecFormatWrappedPKCS8, 0, &params, &keydata);
+            SecItemExport(keyref, kSecFormatWrappedPKCS8, 0, &params, &keydata);
             CFRelease(keyref);
             if(!keydata)
                 THROW("Failed to read PKCS12 key");
