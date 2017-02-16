@@ -50,7 +50,11 @@ public:
     bool load(const string &driver)
     {
         wstring _driver = File::encodeName(driver);
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
         return (h = LoadLibraryW(_driver.c_str())) != 0;
+#else
+		return false;
+#endif
     }
 
     void* resolve(const char *symbol)

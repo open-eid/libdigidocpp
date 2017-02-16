@@ -20,12 +20,17 @@
 #pragma once
 
 #ifdef WIN32
+  #include <winapifamily.h>
   #ifdef digidocpp_EXPORTS
     #define EXP_DIGIDOC __declspec(dllexport)
   #else
     #define EXP_DIGIDOC __declspec(dllimport)
   #endif
-  #define DEPRECATED_DIGIDOCPP __declspec(deprecated)
+  #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+    #define DEPRECATED_DIGIDOCPP __declspec(deprecated)
+  #else
+    #define DEPRECATED_DIGIDOCPP
+  #endif
   #pragma warning( disable: 4251 ) // shut up std::vector warnings
 #else
   #if __GNUC__ >= 4

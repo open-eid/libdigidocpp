@@ -269,6 +269,11 @@ bool Connect::waitSocket(Wait wait)
     if(fd <= 0)
         return false;
 
+#if defined(_WIN32)
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+    return true;
+#endif
+#endif
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(fd, &fds);

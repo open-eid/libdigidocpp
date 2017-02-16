@@ -153,6 +153,9 @@ string File::confPath()
 string File::cwd()
 {
 #ifdef _WIN32
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+    return "./";
+#endif
     wchar_t *path = _wgetcwd( 0, 0 );
 #else
     char *path = getcwd( 0, 0 );
@@ -167,6 +170,9 @@ string File::cwd()
 string File::env(const string &varname)
 {
 #ifdef _WIN32
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+    return string();
+#endif
     if(wchar_t *var = _wgetenv(encodeName(varname).c_str()))
 #else
     if(char *var = getenv(encodeName(varname).c_str()))
@@ -275,12 +281,16 @@ bool File::directoryExists(const string& path)
 #ifdef _WIN32
 string File::dllPath(const string &dll)
 {
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
     wstring wdll = File::encodeName(dll);
     HMODULE handle = GetModuleHandleW(wdll.c_str());
     wstring path(MAX_PATH, 0);
     DWORD size = GetModuleFileNameW(handle, &path[0], DWORD(path.size()));
     path.resize(size);
     return File::directory(File::decodeName(path)) + "\\";
+#else
+	return "./";
+#endif
 }
 #endif
 
@@ -512,6 +522,7 @@ vector<string> File::listFiles(const string& directory)
 
     closedir(pDir);
 #else
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
     WIN32_FIND_DATAW findFileData;
     HANDLE hFind = NULL;
 
@@ -549,6 +560,7 @@ vector<string> File::listFiles(const string& directory)
         ::FindClose(hFind);
         throw;
     }
+#endif
 #endif
     return files;
 }

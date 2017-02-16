@@ -35,6 +35,8 @@
 using namespace digidoc;
 using namespace std;
 
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+
 extern "C" {
 
 typedef BOOL (WINAPI * PFNCCERTDISPLAYPROC)(
@@ -293,3 +295,5 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     }
     return signature;
 }
+
+#endif
