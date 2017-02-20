@@ -36,6 +36,28 @@
 using namespace digidoc;
 using namespace std;
 
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
+static X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
+{
+    return ctx->cert;
+}
+
+static X509_VERIFY_PARAM *X509_STORE_get0_param(X509_STORE *ctx)
+{
+    return ctx->param;
+}
+
+static time_t X509_VERIFY_PARAM_get_time(const X509_VERIFY_PARAM *param)
+{
+    return param->check_time;
+}
+
+static const ASN1_TIME *X509_get0_notBefore(const X509 *x)
+{
+    return x->cert_info->validity->notBefore;
+}
+#endif
+
 const set<string> X509CertStore::CA = {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
 };
@@ -165,7 +187,7 @@ X509_STORE* X509CertStore::createStore(const set<string> &type, time_t *t)
 
     if(t)
     {
-        X509_VERIFY_PARAM_set_time(store->param, *t);
+        X509_VERIFY_PARAM_set_time(X509_STORE_get0_param(store.get()), *t);
         X509_STORE_set_flags(store.get(), X509_V_FLAG_USE_CHECK_TIME);
     }
     return store.release();
@@ -180,17 +202,18 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
     case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
     case X509_V_ERR_CERT_UNTRUSTED:
     {
-        SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(ctx->current_cert, NID_authority_key_identifier, 0, 0));
+        X509 *x509 = X509_STORE_CTX_get0_cert(ctx);
+        SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(x509, NID_authority_key_identifier, 0, 0));
         for(const TSL::Service &s: *instance()->d)
         {
             if(type.find(s.type) == type.cend())
                 continue;
             auto certFound = find_if(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
-                if(X509_cmp(ctx->current_cert, issuer.handle()) == 0)
+                if(X509_cmp(x509, issuer.handle()) == 0)
                     return true;
                 if(!akid || !akid->keyid)
                 {
-                    if(X509_NAME_cmp(X509_get_subject_name(issuer.handle()), X509_get_issuer_name(ctx->current_cert)) != 0)
+                    if(X509_NAME_cmp(X509_get_subject_name(issuer.handle()), X509_get_issuer_name(x509)) != 0)
                         return false;
                 }
                 else
@@ -200,21 +223,22 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
                         return false;
                 }
                 SCOPE(EVP_PKEY, pub, X509_get_pubkey(issuer.handle()));
-                if(X509_verify(ctx->current_cert, pub.get()) == 1)
+                if(X509_verify(x509, pub.get()) == 1)
                     return true;
                 OpenSSLException(); //Clear errors
                 return false;
             });
             if(certFound == s.certs.cend())
                 continue;
-            CRYPTO_set_ex_data(&ctx->ex_data, 0, const_cast<TSL::Validity*>(&s.validity[0]));
-            if(!(ctx->param->flags & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
+            X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&s.validity[0]));
+            X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
+            if(!(X509_VERIFY_PARAM_get_flags(param) & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
                 return 1;
             for(const TSL::Validity &v: s.validity)
             {
-                if(ctx->param->check_time >= v.start && (v.end == 0 || ctx->param->check_time <= v.end))
+                if(X509_VERIFY_PARAM_get_time(param) >= v.start && (v.end == 0 || X509_VERIFY_PARAM_get_time(param) <= v.end))
                 {
-                    CRYPTO_set_ex_data(&ctx->ex_data, 0, const_cast<TSL::Validity*>(&v));
+                    X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&v));
                     return 1;
                 }
             }
@@ -232,7 +256,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
 bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
 {
     activate(cert.issuerName("C"));
-    ASN1_TIME *asn1time = cert.handle()->cert_info->validity->notBefore;
+    const ASN1_TIME *asn1time = X509_get0_notBefore(cert.handle());
     time_t time = util::date::ASN1TimeToTime_t(string((const char*)asn1time->data, asn1time->length), asn1time->type == V_ASN1_GENERALIZEDTIME);
     SCOPE(X509_STORE, store, createStore(X509CertStore::CA, &time));
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
@@ -243,7 +267,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
         if(noqscd)
             return true;
 
-        const TSL::Validity *v = static_cast<const TSL::Validity*>(CRYPTO_get_ex_data(&csc->ex_data, 0));
+        const TSL::Validity *v = static_cast<const TSL::Validity*>(X509_STORE_CTX_get_ex_data(csc.get(), 0));
         const vector<string> policies = cert.certificatePolicies();
         const vector<string> qcstatement = cert.qcStatements();
         const vector<X509Cert::KeyUsage> keyUsage = cert.keyUsage();

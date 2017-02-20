@@ -28,6 +28,14 @@
 
 using namespace std;
 
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
+static void X509_SIG_get0(const X509_SIG *sig, const X509_ALGOR **palg, const ASN1_OCTET_STRING **pdigest)
+{
+    if(palg) *palg = sig->algor;
+    if(pdigest) *pdigest = sig->digest;
+}
+#endif
+
 namespace digidoc
 {
 class DigestPrivate: public vector<unsigned char>
@@ -89,7 +97,9 @@ vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> 
     SCOPE(X509_SIG, sig, d2i_X509_SIG(NULL, &p, (long)digest.size()));
     if(!sig)
         return vector<unsigned char>();
-    return vector<unsigned char>(sig->digest->data, sig->digest->data + sig->digest->length);
+    const ASN1_OCTET_STRING *value = nullptr;
+    X509_SIG_get0(sig.get(), nullptr, &value);
+    return vector<unsigned char>(value->data, value->data + value->length);
 }
 
 string Digest::digestInfoUri(const std::vector<unsigned char> &digest)
@@ -98,7 +108,9 @@ string Digest::digestInfoUri(const std::vector<unsigned char> &digest)
     SCOPE(X509_SIG, sig, d2i_X509_SIG(NULL, &p, (long)digest.size()));
     if(!sig)
         return string();
-    switch(OBJ_obj2nid(sig->algor->algorithm))
+    const X509_ALGOR *algor = nullptr;
+    X509_SIG_get0(sig.get(), &algor, nullptr);
+    switch(OBJ_obj2nid(algor->algorithm))
     {
     case NID_sha1:  return URI_SHA1;
     case NID_sha224: return URI_SHA224;

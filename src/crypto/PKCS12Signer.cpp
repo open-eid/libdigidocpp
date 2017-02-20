@@ -39,6 +39,14 @@ public:
 using namespace digidoc;
 using namespace std;
 
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
+static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps)
+{
+    if(pr) *pr = sig->r;
+    if(ps) *ps = sig->s;
+}
+#endif
+
 /**
  * @class digidoc::PKCS12Signer
  * @brief Implements <code>Signer</code> interface for PKCS#12 files.
@@ -87,7 +95,7 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
 
     int result = 0;
     vector<unsigned char> signature;
-    switch(EVP_PKEY_type(d->key->type))
+    switch(EVP_PKEY_base_id(d->key))
     {
     case EVP_PKEY_RSA:
     {
@@ -118,9 +126,11 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
              THROW("Error caclulating signature size");
         signature.resize(keyLen * 2);
 
-        if(BN_bn2bin(sig->r, &signature[keyLen - BN_num_bytes(sig->r)]) <= 0)
+        const BIGNUM *r = nullptr, *s = nullptr;
+        ECDSA_SIG_get0(sig.get(), &r, &s);
+        if(BN_bn2bin(r, &signature[keyLen - BN_num_bytes(r)]) <= 0)
             THROW("Error copying signature 'r' value to buffer");
-        if(BN_bn2bin(sig->s, &signature[keyLen*2 - BN_num_bytes(sig->s)]) <= 0)
+        if(BN_bn2bin(s, &signature[keyLen*2 - BN_num_bytes(s)]) <= 0)
             THROW("Error copying signature 's' value to buffer");
 
         result = 1;
