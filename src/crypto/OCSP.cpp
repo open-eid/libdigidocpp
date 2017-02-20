@@ -45,6 +45,35 @@
 using namespace digidoc;
 using namespace std;
 
+
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
+static int OCSP_resp_get0_id(const OCSP_BASICRESP *bs, const ASN1_OCTET_STRING **pid, const X509_NAME **pname)
+
+{
+    const OCSP_RESPID *rid = bs->tbsResponseData->responderId;
+    if (rid->type == V_OCSP_RESPID_NAME) {
+        *pname = rid->value.byName;
+        *pid = nullptr;
+    } else if (rid->type == V_OCSP_RESPID_KEY) {
+        *pid = rid->value.byKey;
+        *pname = nullptr;
+    } else {
+        return 0;
+    }
+    return 1;
+}
+
+static const STACK_OF(X509) *OCSP_resp_get0_certs(const OCSP_BASICRESP *bs)
+{
+    return bs->certs;
+}
+
+static const ASN1_GENERALIZEDTIME *OCSP_resp_get0_produced_at(const OCSP_BASICRESP* bs)
+{
+    return bs->tbsResponseData->producedAt;
+}
+#endif
+
 /**
  * Initialize OCSP certificate validator.
  */
@@ -117,20 +146,19 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
 {
     if(!basic || !cert)
         return false;
-    OCSP_RESPID *respID = basic->tbsResponseData->responderId;
-    switch(respID->type)
-    {
-    case V_OCSP_RESPID_NAME:
-        return X509_NAME_cmp(X509_get_subject_name(cert.handle()), respID->value.byName) == 0;
-    case V_OCSP_RESPID_KEY:
+    const ASN1_OCTET_STRING *hash = nullptr;
+    const X509_NAME *name = nullptr;
+    OCSP_resp_get0_id(basic.get(), &hash, &name);
+    if(name)
+        return X509_NAME_cmp(X509_get_subject_name(cert.handle()), name) == 0;
+    else if(hash)
     {
         unsigned char sha1[SHA_DIGEST_LENGTH];
-        ASN1_BIT_STRING *key = cert.handle()->cert_info->key->public_key;
+        ASN1_BIT_STRING *key = X509_get0_pubkey_bitstr(cert.handle());
         return EVP_Digest(key->data, key->length, sha1, nullptr, EVP_sha1(), nullptr) == 1 &&
-            memcmp(respID->value.byKey->data, &sha1, respID->value.byKey->length) == 0;
+            memcmp(hash->data, &sha1, hash->length) == 0;
     }
-    default: return false;
-    }
+    return false;
 }
 
 /**
@@ -250,9 +278,10 @@ X509Cert OCSP::responderCert() const
 {
     if(!basic)
         return X509Cert();
-    for(int i = 0; i < sk_X509_num(basic->certs); ++i)
+    const STACK_OF(X509) *certs = OCSP_resp_get0_certs(basic.get());
+    for(int i = 0; i < sk_X509_num(certs); ++i)
     {
-        X509Cert cert(sk_X509_value(basic->certs, i));
+        X509Cert cert(sk_X509_value(certs, i));
         if(compareResponderCert(cert))
             return cert;
     }
@@ -454,7 +483,8 @@ vector<unsigned char> OCSP::nonce() const
     if(!ext)
         return nonce;
 
-    nonce.assign(ext->value->data, ext->value->data + ext->value->length);
+    ASN1_OCTET_STRING *value = X509_EXTENSION_get_data(ext);
+    nonce.assign(value->data, value->data + value->length);
 #if 1 //def OCSP_NATIVE_NONCE
     //OpenSSL OCSP created messages NID_id_pkix_OCSP_Nonce field is DER encoded twice, not a problem with java impl
     //XXX: UglyHackTM check if nonceAsn1 contains ASN1_OCTET_STRING
@@ -471,7 +501,7 @@ string OCSP::producedAt() const
     string result;
     if(!basic)
         return result;
-    ASN1_GENERALIZEDTIME* time = basic->tbsResponseData->producedAt;
+    const ASN1_GENERALIZEDTIME *time = OCSP_resp_get0_produced_at(basic.get());
     result.assign(time->data, time->data+time->length);
     return result;
 }

@@ -23,15 +23,52 @@
 #include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
 
+#include <openssl/asn1t.h>
 #include <openssl/err.h>
-#include <openssl/x509.h>
 #include <openssl/ts.h>
+#include <openssl/x509v3.h>
 
 #include <cstring>
 #include <set>
 
 using namespace digidoc;
 using namespace std;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10010000L
+/*-
+ * IssuerSerial ::= SEQUENCE {
+ *         issuer                   GeneralNames,
+ *         serialNumber             CertificateSerialNumber
+ *         }
+ */
+typedef struct ESS_issuer_serial {
+    STACK_OF(GENERAL_NAME) *issuer;
+    ASN1_INTEGER *serial;
+} ESS_ISSUER_SERIAL;
+
+ASN1_SEQUENCE(ESS_ISSUER_SERIAL) = {
+        ASN1_SEQUENCE_OF(ESS_ISSUER_SERIAL, issuer, GENERAL_NAME),
+        ASN1_SIMPLE(ESS_ISSUER_SERIAL, serial, ASN1_INTEGER)
+} static_ASN1_SEQUENCE_END(ESS_ISSUER_SERIAL)
+IMPLEMENT_ASN1_FUNCTIONS_const(ESS_ISSUER_SERIAL)
+#else
+static int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
+{
+    if(!r || !s) return 0;
+    BN_clear_free(sig->r);
+    BN_clear_free(sig->s);
+    sig->r = r;
+    sig->s = s;
+    return 1;
+}
+
+static void RSA_get0_key(const RSA *r, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
+{
+    if(n) *n = r->n;
+    if(e) *e = r->e;
+    if(d) *d = r->d;
+}
+#endif
 
 /**
  * Initialize RSA crypter.
@@ -53,8 +90,8 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
 
     GENERAL_NAME *issuer = sk_GENERAL_NAME_value(is->issuer, 0);
     return issuer->type == GEN_DIRNAME &&
-        X509_NAME_cmp(issuer->d.dirn, cert.handle()->cert_info->issuer) == 0 &&
-        ASN1_INTEGER_cmp(is->serial, cert.handle()->cert_info->serialNumber) == 0;
+        X509_NAME_cmp(issuer->d.dirn, X509_get_issuer_name(cert.handle())) == 0 &&
+        ASN1_INTEGER_cmp(is->serial, X509_get_serialNumber(cert.handle())) == 0;
 }
 
 /**
@@ -154,16 +191,18 @@ int X509Crypto::compareIssuerToString(const string &name) const
 vector<unsigned char> X509Crypto::rsaModulus() const
 {
     SCOPE(EVP_PKEY, key, X509_get_pubkey(cert.handle()));
-    if(!key || key->type != EVP_PKEY_RSA)
+    if(!key || EVP_PKEY_base_id(key.get()) != EVP_PKEY_RSA)
         return vector<unsigned char>();
 
     SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(key.get()));
-    int bufSize = BN_num_bytes(rsa->n);
+    const BIGNUM *n = nullptr;
+    RSA_get0_key(rsa.get(), &n, nullptr, nullptr);
+    int bufSize = BN_num_bytes(n);
     if(bufSize <= 0)
         return vector<unsigned char>();
 
     vector<unsigned char> rsaModulus(bufSize, 0);
-    if(BN_bn2bin(rsa->n, rsaModulus.data()) <= 0)
+    if(BN_bn2bin(n, rsaModulus.data()) <= 0)
         return vector<unsigned char>();
 
     return rsaModulus;
@@ -190,7 +229,7 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
         THROW("Certificate does not have a public key, can not verify signature.");
 
     int result = 0;
-    switch(EVP_PKEY_type(key->type))
+    switch(EVP_PKEY_base_id(key.get()))
     {
     case EVP_PKEY_RSA:
     {
@@ -204,10 +243,9 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
     {
         SCOPE(EC_KEY, ec, EVP_PKEY_get1_EC_KEY(key.get()));
         SCOPE(ECDSA_SIG, sig, ECDSA_SIG_new());
-        BN_free(sig->r);
-        BN_free(sig->s);
-        sig->r = BN_bin2bn(signature.data(), int(signature.size()/2), 0);
-        sig->s = BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), 0);
+        ECDSA_SIG_set0(sig.get(),
+            BN_bin2bn(signature.data(), int(signature.size()/2), 0),
+            BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), 0));
         result = ECDSA_do_verify(digest.data(), (unsigned int)digest.size(), sig.get(), ec.get());
         //result = ECDSA_verify(Digest::toMethod(method), digest.data(), (unsigned int)digest.size(),
         //    const_cast<unsigned char*>(signature.data()), (unsigned int)signature.size(), ec.get());

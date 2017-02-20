@@ -34,6 +34,18 @@
 using namespace digidoc;
 using namespace std;
 
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
+static const ASN1_TIME *X509_get0_notBefore(const X509 *x)
+{
+    return x->cert_info->validity->notBefore;
+}
+
+static const ASN1_TIME *X509_get0_notAfter(const X509 *x)
+{
+    return x->cert_info->validity->notAfter;
+}
+#endif
+
 /**
  * SemanticsInformation ::= SEQUENCE {
  *        semanticsIdentifier         OBJECT IDENTIFIER OPTIONAL,
@@ -374,13 +386,13 @@ vector<string> X509Cert::qcStatements() const
     if(pos == -1)
         return result;
     X509_EXTENSION *ext = X509_get_ext(cert.get(), pos);
-    STACK_OF(QCStatement) *qc = (STACK_OF(QCStatement)*)ASN1_item_unpack(ext->value, ASN1_ITEM_rptr(QCStatements));
+    QCStatements *qc = (QCStatements*)ASN1_item_unpack(X509_EXTENSION_get_data(ext), ASN1_ITEM_rptr(QCStatements));
     if(!qc)
         return result;
 
-    for(int i = 0; i < SKM_sk_num(QCStatement, qc); ++i)
+    for(int i = 0; i < sk_num((const stack_st*)qc); ++i)
     {
-        QCStatement *s = SKM_sk_value(QCStatement, qc, i);
+        QCStatement *s = (QCStatement*)sk_value((const stack_st*)qc, i);
         string oid = toOID(s->statementId);
         if(oid == QC_SYNTAX2)
         {
@@ -413,7 +425,8 @@ vector<string> X509Cert::qcStatements() const
         else
             result.push_back(oid);
     }
-    SKM_sk_pop_free(QCStatement, qc, QCStatement_free);
+    typedef void (*cast_free) (void *);
+    sk_pop_free((stack_st*)qc, (cast_free)QCStatement_free);
     return result;
 }
 
@@ -518,8 +531,8 @@ bool X509Cert::isValid(time_t *t) const
 {
     if(!cert)
         THROW_OPENSSLEXCEPTION("Failed to validate cert");
-    int notBefore = X509_cmp_time(cert->cert_info->validity->notBefore, t);
-    int notAfter = X509_cmp_time(cert->cert_info->validity->notAfter, t);
+    int notBefore = X509_cmp_time(X509_get0_notBefore(cert.get()), t);
+    int notAfter = X509_cmp_time(X509_get0_notAfter(cert.get()), t);
     if(notBefore == 0 || notAfter == 0)
         THROW_OPENSSLEXCEPTION("Failed to validate cert");
     return notBefore < 0 && notAfter > 0;

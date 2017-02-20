@@ -38,6 +38,13 @@
 using namespace digidoc;
 using namespace std;
 
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
+static X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
+{
+    return ctx->cert;
+}
+#endif
+
 Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent, const X509Cert &cert)
     : _timeout(timeout)
 {
@@ -97,7 +104,8 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         {
             SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, 0);
             SSL_CTX_set_cert_verify_callback(ssl.get(), [](X509_STORE_CTX *store, void *cert) -> int {
-                return store->cert && X509_cmp(store->cert, (X509*)cert) == 0 ? 1 : 0;
+                X509 *x509 = X509_STORE_CTX_get0_cert(store);
+                return x509 && X509_cmp(x509, (X509*)cert) == 0 ? 1 : 0;
             }, cert.handle());
         }
         BIO *sbio = BIO_new_ssl(ssl.get(), 1);

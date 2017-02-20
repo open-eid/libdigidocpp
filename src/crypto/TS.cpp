@@ -40,6 +40,24 @@
 using namespace digidoc;
 using namespace std;
 
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
+static void TS_VERIFY_CTX_set_flags(TS_VERIFY_CTX *ctx, int f)
+{
+    ctx->flags = f;
+}
+
+static void TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx, unsigned char *hexstr, long len)
+{
+    ctx->imprint = hexstr;
+    ctx->imprint_len = len;
+}
+
+static void TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s)
+{
+    ctx->store = s;
+}
+#endif
+
 TS::TS(const string &url, const Digest &digest, const string &useragent)
 {
     SCOPE(TS_REQ, req, TS_REQ_new());
@@ -91,13 +109,12 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
         THROW_OPENSSLEXCEPTION("Failed to parse TS response.");
 
     SCOPE(TS_VERIFY_CTX, ctx, TS_VERIFY_CTX_new());
-    ctx->flags = TS_VFY_NONCE|TS_VFY_VERSION;
-    ctx->nonce = nonce.release();
+    TS_VERIFY_CTX_set_flags(ctx.get(), TS_VFY_VERSION);//|TS_VFY_NONCE);
+    //ctx->nonce = nonce.release();
     if(TS_RESP_verify_response(ctx.get(), resp.get()) != 1)
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
-    d.reset(resp->token, function<void(PKCS7*)>(PKCS7_free));
-    resp->token = nullptr;
+    d.reset(PKCS7_dup(TS_RESP_get_token(resp.get())), function<void(PKCS7*)>(PKCS7_free));
 }
 
 TS::TS(const std::vector<unsigned char> &data)
@@ -149,7 +166,8 @@ string TS::digestMethod() const
     SCOPE(TS_TST_INFO, info, tstInfo());
     if(!info)
         return string();
-    switch(OBJ_obj2nid(info->msg_imprint->hash_algo->algorithm))
+    X509_ALGOR *algo = TS_MSG_IMPRINT_get_algo(TS_TST_INFO_get_msg_imprint(info.get()));
+    switch(OBJ_obj2nid(algo->algorithm))
     {
     case NID_sha1: return URI_SHA1;
     case NID_sha224: return URI_SHA224;
@@ -167,7 +185,7 @@ string TS::serial() const
     if (info)
     {
         string serial;
-        SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(info->serial, 0), BN_free);
+        SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), 0), BN_free);
         if(!!bn)
         {
             char *str = BN_bn2dec(bn.get());
@@ -185,7 +203,8 @@ string TS::serial() const
 string TS::time() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
-    return info ? string((char*)info->time->data, size_t(info->time->length)) : string();
+    const ASN1_GENERALIZEDTIME *time = TS_TST_INFO_get_time(info.get());
+    return info ? string((char*)time->data, size_t(time->length)) : string();
 }
 
 TS_TST_INFO* TS::tstInfo() const
@@ -221,13 +240,11 @@ void TS::verify(const Digest &digest)
     if(d)
     {
         SCOPE(TS_VERIFY_CTX, ctx, TS_VERIFY_CTX_new());
-        ctx->flags = TS_VFY_IMPRINT|TS_VFY_VERSION|TS_VFY_SIGNATURE;
-        ctx->imprint = data.data();
-        ctx->imprint_len = (unsigned int)data.size();
-        ctx->store = store.release();
+        TS_VERIFY_CTX_set_flags(ctx.get(), TS_VFY_IMPRINT|TS_VFY_VERSION|TS_VFY_SIGNATURE);
+        TS_VERIFY_CTX_set_imprint(ctx.get(), data.data(), (long)data.size());
+        TS_VERIFY_CTX_set_store(ctx.get(), store.release());
         int err = TS_RESP_verify_token(ctx.get(), d.get());
-        ctx->imprint = nullptr; //Avoid CRYPTO_free
-        ctx->imprint_len = 0;
+        TS_VERIFY_CTX_set_imprint(ctx.get(), nullptr, 0); //Avoid CRYPTO_free
         if(err != 1)
         {
             unsigned long err = ERR_get_error();
@@ -249,9 +266,9 @@ void TS::verify(const Digest &digest)
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
         SCOPE(TS_TST_INFO, info, d2i_TS_TST_INFO_bio(out.get(), NULL));
-        TS_MSG_IMPRINT *b = TS_TST_INFO_get_msg_imprint(info.get());
-        if(data.size() != size_t(ASN1_STRING_length(b->hashed_msg)) ||
-            memcmp(data.data(), ASN1_STRING_data(b->hashed_msg), data.size()))
+        ASN1_OCTET_STRING *msg = TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get()));
+        if(data.size() != size_t(ASN1_STRING_length(msg)) ||
+            memcmp(data.data(), ASN1_STRING_data(msg), data.size()))
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
     }
 #endif

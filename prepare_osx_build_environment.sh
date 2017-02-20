@@ -5,6 +5,7 @@ XERCES_DIR=xerces-c-3.1.4
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2k
+#OPENSSL_DIR=openssl-1.1.0e
 LIBXML2_DIR=libxml2-2.9.4
 ANDROID_NDK=android-ndk-r14
 ARGS="$@"
@@ -166,6 +167,7 @@ function xml_security {
     *android*) patch -Np1 -i ../examples/libdigidocpp-android/xmlsec.patch ;;
     *) ;;
     esac
+    #patch -Np1 -i ../xml-security-c-1.7.3_openssl1.1.patch
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${TARGET_PATH} --with-xalan=${TARGET_PATH}
     make -s
@@ -214,12 +216,12 @@ function openssl {
         export CC=${CROSS_COMPILE}-gcc
         unset CROSS_COMPILE
         case "${ARGS}" in
-        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} no-apps no-hw no-engines ;;
+        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} no-hw ;;
         *arm64*)
-          ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-apps no-hw no-engines no-shared -DB_ENDIAN  \
+          ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-hw no-shared -DB_ENDIAN  \
              -fPIC -DOPENSSL_PIC -DDSO_DLFCN -DHAVE_DLFCN_H -mandroid -O3 -fomit-frame-pointer -Wall
           ;;
-        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} no-apps no-hw no-engines ;;
+        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} no-hw ;;
         esac
         make -s
         sudo make install_sw
@@ -231,10 +233,10 @@ function openssl {
         for ARCH in ${ARCHS}
         do
             if [[ "${ARCH}" == "x86_64" ]]; then
-                ./Configure darwin64-x86_64-cc --openssldir=${TARGET_PATH} no-apps no-hw no-engines
+                ./Configure darwin64-x86_64-cc --openssldir=${TARGET_PATH} no-hw
                 sed -ie 's!^CFLAG=!CFLAG=-isysroot '${SYSROOT}' '${SDK_CFLAGS}' !' Makefile
             else
-                ./Configure iphoneos-cross --openssldir=${TARGET_PATH} no-apps no-hw no-engines
+                ./Configure iphoneos-cross --openssldir=${TARGET_PATH} no-hw
                 sed -ie 's!-isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!-arch '${ARCH}' -isysroot '${SYSROOT}' '${SDK_CFLAGS}'!' Makefile
             fi
             make -s depend all install_sw INSTALL_PREFIX=${PWD}/${ARCH} > /dev/null
@@ -247,7 +249,7 @@ function openssl {
         sudo lipo -create ${SSL} -output ${TARGET_PATH}/lib/libssl.a
         ;;
     *)
-        KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-apps no-hw no-engines enable-ec_nistp_64_gcc_128
+        KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw enable-ec_nistp_64_gcc_128
         sed -ie 's!^CFLAG=!CFLAG='${SDK_CFLAGS}' !' Makefile
         make -s
         sudo make install_sw
