@@ -22,7 +22,6 @@
 #include "Exception.h"
 #include "log.h"
 
-#include <functional>
 #include <memory>
 #include <sstream>
 
@@ -31,18 +30,13 @@
 namespace digidoc
 {
 
-#define SCOPE2(TYPE, VAR, DATA, FREE) std::unique_ptr<TYPE,std::function<void(TYPE *)>> VAR(DATA, FREE)
+#define SCOPE2(TYPE, VAR, DATA, FREE) std::unique_ptr<TYPE,decltype(&FREE)> VAR(DATA, FREE)
 #define SCOPE(TYPE, VAR, DATA) SCOPE2(TYPE, VAR, DATA, TYPE##_free)
 
 /**
 * OpenSSL exception implementation. Thrown if the openssl returns error
 *
 */
-#ifdef __APPLE__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
 class OpenSSLException : public Exception
 {
 	public:
@@ -62,10 +56,6 @@ class OpenSSLException : public Exception
 			return str.str();
 		}
 };
-
-#ifdef __APPLE__
-#pragma clang diagnostic pop
-#endif
 
 #define THROW_OPENSSLEXCEPTION(...) THROW_CAUSE(OpenSSLException(), __VA_ARGS__)
 
