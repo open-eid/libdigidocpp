@@ -259,7 +259,7 @@ void Connect::sendProxyAuth()
         return;
 
     BIO_printf(d, "Proxy-Authorization: Basic ");
-    SCOPE2(BIO, b64, BIO_new(BIO_f_base64()), BIO_free_all);
+    SCOPE(BIO, b64, BIO_new(BIO_f_base64()));
     BIO_set_flags(b64.get(), BIO_FLAGS_BASE64_NO_NL);
     BIO_push(b64.get(), d);
     BIO_printf(b64.get(), "%s:%s", c->proxyUser().c_str(), c->proxyPass().c_str());

@@ -95,7 +95,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
 
     OCSP_CERTID *certId = OCSP_cert_to_id(0, cert.handle(), issuer.handle());
     SCOPE(OCSP_REQUEST, req, createRequest(certId, nonce));
-    resp.reset(sendRequest(url, req.get(), useragent), function<void(OCSP_RESPONSE*)>(OCSP_RESPONSE_free));
+    resp.reset(sendRequest(url, req.get(), useragent), OCSP_RESPONSE_free);
 
     switch(int respStatus = OCSP_response_status(resp.get()))
     {
@@ -110,7 +110,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
         THROW("OCSP request failed, response status: %s", OCSP_response_status_str(respStatus));
     }
 
-    basic.reset(OCSP_response_get1_basic(resp.get()), function<void(OCSP_BASICRESP*)>(OCSP_BASICRESP_free));
+    basic.reset(OCSP_response_get1_basic(resp.get()), OCSP_BASICRESP_free);
     if(!basic)
         THROW("Incorrect OCSP response.");
 
@@ -137,9 +137,9 @@ OCSP::OCSP(const vector<unsigned char> &data)
     if(data.empty())
         return;
     const unsigned char *p = data.data();
-    resp.reset(d2i_OCSP_RESPONSE(0, &p, (unsigned int)data.size()), function<void(OCSP_RESPONSE*)>(OCSP_RESPONSE_free));
+    resp.reset(d2i_OCSP_RESPONSE(0, &p, (unsigned int)data.size()), OCSP_RESPONSE_free);
     if(resp)
-       basic.reset(OCSP_response_get1_basic(resp.get()), function<void(OCSP_BASICRESP*)>(OCSP_BASICRESP_free));
+       basic.reset(OCSP_response_get1_basic(resp.get()), OCSP_BASICRESP_free);
 }
 
 bool OCSP::compareResponderCert(const X509Cert &cert) const
@@ -325,7 +325,7 @@ OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const st
             chostname += ":" + c->proxyPort();
     }
 
-    SCOPE2(BIO, connection, BIO_new_connect(const_cast<char*>(chostname.c_str())), BIO_free_all);
+    SCOPE(BIO, connection, BIO_new_connect(const_cast<char*>(chostname.c_str())));
     if(!connection)
         THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", chostname.c_str());
 
@@ -350,7 +350,7 @@ OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const st
     {
         BIO *b64 = BIO_new(BIO_f_base64());
         BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-        SCOPE2(BIO, hash, BIO_push(b64, BIO_new(BIO_s_mem())), BIO_free_all);
+        SCOPE(BIO, hash, BIO_push(b64, BIO_new(BIO_s_mem())));
         BIO_printf(hash.get(), "%s:%s", c->proxyUser().c_str(), c->proxyPass().c_str());
         (void)BIO_flush(hash.get());
         char *base64 = nullptr;

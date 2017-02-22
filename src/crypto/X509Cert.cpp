@@ -255,7 +255,7 @@ X509Cert::X509Cert(const string &path, Format format)
 {
     if(path.empty())
         THROW("No path given to parse X509.");
-    SCOPE2(BIO, bio, BIO_new_file(path.c_str(), "rb"), BIO_free_all);
+    SCOPE(BIO, bio, BIO_new_file(path.c_str(), "rb"));
     if(!bio)
         THROW_OPENSSLEXCEPTION("Failed to open X.509 certificate file '%s'", path.c_str());
     if(format == Der)

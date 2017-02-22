@@ -114,7 +114,7 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
     if(TS_RESP_verify_response(ctx.get(), resp.get()) != 1)
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
-    d.reset(PKCS7_dup(TS_RESP_get_token(resp.get())), function<void(PKCS7*)>(PKCS7_free));
+    d.reset(PKCS7_dup(TS_RESP_get_token(resp.get())), PKCS7_free);
 }
 
 TS::TS(const std::vector<unsigned char> &data)
@@ -122,7 +122,7 @@ TS::TS(const std::vector<unsigned char> &data)
     if(data.empty())
         return;
     const unsigned char *p = data.data();
-    d.reset(d2i_PKCS7(0, &p, long(data.size())), function<void(PKCS7*)>(PKCS7_free));
+    d.reset(d2i_PKCS7(0, &p, long(data.size())), PKCS7_free);
 #ifndef OPENSSL_NO_CMS
     if(d)
         return;
@@ -133,7 +133,7 @@ TS::TS(const std::vector<unsigned char> &data)
      *
      * If PKCS7 wrapped TimeStamp parsing fails, try with CMS wrapping
      */
-    SCOPE2(BIO, bio, BIO_new_mem_buf((void*)data.data(), int(data.size())), BIO_free_all);
+    SCOPE(BIO, bio, BIO_new_mem_buf((void*)data.data(), int(data.size())));
     cms.reset(d2i_CMS_bio(bio.get(), NULL), CMS_ContentInfo_free);
     if(!cms || OBJ_obj2nid(CMS_get0_eContentType(cms.get())) != NID_id_smime_ct_TSTInfo)
         cms.reset();
@@ -260,7 +260,7 @@ void TS::verify(const Digest &digest)
 #ifndef OPENSSL_NO_CMS
     else if(cms)
     {
-        SCOPE2(BIO, out, BIO_new(BIO_s_mem()), BIO_free_all);
+        SCOPE(BIO, out, BIO_new(BIO_s_mem()));
         int err = CMS_verify(cms.get(), NULL, store.get(), NULL, out.get(), 0);
         if(err != 1)
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
