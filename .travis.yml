@@ -32,13 +32,10 @@ cache: ccache
 env:
   global:
   - BUILD_NUMBER=${TRAVIS_BUILD_NUMBER}
-  - VERSION=3.13.0.${TRAVIS_BUILD_NUMBER}
-  - PATH=${PATH}:/usr/local/Cellar/swig/3.0.8/bin;
   - RUN_TESTS=ALL
   - secure: VTpLjRFkVZeqSiP/tea7b5WiMU+PjQJlpny8/QEYazRNhn/uie69aT8VvEdkpsUM1AEx8yPnNmVGShvoNNaOi/AoqynTIKgeGPCj44h6lCnPpByGVur0avc5WrRj2xBbPBBUw1rsL65wZ13MufmRLUwnmmVYQZ3qDBdpgZvCEhA=
 
 before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-    brew update;
     brew install swig;
     ./prepare_osx_build_environment.sh all ${TARGET};
   fi
@@ -54,12 +51,14 @@ script: case ${TARGET} in
     make all zipdebug embedlibs pkgbuild && cd ..;
     ;;
   *)
-    docker run -e BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} -e VERSION=${VERSION} -e DEBFULLNAME="Travis" -e DEBEMAIL="travis-ci@travis" -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "export LC_ALL=en_US.UTF-8; locale-gen en_US.UTF-8; cd $(pwd);"'
+    docker run -e BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} -e DEBFULLNAME="Travis" -e DEBEMAIL="travis-ci@travis" -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
       apt-get update -qq; 
-      apt-get install -y apt-transport-https curl dh-make devscripts dpkg-dev cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen libboost-test-dev;
+      apt-get install -y dh-make devscripts dpkg-dev cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen libboost-test-dev git;
+      export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}").${BUILD_NUMBER};
       dh_make --createorig --addmissing --defaultless -y -p libdigidocpp_${VERSION};
       dch --distribution $(lsb_release -cs) -v ${VERSION} "Release ${VERSION}.";
-      dpkg-buildpackage -rfakeroot -us -uc';
+      dpkg-buildpackage -rfakeroot -us -uc;
+      git clean -dxf';
   esac
 
 addons:
