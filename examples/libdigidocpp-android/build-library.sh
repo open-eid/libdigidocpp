@@ -11,7 +11,7 @@ case "$@" in
   ;;
 *)
   TARGET_PATH=/Library/EstonianIDCard.androidarm
-  ARCH="armeabi"
+  ARCH="armeabi-v7a"
   ;;
 esac
 
