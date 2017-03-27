@@ -6,7 +6,7 @@ XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2k
 LIBXML2_DIR=libxml2-2.9.4
-ANDROID_NDK=android-ndk-r13b
+ANDROID_NDK=android-ndk-r14
 ARGS="$@"
 
 case "$@" in
