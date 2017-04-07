@@ -19,7 +19,9 @@ Additional documentation about the library can be found from GitHub wiki section
 </table>
 
 \section introduction Introduction
-Libdigidocpp is the C++ library for creating applications handling digital signatures, their creation and verification. The digitally signed files are created in "DigiDoc format" (with .ddoc, .bdoc or .asice file extensions), compliant to XML Advanced Electronic Signatures (XAdES), technical standard published by European Telecommunication Standards Institute (ETSI). 
+Libdigidocpp is the C++ library for creating applications handling digital signatures, their creation and verification. The digitally signed files are created in "DigiDoc format" (with .ddoc, .bdoc or .asice file extensions), compliant to XML Advanced Electronic Signatures (XAdES), technical standard published by European Telecommunication Standards Institute (ETSI).
+
+Additionally the libdigidocpp library can be used to read and verify the digitally timestamped containers (using .asics file extension) with a single datafile. The file included in the container is usually a file in DigiDoc format with .ddoc extension.
 
 Development of the library can be monitored in GitHub environment: <a href="https://github.com/open-eid/libdigidocpp">https://github.com/open-eid/libdigidocpp</a>
 
@@ -39,6 +41,7 @@ It is easy to integrate DigiDoc components into existing applications in order t
 Actively used digitally signed file formats in DigiDoc system are:
 - BDOC 2.1 - default format for new files in Libdigidocpp library, described in \ref BDOC "BDOC2.1:2013"; 
 - DIGIDOC-XML 1.3 - see also \ref DDOC "DigiDoc format". NB! Libdigidocpp does not implement DIGIDOC-XML 1.3 support independently - it uses \ref CDigiDoc "CDigiDoc library" library as a base component (via a wrapper class) to offer support for the file format. 
+- ASiC-S - timestamped container, described in \ref ASiC "The ETSI standard TS 102 918". The library implements only read-only support for the format.
 
 DigiDoc system uses file extension .bdoc or .ddoc to distinguish digitally signed files according to the described file formats. Other historical formats that were used previously are SK-XML, DIGIDOC-XML 1.1, DIGIDOC-XML 1.2 and BDOC 1.0. 
 
@@ -108,12 +111,27 @@ The BDOC signature with time-stamp is based on XAdES-BES signature (Basic Electr
 In order to offer long time validation, it is necessary to obtaining proof of validity of the signer’s X.509 digital certificate issued by a certificate authority (CA) at the time of signature creation. 
 
 In case of BDOC with time-stamp (TS profile), the proof is provided as follows:
-1. RCF3161 compliant time-stamp is obtained from a time-stamping service. The hash of the created signature (&lt;SignatureValue&gt; element block) is sent to the time-stamping server. The server’s response contains a time-stamp token with the same hash value that can later be used to validate that the time-stamp was indeed issued for the respective signature. The time-stamp token received from the server is added to the signature providing a proof from a trusted source that the signature value existed at a certain point of time.
+1. RFC3161 compliant time-stamp is obtained from a time-stamping service. The hash of the created signature (&lt;SignatureValue&gt; element block) is sent to the time-stamping server. The server’s response contains a time-stamp token with the same hash value that can later be used to validate that the time-stamp was indeed issued for the respective signature. The time-stamp token received from the server is added to the signature providing a proof from a trusted source that the signature value existed at a certain point of time.
 2. RFC 6960 compliant OCSP confirmation is obtained from an OCSP service. The OCSP response received from the server is used as a trusted source to confirm that the signer’s certificate was valid at a certain point of time (producedAt field’s value in the OCSP response). 
 3. The verifier must check the time-stamp token’s and OCSP confirmation’s time difference. If the difference is acceptable then it can stated that the signer’s certificate was valid at the time of signature creation.
 
 <b>NB!</b> The issuance time (getTime field’s value) of the time-stamp token (received with the response from time-stamping server) is regarded as the time of signature creation. 
 
+\subsubsection asics ASiC-S container format
+In addition to the Associated Signature Extended form (ASiC-E) the \ref ASiC "ETSI standard TS 102 918" defines a Simple form which is used for encapsulating a single datafile and signature or time-stamp token associated with it.
+
+ASiC-S container is a ZIP file consisting of the following objects:
+- an optional file named "mimetype", containing only the following value: application/vnd.etsi.asic-s+zip  
+- data object (file) in original format.
+- META-INF subdirectory with one of the following files:
+  - signatures.p7s
+  - signatures.xml
+  - timestamp.tst
+
+The libdigidocpp library supports only containers with time-stamp token (container includes META-INF/timestamp.tst). The time-stamp token is a binary representation of TimeStampToken as defined in RFC 3161. The time-stamp is obtained from a time-stamping service; it is calculated over the entire binary content of the data object.
+Since both the original file and time-stamp are included in the container, it is possible to verify that the timestamped file existed at a certain point of time.
+
+The library can be used only for reading the content of the container and validating that the time-stamp was indeed issued for the data object included in the container.
 
 
 \section releasenotes Release Notes
@@ -247,6 +265,8 @@ https://github.com/open-eid/libdigidocpp
 Associated Signature Containers
 </td></tr><tr><td>ASiC-E</td><td>
 Extended Associated Signature Containers. A type of ASiC container.
+</td></tr><tr><td>ASiC-S</td><td>
+Associated Signature Container Simple form. A type of ASiC container.
 </td></tr><tr><td>BDOC 2.1 (.bdoc)</td><td>
 Term is used to denote a digitally signed file format which is a profile of XAdES and follows container packaging rules based on
 OpenDocument and ASiC standards. The document format has been defined in \ref BDOC "BDOC2.1:2013", an overview is provided in chapter \ref format of the current document.
@@ -961,6 +981,8 @@ Write a DigiDoc file (represented with a Container object) to file system with t
     digidoc::Container::save("<output-file's-path>");
 \endcode
 
+\note In case of read-only formats (e.g. ASiC-S documents), the save will throw a digidoc::Exception.
+
 \subsection validate Validating signature containers and signatures
 Validation of a signed DigiDoc document consists of three main steps:
 1.	Call out the main validation method of the library. If there are multiple validation errors then get the errors list.
@@ -1221,7 +1243,7 @@ void digidoc::Container::removeDataFile(unsigned int id);
 \endcode
 
 "Id" parameters of the abovementioned methods represent the signature’s and data file’s sequence numbers in the container. The identifiers are determined when a data file or signature is added to the container, counting starts from zero. 
-\note The functionality of modifying files in DigiDoc file formats SK-XML, DIGIDOC-XML 1.1 and DIGIDOC-XML 1.2 is not supported.
+\note The functionality of modifying files in DigiDoc file formats SK-XML, DIGIDOC-XML 1.1, DIGIDOC-XML 1.2 and ASiC-S is not supported.
 
 
 \subsection shutting-down Shutting down the library
