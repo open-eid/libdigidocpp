@@ -539,6 +539,39 @@ BOOST_AUTO_TEST_CASE(OpenInvalidTsASiCSContainer)
     BOOST_CHECK_THROW(ts->validate(), Exception);
 }
 
+BOOST_AUTO_TEST_CASE(TeRaASiCSContainer)
+{
+    unique_ptr<Container> d(Container::open("test-tera.asics"));
+    BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
+
+    const DataFile *doc = d->dataFiles().front();
+    BOOST_CHECK_EQUAL(doc->fileName(), "ddoc_for_testing.ddoc");
+    BOOST_CHECK_EQUAL(doc->fileSize(), 8736U);
+
+    const auto ts = d->signatures().front();
+    BOOST_CHECK_NO_THROW(ts->validate());
+
+    BOOST_WARN_EQUAL("2017-04-10T06:27:28Z", ts->TimeStampTime().substr(0, 19));
+    BOOST_CHECK_EQUAL("DEMO of SK TSA 2014", ts->TimeStampCertificate().subjectName("CN"));
+}
+
+BOOST_AUTO_TEST_CASE(TeRaEmptyASiCSContainer)
+{
+    unique_ptr<Container> d(Container::open("test-tera-empty.asics"));
+    BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
+
+    const DataFile *doc = d->dataFiles().front();
+    BOOST_CHECK_EQUAL(doc->fileName(), "emptyFile.ddoc");
+    BOOST_CHECK_EQUAL(doc->fileSize(), 0U);
+
+    const auto ts = d->signatures().front();
+    BOOST_CHECK_NO_THROW(ts->validate());
+}
+
 BOOST_AUTO_TEST_CASE(OpenInvalidMimetypeContainer)
 {
     BOOST_CHECK_THROW(Container::open("test-invalid.asics"), Exception);
