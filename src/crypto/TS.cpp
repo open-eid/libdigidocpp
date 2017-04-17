@@ -134,7 +134,7 @@ TS::TS(const std::vector<unsigned char> &data)
      * If PKCS7 wrapped TimeStamp parsing fails, try with CMS wrapping
      */
     SCOPE(BIO, bio, BIO_new_mem_buf((void*)data.data(), int(data.size())));
-    cms.reset(d2i_CMS_bio(bio.get(), NULL), CMS_ContentInfo_free);
+    cms.reset(d2i_CMS_bio(bio.get(), nullptr), CMS_ContentInfo_free);
     if(!cms || OBJ_obj2nid(CMS_get0_eContentType(cms.get())) != NID_id_smime_ct_TSTInfo)
         cms.reset();
 #endif
@@ -181,30 +181,31 @@ string TS::digestMethod() const
 string TS::serial() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
-
-    if (info)
-    {
-        string serial;
-        SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), 0), BN_free);
-        if(!!bn)
-        {
-            char *str = BN_bn2dec(bn.get());
-            if(str)
-                serial = str;
-            OPENSSL_free(str);
-        }
-
+    string serial;
+    if(!info)
         return serial;
-    }
 
-    return string();
+    SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), 0), BN_free);
+    if(!!bn)
+    {
+        char *str = BN_bn2dec(bn.get());
+        if(str)
+            serial = str;
+        OPENSSL_free(str);
+    }
+    return serial;
 }
 
 string TS::time() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
+    string result;
+    if(!info)
+        return result;
     const ASN1_GENERALIZEDTIME *time = TS_TST_INFO_get_time(info.get());
-    return info ? string((char*)time->data, size_t(time->length)) : string();
+    if(time)
+        result.assign((char*)time->data, size_t(time->length));
+    return result;
 }
 
 TS_TST_INFO* TS::tstInfo() const
@@ -214,8 +215,8 @@ TS_TST_INFO* TS::tstInfo() const
 #ifndef OPENSSL_NO_CMS
     else if(cms)
     {
-        BIO *out = CMS_dataInit(cms.get(), NULL);
-        TS_TST_INFO *info =  d2i_TS_TST_INFO_bio(out, NULL);
+        BIO *out = CMS_dataInit(cms.get(), nullptr);
+        TS_TST_INFO *info =  d2i_TS_TST_INFO_bio(out, nullptr);
         BIO_free(out);
         return info;
     }
@@ -261,11 +262,11 @@ void TS::verify(const Digest &digest)
     else if(cms)
     {
         SCOPE(BIO, out, BIO_new(BIO_s_mem()));
-        int err = CMS_verify(cms.get(), NULL, store.get(), NULL, out.get(), 0);
+        int err = CMS_verify(cms.get(), nullptr, store.get(), nullptr, out.get(), 0);
         if(err != 1)
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
-        SCOPE(TS_TST_INFO, info, d2i_TS_TST_INFO_bio(out.get(), NULL));
+        SCOPE(TS_TST_INFO, info, d2i_TS_TST_INFO_bio(out.get(), nullptr));
         ASN1_OCTET_STRING *msg = TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get()));
         if(data.size() != size_t(ASN1_STRING_length(msg)) ||
             memcmp(data.data(), ASN1_STRING_data(msg), data.size()))
@@ -278,25 +279,24 @@ void TS::verify(const Digest &digest)
 
 TS::operator vector<unsigned char>() const
 {
+    vector<unsigned char> der;
     if(d)
     {
-        vector<unsigned char> der(i2d_PKCS7(d.get(), 0), 0);
+        der.resize(i2d_PKCS7(d.get(), 0), 0);
         if(der.empty())
             return der;
         unsigned char *p = der.data();
         i2d_PKCS7(d.get(), &p);
-        return der;
     }
 #ifndef OPENSSL_NO_CMS
     else if(cms)
     {
-        vector<unsigned char> der(i2d_CMS_ContentInfo(cms.get(), 0), 0);
+        der.resize(i2d_CMS_ContentInfo(cms.get(), 0), 0);
         if(der.empty())
             return der;
         unsigned char *p = der.data();
         i2d_CMS_ContentInfo(cms.get(), &p);
-        return der;
     }
 #endif
-    return vector<unsigned char>();
+    return der;
 }
