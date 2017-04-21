@@ -336,12 +336,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
             }
         }
 
-        if(!isQCCompliant || !isQSCD)
-        {
-            return false;
-        }
-
-        return true;
+        return isQCCompliant && isQSCD;
     }
 
     int err = X509_STORE_CTX_get_error(csc.get());
