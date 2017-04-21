@@ -698,6 +698,7 @@ void SignatureXAdES_B::checkKeyInfo() const
  */
 void SignatureXAdES_B::checkSigningCertificate(bool noqscd) const
 {
+    bool qscdWarning = false;
     try
     {
         X509Cert signingCert = signingCertificate();
@@ -705,11 +706,18 @@ void SignatureXAdES_B::checkSigningCertificate(bool noqscd) const
         if(find(usage.begin(), usage.end(), X509Cert::NonRepudiation) == usage.end())
             THROW("Signing certificate does not contain NonRepudiation key usage flag");
         if(!X509CertStore::instance()->verify(signingCert, noqscd))
-            THROW("Unable to verify signing certificate");
+            qscdWarning = true;
     }
     catch(const Exception &e)
     {
         THROW_CAUSE( e, "Unable to verify signing certificate" );
+    }
+
+    if(qscdWarning)
+    {
+        Exception e(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
+        e.setCode(Exception::QSCDConformanceWarning);
+        throw e;
     }
 }
 

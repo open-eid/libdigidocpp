@@ -469,6 +469,7 @@ static void parseException(const Exception &e, const char *main = 0)
     case Exception::PINLocked: cout << "PINLocked"; break;
     case Exception::ReferenceDigestWeak: cout << "ReferenceDigestWeak"; break;
     case Exception::SignatureDigestWeak: cout << "SignatureDigestWeak"; break;
+    case Exception::QSCDConformanceWarning: cout << "QSCDConformanceWarning"; break;
     case Exception::DataFileNameSpaceWarning: cout << "DataFileNameSpaceWarning"; break;
     case Exception::IssuerNameSpaceWarning: cout << "IssuerNameSpaceWarning"; break;
     case Exception::ProducedATLateWarning: cout << "ProducedATLateWarning"; break;
@@ -588,6 +589,7 @@ static int open(int argc, char* argv[])
                         {
                         case Exception::ReferenceDigestWeak: warnings.push_back("ReferenceDigestWeak"); break;
                         case Exception::SignatureDigestWeak: warnings.push_back("SignatureDigestWeak"); break;
+                        case Exception::QSCDConformanceWarning: warnings.push_back("QSCDConformanceWarning"); break;
                         case Exception::IssuerNameSpaceWarning:
                         case Exception::DataFileNameSpaceWarning: warnings.push_back("WrongNameSpace"); break;
                         case Exception::ProducedATLateWarning: warnings.push_back("ProducedATLate"); break;

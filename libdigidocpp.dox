@@ -1084,6 +1084,12 @@ i.e. no signatures should be added or removed.</td>
 </tr>
 <tr>
   <td>4</td>
+  <td>RESTRICTED</td>
+  <td><b>17</b> QSCDConformanceWarning (signature is not given with qualified signature creation device)</td>
+  <td>Validation process determines that signature is not given with qualified signature creation device (QSCD). QSCD is according to eIDAS a device, which has Common Criteria (CC) certificate with Protection Profile for SSCD (see Standard EN 419 211, Protection Profiles for Secure Signature Creation and other related devices part 1-2).</td>
+</tr>
+<tr>
+  <td>5</td>
   <td>VALID</td>
   <td>N/A</td>
   <td>Validation process returns no errors. The signature is legally valid.</td>

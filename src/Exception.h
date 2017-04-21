@@ -53,6 +53,7 @@ namespace digidoc
               DataFileNameSpaceWarning = 14,
               IssuerNameSpaceWarning   = 15,
               ProducedATLateWarning     = 16,
+              QSCDConformanceWarning   = 17,
               //DDoc error codes
               DDocError                = 512
           };
