@@ -274,7 +274,8 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
         const SignedPropertiesType::SignedDataObjectPropertiesOptional &sdop = sp->signedDataObjectProperties();
         if(sdop.present())
         {
-            DEBUG("CommitmentTypeIndicationType is not supported");
+            if(!sdop->commitmentTypeIndication().empty())
+                DEBUG("CommitmentTypeIndicationType is not supported");
             if(!sdop->allDataObjectsTimeStamp().empty())
                 THROW("AllDataObjectsTimeStamp is not supported");
             if(!sdop->individualDataObjectsTimeStamp().empty())
