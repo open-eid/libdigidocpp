@@ -26,7 +26,7 @@ if( Boost_INCLUDE_DIR )
     else()
         set_target_properties(unittests TSLTests PROPERTIES COMPILE_FLAGS "-Wno-unused-parameter -Wno-unused-variable")
     endif()
-    if( Boost_MAJOR_VERSION EQUAL 1 AND Boost_MINOR_VERSION EQUAL 62 )
+    if( NOT Boost_VERSION VERSION_LESS 106200 AND Boost_VERSION VERSION_LESS 106300 )
         add_test(NAME runtest
             COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests  --build_info=YES --report_level=no  --logger=XML,all,${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
