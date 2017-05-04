@@ -26,10 +26,17 @@ if( Boost_INCLUDE_DIR )
     else()
         set_target_properties(unittests TSLTests PROPERTIES COMPILE_FLAGS "-Wno-unused-parameter -Wno-unused-variable")
     endif()
-    add_test(NAME runtest
-        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests --build_info=YES --output_format=XML --log_level=all --report_level=no --log_sink=${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-    )
+    if( Boost_MAJOR_VERSION EQUAL 1 AND Boost_MINOR_VERSION EQUAL 62 )
+        add_test(NAME runtest
+            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests  --build_info=YES --report_level=no  --logger=XML,all,${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+        )
+    else()
+        add_test(NAME runtest
+            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests --build_info=YES --output_format=XML --log_level=all --report_level=no --log_sink=${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+        )
+    endif()
     add_test(NAME TSLTest_CA-invalid-type
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-invalid-type.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
