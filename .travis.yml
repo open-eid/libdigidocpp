@@ -5,14 +5,13 @@ matrix:
     env: TARGET=ubuntu:16.04
     sudo: false
   - os: linux
-    env: TARGET=ubuntu:16.10
+    env: TARGET=ubuntu:17.04
     sudo: false
   - os: linux
     env: TARGET=32bit/ubuntu:16.04
     sudo: false
   - os: osx
     env: TARGET=osx
-    osx_image: xcode7.3
   - os: osx
     env: TARGET=ios
   - os: osx
@@ -25,7 +24,7 @@ matrix:
     env: TARGET=androidx86
 sudo: required
 dist: trusty
-osx_image: xcode8.2
+osx_image: xcode8.3
 services:
 - docker
 cache: ccache
@@ -65,7 +64,7 @@ script: case ${TARGET} in
     make all zipdebug embedlibs pkgbuild && cd ..;
     ;;
   *)
-    docker run -e BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} -e DEBFULLNAME="Travis" -e DEBEMAIL="travis-ci@travis" -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
+    docker run -e BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} -e DEBFULLNAME="Travis" -e RUN_TESTS=${RUN_TESTS} -e DEBEMAIL="travis-ci@travis" -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
       apt-get update -qq; 
       apt-get install -y dh-make devscripts dpkg-dev cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen libboost-test-dev git;
       export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}").${BUILD_NUMBER};
