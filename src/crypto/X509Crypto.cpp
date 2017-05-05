@@ -173,7 +173,7 @@ int X509Crypto::compareIssuerToString(const string &name) const
 
             char *data = nullptr;
             int size = ASN1_STRING_to_UTF8((unsigned char**)&data, X509_NAME_ENTRY_get_data(entb));
-            found = value.compare(0, size_t(size), data) == 0;
+            found = value.compare(0, size_t(size), data, value.size()) == 0;
             OPENSSL_free(data);
             if(found)
                 break;

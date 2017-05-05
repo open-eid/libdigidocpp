@@ -154,6 +154,7 @@ BOOST_AUTO_TEST_CASE(parameters)
     BOOST_CHECK_EQUAL(crypto.rsaModulus().size(), 256U);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()), 0);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of ESTEID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
+    BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()+"EE"), -1);
 
     unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
     vector<unsigned char> data({'H','e','l','l','o',' ','w','o','r','l','d'});
