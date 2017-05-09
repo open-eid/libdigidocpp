@@ -242,7 +242,7 @@ void TS::verify(const Digest &digest)
     {
         SCOPE(TS_VERIFY_CTX, ctx, TS_VERIFY_CTX_new());
         TS_VERIFY_CTX_set_flags(ctx.get(), TS_VFY_IMPRINT|TS_VFY_VERSION|TS_VFY_SIGNATURE);
-        TS_VERIFY_CTX_set_imprint(ctx.get(), data.data(), (long)data.size());
+        TS_VERIFY_CTX_set_imprint(ctx.get(), data.data(), long(data.size()));
         TS_VERIFY_CTX_set_store(ctx.get(), store.release());
         int err = TS_RESP_verify_token(ctx.get(), d.get());
         TS_VERIFY_CTX_set_imprint(ctx.get(), nullptr, 0); //Avoid CRYPTO_free
@@ -262,7 +262,13 @@ void TS::verify(const Digest &digest)
     else if(cms)
     {
         SCOPE(BIO, out, BIO_new(BIO_s_mem()));
+        // Override smime_sign purpose bit because it is actually timestamp
+        X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
+        X509_VERIFY_PARAM_set1_name(param, "smime_sign");
+        X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_TIMESTAMP_SIGN);
+        X509_VERIFY_PARAM_add0_table(param);
         int err = CMS_verify(cms.get(), nullptr, store.get(), nullptr, out.get(), 0);
+        X509_VERIFY_PARAM_table_cleanup();
         if(err != 1)
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
