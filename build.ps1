@@ -1,6 +1,6 @@
 param(
   [string]$target = "C:\build",
-  [string]$msiversion = "3.12.0.0",
+  [string]$msiversion = "3.13.0.0",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
   [string]$msbuild = "C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe",
   [string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
@@ -132,7 +132,7 @@ foreach($platform in @("x86", "x64")) {
 
 Function Sign($filename) {
   signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
-    /t http://timestamp.verisign.com/scripts/timstamp.dll "$filename"
+    /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 "$filename"
 }
 
 if($sign) {
