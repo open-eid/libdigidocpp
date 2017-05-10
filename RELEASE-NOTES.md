@@ -1,11 +1,17 @@
-Libdigidocpp library 3.13.0 release notes
+Libdigidocpp library [3.13.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.0) release notes
 --------------------------------------
 - Relax validation of BDOC to accept sub-elements of SignatureProductionPlace in any order
 - Speed up signing large files by handling them as file stream instead of in-memory
-- Improved compatability with Latvian ASiC-E documents
+- Improved compatability with Latvian/Lithuanian ASiC-E documents
 - XAdES EN support
 - Better handling of malicious zip files
 - Added ASiC-S validation support
+- Improve TSL parsing
+- Improve compatibilty with EIDAS
+- Disable External Entities parsing
+- Use SiVa service for parsing PDF and DDoc (on platforms where libdigidoc backend is missing)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.12.2...v3.13.0)
 
 
 
