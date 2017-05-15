@@ -37,7 +37,7 @@ namespace digidoc
 
           bool compareIssuerToDer(const std::vector<unsigned char> &issuer) const;
           int compareIssuerToString(const std::string &name) const;
-          std::vector<unsigned char> rsaModulus() const;
+          bool isRSAKey() const;
 
           bool verify(const std::string &method, const std::vector<unsigned char> &digest,
                       const std::vector<unsigned char> &signature);

@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(parameters)
 {
     X509Cert cert("47101010033.cer", X509Cert::Pem);
     digidoc::X509Crypto crypto(cert);
-    BOOST_CHECK_EQUAL(crypto.rsaModulus().size(), 256U);
+    BOOST_CHECK_EQUAL(crypto.isRSAKey(), true);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()), 0);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of ESTEID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()+"EE"), -1);
