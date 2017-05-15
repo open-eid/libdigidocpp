@@ -211,18 +211,6 @@ void Signer::setENProfile(bool enable)
  */
 string Signer::method() const
 {
-    // Estoniand ID-Card specific hack for older cards, they support only max SHA224
-    X509Cert c = cert();
-    if(d->method != URI_SHA1 && d->method != URI_SHA224 &&
-        X509Crypto(c).rsaModulus().size() <= 128)
-    {
-        for(const string &pol: c.certificatePolicies())
-        {
-            if(pol.compare(0, 22, "1.3.6.1.4.1.10015.1.1.") == 0 ||
-                pol.compare(0, 22, "1.3.6.1.4.1.10015.3.1.") == 0)
-                 return URI_SHA224;
-        }
-    }
     return d->method;
 }
 

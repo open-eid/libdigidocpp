@@ -206,8 +206,8 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
         setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
         setSignerRoles(signer->signerRoles());
     }
-    signature->signedInfo().signatureMethod(Uri( X509Crypto(c).rsaModulus().empty() ?
-        Digest::toEcUri(signer->method()) : Digest::toRsaUri(signer->method()) ));
+    signature->signedInfo().signatureMethod(Uri( X509Crypto(c).isRSAKey() ?
+        Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()) ));
     time_t t = time(0);
     setSigningTime(gmtime(&t));
 

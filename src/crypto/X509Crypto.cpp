@@ -61,13 +61,6 @@ static int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
     sig->s = s;
     return 1;
 }
-
-static void RSA_get0_key(const RSA *r, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
-{
-    if(n) *n = r->n;
-    if(e) *e = r->e;
-    if(d) *d = r->d;
-}
 #endif
 
 /**
@@ -184,28 +177,10 @@ int X509Crypto::compareIssuerToString(const string &name) const
     return 0;
 }
 
-/**
- * @return Extracts RSA modulus from X.509 certificate and returns it.
- * @throws IOException throws exception if the RSA modulus extraction failed.
- */
-vector<unsigned char> X509Crypto::rsaModulus() const
+bool X509Crypto::isRSAKey() const
 {
     SCOPE(EVP_PKEY, key, X509_get_pubkey(cert.handle()));
-    if(!key || EVP_PKEY_base_id(key.get()) != EVP_PKEY_RSA)
-        return vector<unsigned char>();
-
-    SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(key.get()));
-    const BIGNUM *n = nullptr;
-    RSA_get0_key(rsa.get(), &n, nullptr, nullptr);
-    int bufSize = BN_num_bytes(n);
-    if(bufSize <= 0)
-        return vector<unsigned char>();
-
-    vector<unsigned char> rsaModulus(bufSize, 0);
-    if(BN_bn2bin(n, rsaModulus.data()) <= 0)
-        return vector<unsigned char>();
-
-    return rsaModulus;
+    return key.get() && EVP_PKEY_base_id(key.get()) == EVP_PKEY_RSA;
 }
 
 /**
