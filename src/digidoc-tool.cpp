@@ -124,20 +124,6 @@ static string decodeParameter(const string &param)
 #endif
 }
 
-static vector<unsigned char> hexToBin(const string &in)
-{
-    vector<unsigned char> out;
-    char data[] = "00";
-    for(string::const_iterator i = in.cbegin(); i != in.end();)
-    {
-        data[0] = *(i++);
-        data[1] = *(i++);
-        out.push_back(static_cast<unsigned char>(strtoul(data, 0, 16)));
-    }
-    return out;
-}
-
-
 /**
  * For demonstration purpose overwrites certificate selection to print out all
  * the certificates available on ID-Card.
@@ -273,7 +259,6 @@ private:
     vector<unsigned char> sign(const string &, const vector<unsigned char> &) const override
     {
         THROW("Not implemented");
-        return vector<unsigned char>();
     }
 
     X509Cert _cert;
@@ -331,7 +316,7 @@ static void printUsage(const char *executable)
     << "    Example: " << executable << " add --file=file1.txt container-file.bdoc" << endl
     << "    Available options:" << endl
     << "      --file=        - The option can occur multiple times. File(s) to be added to the container" << endl
-    << "      --mime=        - can be after --file parameter. Default value is application/octet-stream" << endl
+    << "      --mime=        - can be after --file parameter. Default value is application/octet-stream" << endl << endl
     << "  Command remove:" << endl
     << "    Example: " << executable << " remove --document=0 --document=1 --signature=1 container-file.bdoc" << endl
     << "    Available options:" << endl
@@ -362,7 +347,9 @@ static void printUsage(const char *executable)
     << "      --pin=         - default asks pin from prompt" << endl
     << "      --sha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl
-    << "      --dontValidate= - Don't validate container" << endl;
+    << "      --dontValidate= - Don't validate container" << endl << endl
+    << "  All commands:" << endl
+    << "      --nocolor       - Disable terminal colors" << endl;
 }
 
 struct Params
@@ -373,6 +360,7 @@ struct Params
     vector<string> roles;
     bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
     static const map<string,string> profiles;
+    static string RED, GREEN, YELLOW, RESET;
 };
 
 const map<string,string> Params::profiles = {
@@ -387,6 +375,10 @@ const map<string,string> Params::profiles = {
     {"time-mark-archive", "time-mark-archive"},
     {"time-stamp-archive", "time-stamp-archive"},
 };
+string Params::RED = "\033[31m";
+string Params::GREEN = "\033[32m";
+string Params::YELLOW = "\033[33m";
+string Params::RESET = "\033[0m";
 
 Params::Params(int argc, char *argv[])
 {
@@ -444,6 +436,7 @@ Params::Params(int argc, char *argv[])
         else if(arg.find("--tslcert=") == 0) conf->tslcerts = { X509Cert(arg.substr(10)) };
         else if(arg == "--TSLAllowExpired") conf->expired = true;
         else if(arg == "--dontsign") doSign = false;
+        else if(arg == "--nocolor") RED = GREEN = YELLOW = RESET = string();
         else path = arg;
     }
 }
@@ -546,7 +539,7 @@ static int open(int argc, char* argv[])
                     file->saveAs(dst);
                     cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
                 } catch(const Exception &e) {
-                    cout << "  Document " << file->fileName() << " extraction: FAILED" << endl;
+                    cout << "  Document " << file->fileName() << " extraction: " << Params::RED << "FAILED" << Params::RESET << endl;
                     parseException(e, "  Exception:");
                     return EXIT_FAILURE;
                 }
@@ -577,7 +570,7 @@ static int open(int argc, char* argv[])
             // and signed documents checksums are correct.
             try {
                 s->validate(policy);
-                cout << "    Validation: OK" << endl;
+                cout << "    Validation: " << Params::GREEN << "OK" << Params::RESET << endl;
             } catch(const Exception &e) {
                 function<void (const Exception &e)> validate = [=, &returnCode, &warnings, &validate] (const Exception &e)
                 {
@@ -600,11 +593,11 @@ static int open(int argc, char* argv[])
                 validate(e);
                 if(reportwarnings == WError || returnCode == EXIT_FAILURE)
                 {
-                    cout << "    Validation: FAILED" << endl;
+                    cout << "    Validation: " << Params::RED << "FAILED" << Params::RESET << endl;
                     parseException(e, "     Exception:");
                 }
                 else
-                    cout << "    Validation: OK" << endl;
+                    cout << "    Validation: " << Params::GREEN << "OK" << Params::RESET << endl;
             }
 
             // Get signature production place info.
@@ -623,8 +616,8 @@ static int open(int argc, char* argv[])
             if(!roles.empty())
             {
                 cout << "    Signer role(s):" << endl;
-                for(vector<string>::const_iterator iter = roles.begin(); iter != roles.end(); ++iter)
-                    cout << "      " << *iter << endl;
+                for(const string &role : roles)
+                    cout << "      " << role << endl;
             }
 
             vector<unsigned char> nonce = s->OCSPNonce();
@@ -643,10 +636,10 @@ static int open(int argc, char* argv[])
                 << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
             if(reportwarnings == WWarning && !warnings.empty())
             {
-                cout << "    Warnings: ";
+                cout << "    Warnings: " << Params::YELLOW;
                 for(const string &warning: warnings)
                     cout << warning << ", ";
-                cout << endl;
+                cout << Params::RESET << endl;
                 returnCode = EXIT_FAILURE;
             }
         }
@@ -803,9 +796,9 @@ static int signContainer(Container *doc, Signer *signer, bool dontValidate = fal
             return EXIT_SUCCESS;
         try {
             signature->validate();
-            printf("    Validation: OK\n");
+            cout << "    Validation: " << Params::GREEN << "OK" << Params::RESET << endl;
         } catch(const Exception &e) {
-            printf("    Validation: FAILED\n");
+            cout << "    Validation: " << Params::RED << "FAILED" << Params::RESET << endl;
             parseException(e, "     Exception:");
             return EXIT_FAILURE;
         }
@@ -971,14 +964,14 @@ static int websign(int argc, char* argv[])
                  << "Please enter signed digest in hex: " << endl;
             string signedData;
             cin >> signedData;
-            signature->setSignatureValue(hexToBin(signedData));
-            cout << "Test" << hexToBin(signedData);
+            signature->setSignatureValue(File::hexToBin(signedData));
+            cout << "Test" << File::hexToBin(signedData);
             signature->extendSignatureProfile(p.profile);
             try {
                 signature->validate();
-                printf("    Validation: OK\n");
+                cout << "    Validation: " << Params::GREEN << "OK" << Params::RESET << endl;
             } catch(const Exception &e) {
-                printf("    Validation: FAILED\n");
+                cout << "    Validation: " << Params::RED << "FAILED" << Params::RESET << endl;
                 parseException(e, "     Exception:");
                 returnCode = EXIT_FAILURE;
             }
@@ -1007,9 +1000,9 @@ static int tslcmd(int , char* [])
     try {
         cout << "  Signature: ";
         t.validate(CONF(TSLCerts));
-        cout << "VALID" << endl;
+        cout << Params::GREEN << "VALID" << Params::RESET << endl;
     } catch(const Exception &e) {
-        cout << "INVALID" << endl;
+        cout << Params::RED << "INVALID" << Params::RESET << endl;
         parseException(e, "Caught Exception:");
         returnCode = EXIT_FAILURE;
     }
@@ -1034,9 +1027,9 @@ static int tslcmd(int , char* [])
         try {
             cout << "        Signature: ";
             tp.validate(p.certs);
-            cout << "VALID" << endl;
+            cout << Params::GREEN << "VALID" << Params::RESET << endl;
         } catch(const Exception &e) {
-            cout << "INVALID" << endl;
+            cout << Params::RED << "INVALID" << Params::RESET << endl;
             parseException(e, "Caught Exception:");
             returnCode = EXIT_FAILURE;
         }
