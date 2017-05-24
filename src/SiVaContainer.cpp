@@ -68,12 +68,27 @@ void SignatureSiVa::setSignatureValue(const vector<unsigned char> &)
 
 void SignatureSiVa::validate() const
 {
-    if(_indication == "TOTAL-PASSED")
-        return;
+    validate(POLv2);
+}
+
+void SignatureSiVa::validate(const std::string &policy) const
+{
     Exception e(EXCEPTION_PARAMS("Signature validation"));
-    for(const Exception &error: _errors)
-        e.addCause(error);
-    throw e;
+    if(_indication == "TOTAL-PASSED")
+    {
+        if(_signatureLevel == "QES"|| _signatureLevel.empty() || policy == POLv1)
+            return;
+        Exception ex(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
+        ex.setCode(Exception::CertificateIssuerMissing);
+        e.addCause(ex);
+    }
+    else
+    {
+        for(const Exception &error: _errors)
+            e.addCause(error);
+    }
+    if(!e.causes().empty())
+        throw e;
 }
 
 
@@ -149,6 +164,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         s->_indication = signature.get<string>("indication");
         s->_subIndication = signature.get<string>("subIndication");
         s->_signedBy = signature.get<string>("signedBy");
+        s->_signatureLevel = signature.get<string>("signatureLevel");
         for(const jsonxx::Value *error: signature.get<jsonxx::Array>("errors").values())
         {
             string message = error->get<jsonxx::Object>().get<string>("content");

@@ -38,6 +38,7 @@ public:
     std::string signedBy() const override { return _signedBy; }
     std::string signatureMethod() const override { return std::string(); }
     void validate() const override;
+    void validate(const std::string &policy) const override;
     std::vector<unsigned char> dataToSign() const override;
     void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
 
@@ -48,7 +49,7 @@ private:
     SignatureSiVa() = default;
     DISABLE_COPY(SignatureSiVa);
 
-    std::string _id, _profile, _signedBy, _signingTime, _bestTime, _indication, _subIndication;
+    std::string _id, _profile, _signedBy, _signingTime, _bestTime, _indication, _subIndication, _signatureLevel;
     std::vector<Exception> _errors;
 
     friend SiVaContainer;
