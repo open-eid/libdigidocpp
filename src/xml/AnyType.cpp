@@ -21,6 +21,7 @@
 
 #include <xsd/cxx/xml/dom/parsing-source.hxx>
 #include <xsd/cxx/xml/dom/serialization-source.hxx>
+#include <xsd/cxx/xml/char-utf8.hxx>
 
 using namespace digidoc::xades;
 using namespace xercesc;
@@ -96,9 +97,8 @@ AnyType::AnyType(const DOMElement &e, Flags f, Container *c)
         if(p.cur_is_text())
         {
             const XMLCh *text = p.cur_text().getWholeText();
-            char *outbuf = XMLString::transcode(text);
-            text_ = std::string(outbuf);
-            XMLString::release(&outbuf);
+            XMLSize_t len = XMLString::stringLen(text);
+            text_ = char_utf8_transcoder<char>::to(text, len);
             isText = true;
             continue;
         }
