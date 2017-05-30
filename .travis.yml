@@ -79,7 +79,7 @@ addons:
     project:
       name: open-eid/libdigidocpp
     notification_email: raul@metsma.ee
-    build_command_prepend: mkdir coverity; cd coverity; cmake ..
+    build_command_prepend: mkdir coverity; cd coverity; cmake -DCMAKE_INSTALL_PREFIX=/Library/EstonianIDCard -DOPENSSL_ROOT_DIR=/Library/EstonianIDCard ..
     build_command: make
     branch_pattern: coverity_scan
 
