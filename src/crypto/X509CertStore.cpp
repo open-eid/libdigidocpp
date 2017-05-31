@@ -251,6 +251,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
 
 /**
  * Check if X509Cert is signed by trusted issuer
+ * @return false if QSCD check fails
  * @throw Exception if error
  */
 bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
@@ -335,14 +336,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
             }
         }
 
-        if(!isQCCompliant || !isQSCD)
-        {
-            Exception e(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
-            e.setCode(Exception::CertificateIssuerMissing);
-            throw e;
-        }
-
-        return true;
+        return isQCCompliant && isQSCD;
     }
 
     int err = X509_STORE_CTX_get_error(csc.get());
