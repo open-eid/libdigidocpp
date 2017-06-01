@@ -64,24 +64,24 @@ script: case ${TARGET} in
     make all zipdebug embedlibs pkgbuild && cd ..;
     ;;
   *)
-    docker run -e BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} -e DEBFULLNAME="Travis" -e RUN_TESTS=${RUN_TESTS} -e DEBEMAIL="travis-ci@travis" -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
+    docker run -e BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} -e DEBFULLNAME="Travis" -e RUN_TESTS=${RUN_TESTS} -e DEBEMAIL="travis-ci@travis" -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH:${TRAVIS_BRANCH} -e TARGET=${TARGET} -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
       apt-get update -qq; 
-      apt-get install -y dh-make devscripts dpkg-dev cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen libboost-test-dev git;
+      apt-get install -y dh-make devscripts dpkg-dev cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen libboost-test-dev git curl wget;
       export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}").${BUILD_NUMBER};
       dh_make --createorig --addmissing --defaultless -y -p libdigidocpp_${VERSION};
       dch --distribution $(lsb_release -cs) -v ${VERSION} "Release ${VERSION}.";
       dpkg-buildpackage -rfakeroot -us -uc;
+      if [ "${TARGET}" = "ubuntu:16.04" ]; then
+        export COVERITY_SCAN_PROJECT_NAME="open-eid/libdigidocpp";
+        export COVERITY_SCAN_NOTIFICATION_EMAIL="raul@metsma.ee";
+        export COVERITY_SCAN_BRANCH_PATTERN=coverity_scan;
+        export COVERITY_SCAN_BUILD_COMMAND_PREPEND="cmake .";
+        export COVERITY_SCAN_BUILD_COMMAND=make;
+        wget https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh;
+        bash travisci_build_coverity_scan.sh;
+      fi;
       git clean -dxf';
   esac
-
-addons:
-  coverity_scan:
-    project:
-      name: open-eid/libdigidocpp
-    notification_email: raul@metsma.ee
-    build_command_prepend: mkdir coverity; cd coverity; cmake -DCMAKE_INSTALL_PREFIX=/Library/EstonianIDCard -DOPENSSL_ROOT_DIR=/Library/EstonianIDCard ..
-    build_command: make
-    branch_pattern: coverity_scan
 
 before_deploy:
 - export VERSION=${TRAVIS_TAG:1}
