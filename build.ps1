@@ -152,8 +152,7 @@ if($doxygen) {
 & $light -nologo -out $msi_name -ext WixUIExtension `
   "-dWixUIBannerBmp=$libdigidocpp/cmake/modules/banner.bmp" `
   "-dWixUIDialogBmp=$libdigidocpp/cmake/modules/dlgbmp.bmp" `
-  "-dWixUILicenseRtf=$libdigidocpp/cmake/modules/LICENSE.LGPL.rtf" $lightext `
-  libdigidocpp.wixobj HeadersFragment.wixobj
+  $lightext libdigidocpp.wixobj HeadersFragment.wixobj
  
 if($sign) {
   Sign($msi_name)
