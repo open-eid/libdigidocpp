@@ -236,6 +236,8 @@ void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert
     DEBUG("SignatureXAdES_LT::addCertificateValue(%s, X509Cert{%s,%s})",
         certId.c_str(), x509.serial().c_str(), x509.subjectName().c_str());
 
+    createUnsignedSignatureProperties();
+
     UnsignedSignaturePropertiesType::CertificateValuesSequence &values =
             unsignedSignatureProperties().certificateValues();
     if(values.empty())
@@ -255,6 +257,8 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
 {
     DEBUG("SignatureXAdES_LT::addOCSPValue(%s, %s)", id.c_str(), ocsp.producedAt().c_str());
 
+    createUnsignedSignatureProperties();
+
     OCSPValuesType::EncapsulatedOCSPValueType ocspValueData(toBase64(ocsp.toDer()));
     ocspValueData.id(id);
 
@@ -263,13 +267,6 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
 
     RevocationValuesType revocationValues;
     revocationValues.oCSPValues(ocspValue);
-
-    if(!qualifyingProperties().unsignedProperties().present())
-    {
-        UnsignedPropertiesType usProp;
-        usProp.unsignedSignatureProperties(UnsignedSignaturePropertiesType());
-        qualifyingProperties().unsignedProperties(usProp);
-    }
 
     unsignedSignatureProperties().revocationValues().push_back(revocationValues);
     unsignedSignatureProperties().contentOrder().push_back(

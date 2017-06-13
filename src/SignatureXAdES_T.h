@@ -41,6 +41,7 @@ public:
     virtual void extendSignatureProfile(const std::string &profile) override;
 
 protected:
+    void createUnsignedSignatureProperties();
     xades::UnsignedSignaturePropertiesType& unsignedSignatureProperties() const;
 
 private:
