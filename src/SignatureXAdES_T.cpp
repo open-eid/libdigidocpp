@@ -48,6 +48,15 @@ SignatureXAdES_T::SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *
 
 SignatureXAdES_T::SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_B(sigdata, bdoc, relaxSchemaValidation) {}
 
+void SignatureXAdES_T::createUnsignedSignatureProperties()
+{
+    if(qualifyingProperties().unsignedProperties().present())
+        return;
+    UnsignedPropertiesType usProp;
+    usProp.unsignedSignatureProperties(UnsignedSignaturePropertiesType());
+    qualifyingProperties().unsignedProperties(usProp);
+}
+
 X509Cert SignatureXAdES_T::TimeStampCertificate() const
 {
     return TS(tsBase64()).cert();
@@ -69,12 +78,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     if(profile.find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
         return;
 
-    if(!qualifyingProperties().unsignedProperties().present())
-    {
-        UnsignedPropertiesType usProp;
-        usProp.unsignedSignatureProperties(UnsignedSignaturePropertiesType());
-        qualifyingProperties().unsignedProperties(usProp);
-    }
+    createUnsignedSignatureProperties();
 
     Digest calc;
     calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
