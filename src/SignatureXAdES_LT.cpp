@@ -220,9 +220,9 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
         (profile.find(ASiC_E::ASIC_TM_PROFILE) == string::npos ? "ASiC_E_BASELINE_LT" : "ASiC_E_BASELINE_LT_TM"));
     ocsp.verifyResponse(cert);
 
-    addOCSPValue(id().replace(0, 1, "N"), ocsp);
     addCertificateValue(id() + "-RESPONDER_CERT", ocsp.responderCert());
     addCertificateValue(id() + "-CA-CERT", issuer);
+    addOCSPValue(id().replace(0, 1, "N"), ocsp);
     sigdata_.clear();
 }
 
