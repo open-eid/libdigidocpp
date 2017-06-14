@@ -1,3 +1,11 @@
+Libdigidocpp library [3.13.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.1) release notes
+--------------------------------------
+- Restore compatibility with jdigidoc 3.11
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.0...v3.13.1)
+
+
+
 Libdigidocpp library [3.13.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.0) release notes
 --------------------------------------
 - Relax validation of BDOC to accept sub-elements of SignatureProductionPlace in any order
