@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<?if $(var.VCINSTALLDIR) = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC" ?>
+<?if $(env.VisualStudioVersion) = "14.0" ?>
 <?define VCVER = "140" ?>
 <?define VCRT = "vcruntime" ?>
 <?else?>
