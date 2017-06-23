@@ -13,7 +13,7 @@
 
 1. Install dependencies
 
-        sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev
+        sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev doxygen
 
 2. Fetch the source
 
