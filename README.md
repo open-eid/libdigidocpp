@@ -13,7 +13,7 @@
 
 1. Install dependencies
 
-        sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev doxygen
+        sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev doxygen libxerces-c-dev swig libboost-dev
 
 2. Fetch the source
 
@@ -25,6 +25,9 @@
         mkdir build
         cd build
         cmake ..
+
+   if you are seeing 'include could not find load file: VersionInfo',
+   you didn't do a recursive clone in the previous step.
 
 4. Build
 
