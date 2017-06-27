@@ -2,15 +2,15 @@
 
 case "$@" in
 *x86*)
-  TARGET_PATH=/Library/EstonianIDCard.androidx86
+  TARGET_PATH=/Library/libdigidocpp.androidx86
   ARCH="x86"
   ;;
 *arm64*)
-  TARGET_PATH=/Library/EstonianIDCard.androidarm64
+  TARGET_PATH=/Library/libdigidocpp.androidarm64
   ARCH="arm64-v8a"
   ;;
 *)
-  TARGET_PATH=/Library/EstonianIDCard.androidarm
+  TARGET_PATH=/Library/libdigidocpp.androidarm
   ARCH="armeabi-v7a"
   ;;
 esac

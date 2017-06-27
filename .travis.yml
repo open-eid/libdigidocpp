@@ -34,7 +34,6 @@ env:
   - RUN_TESTS=ALL
   - PATH=${PATH}:$HOME/.local/bin:$HOME/Library/Python/2.7/bin;
   - AWS_DEFAULT_REGION=eu-west-1
-  - secure: VTpLjRFkVZeqSiP/tea7b5WiMU+PjQJlpny8/QEYazRNhn/uie69aT8VvEdkpsUM1AEx8yPnNmVGShvoNNaOi/AoqynTIKgeGPCj44h6lCnPpByGVur0avc5WrRj2xBbPBBUw1rsL65wZ13MufmRLUwnmmVYQZ3qDBdpgZvCEhA=
 
 before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
     brew install swig;
@@ -46,7 +45,7 @@ before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
     else
       ./prepare_osx_build_environment.sh all ${TARGET};
       if [ ${AWS_ACCESS_KEY_ID:+1} ]; then
-        cd /Library && zip -q -r $OLDPWD/${HASH}.zip EstonianIDCard* && cd $OLDPWD;
+        cd /Library && zip -q -r $OLDPWD/${HASH}.zip libdigidocpp* && cd $OLDPWD;
         aws s3 cp ${HASH}.zip s3://open-eid/libdigidocpp-cache/${TARGET}/${HASH}.zip --acl public-read;
       fi
     fi
@@ -57,10 +56,10 @@ script: case ${TARGET} in
     ;;
   *android*)
     cd examples/libdigidocpp-android && ./build-library.sh ${TARGET} && cd ../..;
-    sudo /Library/EstonianIDCard.${TARGET}/bin/*strip -s /Library/EstonianIDCard.${TARGET}/lib/*.so;
+    sudo /Library/libdigidocpp.${TARGET}/bin/*strip -s /Library/libdigidocpp.${TARGET}/lib/*.so;
     ;;
   *osx*)
-    mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/Library/EstonianIDCard -DOPENSSL_ROOT_DIR=/Library/EstonianIDCard ..;
+    mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/Library/libdigidocpp -DOPENSSL_ROOT_DIR=/Library/libdigidocpp ..;
     make all zipdebug embedlibs pkgbuild && cd ..;
     ;;
   *)
@@ -91,8 +90,7 @@ before_deploy:
 - tar czf libdigidocpp-${VERSION}.tar.gz --exclude-vcs libdigidocpp-${VERSION}
 deploy:
   provider: releases
-  api_key:
-    secure: CXl5yp2RQ1VpUWU3j8hsTrQ38TwShaUSIQoAAfHjEdMZvk5GAR0JFzrswpE2AWOEEDHsQV+66DHydqAnv4fYQlAZdXSc44PlNiIC3LV15sVdtoLLZhFBM/UWxDJ1tPMeU654d/SUeXWLd3CMHMrbOEyUA+ymUR1icmc8xHNGqpo=
+  api_key: ${GITHUB_ACCESS_TOKEN}
   file: libdigidocpp-${VERSION}.tar.gz
   skip_cleanup: true
   on:

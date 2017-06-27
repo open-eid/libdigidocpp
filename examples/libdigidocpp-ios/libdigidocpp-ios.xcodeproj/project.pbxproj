@@ -313,8 +313,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				"SDKPATH[sdk=iphoneos*]" = /Library/EstonianIDCard.iphoneos;
-				"SDKPATH[sdk=iphonesimulator*]" = /Library/EstonianIDCard.iphonesimulator;
+				"SDKPATH[sdk=iphoneos*]" = /Library/libdigidocpp.iphoneos;
+				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
 			};
 			name = Debug;
 		};
@@ -344,8 +344,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				"SDKPATH[sdk=iphoneos*]" = /Library/EstonianIDCard.iphoneos;
-				"SDKPATH[sdk=iphonesimulator*]" = /Library/EstonianIDCard.iphonesimulator;
+				"SDKPATH[sdk=iphoneos*]" = /Library/libdigidocpp.iphoneos;
+				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
 			};
 			name = Release;
 		};
