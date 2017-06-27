@@ -13,7 +13,7 @@ case "$@" in
   ;;
 esac
 
-TARGET_PATH=/Library/EstonianIDCard.${TARGET}
+TARGET_PATH=/Library/libdigidocpp.${TARGET}
 rm -rf ${TARGET}
 mkdir -p ${TARGET}
 cd ${TARGET}

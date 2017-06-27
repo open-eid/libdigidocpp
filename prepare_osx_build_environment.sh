@@ -4,7 +4,7 @@ set -e
 XERCES_DIR=xerces-c-3.1.4
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.0.2k
+OPENSSL_DIR=openssl-1.0.2l
 #OPENSSL_DIR=openssl-1.1.0e
 LIBXML2_DIR=libxml2-2.9.4
 ANDROID_NDK=android-ndk-r14
@@ -32,7 +32,7 @@ case "$@" in
   esac
   echo "Building for Android ${ARCH} ${API}"
 
-  TARGET_PATH=/Library/EstonianIDCard.android${ARCH}
+  TARGET_PATH=/Library/libdigidocpp.android${ARCH}
   SYSROOT=${TARGET_PATH}/sysroot
   export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
   export CC=clang
@@ -61,7 +61,7 @@ case "$@" in
   ;;
 *ios*)
   echo "Building for iOS"
-  TARGET_PATH=/Library/EstonianIDCard.iphoneos
+  TARGET_PATH=/Library/libdigidocpp.iphoneos
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
   SDK_CFLAGS="-miphoneos-version-min=9.0"
@@ -71,7 +71,7 @@ case "$@" in
   ;;
 *simulator*)
   echo "Building for iOS Simulator"
-  TARGET_PATH=/Library/EstonianIDCard.iphonesimulator
+  TARGET_PATH=/Library/libdigidocpp.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
   SDK_CFLAGS="-miphoneos-version-min=9.0"
@@ -81,7 +81,7 @@ case "$@" in
   ;;
 *)
   echo "Building for OSX"
-  TARGET_PATH=/Library/EstonianIDCard
+  TARGET_PATH=/Library/libdigidocpp
   CONFIGURE="--disable-static --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   SDK_CFLAGS="-mmacosx-version-min=10.9"
