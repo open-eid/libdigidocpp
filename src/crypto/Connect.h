@@ -50,6 +50,10 @@ public:
             return result.find("301") != std::string::npos ||
                    result.find("302") != std::string::npos;
         }
+        bool isForbidden() const
+        {
+            return result.find("403") != std::string::npos;
+        }
     };
 
     Connect(const std::string &url, const std::string &method = "POST",

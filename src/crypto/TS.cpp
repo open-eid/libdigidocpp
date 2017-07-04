@@ -96,15 +96,20 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
     unsigned char *p = data.data();
     i2d_TS_REQ(req.get(), &p);
 
-    string result = Connect(url, "POST", 0, useragent).exec({
+    Connect::Result result = Connect(url, "POST", 0, useragent).exec({
         {"Content-Type", "application/timestamp-query"},
         {"Accept", "application/timestamp-reply"},
         {"Connection", "Close"},
         {"Cache-Control", "no-cache"}
-    }, data).content;
+    }, data);
 
-    const unsigned char *p2 = (const unsigned char*)result.c_str();
-    SCOPE(TS_RESP, resp, d2i_TS_RESP(0, &p2, long(result.size())));
+    if(result.isForbidden())
+        THROW("Time-stamp service responded - Forbidden");
+    if(!result)
+        THROW("Failed to send Time-stamp request");
+
+    const unsigned char *p2 = (const unsigned char*)result.content.c_str();
+    SCOPE(TS_RESP, resp, d2i_TS_RESP(0, &p2, long(result.content.size())));
     if(!resp)
         THROW_OPENSSLEXCEPTION("Failed to parse TS response.");
 
