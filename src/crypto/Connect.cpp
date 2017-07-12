@@ -29,6 +29,8 @@
 
 #include <zlib.h>
 
+#include <cstring>
+#include <functional>
 #include <thread>
 
 #ifdef __ANDROID__
