@@ -77,7 +77,7 @@ static const ASN1_GENERALIZEDTIME *OCSP_resp_get0_produced_at(const OCSP_BASICRE
 /**
  * Initialize OCSP certificate validator.
  */
-OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned char> &nonce, const string &useragent)
+OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned char> &nonce, const string &format, bool TMProfile)
 {
     if(!cert)
         THROW("Can not check X.509 certificate, certificate is NULL pointer.");
@@ -85,6 +85,15 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
         THROW("Can not check X.509 certificate, issuer certificate is NULL pointer.");
 
     string url = Conf::instance()->ocsp(cert.issuerName("CN"));
+    if(url.empty())
+    {
+        STACK_OF(OPENSSL_STRING) *urls = X509_get1_ocsp(cert.handle());
+        if(sk_OPENSSL_STRING_num(urls) > 0)
+            url = sk_OPENSSL_STRING_value(urls, 0);
+        X509_email_free(urls);
+    }
+    if(url.empty() || (TMProfile && url.find(".sk.ee") == string::npos))
+        url = "http://ocsp.sk.ee/_proxy";
     DEBUG("OCSP url %s", url.c_str());
     if(url.empty())
     {
@@ -94,8 +103,10 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     }
 
     OCSP_CERTID *certId = OCSP_cert_to_id(0, cert.handle(), issuer.handle());
-    SCOPE(OCSP_REQUEST, req, createRequest(certId, nonce));
-    resp.reset(sendRequest(url, req.get(), useragent), OCSP_RESPONSE_free);
+    SCOPE(OCSP_REQUEST, req, createRequest(certId, nonce,
+        !Conf::instance()->PKCS12Disable() && url.find("ocsp.sk.ee") != string::npos));
+    resp.reset(sendRequest(url, req.get(), "format: " + format + " profile: " +
+        (TMProfile ? "ASiC_E_BASELINE_LT_TM" : "ASiC_E_BASELINE_LT")), OCSP_RESPONSE_free);
 
     switch(int respStatus = OCSP_response_status(resp.get()))
     {
@@ -168,7 +179,7 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
  * @param nonce NONCE field value in OCSP request.
  * @return returns created OCSP request.
  */
-OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned char> &nonce)
+OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned char> &nonce, bool signRequest)
 {
     SCOPE(OCSP_REQUEST, req, OCSP_REQUEST_new());
     if(!req)
@@ -181,7 +192,7 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
     if(OCSP_request_add1_nonce(req.get(), const_cast<unsigned char*>(nonce.data()), int(nonce.size())) <= 0)
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 #else
-    ASN1_OCTET_STRING *st = ASN1_OCTET_STRING_new();
+    SCOPE(ASN1_OCTET_STRING, st, ASN1_OCTET_STRING_new());
     if(nonce.empty())
     {
         st->length = 20;
@@ -189,17 +200,12 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
         RAND_bytes(st->data, st->length);
     }
     else
-    {
-        ASN1_OCTET_STRING_set(st, nonce.data(), nonce.size());
-        X509_EXTENSION *ex = X509_EXTENSION_create_by_NID(0, NID_id_pkix_OCSP_Nonce, 0, st);
-        ASN1_OCTET_STRING_free(st);
-        if(!OCSP_REQUEST_add_ext(req.get(), ex, 0))
-            THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
-    }
+        ASN1_OCTET_STRING_set(st.get(), nonce.data(), int(nonce.size()));
+    if(!OCSP_REQUEST_add_ext(req.get(), X509_EXTENSION_create_by_NID(0, NID_id_pkix_OCSP_Nonce, 0, st.get()), 0))
+        THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 #endif
 
-    Conf *c = Conf::instance();
-    if(!c->PKCS12Disable())
+    if(signRequest)
     {
         X509* signCert;
         EVP_PKEY* signKey;
@@ -221,8 +227,6 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
             const unsigned char *p = CFDataGetBytePtr(certdata);
             signCert = d2i_X509(0, &p, CFDataGetLength(certdata));
             CFRelease(certdata);
-            if(!signCert)
-                THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate");
 
             CFDataRef keydata = nullptr;
             SecItemImportExportKeyParameters params;
@@ -233,8 +237,8 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
             CFRelease(keyref);
             if(!keydata)
                 THROW("Failed to read PKCS12 key");
-            BIO *bio = BIO_new_mem_buf((void*)CFDataGetBytePtr(keydata), CFDataGetLength(keydata));
-            signKey = d2i_PKCS8PrivateKey_bio(bio, 0, [](char *buf, int bufsiz, int, void *) -> int {
+            SCOPE(BIO, bio, BIO_new_mem_buf((void*)CFDataGetBytePtr(keydata), CFDataGetLength(keydata)));
+            signKey = d2i_PKCS8PrivateKey_bio(bio.get(), 0, [](char *buf, int bufsiz, int, void *) -> int {
                 static const char password[] = "pass";
                 int res = strlen(password);
                 if (res > bufsiz)
@@ -243,29 +247,27 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
                 return res;
             }, 0);
             CFRelease(keydata);
-            BIO_free(bio);
-
-            if(!signKey)
-                THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 key");
         } else {
 #endif
-        BIO *bio = BIO_new_file(c->PKCS12Cert().c_str(), "rb");
+        Conf *c = Conf::instance();
+        SCOPE(BIO, bio, BIO_new_file(c->PKCS12Cert().c_str(), "rb"));
         if(!bio)
             THROW_OPENSSLEXCEPTION("Failed to open PKCS12 certificate: %s.", c->PKCS12Cert().c_str());
-        SCOPE(PKCS12, p12, d2i_PKCS12_bio(bio, 0));
-        BIO_free(bio);
+        SCOPE(PKCS12, p12, d2i_PKCS12_bio(bio.get(), 0));
         if(!p12)
             THROW_OPENSSLEXCEPTION("Failed to read PKCS12 certificate: %s.", c->PKCS12Cert().c_str());
-
-        int res = PKCS12_parse(p12.get(), c->PKCS12Pass().c_str(), &signKey, &signCert, 0);
-        if(!res)
+        if(!PKCS12_parse(p12.get(), c->PKCS12Pass().c_str(), &signKey, &signCert, 0))
             THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate.");
         else // Hack: clear PKCS12_parse error ERROR: 185073780 - error:0B080074:x509 certificate routines:X509_check_private_key:key values mismatch
             OpenSSLException();
 #ifdef USE_KEYCHAIN
         }
 #endif
-        if(!OCSP_request_sign(req.get(), signCert, signKey, EVP_sha1(), 0, 0))
+        if(!signCert)
+            THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate");
+        if(!signKey)
+            THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 key");
+        if(!OCSP_request_sign(req.get(), signCert, signKey, EVP_sha256(), 0, 0))
             THROW_OPENSSLEXCEPTION("Failed to sign OCSP request.");
         X509_free(signCert);
         EVP_PKEY_free(signKey);
@@ -365,7 +367,6 @@ OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const st
     user_agent += " APP " + appInfo() + " " + useragent;
 
     OCSP_RESPONSE* resp = nullptr;
-#if OPENSSL_VERSION_NUMBER > 0x10000000
     SCOPE(OCSP_REQ_CTX, rctx, OCSP_sendreq_new(connection.get(), const_cast<char*>(url.c_str()), 0, -1));
     if(!rctx)
         THROW_OPENSSLEXCEPTION("Failed to set OCSP request headers.");
@@ -379,18 +380,6 @@ OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const st
         THROW_OPENSSLEXCEPTION("Failed to set OCSP request headers.");
     if(!OCSP_sendreq_nbio(&resp, rctx.get()))
         THROW_OPENSSLEXCEPTION("Failed to send OCSP request.");
-#else
-    // HACK to alter openssl OCSP request http header
-    string header;
-    header += url + " HTTP/1.0\r\n";
-    header += "Host: " + hostname += "\r\n";
-    if(!auth.empty())
-        header += "Proxy-Authorization: " + auth + "\r\n";
-    header += "User-Agent: " + user_agent + "\r\n";
-    header += "X-Ignore:"; // needed for disabling OCSP_sendreq_bio "HTTP/1.0" headers
-    resp = OCSP_sendreq_bio(connection.get(), const_cast<char*>(header.c_str()), req);
-#endif
-
     if(!resp)
         THROW_OPENSSLEXCEPTION("Failed to send OCSP request.");
     return resp;
@@ -477,8 +466,9 @@ vector<unsigned char> OCSP::nonce() const
     vector<unsigned char> nonce;
     if(!basic)
         return nonce;
-
     int resp_idx = OCSP_BASICRESP_get_ext_by_NID(basic.get(), NID_id_pkix_OCSP_Nonce, -1);
+    if(resp_idx < 0)
+        return nonce;
     X509_EXTENSION *ext = OCSP_BASICRESP_get_ext(basic.get(), resp_idx);
     if(!ext)
         return nonce;
@@ -502,6 +492,8 @@ string OCSP::producedAt() const
     if(!basic)
         return result;
     const ASN1_GENERALIZEDTIME *time = OCSP_resp_get0_produced_at(basic.get());
+    if(!time)
+        return result;
     result.assign(time->data, time->data+time->length);
     return result;
 }

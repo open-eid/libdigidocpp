@@ -143,7 +143,7 @@ string Conf::ocsp(const string &issuer) const
         {"Nacionalinis sertifikavimo centras (IssuingCA A)", "http://demo.sk.ee/ocsp"},
     };
     auto pos = ocsplist.find(issuer);
-    return pos == ocsplist.end() ? "http://ocsp.sk.ee/_proxy" : pos->second;
+    return pos == ocsplist.end() ? string() : pos->second;
 }
 
 /**
