@@ -5,9 +5,9 @@ XERCES_DIR=xerces-c-3.1.4
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2l
-#OPENSSL_DIR=openssl-1.1.0e
+#OPENSSL_DIR=openssl-1.1.0f
 LIBXML2_DIR=libxml2-2.9.4
-ANDROID_NDK=android-ndk-r14
+ANDROID_NDK=android-ndk-r14b
 ARGS="$@"
 
 case "$@" in
@@ -64,8 +64,7 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp.iphoneos
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
-  SDK_CFLAGS="-miphoneos-version-min=9.0"
-  export CFLAGS="-arch armv7 -arch armv7s -arch arm64 ${SDK_CFLAGS} -isysroot ${SYSROOT}"
+  export CFLAGS="-arch armv7 -arch armv7s -arch arm64 -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ARCHS="armv7 armv7s arm64"
   ;;
@@ -74,18 +73,16 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
-  SDK_CFLAGS="-miphoneos-version-min=9.0"
-  export CFLAGS="-arch i386 -arch x86_64 ${SDK_CFLAGS} -isysroot ${SYSROOT}"
+  export CFLAGS="-arch i386 -arch x86_64 -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ARCHS="i386 x86_64"
   ;;
 *)
   echo "Building for OSX"
   TARGET_PATH=/Library/libdigidocpp
-  CONFIGURE="--disable-static --disable-dependency-tracking"
+  CONFIGURE="--disable-static --enable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
-  SDK_CFLAGS="-mmacosx-version-min=10.9"
-  export CFLAGS="${SDK_CFLAGS}"
+  export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ARCHS="x86_64"
   ;;
@@ -130,8 +127,6 @@ function xalan {
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
         -DCMAKE_C_COMPILER_WORKS=yes \
         -DCMAKE_CXX_COMPILER_WORKS=yes \
-        -DCMAKE_C_FLAGS="${SDK_CFLAGS}" \
-        -DCMAKE_CXX_FLAGS="${SDK_CFLAGS}" \
         -DCMAKE_BUILD_TYPE="Release" \
         -DCMAKE_OSX_SYSROOT=${SYSROOT} \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
@@ -177,6 +172,13 @@ function xml_security {
 
 function libxml2 {
     echo Building ${LIBXML2_DIR}
+    case "${ARGS}" in
+    *android*) ;;
+    *)
+      echo "Not needed"
+      return 0
+      ;;
+    esac
     if [ ! -f ${LIBXML2_DIR}.tar.gz ]; then
         curl -O http://xmlsoft.org/sources/${LIBXML2_DIR}.tar.gz
     fi
@@ -184,6 +186,9 @@ function libxml2 {
     tar xf ${LIBXML2_DIR}.tar.gz
     cd ${LIBXML2_DIR}
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --without-python
+    # Android is missing glob.h
+    sed -ie 's!runtest$(EXEEXT)!!' Makefile
+    sed -ie 's!testrecurse$(EXEEXT)!!' Makefile
     make -s
     sudo make install
     cd ..
@@ -234,10 +239,10 @@ function openssl {
         do
             if [[ "${ARCH}" == "x86_64" ]]; then
                 ./Configure darwin64-x86_64-cc --openssldir=${TARGET_PATH} no-hw
-                sed -ie 's!^CFLAG=!CFLAG=-isysroot '${SYSROOT}' '${SDK_CFLAGS}' !' Makefile
+                sed -ie 's!^CFLAG=!CFLAG=-isysroot '${SYSROOT}' !' Makefile
             else
                 ./Configure iphoneos-cross --openssldir=${TARGET_PATH} no-hw
-                sed -ie 's!-isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!-arch '${ARCH}' -isysroot '${SYSROOT}' '${SDK_CFLAGS}'!' Makefile
+                sed -ie 's!-isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!-arch '${ARCH}' -isysroot '${SYSROOT}'!' Makefile
             fi
             make -s depend all install_sw INSTALL_PREFIX=${PWD}/${ARCH} > /dev/null
             make clean
@@ -250,7 +255,6 @@ function openssl {
         ;;
     *)
         KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw enable-ec_nistp_64_gcc_128
-        sed -ie 's!^CFLAG=!CFLAG='${SDK_CFLAGS}' !' Makefile
         make -s
         sudo make install_sw
         ;;
@@ -277,6 +281,9 @@ case "$@" in
     echo "Usage:"
     echo "  $0 [target] [task]"
     echo "  target: osx ios simulator androidarm androidarm64 androidx86"
-    echo "  tasks: xerces, xalan, xmlsec, xsd, all, help"
+    echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
+    echo "To control iOS, macOS minimum deployment target set environment variables:"
+    echo " - MACOSX_DEPLOYMENT_TARGET=10.10"
+    echo " - IPHONEOS_DEPLOYMENT_TARGET=9.0"
     ;;
 esac
