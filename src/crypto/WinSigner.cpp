@@ -88,7 +88,7 @@ public:
     HCRYPTPROV_OR_NCRYPT_KEY_HANDLE key = 0;
     DWORD spec = 0;
     BOOL freeKey = false;
-    wstring pin;
+    string pin;
     bool selectFirst = false;
 };
 
@@ -117,10 +117,10 @@ BOOL WinSignerPrivate::CertFilter(PCCERT_CONTEXT cert_context, BOOL *, void *)
         break;
     }
 
-    X509Cert cert( vector<unsigned char>(cert_context->pbCertEncoded,
+    X509Cert cert(vector<unsigned char>(cert_context->pbCertEncoded,
         cert_context->pbCertEncoded+cert_context->cbCertEncoded));
     vector<X509Cert::KeyUsage> usage = cert.keyUsage();
-    return find(usage.begin(), usage.end(), X509Cert::NonRepudiation) != usage.end();
+    return find(usage.cbegin(), usage.cend(), X509Cert::NonRepudiation) != usage.cend();
 }
 
 /**
@@ -209,7 +209,7 @@ X509Cert WinSigner::cert() const
  */
 void WinSigner::setPin(const string &pin)
 {
-    d->pin = util::File::encodeName(pin);
+    d->pin = pin;
 }
 
 /**
@@ -243,9 +243,15 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     case CERT_NCRYPT_KEY_SPEC:
     {
         if(!d->pin.empty())
-            err = NCryptSetProperty(d->key, NCRYPT_PIN_PROPERTY, PBYTE(d->pin.c_str()), DWORD(d->pin.size()), 0);
-        err = NCryptSignHash(d->key, &padInfo, PBYTE(&digest[0]), DWORD(digest.size()),
-            &signature[0], DWORD(signature.size()), (DWORD*)&size, BCRYPT_PAD_PKCS1);
+        {
+            wstring pin = util::File::encodeName(d->pin);
+            err = NCryptSetProperty(d->key, NCRYPT_PIN_PROPERTY, PBYTE(pin.c_str()), DWORD(pin.size()), 0);
+            if(err != ERROR_SUCCESS)
+                break;
+        }
+
+        err = NCryptSignHash(d->key, &padInfo, PBYTE(digest.data()), DWORD(digest.size()),
+            signature.data(), DWORD(signature.size()), &size, BCRYPT_PAD_PKCS1);
         break;
     }
     case AT_SIGNATURE:
@@ -253,6 +259,13 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     {
         if(method == URI_RSA_SHA224)
             THROW("Unsupported digest");
+
+        if(!d->pin.empty() &&
+           !CryptSetProvParam(d->key, d->spec == AT_SIGNATURE ? PP_SIGNATURE_PIN : PP_KEYEXCHANGE_PIN, LPBYTE(d->pin.c_str()), 0))
+        {
+            err = LONG(GetLastError());
+            break;
+        }
 
         HCRYPTHASH hash = 0;
         if(!CryptCreateHash(d->key, alg, 0, 0, &hash))
@@ -263,8 +276,8 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
             CryptDestroyHash(hash);
             THROW("Failed to sign");
         }
-        if(!CryptSignHashW(hash, AT_SIGNATURE, 0, 0, LPBYTE(signature.data()), &size))
-            err = GetLastError();
+        if(!CryptSignHashW(hash, AT_SIGNATURE, 0, 0, signature.data(), &size))
+            err = LONG(GetLastError());
         std::reverse(signature.begin(), signature.end());
 
         CryptDestroyHash(hash);
@@ -274,7 +287,6 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
         THROW("Failed to sign");
     }
     signature.resize(size);
-
 
     switch(err)
     {
@@ -286,6 +298,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
         e.setCode(Exception::PINCanceled);
         throw e;
     }
+    case SCARD_W_WRONG_CHV:
     default:
         ostringstream s;
         s << "Failed to login to token: " << err;
