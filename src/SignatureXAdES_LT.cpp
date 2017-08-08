@@ -141,7 +141,7 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
         vector<Exception> ocspExceptions;
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: revSeq.front().oCSPValues()->encapsulatedOCSPValue())
         {
-            OCSP ocsp(vector<unsigned char>(resp.data(), resp.data()+resp.size()));
+            OCSP ocsp(vector<unsigned char>(resp.begin(), resp.end()));
             try {
                 ocsp.verifyResponse(signingCertificate());
                 foundSignerOCSP = true;
@@ -174,7 +174,7 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
                 if((producedAt_t - timeT > 15 * 60 || timeT - producedAt_t > 15 * 60) &&
                     !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
                 {
-                    Exception e(EXCEPTION_PARAMS("TimeStamp time and OCSP producedAt are over 15m TS: %s OCSP: %s", ocsp.producedAt().c_str(), TimeStampTime().c_str()));
+                    Exception e(EXCEPTION_PARAMS("TimeStamp time and OCSP producedAt are over 15m off TS: %s OCSP: %s", TimeStampTime().c_str(), ocsp.producedAt().c_str()));
                     e.setCode(Exception::ProducedATLateWarning);
                     exception.addCause(e);
                 }
@@ -293,7 +293,7 @@ vector<unsigned char> SignatureXAdES_LT::getOCSPResponseValue() const
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
         {
             try {
-                vector<unsigned char> data(resp.data(), resp.data()+resp.size());
+                vector<unsigned char> data(resp.begin(), resp.end());
                 OCSP(data).verifyResponse(signingCertificate());
                 return data;
             } catch(const Exception &) {
