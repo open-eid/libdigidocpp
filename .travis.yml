@@ -11,11 +11,11 @@ matrix:
     env: TARGET=32bit/ubuntu:16.04
     sudo: false
   - os: osx
-    env: TARGET=osx
+    env: TARGET=osx MACOSX_DEPLOYMENT_TARGET=10.10
   - os: osx
-    env: TARGET=ios
+    env: TARGET=ios IPHONEOS_DEPLOYMENT_TARGET=9.0
   - os: osx
-    env: TARGET=simulator
+    env: TARGET=simulator IPHONEOS_DEPLOYMENT_TARGET=9.0
   - os: osx
     env: TARGET=androidarm
   - os: osx
@@ -37,6 +37,7 @@ env:
 
 before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
     brew install swig;
+    brew upgrade cmake;
     HASH=($(shasum prepare_osx_build_environment.sh));
     pip install --user awscli > /dev/null;
     aws s3 cp s3://open-eid/libdigidocpp-cache/${TARGET}/${HASH}.zip ${HASH}.zip --no-sign-request;
