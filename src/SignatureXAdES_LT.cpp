@@ -61,7 +61,7 @@ SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool 
                 THROW("Could not find certificate issuer '%s' in certificate store.",
                     cert.issuerName().c_str());
 
-            OCSP ocsp(cert, issuer, vector<unsigned char>(), "format: " + bdoc->mediaType() + " version: " + policy());
+            OCSP ocsp(cert, issuer, vector<unsigned char>(), bdoc->mediaType(), false);
             addOCSPValue(id().replace(0, 1, "N"), ocsp);
         }
     } catch(const Exception &) {
@@ -216,8 +216,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
         THROW("Could not find certificate issuer '%s' in certificate store.",
             cert.issuerName().c_str());
 
-    OCSP ocsp(cert, issuer, nonce, "format: " + bdoc->mediaType() + " profile: " +
-        (profile.find(ASiC_E::ASIC_TM_PROFILE) == string::npos ? "ASiC_E_BASELINE_LT" : "ASiC_E_BASELINE_LT_TM"));
+    OCSP ocsp(cert, issuer, nonce, bdoc->mediaType(), profile.find(ASiC_E::ASIC_TM_PROFILE) != string::npos);
     ocsp.verifyResponse(cert);
 
     addCertificateValue(id() + "-RESPONDER_CERT", ocsp.responderCert());

@@ -40,7 +40,7 @@ namespace digidoc
 
       public:
           OCSP(const X509Cert &cert, const X509Cert &issuer,
-               const std::vector<unsigned char> &nonce, const std::string &useragent = "");
+               const std::vector<unsigned char> &nonce, const std::string &format, bool TMProfile);
           OCSP(const std::vector<unsigned char> &data);
 
           std::vector<unsigned char> nonce() const;
@@ -51,7 +51,7 @@ namespace digidoc
           void verifyResponse(const X509Cert &cert) const;
 
       private:
-          OCSP_REQUEST* createRequest(OCSP_CERTID *certId, const std::vector<unsigned char> &nonce);
+          OCSP_REQUEST* createRequest(OCSP_CERTID *certId, const std::vector<unsigned char> &nonce, bool signRequest);
           OCSP_RESPONSE* sendRequest(const std::string &url, OCSP_REQUEST *req, const std::string &useragent);
 
           std::shared_ptr<OCSP_RESPONSE> resp;
