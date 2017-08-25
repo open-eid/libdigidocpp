@@ -22,6 +22,7 @@
 #include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
+#include "util/File.h"
 
 #include <openssl/asn1t.h>
 #include <openssl/err.h>
@@ -29,6 +30,7 @@
 #include <openssl/x509v3.h>
 
 #include <cstring>
+#include <iterator>
 #include <set>
 
 using namespace digidoc;
@@ -126,10 +128,10 @@ int X509Crypto::compareIssuerToString(const string &name) const
         "DC", "domainComponent",
         "UID", "userId"
     };
-    size_t old = 0;
-    while(true)
+
+    for(size_t old = 0, pos = 0; ; )
     {
-        size_t pos = name.find(",", old);
+        pos = name.find(",", old);
         if(pos == string::npos)
         {
             pos = name.size();
@@ -138,8 +140,11 @@ int X509Crypto::compareIssuerToString(const string &name) const
         }
         else
         {
-            if(name.compare(pos-1, 1, "\\") == 0)
+            if(name[pos-1] == '\\')
+            {
+                old = pos;
                 continue;
+            }
         }
 
         string nameitem = name.substr(old, pos - old);
@@ -154,7 +159,21 @@ int X509Crypto::compareIssuerToString(const string &name) const
             continue;
 
         ASN1_OBJECT *obja = OBJ_txt2obj(obj.c_str(), 0);
-        string value = nameitem.substr(pos+1, pos-old);
+        string tmp = nameitem.substr(pos+1, pos-old);
+
+        string value;
+        char data[] = "00";
+        for(string::const_iterator i = tmp.cbegin(); i != tmp.cend(); ++i)
+        {
+            if(*i == '\\' && distance(i, tmp.cend()) > 2 && isxdigit(*(i+1)) && isxdigit(*(i+2)))
+            {
+                data[0] = *(++i);
+                data[1] = *(++i);
+                value += static_cast<char>(strtoul(data, 0, 16));
+            }
+            else
+                value += *i;
+        }
 
         bool found = false;
         X509_NAME *issuer = X509_get_issuer_name(cert.handle());
