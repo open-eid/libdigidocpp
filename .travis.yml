@@ -13,7 +13,7 @@ matrix:
   - os: osx
     env: TARGET=osx MACOSX_DEPLOYMENT_TARGET=10.10
   - os: osx
-    env: TARGET=ios IPHONEOS_DEPLOYMENT_TARGET=9.0
+    env: TARGET=ios IPHONEOS_DEPLOYMENT_TARGET=9.0 ARCHS="armv7 arm64"
   - os: osx
     env: TARGET=simulator IPHONEOS_DEPLOYMENT_TARGET=9.0
   - os: osx
