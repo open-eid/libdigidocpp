@@ -64,27 +64,27 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp.iphoneos
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
-  export CFLAGS="-arch armv7 -arch armv7s -arch arm64 -isysroot ${SYSROOT}"
+  : ${ARCHS:="armv7 armv7s arm64"}
+  export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
-  ARCHS="armv7 armv7s arm64"
   ;;
 *simulator*)
   echo "Building for iOS Simulator"
   TARGET_PATH=/Library/libdigidocpp.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
-  export CFLAGS="-arch i386 -arch x86_64 -isysroot ${SYSROOT}"
+  :  ${ARCHS:="i386 x86_64"}
+  export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
-  ARCHS="i386 x86_64"
   ;;
 *)
   echo "Building for OSX"
   TARGET_PATH=/Library/libdigidocpp
   CONFIGURE="--disable-static --enable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
+  ARCHS="x86_64"
   export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
-  ARCHS="x86_64"
   ;;
 esac
 
@@ -282,8 +282,12 @@ case "$@" in
     echo "  $0 [target] [task]"
     echo "  target: osx ios simulator androidarm androidarm64 androidx86"
     echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
-    echo "To control iOS, macOS minimum deployment target set environment variables:"
+    echo "To control iOS, macOS builds set environment variables:"
+    echo " minimum deployment target"
     echo " - MACOSX_DEPLOYMENT_TARGET=10.10"
     echo " - IPHONEOS_DEPLOYMENT_TARGET=9.0"
+    echo " archs to build on iOS"
+    echo " - ARCHS=\"armv7 armv7s arm64\" (iOS)"
+    echo " - ARCHS=\"i386 x86_64\" (iPhoneSimulator)"
     ;;
 esac
