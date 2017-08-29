@@ -71,7 +71,7 @@ BinInputStream* URIResolver::resolveURI(const XMLCh *uri)
             "XSECURIResolverXerces - anonymous references not supported in default URI Resolvers");
 
 #ifdef _WIN32
-    string _uri = File::decodeName(uri);
+    string _uri = File::decodeName(reinterpret_cast<const wchar_t *>(uri));
 #else
     string _uri = X(uri).toString();
 #endif

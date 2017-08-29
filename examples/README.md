@@ -6,4 +6,3 @@ Contents of this folder is provided on as is terms, whithout support.
 * [libdigidocpp-android](./libdigidocpp-android/README.md) - example project to use on Android platform
 * [DigiDocCSharp](./DigiDocCSharp/README.md) - example project to use C# on Windows
 * [pkcs11sign.cpp](pkcs11sign.cpp) - Simple PKCS11Signer example
-* [winrt](./winrt/README.md) - experimental patches to build library on WinRT platform

@@ -11,7 +11,7 @@ param(
 	[string]$devenv = "$VSINSTALLDIR\Common7\IDE\devenv.exe",
 	[string]$vcvars = "$VSINSTALLDIR\VC\vcvarsall.bat",
 	[string]$opensslver = "openssl-1.0.2l",
-	[string]$xercesver = "xerces-c-3.1.4",
+	[string]$xercesver = "xerces-c-3.2.0",
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
@@ -31,7 +31,6 @@ if(!(Test-Path -Path $target)){
 Push-Location -Path $target
 
 [Net.ServicePointManager]::SecurityProtocol = 'Tls12'
-$shell = new-object -com shell.application
 $client = new-object System.Net.WebClient
 
 function openssl() {
@@ -52,73 +51,73 @@ function openssl() {
 }
 
 function xerces() {
-	$client.DownloadFile("http://mirrors.advancedhosters.com/apache//xerces/c/3/sources/$xercesver.zip", "$target\$xercesver.zip")
-	foreach($item in $shell.NameSpace("$target\$xercesver.zip").items()) {
-		$shell.Namespace($target).CopyHere($item,0x14)
+	$client.DownloadFile("http://mirrors.advancedhosters.com/apache/xerces/c/3/sources/$xercesver.zip", "$target\$xercesver.zip")
+	& $7zip x "$xercesver.zip" > $null
+	Push-Location -Path $xercesver
+	(Get-Content CMakeLists.txt) -replace 'add_subdirectory\(doc\)', '' -replace 'add_subdirectory\(tests\)', '' -replace 'add_subdirectory\(samples\)', '' | Set-Content CMakeLists.txt
+	foreach($platform in @("x86", "x64")) {
+		foreach($type in @("Debug", "RelWithDebInfo")) {
+			$buildpath = $platform+$type
+			$arch = If ($platform -ne "x86") {"x86_amd64"} Else {"x86"}
+			New-Item -ItemType directory -Path $buildpath > $null
+			Push-Location -Path $buildpath
+			& $vcvars $arch "&&" $cmake "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=$target\xerces\$platform" "-GNMake Makefiles" .. "&&" nmake /nologo install # > $null
+			Pop-Location
+			Remove-Item $buildpath -Force -Recurse
+		}
 	}
-
-	Rename-Item $xercesver xerces
-	$xercesproj = "xerces\projects\Win32\VC12\xerces-all\xerces-all.sln"
-	& $devenv /upgrade $xercesproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32" "/t:XercesLib" $xercesproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64" "/t:XercesLib" $xercesproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32" "/t:XercesLib" $xercesproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64" "/t:XercesLib" $xercesproj
+	Pop-Location
+	Remove-Item $xercesver -Force -Recurse
 }
 
 function xalan() {
 	$client.DownloadFile("http://www-eu.apache.org/dist/xalan/xalan-c/sources/$xalanver-src.zip", "$target\$xalanver.zip")
-	foreach($item in $shell.NameSpace("$target\$xalanver.zip").items()) {
-		$shell.Namespace($target).CopyHere($item,0x14)
-	}
+	& $7zip x "$xalanver.zip" > $null
 	Rename-Item "xalan-c-1.11" xalan
-	$xalanproj = "xalan\c\Projects\Win32\VC10\Xalan.sln"
-	& $devenv /upgrade $xalanproj
-	$Env:XERCESCROOT="$target\xerces"
-	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12" "$Env:XERCESCROOT\Build\Win32\VC10" -Recurse -Force
-	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12" "$Env:XERCESCROOT\Build\Win64\VC10" -Recurse -Force
-	New-Item -ItemType directory -Path "xalan\c\Build\Win32\VC10\Release" -Force > $null
-	New-Item -ItemType directory -Path "xalan\c\Build\Win64\VC10\Release" -Force > $null
-	New-Item -ItemType directory -Path "xalan\c\Build\Win32\VC10\Debug" -Force > $null
-	New-Item -ItemType directory -Path "xalan\c\Build\Win64\VC10\Debug" -Force > $null
-	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12\Release\*.dll" "xalan\c\Build\Win32\VC10\Release"
-	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12\Release\*.dll" "xalan\c\Build\Win64\VC10\Release"
-	Copy-Item "$Env:XERCESCROOT\Build\Win32\VC12\Debug\*.dll" "xalan\c\Build\Win32\VC10\Debug"
-	Copy-Item "$Env:XERCESCROOT\Build\Win64\VC12\Debug\*.dll" "xalan\c\Build\Win64\VC10\Debug"
-	Get-ChildItem xalan\c\Projects\Win32\VC10 *.vcxproj -recurse | ForEach {
+	Push-Location -Path xalan
+	Copy-Item "$libdigidocpp\patches\XalanDiagnosticMemoryManager.cpp" "c\src\xalanc\Harness"
+	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xerces-char16_t.patch
+	$xalanproj = "c\Projects\Win32\VC10\Xalan.sln"
+	Get-ChildItem c\Projects\Win32\VC10 *.vcxproj -recurse | ForEach {
 		(Get-Content $_.FullName) -replace '\<SmallerTypeCheck\>true\<\/SmallerTypeCheck\>', '' | Set-Content $_.FullName
 	}
+	$Env:XERCESCROOT="$target\xerces\x86"
+	New-Item -ItemType directory -Path "c\Build\Win32\VC10\Release" -Force > $null
+	New-Item -ItemType directory -Path "c\Build\Win32\VC10\Debug" -Force > $null
+	Copy-Item "$Env:XERCESCROOT\bin\*.dll" "c\Build\Win32\VC10\Release"
+	Copy-Item "$Env:XERCESCROOT\bin\*.dll" "c\Build\Win32\VC10\Debug"
 	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32" "/t:AllInOne" $xalanproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64" "/t:AllInOne" $xalanproj
 	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32" "/t:AllInOne" $xalanproj
+	$Env:XERCESCROOT="$target\xerces\x64"
+	New-Item -ItemType directory -Path "c\Build\Win64\VC10\Release" -Force > $null
+	New-Item -ItemType directory -Path "c\Build\Win64\VC10\Debug" -Force > $null
+	Copy-Item "$Env:XERCESCROOT\bin\*.dll" "c\Build\Win64\VC10\Release"
+	Copy-Item "$Env:XERCESCROOT\bin\*.dll" "c\Build\Win64\VC10\Debug"
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64" "/t:AllInOne" $xalanproj
 	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64" "/t:AllInOne" $xalanproj
-	Copy-Item "xalan\c\Build\Win32\VC10\Release\Nls\Include\*" "xalan\c\src\xalanc\PlatformSupport"
+	Copy-Item "c\Build\Win32\VC10\Release\Nls\Include\*" "c\src\xalanc\PlatformSupport"
+	Pop-Location
 }
 
 function xmlsec() {
-	$client.DownloadFile("http://mirrors.advancedhosters.com/apache//santuario/c-library/$xmlsecver.tar.gz", "$target\$xmlsecver.tar.gz")
+	$client.DownloadFile("http://mirrors.advancedhosters.com/apache/santuario/c-library/$xmlsecver.tar.gz", "$target\$xmlsecver.tar.gz")
 	& $7zip x "$xmlsecver.tar.gz" > $null
 	& $7zip x "$xmlsecver.tar" > $null
-	foreach($item in $shell.NameSpace("$libdigidocpp\$xmlsecver-VC12.zip").items()) {
-		$shell.Namespace($target).CopyHere($item,0x14)
-	}
-
-	$env:XERCES_PATH = "$target\xerces"
+	& $7zip x -y "$libdigidocpp\patches\$xmlsecver-VC12.zip" > $null
 	$env:XALAN_PATH = "$target\xalan\c"
 	Rename-Item $xmlsecver xmlsec
 	$xsecproj = "xmlsec\Projects\VC12.0\xsec\xsec_lib\xsec_lib.vcxproj"
-	& $devenv /upgrade $xsecproj
+	$Env:XERCES_PATH="$target\xerces\x86"
 	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64" $xsecproj
 	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32" $xsecproj
+	$Env:XERCES_PATH="$target\xerces\x64"
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64" $xsecproj
 	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64" $xsecproj
 }
 
 function xsd() {
 	$client.DownloadFile("http://www.codesynthesis.com/download/xsd/4.0/windows/i686/$xsdver.zip", "$target\$xsdver.zip")
-	foreach($item in $shell.NameSpace("$target\$xsdver.zip").items()) {
-		$shell.Namespace($target).CopyHere($item,0x14)
-	}
+	& $7zip x "$xsdver.zip" > $null
 	Rename-Item $xsdver xsd
 }
 
