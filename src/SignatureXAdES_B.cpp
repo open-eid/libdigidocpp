@@ -459,9 +459,6 @@ void SignatureXAdES_B::validate(const string &policy) const
         exception.addCause(e);
     }
 
-    if(signerRoles().size() > 1)
-        EXCEPTION_ADD(exception, "More than 1 signer role is not supported");
-
     if(profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos)
     {
         if(SPUri().empty())
