@@ -465,6 +465,7 @@ static void parseException(const Exception &e, const char *main = 0)
     case Exception::DataFileNameSpaceWarning: cout << "DataFileNameSpaceWarning"; break;
     case Exception::IssuerNameSpaceWarning: cout << "IssuerNameSpaceWarning"; break;
     case Exception::ProducedATLateWarning: cout << "ProducedATLateWarning"; break;
+    case Exception::MimeTypeWarning: cout << "MimeTypeWarning"; break;
     default: cout << e.code();
     }
     cout << ") " << e.msg() << endl;
@@ -584,6 +585,7 @@ static int open(int argc, char* argv[])
                         case Exception::IssuerNameSpaceWarning:
                         case Exception::DataFileNameSpaceWarning: warnings.push_back("WrongNameSpace"); break;
                         case Exception::ProducedATLateWarning: warnings.push_back("ProducedATLate"); break;
+                        case Exception::MimeTypeWarning: warnings.push_back("MimeTypeWarning"); break;
                         default: returnCode = EXIT_FAILURE; break;
                         }
                         if(!j->causes().empty())

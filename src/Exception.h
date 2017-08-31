@@ -52,7 +52,8 @@ namespace digidoc
               SignatureDigestWeak      = 13,
               DataFileNameSpaceWarning = 14,
               IssuerNameSpaceWarning   = 15,
-              ProducedATLateWarning     = 16,
+              ProducedATLateWarning    = 16,
+              MimeTypeWarning          = 17,
               //DDoc error codes
               DDocError                = 512
           };
