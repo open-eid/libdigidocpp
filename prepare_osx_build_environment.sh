@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-XERCES_DIR=xerces-c-3.1.4
+XERCES_DIR=xerces-c-3.2.0
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2l
@@ -48,7 +48,7 @@ case "$@" in
     rm -rf ${ANDROID_NDK}
     unzip -qq ${ANDROID_NDK}-darwin-x86_64.zip
     cd ${ANDROID_NDK}
-    patch -Np1 -i ../examples/libdigidocpp-android/iconv.c.patch
+    patch -Np1 -i ../patches/iconv.c.patch
     sudo ./build/tools/make_standalone_toolchain.py \
       --arch=${ARCH} --api=${API} --stl=libc++ --install-dir=${TARGET_PATH}
 
@@ -90,15 +90,17 @@ esac
 
 function xerces {
     echo Building ${XERCES_DIR}
-    if [ ! -f ${XERCES_DIR}.zip ]; then
-        curl -O http://www.eu.apache.org/dist/xerces/c/3/sources/${XERCES_DIR}.zip
+    if [ ! -f ${XERCES_DIR}.tar.xz ]; then
+        curl -O http://www.eu.apache.org/dist/xerces/c/3/sources/${XERCES_DIR}.tar.xz
     fi
     rm -rf ${XERCES_DIR}
-    unzip -qq ${XERCES_DIR}.zip
+    tar xf ${XERCES_DIR}.tar.xz
     cd ${XERCES_DIR}
+    sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE}
     make -s
     sudo make install
+    sudo ln -s libxerces-c-3.2.so ${TARGET_PATH}/lib/libxerces-c.so
     cd ..
 }
 
@@ -114,15 +116,15 @@ function xalan {
     export XALANCROOT=${PWD}
     case "${ARGS}" in
     *android*)
-      patch -Np2 -i ../../examples/libdigidocpp-android/xalan-android.patch
+      patch -Np2 -i ../../patches/xalan-android.patch
       mkdir bin
-      cp ../../examples/libdigidocpp-android/MsgCreator bin
+      cp ../../patches/MsgCreator bin
       ./runConfigure -p linux -P ${TARGET_PATH} -c ${CC} -x ${CXX} -r none -C --host=arm-unknown-linux
       make -s
       sudo XALANCROOT=${PWD} make install
       ;;
     *ios*|*simulator*)
-      cp ../../examples/libdigidocpp-ios/xalan-CMakeLists.txt src/CMakeLists.txt
+      cp ../../patches/xalan-CMakeLists.txt src/CMakeLists.txt
       cmake \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
         -DCMAKE_C_COMPILER_WORKS=yes \
@@ -133,7 +135,7 @@ function xalan {
         -DXERCESC_INCLUDE_DIR=${TARGET_PATH}/include \
         -DXercesC_LIBRARY_RELEASE=${TARGET_PATH}/lib/libxerces-c.a \
         src
-      cp ../../examples/libdigidocpp-android/MsgCreator src
+      cp ../../patches/MsgCreator src
       make -s
       sudo make install
       ;;
@@ -159,10 +161,10 @@ function xml_security {
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
     case "${ARGS}" in
-    *android*) patch -Np1 -i ../examples/libdigidocpp-android/xmlsec.patch ;;
+    *android*) patch -Np1 -i ../patches/xmlsec.patch ;;
     *) ;;
     esac
-    #patch -Np1 -i ../xml-security-c-1.7.3_openssl1.1.patch
+    #patch -Np1 -i ../patches/xml-security-c-1.7.3_openssl1.1.patch
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${TARGET_PATH} --with-xalan=${TARGET_PATH}
     make -s
