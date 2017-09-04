@@ -48,6 +48,8 @@
 #include <xsec/framework/XSECException.hpp>
 #include <xsec/framework/XSECProvider.hpp>
 
+#include <regex>
+
 using namespace digidoc;
 using namespace digidoc::asic;
 using namespace digidoc::dsig;
@@ -612,6 +614,13 @@ void SignatureXAdES_B::validate(const string &policy) const
                 if(i->second != file->mediaType())
                     EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
                         file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
+                static regex reg("([\\w])*/([\\w\\-\\+\\.])*");
+                if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
+                {
+                    Exception w(EXCEPTION_PARAMS("'%s' is not conformant mime-type string!", file->mediaType().c_str()));
+                    w.setCode(Exception::MimeTypeWarning);
+                    exception.addCause(w);
+                }
                 signatureref.erase(i);
             }
             else

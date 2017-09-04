@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     BOOST_CHECK_THROW(d->removeDataFile(0U), Exception);
 
     // Add first Document
-    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "file1"));
+    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     if(!d->dataFiles().empty())
     {
@@ -201,11 +201,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
         if(d->mediaType() == DDoc::TYPE)
             BOOST_CHECK_EQUAL(doc1->id(), "D0");
         BOOST_CHECK_EQUAL(doc1->fileName(), "test1.txt");
-        BOOST_CHECK_EQUAL(doc1->mediaType(), "file1");
+        BOOST_CHECK_EQUAL(doc1->mediaType(), "text/plain");
     }
 
     // Add second Document
-    BOOST_CHECK_NO_THROW(d->addDataFile("test2.bin", "file2"));
+    BOOST_CHECK_NO_THROW(d->addDataFile("test2.bin", "text/plain"));
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 2U);
     if(!d->dataFiles().empty())
     {
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
         if(d->mediaType() == DDoc::TYPE)
             BOOST_CHECK_EQUAL(doc2->id(), "D1");
         BOOST_CHECK_EQUAL(doc2->fileName(), "test2.bin");
-        BOOST_CHECK_EQUAL(doc2->mediaType(), "file2");
+        BOOST_CHECK_EQUAL(doc2->mediaType(), "text/plain");
     }
 
     // Remove first Document
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
         if(d->mediaType() == DDoc::TYPE)
             BOOST_CHECK_EQUAL(doc3->id(), "D1");
         BOOST_CHECK_EQUAL(doc3->fileName(), "test2.bin");
-        BOOST_CHECK_EQUAL(doc3->mediaType(), "file2");
+        BOOST_CHECK_EQUAL(doc3->mediaType(), "text/plain");
     }
 
     // Remove second Document
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         return;
 
     // Add first Signature
-    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "file"));
+    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
     BOOST_CHECK_NO_THROW(d->sign(signer1.get()));
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     if(d->signatures().size() == 1)
@@ -291,7 +291,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_NO_THROW(d->save(Doc::EXT + ".tmp"));
 
     // Signed container cannot add and remove documents
-    BOOST_CHECK_THROW(d->addDataFile("test1.txt", "file"), Exception);
+    BOOST_CHECK_THROW(d->addDataFile("test1.txt", "text/plain"), Exception);
     BOOST_CHECK_THROW(d->removeDataFile(0U), Exception);
 
     // Add second Signature
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
     {
         unique_ptr<Container> d(Container::create("test." + Doc::EXT));
         const Signature *s1 = 0;
-        BOOST_CHECK_NO_THROW(d->addDataFile(*i + ".txt", "file"));
+        BOOST_CHECK_NO_THROW(d->addDataFile(*i + ".txt", "text/plain"));
         if(Doc::EXT == DDoc::EXT)
             return;
         BOOST_CHECK_NO_THROW(s1 = d->sign(signer1.get()));
@@ -404,8 +404,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
     signer1->setSignerRoles( roles );
 
     const Signature *s1 = 0;
-    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "file"));
-    BOOST_CHECK_NO_THROW(d->addDataFile("test2.bin", "file"));
+    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+    BOOST_CHECK_NO_THROW(d->addDataFile("test2.bin", "text/plain"));
     if(Doc::EXT == DDoc::EXT)
         return;
     BOOST_CHECK_NO_THROW(s1 = d->sign(signer1.get()));
