@@ -51,7 +51,7 @@ function openssl() {
 }
 
 function xerces() {
-	$client.DownloadFile("http://mirrors.advancedhosters.com/apache/xerces/c/3/sources/$xercesver.zip", "$target\$xercesver.zip")
+	$client.DownloadFile("http://www.eu.apache.org/dist/xerces/c/3/sources/$xercesver.zip", "$target\$xercesver.zip")
 	& $7zip x "$xercesver.zip" > $null
 	Push-Location -Path $xercesver
 	(Get-Content CMakeLists.txt) -replace 'add_subdirectory\(doc\)', '' -replace 'add_subdirectory\(tests\)', '' -replace 'add_subdirectory\(samples\)', '' | Set-Content CMakeLists.txt
@@ -71,11 +71,11 @@ function xerces() {
 }
 
 function xalan() {
-	$client.DownloadFile("http://www-eu.apache.org/dist/xalan/xalan-c/sources/$xalanver-src.zip", "$target\$xalanver.zip")
+	$client.DownloadFile("http://www.eu.apache.org/dist/xalan/xalan-c/sources/$xalanver-src.zip", "$target\$xalanver.zip")
 	& $7zip x "$xalanver.zip" > $null
 	Rename-Item "xalan-c-1.11" xalan
 	Push-Location -Path xalan
-	Copy-Item "$libdigidocpp\patches\XalanDiagnosticMemoryManager.cpp" "c\src\xalanc\Harness"
+	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xalan-Xerces3.2.0.patch
 	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xerces-char16_t.patch
 	$xalanproj = "c\Projects\Win32\VC10\Xalan.sln"
 	Get-ChildItem c\Projects\Win32\VC10 *.vcxproj -recurse | ForEach {
@@ -100,7 +100,7 @@ function xalan() {
 }
 
 function xmlsec() {
-	$client.DownloadFile("http://mirrors.advancedhosters.com/apache/santuario/c-library/$xmlsecver.tar.gz", "$target\$xmlsecver.tar.gz")
+	$client.DownloadFile("http://www.eu.apache.org/dist/santuario/c-library/$xmlsecver.tar.gz", "$target\$xmlsecver.tar.gz")
 	& $7zip x "$xmlsecver.tar.gz" > $null
 	& $7zip x "$xmlsecver.tar" > $null
 	& $7zip x -y "$libdigidocpp\patches\$xmlsecver-VC12.zip" > $null
