@@ -214,7 +214,7 @@ string Digest::toEcUri(const string &uri)
  */
 void Digest::update(const vector<unsigned char> &data)
 {
-    update(&data[0], (unsigned int)data.size());
+    update(data.data(), (unsigned int)data.size());
 }
 
 /**
