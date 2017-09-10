@@ -91,12 +91,13 @@ public:
 
 vector<CK_OBJECT_HANDLE> PKCS11SignerPrivate::findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls) const
 {
+    vector<CK_OBJECT_HANDLE> result;
     CK_ATTRIBUTE attr = { CKA_CLASS, &cls, sizeof(cls) };
     if(f->C_FindObjectsInit(session, &attr, 1) != CKR_OK)
-        return vector<CK_OBJECT_HANDLE>();
+        return result;
 
     CK_ULONG count = 32;
-    vector<CK_OBJECT_HANDLE> result(count, 0);
+    result.resize(count);
     CK_RV err = f->C_FindObjects(session, result.data(), CK_ULONG(result.size()), &count);
     result.resize(err == CKR_OK ? count : 0);
     f->C_FindObjectsFinal(session);
@@ -364,11 +365,15 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
         THROW("Could not get key that matches selected certificate.");
 
     // Sign the digest.
-    CK_MECHANISM mech = { CKM_RSA_PKCS, 0, 0 };
+    CK_KEY_TYPE keyType = CKK_RSA;
+    CK_ATTRIBUTE attribute = { CKA_KEY_TYPE, &keyType, sizeof(keyType) };
+    d->f->C_GetAttributeValue(session, key[d->sign.cert], &attribute, 1);
+
+    CK_MECHANISM mech = { keyType == CKK_ECDSA ? CKM_ECDSA : CKM_RSA_PKCS, 0, 0 };
     if(d->f->C_SignInit(session, &mech, key[d->sign.cert]) != CKR_OK)
         THROW("Failed to sign digest");
 
-    vector<unsigned char> data = Digest::addDigestInfo(digest, method);
+    vector<unsigned char> data = keyType == CKK_RSA ? Digest::addDigestInfo(digest, method) : digest;
     CK_ULONG size = 0;
     if(d->f->C_Sign(session, data.data(), CK_ULONG(data.size()), 0, &size) != CKR_OK)
         THROW("Failed to sign digest");

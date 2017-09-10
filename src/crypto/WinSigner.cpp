@@ -233,11 +233,14 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     else if(method == URI_RSA_SHA256) { padInfo.pszAlgId = NCRYPT_SHA256_ALGORITHM; alg = CALG_SHA_256; }
     else if(method == URI_RSA_SHA384) { padInfo.pszAlgId = NCRYPT_SHA384_ALGORITHM; alg = CALG_SHA_384; }
     else if(method == URI_RSA_SHA512) { padInfo.pszAlgId = NCRYPT_SHA512_ALGORITHM; alg = CALG_SHA_512; }
+    else if(method == URI_ECDSA_SHA224) {}
+    else if(method == URI_ECDSA_SHA256) {}
+    else if(method == URI_ECDSA_SHA384) {}
+    else if(method == URI_ECDSA_SHA512) {}
     else THROW("Unsupported signature method");
 
     SECURITY_STATUS err = 0;
-    DWORD size = 256;
-    vector<unsigned char> signature(size, 0);
+    vector<unsigned char> signature;
     switch(d->spec)
     {
     case CERT_NCRYPT_KEY_SPEC:
@@ -250,6 +253,12 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
                 break;
         }
 
+        DWORD size = 0;
+        err = NCryptSignHash(d->key, &padInfo, PBYTE(digest.data()), DWORD(digest.size()),
+            nullptr, 0, &size, BCRYPT_PAD_PKCS1);
+        if(FAILED(err))
+            break;
+        signature.resize(size);
         err = NCryptSignHash(d->key, &padInfo, PBYTE(digest.data()), DWORD(digest.size()),
             signature.data(), DWORD(signature.size()), &size, BCRYPT_PAD_PKCS1);
         break;
@@ -276,6 +285,13 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
             CryptDestroyHash(hash);
             THROW("Failed to sign");
         }
+        DWORD size = 0;
+        if(!CryptSignHashW(hash, AT_SIGNATURE, 0, 0, nullptr, &size)) {
+            err = LONG(GetLastError());
+            CryptDestroyHash(hash);
+            break;
+        }
+        signature.resize(size);
         if(!CryptSignHashW(hash, AT_SIGNATURE, 0, 0, signature.data(), &size))
             err = LONG(GetLastError());
         std::reverse(signature.begin(), signature.end());
@@ -286,7 +302,6 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     default:
         THROW("Failed to sign");
     }
-    signature.resize(size);
 
     switch(err)
     {
