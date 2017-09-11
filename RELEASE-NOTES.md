@@ -1,4 +1,16 @@
-Libdigidocpp library [3.13.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.1) release notes
+Libdigidocpp library [3.13.2](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.2) release notes
+--------------------------------------
+- Implement ECDSA token support (#152)
+- Fix issuer name with UTF-8 characters (#146)
+- Check mimetype format (#150)
+- Update xerces-c to 3.2.0 (#149)
+- Take OCSP URL from AIA extension (#138)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.1...v3.13.2)
+
+
+
+Libdigidocpp library [3.13.1](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.1) release notes
 --------------------------------------
 - Restore compatibility with jdigidoc 3.11
 
