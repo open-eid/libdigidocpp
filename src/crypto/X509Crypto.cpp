@@ -218,6 +218,9 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
     if(!cert)
         THROW("X.509 certificate parameter is not set in RSACrypt, can not verify signature.");
 
+    if(signature.empty())
+        THROW("Signature value is empty.");
+
     SCOPE(EVP_PKEY, key, X509_get_pubkey(cert.handle()));
     if(!key)
         THROW("Certificate does not have a public key, can not verify signature.");
