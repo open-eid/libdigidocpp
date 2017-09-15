@@ -245,6 +245,12 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     {
     case CERT_NCRYPT_KEY_SPEC:
     {
+        DWORD size = 0;
+        wstring algo(5, 0);
+        err = NCryptGetProperty(d->key, NCRYPT_ALGORITHM_GROUP_PROPERTY, PBYTE(algo.data()), (algo.size() + 1) * 2, &size, 0);
+        algo.resize(size/2 - 1);
+        bool isRSA = algo == L"RSA";
+
         if(!d->pin.empty())
         {
             wstring pin = util::File::encodeName(d->pin);
@@ -253,14 +259,13 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
                 break;
         }
 
-        DWORD size = 0;
-        err = NCryptSignHash(d->key, &padInfo, PBYTE(digest.data()), DWORD(digest.size()),
-            nullptr, 0, &size, BCRYPT_PAD_PKCS1);
+        err = NCryptSignHash(d->key, isRSA ? &padInfo : nullptr, PBYTE(digest.data()), DWORD(digest.size()),
+            nullptr, 0, &size, isRSA ? BCRYPT_PAD_PKCS1 : 0);
         if(FAILED(err))
             break;
         signature.resize(size);
-        err = NCryptSignHash(d->key, &padInfo, PBYTE(digest.data()), DWORD(digest.size()),
-            signature.data(), DWORD(signature.size()), &size, BCRYPT_PAD_PKCS1);
+        err = NCryptSignHash(d->key, isRSA ? &padInfo : nullptr, PBYTE(digest.data()), DWORD(digest.size()),
+            signature.data(), DWORD(signature.size()), &size, isRSA ? BCRYPT_PAD_PKCS1 : 0);
         break;
     }
     case AT_SIGNATURE:
