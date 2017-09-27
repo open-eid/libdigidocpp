@@ -49,6 +49,13 @@
 #include <xsec/framework/XSECProvider.hpp>
 
 #include <regex>
+#if __cplusplus >= 201103L &&                             \
+    (!defined(__GLIBCXX__) || (__cplusplus >= 201402L) || \
+        (defined(_GLIBCXX_REGEX_DFS_QUANTIFIERS_LIMIT) || \
+         defined(_GLIBCXX_REGEX_STATE_LIMIT)           || \
+         (defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE > 4)))
+#define HAVE_WORKING_REGEX
+#endif
 
 using namespace digidoc;
 using namespace digidoc::asic;
@@ -614,6 +621,7 @@ void SignatureXAdES_B::validate(const string &policy) const
                 if(i->second != file->mediaType())
                     EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
                         file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
+#ifdef HAVE_WORKING_REGEX
                 static regex reg("([\\w])*/([\\w\\-\\+\\.])*");
                 if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
                 {
@@ -621,6 +629,7 @@ void SignatureXAdES_B::validate(const string &policy) const
                     w.setCode(Exception::MimeTypeWarning);
                     exception.addCause(w);
                 }
+#endif
                 signatureref.erase(i);
             }
             else
