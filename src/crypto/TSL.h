@@ -73,7 +73,7 @@ private:
     static const std::set<std::string> SERVICESTATUS_START;
     static const std::set<std::string> SERVICESTATUS_END;
 
-    std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en") const;
+    static std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en");
     void validateLastModified(const std::string &url, int timeout);
     std::shared_ptr<tsl::TrustStatusListType> tsl;
     std::string path;
