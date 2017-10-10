@@ -330,10 +330,7 @@ bool TSL::parseInfo(const X &info, Service &s, time_t &previousTime)
             if(extension.critical())
             {
                 if(extension.takenOverByType().present())
-                {
-                    WARN("Found critical extension TakenOverByType");
-                    return false;
-                }
+                    WARN("Found critical extension TakenOverByType '%s'", toString(extension.takenOverByType()->tSPName()).c_str());
                 if(extension.expiredCertsRevocationInfo().present())
                 {
                     WARN("Found critical extension ExpiredCertsRevocationInfo");
@@ -461,7 +458,7 @@ string TSL::territory() const
         string() : tsl->schemeInformation().schemeTerritory().get();
 }
 
-string TSL::toString(const InternationalNamesType &obj, const string &lang) const
+string TSL::toString(const InternationalNamesType &obj, const string &lang)
 {
     for(const InternationalNamesType::NameType &name: obj.name())
         if(name.lang() == lang)
