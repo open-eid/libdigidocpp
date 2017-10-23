@@ -81,6 +81,8 @@ AnyType::AnyType(const DOMElement &e, Flags f, Container *c)
             std::unique_ptr<SPURIType> r(SPURITraits::create(i, f, this));
             if(!this->SPURI_.present())
                 this->SPURI_.set(std::move(r));
+            isText = false;
+            text_.clear();
             continue;
         }
 
