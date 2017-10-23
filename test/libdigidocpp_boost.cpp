@@ -362,6 +362,22 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_NO_THROW(d->save(Doc::EXT + "-TMA.tmp"));
         BOOST_CHECK_NO_THROW(d->removeSignature(1U));
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+
+        // Save with no SignatureValue and later add signautre value, time-mark
+        signer2->setProfile("time-mark");
+        d.reset(Container::create(Doc::EXT + ".tmp"));
+        BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+        Signature *s = nullptr;
+        BOOST_CHECK_NO_THROW(s = d->prepareSignature(signer2.get()));
+        vector<unsigned char> signatureValue;
+        BOOST_CHECK_NO_THROW(signatureValue = signer2->sign(s->signatureMethod(), s->dataToSign()));
+        BOOST_CHECK_NO_THROW(d->save());
+        d.reset(Container::open(Doc::EXT + ".tmp"));
+        s = d->signatures().back();
+        BOOST_CHECK_NO_THROW(s->setSignatureValue(signatureValue));
+        BOOST_CHECK_NO_THROW(s->extendSignatureProfile(signer2->profile()));
+        BOOST_CHECK_NO_THROW(d->save());
+        BOOST_CHECK_NO_THROW(s->validate());
     }
 
     // Remove second Signature
