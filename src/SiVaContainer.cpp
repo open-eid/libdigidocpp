@@ -127,20 +127,24 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         delete out;
     }
 
-
-    string req = (jsonxx::Object()
-        << "filename" << File::fileName(path)
-        << "documentType" << ext
-        << "document" << b64).json();
-    Connect::Result r = Connect(CONF(verifyServiceUri), "POST", 0, "", CONF(verifyServiceCert)).exec({
+    string url = CONF(verifyServiceUri);
+    const bool isV2 = url.find("V2") != string::npos;
+    jsonxx::Object reqObj = jsonxx::Object() <<"filename" << File::fileName(path) << "document" << b64;
+    if(isV2)
+        reqObj << "signaturePolicy" << "POLv4";
+    else
+        reqObj << "documentType" << ext;
+    string req = reqObj.json();
+    Connect::Result r = Connect(url, "POST", 0, "", CONF(verifyServiceCert)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
-    }, vector<unsigned char>(req.c_str(), req.c_str()+req.size()));
+    }, vector<unsigned char>(req.cbegin(), req.cend()));
 
     if(!r)
         THROW("Failed to send request to SiVa");
 
     jsonxx::Object result;
-    result.parse(r.content);
+    if(!result.parse(r.content))
+        THROW("Failed to parse to SiVa response");
 
     if(result.has<jsonxx::Array>("requestErrors"))
     {
@@ -153,19 +157,27 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         throw e;
     }
 
-    for(const jsonxx::Value *obj: result.get<jsonxx::Array>("signatures").values())
+    jsonxx::Object base;
+    if(isV2)
+    {
+        jsonxx::Object report = result.get<jsonxx::Object>("validationReport");
+        base = report.get<jsonxx::Object>("validationConclusion");
+    }
+    else
+        base = result;
+    for(const jsonxx::Value *obj: base.get<jsonxx::Array>("signatures").values())
     {
         SignatureSiVa *s = new SignatureSiVa;
         jsonxx::Object signature = obj->get<jsonxx::Object>();
         s->_id = signature.get<string>("id");
         s->_signingTime = signature.get<string>("claimedSigningTime");
-        s->_bestTime = signature.get<jsonxx::Object>("info").get<string>("bestSignatureTime");
+        s->_bestTime = signature.get<jsonxx::Object>("info").get<string>("bestSignatureTime", string());
         s->_profile = signature.get<string>("signatureFormat");
         s->_indication = signature.get<string>("indication");
-        s->_subIndication = signature.get<string>("subIndication");
+        s->_subIndication = signature.get<string>("subIndication", string());
         s->_signedBy = signature.get<string>("signedBy");
-        s->_signatureLevel = signature.get<string>("signatureLevel");
-        for(const jsonxx::Value *error: signature.get<jsonxx::Array>("errors").values())
+        s->_signatureLevel = signature.get<string>("signatureLevel", string());
+        for(const jsonxx::Value *error: signature.get<jsonxx::Array>("errors", jsonxx::Array()).values())
         {
             string message = error->get<jsonxx::Object>().get<string>("content");
             s->_errors.push_back(Exception(EXCEPTION_PARAMS(message.c_str())));
