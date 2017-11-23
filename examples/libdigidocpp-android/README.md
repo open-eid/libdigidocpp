@@ -3,23 +3,21 @@
 ### OSX
 
 1. Install dependencies from
-	* [Android NDK](https://developer.android.com/ndk/downloads/index.html)
 	* [http://www.cmake.org](http://www.cmake.org)
+	* [http://swig.org](http://swig.org)
 
 2. Prepare
 
-        export ANDROID_NDK=$HOME/android-ndk-r10e
-        sh ../../prepare_osx_build_environment.sh android all
+        sh ../../prepare_osx_build_environment.sh [androidarm|androidarm64|androidx86] all
 
-3. Build library, also needs libdigidoc dependency for DDoc support
+3. Build library
 
-        sh build-library.sh android
+        sh build-library.sh [arm|arm64|x86]
 
 4. Build example and run
 
-        open project with eclipse, build and run
+        open project with Android Studio, build and run
 
-Swig is required for generating digidoc_java.so for example JNI wrapper.
-
-Shared library must placed libs/armeabi/libdigidoc_java.so. Also /Library/libdigidocpp.android/etc/digidocpp/schema content should be ziped and included res/raw/schema.zip path. It will be extracted on application execution and path given to library special digidoc.initJava(path) JNI function.
-Libdigidoc still needs adjusted to point CA files folder and include certificates in project.
+Shared libraries must placed app/src/main/jniLibs/[armeabi-v7a,arm64-v8a,x86]/.
+Also /Library/libdigidocpp.androidarm/etc/digidocpp/schema content should be ziped and included app/src/main/res/raw/schema.zip path.
+It will be extracted on application execution and path given to library special digidoc.initializeLib(appName, path) JNI function.

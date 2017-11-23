@@ -4,7 +4,7 @@ set -e
 XERCES_DIR=xerces-c-3.2.0
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.0.2l
+OPENSSL_DIR=openssl-1.0.2m
 #OPENSSL_DIR=openssl-1.1.0f
 LIBXML2_DIR=libxml2-2.9.4
 ANDROID_NDK=android-ndk-r14b
@@ -199,7 +199,7 @@ function libxml2 {
 function xsd {
     echo Building ${XSD}
     if [ ! -f ${XSD}.tar.bz2 ]; then
-        curl -O http://www.codesynthesis.com/download/xsd/4.0/macosx/i686/${XSD}.tar.bz2
+        curl -O https://www.codesynthesis.com/download/xsd/4.0/macosx/i686/${XSD}.tar.bz2
     fi
     rm -rf ${XSD}
     tar xf ${XSD}.tar.bz2
