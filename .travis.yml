@@ -36,6 +36,7 @@ env:
   - AWS_DEFAULT_REGION=eu-west-1
 
 before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+    sudo easy_install pip;
     brew install swig;
     brew upgrade cmake;
     HASH=($(shasum prepare_osx_build_environment.sh));
