@@ -55,6 +55,8 @@ public class MainActivity extends Activity {
 			System.loadLibrary("xerces-c-3.2");
 			System.loadLibrary("xalanMsg");
 			System.loadLibrary("xalan-c");
+			System.loadLibrary("crypto");
+			System.loadLibrary("ssl");
 			System.loadLibrary("xml-security-c");
 			System.loadLibrary("digidoc_java");
 			digidoc.initializeLib("libdigidoc Android", getCacheDir().getAbsolutePath());

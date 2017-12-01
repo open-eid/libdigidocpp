@@ -223,13 +223,17 @@ function openssl {
         export CC=${CROSS_COMPILE}-gcc
         unset CROSS_COMPILE
         case "${ARGS}" in
-        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} no-hw ;;
+        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} no-hw shared ;;
         *arm64*)
-          ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-hw no-shared -DB_ENDIAN  \
+          ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-hw shared -DB_ENDIAN  \
              -fPIC -DOPENSSL_PIC -DDSO_DLFCN -DHAVE_DLFCN_H -mandroid -O3 -fomit-frame-pointer -Wall
           ;;
-        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} no-hw ;;
+        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} no-hw shared ;;
         esac
+        perl -pi -e 's/SHLIB_EXT=\.so\.\$\(SHLIB_MAJOR\)\.\$\(SHLIB_MINOR\)/SHLIB_EXT=\.so/g' Makefile
+        perl -pi -e 's/SHARED_LIBS_LINK_EXTS=\.so\.\$\(SHLIB_MAJOR\) \.so//g' Makefile
+        perl -pi -e 's/SHLIB_MAJOR=1/SHLIB_MAJOR=`/g' Makefile
+        perl -pi -e 's/SHLIB_MINOR=0.0/SHLIB_MINOR=`/g' Makefile
         make -s
         sudo make install_sw
         export CC=${CCOLD}
