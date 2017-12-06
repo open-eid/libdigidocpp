@@ -1,3 +1,12 @@
+Libdigidocpp library [3.13.3](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.3) release notes
+--------------------------------------
+- SiVa V2 support (#166)
+- Android build fixes (#167, #164)
+- Fix loading unsigned TM signatures (#161)
+- Don't terminate TSL parsing when TakenOvertByType extension is found (#160)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.2...v3.13.3)
+
 Libdigidocpp library [3.13.2](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.2) release notes
 --------------------------------------
 - Implement ECDSA token support (#152)
