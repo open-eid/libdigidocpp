@@ -1,6 +1,6 @@
 param(
   [string]$target = "C:\build",
-  [string]$msiversion = "3.13.0.0",
+  [string]$msiversion = "3.13.3.0",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
   [string]$msbuild = "C:\Program Files (x86)\MSBuild\$Env:VisualStudioVersion\Bin\MSBuild.exe",
   [string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
