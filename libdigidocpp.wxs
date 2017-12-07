@@ -60,13 +60,16 @@
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Debug\Xalan-C_1_11D.dll"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Debug\XalanMessages_1_11D.dll"/>
                 <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC12\Debug\xsec_1_7D.dll"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.pdb"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.lib"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.pdb"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.lib"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.pdb"/>
 <?ifdef var.swig ?>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.pdb"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharpd.dll"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharpd.pdb"/>
 <?endif?>
               </Component>
               <Directory Id="SchemaFolderX86" Name="schema"
@@ -119,13 +122,16 @@
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Debug\Xalan-C_1_11D.dll" Id="Xalan_C_1_11D.dll_64"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Debug\XalanMessages_1_11D.dll" Id="XalanMessages_1_11D.dll_64"/>
                 <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC12\Debug\xsec_1_7D.dll" Id="xsec_1_7D.dll_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.pdb" Id="digidoc_tool.pdb_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.lib" Id="digidocpp.lib_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.pdb" Id="digidocpp.pdb_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.dll" Id="digidocppd.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.lib" Id="digidocppd.lib_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.pdb" Id="digidocppd.pdb_64"/>
 <?ifdef var.swig ?>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.pdb" Id="digidoc_csharp.pdb_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharpd.dll" Id="digidoc_csharpd.dll_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharpd.pdb" Id="digidoc_csharpd.pdb_64"/>
 <?endif?>
               </Component>
               <Directory Id="SchemaFolderX64" Name="schema"
