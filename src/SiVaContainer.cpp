@@ -73,10 +73,11 @@ void SignatureSiVa::validate() const
 
 void SignatureSiVa::validate(const std::string &policy) const
 {
+    static const std::set<std::string> QES = { "QESIG", "QESEAL", "QES" };
     Exception e(EXCEPTION_PARAMS("Signature validation"));
     if(_indication == "TOTAL-PASSED")
     {
-        if(_signatureLevel == "QES"|| _signatureLevel.empty() || policy == POLv1)
+        if(QES.find(_signatureLevel) != QES.cend() || _signatureLevel.empty() || policy == POLv1)
             return;
         Exception ex(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
         ex.setCode(Exception::CertificateIssuerMissing);
