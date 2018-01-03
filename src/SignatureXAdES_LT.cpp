@@ -286,7 +286,7 @@ vector<unsigned char> SignatureXAdES_LT::getOCSPResponseValue() const
         if(unsignedSignatureProperties().revocationValues().empty())
             return vector<unsigned char>();
         const RevocationValuesType &t = unsignedSignatureProperties().revocationValues().front();
-        if(!t.oCSPValues().present())
+        if(!t.oCSPValues().present() || t.oCSPValues()->encapsulatedOCSPValue().empty())
             return vector<unsigned char>();
         // Return OCSP response that matches with signingCertificate
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
@@ -298,6 +298,9 @@ vector<unsigned char> SignatureXAdES_LT::getOCSPResponseValue() const
             } catch(const Exception &) {
             }
         }
+        // Return first OCSP response when chains are not complete and validation fails
+        const OCSPValuesType::EncapsulatedOCSPValueType &resp = t.oCSPValues()->encapsulatedOCSPValue().at(0);
+        return vector<unsigned char>(resp.begin(), resp.end());
     }
     catch(const Exception &)
     {}
