@@ -23,11 +23,7 @@
 #include "crypto/Digest.h"
 #include "crypto/X509Cert.h"
 #include "util/File.h"
-
-#include "tslcert1.h"
-#include "tslcert2.h"
-#include "tslcert3.h"
-#include "tslcert4.h"
+#include "tslcerts.h"
 
 #include <map>
 
@@ -228,13 +224,7 @@ bool Conf::TSLAllowExpired() const { return false; }
  */
 vector<X509Cert> Conf::TSLCerts() const
 {
-    static vector<X509Cert> certs {
-        X509Cert(tslcert1_crt, tslcert1_crt_len, X509Cert::Pem),
-        X509Cert(tslcert2_crt, tslcert2_crt_len, X509Cert::Pem),
-        X509Cert(tslcert3_crt, tslcert3_crt_len, X509Cert::Pem),
-        X509Cert(tslcert4_crt, tslcert4_crt_len, X509Cert::Pem),
-    };
-    return certs;
+    return tslcerts;
 }
 
 /**
