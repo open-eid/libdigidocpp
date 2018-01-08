@@ -101,29 +101,39 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020101_sie_xs
     --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
     --namespace-map http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/\#=digidoc::tsl
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
-if( WIN32 )
-    add_executable( embedfile embedfile.cpp )
-    add_custom_command( OUTPUT tslcert1.h tslcert2.h tslcert3.h tslcert4.h
-        COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT1} tslcert1_crt tslcert1.h
-        COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT2} tslcert2_crt tslcert2.h
-        COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT3} tslcert3_crt tslcert3.h
-        COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT4} tslcert4_crt tslcert4.h
-        COMMENT "Generating tslcert1.h from ${TSL_CERT1}, tslcert2.h from ${TSL_CERT2}, tslcert3.h from ${TSL_CERT3}, tslcert4.h from ${TSL_CERT4}"
-    )
-else()
-    add_custom_command( OUTPUT tslcert1.h tslcert2.h tslcert3.h tslcert4.h
-        COMMAND ln -sf ${TSL_CERT1} tslcert1.crt
-        COMMAND ln -sf ${TSL_CERT2} tslcert2.crt
-        COMMAND ln -sf ${TSL_CERT3} tslcert3.crt
-        COMMAND ln -sf ${TSL_CERT4} tslcert4.crt
-        COMMAND xxd -i tslcert1.crt tslcert1.h
-        COMMAND xxd -i tslcert2.crt tslcert2.h
-        COMMAND xxd -i tslcert3.crt tslcert3.h
-        COMMAND xxd -i tslcert4.crt tslcert4.h
-        COMMENT "Generating tslcert1.h from ${TSL_CERT1}, tslcert2.h from ${TSL_CERT2}, tslcert3.h from ${TSL_CERT3}, tslcert4.h from ${TSL_CERT4}"
-    )
+
+if(WIN32)
+    add_executable(embedfile embedfile.cpp)
 endif()
-list( APPEND digidocpp_SRCS tslcert1.h tslcert2.h tslcert3.h tslcert4.h )
+set(COUNT 0)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "")
+foreach(TSL_CERT ${TSL_CERTS})
+    math(EXPR COUNT "${COUNT}+1")
+    set(BASE "tslcert${COUNT}")
+    list(APPEND digidocpp_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${BASE}.h)
+    if(WIN32)
+        add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${BASE}.h
+            COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT} ${BASE}_crt ${BASE}.h
+            COMMENT "Generating ${BASE}.h from ${TSL_CERT}"
+            )
+    else()
+        add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${BASE}.h
+            COMMAND ln -sf ${TSL_CERT} ${BASE}.crt
+            COMMAND xxd -i ${BASE}.crt ${BASE}.h
+            COMMENT "Generating ${BASE}.h from ${TSL_CERT}"
+            )
+    endif()
+    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "#include \"${BASE}.h\"\n")
+endforeach()
+file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "static const std::vector<X509Cert> tslcerts {\n")
+
+set(COUNT 0)
+foreach(TSL_CERT ${TSL_CERTS})
+    math(EXPR COUNT "${COUNT}+1")
+    set(BASE "tslcert${COUNT}")
+    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "digidoc::X509Cert(${BASE}_crt, ${BASE}_crt_len, X509Cert::Pem),\n")
+endforeach()
+file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "};")
 
 set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd
