@@ -40,8 +40,8 @@ class ZipSerializePrivate
 public:
     zlib_filefunc_def pzlib_filefunc;
     string path;
-    zipFile create;
-    unzFile open;
+    zipFile create = nullptr;
+    unzFile open = nullptr;
 };
 }
 
@@ -61,19 +61,17 @@ ZipSerialize::ZipSerialize(const string& path, bool create)
     fill_fopen_filefunc(&d->pzlib_filefunc);
 #endif
     d->path = path;
-    d->create = 0;
-    d->open = 0;
     if(create)
     {
         DEBUG("ZipSerialize::create(%s)", path.c_str());
-        d->create = zipOpen2((char*)util::File::encodeName(d->path).c_str(), APPEND_STATUS_CREATE, 0, &d->pzlib_filefunc);
+        d->create = zipOpen2(util::File::encodeName(d->path).c_str(), APPEND_STATUS_CREATE, nullptr, &d->pzlib_filefunc);
         if(!d->create)
             THROW("Failed to create ZIP file '%s'.", d->path.c_str());
     }
     else
     {
         DEBUG("ZipSerialize::open(%s)", path.c_str());
-        d->open = unzOpen2((char*)util::File::encodeName(d->path).c_str(), &d->pzlib_filefunc);
+        d->open = unzOpen2(util::File::encodeName(d->path).c_str(), &d->pzlib_filefunc);
         if(!d->open)
             THROW("Failed to open ZIP file '%s'.", d->path.c_str());
     }
@@ -86,7 +84,7 @@ ZipSerialize::ZipSerialize(const string& path, bool create)
  */
 ZipSerialize::~ZipSerialize()
 {
-    if(d->create) zipClose(d->create, 0);
+    if(d->create) zipClose(d->create, nullptr);
     if(d->open) unzClose(d->open);
     delete d;
 }
@@ -111,12 +109,12 @@ vector<string> ZipSerialize::list() const
             THROW("Failed to go to the next file inside ZIP container. ZLib error: %d", unzResult);
 
         unz_file_info fileInfo;
-        unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, 0, 0, 0, 0, 0, 0);
+        unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, nullptr, 0, nullptr, 0, nullptr, 0);
         if(unzResult != UNZ_OK)
             THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
         string fileName(fileInfo.size_filename, 0);
-        unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, &fileName[0], uLong(fileName.size()), 0, 0, 0, 0);
+        unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, &fileName[0], uLong(fileName.size()), nullptr, 0, nullptr, 0);
         if(unzResult != UNZ_OK)
             THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
@@ -140,7 +138,7 @@ void ZipSerialize::extract(const string &file, ostream &os) const
     if(file[file.size()-1] == '/')
         return;
 
-    int unzResult = unzLocateFile(d->open, file.c_str(), 0);
+    int unzResult = unzLocateFile(d->open, file.c_str(), 1);
     if(unzResult != UNZ_OK)
         THROW("Failed to open file inside ZIP container. ZLib error: %d", unzResult);
 
@@ -200,8 +198,8 @@ void ZipSerialize::addFile(const string& containerPath, istream &is, const Prope
     int compression = flags & DontCompress ? Z_NULL : Z_DEFLATED;
     int level = flags & DontCompress ? Z_NO_COMPRESSION : Z_DEFAULT_COMPRESSION;
     int zipResult = zipOpenNewFileInZip4(d->create, containerPath.c_str(),
-        &info, 0, 0, 0, 0, prop.comment.c_str(), compression, level, 0,
-        -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, 0, 0, 0, 2048);
+        &info, nullptr, 0, nullptr, 0, prop.comment.c_str(), compression, level, 0,
+        -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, nullptr, 0, 0, 2048);
     if(zipResult != ZIP_OK)
         THROW("Failed to create new file inside ZIP container. ZLib error: %d", zipResult);
 
@@ -214,7 +212,7 @@ void ZipSerialize::addFile(const string& containerPath, istream &is, const Prope
         if(is.gcount() <= 0)
             break;
 
-        zipResult = zipWriteInFileInZip(d->create, buf, (unsigned int)is.gcount());
+        zipResult = zipWriteInFileInZip(d->create, buf, unsigned(is.gcount()));
         if(zipResult != ZIP_OK)
         {
             zipCloseFileInZip(d->create);
@@ -234,7 +232,7 @@ ZipSerialize::Properties ZipSerialize::properties(const string &file) const
         THROW("Failed to open file inside ZIP container. ZLib error: %d", unzResult);
 
     unz_file_info info;
-    unzResult = unzGetCurrentFileInfo(d->open, &info, 0, 0, 0, 0, 0, 0);
+    unzResult = unzGetCurrentFileInfo(d->open, &info, nullptr, 0, nullptr, 0, nullptr, 0);
     if(unzResult != UNZ_OK)
         THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
@@ -252,7 +250,7 @@ ZipSerialize::Properties ZipSerialize::properties(const string &file) const
         return prop;
 
     prop.comment.resize(info.size_file_comment);
-    unzResult = unzGetCurrentFileInfo(d->open, &info, 0, 0, 0, 0, &prop.comment[0], uLong(prop.comment.size()));
+    unzResult = unzGetCurrentFileInfo(d->open, &info, nullptr, 0, nullptr, 0, &prop.comment[0], uLong(prop.comment.size()));
     if(unzResult != UNZ_OK)
         THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
