@@ -8,15 +8,15 @@
 
 package ee.ria.libdigidocpp;
 
-public class PKCS12Signer extends Signer {
+public class ConfV3 extends ConfV2 {
   private transient long swigCPtr;
 
-  protected PKCS12Signer(long cPtr, boolean cMemoryOwn) {
-    super(digidocJNI.PKCS12Signer_SWIGUpcast(cPtr), cMemoryOwn);
+  protected ConfV3(long cPtr, boolean cMemoryOwn) {
+    super(digidocJNI.ConfV3_SWIGUpcast(cPtr), cMemoryOwn);
     swigCPtr = cPtr;
   }
 
-  protected static long getCPtr(PKCS12Signer obj) {
+  protected static long getCPtr(ConfV3 obj) {
     return (obj == null) ? 0 : obj.swigCPtr;
   }
 
@@ -29,15 +29,20 @@ public class PKCS12Signer extends Signer {
     if (swigCPtr != 0) {
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        digidocJNI.delete_PKCS12Signer(swigCPtr);
+        digidocJNI.delete_ConfV3(swigCPtr);
       }
       swigCPtr = 0;
     }
     super.delete();
   }
 
-  public PKCS12Signer(String path, String pass) {
-    this(digidocJNI.new_PKCS12Signer(path, pass), true);
+  public ConfV3() {
+    this(digidocJNI.new_ConfV3(), true);
+  }
+
+  public static ConfV3 instance() {
+    long cPtr = digidocJNI.ConfV3_instance();
+    return (cPtr == 0) ? null : new ConfV3(cPtr, false);
   }
 
 }
