@@ -64,14 +64,14 @@ ZipSerialize::ZipSerialize(const string& path, bool create)
     if(create)
     {
         DEBUG("ZipSerialize::create(%s)", path.c_str());
-        d->create = zipOpen2(util::File::encodeName(d->path).c_str(), APPEND_STATUS_CREATE, nullptr, &d->pzlib_filefunc);
+        d->create = zipOpen2((char*)util::File::encodeName(d->path).c_str(), APPEND_STATUS_CREATE, nullptr, &d->pzlib_filefunc);
         if(!d->create)
             THROW("Failed to create ZIP file '%s'.", d->path.c_str());
     }
     else
     {
         DEBUG("ZipSerialize::open(%s)", path.c_str());
-        d->open = unzOpen2(util::File::encodeName(d->path).c_str(), &d->pzlib_filefunc);
+        d->open = unzOpen2((char*)util::File::encodeName(d->path).c_str(), &d->pzlib_filefunc);
         if(!d->open)
             THROW("Failed to open ZIP file '%s'.", d->path.c_str());
     }
