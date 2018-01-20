@@ -97,7 +97,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     DEBUG("OCSP url %s", url.c_str());
     if(url.empty())
     {
-        Exception e(__FILE__, __LINE__, "Failed to find ocsp responder url.");
+        Exception e(EXCEPTION_PARAMS("Failed to find ocsp responder url."));
         e.setCode(Exception::OCSPResponderMissing);
         throw e;
     }
@@ -113,7 +113,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     case OCSP_RESPONSE_STATUS_SUCCESSFUL: break;
     case OCSP_RESPONSE_STATUS_UNAUTHORIZED:
     {
-        Exception e(__FILE__, __LINE__, "OCSP request failed");
+        Exception e(EXCEPTION_PARAMS("OCSP request failed"));
         e.setCode(Exception::OCSPRequestUnauthorized);
         throw e;
     }
@@ -128,15 +128,14 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     if(OCSP_check_nonce(req.get(), basic.get()) <= 0)
         THROW("Incorrect NONCE field value.");
 
-    int certStatus = -1; int reason = -1;
-    ASN1_GENERALIZEDTIME *producedAt = nullptr, *thisUpdate = nullptr, *nextUpdate = nullptr;
-    if(!OCSP_resp_find_status(basic.get(), certId, &certStatus, &reason, &producedAt, &thisUpdate, &nextUpdate))
-        THROW("Failed to get status code from OCSP response.");
+    ASN1_GENERALIZEDTIME *thisUpdate = nullptr, *nextUpdate = nullptr;
+    if(OCSP_resp_find_status(basic.get(), certId, nullptr, nullptr, nullptr, &thisUpdate, &nextUpdate) != 1)
+        THROW("Failed to find CERT_ID from OCSP response.");
 
 #if 0
     if(!OCSP_check_validity(thisUpdate, nextUpdate, 15*60, 2*60))
     {
-        Exception e(__FILE__, __LINE__, "OCSP response not in valid time slot.");
+        Exception e(EXCEPTION_PARAMS("OCSP response not in valid time slot."));
         e.setCode(Exception::OCSPTimeSlot);
         throw e;
     }
@@ -427,34 +426,36 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
     if(!issuer)
     {
-        Exception e(__FILE__, __LINE__, "Certificate status: unknown");
+        Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
         e.setCode( Exception::CertificateUnknown );
         throw e;
     }
-    for(int i = 0; i < OCSP_resp_count(basic.get()); ++i)
+    SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(0, cert.handle(), issuer.handle()));
+    int status = -1; int reason = -1;
+    if(OCSP_resp_find_status(basic.get(), certId.get(), &status, &reason, 0, 0, 0) <= 0)
     {
-        SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(0, cert.handle(), issuer.handle()));
-        int status = -1; int reason = -1;
-        /*result =*/ OCSP_resp_find_status(basic.get(), certId.get(), &status, &reason, 0, 0, 0);
-        switch(status)
-        {
-        case V_OCSP_CERTSTATUS_GOOD: break;
-        case V_OCSP_CERTSTATUS_REVOKED:
-        {
-            DEBUG("OCSP status: REVOKED");
-            Exception e(__FILE__, __LINE__, "Certificate status: revoked");
-            e.setCode(Exception::CertificateRevoked);
-            throw e;
-        }
-        case V_OCSP_CERTSTATUS_UNKNOWN:
-        default:
-        {
-            DEBUG("OCSP status: UNKNOWN");
-            Exception e(__FILE__, __LINE__, "Certificate status: unknown");
-            e.setCode( Exception::CertificateUnknown );
-            throw e;
-        }
-        }
+        Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
+        e.setCode(Exception::CertificateUnknown);
+        throw e;
+    }
+    switch(status)
+    {
+    case V_OCSP_CERTSTATUS_GOOD: break;
+    case V_OCSP_CERTSTATUS_REVOKED:
+    {
+        DEBUG("OCSP status: REVOKED");
+        Exception e(EXCEPTION_PARAMS("Certificate status: revoked"));
+        e.setCode(Exception::CertificateRevoked);
+        throw e;
+    }
+    case V_OCSP_CERTSTATUS_UNKNOWN:
+    default:
+    {
+        DEBUG("OCSP status: UNKNOWN");
+        Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
+        e.setCode( Exception::CertificateUnknown );
+        throw e;
+    }
     }
 }
 
