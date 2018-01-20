@@ -5,17 +5,17 @@ matrix:
     env: TARGET=ubuntu:16.04
     sudo: false
   - os: linux
-    env: TARGET=ubuntu:17.04
+    env: TARGET=ubuntu:17.10
     sudo: false
   - os: linux
     env: TARGET=32bit/ubuntu:16.04
     sudo: false
   - os: osx
-    env: TARGET=osx MACOSX_DEPLOYMENT_TARGET=10.10
+    env: TARGET=osx
   - os: osx
-    env: TARGET=ios IPHONEOS_DEPLOYMENT_TARGET=9.0 ARCHS="armv7 arm64"
+    env: TARGET=ios ARCHS="armv7 arm64"
   - os: osx
-    env: TARGET=simulator IPHONEOS_DEPLOYMENT_TARGET=9.0
+    env: TARGET=simulator ARCHS="x86_64"
   - os: osx
     env: TARGET=androidarm
   - os: osx
@@ -24,7 +24,7 @@ matrix:
     env: TARGET=androidx86
 sudo: required
 dist: trusty
-osx_image: xcode8.3
+osx_image: xcode9.2
 services:
 - docker
 cache: ccache
@@ -38,7 +38,6 @@ env:
 before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
     sudo easy_install pip;
     brew install swig;
-    brew upgrade cmake;
     HASH=($(shasum prepare_osx_build_environment.sh));
     pip install --user awscli > /dev/null;
     aws s3 cp s3://open-eid/libdigidocpp-cache/${TARGET}/${HASH}.zip ${HASH}.zip --no-sign-request;
