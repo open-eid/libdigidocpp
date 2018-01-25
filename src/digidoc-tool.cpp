@@ -56,49 +56,7 @@ namespace std
 {
 static ostream &operator<<(ostream &os, const X509Cert &cert)
 {
-    enum {
-        UnknownType = 0,
-        DigiIDType = 1,
-        EstEidType = 2,
-        MobileIDType = 4,
-        OCSPType = 8,
-        TempelType = 16,
-
-        TestType = 32,
-        DigiIDTestType = TestType|DigiIDType,
-        EstEidTestType = TestType|EstEidType,
-        MobileIDTestType = TestType|MobileIDType,
-        OCSPTestType = TestType|OCSPType,
-        TempelTestType = TestType|TempelType
-    } type = UnknownType;
-    for(const string &i: cert.certificatePolicies())
-    {
-        if(i.compare(0, 22, "1.3.6.1.4.1.10015.1.1.") == 0)
-            type = EstEidType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.1.2.") == 0)
-            type = DigiIDType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.1.3.") == 0 ||
-            i.compare(0, 23, "1.3.6.1.4.1.10015.11.1.") == 0)
-            type = MobileIDType;
-
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.3.1.") == 0)
-            type = EstEidTestType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.3.2.") == 0)
-            type = DigiIDTestType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.3.3.") == 0 ||
-            i.compare(0, 23, "1.3.6.1.4.1.10015.11.3.") == 0)
-            type = MobileIDTestType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.3.7.") == 0 ||
-            (i.compare(0, 22, "1.3.6.1.4.1.10015.7.1.") == 0 &&
-            cert.issuerName("CN").find("TEST") != string::npos) )
-            type = TempelTestType;
-
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.7.1.") == 0 ||
-            i.compare(0, 22, "1.3.6.1.4.1.10015.2.1.") == 0)
-            type = TempelType;
-    }
-
-    return os << cert.subjectName("CN") << (type & TestType ? " (TEST)" : "");
+    return os << cert.subjectName("CN");
 }
 
 static ostream &operator<<(ostream &os, const vector<unsigned char> &data)
@@ -107,6 +65,41 @@ static ostream &operator<<(ostream &os, const vector<unsigned char> &data)
     for(const unsigned char &i: data)
         os << setw(2) << static_cast<int>(i) << ' ';
     return os << dec << nouppercase << setfill(' ');
+}
+
+static ostream &operator<<(ostream &os, const Exception::ExceptionCode code)
+{
+    switch(code)
+    {
+    case Exception::General: os << "General"; break;
+    case Exception::CertificateIssuerMissing: os << "CertificateIssuerMissing"; break;
+    case Exception::CertificateRevoked: os << "CertificateRevoked"; break;
+    case Exception::CertificateUnknown: os << "CertificateUnknown"; break;
+    case Exception::OCSPResponderMissing: os << "OCSPResponderMissing"; break;
+    case Exception::OCSPCertMissing: os << "OCSPCertMissing"; break;
+    case Exception::OCSPTimeSlot: os << "OCSPTimeSlot"; break;
+    case Exception::OCSPRequestUnauthorized: os << "OCSPRequestUnauthorized"; break;
+    case Exception::PINCanceled: os << "PINCanceled"; break;
+    case Exception::PINFailed: os << "PINFailed"; break;
+    case Exception::PINIncorrect: os << "PINIncorrect"; break;
+    case Exception::PINLocked: os << "PINLocked"; break;
+    case Exception::ReferenceDigestWeak: os << "ReferenceDigestWeak"; break;
+    case Exception::SignatureDigestWeak: os << "SignatureDigestWeak"; break;
+    case Exception::DataFileNameSpaceWarning: os << "DataFileNameSpaceWarning"; break;
+    case Exception::IssuerNameSpaceWarning: os << "IssuerNameSpaceWarning"; break;
+    case Exception::ProducedATLateWarning: os << "ProducedATLateWarning"; break;
+    case Exception::MimeTypeWarning: os << "MimeTypeWarning"; break;
+    default: os << code;
+    }
+    return os;
+}
+
+static ostream &operator<<(ostream &os, const Exception &e)
+{
+    os << e.file() << ":" << e.line() << " code(" << e.code() << ") " << e.msg() << endl;
+    for(const Exception &ex: e.causes())
+        os << ex;
+    return os;
 }
 }
 
@@ -347,6 +340,12 @@ static void printUsage(const char *executable)
 
 struct Params
 {
+    enum Warning {
+        WError,
+        WWarning,
+        WIgnore
+    };
+
     Params(int argc, char *argv[]);
     static string decodeParameter(const string &param)
     {
@@ -450,36 +449,62 @@ Params::Params(int argc, char *argv[])
     }
 }
 
-static void parseException(const Exception &e, const char *main = nullptr)
+static int validateSignature(const Signature *s, Params::Warning warning = Params::WWarning)
 {
-    if(main)
-        cout << main << endl;
-    cout << e.file() << ":" << e.line() << " code(";
-    switch(e.code())
-    {
-    case Exception::General: cout << "General"; break;
-    case Exception::CertificateIssuerMissing: cout << "CertificateIssuerMissing"; break;
-    case Exception::CertificateRevoked: cout << "CertificateRevoked"; break;
-    case Exception::CertificateUnknown: cout << "CertificateUnknown"; break;
-    case Exception::OCSPResponderMissing: cout << "OCSPResponderMissing"; break;
-    case Exception::OCSPCertMissing: cout << "OCSPCertMissing"; break;
-    case Exception::OCSPTimeSlot: cout << "OCSPTimeSlot"; break;
-    case Exception::OCSPRequestUnauthorized: cout << "OCSPRequestUnauthorized"; break;
-    case Exception::PINCanceled: cout << "PINCanceled"; break;
-    case Exception::PINFailed: cout << "PINFailed"; break;
-    case Exception::PINIncorrect: cout << "PINIncorrect"; break;
-    case Exception::PINLocked: cout << "PINLocked"; break;
-    case Exception::ReferenceDigestWeak: cout << "ReferenceDigestWeak"; break;
-    case Exception::SignatureDigestWeak: cout << "SignatureDigestWeak"; break;
-    case Exception::DataFileNameSpaceWarning: cout << "DataFileNameSpaceWarning"; break;
-    case Exception::IssuerNameSpaceWarning: cout << "IssuerNameSpaceWarning"; break;
-    case Exception::ProducedATLateWarning: cout << "ProducedATLateWarning"; break;
-    case Exception::MimeTypeWarning: cout << "MimeTypeWarning"; break;
-    default: cout << e.code();
+    int returnCode = EXIT_SUCCESS;
+    Signature::Validator v(s);
+    cout << "    Validation: ";
+    switch (v.status()) {
+    case Signature::Validator::Valid:
+        cout << Params::GREEN << "OK";
+        break;
+    case Signature::Validator::Warning:
+        if(warning == Params::WError)
+        {
+            cout << Params::RED << "FAILED (Warning)";
+            returnCode = EXIT_FAILURE;
+        }
+        else
+            cout << Params::YELLOW << "OK (Warning)";
+        break;
+    case Signature::Validator::NonQSCD:
+        if(warning == Params::WError)
+        {
+            cout << Params::RED << "FAILED (NonQSCD)";
+            returnCode = EXIT_FAILURE;
+        }
+        else
+            cout << Params::YELLOW << "OK (NonQSCD)";
+        break;
+    case Signature::Validator::Test:
+        if(warning == Params::WError)
+        {
+            cout << Params::RED << "OK (Test)";
+            returnCode = EXIT_FAILURE;
+        }
+        else
+            cout << Params::YELLOW << "OK (Test)";
+        break;
+    case Signature::Validator::Unknown:
+        cout << Params::RED << "FAILED (Unknown)";
+        returnCode = EXIT_FAILURE;
+        break;
+    case Signature::Validator::Invalid:
+        cout << Params::RED << "FAILED (Invalid)";
+        returnCode = EXIT_FAILURE;
+        break;
     }
-    cout << ") " << e.msg() << endl;
-    for(const Exception &ex: e.causes())
-        parseException(ex);
+    cout << Params::RESET << endl;
+    if(!v.warnings().empty() && warning != Params::WIgnore)
+    {
+        cout << "    Warnings: " << Params::YELLOW;
+        for(Exception::ExceptionCode code: v.warnings())
+            cout << code;
+        cout << Params::RESET << endl;
+    }
+    if(!v.diagnostics().empty())
+        cout << "    Exception:" << endl << v.diagnostics() << endl;
+    return returnCode;
 }
 
 /**
@@ -491,11 +516,7 @@ static void parseException(const Exception &e, const char *main = nullptr)
  */
 static int open(int argc, char* argv[])
 {
-    enum {
-        WError,
-        WWarning,
-        WIgnore
-    } reportwarnings = WWarning;
+    Params::Warning reportwarnings = Params::WWarning;
     string path, extractPath, policy;
     int returnCode = EXIT_SUCCESS;
 
@@ -507,8 +528,8 @@ static int open(int argc, char* argv[])
             continue;
         else if(arg.find("--warnings=") == 0)
         {
-            if(arg.substr(11, 6) == "ignore") reportwarnings = WIgnore;
-            if(arg.substr(11, 5) == "error") reportwarnings = WError;
+            if(arg.substr(11, 6) == "ignore") reportwarnings = Params::WIgnore;
+            if(arg.substr(11, 5) == "error") reportwarnings = Params::WError;
         }
         else if(arg.find("--extractAll") == 0)
         {
@@ -533,8 +554,8 @@ static int open(int argc, char* argv[])
     try {
         doc.reset(Container::open(path));
     } catch(const Exception &e) {
-        cout << "Failed to parse container";
-        parseException(e, "  Exception:");
+        cout << "Failed to parse container" << endl;
+        cout << "  Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 
@@ -550,7 +571,7 @@ static int open(int argc, char* argv[])
                     cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
                 } catch(const Exception &e) {
                     cout << "  Document " << file->fileName() << " extraction: " << Params::RED << "FAILED" << Params::RESET << endl;
-                    parseException(e, "  Exception:");
+                    cout << "  Exception:" << endl << e;
                     return EXIT_FAILURE;
                 }
             }
@@ -574,42 +595,10 @@ static int open(int argc, char* argv[])
         for(const Signature *s: doc->signatures())
         {
             cout << "  Signature " << pos++ << " (" << s->profile().c_str() << "):" << endl;
-            vector<string> warnings;
-
             // Validate signature. Checks, whether signature format is correct
             // and signed documents checksums are correct.
-            try {
-                s->validate(policy);
-                cout << "    Validation: " << Params::GREEN << "OK" << Params::RESET << endl;
-            } catch(const Exception &e) {
-                function<void (const Exception &e)> validate = [=, &returnCode, &warnings, &validate] (const Exception &e)
-                {
-                    vector<Exception> causes = e.causes();
-                    for(vector<Exception>::const_iterator j = causes.begin(); j != causes.end(); ++j)
-                    {
-                        switch(j->code())
-                        {
-                        case Exception::ReferenceDigestWeak: warnings.push_back("ReferenceDigestWeak"); break;
-                        case Exception::SignatureDigestWeak: warnings.push_back("SignatureDigestWeak"); break;
-                        case Exception::IssuerNameSpaceWarning:
-                        case Exception::DataFileNameSpaceWarning: warnings.push_back("WrongNameSpace"); break;
-                        case Exception::ProducedATLateWarning: warnings.push_back("ProducedATLate"); break;
-                        case Exception::MimeTypeWarning: warnings.push_back("MimeTypeWarning"); break;
-                        default: returnCode = EXIT_FAILURE; break;
-                        }
-                        if(!j->causes().empty())
-                            validate(*j);
-                    }
-                };
-                validate(e);
-                if(reportwarnings == WError || returnCode == EXIT_FAILURE)
-                {
-                    cout << "    Validation: " << Params::RED << "FAILED" << Params::RESET << endl;
-                    parseException(e, "     Exception:");
-                }
-                else
-                    cout << "    Validation: " << Params::GREEN << "OK" << Params::RESET << endl;
-            }
+            if(validateSignature(s, reportwarnings) == EXIT_FAILURE)
+                returnCode = EXIT_FAILURE;
 
             // Get signature production place info.
             if(!s->city().empty() || !s->stateOrProvince().empty() || !s->streetAddress().empty() || !s->postalCode().empty() || !s->countryName().empty())
@@ -645,17 +634,9 @@ static int open(int argc, char* argv[])
                 << "    TS time: " << s->TimeStampTime() << endl
                 << "    TSA: " << s->ArchiveTimeStampCertificate() << endl
                 << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
-            if(reportwarnings == WWarning && !warnings.empty())
-            {
-                cout << "    Warnings: " << Params::YELLOW;
-                for(const string &warning: warnings)
-                    cout << warning << ", ";
-                cout << Params::RESET << endl;
-                returnCode = EXIT_FAILURE;
-            }
         }
     } catch(const Exception &e) {
-        parseException(e, "Caught Exception:");
+        cout << "Caught Exception:" << endl << e;
         returnCode = EXIT_FAILURE;
     }
 
@@ -694,8 +675,8 @@ static int remove(int argc, char *argv[])
     try {
         doc.reset(Container::open(path));
     } catch(const Exception &e) {
-        printf("Failed to parse container");
-        parseException(e, "  Exception:");
+        cout << "Failed to parse container" << endl;
+        cout << "  Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 
@@ -705,7 +686,7 @@ static int remove(int argc, char *argv[])
             sort(signatures.begin(), signatures.end(), greater<unsigned int>());
             for(vector<unsigned int>::const_iterator i = signatures.begin(); i != signatures.end(); ++i)
             {
-                printf("  Removing signature %u\n", *i);
+                cout << "  Removing signature " << *i << endl;
                 doc->removeSignature(*i);
             }
         }
@@ -715,7 +696,7 @@ static int remove(int argc, char *argv[])
             sort(documents.begin(), documents.end(), greater<unsigned int>());
             for(vector<unsigned int>::const_iterator i = documents.begin(); i != documents.end(); ++i)
             {
-                printf("  Removing document %u\n", *i);
+                cout << "  Removing document " << *i << endl;
                 doc->removeDataFile(*i);
             }
         }
@@ -723,7 +704,7 @@ static int remove(int argc, char *argv[])
         doc->save();
 
         return EXIT_SUCCESS;
-    } catch(const Exception &e) { parseException(e, "Caught Exception:"); }
+    } catch(const Exception &e) { cout << "Caught Exception:" << endl << e; }
 
     return EXIT_FAILURE;
 }
@@ -749,8 +730,8 @@ static int add(int argc, char *argv[])
     try {
         doc.reset(Container::open(p.path));
     } catch(const Exception &e) {
-        printf("Failed to parse container");
-        parseException(e, "  Exception:");
+        cout << "Failed to parse container" << endl;
+        cout << "  Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 
@@ -761,7 +742,7 @@ static int add(int argc, char *argv[])
         doc->save();
 
         return EXIT_SUCCESS;
-    } catch(const Exception &e) { parseException(e, "Caught Exception:"); }
+    } catch(const Exception &e) { cout << "Caught Exception:" << endl << e; }
 
     return EXIT_FAILURE;
 }
@@ -810,7 +791,7 @@ static int signContainer(Container *doc, Signer *signer, bool dontValidate = fal
             cout << "    Validation: " << Params::GREEN << "OK" << Params::RESET << endl;
         } catch(const Exception &e) {
             cout << "    Validation: " << Params::RED << "FAILED" << Params::RESET << endl;
-            parseException(e, "     Exception:");
+            cout << "     Exception:" << endl << e;
             return EXIT_FAILURE;
         }
         return EXIT_SUCCESS;
@@ -839,8 +820,8 @@ static int create(int argc, char* argv[])
     try {
         doc.reset(Container::create(p.path));
     } catch(const Exception &e) {
-        printf("Failed to parse container");
-        parseException(e, "  Exception:");
+        cout << "Failed to parse container" << endl;
+        cout << "  Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 
@@ -854,7 +835,7 @@ static int create(int argc, char* argv[])
         doc->save();
         return returnCode;
     } catch(const Exception &e) {
-        parseException(e, "Caught Exception:");
+        cout << "Caught Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 }
@@ -880,7 +861,7 @@ static int createBatch(int argc, char* argv[])
     try {
         signer = getSigner(p);
     } catch(const Exception &e) {
-        parseException(e, "Caught Exception:");
+        cout << "Caught Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 
@@ -897,7 +878,7 @@ static int createBatch(int argc, char* argv[])
                 returnCode = EXIT_FAILURE;
             doc->save();
         } catch(const Exception &e) {
-            parseException(e, "  Exception:");
+            cout << "  Exception:" << endl << e;
             returnCode = EXIT_FAILURE;
         }
     }
@@ -925,8 +906,8 @@ static int sign(int argc, char* argv[])
     try {
         doc.reset(Container::open(p.path));
     } catch(const Exception &e) {
-        printf("Failed to parse container");
-        parseException(e, "  Exception:");
+        cout << "Failed to parse container" << endl;
+        cout << "  Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 
@@ -935,7 +916,7 @@ static int sign(int argc, char* argv[])
         doc->save();
         return returnCode;
     } catch(const Exception &e) {
-        parseException(e, "Caught Exception:");
+        cout << "Caught Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 }
@@ -953,8 +934,8 @@ static int websign(int argc, char* argv[])
     try {
         doc.reset(Container::create(p.path));
     } catch(const Exception &e) {
-        printf("Failed to parse container");
-        parseException(e, "  Exception:");
+        cout << "Failed to parse container" << endl;
+        cout << "  Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 
@@ -978,18 +959,12 @@ static int websign(int argc, char* argv[])
             signature->setSignatureValue(File::hexToBin(signedData));
             cout << "Test" << File::hexToBin(signedData);
             signature->extendSignatureProfile(p.profile);
-            try {
-                signature->validate();
-                cout << "    Validation: " << Params::GREEN << "OK" << Params::RESET << endl;
-            } catch(const Exception &e) {
-                cout << "    Validation: " << Params::RED << "FAILED" << Params::RESET << endl;
-                parseException(e, "     Exception:");
+            if(validateSignature(signature) == EXIT_FAILURE)
                 returnCode = EXIT_FAILURE;
-            }
         }
         doc->save();
     } catch(const Exception &e) {
-        parseException(e, "Caught Exception:");
+        cout << "Caught Exception:" << endl << e;
         returnCode = EXIT_FAILURE;
     }
 
@@ -1014,7 +989,7 @@ static int tslcmd(int , char* [])
         cout << Params::GREEN << "VALID" << Params::RESET << endl;
     } catch(const Exception &e) {
         cout << Params::RED << "INVALID" << Params::RESET << endl;
-        parseException(e, "Caught Exception:");
+        cout << "Caught Exception:" << endl << e;
         returnCode = EXIT_FAILURE;
     }
     for(const TSL::Service &s: t.services())
@@ -1041,7 +1016,7 @@ static int tslcmd(int , char* [])
             cout << Params::GREEN << "VALID" << Params::RESET << endl;
         } catch(const Exception &e) {
             cout << Params::RED << "INVALID" << Params::RESET << endl;
-            parseException(e, "Caught Exception:");
+            cout << "Caught Exception:" << endl << e;
             returnCode = EXIT_FAILURE;
         }
         for(const TSL::Service &s: tp.services())
@@ -1081,8 +1056,8 @@ int main(int argc, char *argv[])
         info << ")";
         digidoc::initialize(info.str());
     } catch(const Exception &e) {
-        printf("Failed to initalize library:\n");
-        parseException(e, "Caught Exception:");
+        cout << "Failed to initalize library:" << endl;
+        cout << "Caught Exception:" << endl << e;
         return EXIT_FAILURE;
     }
 

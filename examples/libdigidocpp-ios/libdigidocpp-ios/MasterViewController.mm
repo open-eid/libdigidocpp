@@ -109,13 +109,13 @@ static void parseException(const digidoc::Exception &e)
                     cell.textLabel.text = [NSString stringWithUTF8String:signature->signingCertificate().subjectName("CN").c_str()];
                     break;
                 case 1:
-                    try {
-                        signature->validate();
-                        cell.textLabel.text = @"Valid";
-                    }
-                    catch(const digidoc::Exception &e) {
-                        cell.textLabel.text = @"Invalid";
-                        parseException(e);
+                    switch (digidoc::Signature::Validator(signature).status()) {
+                    case digidoc::Signature::Validator::Valid: cell.textLabel.text = @"Valid"; break;
+                    case digidoc::Signature::Validator::Warning: cell.textLabel.text = @"Warning"; break;
+                    case digidoc::Signature::Validator::NonQSCD: cell.textLabel.text = @"NonQSCD"; break;
+                    case digidoc::Signature::Validator::Test: cell.textLabel.text = @"Test"; break;
+                    case digidoc::Signature::Validator::Unknown: cell.textLabel.text = @"Unknown"; break;
+                    case digidoc::Signature::Validator::Invalid: cell.textLabel.text = @"Invalid"; break;
                     }
                     break;
                 default:

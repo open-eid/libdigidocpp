@@ -70,11 +70,9 @@ public class MainActivity extends Activity {
 						certFactory.generateCertificate(new ByteArrayInputStream(s.signingCertificateDer()));
 				content.append("Signer: " + info.getSubjectDN().toString() + "\n");
 				content.append("Signing time: " + s.trustedSigningTime() + "\n");
-				try {
-					s.validate();
-					content.append("Signature: valid\n");
-				} catch (Exception e) {
-					content.append("Signature: invalid\n");
+				content.append("Signature status: " + v.status().toString() + "\n");
+				if (!v.diagnostics().isEmpty()) {
+					content.append("Diagnostics:\n" + v.diagnostics() + "\n");
 				}
 			}
 		} catch (CertificateException e) {

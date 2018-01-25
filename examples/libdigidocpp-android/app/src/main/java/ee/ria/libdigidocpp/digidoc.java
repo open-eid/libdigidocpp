@@ -25,4 +25,8 @@ public class digidoc {
     digidocJNI.initializeLib(appName, path);
   }
 
+  public static void initializeLibWithTSL(String appName, String path, String tslUrl, byte[] tslCert) {
+    digidocJNI.initializeLibWithTSL(appName, path, tslUrl, tslCert);
+  }
+
 }

@@ -44,8 +44,4 @@ public class ConfV2 extends Conf {
     return (cPtr == 0) ? null : new ConfV2(cPtr, false);
   }
 
-  public SWIGTYPE_p_digidoc__X509Cert verifyServiceCert() {
-    return new SWIGTYPE_p_digidoc__X509Cert(digidocJNI.ConfV2_verifyServiceCert(swigCPtr, this), true);
-  }
-
 }

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "Exports.h"
+#include "Exception.h"
 
 #include <string>
 #include <vector>
@@ -27,9 +27,40 @@
 namespace digidoc
 {
     class X509Cert;
+
     class EXP_DIGIDOC Signature
     {
       public:
+        class EXP_DIGIDOC Validator
+        {
+        public:
+            enum Status
+            {
+                Valid,
+                Warning,
+                NonQSCD,
+                Test,
+                Invalid,
+                Unknown
+            };
+
+            Validator(const Signature *s);
+            ~Validator();
+
+            std::string diagnostics() const;
+            Status status() const;
+            std::vector<Exception::ExceptionCode> warnings() const;
+
+        private:
+            DISABLE_COPY(Validator);
+
+            bool isTestCert(const X509Cert &cert);
+            void parseException(const Exception &e);
+
+            struct Private;
+            Private *d;
+        };
+
           static const std::string POLv1;
           static const std::string POLv2;
 
