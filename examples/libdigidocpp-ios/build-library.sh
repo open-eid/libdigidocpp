@@ -13,6 +13,7 @@ case "$@" in
   ;;
 esac
 
+: ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
 TARGET_PATH=/Library/libdigidocpp.${TARGET}
 rm -rf ${TARGET}
 mkdir -p ${TARGET}
@@ -33,6 +34,7 @@ cmake \
     -DUSE_KEYCHAIN=off \
     -DBUILD_TOOLS=off \
     -DBUILD_TYPE=STATIC \
+    -DDOXYGEN_EXECUTABLE=NOTFOUND \
     ../../..
 make
 sudo make install

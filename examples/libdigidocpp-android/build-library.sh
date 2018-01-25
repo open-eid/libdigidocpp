@@ -29,6 +29,7 @@ cmake \
     -DBoost_INCLUDE_DIR="" \
     -DBUILD_TOOLS=off \
     -DBUILD_TYPE=STATIC \
+    -DDOXYGEN_EXECUTABLE=NOTFOUND \
     ../../..
 make
 sudo make install

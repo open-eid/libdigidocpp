@@ -4,9 +4,9 @@ set -e
 XERCES_DIR=xerces-c-3.2.0
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.0.2m
-#OPENSSL_DIR=openssl-1.1.0f
-LIBXML2_DIR=libxml2-2.9.4
+OPENSSL_DIR=openssl-1.0.2n
+#OPENSSL_DIR=openssl-1.1.0g
+LIBXML2_DIR=libxml2-2.9.7
 ANDROID_NDK=android-ndk-r14b
 ARGS="$@"
 
@@ -15,17 +15,20 @@ case "$@" in
   case "$@" in
   *x86*)
     ARCH=x86
+    ARCH_ABI="x86"
     API=19
     CROSS_COMPILE=i686-linux-android
     ;;
   *arm64*)
     ARCH=arm64
+    ARCH_ABI="arm64-v8a"
     API=21
     CROSS_COMPILE=aarch64-linux-android
     export LIBS="-liconv"
     ;;
   *)
     ARCH=arm
+    ARCH_ABI="armeabi-v7a"
     API=19
     CROSS_COMPILE=arm-linux-androideabi
     ;;
@@ -39,7 +42,7 @@ case "$@" in
   export CXX=clang++
   export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
-  CONFIGURE="--host=${CROSS_COMPILE} --disable-static --enable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking"
+  CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking"
 
   if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
     curl -O https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
@@ -65,6 +68,7 @@ case "$@" in
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
   : ${ARCHS:="armv7 armv7s arm64"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ;;
@@ -73,7 +77,8 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
-  :  ${ARCHS:="i386 x86_64"}
+  : ${ARCHS:="i386 x86_64"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ;;
@@ -82,7 +87,8 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp
   CONFIGURE="--disable-static --enable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
-  ARCHS="x86_64"
+  : ${ARCHS:="x86_64"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="10.11"}
   export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ;;
@@ -100,7 +106,6 @@ function xerces {
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE}
     make -s
     sudo make install
-    sudo ln -s libxerces-c-3.2.so ${TARGET_PATH}/lib/libxerces-c.so
     cd ..
 }
 
@@ -116,12 +121,19 @@ function xalan {
     export XALANCROOT=${PWD}
     case "${ARGS}" in
     *android*)
-      patch -Np2 -i ../../patches/xalan-android.patch
-      mkdir bin
-      cp ../../patches/MsgCreator bin
-      ./runConfigure -p linux -P ${TARGET_PATH} -c ${CC} -x ${CXX} -r none -C --host=arm-unknown-linux
+      cp ../../patches/xalan-CMakeLists.txt src/CMakeLists.txt
+      cmake \
+        -DCMAKE_SYSTEM_NAME=Android \
+        -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN=${TARGET_PATH} \
+        -DCMAKE_ANDROID_ARCH_ABI=${ARCH_ABI} \
+        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+        -DCMAKE_BUILD_TYPE="Release" \
+        -DXERCESC_INCLUDE_DIR=${TARGET_PATH}/include \
+        -DXercesC_LIBRARY_RELEASE=${TARGET_PATH}/lib/libxerces-c.a \
+        src
+      cp ../../patches/MsgCreator src
       make -s
-      sudo XALANCROOT=${PWD} make install
+      sudo make install
       ;;
     *ios*|*simulator*)
       cp ../../patches/xalan-CMakeLists.txt src/CMakeLists.txt
@@ -219,24 +231,16 @@ function openssl {
 
     case "${ARGS}" in
     *android*)
-        CCOLD=${CC}
-        export CC=${CROSS_COMPILE}-gcc
+        perl -pi -e 's/-mandroid/-fno-integrated-as/g' Configure
+        perl -pi -e 's/.code\t32/#if defined(__thumb2__) || defined(__clang__)\n.syntax unified\n#endif\n#if defined(__thumb2__)\n.thumb\n#else\n.code   32\n#endif/g' crypto/modes/asm/ghash-armv4.pl 
         unset CROSS_COMPILE
         case "${ARGS}" in
-        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} no-hw shared ;;
-        *arm64*)
-          ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-hw shared -DB_ENDIAN  \
-             -fPIC -DOPENSSL_PIC -DDSO_DLFCN -DHAVE_DLFCN_H -mandroid -O3 -fomit-frame-pointer -Wall
-          ;;
-        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} no-hw shared ;;
+        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} no-hw no-asm ;;
+        *arm64*) ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-hw no-asm -DB_ENDIAN -fomit-frame-pointer ;;
+        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} no-hw no-asm ;;
         esac
-        perl -pi -e 's/SHLIB_EXT=\.so\.\$\(SHLIB_MAJOR\)\.\$\(SHLIB_MINOR\)/SHLIB_EXT=\.so/g' Makefile
-        perl -pi -e 's/SHARED_LIBS_LINK_EXTS=\.so\.\$\(SHLIB_MAJOR\) \.so//g' Makefile
-        perl -pi -e 's/SHLIB_MAJOR=1/SHLIB_MAJOR=`/g' Makefile
-        perl -pi -e 's/SHLIB_MINOR=0.0/SHLIB_MINOR=`/g' Makefile
         make -s
         sudo make install_sw
-        export CC=${CCOLD}
         ;;
     *ios*|*simulator*)
         CRYPTO=""
@@ -290,7 +294,7 @@ case "$@" in
     echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
     echo "To control iOS, macOS builds set environment variables:"
     echo " minimum deployment target"
-    echo " - MACOSX_DEPLOYMENT_TARGET=10.10"
+    echo " - MACOSX_DEPLOYMENT_TARGET=10.11"
     echo " - IPHONEOS_DEPLOYMENT_TARGET=9.0"
     echo " archs to build on iOS"
     echo " - ARCHS=\"armv7 armv7s arm64\" (iOS)"

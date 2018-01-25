@@ -256,8 +256,9 @@ set_target_properties(digidocpp PROPERTIES
 target_link_libraries(digidocpp digidocpp_priv
     ${CMAKE_DL_LIBS}
     ${MINIZIP_LIBRARIES}
-    ${XERCESC_LIBRARIES}
     ${XMLSECURITYC_LIBRARIES}
+    ${XALANMSG_LIBRARY}
+    ${XERCESC_LIBRARIES}
     ${TARGET_LIBRARIES}
     ${OPENSSL_LIBRARIES}
     ${ZLIB_LIBRARIES}
