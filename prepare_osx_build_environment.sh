@@ -236,7 +236,7 @@ function openssl {
         unset CROSS_COMPILE
         case "${ARGS}" in
         *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} no-hw no-asm ;;
-        *arm64*) ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-hw no-asm -DB_ENDIAN -fomit-frame-pointer ;;
+        *arm64*) ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-hw no-asm -fomit-frame-pointer ;;
         *) ./Configure android-armv7 --openssldir=${TARGET_PATH} no-hw no-asm ;;
         esac
         make -s

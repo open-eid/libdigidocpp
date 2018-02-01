@@ -1,7 +1,6 @@
 # Android patches
 * iconv.c.patch - arm64
 * MsgCreator - macOS prebuild binary for Xalan-C cross compiling
-* xalan-android.patch - Xalan-C soname fixes
 * xmlsec.patch - Workaround missing android sdk elements
 
 # iOS patches
