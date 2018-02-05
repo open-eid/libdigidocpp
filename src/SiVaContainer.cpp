@@ -96,6 +96,7 @@ void SignatureSiVa::validate(const std::string &policy) const
 SiVaContainer::SiVaContainer(const string &path, const string &ext)
     : d(new Private)
 {
+    DEBUG("SiVaContainer::SiVaContainer(%s, %s)", path.c_str(), ext.c_str());
     unique_ptr<istream> ifs(new ifstream(File::encodeName(path).c_str(), ifstream::binary));
     istream *is = ifs.get();
     unique_ptr<stringstream> ddoc;
@@ -288,6 +289,10 @@ std::stringstream* SiVaContainer::parseDDoc(std::istream *is)
     catch(const DOMException& e)
     {
         THROW("Failed to parse DDoc XML: %s", X(e.getMessage()).toString().c_str());
+    }
+    catch(const Exception &)
+    {
+        throw;
     }
     catch(...)
     {

@@ -121,6 +121,10 @@ unique_ptr<DOMDocument> SecureDOMParser::parseIStream(std::istream &is)
     getDomConfig()->setParameter(XMLUni::fgDOMErrorHandler, &ehp);
     // Parse XML to DOM.
     unique_ptr<DOMDocument> doc(DOMLSParserImpl::parse(&wrap));
-    eh.throw_if_failed<xsd::cxx::tree::parsing<char>>();
+    try {
+        eh.throw_if_failed<xsd::cxx::tree::parsing<char>>();
+    } catch(const xsd::cxx::tree::parsing<char> &e) {
+        THROW("Failed to parse XML %s", e.what());
+    }
     return doc;
 }
