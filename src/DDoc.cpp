@@ -436,6 +436,7 @@ void SignatureDDOC::validate() const
 DDoc::DDoc()
 :	d( new DDocPrivate )
 {
+    DEBUG("DDoc::DDoc()");
     d->doc = nullptr;
     d->lib = DDocLibrary::instance();
     if(!d->lib->f_initDigiDocLib)
@@ -450,6 +451,7 @@ DDoc::DDoc()
 DDoc::DDoc(const string &path)
  :	d( new DDocPrivate )
 {
+    DEBUG("DDoc::DDoc(%s)", path.c_str());
     d->lib = DDocLibrary::instance();
     load(path);
 }
