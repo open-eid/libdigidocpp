@@ -1,3 +1,9 @@
+Libdigidocpp library [3.13.4](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.4) release notes
+--------------------------------------
+- Add TSL cert tl-mp5 and generate headers dynamically (#174)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.3...v3.13.4)
+
 Libdigidocpp library [3.13.3](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.3) release notes
 --------------------------------------
 - SiVa V2 support (#166)
