@@ -344,6 +344,7 @@ if( FRAMEWORK )
             -change '${LIBPATH}/libssl.1.0.0.dylib' '@loader_path/Libraries/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/Libraries/libxerces-c.dylib'
             -change '${LIBPATH}/libxml-security-c.17.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
+            -change '${LIBPATH}/libxalanMsg.111.0.dylib' '@loader_path/Libraries/libxalanMsg.dylib'
             -change '${LIBPATH}/libxalan-c.111.0.dylib' '@loader_path/Libraries/libxalan-c.dylib'
             $<TARGET_FILE:digidocpp>
         COMMAND install_name_tool
@@ -351,6 +352,7 @@ if( FRAMEWORK )
             -change '${LIBPATH}/libssl.1.0.0.dylib' '@executable_path/../Libraries/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
             -change '${LIBPATH}/libxml-security-c.17.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
+            -change '${LIBPATH}/libxalanMsg.111.0.dylib' '@executable_path/../Libraries/libxalanMsg.dylib'
             -change '${LIBPATH}/libxalan-c.111.0.dylib' '@executable_path/../Libraries/libxalan-c.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
         COMMAND touch $<TARGET_FILE:digidoc-tool>
