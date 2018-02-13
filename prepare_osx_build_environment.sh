@@ -69,6 +69,7 @@ case "$@" in
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
   : ${ARCHS:="armv7 armv7s arm64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
+  export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ;;
@@ -79,6 +80,7 @@ case "$@" in
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
   : ${ARCHS:="i386 x86_64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
+  export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ;;
@@ -89,6 +91,7 @@ case "$@" in
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="x86_64"}
   : ${MACOSX_DEPLOYMENT_TARGET:="10.11"}
+  export MACOSX_DEPLOYMENT_TARGET
   export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   ;;
