@@ -406,6 +406,16 @@ void OCSP::verifyResponse(const X509Cert &cert) const
 {
     if(!resp)
         THROW("Failed to verify OCSP response.");
+
+    // Find issuer before OCSP validation to activate region TSL
+    X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
+    if(!issuer)
+    {
+        Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
+        e.setCode(Exception::CertificateUnknown);
+        throw e;
+    }
+
     time_t t = util::date::ASN1TimeToTime_t(producedAt());
     SCOPE(X509_STORE, store, X509CertStore::createStore(X509CertStore::OCSP, &t));
     STACK_OF(X509) *stack = sk_X509_new_null();
@@ -423,13 +433,6 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     if(result <= 0)
         THROW_OPENSSLEXCEPTION("Failed to verify OCSP response.");
 
-    X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
-    if(!issuer)
-    {
-        Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
-        e.setCode( Exception::CertificateUnknown );
-        throw e;
-    }
     SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(0, cert.handle(), issuer.handle()));
     int status = -1; int reason = -1;
     if(OCSP_resp_find_status(basic.get(), certId.get(), &status, &reason, 0, 0, 0) <= 0)
