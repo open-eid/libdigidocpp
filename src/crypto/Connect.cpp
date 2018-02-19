@@ -30,12 +30,7 @@
 #include <zlib.h>
 
 #include <cstring>
-#include <functional>
 #include <thread>
-
-#ifdef __ANDROID__
-#include <sys/select.h>
-#endif
 
 using namespace digidoc;
 using namespace std;
@@ -72,16 +67,22 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         path = url;
     }
 
-    DEBUG("Connecting to Host: %s", hostname.c_str());
+    DEBUG("Connecting to Host: %s timeout: %i", hostname.c_str(), _timeout);
     d = BIO_new_connect(const_cast<char*>(hostname.c_str()));
     if(!d)
         THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
 
     BIO_set_nbio(d, _timeout > 0);
-    if(BIO_do_connect(d) != 1 && _timeout == 0)
-        THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
-    if(!waitSocket(Write))
-        THROW("Failed to connect to host: '%s'", hostname.c_str());
+    auto start = chrono::high_resolution_clock::now();
+    while(BIO_do_connect(d) != 1)
+    {
+        if(_timeout == 0)
+            THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
+        auto end = chrono::high_resolution_clock::now();
+        if(chrono::duration_cast<chrono::seconds>(end - start).count() >= _timeout)
+            THROW("Failed to create connection with host timeout: '%s'", hostname.c_str());
+        this_thread::sleep_for(chrono::milliseconds(50));
+    }
 
     if(usessl > 0)
     {
@@ -93,13 +94,13 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
             _timeout = 1; // Don't wait additional data on read, case proxy tunnel
             Result r = exec();
             if(!r.isOK() || r.result.find("established") == string::npos)
-                THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
+                THROW_OPENSSLEXCEPTION("Failed to create proxy connection with host: '%s'", hostname.c_str());
             _timeout = timeout; // Restore
         }
 
-        ssl.reset(SSL_CTX_new(SSLv23_client_method()), function<void(SSL_CTX*)>(SSL_CTX_free));
+        ssl.reset(SSL_CTX_new(SSLv23_client_method()), SSL_CTX_free);
         if(!ssl)
-            THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
+            THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
         SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
         SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
         if(cert.handle())
@@ -114,16 +115,15 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         if(!sbio)
             THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
         d = BIO_push(sbio, d);
-        for(int i = 0; i < timeout; ++i)
+        while(BIO_do_handshake(d) != 1)
         {
-            if(BIO_do_handshake(d) == 1)
-                break;
-            if(i == timeout)
+            if(_timeout == 0)
                 THROW("Failed to create ssl connection with host: '%s'", hostname.c_str());
-            this_thread::sleep_for(chrono::milliseconds(1000));
+            auto end = chrono::high_resolution_clock::now();
+            if(chrono::duration_cast<chrono::seconds>(end - start).count() >= _timeout)
+                THROW("Failed to create ssl connection with host timeout: '%s'", hostname.c_str());
+            this_thread::sleep_for(chrono::milliseconds(50));
         }
-        if(timeout == 0 && BIO_do_handshake(d) != 1)
-            THROW("Failed to create ssl connection with host: '%s'", hostname.c_str());
     }
 
     BIO_printf(d, "%s %s HTTP/1.0\r\n", method.c_str(), path.c_str());
@@ -172,8 +172,6 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
     else
         BIO_printf(d, "\r\n");
 
-    waitSocket(Read);
-
     int rc = 0;
     size_t pos = 0;
     Result r;
@@ -185,8 +183,8 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
         rc = BIO_read(d, &r.content[pos], int(r.content.size() - pos));
         if(rc == -1 && BIO_should_read(d) != 1)
             break;
-        if(_timeout > 0 && _timeout * 1000 <
-           chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count())
+        auto end = chrono::high_resolution_clock::now();
+        if(_timeout > 0 && _timeout < chrono::duration_cast<chrono::seconds>(end - start).count())
             break;
     } while(rc != 0);
     r.content.resize(pos);
@@ -268,30 +266,4 @@ void Connect::sendProxyAuth()
     (void)BIO_flush(b64.get());
     BIO_pop(b64.get());
     BIO_printf(d, "\r\n");
-}
-
-bool Connect::waitSocket(Wait wait)
-{
-    if(_timeout == 0)
-        return true;
-
-    int fd = BIO_get_fd(d, NULL);
-    if(fd <= 0)
-        return false;
-
-#if defined(_WIN32)
-#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    return true;
-#endif
-#endif
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(fd, &fds);
-    struct timeval tv = { _timeout, 0 };
-    switch(wait)
-    {
-    case Read: return select(fd + 1, &fds, nullptr, nullptr, &tv) > 0;
-    case Write:
-    default: return select(fd + 1, nullptr, &fds, nullptr, &tv) > 0;
-    }
 }
