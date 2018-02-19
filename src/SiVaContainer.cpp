@@ -173,7 +173,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         jsonxx::Object signature = obj->get<jsonxx::Object>();
         s->_id = signature.get<string>("id");
         s->_signingTime = signature.get<string>("claimedSigningTime");
-        s->_bestTime = signature.get<jsonxx::Object>("info").get<string>("bestSignatureTime", string());
+        s->_bestTime = signature.get<jsonxx::Object>("info", jsonxx::Object()).get<string>("bestSignatureTime", string());
         s->_profile = signature.get<string>("signatureFormat");
         s->_indication = signature.get<string>("indication");
         s->_subIndication = signature.get<string>("subIndication", string());
