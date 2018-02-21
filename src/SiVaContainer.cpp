@@ -240,7 +240,7 @@ std::stringstream* SiVaContainer::parseDDoc(std::istream *is)
     try
     {
         unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(*is));
-        DOMNodeList *nodeList = dom->getElementsByTagNameNS(X("http://www.sk.ee/DigiDoc/v1.3.0#"), X("DataFile"));
+        DOMNodeList *nodeList = dom->getElementsByTagName(X("DataFile"));
         for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
         {
             DOMElement *item = static_cast<DOMElement*>(nodeList->item(i));
