@@ -254,7 +254,7 @@ function openssl {
                 ./Configure darwin64-x86_64-cc --openssldir=${TARGET_PATH} no-hw
                 sed -ie 's!^CFLAG=!CFLAG=-isysroot '${SYSROOT}' !' Makefile
             else
-                ./Configure iphoneos-cross --openssldir=${TARGET_PATH} no-hw
+                ./Configure iphoneos-cross --openssldir=${TARGET_PATH} no-hw -Wno-ignored-optimization-argument
                 sed -ie 's!-isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!-arch '${ARCH}' -isysroot '${SYSROOT}'!' Makefile
             fi
             make -s depend all install_sw INSTALL_PREFIX=${PWD}/${ARCH} > /dev/null

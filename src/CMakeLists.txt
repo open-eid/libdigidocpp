@@ -257,7 +257,7 @@ target_link_libraries(digidocpp digidocpp_priv
     ${CMAKE_DL_LIBS}
     ${MINIZIP_LIBRARIES}
     ${XMLSECURITYC_LIBRARIES}
-    ${XALANMSG_LIBRARY}
+    $<$<STREQUAL:${BUILD_TYPE},STATIC>:${XALANMSG_LIBRARY}>
     ${XERCESC_LIBRARIES}
     ${TARGET_LIBRARIES}
     ${OPENSSL_LIBRARIES}
@@ -266,7 +266,7 @@ target_link_libraries(digidocpp digidocpp_priv
 
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
-    target_link_libraries(digidoc-tool digidocpp digidocpp_priv ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(digidoc-tool digidocpp ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 if(SWIG_FOUND AND WIN32)
@@ -344,7 +344,6 @@ if( FRAMEWORK )
             -change '${LIBPATH}/libssl.1.0.0.dylib' '@loader_path/Libraries/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/Libraries/libxerces-c.dylib'
             -change '${LIBPATH}/libxml-security-c.17.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
-            -change '${LIBPATH}/libxalanMsg.111.0.dylib' '@loader_path/Libraries/libxalanMsg.dylib'
             -change '${LIBPATH}/libxalan-c.111.0.dylib' '@loader_path/Libraries/libxalan-c.dylib'
             $<TARGET_FILE:digidocpp>
         COMMAND install_name_tool
@@ -352,7 +351,6 @@ if( FRAMEWORK )
             -change '${LIBPATH}/libssl.1.0.0.dylib' '@executable_path/../Libraries/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
             -change '${LIBPATH}/libxml-security-c.17.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
-            -change '${LIBPATH}/libxalanMsg.111.0.dylib' '@executable_path/../Libraries/libxalanMsg.dylib'
             -change '${LIBPATH}/libxalan-c.111.0.dylib' '@executable_path/../Libraries/libxalan-c.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
         COMMAND touch $<TARGET_FILE:digidoc-tool>
@@ -368,7 +366,8 @@ if( FRAMEWORK )
         set(PKGEXTRA --sign ${INSTCERT})
     endif()
     add_custom_target( pkgbuild DEPENDS digidoc-tool
-        COMMAND make install DESTDIR=install \; pkgbuild --root install ${PKGEXTRA}
+        COMMAND make install DESTDIR=install
+        COMMAND pkgbuild --root install ${PKGEXTRA}
             ${CMAKE_BINARY_DIR}/libdigidocpp_${VERSION}$ENV{VER_SUFFIX}.pkg
     )
     add_custom_target( zipdebug DEPENDS digidoc-tool
