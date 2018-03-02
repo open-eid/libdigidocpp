@@ -10,8 +10,8 @@ param(
 	[string]$VSINSTALLDIR = "C:\Program Files (x86)\Microsoft Visual Studio $vsver",
 	[string]$devenv = "$VSINSTALLDIR\Common7\IDE\devenv.exe",
 	[string]$vcvars = "$VSINSTALLDIR\VC\vcvarsall.bat",
-	[string]$opensslver = "openssl-1.0.2m",
-	[string]$xercesver = "xerces-c-3.2.0",
+	[string]$opensslver = "openssl-1.0.2n",
+	[string]$xercesver = "xerces-c-3.2.1",
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
@@ -75,7 +75,6 @@ function xalan() {
 	& $7zip x "$xalanver.zip" > $null
 	Rename-Item "xalan-c-1.11" xalan
 	Push-Location -Path xalan
-	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xalan-Xerces3.2.0.patch
 	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xerces-char16_t.patch
 	$xalanproj = "c\Projects\Win32\VC10\Xalan.sln"
 	Get-ChildItem c\Projects\Win32\VC10 *.vcxproj -recurse | ForEach {

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-XERCES_DIR=xerces-c-3.2.0
+XERCES_DIR=xerces-c-3.2.1
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2n
