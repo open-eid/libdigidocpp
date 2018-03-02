@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		4E25CC401B5D1D85005E0B79 /* test.bdoc in Resources */ = {isa = PBXBuildFile; fileRef = 4E25CC3F1B5D1D85005E0B79 /* test.bdoc */; };
 		4E25CC421B5D1EDA005E0B79 /* schema in Resources */ = {isa = PBXBuildFile; fileRef = 4E25CC411B5D1EDA005E0B79 /* schema */; };
-		4E76639E1B5A37AC00672ACF /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4E76639D1B5A37AC00672ACF /* main.m */; };
+		4E76639E1B5A37AC00672ACF /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E76639D1B5A37AC00672ACF /* main.mm */; };
 		4E7663A11B5A37AC00672ACF /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E7663A01B5A37AC00672ACF /* AppDelegate.mm */; };
 		4E7663A41B5A37AC00672ACF /* MasterViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E7663A31B5A37AC00672ACF /* MasterViewController.mm */; };
 		4E7663AA1B5A37AC00672ACF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663A81B5A37AC00672ACF /* Main.storyboard */; };
@@ -25,6 +25,7 @@
 		4ECD5FBB2010A38900BCC616 /* libminizip.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FB82010A38900BCC616 /* libminizip.a */; };
 		4ECD5FBC2010A38900BCC616 /* libdigidocpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FB92010A38900BCC616 /* libdigidocpp.a */; };
 		4ECD5FBD2010A38900BCC616 /* libdigidocpp_priv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FBA2010A38900BCC616 /* libdigidocpp_priv.a */; };
+		4EF2169520496F780013677E /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4EF2169420496F780013677E /* UIKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,7 +33,7 @@
 		4E25CC411B5D1EDA005E0B79 /* schema */ = {isa = PBXFileReference; lastKnownFileType = folder; name = schema; path = "$(SDKPATH)/etc/digidocpp/schema"; sourceTree = "<absolute>"; };
 		4E7663981B5A37AC00672ACF /* libdigidocpp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = libdigidocpp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E76639C1B5A37AC00672ACF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		4E76639D1B5A37AC00672ACF /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		4E76639D1B5A37AC00672ACF /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		4E76639F1B5A37AC00672ACF /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		4E7663A01B5A37AC00672ACF /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		4E7663A31B5A37AC00672ACF /* MasterViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MasterViewController.mm; sourceTree = "<group>"; };
@@ -49,6 +50,7 @@
 		4ECD5FB82010A38900BCC616 /* libminizip.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libminizip.a; path = "$(SDKPATH)/lib/libminizip.a"; sourceTree = "<absolute>"; };
 		4ECD5FB92010A38900BCC616 /* libdigidocpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp.a; path = "$(SDKPATH)/lib/libdigidocpp.a"; sourceTree = "<absolute>"; };
 		4ECD5FBA2010A38900BCC616 /* libdigidocpp_priv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp_priv.a; path = "$(SDKPATH)/lib/libdigidocpp_priv.a"; sourceTree = "<absolute>"; };
+		4EF2169420496F780013677E /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4EF2169520496F780013677E /* UIKit.framework in Frameworks */,
 				4ECD5FBC2010A38900BCC616 /* libdigidocpp.a in Frameworks */,
 				4ECD5FBD2010A38900BCC616 /* libdigidocpp_priv.a in Frameworks */,
 				4ECD5FBB2010A38900BCC616 /* libminizip.a in Frameworks */,
@@ -109,7 +112,7 @@
 				4E25CC411B5D1EDA005E0B79 /* schema */,
 				4E25CC3F1B5D1D85005E0B79 /* test.bdoc */,
 				4E76639C1B5A37AC00672ACF /* Info.plist */,
-				4E76639D1B5A37AC00672ACF /* main.m */,
+				4E76639D1B5A37AC00672ACF /* main.mm */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -117,6 +120,7 @@
 		4ECD5FA82010A15A00BCC616 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				4EF2169420496F780013677E /* UIKit.framework */,
 				4ECD5FA92010A15A00BCC616 /* libcrypto.a */,
 				4ECD5FB92010A38900BCC616 /* libdigidocpp.a */,
 				4ECD5FBA2010A38900BCC616 /* libdigidocpp_priv.a */,
@@ -207,7 +211,7 @@
 			files = (
 				4E7663A11B5A37AC00672ACF /* AppDelegate.mm in Sources */,
 				4E7663A41B5A37AC00672ACF /* MasterViewController.mm in Sources */,
-				4E76639E1B5A37AC00672ACF /* main.m in Sources */,
+				4E76639E1B5A37AC00672ACF /* main.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
