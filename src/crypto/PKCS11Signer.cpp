@@ -44,7 +44,8 @@ namespace digidoc
 class PKCS11SignerPrivate
 {
 public:
-    vector<CK_OBJECT_HANDLE> findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls) const;
+    vector<CK_BYTE> attribute(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE obj, CK_ATTRIBUTE_TYPE type) const;
+    vector<CK_OBJECT_HANDLE> findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls, const vector<CK_BYTE> &id = {}) const;
 
 #ifdef _WIN32
     bool load(const string &driver)
@@ -82,18 +83,37 @@ public:
     {
         X509Cert certificate;
         CK_SLOT_ID slot;
-        CK_ULONG cert;
-    } sign = SignSlot({ X509Cert(), 0, 0 });
+        std::vector<CK_BYTE> id;
+    } sign = SignSlot({ X509Cert(), 0, {} });
     string pin;
 };
 
 }
 
-vector<CK_OBJECT_HANDLE> PKCS11SignerPrivate::findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls) const
+vector<CK_BYTE> PKCS11SignerPrivate::attribute(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE obj, CK_ATTRIBUTE_TYPE type) const
+{
+    vector<CK_BYTE> value;
+    CK_ATTRIBUTE attr = { type, nullptr, 0 };
+    if(f->C_GetAttributeValue(session, obj, &attr, 1) != CKR_OK)
+        return value;
+    value.resize(size_t(attr.ulValueLen));
+    attr.pValue = value.data();
+    if(f->C_GetAttributeValue(session, obj, &attr, 1) != CKR_OK)
+        value.clear();
+    return value;
+}
+
+vector<CK_OBJECT_HANDLE> PKCS11SignerPrivate::findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls, const vector<CK_BYTE> &id) const
 {
     vector<CK_OBJECT_HANDLE> result;
-    CK_ATTRIBUTE attr = { CKA_CLASS, &cls, sizeof(cls) };
-    if(f->C_FindObjectsInit(session, &attr, 1) != CKR_OK)
+    CK_BBOOL _true = CK_TRUE;
+    vector<CK_ATTRIBUTE> attrs {
+        { CKA_CLASS, &cls, sizeof(cls) },
+        { CKA_TOKEN, &_true, sizeof(_true) }
+    };
+    if(!id.empty())
+        attrs.push_back({ CKA_ID, CK_VOID_PTR(id.data()), CK_ULONG(id.size()) });
+    if(f->C_FindObjectsInit(session, attrs.data(), CK_ULONG(attrs.size())) != CKR_OK)
         return result;
 
     CK_ULONG count = 32;
@@ -199,32 +219,17 @@ X509Cert PKCS11Signer::cert() const
     vector<PKCS11SignerPrivate::SignSlot> certSlotMapping;
     for(const CK_SLOT_ID &slot: slots)
     {
-        CK_TOKEN_INFO token;
-        vector<CK_OBJECT_HANDLE> objs;
-
         if(session)
            d->f->C_CloseSession(session);
-
-        if(d->f->C_GetTokenInfo(slot, &token) != CKR_OK ||
-           d->f->C_OpenSession(slot, CKF_SERIAL_SESSION, nullptr, nullptr, &session) != CKR_OK ||
-           (objs = d->findObject(session, CKO_CERTIFICATE)).empty())
+        if(d->f->C_OpenSession(slot, CKF_SERIAL_SESSION, nullptr, nullptr, &session) != CKR_OK)
             continue;
-
-        for(size_t j = 0; j < objs.size(); ++j)
+        for(CK_OBJECT_HANDLE obj: d->findObject(session, CKO_CERTIFICATE))
         {
-            CK_ATTRIBUTE attr = { CKA_VALUE, nullptr, 0 };
-            if(d->f->C_GetAttributeValue(session, objs[j], &attr, 1) != CKR_OK)
-                continue;
-            vector<unsigned char> value(attr.ulValueLen, 0);
-            attr.pValue = value.data();
-            if(d->f->C_GetAttributeValue(session, objs[j], &attr, 1) != CKR_OK)
-                continue;
-            X509Cert x509(value);
+            X509Cert x509(d->attribute(session, obj, CKA_VALUE));
             vector<X509Cert::KeyUsage> usage = x509.keyUsage();
-            if(x509.isCA() || !x509.isValid() ||
-               find(usage.begin(), usage.end(), X509Cert::NonRepudiation) == usage.end())
+            if(!x509.isValid() || find(usage.cbegin(), usage.cend(), X509Cert::NonRepudiation) == usage.cend())
                 continue;
-            certSlotMapping.push_back({ x509, slot, CK_ULONG(j) });
+            certSlotMapping.push_back({ x509, slot, d->attribute(session, obj, CKA_ID) });
             certificates.push_back(x509);
         }
     }
@@ -360,20 +365,20 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
         }
     }
 
-    vector<CK_OBJECT_HANDLE> key = d->findObject(session, CKO_PRIVATE_KEY);
-    if(key.empty())
+    vector<CK_OBJECT_HANDLE> key = d->findObject(session, CKO_PRIVATE_KEY, d->sign.id);
+    if(key.size() != 1)
         THROW("Could not get key that matches selected certificate.");
 
     // Sign the digest.
     CK_KEY_TYPE keyType = CKK_RSA;
     CK_ATTRIBUTE attribute = { CKA_KEY_TYPE, &keyType, sizeof(keyType) };
-    d->f->C_GetAttributeValue(session, key[d->sign.cert], &attribute, 1);
+    d->f->C_GetAttributeValue(session, key[0], &attribute, 1);
 
     CK_MECHANISM mech = { keyType == CKK_ECDSA ? CKM_ECDSA : CKM_RSA_PKCS, 0, 0 };
-    if(d->f->C_SignInit(session, &mech, key[d->sign.cert]) != CKR_OK)
+    if(d->f->C_SignInit(session, &mech, key[0]) != CKR_OK)
         THROW("Failed to sign digest");
 
-    vector<unsigned char> data = keyType == CKK_RSA ? Digest::addDigestInfo(digest, method) : digest;
+    vector<CK_BYTE> data = keyType == CKK_RSA ? Digest::addDigestInfo(digest, method) : digest;
     CK_ULONG size = 0;
     if(d->f->C_Sign(session, data.data(), CK_ULONG(data.size()), 0, &size) != CKR_OK)
         THROW("Failed to sign digest");
