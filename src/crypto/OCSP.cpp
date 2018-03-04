@@ -386,17 +386,7 @@ OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const st
 
 vector<unsigned char> OCSP::toDer() const
 {
-    vector<unsigned char> result;
-    if(!resp)
-        return result;
-    int size = i2d_OCSP_RESPONSE(resp.get(), 0);
-    if(size < 0)
-        return result;
-    result.resize(size_t(size));
-    unsigned char *p = result.data();
-    if(i2d_OCSP_RESPONSE(resp.get(), &p) < 0)
-        result.clear();
-    return result;
+    return i2d(resp.get(), i2d_OCSP_RESPONSE);
 }
 
 /**
