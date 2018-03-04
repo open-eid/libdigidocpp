@@ -201,7 +201,7 @@ const string X509Cert::QCP_WEB = "0.4.0.194112.1.4";
  * @param cert X509 certificate structure to be wrapped.
  */
 X509Cert::X509Cert(X509* cert)
-    : cert(X509_dup(cert), function<void(X509*)>(X509_free))
+    : cert(X509_dup(cert), X509_free)
 {
 }
 
@@ -232,13 +232,12 @@ X509Cert::X509Cert(const unsigned char *bytes, size_t size, Format format)
     if(format == Der)
     {
         const unsigned char *p = bytes;
-        cert.reset(d2i_X509(0, &p, (unsigned int)size), function<void(X509*)>(X509_free));
+        cert.reset(d2i_X509(0, &p, (unsigned int)size), X509_free);
     }
     else
     {
-        BIO *bio = BIO_new_mem_buf((void*)bytes, int(size));
-        cert.reset(PEM_read_bio_X509(bio, 0, 0, 0), function<void(X509*)>(X509_free));
-        BIO_free(bio);
+        SCOPE(BIO, bio, BIO_new_mem_buf((void*)bytes, int(size)));
+        cert.reset(PEM_read_bio_X509(bio.get(), 0, 0, 0), X509_free);
     }
     if(!cert)
         THROW_OPENSSLEXCEPTION("Failed to parse X509 certificate from bytes given");
@@ -259,9 +258,9 @@ X509Cert::X509Cert(const string &path, Format format)
     if(!bio)
         THROW_OPENSSLEXCEPTION("Failed to open X.509 certificate file '%s'", path.c_str());
     if(format == Der)
-        cert.reset(d2i_X509_bio(bio.get(), 0), function<void(X509*)>(X509_free));
+        cert.reset(d2i_X509_bio(bio.get(), 0), X509_free);
     else
-        cert.reset(PEM_read_bio_X509(bio.get(), 0, 0, 0), function<void(X509*)>(X509_free));
+        cert.reset(PEM_read_bio_X509(bio.get(), 0, 0, 0), X509_free);
     if(!cert)
         THROW_OPENSSLEXCEPTION("Failed to parse X509 certificate from bytes given");
 }
@@ -289,15 +288,7 @@ X509Cert::~X509Cert() = default;
  */
 X509Cert::operator vector<unsigned char>() const
 {
-    vector<unsigned char> der;
-    if(!cert)
-        return der;
-    der.resize(size_t(i2d_X509(cert.get(), 0)), 0);
-    if(der.empty())
-        return der;
-    unsigned char *p = der.data();
-    i2d_X509(cert.get(), &p);
-    return der;
+    return i2d(cert.get(), i2d_X509);
 }
 
 /**
@@ -426,7 +417,7 @@ vector<string> X509Cert::qcStatements() const
             result.push_back(oid);
     }
     typedef void (*cast_free) (void *);
-    sk_pop_free((stack_st*)qc, (cast_free)QCStatement_free);
+    sk_pop_free((stack_st*)qc, cast_free(QCStatement_free));
     return result;
 }
 
@@ -477,27 +468,23 @@ string X509Cert::toString(Func func, const string &obj) const
 
             char *data = nullptr;
             int size = ASN1_STRING_to_UTF8((unsigned char**)&data, X509_NAME_ENTRY_get_data(e));
-            str.append(data, size);
+            str.append(data, size_t(size));
             OPENSSL_free(data);
         }
     }
     else
     {
-        BIO* mem = BIO_new(BIO_s_mem());
+        SCOPE(BIO, mem, BIO_new(BIO_s_mem()));
         if(!mem)
             THROW_OPENSSLEXCEPTION("Failed to allocate memory for X509_NAME conversion");
 
         // Convert the X509_NAME struct to string.
-        if(X509_NAME_print_ex(mem, name, 0, XN_FLAG_RFC2253) < 0)
-        {
-            BIO_free(mem);
+        if(X509_NAME_print_ex(mem.get(), name, 0, XN_FLAG_RFC2253) < 0)
             THROW_OPENSSLEXCEPTION("Failed to convert X509_NAME struct to string");
-        }
 
         BUF_MEM *data = nullptr;
-        BIO_get_mem_ptr(mem, &data);
+        BIO_get_mem_ptr(mem.get(), &data);
         str.assign(data->data, data->length);
-        BIO_free(mem);
     }
 
     return str;

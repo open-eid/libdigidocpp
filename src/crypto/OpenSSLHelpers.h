@@ -33,6 +33,22 @@ namespace digidoc
 #define SCOPE2(TYPE, VAR, DATA, FREE) std::unique_ptr<TYPE,decltype(&FREE)> VAR(DATA, FREE)
 #define SCOPE(TYPE, VAR, DATA) SCOPE2(TYPE, VAR, DATA, TYPE##_free)
 
+template<class T, typename Func>
+std::vector<unsigned char> i2d(T *obj, Func func)
+{
+    std::vector<unsigned char> result;
+    if(!obj)
+        return result;
+    int size = func(obj, 0);
+    if(size <= 0)
+        return result;
+    result.resize(size_t(size));
+    unsigned char *p = result.data();
+    if(func(obj, &p) <= 0)
+        result.clear();
+    return result;
+}
+
 /**
 * OpenSSL exception implementation. Thrown if the openssl returns error
 *

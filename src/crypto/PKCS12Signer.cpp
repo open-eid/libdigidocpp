@@ -63,11 +63,10 @@ static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM
 PKCS12Signer::PKCS12Signer(const string &path, const string &pass)
  : d(new PKCS12SignerPrivate)
 {
-    BIO *bio = BIO_new_file(path.c_str(), "rb");
+    SCOPE(BIO, bio, BIO_new_file(path.c_str(), "rb"));
     if(!bio)
         THROW_CAUSE(OpenSSLException(), "Failed to open PKCS12 certificate: %s.", path.c_str());
-    SCOPE(PKCS12, p12, d2i_PKCS12_bio(bio, 0));
-    BIO_free(bio);
+    SCOPE(PKCS12, p12, d2i_PKCS12_bio(bio.get(), 0));
     if(!p12)
         THROW_CAUSE(OpenSSLException(), "Failed to read PKCS12 certificate: %s.", path.c_str());
 
@@ -100,10 +99,10 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
     case EVP_PKEY_RSA:
     {
         SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(d->key));
-        signature.resize(RSA_size(rsa.get()));
+        signature.resize(size_t(RSA_size(rsa.get())));
         int nid = Digest::toMethod(method);
         unsigned int size = (unsigned int)signature.size();
-        result = RSA_sign(nid, &digest[0], (unsigned int)digest.size(), &signature[0], &size, rsa.get());
+        result = RSA_sign(nid, &digest[0], (unsigned int)digest.size(), signature.data(), &size, rsa.get());
         break;
     }
 #ifndef OPENSSL_NO_ECDSA
