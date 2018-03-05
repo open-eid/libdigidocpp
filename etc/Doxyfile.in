@@ -866,12 +866,14 @@ EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          **/*_p.h \
                          */digidoc-tool.cpp \
                          */log.* \
+                         */SignatureCAdES_*.* \
                          */SignatureXAdES*.* \
                          */SignatureTST.* \
                          */*ASiC*.* \
                          */*Doc.* \
                          */*jsonxx.* \
-                         */*SiVa*.*
+                         */*SiVa*.* \
+                         */PDF.*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the

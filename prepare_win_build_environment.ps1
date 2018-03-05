@@ -16,12 +16,16 @@ param(
 	[string]$xmlsecver = "xml-security-c-1.7.3",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
 	[string]$zlibver = "zlib-1.2.11",
+	[string]$freetypever = "freetype-2.7",
+	[string]$podofover = "podofo-0.9.4",
 	[switch]$openssl = $false,
 	[switch]$xerces = $false,
 	[switch]$xalan = $false,
 	[switch]$xmlsec = $false,
 	[switch]$xsd = $false,
-	[switch]$zlib = $false
+	[switch]$zlib = $false,
+	[switch]$freetype = $false,
+	[switch]$podofo = $false
 )
 
 $libdigidocpp = split-path -parent $MyInvocation.MyCommand.Definition
@@ -134,6 +138,46 @@ function zlib() {
 	Remove-Item "$zlibver.tar"
 }
 
+function freetype() {
+	$client.DownloadFile("http://download.savannah.gnu.org/releases/freetype/$freetypever.tar.bz2", "$target\$freetypever.tar.gz")
+	& $7zip x "$freetypever.tar.gz" > $null
+	& $7zip x "$freetypever.tar" > $null
+	Push-Location -Path $freetypever
+	foreach($platform in @("x86", "x64")) {
+		New-Item -ItemType directory -Path build > $null
+		Push-Location -Path build
+		$arch = If ($platform -ne "x86") {"x86_amd64"} Else {"x86"}
+		& $vcvars $arch "&&" $cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\freetype\$platform" "-GNMake Makefiles" .. "&&" nmake /nologo install
+		Pop-Location
+		Remove-Item build -Force -Recurse
+	}
+	Pop-Location
+	Remove-Item $freetypever -Force -Recurse
+	Remove-Item "$freetypever.tar"
+}
+
+function podofo() {
+	$client.DownloadFile("http://downloads.sourceforge.net/project/podofo/podofo/0.9.4/$podofover.tar.gz", "$target\$podofover.tar.gz")
+	& $7zip x "$podofover.tar.gz" > $null
+	foreach($platform in @("x86", "x64")) {
+		& $7zip x "$podofover.tar" > $null
+		Push-Location -Path $podofover
+		del cmake/modules/FindFREETYPE.cmake
+		del cmake/modules/FindOpenSSL.cmake
+		del cmake/modules/FindZLIB.cmake
+		(Get-Content CMakeLists.txt) -replace '\$\{PNG_LIBRARIES\}', '' | Set-Content CMakeLists.txt
+		(Get-Content src/doc/PdfSignatureField.cpp) -replace 'adbe.pkcs7.detached', 'ETSI.CAdES.detached' | Set-Content src/doc/PdfSignatureField.cpp
+		$arch = If ($platform -ne "x86") {"x86_amd64"} Else {"x86"}
+		& $vcvars $arch "&&" $cmake "-GNMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DPODOFO_BUILD_LIB_ONLY=YES `
+			"-DCMAKE_INSTALL_PREFIX=$target\podofo\$platform" -DPODOFO_BUILD_STATIC=NO -DPODOFO_BUILD_SHARED=YES `
+			"-DZLIB_INCLUDE_DIR=$target\zlib\$platform\include" "-DZLIB_LIBRARY_RELEASE=$target\zlib\$platform\lib\zlib.lib" `
+			"-DFREETYPE_INCLUDE_DIR=$target\freetype\$platform\include\freetype2" "-DFREETYPE_LIBRARY=$target\freetype\$platform\lib\freetype.lib" . "&&" nmake /nologo install
+		Pop-Location
+		Remove-Item $podofover -Force -Recurse
+	}
+	Remove-Item "$podofover.tar"
+}
+
 if($openssl) {
 	openssl
 }
@@ -152,7 +196,13 @@ if($xsd) {
 if($zlib) {
 	zlib
 }
-if(!$openssl -and !$xerces -and !$xalan -and !$xmlsec -and !$xsd -and !$zlib) {
+if($freetype) {
+	freetype
+}
+if($podofo) {
+	podofo
+}
+if(!$openssl -and !$xerces -and !$xalan -and !$xmlsec -and !$xsd -and !$zlib -and !$freetype -and !$podofo) {
 	openssl
 	xerces
 	xalan
