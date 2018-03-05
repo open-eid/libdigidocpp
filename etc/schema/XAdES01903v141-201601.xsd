@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsd:schema targetNamespace="http://uri.etsi.org/01903/v1.4.1#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns="http://uri.etsi.org/01903/v1.4.1#" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" elementFormDefault="qualified">
-	<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
-	<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+	<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="http://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd"/>
+	<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd"/>
 	<!-- Start CertificateValues -->
 	<xsd:element name="TimeStampValidationData" type="ValidationDataType"/>
 	<xsd:complexType name="ValidationDataType">

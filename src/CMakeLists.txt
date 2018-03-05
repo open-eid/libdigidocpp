@@ -91,13 +91,15 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020201_201601
     --hxx-epilogue \"\#include <xml/AdditionalInformationType.h>\" )
 XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020101_additionaltypes_xsd.xsd
     --root-element-none
+    --location-map http://uri.etsi.org/19612/v1.2.1/tsl.xsd=ts_119612v020201_201601xsd.xsd
+    --location-map http://uri.etsi.org/01903/v1.3.2/XAdES.xsd=XAdES01903v132-201601.xsd
     --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
     --namespace-map http://uri.etsi.org/02231/v2/additionaltypes\#=digidoc::tsl
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
 XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020101_sie_xsd.xsd
     --root-element-none
-    --accessor-regex /assert/assert_/
-    --modifier-regex /assert/assert_/
+    --reserved-name assert
+    --location-map http://uri.etsi.org/01903/v1.3.2/XAdES.xsd=XAdES01903v132-201601.xsd
     --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
     --namespace-map http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/\#=digidoc::tsl
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )

@@ -5,7 +5,7 @@ part of this document in conflict with the text of TS 119 612
 then that text shall prevail as the authoritative source
 -->
 <xsd:schema targetNamespace="http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/#" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/#" xmlns:tsl="http://uri.etsi.org/02231/v2#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" elementFormDefault="qualified" attributeFormDefault="unqualified">
-    <xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+	<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="http://uri.etsi.org/01903/v1.3.2/XAdES.xsd"/> 
 	<xsd:annotation><xsd:documentation>Specified in TS 119 612 v2.1.1 clause 5.5.9.2 Qualifications Extension</xsd:documentation></xsd:annotation>
 	<xsd:element name="Qualifications" type="tns:QualificationsType"/>
 	<xsd:complexType name="QualificationsType">
