@@ -5,8 +5,8 @@ part of this document in conflict with the text of TS 119 612
 then that text shall prevail as the authoritative source
 -->
 <xsd:schema targetNamespace="http://uri.etsi.org/02231/v2/additionaltypes#" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tslx="http://uri.etsi.org/02231/v2/additionaltypes#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:tsl="http://uri.etsi.org/02231/v2#" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" elementFormDefault="qualified" attributeFormDefault="unqualified">
-	<xsd:import namespace="http://uri.etsi.org/02231/v2#" schemaLocation="ts_119612v020201_201601xsd.xsd"/>
-	<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+	<xsd:import namespace="http://uri.etsi.org/02231/v2#" schemaLocation="http://uri.etsi.org/19612/v1.2.1/tsl.xsd"/>
+	<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="http://uri.etsi.org/01903/v1.3.2/XAdES.xsd"/>
 	<!-- -->
 	<!-- -->
 	<xsd:annotation><xsd:documentation>Specified in TS 119 612 v2.1.1 clause 5.3.13 Pointers to other TSLs</xsd:documentation></xsd:annotation>

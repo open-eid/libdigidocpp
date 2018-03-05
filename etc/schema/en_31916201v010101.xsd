@@ -4,7 +4,7 @@
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
 	attributeFormDefault="unqualified">
 	<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#"
-		schemaLocation="xmldsig-core-schema.xsd"/>
+		schemaLocation="http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd"/>
 	<xsd:element name="ASiCManifest" type="ASiCManifestType">
 		<xsd:annotation>
 			<xsd:documentation>Schema for ASiCManifest – See ETSI EN 319 162</xsd:documentation>
