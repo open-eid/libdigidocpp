@@ -20,11 +20,11 @@ BEGIN
 	BEGIN
 		BLOCK "040904B0"
 		BEGIN
-			VALUE "CompanyName", ORG
+			VALUE "CompanyName", "RIA"
 			VALUE "FileDescription", "digidoc-tool"
 			VALUE "FileVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
 			VALUE "InternalName", "digidoc-tool"
-			VALUE "LegalCopyright", "(C) 2009-2015 Estonian Information System Authority"
+			VALUE "LegalCopyright", "(C) 2009-2018 Estonian Information System Authority"
 			VALUE "OriginalFilename", "digidoc-tool.exe"
 			VALUE "ProductName", "digidoc-tool"
 			VALUE "ProductVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
