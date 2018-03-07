@@ -68,12 +68,7 @@ public:
 private:
     DISABLE_COPY(Connect);
 
-    enum Wait {
-        Read,
-        Write,
-    };
     void sendProxyAuth();
-    bool waitSocket(Wait wait);
 
     BIO *d = nullptr;
     std::shared_ptr<SSL_CTX> ssl;
