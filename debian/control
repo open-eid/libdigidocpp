@@ -9,7 +9,7 @@ Build-Depends:
  xsdcxx (>= 4.0) | xsd (>= 4.0),
  vim-common,
  doxygen
-Standards-Version: 3.9.5
+Standards-Version: 3.9.8
 Homepage: https://github.com/open-eid/libdigidocpp
 
 Package: libdigidocpp-common

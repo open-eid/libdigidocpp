@@ -1,3 +1,16 @@
+Libdigidocpp library [3.13.5](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.5) release notes
+--------------------------------------
+- Add TSL cert tl-mp5 and generate headers dynamically (#174)
+- Use case sensitive zip file compare (#175)
+- Android build improvements (#179, #180)
+- SiVa service validation improvements (#185, #184)
+- Update Xerces-C to 3.2.1 (#187)
+- Optimize TSL loading (#192)
+- PDF Experimental backend (#57)
+- Build fixes and improvements
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.3...v3.13.5)
+
 Libdigidocpp library [3.13.4](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.4) release notes
 --------------------------------------
 - Add TSL cert tl-mp5 and generate headers dynamically (#174)
