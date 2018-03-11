@@ -141,7 +141,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         {"Content-Type", "application/json;charset=UTF-8"}
     }, vector<unsigned char>(req.cbegin(), req.cend()));
 
-    if(!r)
+    if(!r.isOK() && !r.isStatusCode("400"))
         THROW("Failed to send request to SiVa");
 
     jsonxx::Object result;
