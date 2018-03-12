@@ -41,18 +41,21 @@ public:
         {
             return !isOK();
         }
+        bool isStatusCode(const std::string &code) const
+        {
+            return result.find(code) != std::string::npos;
+        }
         bool isOK() const
         {
-            return result.find("200") != std::string::npos;
+            return isStatusCode("200");
         }
         bool isRedirect() const
         {
-            return result.find("301") != std::string::npos ||
-                   result.find("302") != std::string::npos;
+            return isStatusCode("301") || isStatusCode("302");
         }
         bool isForbidden() const
         {
-            return result.find("403") != std::string::npos;
+            return isStatusCode("403");
         }
     };
 
