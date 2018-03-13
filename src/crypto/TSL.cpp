@@ -241,9 +241,9 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
         valid = true;
         result = { tsl.services(), tsl.isExpired() };
         if(result.expired)
-            THROW("TSL is expired");
+            THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
         tsl.validateRemoteDigest(url, timeout);
-        DEBUG("TSL %s signature is valid", territory.c_str());
+        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
     } catch(const Exception &e) {
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
         if((CONF(TSLAutoUpdate)))
@@ -277,7 +277,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
                     ots.close();
 
                     result = { tsl.services(), tsl.isExpired() };
-                    DEBUG("TSL %s signature is valid", territory.c_str());
+                    DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
                 } catch(const Exception &e) {
                     debugException(e);
                     ERR("TSL %s signature is invalid", territory.c_str());
@@ -286,7 +286,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
             catch(const Exception &e)
             {
                 debugException(e);
-                ERR("TSL: Failed to download %s list", tsl.territory().c_str());
+                ERR("TSL %s Failed to download list", tsl.territory().c_str());
             }
         }
     }
@@ -452,6 +452,11 @@ std::vector<TSL::Pointer> TSL::pointers() const
     return pointer;
 }
 
+unsigned long long  TSL::sequenceNumber() const
+{
+    return !tsl ? 0 : tsl->schemeInformation().tSLSequenceNumber();
+}
+
 string TSL::territory() const
 {
     return !tsl || !tsl->schemeInformation().schemeTerritory().present() ?
@@ -497,7 +502,7 @@ void TSL::validate(const std::vector<X509Cert> &certs)
     }
 
     if(find(certs.cbegin(), certs.cend(), signingCert) == certs.cend())
-        THROW("TSL Signature is signed with untrusted certificate");
+        THROW("TSL %s Signature is signed with untrusted certificate", territory().c_str());
 
     try {
         XSECProvider prov;
@@ -509,13 +514,13 @@ void TSL::validate(const std::vector<X509Cert> &certs)
         if(!sig->verify())
         {
             string msg = xsd::cxx::xml::transcode<char>(sig->getErrMsgs());
-            THROW("TLS Signature is invalid: %s", msg.c_str());
+            THROW("TSL %s Signature is invalid: %s", territory().c_str(), msg.c_str());
         }
     }
     catch(XSECException &e)
     {
         string msg = xsd::cxx::xml::transcode<char>(e.getMsg());
-        THROW("TSL Signature is invalid: %s", msg.c_str());
+        THROW("TSL %s Signature is invalid: %s", territory().c_str(), msg.c_str());
     }
     catch(const Exception &)
     {
@@ -523,14 +528,16 @@ void TSL::validate(const std::vector<X509Cert> &certs)
     }
     catch(...)
     {
-        THROW("TSL Signature is invalid");
+        THROW("TSL %s Signature is invalid", territory().c_str());
     }
 }
 
-/// Check if HTTP Last-Modified header is the same as timestamp of the cached TSL
-/// @param url Url of the TSL
-/// @param timeout Time to wait for downloading
-/// @throws Exception if Last-Modified does not match cached ts and TSL loading should be triggered
+/**
+ * Check if HTTP Last-Modified header is the same as timestamp of the cached TSL
+ * @param url Url of the TSL
+ * @param timeout Time to wait for downloading
+ * @throws Exception if Last-Modified does not match cached ts and TSL loading should be triggered
+ */
 void TSL::validateLastModified(const string &url, int timeout)
 {
     Connect::Result r = Connect(url, "HEAD", timeout).exec();
@@ -635,5 +642,5 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
     }
 
     if(!digest.empty() && digest != sha.result())
-        THROW("Remote digest does not match");
+        THROW("TSL %s remote digest does not match local. TSL might be outdated", territory().c_str());
 }

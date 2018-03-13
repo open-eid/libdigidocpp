@@ -45,6 +45,7 @@ public:
     std::string type() const;
     std::string operatorName() const;
     std::string territory() const;
+    unsigned long long sequenceNumber() const;
     std::string issueDate() const;
     std::string nextUpdate() const;
     std::string url() const;
