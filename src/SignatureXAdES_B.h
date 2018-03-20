@@ -22,6 +22,7 @@
 #include "Signature.h"
 
 #include <map>
+#include <memory>
 
 namespace digidoc
 {
@@ -86,9 +87,9 @@ namespace digidoc
           static const std::string XADESv141_NAMESPACE;
           static const std::string OPENDOCUMENT_NAMESPACE;
           static const std::string POLICY_BDOC_2_1_OID;
-          dsig::SignatureType *signature;
-          asic::XAdESSignaturesType *asicsignature;
-          asic::Document_signatures *odfsignature;
+          dsig::SignatureType *signature = nullptr;
+          std::unique_ptr<asic::XAdESSignaturesType> asicsignature;
+          std::unique_ptr<asic::Document_signatures> odfsignature;
           ASiContainer *bdoc;
           std::string sigdata_;
 
