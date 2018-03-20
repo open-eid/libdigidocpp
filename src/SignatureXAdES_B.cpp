@@ -124,7 +124,7 @@ namespace digidoc
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
 {
-    return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
+    return Base64Binary(v.data(), v.size());
 }
 
 }
@@ -133,10 +133,7 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
  * Creates an empty BDOC-BES signature with mandatory XML nodes.
  */
 SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer)
- : signature(nullptr)
- , asicsignature(nullptr)
- , odfsignature(nullptr)
- , bdoc(bdoc)
+    : bdoc(bdoc)
 {
     string nr = "S" + to_string(id);
 
@@ -148,7 +145,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     signatureValue.id(nr + "-SIG");
 
     // Signature (root)
-    asicsignature = new XAdESSignaturesType();
+    asicsignature.reset(new XAdESSignaturesType());
     asicsignature->signature().push_back(SignatureType(signedInfo, signatureValue));
     signature = &asicsignature->signature()[0];
     signature->id(nr);
@@ -243,10 +240,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
  * @throws SignatureException
  */
 SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
- : signature(nullptr)
- , asicsignature(nullptr)
- , odfsignature(nullptr)
- , bdoc(bdoc)
+    : bdoc(bdoc)
 {
     try
     {
@@ -272,7 +266,7 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
          */
         if(bdoc->mediaType() == ASiC_E::MIMETYPE_ADOC)
         {
-            odfsignature = document_signatures(*doc, Flags::dont_initialize, properties).release();
+            odfsignature = document_signatures(*doc, Flags::dont_initialize, properties);
             if(odfsignature->signature().size() > 1)
                 THROW("More than one signature in signatures.xml file is unsupported");
             if(odfsignature->signature().empty())
@@ -281,7 +275,7 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
         }
         else
         {
-            asicsignature = xAdESSignatures(*doc, Flags::dont_initialize, properties).release();
+            asicsignature = xAdESSignatures(*doc, Flags::dont_initialize, properties);
             if(asicsignature->signature().size() > 1)
                 THROW("More than one signature in signatures.xml file is unsupported");
             if(asicsignature->signature().empty())
@@ -358,11 +352,7 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
         THROW("Signature element mandatory attribute 'Id' is missing");
 }
 
-SignatureXAdES_B::~SignatureXAdES_B()
-{
-    delete asicsignature;
-    delete odfsignature;
-}
+SignatureXAdES_B::~SignatureXAdES_B() = default;
 
 string SignatureXAdES_B::policy() const
 {
@@ -546,7 +536,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         string s = xml::transcode<char>(e.getMsg());
         EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
     }
-    catch(XMLException &e)
+    catch(const XMLException &e)
     {
         string s = xml::transcode<char>(e.getMessage());
         EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
@@ -705,9 +695,8 @@ void SignatureXAdES_B::checkKeyInfo() const
             // Verify IssuerSerialV2, optional parameter
             if(certs[0].issuerSerialV2().present())
             {
-                vector<unsigned char> issuerSerial(certs[0].issuerSerialV2()->data(),
-                        certs[0].issuerSerialV2()->data() + certs[0].issuerSerialV2()->size());
-                if(!X509Crypto(x509).compareIssuerToDer(issuerSerial))
+                if(!X509Crypto(x509).compareIssuerToDer(
+                            vector<unsigned char>(certs[0].issuerSerialV2()->begin(), certs[0].issuerSerialV2()->end())))
                     THROW("Signing certificate issuer information does not match");
             }
 
@@ -741,7 +730,7 @@ void SignatureXAdES_B::checkSigningCertificate(bool noqscd) const
     {
         X509Cert signingCert = signingCertificate();
         vector<X509Cert::KeyUsage> usage = signingCert.keyUsage();
-        if(find(usage.begin(), usage.end(), X509Cert::NonRepudiation) == usage.end())
+        if(find(usage.cbegin(), usage.cend(), X509Cert::NonRepudiation) == usage.cend())
             THROW("Signing certificate does not contain NonRepudiation key usage flag");
         if(!X509CertStore::instance()->verify(signingCert, noqscd))
             THROW("Unable to verify signing certificate");
@@ -990,8 +979,7 @@ void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureV
 vector<unsigned char> SignatureXAdES_B::getSignatureValue() const
 {
     const SignatureType::SignatureValueType &signatureValueType = signature->signatureValue();
-    return vector<unsigned char>(signatureValueType.data(),
-        signatureValueType.data() + signatureValueType.size());
+    return vector<unsigned char>(signatureValueType.begin(), signatureValueType.end());
 }
 
 /**
@@ -1089,7 +1077,7 @@ void SignatureXAdES_B::saveToXml(ostream &os) const
         asic.signature().push_back(*signature);
         xAdESSignatures(os, asic, map, "UTF-8", Flags::dont_initialize);
     }
-    catch ( xml::invalid_utf8_string )
+    catch(const xml::invalid_utf8_string &)
     {
         THROW("Failed to create signature XML file. Parameters must be in UTF-8.");
     }
@@ -1171,9 +1159,9 @@ vector<string> SignatureXAdES_B::signerRoles() const
         getSignedSignatureProperties().signerRoleV2();
     auto claimedRoleSequence = [&]() -> ClaimedRolesListType::ClaimedRoleSequence const {
         // return elements from SignerRole element or SignerRoleV2 when available
-        if(roleOpt.present())
+        if(roleOpt.present() && roleOpt->claimedRoles().present())
             return roleOpt->claimedRoles()->claimedRole();
-        else if(roleV2Opt.present())
+        else if(roleV2Opt.present() && roleV2Opt->claimedRoles().present())
             return roleV2Opt->claimedRoles()->claimedRole();
         else
             return ClaimedRolesListType::ClaimedRoleSequence();
