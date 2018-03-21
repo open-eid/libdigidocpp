@@ -110,20 +110,6 @@ static ostream &operator<<(ostream &os, const vector<unsigned char> &data)
 }
 }
 
-static string decodeParameter(const string &param)
-{
-    if(param.empty())
-        return string();
-#ifdef _WIN32
-    int len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), 0, 0);
-    wstring out(len, 0);
-    len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), &out[0], len);
-    return File::decodeName(out);
-#else
-    return File::decodeName(param);
-#endif
-}
-
 /**
  * For demonstration purpose overwrites certificate selection to print out all
  * the certificates available on ID-Card.
@@ -269,20 +255,25 @@ class ToolConfig: public XmlConfCurrent
 {
 public:
     ToolConfig(): XmlConfCurrent()
+      , _logLevel(XmlConfCurrent::logLevel())
       , expired(XmlConfCurrent::TSLAllowExpired())
       , tslcerts(XmlConfCurrent::TSLCerts())
+      , _logFile(XmlConfCurrent::logFile())
       , tslurl(XmlConfCurrent::TSLUrl())
       , uri(XmlConfCurrent::digestUri())
       , siguri(XmlConfCurrent::signatureDigestUri()) {}
+    int logLevel() const override { return _logLevel; }
+    string logFile() const override { return _logFile; }
     string digestUri() const override { return uri; }
     string signatureDigestUri() const override { return siguri; }
     bool TSLAllowExpired() const override { return expired; }
     vector<X509Cert> TSLCerts() const override { return tslcerts; }
     string TSLUrl() const override { return tslurl; }
 
+    int _logLevel;
     bool expired;
     vector<X509Cert> tslcerts;
-    string tslurl, uri, siguri;
+    string _logFile, tslurl, uri, siguri;
 };
 
 
@@ -349,12 +340,28 @@ static void printUsage(const char *executable)
     << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --dontValidate= - Don't validate container" << endl << endl
     << "  All commands:" << endl
-    << "      --nocolor       - Disable terminal colors" << endl;
+    << "      --nocolor       - Disable terminal colors" << endl
+    << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
+    << "      --logfile=      - File to log, empty to console" << endl;
 }
 
 struct Params
 {
     Params(int argc, char *argv[]);
+    static string decodeParameter(const string &param)
+    {
+        if(param.empty())
+            return string();
+#ifdef _WIN32
+        int len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), 0, 0);
+        wstring out(len, 0);
+        len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), &out[0], len);
+        return File::decodeName(out);
+#else
+        return File::decodeName(param);
+#endif
+    }
+
     string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
     vector<pair<string,string> > files;
     vector<string> roles;
@@ -437,6 +444,8 @@ Params::Params(int argc, char *argv[])
         else if(arg == "--TSLAllowExpired") conf->expired = true;
         else if(arg == "--dontsign") doSign = false;
         else if(arg == "--nocolor") RED = GREEN = YELLOW = RESET = string();
+        else if(arg.find("--loglevel=") == 0) conf->_logLevel = stoi(arg.substr(11));
+        else if(arg.find("--logfile=") == 0) conf->_logFile = arg.substr(10);
         else path = arg;
     }
 }
@@ -493,7 +502,7 @@ static int open(int argc, char* argv[])
     // Parse command line arguments.
     for(int i = 2; i < argc; i++)
     {
-        string arg( decodeParameter( argv[i] ) );
+        string arg(Params::decodeParameter(argv[i]));
         if(arg == "--list")
             continue;
         else if(arg.find("--warnings=") == 0)
@@ -666,7 +675,7 @@ static int remove(int argc, char *argv[])
     string path;
     for(int i = 2; i < argc; i++)
     {
-        string arg( decodeParameter( argv[i] ) );
+        string arg(Params::decodeParameter(argv[i]));
         if(arg.find("--document=") == 0)
             documents.push_back(atoi(arg.substr(11).c_str()));
         else if(arg.find("--signature=") == 0)
