@@ -61,10 +61,10 @@ script: case ${TARGET} in
     ;;
   *osx*)
     mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/Library/libdigidocpp -DOPENSSL_ROOT_DIR=/Library/libdigidocpp ..;
-    make all zipdebug embedlibs pkgbuild && cd ..;
+    make all pkcs11sign zipdebug embedlibs pkgbuild && cd ..;
     ;;
   *)
-    docker run -e BUILD_NUMBER=${TRAVIS_BUILD_NUMBER} -e DEBFULLNAME="Travis" -e RUN_TESTS=${RUN_TESTS} -e DEBEMAIL="travis-ci@travis" -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -e TARGET=${TARGET} -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
+    docker run -e BUILD_NUMBER=${BUILD_NUMBER} -e DEBFULLNAME="Travis" -e RUN_TESTS=${RUN_TESTS} -e DEBEMAIL="travis-ci@travis" -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -e TARGET=${TARGET} -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
       apt-get update -qq; 
       apt-get install -y dh-make devscripts dpkg-dev cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen libboost-test-dev git curl wget ruby;
       export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}").${BUILD_NUMBER};
@@ -77,15 +77,13 @@ script: case ${TARGET} in
         export COVERITY_SCAN_BRANCH_PATTERN=coverity_scan;
         export COVERITY_SCAN_BUILD_COMMAND_PREPEND="cmake .";
         export COVERITY_SCAN_BUILD_COMMAND=make;
-        wget https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh;
-        bash travisci_build_coverity_scan.sh;
+        wget -O - https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh | bash;
       fi;
       git clean -dxf';
   esac
 
 before_deploy:
 - export VERSION=${TRAVIS_TAG:1}
-- git clean -dfx
 - cd ..
 - mv libdigidocpp libdigidocpp-${VERSION}
 - tar czf libdigidocpp-${VERSION}.tar.gz --exclude-vcs libdigidocpp-${VERSION}
