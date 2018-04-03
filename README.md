@@ -13,7 +13,10 @@
 
 1. Install dependencies
 
-        sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev doxygen
+        sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev
+
+	* doxygen - Optional, for API documentation
+	* libboost-test-dev - Optional, for unittests
 
 2. Fetch the source
 
@@ -74,11 +77,11 @@
 ### Windows
 
 1. Install dependencies and necessary tools from
-	* [Visual Studio Express 2013 for Windows Desktop](http://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx)
-	* [Perl](https://www.perl.org/get.html)
-	* [7-zip](http://www.7-zip.org)
+	* [Visual Studio Community 2015](https://www.visualstudio.com/downloads/)
 	* [http://www.cmake.org](http://www.cmake.org) - NB! Build scripts use 32-bit version of CMake
-	* [swigwin-3.0.10.zip](http://swig.org/download.html) - Optional, for C# bindings
+	* [7-zip](http://www.7-zip.org) - Optional, for prepare script
+	* [Perl](https://www.perl.org/get.html) - Optional, for OpenSSL prepare script
+	* [swigwin-3.0.12.zip](http://swig.org/download.html) - Optional, for C# bindings
 	* [Wix toolset](http://wixtoolset.org/releases/) - Optional, for creating Windows installation packages
 
 2. Fetch the source
@@ -98,7 +101,7 @@
 
    Optional CMake parameters:
 
-       -DSWIG_EXECUTABLE=C:/swigwin-3.0.10/swig.exe
+       -DSWIG_EXECUTABLE=C:/swigwin-3.0.12/swig.exe
 
    After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
    [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
@@ -109,8 +112,7 @@
 
 6. Alternative to steps 4. and 5. -
 
-        Run the build script in PowerShell:
-        ./build.ps1
+        powershell -ExecutionPolicy ByPass -File build.ps1
 
     The build script builds executables and installation media for all
     platforms (x86 and x64 / Debug and Release with debug symbols)

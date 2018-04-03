@@ -10,7 +10,7 @@ param(
 	[string]$VSINSTALLDIR = "C:\Program Files (x86)\Microsoft Visual Studio $vsver",
 	[string]$devenv = "$VSINSTALLDIR\Common7\IDE\devenv.exe",
 	[string]$vcvars = "$VSINSTALLDIR\VC\vcvarsall.bat",
-	[string]$opensslver = "openssl-1.0.2n",
+	[string]$opensslver = "openssl-1.0.2o",
 	[string]$xercesver = "xerces-c-3.2.1",
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
