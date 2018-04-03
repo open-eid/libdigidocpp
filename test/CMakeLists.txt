@@ -6,6 +6,7 @@ if( Boost_INCLUDE_DIR )
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_BINARY_DIR}/src
         ${XSD_INCLUDE_DIR}
+        ${XERCESC_INCLUDE_DIR}
         ${Boost_INCLUDE_DIR}
     )
     add_definitions(

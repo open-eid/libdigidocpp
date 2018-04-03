@@ -8,7 +8,7 @@ matrix:
     env: TARGET=ubuntu:17.10
     sudo: false
   - os: linux
-    env: TARGET=32bit/ubuntu:16.04
+    env: TARGET=i386/ubuntu:16.04
     sudo: false
   - os: osx
     env: TARGET=osx
@@ -38,8 +38,8 @@ env:
 before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
     sudo easy_install pip;
     brew install swig;
-    HASH=($(shasum prepare_osx_build_environment.sh));
     pip install --user awscli > /dev/null;
+    HASH=($(shasum prepare_osx_build_environment.sh));
     aws s3 cp s3://open-eid/libdigidocpp-cache/${TARGET}/${HASH}.zip ${HASH}.zip --no-sign-request;
     if [ $? -eq 0 ]; then
       sudo unzip -qq -d /Library ${HASH}.zip;
