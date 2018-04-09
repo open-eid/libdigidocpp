@@ -23,11 +23,13 @@
 #include "log.h"
 
 #include <xercesc/framework/Wrapper4InputSource.hpp>
+#include <xsd/cxx/tree/error-handler.hxx>
+#include <xsd/cxx/xml/dom/bits/error-handler-proxy.hxx>
+#include <xsd/cxx/xml/sax/std-input-source.hxx>
 #include <xsec/canon/XSECC14n20010315.hpp>
 #include <xsec/dsig/DSIGReference.hpp>
-#include <xsd/cxx/xml/sax/std-input-source.hxx>
-#include <xsd/cxx/xml/dom/bits/error-handler-proxy.hxx>
-#include <xsd/cxx/tree/error-handler.hxx>
+
+#include <sstream>
 
 using namespace digidoc;
 using namespace std;
@@ -123,8 +125,12 @@ unique_ptr<DOMDocument> SecureDOMParser::parseIStream(std::istream &is)
     unique_ptr<DOMDocument> doc(DOMLSParserImpl::parse(&wrap));
     try {
         eh.throw_if_failed<xsd::cxx::tree::parsing<char>>();
-    } catch(const xsd::cxx::tree::parsing<char> &e) {
-        THROW("Failed to parse XML %s", e.what());
+    }
+    catch(const xsd::cxx::tree::parsing<char> &e)
+    {
+        stringstream s;
+        s << e;
+        THROW("Failed to parse XML %s\n%s", e.what(), s.str().c_str());
     }
     return doc;
 }
