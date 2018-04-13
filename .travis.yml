@@ -5,7 +5,7 @@ matrix:
     env: TARGET=ubuntu:16.04
     sudo: false
   - os: linux
-    env: TARGET=ubuntu:17.10
+    env: TARGET=ubuntu:18.04
     sudo: false
   - os: linux
     env: TARGET=i386/ubuntu:16.04
@@ -24,7 +24,7 @@ matrix:
     env: TARGET=androidx86
 sudo: required
 dist: trusty
-osx_image: xcode9.2
+osx_image: xcode9.3
 services:
 - docker
 cache: ccache
@@ -64,10 +64,12 @@ script: case ${TARGET} in
     make all pkcs11sign zipdebug embedlibs pkgbuild && cd ..;
     ;;
   *)
-    docker run -e BUILD_NUMBER=${BUILD_NUMBER} -e DEBFULLNAME="Travis" -e RUN_TESTS=${RUN_TESTS} -e DEBEMAIL="travis-ci@travis" -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -e TARGET=${TARGET} -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
+    docker run -e BUILD_NUMBER=${BUILD_NUMBER} -e RUN_TESTS=${RUN_TESTS} -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -e TARGET=${TARGET} -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
       apt-get update -qq; 
       apt-get install -y dh-make devscripts dpkg-dev cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen libboost-test-dev git curl wget ruby;
       export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}").${BUILD_NUMBER};
+      export DEBFULLNAME="Travis";
+      export DEBEMAIL="travis-ci@travis";
       dh_make --createorig --addmissing --defaultless -y -p libdigidocpp_${VERSION};
       dch --distribution $(lsb_release -cs) -v ${VERSION} "Release ${VERSION}.";
       dpkg-buildpackage -rfakeroot -us -uc;
