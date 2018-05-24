@@ -48,6 +48,7 @@
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.dll"/>
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.dll"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_java.dll"/>
 <?endif?>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.exe"/>
                 <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\878252.p12"/>
@@ -70,6 +71,9 @@
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.pdb"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharpd.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharpd.pdb"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_java.pdb"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_javad.dll"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_javad.pdb"/>
 <?endif?>
               </Component>
               <Directory Id="SchemaFolderX86" Name="schema"
@@ -110,6 +114,7 @@
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.dll" Id="digidocpp.dll_64"/>
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.dll" Id="digidoc_csharp.dll_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_java.dll" Id="digidoc_java.dll_64"/>
 <?endif?>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.exe" Id="digidoc_tool.exe_64"/>
                 <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\878252.p12" Id="_878252.p12_64"/>
@@ -132,6 +137,9 @@
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.pdb" Id="digidoc_csharp.pdb_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharpd.dll" Id="digidoc_csharpd.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharpd.pdb" Id="digidoc_csharpd.pdb_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_java.pdb" Id="digidoc_java.pdb_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_javad.dll" Id="digidoc_javad.dll_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_javad.pdb" Id="digidoc_javad.pdb_64"/>
 <?endif?>
               </Component>
               <Directory Id="SchemaFolderX64" Name="schema"
