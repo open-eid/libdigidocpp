@@ -64,9 +64,9 @@ script: case ${TARGET} in
     make all pkcs11sign zipdebug embedlibs pkgbuild && cd ..;
     ;;
   *)
-    docker run -e BUILD_NUMBER=${BUILD_NUMBER} -e RUN_TESTS=${RUN_TESTS} -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -e TARGET=${TARGET} -v $(pwd):$(pwd) -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
+    docker run -e BUILD_NUMBER=${BUILD_NUMBER} -e RUN_TESTS=${RUN_TESTS} -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -e TARGET=${TARGET} -v ${HOME}:${HOME} -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
       apt-get update -qq; 
-      apt-get install -y dh-make devscripts dpkg-dev cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen libboost-test-dev git curl wget ruby;
+      apt-get install -y dh-make devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev git curl wget ruby;
       export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}").${BUILD_NUMBER};
       export DEBFULLNAME="Travis";
       export DEBEMAIL="travis-ci@travis";

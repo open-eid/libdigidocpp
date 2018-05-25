@@ -8,7 +8,8 @@ Build-Depends:
  libxml-security-c-dev,
  xsdcxx (>= 4.0) | xsd (>= 4.0),
  vim-common,
- doxygen
+ doxygen,
+ swig
 Standards-Version: 3.9.8
 Homepage: https://github.com/open-eid/libdigidocpp
 
@@ -58,17 +59,6 @@ Depends:
 Description: DigiDoc digital signature library tools
  This package contains tools for manipulating signatures command line with the
  DigiDoc digital signature library.
-
-Package: libdigidocpp-dbg
-Architecture: any
-Section: debug
-Depends:
- libdigidocpp1 (= ${binary:Version}),
- xsdcxx,
- ${misc:Depends}
-Description: Debugging symbols for libdigidocpp1
- This package contains the debugging symbols for DigiDoc digital signature
- library.
 
 Package: libdigidocpp-dev
 Architecture: any

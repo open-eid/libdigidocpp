@@ -17,11 +17,7 @@
  *
  */
 
-// digidoc.i - SWIG interface for DigiDoc C++ library
-
-// TODO: Find a way to tap into PHP-s RINIT and RSHUTDOWN
-//       (request init/shutdown), MSHUTDOWN and MINFO would
-//       be nice too. Also investigate phppointers.i
+// digidocpp.i - SWIG interface for libdigidocpp library
 
 // TODO: Add %newobject to stuff that is known to return
 //       pointers to specifically allocated objects
@@ -55,10 +51,14 @@ public:
     DigiDocConf(const std::string &_cache)
         : digidoc::XmlConfCurrent(), cache(_cache) {}
     int logLevel() const override { return 4; }
-    std::string logFile() const override { return cache + "/digidocpp.log"; }
-    std::string PKCS12Cert() const override { return cache + "/" + digidoc::util::File::fileName(digidoc::XmlConfCurrent::PKCS12Cert()); }
-    std::string TSLCache() const override { return cache; }
-    std::string xsdPath() const override { return cache; }
+    std::string logFile() const override { return cache.empty() ? digidoc::XmlConfCurrent::logFile() : cache + "/digidocpp.log"; }
+    std::string PKCS12Cert() const override
+    {
+        return cache.empty() ? digidoc::XmlConfCurrent::PKCS12Cert() :
+            cache + "/" + digidoc::util::File::fileName(digidoc::XmlConfCurrent::PKCS12Cert());
+    }
+    std::string TSLCache() const override { return cache.empty() ? digidoc::XmlConfCurrent::TSLCache() : cache; }
+    std::string xsdPath() const override { return cache.empty() ? digidoc::XmlConfCurrent::xsdPath() : cache; }
 
 private:
     std::string cache;
@@ -183,6 +183,9 @@ extern "C"
 %ignore digidoc::initialize;
 #endif
 // ignore X509Cert and implement later cert as ByteVector
+%ignore digidoc::Conf::TSLCerts;
+%ignore digidoc::ConfV2::verifyServiceCert;
+%ignore digidoc::XmlConfV2::verifyServiceCert;
 %ignore digidoc::Signer::cert;
 %ignore digidoc::Signature::signingCertificate;
 %ignore digidoc::Signature::OCSPCertificate;
@@ -192,6 +195,8 @@ extern "C"
 %ignore digidoc::DataFile::saveAs(std::ostream &os) const;
 %ignore digidoc::Container::addAdESSignature(std::istream &signature);
 %ignore digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
+// Other
+%ignore digidoc::Signature::Validator::warnings;
 
 // Handle standard C++ types
 %include "std_string.i"
