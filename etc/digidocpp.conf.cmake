@@ -38,7 +38,6 @@
     <!--<param name="verify.serivceUri" lock="false">@SIVA_URL@</param>-->
 
     <!-- OCSP responder url. Used for validating signing certificates and generating BDoc-TM signatures-->
-    <!--<ocsp issuer="ESTEID-SK 2007">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="ESTEID-SK 2011">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="ESTEID-SK 2015">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="EID-SK 2011">http://ocsp.sk.ee</ocsp>-->
