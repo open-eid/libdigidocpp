@@ -19,25 +19,20 @@
 
 #include "PKCS12Signer.h"
 
-#include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509Cert.h"
+#include "log.h"
 
-#include <openssl/pkcs12.h>
-#include <openssl/x509.h>
+using namespace digidoc;
+using namespace std;
 
-namespace digidoc
-{
-class PKCS12SignerPrivate
+class PKCS12Signer::Private
 {
 public:
     X509 *cert = nullptr;
     EVP_PKEY *key = nullptr;
 };
-}
-using namespace digidoc;
-using namespace std;
 
 #if OPENSSL_VERSION_NUMBER < 0x10010000L
 static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps)
@@ -61,19 +56,9 @@ static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM
  * @throws Exception throws exception if the file is not found or wrong password
  */
 PKCS12Signer::PKCS12Signer(const string &path, const string &pass)
- : d(new PKCS12SignerPrivate)
+ : d(new Private)
 {
-    SCOPE(BIO, bio, BIO_new_file(path.c_str(), "rb"));
-    if(!bio)
-        THROW_CAUSE(OpenSSLException(), "Failed to open PKCS12 certificate: %s.", path.c_str());
-    SCOPE(PKCS12, p12, d2i_PKCS12_bio(bio.get(), 0));
-    if(!p12)
-        THROW_CAUSE(OpenSSLException(), "Failed to read PKCS12 certificate: %s.", path.c_str());
-
-    if(!PKCS12_parse(p12.get(), pass.c_str(), &d->key, &d->cert, 0))
-        THROW_CAUSE(OpenSSLException(), "Failed to parse PKCS12 certificate.");
-    else // Hack: clear PKCS12_parse error ERROR: 185073780 - error:0B080074:x509 certificate routines:X509_check_private_key:key values mismatch
-        OpenSSLException();
+    OpenSSL::parsePKCS12(path, pass, &d->key, &d->cert);
 }
 
 PKCS12Signer::~PKCS12Signer()
@@ -102,23 +87,23 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
         signature.resize(size_t(RSA_size(rsa.get())));
         int nid = Digest::toMethod(method);
         unsigned int size = (unsigned int)signature.size();
-        result = RSA_sign(nid, &digest[0], (unsigned int)digest.size(), signature.data(), &size, rsa.get());
+        result = RSA_sign(nid, digest.data(), (unsigned int)digest.size(), signature.data(), &size, rsa.get());
         break;
     }
 #ifndef OPENSSL_NO_ECDSA
     case EVP_PKEY_EC:
     {
         SCOPE(EC_KEY, ec, EVP_PKEY_get1_EC_KEY(d->key));
-        SCOPE(ECDSA_SIG, sig, ECDSA_do_sign(&digest[0], (unsigned int)digest.size(), ec.get()));
+        SCOPE(ECDSA_SIG, sig, ECDSA_do_sign(digest.data(), int(digest.size()), ec.get()));
         if(!sig)
              break;
 
-        unsigned int keyLen = 0;
+        size_t keyLen = 0;
         if(const EC_GROUP *group = EC_KEY_get0_group(ec.get()))
         {
             BIGNUM *order = BN_new();
             if (EC_GROUP_get_order(group, order, nullptr))
-                keyLen = BN_num_bytes(order);
+                keyLen = size_t(BN_num_bytes(order));
             BN_clear_free(order);
         }
         if(keyLen == 0)
@@ -127,9 +112,9 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
 
         const BIGNUM *r = nullptr, *s = nullptr;
         ECDSA_SIG_get0(sig.get(), &r, &s);
-        if(BN_bn2bin(r, &signature[keyLen - BN_num_bytes(r)]) <= 0)
+        if(BN_bn2bin(r, &signature[keyLen - size_t(BN_num_bytes(r))]) <= 0)
             THROW("Error copying signature 'r' value to buffer");
-        if(BN_bn2bin(s, &signature[keyLen*2 - BN_num_bytes(s)]) <= 0)
+        if(BN_bn2bin(s, &signature[keyLen*2 - size_t(BN_num_bytes(s))]) <= 0)
             THROW("Error copying signature 's' value to buffer");
 
         result = 1;

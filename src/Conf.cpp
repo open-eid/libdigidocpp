@@ -19,11 +19,12 @@
 
 #include "Conf.h"
 
-#include "log.h"
 #include "crypto/Digest.h"
+#include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509Cert.h"
-#include "util/File.h"
+#include "log.h"
 #include "tslcerts.h"
+#include "util/File.h"
 
 #include <map>
 
@@ -42,9 +43,9 @@ Conf* Conf::INSTANCE = nullptr;
 /**
  * Configuration parameters
  */
-Conf::Conf() {}
+Conf::Conf() = default;
 
-Conf::~Conf() {}
+Conf::~Conf() = default;
 
 /**
  * Return global instance object
@@ -115,7 +116,6 @@ string Conf::ocsp(const string &issuer) const
 {
     static const map<string,string> ocsplist = {
         //Estonia Live
-        {"ESTEID-SK 2007", "http://ocsp.sk.ee"},
         {"ESTEID-SK 2011", "http://ocsp.sk.ee"},
         {"ESTEID-SK 2015", "http://ocsp.sk.ee"},
         {"EID-SK 2011", "http://ocsp.sk.ee"},
@@ -123,7 +123,6 @@ string Conf::ocsp(const string &issuer) const
         {"KLASS3-SK 2010", "http://ocsp.sk.ee"},
         {"KLASS3-SK 2016", "http://ocsp.sk.ee"},
         //Estonia Test
-        {"TEST of ESTEID-SK 2007", "http://demo.sk.ee/ocsp"},
         {"TEST of ESTEID-SK 2011", "http://demo.sk.ee/ocsp"},
         {"TEST of ESTEID-SK 2015", "http://demo.sk.ee/ocsp"},
         {"TEST of EID-SK 2011", "http://demo.sk.ee/ocsp"},
@@ -173,7 +172,25 @@ string Conf::proxyPass() const { return string(); }
  *
  * Used for signing OCSP request
  */
-string Conf::PKCS12Cert() const { return File::confPath() + "878252.p12"; }
+string Conf::PKCS12Cert() const
+{
+    string oldPath = File::confPath() + "878252.p12";
+    string newPath = File::confPath() + "798.p12";
+    static const bool isValid = [&]{
+        try {
+            X509 *tmp = nullptr;
+            EVP_PKEY *key = nullptr;
+            OpenSSL::parsePKCS12(oldPath, PKCS12Pass(), &key, &tmp);
+            EVP_PKEY_free(key);
+            SCOPE(X509, cert, tmp);
+            return X509Cert(cert.get()).isValid();
+        } catch(const Exception &e) {
+            WARN("Failed to parse PKCS12 certificate: %s %s", oldPath.c_str(), e.msg().c_str());
+        }
+        return true;
+    }();
+    return isValid ? oldPath : newPath;
+}
 
 /**
  * Gets PKCS12 password.
@@ -274,9 +291,9 @@ string Conf::verifyServiceUri() const { return SIVA_URL; }
 /**
  * Version 2 config with new parameters
  */
-ConfV2::ConfV2() {}
+ConfV2::ConfV2() = default;
 
-ConfV2::~ConfV2() {}
+ConfV2::~ConfV2() = default;
 
 /**
  * Return global instance object

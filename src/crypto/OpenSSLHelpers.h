@@ -26,6 +26,7 @@
 #include <sstream>
 
 #include <openssl/err.h>
+#include <openssl/pkcs12.h>
 
 namespace digidoc
 {
@@ -74,5 +75,23 @@ class OpenSSLException : public Exception
 };
 
 #define THROW_OPENSSLEXCEPTION(...) THROW_CAUSE(OpenSSLException(), __VA_ARGS__)
+
+class OpenSSL
+{
+public:
+    static void parsePKCS12(const std::string &path, const std::string &pass,  EVP_PKEY **key, X509 **cert)
+    {
+        SCOPE(BIO, bio, BIO_new_file(path.c_str(), "rb"));
+        if(!bio)
+            THROW_OPENSSLEXCEPTION("Failed to open PKCS12 certificate: %s.", path.c_str());
+        SCOPE(PKCS12, p12, d2i_PKCS12_bio(bio.get(), nullptr));
+        if(!p12)
+            THROW_OPENSSLEXCEPTION("Failed to read PKCS12 certificate: %s.", path.c_str());
+        if(!PKCS12_parse(p12.get(), pass.c_str(), key, cert, nullptr))
+            THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate.");
+        else // Hack: clear PKCS12_parse error ERROR: 185073780 - error:0B080074:x509 certificate routines:X509_check_private_key:key values mismatch
+            OpenSSLException();
+    }
+};
 
 }

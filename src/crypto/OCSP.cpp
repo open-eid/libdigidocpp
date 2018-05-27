@@ -19,16 +19,15 @@
 
 #include "OCSP.h"
 
-#include "Container.h"
-#include "log.h"
 #include "Conf.h"
+#include "Container.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509CertStore.h"
+#include "log.h"
 #include "util/DateTime.h"
 
 #include <algorithm>
 
-#include <openssl/pkcs12.h>
 #include <openssl/ssl.h>
 #ifdef WIN32 //hack for win32 build
 #undef OCSP_REQUEST
@@ -102,7 +101,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
         throw e;
     }
 
-    OCSP_CERTID *certId = OCSP_cert_to_id(0, cert.handle(), issuer.handle());
+    OCSP_CERTID *certId = OCSP_cert_to_id(nullptr, cert.handle(), issuer.handle());
     SCOPE(OCSP_REQUEST, req, createRequest(certId, nonce,
         !Conf::instance()->PKCS12Disable() && url.find("ocsp.sk.ee") != string::npos));
     resp.reset(sendRequest(url, req.get(), "format: " + format + " profile: " +
@@ -147,7 +146,7 @@ OCSP::OCSP(const vector<unsigned char> &data)
     if(data.empty())
         return;
     const unsigned char *p = data.data();
-    resp.reset(d2i_OCSP_RESPONSE(0, &p, (unsigned int)data.size()), OCSP_RESPONSE_free);
+    resp.reset(d2i_OCSP_RESPONSE(nullptr, &p, (unsigned int)data.size()), OCSP_RESPONSE_free);
     if(resp)
        basic.reset(OCSP_response_get1_basic(resp.get()), OCSP_BASICRESP_free);
 }
@@ -165,8 +164,8 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
     {
         unsigned char sha1[SHA_DIGEST_LENGTH];
         ASN1_BIT_STRING *key = X509_get0_pubkey_bitstr(cert.handle());
-        return EVP_Digest(key->data, key->length, sha1, nullptr, EVP_sha1(), nullptr) == 1 &&
-            memcmp(hash->data, &sha1, hash->length) == 0;
+        return EVP_Digest(key->data, size_t(key->length), sha1, nullptr, EVP_sha1(), nullptr) == 1 &&
+            memcmp(hash->data, &sha1, size_t(hash->length)) == 0;
     }
     return false;
 }
@@ -200,7 +199,7 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
     }
     else
         ASN1_OCTET_STRING_set(st.get(), nonce.data(), int(nonce.size()));
-    if(!OCSP_REQUEST_add_ext(req.get(), X509_EXTENSION_create_by_NID(0, NID_id_pkix_OCSP_Nonce, 0, st.get()), 0))
+    if(!OCSP_REQUEST_add_ext(req.get(), X509_EXTENSION_create_by_NID(nullptr, NID_id_pkix_OCSP_Nonce, 0, st.get()), 0))
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 #endif
 
@@ -209,7 +208,7 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
         X509* signCert;
         EVP_PKEY* signKey;
 #ifdef USE_KEYCHAIN
-        if(SecIdentityRef identity = SecIdentityCopyPreferred( CFSTR("ocsp.sk.ee"), 0, 0 ))
+        if(SecIdentityRef identity = SecIdentityCopyPreferred(CFSTR("ocsp.sk.ee"), nullptr, nullptr))
         {
             SecCertificateRef certref = nullptr;
             SecKeyRef keyref = nullptr;
@@ -224,7 +223,7 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
             if(!certdata)
                 THROW("Failed to read PKCS12 certificate");
             const unsigned char *p = CFDataGetBytePtr(certdata);
-            signCert = d2i_X509(0, &p, CFDataGetLength(certdata));
+            signCert = d2i_X509(nullptr, &p, CFDataGetLength(certdata));
             CFRelease(certdata);
 
             CFDataRef keydata = nullptr;
@@ -236,29 +235,20 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
             CFRelease(keyref);
             if(!keydata)
                 THROW("Failed to read PKCS12 key");
-            SCOPE(BIO, bio, BIO_new_mem_buf((void*)CFDataGetBytePtr(keydata), CFDataGetLength(keydata)));
-            signKey = d2i_PKCS8PrivateKey_bio(bio.get(), 0, [](char *buf, int bufsiz, int, void *) -> int {
+            SCOPE(BIO, bio, BIO_new_mem_buf((void*)CFDataGetBytePtr(keydata), int(CFDataGetLength(keydata))));
+            signKey = d2i_PKCS8PrivateKey_bio(bio.get(), nullptr, [](char *buf, int bufsiz, int, void *) -> int {
                 static const char password[] = "pass";
                 int res = strlen(password);
                 if (res > bufsiz)
                         res = bufsiz;
-                memcpy(buf, password, res);
+                memcpy(buf, password, size_t(res));
                 return res;
-            }, 0);
+            }, nullptr);
             CFRelease(keydata);
         } else {
 #endif
         Conf *c = Conf::instance();
-        SCOPE(BIO, bio, BIO_new_file(c->PKCS12Cert().c_str(), "rb"));
-        if(!bio)
-            THROW_OPENSSLEXCEPTION("Failed to open PKCS12 certificate: %s.", c->PKCS12Cert().c_str());
-        SCOPE(PKCS12, p12, d2i_PKCS12_bio(bio.get(), 0));
-        if(!p12)
-            THROW_OPENSSLEXCEPTION("Failed to read PKCS12 certificate: %s.", c->PKCS12Cert().c_str());
-        if(!PKCS12_parse(p12.get(), c->PKCS12Pass().c_str(), &signKey, &signCert, 0))
-            THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate.");
-        else // Hack: clear PKCS12_parse error ERROR: 185073780 - error:0B080074:x509 certificate routines:X509_check_private_key:key values mismatch
-            OpenSSLException();
+        OpenSSL::parsePKCS12(c->PKCS12Cert(), c->PKCS12Pass(), &signKey, &signCert);
 #ifdef USE_KEYCHAIN
         }
 #endif
@@ -266,7 +256,7 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
             THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate");
         if(!signKey)
             THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 key");
-        if(!OCSP_request_sign(req.get(), signCert, signKey, EVP_sha256(), 0, 0))
+        if(!OCSP_request_sign(req.get(), signCert, signKey, EVP_sha256(), nullptr, 0))
             THROW_OPENSSLEXCEPTION("Failed to sign OCSP request.");
         X509_free(signCert);
         EVP_PKEY_free(signKey);
@@ -366,7 +356,7 @@ OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const st
     user_agent += " APP " + appInfo() + " " + useragent;
 
     OCSP_RESPONSE* resp = nullptr;
-    SCOPE(OCSP_REQ_CTX, rctx, OCSP_sendreq_new(connection.get(), const_cast<char*>(url.c_str()), 0, -1));
+    SCOPE(OCSP_REQ_CTX, rctx, OCSP_sendreq_new(connection.get(), const_cast<char*>(url.c_str()), nullptr, -1));
     if(!rctx)
         THROW_OPENSSLEXCEPTION("Failed to set OCSP request headers.");
     if(!OCSP_REQ_CTX_add1_header(rctx.get(), "Host", const_cast<char*>(hostname.c_str())))
@@ -425,7 +415,7 @@ void OCSP::verifyResponse(const X509Cert &cert) const
 
     SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(0, cert.handle(), issuer.handle()));
     int status = -1; int reason = -1;
-    if(OCSP_resp_find_status(basic.get(), certId.get(), &status, &reason, 0, 0, 0) <= 0)
+    if(OCSP_resp_find_status(basic.get(), certId.get(), &status, &reason, nullptr, nullptr, nullptr) <= 0)
     {
         Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
         e.setCode(Exception::CertificateUnknown);

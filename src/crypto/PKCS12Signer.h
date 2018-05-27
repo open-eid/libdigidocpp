@@ -23,19 +23,19 @@
 
 namespace digidoc
 {
-    class PKCS12SignerPrivate;
     class EXP_DIGIDOC PKCS12Signer : public Signer
     {
 
       public:
           PKCS12Signer(const std::string &path, const std::string &pass);
-          virtual ~PKCS12Signer();
+          ~PKCS12Signer() final;
 
       private:
           X509Cert cert() const override;
           std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const override;
 
           DISABLE_COPY(PKCS12Signer);
-          PKCS12SignerPrivate *d;
+          class Private;
+          Private *d;
     };
 }
