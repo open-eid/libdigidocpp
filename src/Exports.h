@@ -31,6 +31,7 @@
   #else
     #define DEPRECATED_DIGIDOCPP
   #endif
+  #define DIGIDOCPP_NOEXCEPT _NOEXCEPT
   #pragma warning( disable: 4251 ) // shut up std::vector warnings
 #else
   #if __GNUC__ >= 4
@@ -40,6 +41,7 @@
     #define EXP_DIGIDOC
     #define DEPRECATED_DIGIDOCPP
   #endif
+  #define DIGIDOCPP_NOEXCEPT noexcept
 #endif
 
 #define DISABLE_COPY(Class) \

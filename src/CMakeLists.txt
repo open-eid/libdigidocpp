@@ -214,7 +214,7 @@ add_library(digidocpp_priv STATIC
 )
 
 set_target_properties(digidocpp_priv PROPERTIES
-    COMPILE_DEFINITIONS "DIGIDOCPP_CONFIG_DIR=\"${DIGIDOCPP_CONFIG_DIR}\""
+    COMPILE_DEFINITIONS "DIGIDOCPP_CONFIG_DIR=\"${DIGIDOCPP_CONFIG_DIR}\";digidocpp_EXPORTS"
     POSITION_INDEPENDENT_CODE YES
 )
 
@@ -296,6 +296,9 @@ if(SWIG_FOUND)
         endif()
         install(TARGETS digidoc_java DESTINATION ${CMAKE_INSTALL_LIBDIR})
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ee/ria/libdigidocpp FILES_MATCHING PATTERN "*.java")
+        if(WIN32)
+            install(FILES $<TARGET_PDB_FILE:digidoc_java> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+        endif()
     endif()
     if(WIN32)
         set(CMAKE_SWIG_FLAGS -dllimport digidoc_csharp -namespace digidoc)
@@ -305,6 +308,7 @@ if(SWIG_FOUND)
         set_target_properties(digidoc_csharp PROPERTIES DEBUG_OUTPUT_NAME "digidoc_csharpd")
         install(TARGETS digidoc_csharp DESTINATION ${CMAKE_INSTALL_BINDIR})
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/csharp/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_csharp FILES_MATCHING PATTERN "*.cs")
+        install(FILES $<TARGET_PDB_FILE:digidoc_csharp> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
     endif()
 endif()
 
@@ -319,12 +323,7 @@ install( TARGETS digidocpp
 
 if(WIN32)
     set_target_properties( digidocpp PROPERTIES DEBUG_OUTPUT_NAME "digidocppd" )
-    install(FILES
-        $<TARGET_PDB_FILE:digidocpp>
-        $<TARGET_PDB_FILE:digidoc-tool>
-        $<TARGET_PDB_FILE:digidoc_csharp>
-        $<TARGET_PDB_FILE:digidoc_java>
-        DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+    install(FILES $<TARGET_PDB_FILE:digidocpp> $<TARGET_PDB_FILE:digidoc-tool> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
 endif()
 
 source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/878252.p12;${CMAKE_SOURCE_DIR}/etc/798.p12" )
