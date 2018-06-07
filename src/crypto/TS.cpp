@@ -40,16 +40,16 @@
 using namespace digidoc;
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void TS_VERIFY_CTX_set_flags(TS_VERIFY_CTX *ctx, int f)
 {
-    ctx->flags = f;
+    ctx->flags = unsigned(f);
 }
 
 static void TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx, unsigned char *hexstr, long len)
 {
     ctx->imprint = hexstr;
-    ctx->imprint_len = len;
+    ctx->imprint_len = unsigned(len);
 }
 
 static void TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s)
@@ -104,13 +104,12 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
         THROW("Failed to send Time-stamp request");
 
     const unsigned char *p2 = (const unsigned char*)result.content.c_str();
-    SCOPE(TS_RESP, resp, d2i_TS_RESP(0, &p2, long(result.content.size())));
+    SCOPE(TS_RESP, resp, d2i_TS_RESP(nullptr, &p2, long(result.content.size())));
     if(!resp)
         THROW_OPENSSLEXCEPTION("Failed to parse TS response.");
 
-    SCOPE(TS_VERIFY_CTX, ctx, TS_VERIFY_CTX_new());
-    TS_VERIFY_CTX_set_flags(ctx.get(), TS_VFY_VERSION);//|TS_VFY_NONCE);
-    //ctx->nonce = nonce.release();
+    SCOPE(TS_VERIFY_CTX, ctx, TS_REQ_to_TS_VERIFY_CTX(req.get(), nullptr));
+    TS_VERIFY_CTX_set_flags(ctx.get(), TS_VFY_VERSION|TS_VFY_NONCE);
     if(TS_RESP_verify_response(ctx.get(), resp.get()) != 1)
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
@@ -122,7 +121,7 @@ TS::TS(const std::vector<unsigned char> &data)
     if(data.empty())
         return;
     const unsigned char *p = data.data();
-    d.reset(d2i_PKCS7(0, &p, long(data.size())), PKCS7_free);
+    d.reset(d2i_PKCS7(nullptr, &p, long(data.size())), PKCS7_free);
 #ifndef OPENSSL_NO_CMS
     if(d)
         return;
@@ -142,17 +141,17 @@ TS::TS(const std::vector<unsigned char> &data)
 
 X509Cert TS::cert() const
 {
-    typedef void (*sk_X509_free_t)(STACK_OF(X509) *stack);
+    using sk_X509_free_t = void (*)(STACK_OF(X509) *);
     unique_ptr<STACK_OF(X509), sk_X509_free_t> signers = [&] {
         if(d && PKCS7_type_is_signed(d.get()))
-            return unique_ptr<STACK_OF(X509), sk_X509_free_t>(PKCS7_get0_signers(d.get(), 0, 0),
+            return unique_ptr<STACK_OF(X509), sk_X509_free_t>(PKCS7_get0_signers(d.get(), nullptr, 0),
                 [](STACK_OF(X509) *stack) { sk_X509_free(stack); });
 #ifndef OPENSSL_NO_CMS
         else if(cms)
             return unique_ptr<STACK_OF(X509), sk_X509_free_t>(CMS_get1_certs(cms.get()),
                 [](STACK_OF(X509) *stack) { sk_X509_pop_free(stack, X509_free); });
 #endif
-        return unique_ptr<STACK_OF(X509), sk_X509_free_t>(nullptr, [](STACK_OF(X509) *) {});
+        return unique_ptr<STACK_OF(X509), sk_X509_free_t>(nullptr, nullptr);
     }();
 
     if(!signers || sk_X509_num(signers.get()) != 1)
@@ -184,7 +183,7 @@ string TS::serial() const
     if(!info)
         return serial;
 
-    SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), 0), BN_free);
+    SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), nullptr), BN_free);
     if(!!bn)
     {
         char *str = BN_bn2dec(bn.get());
@@ -232,7 +231,7 @@ void TS::verify(const Digest &digest)
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
     if (!csc)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
-    if(!X509_STORE_CTX_init(csc.get(), store.get(), 0, 0))
+    if(!X509_STORE_CTX_init(csc.get(), store.get(), nullptr, nullptr))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
 
     if(d)
