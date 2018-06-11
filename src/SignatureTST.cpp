@@ -38,7 +38,7 @@ SignatureTST::SignatureTST(istream &is, ASiC_S *asicSDoc): asicSDoc(asicSDoc)
     is.seekg(0, istream::beg);
 
     vector<unsigned char> buf(size, 0);
-    is.read((char*)&buf[0], buf.size());
+    is.read((char*)buf.data(), buf.size());
 
     timestampToken = new TS(buf);
 }
@@ -115,7 +115,7 @@ std::vector<unsigned char> SignatureTST::dataToSign() const
     THROW("Not implemented.");
 }
 
-void SignatureTST::setSignatureValue(const std::vector<unsigned char> &signatureValue)
+void SignatureTST::setSignatureValue(const std::vector<unsigned char> &)
 {
     THROW("Not implemented.");
 }

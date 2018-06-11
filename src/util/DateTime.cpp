@@ -21,9 +21,9 @@
 
 #include "log.h"
 
-#include <sstream>
-#include <iomanip>
 #include <cstdlib>
+#include <iomanip>
+#include <sstream>
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <ctime>
 #endif
@@ -39,7 +39,7 @@ tm digidoc::util::date::ASN1TimeToTM(const std::string &date, bool generalizedti
     memset(&time, 0, sizeof(time));
     size_t i = 0;
 
-    if(date.size() < (generalizedtime ? 12 : 10))
+    if(date.size() < size_t(generalizedtime ? 12 : 10))
         THROW("Date time field value shorter than 12 characters: '%s'", t);
 
     // Accept only GMT time.
@@ -97,7 +97,7 @@ tm digidoc::util::date::ASN1TimeToTM(const std::string &date, bool generalizedti
         THROW("Minutes value incorrect: %d", time.tm_min);
 
     // Extract seconds.
-    if(date.size() >= (generalizedtime ? 14 : 12))
+    if(date.size() >= size_t(generalizedtime ? 14 : 12))
     {
         time.tm_sec = (t[i++]-'0')*10;
         time.tm_sec += (t[i++]-'0');
@@ -162,7 +162,7 @@ time_t digidoc::util::date::xsd2time_t(const xml_schema::DateTime &xml)
         0
 #ifndef _WIN32
         ,0
-        ,0
+        ,nullptr
 #endif
     };
     return mkgmtime(t);

@@ -201,7 +201,7 @@ void TSL::debugException(const digidoc::Exception &e)
 bool TSL::isExpired() const
 {
     return !tsl || !tsl->schemeInformation().nextUpdate().dateTime().present() ||
-        xsd2time_t(tsl->schemeInformation().nextUpdate().dateTime().get()) < time(0);
+        xsd2time_t(tsl->schemeInformation().nextUpdate().dateTime().get()) < time(nullptr);
 }
 
 string TSL::issueDate() const
@@ -569,7 +569,7 @@ void TSL::validateLastModified(const string &url, int timeout)
                         failureReason = "Remote timestamp does not match";
                     }
                 }
-                catch(const Exception& e)
+                catch(const Exception &)
                 {
                     failureReason = "Cached timestamp does not exist";
                 }
@@ -625,7 +625,7 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
     ifstream is(path, ifstream::binary);
     while(is)
     {
-        is.read((char*)buf.data(), buf.size());
+        is.read((char*)buf.data(), streamsize(buf.size()));
         if(is.gcount() > 0)
             sha.update(buf.data(), (unsigned long)is.gcount());
     }

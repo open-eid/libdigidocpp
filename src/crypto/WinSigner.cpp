@@ -247,7 +247,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     {
         DWORD size = 0;
         wstring algo(5, 0);
-        err = NCryptGetProperty(d->key, NCRYPT_ALGORITHM_GROUP_PROPERTY, PBYTE(algo.data()), (algo.size() + 1) * 2, &size, 0);
+        err = NCryptGetProperty(d->key, NCRYPT_ALGORITHM_GROUP_PROPERTY, PBYTE(algo.data()), DWORD((algo.size() + 1) * 2), &size, 0);
         algo.resize(size/2 - 1);
         bool isRSA = algo == L"RSA";
 
