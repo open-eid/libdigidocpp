@@ -24,7 +24,7 @@
 namespace digidoc
 {
 
-class EXP_DIGIDOC XmlConf: public Conf
+class DIGIDOCPP_EXPORT XmlConf: public Conf
 {
 public:
     explicit XmlConf(const std::string &path = "", const std::string &schema = "");
@@ -80,7 +80,7 @@ private:
     friend class XmlConfV3;
 };
 
-class EXP_DIGIDOC XmlConfV2: public ConfV2
+class DIGIDOCPP_EXPORT XmlConfV2: public ConfV2
 {
 public:
     explicit XmlConfV2(const std::string &path = "", const std::string &schema = "");
@@ -134,7 +134,7 @@ private:
     XmlConf::Private *d;
 };
 
-class EXP_DIGIDOC XmlConfV3: public ConfV3
+class DIGIDOCPP_EXPORT XmlConfV3: public ConfV3
 {
 public:
     explicit XmlConfV3(const std::string &path = {}, const std::string &schema = {});

@@ -22,14 +22,14 @@
 #ifdef WIN32
   #include <winapifamily.h>
   #ifdef digidocpp_EXPORTS
-    #define EXP_DIGIDOC __declspec(dllexport)
+    #define DIGIDOCPP_EXPORT __declspec(dllexport)
   #else
-    #define EXP_DIGIDOC __declspec(dllimport)
+    #define DIGIDOCPP_EXPORT __declspec(dllimport)
   #endif
   #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    #define DEPRECATED_DIGIDOCPP __declspec(deprecated)
+    #define DIGIDOCPP_DEPRECATED __declspec(deprecated)
   #else
-    #define DEPRECATED_DIGIDOCPP
+    #define DIGIDOCPP_DEPRECATED
   #endif
   #if _MSC_VER >= 1900
     #define DIGIDOCPP_NOEXCEPT noexcept
@@ -43,13 +43,8 @@
   #define DIGIDOCPP_WARNING_DISABLE_MSVC(number) __pragma(warning(disable: number))
   #pragma warning( disable: 4251 ) // shut up std::vector warnings
 #else
-  #if __GNUC__ >= 4
-    #define EXP_DIGIDOC __attribute__ ((visibility("default")))
-    #define DEPRECATED_DIGIDOCPP __attribute__ ((__deprecated__))
-  #else
-    #define EXP_DIGIDOC
-    #define DEPRECATED_DIGIDOCPP
-  #endif
+  #define DIGIDOCPP_EXPORT __attribute__ ((visibility("default")))
+  #define DIGIDOCPP_DEPRECATED __attribute__ ((__deprecated__))
   #define DIGIDOCPP_NOEXCEPT noexcept
   #define DIGIDOCPP_DO_PRAGMA(text) _Pragma(#text)
   #define DIGIDOCPP_WARNING_PUSH DIGIDOCPP_DO_PRAGMA(GCC diagnostic push)

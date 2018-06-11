@@ -237,8 +237,8 @@ extern "C"
 %}
 
 // Handle DigiDoc Export declarations
-#define EXP_DIGIDOC
-#define DEPRECATED_DIGIDOCPP
+#define DIGIDOCPP_EXPORT
+#define DIGIDOCPP_DEPRECATED
 
 #ifdef SWIGPHP
 // Broken in PHP :(

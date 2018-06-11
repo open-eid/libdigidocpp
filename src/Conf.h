@@ -28,7 +28,7 @@
 namespace digidoc
 {
 class X509Cert;
-class EXP_DIGIDOC Conf
+class DIGIDOCPP_EXPORT Conf
 {
 public:
     Conf();
@@ -38,8 +38,8 @@ public:
 
     virtual int logLevel() const;
     virtual std::string logFile() const;
-    DEPRECATED_DIGIDOCPP virtual std::string libdigidocConf() const;
-    DEPRECATED_DIGIDOCPP virtual std::string certsPath() const;
+    DIGIDOCPP_DEPRECATED virtual std::string libdigidocConf() const;
+    DIGIDOCPP_DEPRECATED virtual std::string certsPath() const;
     virtual std::string xsdPath() const;
     virtual std::string PKCS11Driver() const;
 
@@ -74,7 +74,7 @@ private:
     static Conf *INSTANCE;
 };
 
-class EXP_DIGIDOC ConfV2: public Conf
+class DIGIDOCPP_EXPORT ConfV2: public Conf
 {
 public:
     ConfV2();
@@ -87,7 +87,7 @@ private:
     DISABLE_COPY(ConfV2);
 };
 
-class EXP_DIGIDOC ConfV3: public ConfV2
+class DIGIDOCPP_EXPORT ConfV3: public ConfV2
 {
 public:
     ConfV3();

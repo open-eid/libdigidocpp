@@ -26,7 +26,7 @@
 
 namespace digidoc
 {
-    class EXP_DIGIDOC DataFile
+    class DIGIDOCPP_EXPORT DataFile
     {
 
       public:

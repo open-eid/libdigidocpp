@@ -25,12 +25,12 @@
 #include <string>
 #include <vector>
 
-typedef struct asn1_object_st ASN1_OBJECT;
-typedef struct x509_st X509;
+using ASN1_OBJECT = struct asn1_object_st;
+using X509 = struct x509_st;
 
 namespace digidoc
 {
-    class EXP_DIGIDOC X509Cert
+    class DIGIDOCPP_EXPORT X509Cert
     {
 
       public:
@@ -77,7 +77,7 @@ namespace digidoc
           static const std::string QCP_LEGAL_QSCD;
           static const std::string QCP_WEB;
 
-          explicit X509Cert(X509* cert = 0);
+          explicit X509Cert(X509 *cert = nullptr);
           explicit X509Cert(const unsigned char *bytes, size_t size, Format format = Der);
           explicit X509Cert(const std::vector<unsigned char> &bytes, Format format = Der);
           explicit X509Cert(const std::string &path, Format format = Pem);
@@ -92,7 +92,7 @@ namespace digidoc
           std::vector<std::string> certificatePolicies() const;
           std::vector<std::string> qcStatements() const;
           bool isCA() const;
-          bool isValid(time_t *t = 0) const;
+          bool isValid(time_t *t = nullptr) const;
 
           X509* handle() const;
           operator std::vector<unsigned char>() const;
