@@ -114,10 +114,46 @@ Exception::Exception(const string& file, int line, const string& msg, const Exce
 }
 
 /**
+ * Copy constructor
+ */
+Exception::Exception(const Exception &other) = default;
+
+/**
+ * Move constructor
+ */
+Exception::Exception(Exception &&other) DIGIDOCPP_NOEXCEPT
+    : m_file(std::move(other.m_file))
+    , m_msg(std::move(other.m_msg))
+    , m_line(other.m_line)
+    , m_causes(std::move(other.m_causes))
+    , m_code(other.m_code)
+{
+}
+
+/**
  * Releases memory
  */
-Exception::~Exception()
+Exception::~Exception() = default;
+
+/**
+ * Copy operator
+ */
+Exception &Exception::operator=(const Exception &other) = default;
+
+/**
+ * Move operator
+ */
+Exception &Exception::operator=(Exception &&other) DIGIDOCPP_NOEXCEPT
 {
+    if(this != &other)
+    {
+        m_file = std::move(other.m_file);
+        m_msg = std::move(other.m_msg);
+        m_line = other.m_line;
+        m_causes = std::move(other.m_causes);
+        m_code = other.m_code;
+    }
+    return *this;
 }
 
 /**
