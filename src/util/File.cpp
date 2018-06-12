@@ -25,20 +25,20 @@
 #include "../log.h"
 
 #include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <sstream>
 #include <ctime>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #ifdef _WIN32
-    #include <windows.h>
+    #include <Windows.h>
     #include <direct.h>
 #else
-    #include <unistd.h>
     #include <dirent.h>
     #include <sys/param.h>
+#include <unistd.h>
 #endif
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
@@ -50,10 +50,10 @@ using namespace std;
 
 #ifdef _WIN32
 #define f_stat      _wstat
-typedef struct _stat f_statbuf;
+using f_statbuf = struct _stat;
 #else
 #define f_stat      stat
-typedef struct stat f_statbuf;
+using f_statbuf = struct stat;
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -156,9 +156,9 @@ string File::cwd()
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
     return "./";
 #endif
-    wchar_t *path = _wgetcwd( 0, 0 );
+    wchar_t *path = _wgetcwd(nullptr, 0);
 #else
-    char *path = getcwd( 0, 0 );
+    char *path = getcwd(nullptr, 0);
 #endif
     string ret;
     if( path )
@@ -191,16 +191,16 @@ f_string File::encodeName(const string &fileName)
     if(fileName.empty())
         return f_string();
 #if defined(_WIN32)
-    int len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), 0, 0);
-    f_string out(len, 0);
+    int len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), nullptr, 0);
+    f_string out(size_t(len), 0);
     len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), &out[0], len);
 #elif defined(__APPLE__)
-    CFMutableStringRef ref = CFStringCreateMutable(0, 0);
+    CFMutableStringRef ref = CFStringCreateMutable(nullptr, 0);
     CFStringAppendCString(ref, fileName.c_str(), kCFStringEncodingUTF8);
     CFStringNormalize(ref, kCFStringNormalizationFormD);
 
     string out(fileName.size() * 2, 0);
-    CFStringGetCString(ref, &out[0], out.size(), kCFStringEncodingUTF8);
+    CFStringGetCString(ref, &out[0], CFIndex(out.size()), kCFStringEncodingUTF8);
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
 #else
@@ -219,16 +219,16 @@ string File::decodeName(const f_string &localFileName)
     if(localFileName.empty())
         return string();
 #if defined(_WIN32)
-    int len = WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), 0, 0, 0, 0);
-    string out(len, 0);
-    WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), &out[0], len, 0, 0);
+    int len = WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), nullptr, 0, nullptr, nullptr);
+    string out(size_t(len), 0);
+    WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), &out[0], len, nullptr, nullptr);
 #elif defined(__APPLE__)
-    CFMutableStringRef ref = CFStringCreateMutable(0, 0);
+    CFMutableStringRef ref = CFStringCreateMutable(nullptr, 0);
     CFStringAppendCString(ref, localFileName.c_str(), kCFStringEncodingUTF8);
     CFStringNormalize(ref, kCFStringNormalizationFormC);
 
     string out(localFileName.size() * 2, 0);
-    CFStringGetCString(ref, &out[0], out.size(), kCFStringEncodingUTF8);
+    CFStringGetCString(ref, &out[0], CFIndex(out.size()), kCFStringEncodingUTF8);
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
 #else
@@ -304,13 +304,13 @@ tm* File::modifiedTime(const string &path)
 {
     f_statbuf fileInfo;
     if(f_stat(encodeName(path).c_str(), &fileInfo) != 0)
-        return gmtime(0);
+        return gmtime(nullptr);
     return gmtime((const time_t*)&fileInfo.st_mtime);
 }
 
 string File::fileExtension(const std::string &path)
 {
-    size_t pos = path.find_last_of(".");
+    size_t pos = path.find_last_of('.');
     if(pos == string::npos)
         return string();
     string ext = path.substr(pos + 1);
@@ -346,12 +346,12 @@ string File::fileName(const string& path)
 string File::frameworkResourcesPath(const string &name)
 {
     string result(PATH_MAX, 0);
-    CFStringRef identifier = CFStringCreateWithCString(0, name.c_str(), kCFStringEncodingUTF8);
+    CFStringRef identifier = CFStringCreateWithCString(nullptr, name.c_str(), kCFStringEncodingUTF8);
     if(CFBundleRef bundle = CFBundleGetBundleWithIdentifier(identifier))
     {
         if(CFURLRef url = CFBundleCopyResourcesDirectoryURL(bundle))
         {
-            CFURLGetFileSystemRepresentation(url, TRUE, (UInt8 *)&result[0], result.size());
+            CFURLGetFileSystemRepresentation(url, TRUE, (UInt8 *)&result[0], CFIndex(result.size()));
             CFRelease(url);
         }
     }
@@ -406,11 +406,14 @@ string File::tempFileName()
 {
 #ifdef _WIN32
     // requires TMP environment variable to be set
-    wchar_t *fileName = _wtempnam(0, 0); // TODO: static buffer, not thread-safe
+    wchar_t *fileName = _wtempnam(nullptr, nullptr); // TODO: static buffer, not thread-safe
     if ( !fileName )
         THROW("Failed to create a temporary file name.");
 #else
-    char *fileName = tempnam(0, 0);
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
+    char *fileName = tempnam(nullptr, nullptr);
+DIGIDOCPP_WARNING_POP
     if ( !fileName )
         THROW("Failed to create a temporary file name.");
 #endif
@@ -509,7 +512,7 @@ vector<string> File::listFiles(const string& directory)
     char fullPath[MAXPATHLEN];
     struct stat info;
     dirent* entry;
-    while((entry = readdir(pDir)) != NULL)
+    while((entry = readdir(pDir)) != nullptr)
     {
         if(string(".").compare(entry->d_name) == 0
         || string("..").compare(entry->d_name) == 0)
@@ -524,7 +527,7 @@ vector<string> File::listFiles(const string& directory)
 #else
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
     WIN32_FIND_DATAW findFileData;
-    HANDLE hFind = NULL;
+    HANDLE hFind = nullptr;
 
     try
     {
@@ -675,7 +678,7 @@ string File::fromUriPath(const string &path)
         {
             data[2] = *(++i);
             data[3] = *(++i);
-            ret += static_cast<char>(strtoul(data, 0, 16));
+            ret += static_cast<char>(strtoul(data, nullptr, 16));
         }
         else {
             ret += *i;
@@ -692,7 +695,7 @@ vector<unsigned char> File::hexToBin(const string &in)
     {
         data[0] = *(i++);
         data[1] = *(i++);
-        out.push_back(static_cast<unsigned char>(strtoul(data, 0, 16)));
+        out.push_back(static_cast<unsigned char>(strtoul(data, nullptr, 16)));
     }
     return out;
 }

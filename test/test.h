@@ -22,8 +22,8 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include <Container.h>
-#include <Exception.h>
 #include <Conf.h>
+#include <Exception.h>
 #include <crypto/X509Cert.h>
 #include <util/File.h>
 
@@ -124,7 +124,10 @@ public:
 		if(argc > 1)
 		{
 			//BOOST_MESSAGE("Data path " + string(boost::unit_test::framework::master_test_suite().argv[argc-1]));
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-result")
 			chdir(boost::unit_test::framework::master_test_suite().argv[argc-1]);
+DIGIDOCPP_WARNING_POP
 			path = conf->path = boost::unit_test::framework::master_test_suite().argv[argc-1];
 		}
 		boost::unit_test::unit_test_monitor.register_exception_translator<Exception>(&translate_exception);
