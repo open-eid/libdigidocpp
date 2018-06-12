@@ -27,18 +27,15 @@
 #include "util/File.h"
 #include "xml/ts_119612v020201_201601xsd.hxx"
 
-#ifdef __APPLE__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnull-conversion"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-#include <xsec/enc/XSECKeyInfoResolverDefault.hpp>
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
+DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/enc/OpenSSL/OpenSSLCryptoX509.hpp>
+#include <xsec/enc/XSECKeyInfoResolverDefault.hpp>
 #include <xsec/framework/XSECException.hpp>
 #include <xsec/framework/XSECProvider.hpp>
-#ifdef __APPLE__
-#pragma GCC diagnostic pop
-#endif
+DIGIDOCPP_WARNING_POP
 
 #include <cmath>
 #include <fstream>

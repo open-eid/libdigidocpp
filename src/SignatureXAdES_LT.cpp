@@ -21,13 +21,16 @@
 
 #include "ASiC_E.h"
 #include "Conf.h"
-#include "crypto/Digest.h"
-#include "crypto/X509CertStore.h"
-#include "crypto/OCSP.h"
-#include "util/DateTime.h"
 #include "log.h"
+#include "crypto/Digest.h"
+#include "crypto/OCSP.h"
+#include "crypto/X509CertStore.h"
+#include "util/DateTime.h"
 
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/dsig/DSIGConstants.hpp>
+DIGIDOCPP_WARNING_POP
 
 #include <ctime>
 

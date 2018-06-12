@@ -30,7 +30,10 @@
 #include "util/DateTime.h"
 #include "xml/XAdES01903v132-201601.hxx"
 
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/dsig/DSIGConstants.hpp>
+DIGIDOCPP_WARNING_POP
 
 using namespace digidoc;
 using namespace digidoc::util::date;
@@ -106,7 +109,7 @@ vector<unsigned char> SignatureXAdES_T::tsBase64() const
             return vector<unsigned char>();
         GenericTimeStampType::EncapsulatedTimeStampType bin =
                 ts.encapsulatedTimeStamp().front();
-        return vector<unsigned char>(bin.data(), bin.data() + bin.size());
+        return vector<unsigned char>(bin.begin(), bin.end());
     } catch(const Exception &) {}
     return vector<unsigned char>();
 }
@@ -150,9 +153,9 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             THROW("Missing EncapsulatedTimeStamp");
         if(etseq.size() > 1)
             THROW("More than one EncapsulatedTimeStamp is not supported");
-        GenericTimeStampType::EncapsulatedTimeStampType bin = etseq.front();
+        const GenericTimeStampType::EncapsulatedTimeStampType &bin = etseq.front();
 
-        TS tsa(vector<unsigned char>(bin.data(), bin.data() + bin.size()));
+        TS tsa(vector<unsigned char>(bin.begin(), bin.end()));
         Digest calc(tsa.digestMethod());
         calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
         tsa.verify(calc);
