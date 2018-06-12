@@ -21,22 +21,21 @@
 
 #include "ASiC_E.h"
 #include "ASiC_S.h"
-#include "DDoc.h"
-#include "SiVaContainer.h"
-#include "PDF.h"
 #include "DataFile.h"
+#include "DDoc.h"
 #include "Exception.h"
 #include "log.h"
+#include "PDF.h"
+#include "SiVaContainer.h"
 #include "XmlConf.h"
 #include "crypto/X509CertStore.h"
 #include "util/File.h"
 
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
+DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xercesc/util/XMLString.hpp>
-#ifdef __APPLE__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wnull-conversion"
-#endif
 #include <xsec/utils/XSECPlatformUtils.hpp>
 #ifndef XSEC_NO_XALAN
 #include <xalanc/XPath/XPathEvaluator.hpp>
@@ -44,9 +43,7 @@
 XALAN_USING_XALAN(XPathEvaluator)
 XALAN_USING_XALAN(XalanTransformer)
 #endif
-#ifdef __APPLE__
-#pragma GCC diagnostic pop
-#endif
+DIGIDOCPP_WARNING_POP
 
 #include <algorithm>
 #include <sstream>
@@ -56,7 +53,7 @@ using namespace digidoc;
 using namespace std;
 using namespace xercesc;
 
-typedef Container* (*plugin)(const std::string &);
+using plugin = Container *(*)(const std::string &);
 
 namespace digidoc
 {
@@ -154,7 +151,7 @@ void digidoc::initialize(const string &appInfo, initCallBack callBack)
  */
 void digidoc::terminate()
 {
-    Conf::init(0);
+    Conf::init(nullptr);
 
     XSECPlatformUtils::Terminate();
 #ifndef XSEC_NO_XALAN

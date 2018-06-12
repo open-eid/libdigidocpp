@@ -20,9 +20,9 @@
 #include "SignatureXAdES_B.h"
 
 #include "ASiC_E.h"
-#include "log.h"
 #include "Conf.h"
 #include "DataFile_p.h"
+#include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/Signer.h"
@@ -31,22 +31,19 @@
 #include "util/DateTime.h"
 #include "util/File.h"
 #include "xml/en_31916201v010101.hxx"
-#include "xml/SecureDOMParser.h"
 #include "xml/OpenDocument_dsig.hxx"
+#include "xml/SecureDOMParser.h"
 #include "xml/URIResolver.h"
 
-#ifdef __APPLE__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wnull-conversion"
-#endif
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
+DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/dsig/DSIGReference.hpp>
 #include <xsec/enc/XSECKeyInfoResolverDefault.hpp>
-#ifdef __APPLE__
-#pragma GCC diagnostic pop
-#endif
 #include <xsec/framework/XSECException.hpp>
 #include <xsec/framework/XSECProvider.hpp>
+DIGIDOCPP_WARNING_POP
 
 #include <regex>
 #if _MSC_VER >= 1900 || (__cplusplus >= 201103L &&                \
@@ -214,7 +211,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     }
     signature->signedInfo().signatureMethod(Uri( X509Crypto(c).isRSAKey() ?
         Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()) ));
-    time_t t = time(0);
+    time_t t = time(nullptr);
     setSigningTime(gmtime(&t));
 
     string digestMethod = Conf::instance()->digestUri();

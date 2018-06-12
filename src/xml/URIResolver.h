@@ -19,7 +19,12 @@
 
 #pragma once
 
+#include "Exports.h"
+
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/framework/XSECURIResolverXerces.hpp>
+DIGIDOCPP_WARNING_POP
 
 namespace digidoc {
 
@@ -29,8 +34,8 @@ class URIResolver: public XSECURIResolverXerces
 {
 public:
     URIResolver(ASiContainer *doc);
-    xercesc::BinInputStream *resolveURI(const XMLCh *uri);
-    XSECURIResolver *clone(void);
+    xercesc::BinInputStream *resolveURI(const XMLCh *uri) override;
+    XSECURIResolver *clone() override;
 private:
     ASiContainer *doc_;
 };

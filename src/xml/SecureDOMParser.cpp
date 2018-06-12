@@ -22,12 +22,17 @@
 #include "crypto/Digest.h"
 #include "log.h"
 
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
+DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xercesc/framework/Wrapper4InputSource.hpp>
 #include <xsd/cxx/tree/error-handler.hxx>
 #include <xsd/cxx/xml/dom/bits/error-handler-proxy.hxx>
 #include <xsd/cxx/xml/sax/std-input-source.hxx>
 #include <xsec/canon/XSECC14n20010315.hpp>
 #include <xsec/dsig/DSIGReference.hpp>
+DIGIDOCPP_WARNING_POP
 
 #include <sstream>
 

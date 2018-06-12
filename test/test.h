@@ -87,6 +87,8 @@ ostream &operator<<(ostream &os, const vector<X509Cert::KeyUsage> &usage)
 namespace digidoc
 {
 
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_MSVC(4996)
 class TestConfig: public ConfCurrent
 {
 public:
@@ -106,6 +108,7 @@ public:
 
 	string path = ".";
 };
+DIGIDOCPP_WARNING_POP
 
 }
 

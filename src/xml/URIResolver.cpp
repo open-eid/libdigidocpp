@@ -24,8 +24,11 @@
 #include "SecureDOMParser.h"
 #include "util/File.h"
 
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xercesc/util/BinInputStream.hpp>
 #include <xsec/framework/XSECException.hpp>
+DIGIDOCPP_WARNING_POP
 
 #include <istream>
 
@@ -43,20 +46,20 @@ public:
         is_->seekg(0);
     }
 
-    XMLFilePos curPos() const
+    XMLFilePos curPos() const override
     {
-        return is_->tellg();
+        return XMLFilePos(is_->tellg());
     }
 
-    XMLSize_t readBytes(XMLByte * const toFill, const XMLSize_t maxToRead)
+    XMLSize_t readBytes(XMLByte * const toFill, const XMLSize_t maxToRead) override
     {
-        is_->read((char*)toFill, maxToRead);
+        is_->read((char*)toFill, streamsize(maxToRead));
         return XMLSize_t(is_->gcount());
     }
 
-    const XMLCh *getContentType() const
+    const XMLCh *getContentType() const override
     {
-        return 0;
+        return nullptr;
     }
 
     istream *is_;
@@ -95,7 +98,7 @@ BinInputStream* URIResolver::resolveURI(const XMLCh *uri)
     return XSECURIResolverXerces::resolveURI(uri);
 }
 
-XSECURIResolver* URIResolver::clone(void)
+XSECURIResolver* URIResolver::clone()
 {
     return new URIResolver(doc_);
 }

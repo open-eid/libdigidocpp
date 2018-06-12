@@ -27,22 +27,19 @@
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
 #include "xml/SecureDOMParser.h"
-#include "xml/URIResolver.h"
 #include "xml/XAdES01903v141-201601.hxx"
+#include "xml/URIResolver.h"
 
-#ifdef __APPLE__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wnull-conversion"
-#endif
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
+DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/dsig/DSIGReference.hpp>
 #include <xsec/enc/XSECKeyInfoResolverDefault.hpp>
-#ifdef __APPLE__
-#pragma GCC diagnostic pop
-#endif
 #include <xsec/framework/XSECException.hpp>
 #include <xsec/framework/XSECProvider.hpp>
 #include <xsec/utils/XSECBinTXFMInputStream.hpp>
+DIGIDOCPP_WARNING_POP
 
 using namespace digidoc;
 using namespace digidoc::dsig;
@@ -87,7 +84,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         for(size_t i = 0; i < list->getSize(); ++i)
         {
             XSECBinTXFMInputStream *stream = list->item(i)->makeBinInputStream();
-            for(int size = stream->readBytes(buf, 1024); size > 0; size = stream->readBytes(buf, 1024))
+            for(xsecsize_t size = stream->readBytes(buf, 1024); size > 0; size = stream->readBytes(buf, 1024))
                 digest->update(buf, size);
             delete stream;
         }
@@ -96,21 +93,21 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
     {
         stringstream s;
         s << e;
-        THROW("Failed to validate signature: %s", s.str().c_str());
+        THROW("Failed to calculate digest: %s", s.str().c_str());
     }
     catch(XSECException &e)
     {
         string s = xsd::cxx::xml::transcode<char>(e.getMsg());
-        THROW("Failed to validate signature: %s", s.c_str());
+        THROW("Failed to calculate digest: %s", s.c_str());
     }
     catch(XMLException &e)
     {
         string s = xsd::cxx::xml::transcode<char>(e.getMessage());
-        THROW("Failed to validate signature: %s", s.c_str());
+        THROW("Failed to calculate digest: %s", s.c_str());
     }
     catch(...)
     {
-        THROW("Failed to validate signature");
+        THROW("Failed to calculate digest");
     }
 
     vector<string> list = {"SignedInfo", "SignatureValue", "KeyInfo"};
@@ -181,7 +178,7 @@ vector<unsigned char> SignatureXAdES_LTA::tsaBase64() const
             return vector<unsigned char>();
         const GenericTimeStampType::EncapsulatedTimeStampType &bin =
                 ts.encapsulatedTimeStamp().front();
-        return vector<unsigned char>(bin.data(), bin.data() + bin.size());
+        return vector<unsigned char>(bin.begin(), bin.end());
     } catch(const Exception &) {}
     return vector<unsigned char>();
 }
@@ -222,7 +219,7 @@ void SignatureXAdES_LTA::validate(const string &policy) const
             THROW("Missing EncapsulatedTimeStamp");
 
         const GenericTimeStampType::EncapsulatedTimeStampType &bin = ts.encapsulatedTimeStamp().front();
-        TS tsa(vector<unsigned char>(bin.data(), bin.data() + bin.size()));
+        TS tsa(vector<unsigned char>(bin.begin(), bin.end()));
         Digest calc(tsa.digestMethod());
         calcArchiveDigest(&calc);
         tsa.verify(calc);
