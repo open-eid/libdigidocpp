@@ -33,17 +33,19 @@
 
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
-DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
 DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xercesc/util/XMLString.hpp>
 #include <xsec/utils/XSECPlatformUtils.hpp>
+DIGIDOCPP_WARNING_POP
 #ifndef XSEC_NO_XALAN
 #include <xalanc/XPath/XPathEvaluator.hpp>
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
 #include <xalanc/XalanTransformer/XalanTransformer.hpp>
+DIGIDOCPP_WARNING_POP
 XALAN_USING_XALAN(XPathEvaluator)
 XALAN_USING_XALAN(XalanTransformer)
 #endif
-DIGIDOCPP_WARNING_POP
 
 #include <algorithm>
 #include <sstream>

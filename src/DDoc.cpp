@@ -29,8 +29,8 @@
 #include "util/DateTime.h"
 #include "util/File.h"
 
-#include <libdigidoc/DigiDocSAXParser.h>
 #include <libdigidoc/DigiDocObj.h>
+#include <libdigidoc/DigiDocSAXParser.h>
 
 #include <fstream>
 
@@ -110,8 +110,12 @@ DDocLibrary::DDocLibrary()
 #ifdef WIN32
     f_initDigiDocLib();
 #endif
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_MSVC(4996)
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
     string path = Conf::instance()->libdigidocConf();
-    f_initConfigStore(!path.empty() ? path.c_str() : 0);
+DIGIDOCPP_WARNING_POP
+    f_initConfigStore(!path.empty() ? path.c_str() : nullptr);
     f_setGUIVersion( appInfo().c_str() );
 }
 
@@ -119,7 +123,7 @@ DDocLibrary::~DDocLibrary()
 {
     if(f_cleanupConfigStore)
 	{
-		f_cleanupConfigStore( 0 );
+        f_cleanupConfigStore(nullptr);
 		//f_finalizeDigiDocLib(); // dont finalize it unloads openssl also
 	}
 #ifndef LINKED_LIBDIGIDOC
@@ -203,7 +207,7 @@ void DDocPrivate::throwDocOpenError( int line ) const
         throwError("Document not open", line);
 }
 
-void DDocPrivate::throwError(const string &msg, int line, int err, const Exception::ExceptionCode &code) const
+void DDocPrivate::throwError(const string &msg, int line, int err, Exception::ExceptionCode code) const
 {
     Exception e(__FILE__, line, msg);
     e.setCode(code);
@@ -260,7 +264,7 @@ SignatureDDOC::SignatureDDOC(SignatureInfo_st *sig, DDocPrivate *priv)
         throw Exception(__FILE__, __LINE__, "Null pointer in SignatureDDOC constructor");
 }
 
-SignatureDDOC::~SignatureDDOC() {}
+SignatureDDOC::~SignatureDDOC() = default;
 
 vector<unsigned char> SignatureDDOC::dataToSign() const
 {
@@ -355,23 +359,23 @@ void SignatureDDOC::extendSignatureProfile(const string &)
     Conf *c = Conf::instance();
     if(!c->proxyHost().empty())
     {
-        d->lib->f_createOrReplacePrivateConfigItem(0, "USE_PROXY", "true");
-        d->lib->f_createOrReplacePrivateConfigItem(0, "DIGIDOC_PROXY_HOST", c->proxyHost().c_str());
-        d->lib->f_createOrReplacePrivateConfigItem(0, "DIGIDOC_PROXY_PORT", c->proxyPort().c_str());
-        d->lib->f_createOrReplacePrivateConfigItem(0, "DIGIDOC_PROXY_USER", c->proxyUser().c_str());
-        d->lib->f_createOrReplacePrivateConfigItem(0, "DIGIDOC_PROXY_PASS", c->proxyPass().c_str());
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "USE_PROXY", "true");
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "DIGIDOC_PROXY_HOST", c->proxyHost().c_str());
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "DIGIDOC_PROXY_PORT", c->proxyPort().c_str());
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "DIGIDOC_PROXY_USER", c->proxyUser().c_str());
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "DIGIDOC_PROXY_PASS", c->proxyPass().c_str());
     }
     else
-        d->lib->f_createOrReplacePrivateConfigItem(0, "USE_PROXY", "false");
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "USE_PROXY", "false");
 
     if(!c->PKCS12Disable())
     {
-        d->lib->f_createOrReplacePrivateConfigItem(0, "SIGN_OCSP", "true");
-        d->lib->f_createOrReplacePrivateConfigItem(0, "DIGIDOC_PKCS_FILE", c->PKCS12Cert().c_str());
-        d->lib->f_createOrReplacePrivateConfigItem(0, "DIGIDOC_PKCS_PASSWD", c->PKCS12Pass().c_str());
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "SIGN_OCSP", "true");
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "DIGIDOC_PKCS_FILE", c->PKCS12Cert().c_str());
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "DIGIDOC_PKCS_PASSWD", c->PKCS12Pass().c_str());
     }
     else
-        d->lib->f_createOrReplacePrivateConfigItem(0, "SIGN_OCSP", "false");
+        d->lib->f_createOrReplacePrivateConfigItem(nullptr, "SIGN_OCSP", "false");
 
     int err = d->lib->f_notarizeSignature(d->doc, s);
     d->throwSignError(s, err, "Failed to sign document", __LINE__);
@@ -553,8 +557,8 @@ void DDoc::addDataFile(const string &path, const string &mediaType)
     ifstream *is = new ifstream(File::encodeName(path).c_str(), ifstream::binary);
     ::DataFile *data = nullptr;
 #ifndef DDOC_MEMORY
-    int err = d->lib->f_DataFile_new( &data, d->doc, 0, path.c_str(),
-        CONTENT_EMBEDDED_BASE64, mediaType.c_str(), 0, 0, 0, 0, CHARSET_UTF_8 );
+    int err = d->lib->f_DataFile_new(&data, d->doc, nullptr, path.c_str(),
+        CONTENT_EMBEDDED_BASE64, mediaType.c_str(), 0, nullptr, 0, nullptr, CHARSET_UTF_8);
     d->throwCodeError(err, "Failed to add file '" + path + "'" , __LINE__);
     err = d->lib->f_calculateDataFileSizeAndDigest(
         d->doc, data->szId, path.c_str(), DIGEST_SHA1 );
@@ -562,7 +566,7 @@ void DDoc::addDataFile(const string &path, const string &mediaType)
 #else
     stringstream buf;
     buf << is->rdbuf();
-    d->lib->f_createDataFileInMemory(&data, d->doc, 0, path.c_str(),
+    d->lib->f_createDataFileInMemory(&data, d->doc, nullptr, path.c_str(),
         CONTENT_EMBEDDED_BASE64, mediaType.c_str(), buf.str().c_str(), buf.str().size());
 #endif
     d->documents.push_back(
@@ -599,7 +603,7 @@ void DDoc::addAdESSignature(istream &sigdata)
     ofs.flush();
     ofs.close();
 
-    SignedDoc *sigDoc = 0;
+    SignedDoc *sigDoc = nullptr;
     int err = d->lib->f_ddocSaxReadSignedDocFromFile( &sigDoc, fileName.c_str(), 0, 0 );
     d->throwCodeError(err, "Failed to sign document", __LINE__);
 
@@ -616,7 +620,7 @@ void DDoc::addAdESSignature(istream &sigdata)
     for( int i = 0; i < sigDoc->nSignatures; ++i )
     {
         d->doc->pSignatures[d->doc->nSignatures + i] = sigDoc->pSignatures[i]; // take ownership
-        sigDoc->pSignatures[i] = 0;
+        sigDoc->pSignatures[i] = nullptr;
         // from ddocReadNewSignaturesFromDdoc
         ((char*)d->doc->pSignatures[d->doc->nSignatures + i]->pDocs[0]->szDigest)[0] = 0x0A;
     }
@@ -774,21 +778,17 @@ Signature *DDoc::prepareSignature(Signer *signer)
             role << " / ";
     }
 
-#ifdef __APPLE__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
     SignatureInfo *info = nullptr;
     int err = d->lib->f_ddocPrepareSignature(d->doc, &info,
-        (role.str().empty() ? 0 : role.str().c_str()),
-        (signer->city().empty() ? 0 : signer->city().c_str()),
-        (signer->stateOrProvince().empty() ? 0 : signer->stateOrProvince().c_str()),
-        (signer->postalCode().empty() ? 0 : signer->postalCode().c_str()),
-        (signer->countryName().empty() ? 0 : signer->countryName().c_str()),
-        X509_dup(cert.handle()), 0);
-#ifdef __APPLE__
-#pragma GCC diagnostic pop
-#endif
+        (role.str().empty() ? nullptr : role.str().c_str()),
+        (signer->city().empty() ? nullptr : signer->city().c_str()),
+        (signer->stateOrProvince().empty() ? nullptr : signer->stateOrProvince().c_str()),
+        (signer->postalCode().empty() ? nullptr : signer->postalCode().c_str()),
+        (signer->countryName().empty() ? nullptr : signer->countryName().c_str()),
+        X509_dup(cert.handle()), nullptr);
+DIGIDOCPP_WARNING_POP
     d->throwSignError( info, err, "Failed to sign document", __LINE__ );
     if( !info )
         d->throwCodeError(ERR_NULL_POINTER, "Failed to sign document", __LINE__);

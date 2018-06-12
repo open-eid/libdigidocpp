@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <libdigidoc/DigiDocConvert.h>
 #include <libdigidoc/DigiDocConfig.h>
+#include <libdigidoc/DigiDocConvert.h>
 #include <libdigidoc/DigiDocGen.h>
 
 #include "DDoc.h"
@@ -165,7 +165,7 @@ public:
 	void throwCodeError(int err, const std::string &msg, int line) const;
 	void throwDocOpenError( int line ) const;
 	void throwError(const std::string &msg, int line, int err = -1,
-		const Exception::ExceptionCode &e = Exception::General) const;
+        Exception::ExceptionCode e = Exception::General) const;
 	void throwSignError( SignatureInfo *sig, int err, const std::string &msg, int line ) const;
 };
 
