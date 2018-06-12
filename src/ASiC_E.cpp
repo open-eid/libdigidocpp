@@ -21,8 +21,8 @@
 
 #include "Conf.h"
 #include "DataFile_p.h"
-#include "SignatureXAdES_LTA.h"
 #include "log.h"
+#include "SignatureXAdES_LTA.h"
 #include "crypto/Digest.h"
 #include "crypto/Signer.h"
 #include "util/File.h"
@@ -313,7 +313,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     {
         THROW("Failed to parse manifest XML: %s (xsd path: %s)", e.what(), Conf::instance()->xsdPath().c_str());
     }
-    catch (const xercesc::OutOfMemoryException& e)
+    catch (const xercesc::OutOfMemoryException &)
     {
         THROW("Failed to parse manifest XML: out of memory");
     }

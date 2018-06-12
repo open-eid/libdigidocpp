@@ -79,7 +79,7 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
 {
     // DER-encoded instance of type IssuerSerial type defined in IETF RFC 5035 [17].
     const unsigned char *p = data.data();
-    SCOPE(ESS_ISSUER_SERIAL, is, d2i_ESS_ISSUER_SERIAL(nullptr, &p, data.size()));
+    SCOPE(ESS_ISSUER_SERIAL, is, d2i_ESS_ISSUER_SERIAL(nullptr, &p, long(data.size())));
     if(!is || sk_GENERAL_NAME_num(is->issuer) != 1)
         return false;
 
@@ -169,7 +169,7 @@ int X509Crypto::compareIssuerToString(const string &name) const
             {
                 data[0] = *(++i);
                 data[1] = *(++i);
-                value += static_cast<char>(strtoul(data, 0, 16));
+                value += static_cast<char>(strtoul(data, nullptr, 16));
             }
             else
                 value += *i;
@@ -241,11 +241,9 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
         SCOPE(EC_KEY, ec, EVP_PKEY_get1_EC_KEY(key.get()));
         SCOPE(ECDSA_SIG, sig, ECDSA_SIG_new());
         ECDSA_SIG_set0(sig.get(),
-            BN_bin2bn(signature.data(), int(signature.size()/2), 0),
-            BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), 0));
-        result = ECDSA_do_verify(digest.data(), (unsigned int)digest.size(), sig.get(), ec.get());
-        //result = ECDSA_verify(Digest::toMethod(method), digest.data(), (unsigned int)digest.size(),
-        //    const_cast<unsigned char*>(signature.data()), (unsigned int)signature.size(), ec.get());
+            BN_bin2bn(signature.data(), int(signature.size()/2), nullptr),
+            BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), nullptr));
+        result = ECDSA_do_verify(digest.data(), int(digest.size()), sig.get(), ec.get());
         break;
     }
 #endif
