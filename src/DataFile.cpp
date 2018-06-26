@@ -82,16 +82,16 @@ using namespace std;
  * @param os stream where data is written
  */
 
-DataFile::DataFile() {}
-DataFile::~DataFile() {}
+DataFile::DataFile() = default;
+DataFile::~DataFile() = default;
 
 
-DataFilePrivate::DataFilePrivate(istream *is, const string &filename, const string &mediatype,
-                   const string &id, const vector<unsigned char> &digestValue)
-    : m_id(id.empty() ? filename : id)
-    , m_filename(filename)
-    , m_mediatype(mediatype)
-    , m_digestValue(digestValue)
+DataFilePrivate::DataFilePrivate(istream *is, string filename, string mediatype,
+                   string id, vector<unsigned char> digestValue)
+    : m_id(std::move(id))
+    , m_filename(std::move(filename))
+    , m_mediatype(std::move(mediatype))
+    , m_digestValue(std::move(digestValue))
 {
     m_is.reset(is);
     m_is->seekg(0, istream::end);
@@ -115,9 +115,9 @@ void DataFilePrivate::calcDigest(Digest *digest) const
     m_is->seekg(0);
     while(*m_is)
     {
-        m_is->read((char*)&buf[0], buf.size());
+        m_is->read((char*)buf.data(), streamsize(buf.size()));
         if(m_is->gcount() > 0)
-            digest->update(&buf[0], (unsigned long)m_is->gcount());
+            digest->update(buf.data(), size_t(m_is->gcount()));
     }
 }
 

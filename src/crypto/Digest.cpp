@@ -28,7 +28,7 @@
 
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void X509_SIG_get0(const X509_SIG *sig, const X509_ALGOR **palg, const ASN1_OCTET_STRING **pdigest)
 {
     if(palg) *palg = sig->algor;
@@ -38,16 +38,15 @@ static void X509_SIG_get0(const X509_SIG *sig, const X509_ALGOR **palg, const AS
 
 namespace digidoc
 {
-class DigestPrivate: public vector<unsigned char>
+class Digest::Private: public vector<unsigned char>
 {
 public:
-    DigestPrivate(): method(0) {}
     union {
         SHA_CTX sha1;
         SHA256_CTX sha256;
         SHA512_CTX sha512;
     };
-    int method;
+    int method = 0;
 };
 }
 
@@ -60,7 +59,7 @@ using namespace digidoc;
  * @throws IOException throws exception if the digest calculator initialization failed.
  */
 Digest::Digest(const string &uri)
-    : d( new DigestPrivate )
+    : d(new Private)
 {
     reset(uri);
 }
@@ -94,7 +93,7 @@ vector<unsigned char> Digest::addDigestInfo(const vector<unsigned char> &digest,
 vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> &digest)
 {
     const unsigned char *p = digest.data();
-    SCOPE(X509_SIG, sig, d2i_X509_SIG(NULL, &p, (long)digest.size()));
+    SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(digest.size())));
     if(!sig)
         return vector<unsigned char>();
     const ASN1_OCTET_STRING *value = nullptr;
@@ -105,20 +104,12 @@ vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> 
 string Digest::digestInfoUri(const std::vector<unsigned char> &digest)
 {
     const unsigned char *p = digest.data();
-    SCOPE(X509_SIG, sig, d2i_X509_SIG(NULL, &p, (long)digest.size()));
+    SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(digest.size())));
     if(!sig)
         return string();
     const X509_ALGOR *algor = nullptr;
     X509_SIG_get0(sig.get(), &algor, nullptr);
-    switch(OBJ_obj2nid(algor->algorithm))
-    {
-    case NID_sha1:  return URI_SHA1;
-    case NID_sha224: return URI_SHA224;
-    case NID_sha256: return URI_SHA256;
-    case NID_sha384: return URI_SHA384;
-    case NID_sha512: return URI_SHA512;
-    default: return string();
-    }
+    return toUri(OBJ_obj2nid(algor->algorithm));
 }
 
 /**
@@ -127,15 +118,7 @@ string Digest::digestInfoUri(const std::vector<unsigned char> &digest)
  */
 string Digest::uri() const
 {
-    switch(d->method)
-    {
-    case NID_sha1: return URI_SHA1;
-    case NID_sha224: return URI_SHA224;
-    case NID_sha256: return URI_SHA256;
-    case NID_sha384: return URI_SHA384;
-    case NID_sha512: return URI_SHA512;
-    default: return "";
-    }
+    return toUri(d->method);
 }
 
 /**
@@ -158,7 +141,7 @@ void Digest::reset(const string &uri)
     }
     d->clear();
     if(result != 1)
-        THROW_CAUSE(OpenSSLException(), "Failed to initialize %s digest calculator", uri.c_str());
+        THROW_OPENSSLEXCEPTION("Failed to initialize %s digest calculator", uri.c_str());
 }
 
 /**
@@ -182,7 +165,6 @@ int Digest::toMethod(const string &uri)
     if(uri == URI_SHA384 || uri == URI_RSA_SHA384 || uri == URI_ECDSA_SHA384) return NID_sha384;
     if(uri == URI_SHA512 || uri == URI_RSA_SHA512 || uri == URI_ECDSA_SHA512) return NID_sha512;
     THROW( "Digest method URI '%s' is not supported.", uri.c_str() );
-    return 0;
 }
 
 string Digest::toRsaUri(const string &uri)
@@ -192,7 +174,7 @@ string Digest::toRsaUri(const string &uri)
     if(uri == URI_SHA256) return URI_RSA_SHA256;
     if(uri == URI_SHA384) return URI_RSA_SHA384;
     if(uri == URI_SHA512) return URI_RSA_SHA512;
-    return "";
+    return string();
 }
 
 string Digest::toEcUri(const string &uri)
@@ -202,7 +184,20 @@ string Digest::toEcUri(const string &uri)
     if(uri == URI_SHA256) return URI_ECDSA_SHA256;
     if(uri == URI_SHA384) return URI_ECDSA_SHA384;
     if(uri == URI_SHA512) return URI_ECDSA_SHA512;
-    return "";
+    return string();
+}
+
+std::string Digest::toUri(int nid)
+{
+    switch(nid)
+    {
+    case NID_sha1: return URI_SHA1;
+    case NID_sha224: return URI_SHA224;
+    case NID_sha256: return URI_SHA256;
+    case NID_sha384: return URI_SHA384;
+    case NID_sha512: return URI_SHA512;
+    default: return string();
+    }
 }
 
 /**
@@ -214,7 +209,7 @@ string Digest::toEcUri(const string &uri)
  */
 void Digest::update(const vector<unsigned char> &data)
 {
-    update(data.data(), (unsigned int)data.size());
+    update(data.data(), data.size());
 }
 
 /**
@@ -226,7 +221,7 @@ void Digest::update(const vector<unsigned char> &data)
  * @throws IOException throws exception if update failed.
  * @see getDigest()
  */
-void Digest::update(const unsigned char *data, unsigned long length)
+void Digest::update(const unsigned char *data, size_t length)
 {
     if(!data)
         THROW("Can not update digest value from NULL pointer.");
@@ -245,7 +240,7 @@ void Digest::update(const unsigned char *data, unsigned long length)
     default: break;
     }
     if(result != 1)
-        THROW_CAUSE(OpenSSLException(), "Failed to update %s digest value", uri().c_str());
+        THROW_OPENSSLEXCEPTION("Failed to update %s digest value", uri().c_str());
 }
 
 /**
@@ -286,7 +281,7 @@ vector<unsigned char> Digest::result() const
     default: break;
     }
     if(result != 1)
-        THROW_CAUSE(OpenSSLException(), "Failed to create %s digest", uri().c_str());
+        THROW_OPENSSLEXCEPTION("Failed to create %s digest", uri().c_str());
 
     return *d;
 }

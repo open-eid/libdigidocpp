@@ -102,7 +102,7 @@ void SecureDOMParser::calcDigestOnNode(Digest *calc,
     unsigned char buffer[1024];
     xsecsize_t bytes = 0;
     while((bytes = c14n.outputBuffer(buffer, 1024)) > 0)
-        calc->update(buffer, (unsigned int)bytes);
+        calc->update(buffer, bytes);
 }
 
 void SecureDOMParser::doctypeDecl(const DTDElementDecl& root,
