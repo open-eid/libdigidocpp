@@ -48,8 +48,8 @@
 class DigiDocConf: public digidoc::XmlConfCurrent
 {
 public:
-    DigiDocConf(const std::string &_cache)
-        : digidoc::XmlConfCurrent(), cache(_cache) {}
+    DigiDocConf(std::string _cache, std::string _tslUrl = std::string(), std::vector<X509Cert> _tslCerts = std::vector<X509Cert>())
+        : digidoc::XmlConfCurrent(), cache(std::move(_cache)), tslUrl(std::move(_tslUrl)), tslCerts(std::move(_tslCerts)) {}
     int logLevel() const override { return 4; }
     std::string logFile() const override { return cache.empty() ? digidoc::XmlConfCurrent::logFile() : cache + "/digidocpp.log"; }
     std::string PKCS12Cert() const override
@@ -58,10 +58,13 @@ public:
             cache + "/" + digidoc::util::File::fileName(digidoc::XmlConfCurrent::PKCS12Cert());
     }
     std::string TSLCache() const override { return cache.empty() ? digidoc::XmlConfCurrent::TSLCache() : cache; }
+    std::vector<X509Cert> TSLCerts() const override { return tslCerts.empty() ? digidoc::XmlConfCurrent::TSLCerts() : tslCerts; };
+    std::string TSLUrl() const override { return tslUrl.empty() ? digidoc::XmlConfCurrent::TSLUrl() : tslUrl; }
     std::string xsdPath() const override { return cache.empty() ? digidoc::XmlConfCurrent::xsdPath() : cache; }
 
 private:
-    std::string cache;
+    std::string cache, tslUrl;
+    std::vector<X509Cert> tslCerts;
 };
 
 class WebSignerPrivate: public digidoc::Signer
@@ -87,12 +90,17 @@ static std::string parseException(const digidoc::Exception &e) {
 }
 
 namespace digidoc {
-    static void initializeLib(const std::string &appName, const std::string &path)
+    static void initializeLibWithTSL(const std::string &appName, const std::string &path, const std::string &tslUrl = std::string(), const std::vector<unsigned char> &tslCert = std::vector<unsigned char>())
     {
-        digidoc::Conf::init(new DigiDocConf(path));
+        if(!Conf::instance())
+            digidoc::Conf::init(new DigiDocConf(path, tslUrl, { X509Cert(tslCert, X509Cert::Der) }));
         digidoc::initialize(appName);
         digidoc::Exception::addWarningIgnore(digidoc::Exception::ReferenceDigestWeak);
         digidoc::Exception::addWarningIgnore(digidoc::Exception::SignatureDigestWeak);
+    }
+    static void initializeLib(const std::string &appName, const std::string &path)
+    {
+        initializeLibWithTSL(appName, path);
     }
 }
 
@@ -225,6 +233,10 @@ namespace digidoc {
     static void initializeLib(const std::string &appName, const std::string &path)
     {
         initializeLib(appName, path);
+    }
+    static void initializeLibWithTSL(const std::string &appName, const std::string &path, const std::string &tslUrl, const std::vector<unsigned char> &tslCert)
+    {
+        initializeLib(appName, path, tslUrl, tslCert);
     }
 }
 
