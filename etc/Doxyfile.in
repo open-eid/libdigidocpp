@@ -863,7 +863,7 @@ EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          */openssl/* \
                          */util/* \
                          */xml/* \
-                         **/*_p.h \
+                         */DDoc_p.h \
                          */digidoc-tool.cpp \
                          */log.* \
                          */SignatureCAdES_*.* \
