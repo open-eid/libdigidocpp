@@ -286,7 +286,7 @@ X509Cert::~X509Cert() = default;
 /**
  * Encodes the X509 certificate using DER encoding.
  */
-X509Cert::operator vector<unsigned char>() const
+X509Cert::operator std::vector<unsigned char>() const
 {
     return i2d(cert.get(), i2d_X509);
 }
@@ -534,12 +534,12 @@ bool X509Cert::operator !() const
 }
 
 /**
- * Assign operator to make copy of object
+ * Assign operator
  */
 X509Cert& X509Cert::operator =(const X509Cert &other) = default;
 
 /**
- * Assign operator to make copy of object
+ * Move operator
  */
 X509Cert& X509Cert::operator =(X509Cert &&other)
 {
