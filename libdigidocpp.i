@@ -199,6 +199,7 @@ extern "C"
 %ignore digidoc::Conf::libdigidocConf;
 %ignore digidoc::Conf::certsPath;
 %ignore digidoc::Signature::Validator::warnings;
+%ignore digidoc::Signature::OCSPNonce;
 
 // Handle standard C++ types
 %include "std_string.i"

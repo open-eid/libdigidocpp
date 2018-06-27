@@ -32,11 +32,13 @@ class X509Cert;
 class TS
 {
 public:
-    TS(const std::string &url, const Digest &digest, const std::string &useragent = "");
+    TS(const std::string &url, const Digest &digest, const std::string &useragent = std::string());
     TS(const std::vector<unsigned char> &data);
 
     X509Cert cert() const;
     std::string digestMethod() const;
+    std::vector<unsigned char> digestValue() const;
+    std::vector<unsigned char> messageImprint() const;
     std::string serial() const;
     std::string time() const;
     void verify(const Digest &digest);

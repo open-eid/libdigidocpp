@@ -346,7 +346,7 @@ vector<string> SignatureDDOC::signerRoles() const
 /**
  * @return returns OCSP nonce value
  */
-vector<unsigned char> SignatureDDOC::OCSPNonce() const
+vector<unsigned char> SignatureDDOC::messageImprint() const
 {
     NotaryInfo *n = s->pNotary;
     if(n && n->mbufOcspResponse.nLen)

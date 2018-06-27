@@ -71,6 +71,11 @@ string Signature::city() const { return string(); }
 string Signature::countryName() const { return string(); }
 
 /**
+ * Returns signed signature hash message imprint value (TM - OCSP Nonce, TS - TimeStamp value)
+ */
+vector<unsigned char> Signature::messageImprint() const { return vector<unsigned char>(); }
+
+/**
  * Returns signature production postal code.
  */
 string Signature::postalCode() const { return string(); }
@@ -197,11 +202,12 @@ X509Cert Signature::OCSPCertificate() const
 }
 
 /**
- * Returns signature OCSP response nonce.
+ * Returns signed signature message imprint in OCSP response nonce.
+ * @deprecated use messageImprint
  */
 vector<unsigned char> Signature::OCSPNonce() const
 {
-    return vector<unsigned char>();
+    return messageImprint();
 }
 
 /**

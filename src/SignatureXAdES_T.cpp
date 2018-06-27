@@ -60,6 +60,11 @@ void SignatureXAdES_T::createUnsignedSignatureProperties()
     qualifyingProperties().unsignedProperties(usProp);
 }
 
+vector<unsigned char> SignatureXAdES_T::messageImprint() const
+{
+    return TS(tsBase64()).messageImprint();
+}
+
 X509Cert SignatureXAdES_T::TimeStampCertificate() const
 {
     return TS(tsBase64()).cert();
@@ -107,7 +112,7 @@ vector<unsigned char> SignatureXAdES_T::tsBase64() const
                 unsignedSignatureProperties().signatureTimeStamp().front();
         if(ts.encapsulatedTimeStamp().empty())
             return vector<unsigned char>();
-        GenericTimeStampType::EncapsulatedTimeStampType bin =
+        const GenericTimeStampType::EncapsulatedTimeStampType &bin =
                 ts.encapsulatedTimeStamp().front();
         return vector<unsigned char>(bin.begin(), bin.end());
     } catch(const Exception &) {}
@@ -116,7 +121,7 @@ vector<unsigned char> SignatureXAdES_T::tsBase64() const
 
 void SignatureXAdES_T::validate(const std::string &policy) const
 {
-    Exception exception(__FILE__, __LINE__, "Signature validation");
+    Exception exception(EXCEPTION_PARAMS("Signature validation"));
     try {
         SignatureXAdES_B::validate(policy);
     } catch(const Exception &e) {

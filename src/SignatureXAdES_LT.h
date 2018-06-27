@@ -32,11 +32,11 @@ class SignatureXAdES_LT: public SignatureXAdES_T
 public:
     SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer);
     SignatureXAdES_LT(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
-    virtual ~SignatureXAdES_LT() = default;
+    virtual ~SignatureXAdES_LT() override = default;
 
     virtual std::string trustedSigningTime() const override;
 
-    std::vector<unsigned char> OCSPNonce() const override;
+    std::vector<unsigned char> messageImprint() const override;
     X509Cert OCSPCertificate() const override;
     std::string OCSPProducedAt() const override;
     virtual void validate(const std::string &policy) const override;
