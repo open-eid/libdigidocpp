@@ -31,10 +31,10 @@ class Digest;
 class DataFilePrivate: public DataFile
 {
 public:
-	DataFilePrivate(std::istream *is, const std::string &filename, const std::string &mediatype,
-			 const std::string &id = "", const std::vector<unsigned char> &digestValue = std::vector<unsigned char>());
+    DataFilePrivate(std::istream *is, std::string filename, std::string mediatype, std::string id = std::string(),
+        std::vector<unsigned char> digestValue = std::vector<unsigned char>());
 
-	std::string id() const override { return m_id; }
+    std::string id() const override { return m_id.empty() ? m_filename : m_id; }
 	std::string fileName() const override { return m_filename; }
 	unsigned long fileSize() const override { return m_size; }
 	std::string mediaType() const override { return m_mediatype; }

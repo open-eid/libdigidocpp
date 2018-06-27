@@ -19,7 +19,10 @@
 
 #pragma once
 
-#include "../Exception.h"
+#include "../Exports.h"
+
+#include <string>
+#include <vector>
 
 #define URI_SHA1 "http://www.w3.org/2000/09/xmldsig#sha1"
 #define URI_SHA224 "http://www.w3.org/2001/04/xmldsig-more#sha224"
@@ -44,28 +47,29 @@ namespace digidoc
     /**
      * Digest calculation interface.
      */
-    class DigestPrivate;
     class Digest
     {
       public:
-          Digest(const std::string &uri = "");
+          Digest(const std::string &uri = std::string());
           ~Digest();
-          void reset(const std::string &uri = "");
+          void reset(const std::string &uri = std::string());
           void update(const std::vector<unsigned char> &data);
-          void update(const unsigned char *data, unsigned long length);
+          void update(const unsigned char *data, size_t length);
           std::vector<unsigned char> result() const;
           std::string uri() const;
 
           static std::string toRsaUri(const std::string &uri);
           static std::string toEcUri(const std::string &uri);
           static int toMethod(const std::string &uri);
+          static std::string toUri(int nid);
           static std::vector<unsigned char> addDigestInfo(const std::vector<unsigned char> &digest, const std::string &uri);
           static std::vector<unsigned char> digestInfoDigest(const std::vector<unsigned char> &digest);
           static std::string digestInfoUri(const std::vector<unsigned char> &digest);
 
       private:
           DISABLE_COPY(Digest);
-          DigestPrivate *d;
+          class Private;
+          Private *d;
     };
 
 }

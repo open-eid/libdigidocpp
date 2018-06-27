@@ -624,7 +624,7 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
     {
         is.read((char*)buf.data(), streamsize(buf.size()));
         if(is.gcount() > 0)
-            sha.update(buf.data(), (unsigned long)is.gcount());
+            sha.update(buf.data(), size_t(is.gcount()));
     }
 
     vector<unsigned char> digest;
