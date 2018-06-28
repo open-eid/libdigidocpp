@@ -172,8 +172,20 @@ string TS::digestMethod() const
     case NID_sha256: return URI_SHA256;
     case NID_sha384: return URI_SHA384;
     case NID_sha512: return URI_SHA512;
-    default: return "";
+    default: return string();
     }
+}
+
+vector<unsigned char> TS::digestValue() const
+{
+    SCOPE(TS_TST_INFO, info, tstInfo());
+    return i2d(TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get())), i2d_ASN1_OCTET_STRING);
+}
+
+vector<unsigned char> TS::messageImprint() const
+{
+    SCOPE(TS_TST_INFO, info, tstInfo());
+    return i2d(TS_TST_INFO_get_msg_imprint(info.get()), i2d_TS_MSG_IMPRINT);
 }
 
 string TS::serial() const

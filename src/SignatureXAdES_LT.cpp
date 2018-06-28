@@ -74,8 +74,10 @@ SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool 
 /**
  * @return nonce value
  */
-vector<unsigned char> SignatureXAdES_LT::OCSPNonce() const
+vector<unsigned char> SignatureXAdES_LT::messageImprint() const
 {
+    if(profile().find(ASiC_E::ASIC_TM_PROFILE) == string::npos)
+        return SignatureXAdES_T::messageImprint();
     vector<unsigned char> respBuf = getOCSPResponseValue();
     return respBuf.empty() ? vector<unsigned char>() : OCSP(respBuf).nonce();
 }
@@ -118,7 +120,7 @@ string SignatureXAdES_LT::trustedSigningTime() const
  */
 void SignatureXAdES_LT::validate(const std::string &policy) const
 {
-    Exception exception(__FILE__, __LINE__, "Signature validation");
+    Exception exception(EXCEPTION_PARAMS("Signature validation"));
     try {
         SignatureXAdES_T::validate(policy);
     } catch(const Exception &e) {

@@ -36,7 +36,7 @@ class SignatureDDOCPrivate;
 class SignatureDDOC: public Signature
 {
 public:
-    virtual ~SignatureDDOC();
+    ~SignatureDDOC() final;
 
     std::string id() const override;
     std::string claimedSigningTime() const override;
@@ -56,7 +56,7 @@ public:
     std::string countryName() const override;
     std::vector<std::string> signerRoles() const override;
 
-    std::vector<unsigned char> OCSPNonce() const override;
+    std::vector<unsigned char> messageImprint() const override;
     X509Cert OCSPCertificate() const override;
     std::string OCSPProducedAt() const override;
 
@@ -82,7 +82,7 @@ private:
 class DDoc: public Container
 {
 public:
-    ~DDoc();
+    ~DDoc() final;
 
     void save(const std::string &path = "") override;
     std::string mediaType() const override;

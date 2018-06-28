@@ -18,23 +18,23 @@
  */
 
 #include "log.h"
-#include "Container.h"
 #include "Conf.h"
+#include "Container.h"
 #include "DataFile.h"
 #include "Signature.h"
 #include "XmlConf.h"
 #include "crypto/Digest.h"
 #include "crypto/PKCS11Signer.h"
 #include "crypto/PKCS12Signer.h"
-#include "crypto/WinSigner.h"
 #include "crypto/TSL.h"
+#include "crypto/WinSigner.h"
 #include "crypto/X509Cert.h"
 #include "util/File.h"
 
 #include <algorithm>
-#include <functional>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -104,8 +104,8 @@ static ostream &operator<<(ostream &os, const X509Cert &cert)
 static ostream &operator<<(ostream &os, const vector<unsigned char> &data)
 {
     os << hex << uppercase << setfill('0');
-    for(auto i = data.begin(); i != data.end(); ++i)
-        os << setw(2) << static_cast<int>(*i) << ' ';
+    for(const unsigned char &i: data)
+        os << setw(2) << static_cast<int>(i) << ' ';
     return os << dec << nouppercase << setfill(' ');
 }
 }
@@ -123,8 +123,8 @@ public:
     }
 
 private:
-    string pin(const X509Cert &certificate) const;
-    X509Cert selectSigningCertificate(const vector<X509Cert> &certificates) const
+    string pin(const X509Cert &certificate) const override;
+    X509Cert selectSigningCertificate(const vector<X509Cert> &certificates) const override
     {
         cout << "Available certificates:" << endl;
         for(const X509Cert &cert: certificates)
@@ -238,7 +238,7 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
 class WebSigner: public Signer
 {
 public:
-    WebSigner(const X509Cert &cert): _cert(cert) {}
+    WebSigner(X509Cert cert): _cert(std::move(cert)) {}
 
 private:
     X509Cert cert() const override { return _cert; }
@@ -450,7 +450,7 @@ Params::Params(int argc, char *argv[])
     }
 }
 
-static void parseException(const Exception &e, const char *main = 0)
+static void parseException(const Exception &e, const char *main = nullptr)
 {
     if(main)
         cout << main << endl;
@@ -631,7 +631,7 @@ static int open(int argc, char* argv[])
                     cout << "      " << role << endl;
             }
 
-            vector<unsigned char> nonce = s->OCSPNonce();
+            vector<unsigned char> msgImprint = s->messageImprint();
             cout << "    EPES policy: " << s->policy() << endl
                 << "    SPUri: " << s->SPUri() << endl
                 << "    Signature method: " << s->signatureMethod() << endl
@@ -640,7 +640,7 @@ static int open(int argc, char* argv[])
                 << "    Signed by: " << s->signedBy() << endl
                 << "    Produced At: " << s->OCSPProducedAt() << endl
                 << "    OCSP Responder: " << s->OCSPCertificate() << endl
-                << "    OCSP Nonce (" << nonce.size() << "): " << nonce << endl
+                << "    Message imprint (" << msgImprint.size() << "): " << msgImprint << endl
                 << "    TS: " << s->TimeStampCertificate() << endl
                 << "    TS time: " << s->TimeStampTime() << endl
                 << "    TSA: " << s->ArchiveTimeStampCertificate() << endl
