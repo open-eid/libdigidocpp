@@ -8,6 +8,7 @@ if(NOT MINIZIP_FOUND)
         set_target_properties( minizip PROPERTIES COMPILE_FLAGS "-fPIC -Wno-unused-parameter" )
     endif()
     set_target_properties( minizip PROPERTIES COMPILE_DEFINITIONS "NOUNCRYPT;NOCRYPT" )
+    target_link_libraries(minizip ZLIB::ZLIB)
     set( MINIZIP_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/minizip )
     set( MINIZIP_LIBRARIES minizip )
 endif()
@@ -176,11 +177,8 @@ endif()
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
-    ${OPENSSL_INCLUDE_DIR}
-    ${XERCESC_INCLUDE_DIR}
     ${XMLSECURITYC_INCLUDE_DIRS}
     ${XSD_INCLUDE_DIR}
-    ${ZLIB_INCLUDE_DIR}
     ${MINIZIP_INCLUDE_DIR}
 )
 
@@ -216,6 +214,14 @@ add_library(digidocpp_priv STATIC
 set_target_properties(digidocpp_priv PROPERTIES
     COMPILE_DEFINITIONS "DIGIDOCPP_CONFIG_DIR=\"${DIGIDOCPP_CONFIG_DIR}\";digidocpp_EXPORTS"
     POSITION_INDEPENDENT_CODE YES
+)
+
+target_link_libraries(digidocpp_priv
+    ${XMLSECURITYC_LIBRARIES}
+    $<$<STREQUAL:${BUILD_TYPE},STATIC>:${XALANMSG_LIBRARY}>
+    XercesC::XercesC
+    OpenSSL::SSL
+    ZLIB::ZLIB
 )
 
 add_library(digidocpp ${BUILD_TYPE}
@@ -265,20 +271,16 @@ set_target_properties(digidocpp PROPERTIES
     MACOSX_RPATH YES
 )
 
-target_link_libraries(digidocpp digidocpp_priv
+target_link_libraries(digidocpp
     ${CMAKE_DL_LIBS}
     ${MINIZIP_LIBRARIES}
-    ${XMLSECURITYC_LIBRARIES}
-    $<$<STREQUAL:${BUILD_TYPE},STATIC>:${XALANMSG_LIBRARY}>
-    ${XERCESC_LIBRARIES}
     ${TARGET_LIBRARIES}
-    ${OPENSSL_LIBRARIES}
-    ${ZLIB_LIBRARIES}
+    digidocpp_priv
 )
 
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
-    target_link_libraries(digidoc-tool digidocpp ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(digidoc-tool digidocpp Threads::Threads)
 endif()
 
 if(SWIG_FOUND)
@@ -334,11 +336,11 @@ if( FRAMEWORK )
         COMMAND cp $<TARGET_FILE:digidoc-tool> $<TARGET_FILE_DIR:digidocpp>/Resources )
     set_source_files_properties( ${SCHEMA_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/schema )
     set_source_files_properties( ${CRYPTO_HEADER} PROPERTIES MACOSX_PACKAGE_LOCATION Headers/crypto )
-    get_filename_component( LIBPATH ${XERCESC_LIBRARIES} PATH )
+    get_filename_component( LIBPATH ${XercesC_LIBRARIES} PATH )
     add_custom_target( embedlibs DEPENDS digidoc-tool
         COMMAND mkdir -p $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND ln -s -f Versions/Current/Libraries $<TARGET_FILE_DIR:digidocpp>/../..
-        COMMAND cp ${OPENSSL_LIBRARIES} ${XERCESC_LIBRARIES} ${XMLSECURITYC_LIBRARIES} ${XALANMSG_LIBRARY}
+        COMMAND cp ${OPENSSL_LIBRARIES} ${XercesC_LIBRARIES} ${XMLSECURITYC_LIBRARIES} ${XALANMSG_LIBRARY}
             $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND chmod 644 $<TARGET_FILE_DIR:digidocpp>/Libraries/*
         COMMAND install_name_tool -id 'libcrypto.dylib'

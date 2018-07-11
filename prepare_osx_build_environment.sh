@@ -135,8 +135,6 @@ function xalan {
         -DCMAKE_ANDROID_ARCH_ABI=${ARCH_ABI} \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE="Release" \
-        -DXERCESC_INCLUDE_DIR=${TARGET_PATH}/include \
-        -DXercesC_LIBRARY_RELEASE=${TARGET_PATH}/lib/libxerces-c.a \
         src
       cp ../../patches/MsgCreator src
       make -s
@@ -151,8 +149,6 @@ function xalan {
         -DCMAKE_BUILD_TYPE="Release" \
         -DCMAKE_OSX_SYSROOT=${SYSROOT} \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
-        -DXERCESC_INCLUDE_DIR=${TARGET_PATH}/include \
-        -DXercesC_LIBRARY_RELEASE=${TARGET_PATH}/lib/libxerces-c.a \
         src
       cp ../../patches/MsgCreator src
       make -s

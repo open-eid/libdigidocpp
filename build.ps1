@@ -96,7 +96,7 @@ foreach($platform in @("x86", "x64")) {
       $cmakeext += "-DLIBDIGIDOC_LIBRARY=$libdigidoc/$platform/bin/digidoc.lib"
       $cmakeext += "-DLIBDIGIDOC_INCLUDE_DIR=$libdigidoc/$platform/include"
     }
-    Remove-Item $buildpath -Force -Recurse > $null
+    Remove-Item $buildpath -Force -Recurse -ErrorAction Ignore
     New-Item -ItemType directory -Path $buildpath > $null
     Push-Location -Path $buildpath
     if($boost) {
@@ -115,8 +115,8 @@ foreach($platform in @("x86", "x64")) {
     }
     & $vcdir\vcvarsall.bat $platform "&&" $cmake "-GNMake Makefiles" "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=../$platform" "-DCMAKE_INSTALL_LIBDIR=bin" `
       "-DOPENSSL_ROOT_DIR=$openssl" `
-      "-DXERCESC_LIBRARY=$target/xerces/$xerces_lib" `
-      "-DXERCESC_INCLUDE_DIR=$target/xerces/$platform/include" `
+      "-DXercesC_LIBRARY=$target/xerces/$xerces_lib" `
+      "-DXercesC_INCLUDE_DIR=$target/xerces/$platform/include" `
       "-DXALANC_INCLUDE_DIR=$target/xalan/c/src" `
       "-DXALANMSG_LIBRARY=$target/xalan/c/Build/$xalanmsg_lib" `
       "-DXALANC_LIBRARY=$target/xalan/c/Build/$xalanc_lib" `

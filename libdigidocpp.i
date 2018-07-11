@@ -93,7 +93,7 @@ namespace digidoc {
     static void initializeLibWithTSL(const std::string &appName, const std::string &path, const std::string &tslUrl = std::string(), const std::vector<unsigned char> &tslCert = std::vector<unsigned char>())
     {
         if(!Conf::instance())
-            digidoc::Conf::init(new DigiDocConf(path, tslUrl, { X509Cert(tslCert, X509Cert::Der) }));
+            digidoc::Conf::init(new DigiDocConf(path, tslUrl, { tslCert.empty() ? X509Cert() : X509Cert(tslCert, X509Cert::Der) }));
         digidoc::initialize(appName);
         digidoc::Exception::addWarningIgnore(digidoc::Exception::ReferenceDigestWeak);
         digidoc::Exception::addWarningIgnore(digidoc::Exception::SignatureDigestWeak);
