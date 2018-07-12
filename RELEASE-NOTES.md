@@ -1,3 +1,17 @@
+Libdigidocpp library [3.13.7](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.7) release notes
+--------------------------------------
+- Remove compiler warnings
+- Change SiVa service URL to https://siva.eesti.ee/V2/validate
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.6...v3.13.7)
+
+Libdigidocpp library [3.13.6](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.6) release notes
+--------------------------------------
+- Add new OCSP access certificate and use when old is expired (#205)
+- Build java bindings on desktop platforms (#204)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.5...v3.13.6)
+
 Libdigidocpp library [3.13.5](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.5) release notes
 --------------------------------------
 - Add TSL cert tl-mp5 and generate headers dynamically (#174)
