@@ -623,15 +623,14 @@ bool File::removeFile(const string &path)
  */
 string File::toUri(const string &path)
 {
-    static string legal_chars = "-_.!~*'();/?:@&=+$,";
+    static const string legal_chars = "-_.!~*'();/?:@&=+$,";
     ostringstream dst;
-    for(string::const_iterator i = path.begin(); i != path.end(); ++i)
+    for(const char &i: path)
     {
-        if( ((*i >= 'A' && *i <= 'Z') || (*i >= 'a' && *i <= 'z') || (*i >= '0' && *i <= '9')) ||
-            legal_chars.find(*i) != string::npos )
-            dst << *i;
+        if(isalnum(static_cast<unsigned char>(i)) || legal_chars.find(i) != string::npos)
+            dst << i;
         else
-            dst << '%' << hex << uppercase << (static_cast<int>(*i) & 0xFF);
+            dst << '%' << hex << uppercase << (static_cast<int>(i) & 0xFF);
     }
     return dst.str();
 }
@@ -654,16 +653,15 @@ string File::toUri(const string &path)
  */
 string File::toUriPath(const string &path)
 {
-    static string unreserved = "-._~/";
+    static const string unreserved = "-._~/";
     //static string sub-delims = "!$&'()*+,;=";
     ostringstream dst;
-    for(string::const_iterator i = path.begin(); i != path.end(); ++i)
+    for(const char &i: path)
     {
-        if( ((*i >= 'A' && *i <= 'Z') || (*i >= 'a' && *i <= 'z') || (*i >= '0' && *i <= '9')) ||
-            unreserved.find(*i) != string::npos )
-            dst << *i;
+        if(isalnum(static_cast<unsigned char>(i)) || unreserved.find(i) != string::npos)
+            dst << i;
         else
-            dst << '%' << hex << uppercase << (static_cast<int>(*i) & 0xFF);
+            dst << '%' << hex << uppercase << (static_cast<int>(i) & 0xFF);
     }
     return dst.str();
 }
@@ -674,7 +672,7 @@ string File::fromUriPath(const string &path)
     char data[] = "0x00";
     for(string::const_iterator i = path.begin(); i != path.end(); ++i)
     {
-        if(*i == '%' && (std::distance(i, path.end()) > 2) && isxdigit(*(i+1)) && isxdigit(*(i+2)))
+        if(*i == '%' && (distance(i, path.end()) > 2) && isxdigit(*(i+1)) && isxdigit(*(i+2)))
         {
             data[2] = *(++i);
             data[3] = *(++i);
