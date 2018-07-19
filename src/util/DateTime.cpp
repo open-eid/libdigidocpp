@@ -35,8 +35,7 @@ using namespace std;
 tm digidoc::util::date::ASN1TimeToTM(const std::string &date, bool generalizedtime)
 {
     const char* t = date.c_str();
-    struct tm time;
-    memset(&time, 0, sizeof(time));
+    struct tm time{};
     size_t i = 0;
 
     if(date.size() < size_t(generalizedtime ? 12 : 10))
@@ -173,14 +172,7 @@ time_t digidoc::util::date::mkgmtime(struct tm &t)
 #ifdef _WIN32
     return _mkgmtime(&t);
 #else
-    char *tz = getenv("TZ");
-    setenv("TZ", "UTC", 1);
-    time_t result = mktime(&t);
-    if (tz)
-        setenv("TZ", tz, 1);
-    else
-        unsetenv("TZ");
-    return result;
+    return timegm(&t);
 #endif
 }
 
