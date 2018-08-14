@@ -167,7 +167,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
     }
     else
         base = result;
-    for(const jsonxx::Value *obj: base.get<jsonxx::Array>("signatures").values())
+    for(const jsonxx::Value *obj: base.get<jsonxx::Array>("signatures", jsonxx::Array()).values())
     {
         SignatureSiVa *s = new SignatureSiVa;
         jsonxx::Object signature = obj->get<jsonxx::Object>();
