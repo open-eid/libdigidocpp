@@ -69,7 +69,8 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         stringstream ofs;
         saveToXml(ofs);
         XSECProvider prov;
-        DSIGSignature *sig = prov.newSignatureFromDOM(SecureDOMParser().parseIStream(ofs).release());
+        auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
+        unique_ptr<DSIGSignature,decltype(deleteSig)> sig(prov.newSignatureFromDOM(SecureDOMParser().parseIStream(ofs).release()), deleteSig);
         unique_ptr<URIResolver> uriresolver(new URIResolver(bdoc));
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
         sig->setURIResolver(uriresolver.get());

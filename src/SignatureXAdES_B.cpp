@@ -504,7 +504,8 @@ void SignatureXAdES_B::validate(const string &policy) const
         unique_ptr<DOMDocument> doc(parser->parseIStream(ofs));
 
         XSECProvider prov;
-        DSIGSignature *sig = prov.newSignatureFromDOM(doc.get());
+        auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
+        unique_ptr<DSIGSignature, decltype(deleteSig)> sig(prov.newSignatureFromDOM(doc.get()), deleteSig);
         unique_ptr<URIResolver> uriresolver(new URIResolver(bdoc));
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
         sig->setURIResolver(uriresolver.get());

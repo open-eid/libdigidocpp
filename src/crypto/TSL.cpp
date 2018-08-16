@@ -503,7 +503,8 @@ void TSL::validate(const std::vector<X509Cert> &certs)
 
     try {
         XSECProvider prov;
-        DSIGSignature *sig = prov.newSignatureFromDOM(tsl->_node()->getOwnerDocument());
+        auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
+        unique_ptr<DSIGSignature, decltype(deleteSig)> sig(prov.newSignatureFromDOM(tsl->_node()->getOwnerDocument()), deleteSig);
         //sig->setKeyInfoResolver(new XSECKeyInfoResolverDefault);
         sig->setSigningKey(OpenSSLCryptoX509(signingCert.handle()).clonePublicKey());
         //sig->registerIdAttributeName(MAKE_UNICODE_STRING("ID"));
