@@ -10,7 +10,7 @@ param(
 	[string]$VSINSTALLDIR = "C:\Program Files (x86)\Microsoft Visual Studio $vsver",
 	[string]$devenv = "$VSINSTALLDIR\Common7\IDE\devenv.exe",
 	[string]$vcvars = "$VSINSTALLDIR\VC\vcvarsall.bat",
-	[string]$opensslver = "openssl-1.0.2o",
+	[string]$opensslver = "openssl-1.0.2p",
 	[string]$xercesver = "xerces-c-3.2.1",
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
@@ -103,7 +103,7 @@ function xalan() {
 }
 
 function xmlsec() {
-	$client.DownloadFile("http://www.eu.apache.org/dist/santuario/c-library/$xmlsecver.tar.gz", "$target\$xmlsecver.tar.gz")
+	$client.DownloadFile("https://archive.apache.org/dist/santuario/c-library/$xmlsecver.tar.gz", "$target\$xmlsecver.tar.gz")
 	& $7zip x "$xmlsecver.tar.gz" > $null
 	& $7zip x "$xmlsecver.tar" > $null
 	& $7zip x -y "$libdigidocpp\patches\$xmlsecver-VC12.zip" > $null

@@ -4,8 +4,8 @@ set -e
 XERCES_DIR=xerces-c-3.2.1
 XMLSEC_DIR=xml-security-c-1.7.3
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.0.2o
-#OPENSSL_DIR=openssl-1.1.0g
+OPENSSL_DIR=openssl-1.0.2p
+#OPENSSL_DIR=openssl-1.1.0i
 LIBXML2_DIR=libxml2-2.9.8
 ANDROID_NDK=android-ndk-r14b
 FREETYPE_DIR=freetype-2.9
@@ -174,18 +174,14 @@ function xalan {
 function xml_security {
     echo Building ${XMLSEC_DIR}
     if [ ! -f ${XMLSEC_DIR}.tar.gz ]; then
-        curl -O http://www.eu.apache.org/dist/santuario/c-library/${XMLSEC_DIR}.tar.gz
+        curl -O https://archive.apache.org/dist/santuario/c-library/${XMLSEC_DIR}.tar.gz
     fi
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
-    case "${ARGS}" in
-    *android*) patch -Np1 -i ../patches/xmlsec.patch ;;
-    *) ;;
-    esac
-    #patch -Np1 -i ../patches/xml-security-c-1.7.3_openssl1.1.patch
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${TARGET_PATH} --with-xalan=${TARGET_PATH}
+    sed -ie 's!PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)!PROGRAMS = !; s!bin_PROGRAMS = $(am__EXEEXT_1)!bin_PROGRAMS = !' xsec/Makefile
     make -s
     sudo make install
     cd ..
@@ -254,6 +250,7 @@ function openssl {
         SSL=""
         for ARCH in ${ARCHS}
         do
+            sed -ie 's!MAKEDEPPROG=makedepend!MAKEDEPPROG=$(CC) -M!' Makefile.org
             if [[ "${ARCH}" == "x86_64" ]]; then
                 ./Configure darwin64-x86_64-cc --openssldir=${TARGET_PATH} no-hw
                 sed -ie 's!^CFLAG=!CFLAG=-isysroot '${SYSROOT}' !' Makefile
