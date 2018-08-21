@@ -179,12 +179,16 @@ string TS::digestMethod() const
 vector<unsigned char> TS::digestValue() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
+    if(!info)
+        return vector<unsigned char>();
     return i2d(TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get())), i2d_ASN1_OCTET_STRING);
 }
 
 vector<unsigned char> TS::messageImprint() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
+    if(!info)
+        return vector<unsigned char>();
     return i2d(TS_TST_INFO_get_msg_imprint(info.get()), i2d_TS_MSG_IMPRINT);
 }
 
