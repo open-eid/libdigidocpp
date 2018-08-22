@@ -56,8 +56,8 @@ foreach($platform in @("x86", "x64")) {
       $xalanmsg_dll = 'Win32/VC10/Debug/XalanMessages_1_11D.dll'
       $xalanc_lib = 'Win32/VC10/Debug/Xalan-C_1D.lib'
       $xalanc_dll = 'Win32/VC10/Debug/Xalan-C_1_11D.dll'
-      $xmlsec_lib = 'Win32/VC12/Debug/xsec_1D.lib'
-      $xmlsec_dll = 'Win32/VC12/Debug/xsec_1_7D.dll'
+      $xmlsec_lib = 'Win32/VC15/Debug/xsec_2D.lib'
+      $xmlsec_dll = 'Win32/VC15/Debug/xsec_2_0D.dll'
       $openssl = '/OpenSSL-Win32'
     } 'x86RelWithDebInfo' {
       $xerces_dll = 'xerces-c_3_2.dll'
@@ -65,8 +65,8 @@ foreach($platform in @("x86", "x64")) {
       $xalanmsg_dll = 'Win32/VC10/Release/XalanMessages_1_11.dll'
       $xalanc_lib = 'Win32/VC10/Release/Xalan-C_1.lib'
       $xalanc_dll = 'Win32/VC10/Release/Xalan-C_1_11.dll'
-      $xmlsec_lib = 'Win32/VC12/Release/xsec_1.lib'
-      $xmlsec_dll = 'Win32/VC12/Release/xsec_1_7.dll'
+      $xmlsec_lib = 'Win32/VC15/Release/xsec_2.lib'
+      $xmlsec_dll = 'Win32/VC15/Release/xsec_2_0.dll'
       $openssl = '/OpenSSL-Win32'
     } 'x64Debug' {
       $xerces_dll = 'xerces-c_3_2D.dll'
@@ -74,8 +74,8 @@ foreach($platform in @("x86", "x64")) {
       $xalanmsg_dll = 'Win64/VC10/Debug/XalanMessages_1_11D.dll'
       $xalanc_lib = 'Win64/VC10/Debug/Xalan-C_1D.lib'
       $xalanc_dll = 'Win64/VC10/Debug/Xalan-C_1_11D.dll'
-      $xmlsec_lib = 'X64/VC12/Debug/xsec_1D.lib'
-      $xmlsec_dll = 'X64/VC12/Debug/xsec_1_7D.dll'
+      $xmlsec_lib = 'X64/VC15/Debug/xsec_2D.lib'
+      $xmlsec_dll = 'X64/VC15/Debug/xsec_2_0D.dll'
       $openssl = '/OpenSSL-Win64'
     } 'x64RelWithDebInfo' {
       $xerces_dll = 'xerces-c_3_2.dll'
@@ -83,8 +83,8 @@ foreach($platform in @("x86", "x64")) {
       $xalanmsg_dll = 'Win64/VC10/Release/XalanMessages_1_11.dll'
       $xalanc_lib = 'Win64/VC10/Release/Xalan-C_1.lib'
       $xalanc_dll = 'Win64/VC10/Release/Xalan-C_1_11.dll'
-      $xmlsec_lib = 'X64/VC12/Release/xsec_1.lib'
-      $xmlsec_dll = 'X64/VC12/Release/xsec_1_7.dll'
+      $xmlsec_lib = 'X64/VC15/Release/xsec_2.lib'
+      $xmlsec_dll = 'X64/VC15/Release/xsec_2_0.dll'
       $openssl = '/OpenSSL-Win64'
     }}
     if($libdigidoc) {

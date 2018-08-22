@@ -11,7 +11,7 @@ param(
 	[string]$opensslver = "openssl-1.0.2q",
 	[string]$xercesver = "xerces-c-3.2.2",
 	[string]$xalanver = "xalan_c-1.11",
-	[string]$xmlsecver = "xml-security-c-1.7.3",
+	[string]$xmlsecver = "xml-security-c-2.0.1",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
 	[string]$zlibver = "zlib-1.2.11",
 	[string]$freetypever = "freetype-2.9.1",
@@ -103,12 +103,12 @@ function xmlsec() {
 	& $7zip x "$xmlsecver.tar" > $null
 	Rename-Item $xmlsecver xmlsec
 	Push-Location -Path xmlsec
-	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xml-security-c-1.7.3-VC12.patch
-	$xsecproj = "Projects\VC12.0\xsec\xsec_lib\xsec_lib.vcxproj"
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32;XERCES_PATH=$target\xerces\x86;XALAN_PATH=$target\xalan\c" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32;XERCES_PATH=$target\xerces\x86;XALAN_PATH=$target\xalan\c" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64;XERCES_PATH=$target\xerces\x64;XALAN_PATH=$target\xalan\c" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64;XERCES_PATH=$target\xerces\x64;XALAN_PATH=$target\xalan\c" $xsecproj
+	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xml-security-c-2.0.1-win.patch
+	$xsecproj = "Projects\VC15.0\xsec\xsec_lib\xsec_lib.vcxproj"
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32;OPENSSLROOT=C:\OpenSSL-Win32;XERCESCROOT=$target\xerces\x86;XALANCROOT=$target\xalan\c" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32;OPENSSLROOT=C:\OpenSSL-Win32;XERCESCROOT=$target\xerces\x86;XALANCROOT=$target\xalan\c" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64;OPENSSLROOT=C:\OpenSSL-Win64;XERCESCROOT=$target\xerces\x64;XALANCROOT=$target\xalan\c" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64;OPENSSLROOT=C:\OpenSSL-Win64;XERCESCROOT=$target\xerces\x64;XALANCROOT=$target\xalan\c" $xsecproj
 	Pop-Location
 }
 

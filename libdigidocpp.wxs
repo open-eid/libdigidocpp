@@ -44,7 +44,7 @@
                 <File Source="$(var.PREFIX)\xerces\x86\bin\xerces-c_3_2.dll"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Release\Xalan-C_1_11.dll"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Release\XalanMessages_1_11.dll"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC12\Release\xsec_1_7.dll"/>
+                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC15\Release\xsec_2_0.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.dll"/>
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.dll"/>
@@ -61,7 +61,7 @@
                 <File Source="$(var.PREFIX)\xerces\x86\bin\xerces-c_3_2D.dll"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Debug\Xalan-C_1_11D.dll"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Debug\XalanMessages_1_11D.dll"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC12\Debug\xsec_1_7D.dll"/>
+                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC15\Debug\xsec_2_0D.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.pdb"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.lib"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.pdb"/>
@@ -111,7 +111,7 @@
                 <File Source="$(var.PREFIX)\xerces\x64\bin\xerces-c_3_2.dll" Id="xerces_c_3_2.dll_64"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Release\Xalan-C_1_11.dll" Id="Xalan_C_1_11.dll_64"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Release\XalanMessages_1_11.dll" Id="XalanMessages_1_11.dll_64"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC12\Release\xsec_1_7.dll" Id="xsec_1_7.dll_64"/>
+                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC15\Release\xsec_2_0.dll" Id="xsec_2_0.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.dll" Id="digidocpp.dll_64"/>
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.dll" Id="digidoc_csharp.dll_64"/>
@@ -128,7 +128,7 @@
                 <File Source="$(var.PREFIX)\xerces\x64\bin\xerces-c_3_2D.dll" Id="xerces_c_3_2D.dll_64"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Debug\Xalan-C_1_11D.dll" Id="Xalan_C_1_11D.dll_64"/>
                 <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Debug\XalanMessages_1_11D.dll" Id="XalanMessages_1_11D.dll_64"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC12\Debug\xsec_1_7D.dll" Id="xsec_1_7D.dll_64"/>
+                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC15\Debug\xsec_2_0D.dll" Id="xsec_2_0D.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.pdb" Id="digidoc_tool.pdb_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.lib" Id="digidocpp.lib_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.pdb" Id="digidocpp.pdb_64"/>

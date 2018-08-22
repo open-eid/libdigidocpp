@@ -1,0 +1,411 @@
+diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj xml-security-c-2.0.1/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj
+--- xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj	2018-06-18 17:48:30.000000000 +0300
++++ xml-security-c-2.0.1/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj	2019-01-08 22:08:01.000000000 +0200
+@@ -49,6 +49,7 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
++    <UseDebugLibraries>true</UseDebugLibraries>
+     <PlatformToolset>v141</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+@@ -60,6 +61,7 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
++    <UseDebugLibraries>true</UseDebugLibraries>
+     <PlatformToolset>v141</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'" Label="Configuration">
+@@ -70,8 +72,8 @@
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+-    <UseOfMfc>false</UseOfMfc>
+     <CharacterSet>MultiByte</CharacterSet>
++    <UseDebugLibraries>true</UseDebugLibraries>
+     <PlatformToolset>v141</PlatformToolset>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+@@ -82,8 +84,8 @@
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+-    <UseOfMfc>false</UseOfMfc>
+     <CharacterSet>MultiByte</CharacterSet>
++    <UseDebugLibraries>true</UseDebugLibraries>
+     <PlatformToolset>v141</PlatformToolset>
+   </PropertyGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+@@ -118,28 +120,20 @@
+     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">true</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">true</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">false</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">false</LinkIncremental>
+     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'" />
+     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'" />
+@@ -166,287 +160,130 @@
+     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+   </PropertyGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+-    <PreBuildEvent>
+-      <Message>
+-      </Message>
+-      <Command>
+-      </Command>
+-    </PreBuildEvent>
+     <ClCompile>
+-      <Optimization>Disabled</Optimization>
+-      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win32/VC15/Debug/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_XKMS_ENABLED;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;XSEC_HAVE_WINCAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+-      <MinimalRebuild>false</MinimalRebuild>
+-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+-      <PrecompiledHeader>
+-      </PrecompiledHeader>
+-      <PrecompiledHeaderFile>
+-      </PrecompiledHeaderFile>
++      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win32/VC15/Debug/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <WarningLevel>Level3</WarningLevel>
+-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+-      <BrowseInformation>false</BrowseInformation>
+       <ConformanceMode>true</ConformanceMode>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+-      <DataExecutionPrevention>
+-      </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)xsec_2D.lib</ImportLibrary>
+-      <TargetMachine>MachineX86</TargetMachine>
+-      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win32\VC15\Debug;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\$(Platform)\VC15\Debug;$(XERCESCROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win32\VC10\Debug;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\$(Platform)\VC15\Debug;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+-    <PreBuildEvent>
+-      <Message>
+-      </Message>
+-      <Command>
+-      </Command>
+-    </PreBuildEvent>
+-    <Midl>
+-      <TargetEnvironment>X64</TargetEnvironment>
+-    </Midl>
+     <ClCompile>
+-      <Optimization>Disabled</Optimization>
+-      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win64/VC15/Debug/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_XKMS_ENABLED;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;XSEC_HAVE_WINCAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+-      <MinimalRebuild>false</MinimalRebuild>
+-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+-      <PrecompiledHeader>
+-      </PrecompiledHeader>
+-      <PrecompiledHeaderFile>
+-      </PrecompiledHeaderFile>
++      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win64/VC15/Debug/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <WarningLevel>Level3</WarningLevel>
+-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+-      <BrowseInformation>false</BrowseInformation>
+       <ConformanceMode>true</ConformanceMode>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+-      <DataExecutionPrevention>
+-      </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)xsec_2D.lib</ImportLibrary>
+-      <TargetMachine>MachineX64</TargetMachine>
+-      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win64\VC15\Debug;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win64\VC15\Debug;$(XERCESCROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win64\VC10\Debug;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win64\VC15\Debug;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+-    <PreBuildEvent>
+-      <Message>
+-      </Message>
+-      <Command>
+-      </Command>
+-    </PreBuildEvent>
+     <ClCompile>
+-      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win32/VC15/Release/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;XSEC_XKMS_ENABLED;XSEC_HAVE_WINCAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+-      <PrecompiledHeader>
+-      </PrecompiledHeader>
+-      <PrecompiledHeaderFile>
+-      </PrecompiledHeaderFile>
++      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win32/VC15/Release/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <WarningLevel>Level3</WarningLevel>
+-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+-      <WholeProgramOptimization>true</WholeProgramOptimization>
+       <ConformanceMode>true</ConformanceMode>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
+       <SubSystem>Windows</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+-      <DataExecutionPrevention>
+-      </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)xsec_2.lib</ImportLibrary>
+-      <TargetMachine>MachineX86</TargetMachine>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
+-      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win32\VC15\Release;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win32\VC15\Release;$(XERCESCROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win32\VC10\Release;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win32\VC15\Release;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+-    <PreBuildEvent>
+-      <Message>
+-      </Message>
+-      <Command>
+-      </Command>
+-    </PreBuildEvent>
+-    <Midl>
+-      <TargetEnvironment>X64</TargetEnvironment>
+-    </Midl>
+     <ClCompile>
+-      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win64/VC15/Release/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;XSEC_XKMS_ENABLED;XSEC_HAVE_WINCAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+-      <PrecompiledHeader>
+-      </PrecompiledHeader>
+-      <PrecompiledHeaderFile>
+-      </PrecompiledHeaderFile>
++      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win64/VC15/Release/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <WarningLevel>Level3</WarningLevel>
+-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+-      <WholeProgramOptimization>true</WholeProgramOptimization>
+       <ConformanceMode>true</ConformanceMode>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
+       <SubSystem>Windows</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+-      <DataExecutionPrevention>
+-      </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)xsec_2.lib</ImportLibrary>
+-      <TargetMachine>MachineX64</TargetMachine>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
+-      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win64\VC15\Release;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win64\VC15\Release;$(XERCESCROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win64\VC10\Release;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win64\VC15\Release;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">
+-    <PreBuildEvent>
+-      <Message>
+-      </Message>
+-      <Command>
+-      </Command>
+-    </PreBuildEvent>
+     <ClCompile>
+-      <Optimization>Disabled</Optimization>
+-      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+-      <MinimalRebuild>false</MinimalRebuild>
+-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+-      <PrecompiledHeader>
+-      </PrecompiledHeader>
+-      <PrecompiledHeaderFile>
+-      </PrecompiledHeaderFile>
+       <WarningLevel>Level3</WarningLevel>
+-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+-      <BrowseInformation>false</BrowseInformation>
+       <ConformanceMode>true</ConformanceMode>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+-      <DataExecutionPrevention>
+-      </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)xsec_2D.lib</ImportLibrary>
+-      <TargetMachine>MachineX86</TargetMachine>
+-      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\$(Platform)\VC15\Debug;$(XERCESCROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\$(Platform)\VC15\Debug;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">
+-    <PreBuildEvent>
+-      <Message>
+-      </Message>
+-      <Command>
+-      </Command>
+-    </PreBuildEvent>
+-    <Midl>
+-      <TargetEnvironment>X64</TargetEnvironment>
+-    </Midl>
+     <ClCompile>
+-      <Optimization>Disabled</Optimization>
+-      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+-      <MinimalRebuild>false</MinimalRebuild>
+-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+-      <PrecompiledHeader>
+-      </PrecompiledHeader>
+-      <PrecompiledHeaderFile>
+-      </PrecompiledHeaderFile>
+       <WarningLevel>Level3</WarningLevel>
+-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+-      <BrowseInformation>false</BrowseInformation>
+       <ConformanceMode>true</ConformanceMode>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+-      <DataExecutionPrevention>
+-      </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)xsec_2D.lib</ImportLibrary>
+-      <TargetMachine>MachineX64</TargetMachine>
+-      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win64\VC15\Debug;$(XERCESCROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win64\VC15\Debug;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">
+-    <PreBuildEvent>
+-      <Message>
+-      </Message>
+-      <Command>
+-      </Command>
+-    </PreBuildEvent>
+     <ClCompile>
+-      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+-      <PrecompiledHeader>
+-      </PrecompiledHeader>
+-      <PrecompiledHeaderFile>
+-      </PrecompiledHeaderFile>
+-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+-      <WholeProgramOptimization>true</WholeProgramOptimization>
+       <WarningLevel>Level3</WarningLevel>
+       <ConformanceMode>true</ConformanceMode>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
+       <SubSystem>Windows</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+-      <DataExecutionPrevention>
+-      </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)xsec_2.lib</ImportLibrary>
+-      <TargetMachine>MachineX86</TargetMachine>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
+-      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win32\VC15\Release;$(XERCESCROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win32\VC15\Release;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">
+-    <PreBuildEvent>
+-      <Message>
+-      </Message>
+-      <Command>
+-      </Command>
+-    </PreBuildEvent>
+-    <Midl>
+-      <TargetEnvironment>X64</TargetEnvironment>
+-    </Midl>
+     <ClCompile>
+-      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+-      <PrecompiledHeader>
+-      </PrecompiledHeader>
+-      <PrecompiledHeaderFile>
+-      </PrecompiledHeaderFile>
+-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+-      <WholeProgramOptimization>true</WholeProgramOptimization>
+       <WarningLevel>Level3</WarningLevel>
+       <ConformanceMode>true</ConformanceMode>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
+       <SubSystem>Windows</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+-      <DataExecutionPrevention>
+-      </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)xsec_2.lib</ImportLibrary>
+-      <TargetMachine>MachineX64</TargetMachine>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
+-      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win64\VC15\Release;$(XERCESCROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win64\VC15\Release;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemGroup>
+@@ -822,4 +659,4 @@
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+   <ImportGroup Label="ExtensionTargets">
+   </ImportGroup>
+-</Project>
+\ No newline at end of file
++</Project>
+diff -U3 -r xml-security-c-2.0.1.orig/xsec/framework/XSECW32Config.hpp xml-security-c-2.0.1/xsec/framework/XSECW32Config.hpp
+--- xml-security-c-2.0.1.orig/xsec/framework/XSECW32Config.hpp	2018-06-18 17:48:28.000000000 +0300
++++ xml-security-c-2.0.1/xsec/framework/XSECW32Config.hpp	2019-01-08 21:37:37.000000000 +0200
+@@ -38,7 +38,7 @@
+  * Activate this #define if Xalan is not required (or desired)
+  */
+ 
+-// #define XSEC_HAVE_XALAN 1
++#define XSEC_HAVE_XALAN 1
+ 
+ 
+ /*
+@@ -49,7 +49,7 @@
+  * interested in assisting with maintenance and support of that code.
+  */
+ 
+-// #define XSEC_HAVE_OPENSSL 1
++#define XSEC_HAVE_OPENSSL 1
+ // #define XSEC_HAVE_WINCAPI 1
+ // #define XSEC_HAVE_NSS 1
+ 
