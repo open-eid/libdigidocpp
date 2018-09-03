@@ -445,7 +445,7 @@ void SignatureXAdES_B::validate(const string &policy) const
     DEBUG("SignatureXAdES_B::validate(%s)", policy.c_str());
     // A "master" exception containing all problems (causes) with this signature.
     // It'll be only thrown in case we have a reason (cause).
-    Exception exception(__FILE__, __LINE__, "Signature validation");
+    Exception exception(EXCEPTION_PARAMS("Signature validation"));
 
     if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
        (signatureMethod() == URI_RSA_SHA1 || signatureMethod() == URI_ECDSA_SHA1))
@@ -510,13 +510,15 @@ void SignatureXAdES_B::validate(const string &policy) const
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
         sig->setURIResolver(uriresolver.get());
         sig->setKeyInfoResolver(keyresolver.get());
+        sig->registerIdAttributeName(X("ID"));
+        sig->setIdByAttributeName(true);
         sig->load();
 
         safeBuffer m_errStr;
         m_errStr.sbXMLChIn(DSIGConstants::s_unicodeStrEmpty);
 
         if(!DSIGReference::verifyReferenceList(sig->getReferenceList(), m_errStr))
-        //if(!sig->verify()) does not support URI_ID_C14N11_NOC canonicalization
+        //if(!sig->verify()) //xml-security-c < 2.0.0 does not support URI_ID_C14N11_NOC canonicalization
         {
             //string s = xml::transcode<char>(sig->getErrMsgs());
             string s = xml::transcode<char>(m_errStr.rawXMLChBuffer());
@@ -610,7 +612,7 @@ void SignatureXAdES_B::validate(const string &policy) const
                     EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
                         file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
 #ifdef HAVE_WORKING_REGEX
-                static regex reg("([\\w])*/([\\w\\-\\+\\.])*");
+                static regex reg(R"(([\w])*/([\w\-\+\.])*)");
                 if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
                 {
                     Exception w(EXCEPTION_PARAMS("'%s' is not conformant mime-type string!", file->mediaType().c_str()));
@@ -684,7 +686,7 @@ void SignatureXAdES_B::checkKeyInfo() const
 
             return certs[0].certDigest();
         }
-        else if(sigCertV2Opt.present())
+        if(sigCertV2Opt.present())
         {
             const CertIDListV2Type::CertSequence &certs = sigCertV2Opt->cert();
             if(certs.size() != 1)
@@ -751,7 +753,7 @@ void SignatureXAdES_B::checkSignatureValue() const
         vector<unsigned char> sha = dataToSign();
         DEBUGMEM("Digest", sha.data(), sha.size());
         if(!X509Crypto(signingCertificate()).verify(signatureMethod(), sha, getSignatureValue()))
-            THROW_CAUSE(OpenSSLException(), "Signature is not valid.");
+            THROW_OPENSSLEXCEPTION("Signature is not valid.");
     }
     catch(const Exception &e)
     {
@@ -1187,13 +1189,13 @@ X509Cert SignatureXAdES_B::signingCertificate() const
     const KeyInfoType::X509DataSequence& x509DataSeq = keyInfoOptional->x509Data();
     if ( x509DataSeq.empty() )
         THROW("Signature does not contain signer certificate");
-    else if(x509DataSeq.size() != 1)
+    if(x509DataSeq.size() != 1)
         THROW("Signature contains more than one signers certificate");
 
     const X509DataType::X509CertificateSequence& x509CertSeq = x509DataSeq.front().x509Certificate();
     if(x509CertSeq.empty())
         THROW("Signature does not contain signer certificate");
-    else if(x509CertSeq.size() != 1)
+    if(x509CertSeq.size() != 1)
         THROW("Signature contains more than one signers certificate");
     try
     {
@@ -1222,14 +1224,14 @@ QualifyingPropertiesType& SignatureXAdES_B::qualifyingProperties() const
     SignatureType::ObjectSequence& oSeq = signature->object();
     if ( oSeq.empty() )
         THROW("Signature block 'Object' is missing.");
-    else if ( oSeq.size() != 1 )
+    if(oSeq.size() != 1)
         THROW("Signature block contains more than one 'Object' block.");
 
     // QualifyingProperties
     ObjectType::QualifyingPropertiesSequence& qpSeq = oSeq.front().qualifyingProperties();
     if ( qpSeq.empty() )
         THROW("Signature block 'QualifyingProperties' is missing.");
-    else if ( qpSeq.size() != 1 )
+    if(qpSeq.size() != 1)
         THROW("Signature block 'Object' contains more than one 'QualifyingProperties' block.");
 
     return qpSeq.front();

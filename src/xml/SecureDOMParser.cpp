@@ -100,7 +100,7 @@ void SecureDOMParser::calcDigestOnNode(Digest *calc,
     }
 
     unsigned char buffer[1024];
-    xsecsize_t bytes = 0;
+    XMLSize_t bytes = 0;
     while((bytes = c14n.outputBuffer(buffer, 1024)) > 0)
         calc->update(buffer, bytes);
 }

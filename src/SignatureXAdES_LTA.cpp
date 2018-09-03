@@ -75,6 +75,8 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
         sig->setURIResolver(uriresolver.get());
         sig->setKeyInfoResolver(keyresolver.get());
+        sig->registerIdAttributeName(X("ID"));
+        sig->setIdByAttributeName(true);
         sig->load();
 
         safeBuffer m_errStr;
@@ -85,7 +87,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         for(size_t i = 0; i < list->getSize(); ++i)
         {
             XSECBinTXFMInputStream *stream = list->item(i)->makeBinInputStream();
-            for(xsecsize_t size = stream->readBytes(buf, 1024); size > 0; size = stream->readBytes(buf, 1024))
+            for(XMLSize_t size = stream->readBytes(buf, 1024); size > 0; size = stream->readBytes(buf, 1024))
                 digest->update(buf, size);
             delete stream;
         }
@@ -196,7 +198,7 @@ string SignatureXAdES_LTA::ArchiveTimeStampTime() const
 
 void SignatureXAdES_LTA::validate(const string &policy) const
 {
-    Exception exception(__FILE__, __LINE__, "Signature validation");
+    Exception exception(EXCEPTION_PARAMS("Signature validation"));
     try {
         SignatureXAdES_LT::validate(policy);
     } catch(const Exception &e) {
