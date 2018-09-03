@@ -37,7 +37,7 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xercesc/util/XMLString.hpp>
 #include <xsec/utils/XSECPlatformUtils.hpp>
 DIGIDOCPP_WARNING_POP
-#ifndef XSEC_NO_XALAN
+#if !defined(XSEC_NO_XALAN) || defined(XSEC_HAVE_XALAN)
 #include <xalanc/XPath/XPathEvaluator.hpp>
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
@@ -105,7 +105,7 @@ void digidoc::initialize(const string &appInfo, initCallBack callBack)
 
     try {
         XMLPlatformUtils::Initialize();
-#ifndef XSEC_NO_XALAN
+#if !defined(XSEC_NO_XALAN) || defined(XSEC_HAVE_XALAN)
         XPathEvaluator::initialize();
         XalanTransformer::initialize();
 #endif
@@ -156,7 +156,7 @@ void digidoc::terminate()
     Conf::init(nullptr);
 
     XSECPlatformUtils::Terminate();
-#ifndef XSEC_NO_XALAN
+#if !defined(XSEC_NO_XALAN) || defined(XSEC_HAVE_XALAN)
     XalanTransformer::terminate();
     XPathEvaluator::terminate();
 #endif

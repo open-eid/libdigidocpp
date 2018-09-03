@@ -26,6 +26,7 @@
 #include "util/DateTime.h"
 #include "util/File.h"
 #include "xml/ts_119612v020201_201601xsd.hxx"
+#include "xml/SecureDOMParser.h"
 
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
@@ -507,7 +508,8 @@ void TSL::validate(const std::vector<X509Cert> &certs)
         unique_ptr<DSIGSignature, decltype(deleteSig)> sig(prov.newSignatureFromDOM(tsl->_node()->getOwnerDocument()), deleteSig);
         //sig->setKeyInfoResolver(new XSECKeyInfoResolverDefault);
         sig->setSigningKey(OpenSSLCryptoX509(signingCert.handle()).clonePublicKey());
-        //sig->registerIdAttributeName(MAKE_UNICODE_STRING("ID"));
+        sig->registerIdAttributeName(X("ID"));
+        sig->setIdByAttributeName(true);
         sig->load();
         if(!sig->verify())
         {

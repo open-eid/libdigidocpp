@@ -2,7 +2,7 @@
 set -e
 
 XERCES_DIR=xerces-c-3.2.1
-XMLSEC_DIR=xml-security-c-1.7.3
+XMLSEC_DIR=xml-security-c-2.0.1
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2p
 #OPENSSL_DIR=openssl-1.1.0i
@@ -180,8 +180,10 @@ function xml_security {
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
-    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xerces=${TARGET_PATH} --with-openssl=${TARGET_PATH} --with-xalan=${TARGET_PATH}
-    sed -ie 's!PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)!PROGRAMS = !; s!bin_PROGRAMS = $(am__EXEEXT_1)!bin_PROGRAMS = !' xsec/Makefile
+    xerces_CFLAGS="-I${TARGET_PATH}/include" xerces_LIBS="-L${TARGET_PATH}/lib -lxalanMsg -lxalan-c -lxerces-c" \
+    openssl_CFLAGS="-I${TARGET_PATH}/include" openssl_LIBS="-L${TARGET_PATH}/lib -lcrypto" \
+    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xalan=${TARGET_PATH}
+    sed -ie 's!PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)!PROGRAMS = !; s!bin_PROGRAMS = $(am__EXEEXT_2)!bin_PROGRAMS = !' xsec/Makefile
     make -s
     sudo make install
     cd ..
