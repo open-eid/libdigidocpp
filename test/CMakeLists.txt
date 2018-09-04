@@ -6,7 +6,6 @@ if( Boost_INCLUDE_DIR )
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_BINARY_DIR}/src
         ${XSD_INCLUDE_DIR}
-        ${XERCESC_INCLUDE_DIR}
         ${Boost_INCLUDE_DIR}
     )
     add_definitions(
@@ -18,7 +17,7 @@ if( Boost_INCLUDE_DIR )
     endif()
     add_executable(unittests libdigidocpp_boost.cpp)
     add_executable(TSLTests TSLTests.cpp)
-    target_link_libraries(unittests digidocpp digidocpp_priv)
+    target_link_libraries(unittests digidocpp)
     target_link_libraries(TSLTests digidocpp)
     if(WIN32)
         string(REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
