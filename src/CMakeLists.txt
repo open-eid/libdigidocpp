@@ -5,35 +5,12 @@ if(NOT MINIZIP_FOUND)
     endif()
     add_library( minizip STATIC minizip/zip.c minizip/unzip.c minizip/ioapi.c ${MINIZIP_SRCS} )
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        set_target_properties( minizip PROPERTIES COMPILE_FLAGS "-fPIC -Wno-unused-parameter" )
+        set_target_properties( minizip PROPERTIES COMPILE_FLAGS "-Wno-unused-parameter -Wno-unused-value" )
     endif()
-    set_target_properties( minizip PROPERTIES COMPILE_DEFINITIONS "NOUNCRYPT;NOCRYPT" )
+    set_target_properties(minizip PROPERTIES COMPILE_DEFINITIONS "NOUNCRYPT;NOCRYPT" POSITION_INDEPENDENT_CODE YES)
     target_link_libraries(minizip ZLIB::ZLIB)
     set( MINIZIP_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/minizip )
     set( MINIZIP_LIBRARIES minizip )
-endif()
-
-set( DIGIDOCPP_CONFIG_DIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}/digidocpp" )
-
-if( USE_KEYCHAIN )
-    list( APPEND digidocpp_DEFS USE_KEYCHAIN )
-    list( APPEND TARGET_LIBRARIES "-framework Security" )
-endif()
-
-if( LIBDIGIDOC_FOUND )
-    list( APPEND digidocpp_SRCS DDoc.cpp )
-    include_directories( ${LIBDIGIDOC_INCLUDE_DIR} )
-    if( LIBDIGIDOC_LINKED )
-        list( APPEND digidocpp_DEFS LINKED_LIBDIGIDOC )
-        list( APPEND TARGET_LIBRARIES ${LIBDIGIDOC_LIBRARY} )
-        if( ${BUILD_TYPE} STREQUAL "STATIC" )
-            find_package(Iconv)
-            find_package(LibXml2)
-            list( APPEND TARGET_LIBRARIES ${ICONV_LIBRARIES} ${LIBXML2_LIBRARIES} )
-        endif()
-    else()
-        list( APPEND digidocpp_DEFS DYNAMIC_LIBDIGIDOC )
-    endif()
 endif()
 
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
@@ -169,17 +146,6 @@ include_directories(
     ${MINIZIP_INCLUDE_DIR}
 )
 
-if( PODOFO_FOUND )
-    list( APPEND digidocpp_SRCS
-        PDF.cpp
-        SignatureCAdES_B.cpp
-        SignatureCAdES_T.cpp
-    )
-    list( APPEND TARGET_LIBRARIES ${PODOFO_LIBRARIES} )
-    list( APPEND digidocpp_DEFS PDF_SUPPORT )
-    include_directories( ${PODOFO_INCLUDE_DIR} )
-endif()
-
 add_library(digidocpp_priv STATIC
     ${xsd_SRCS}
     log.cpp
@@ -199,7 +165,7 @@ add_library(digidocpp_priv STATIC
 )
 
 set_target_properties(digidocpp_priv PROPERTIES
-    COMPILE_DEFINITIONS "DIGIDOCPP_CONFIG_DIR=\"${DIGIDOCPP_CONFIG_DIR}\";digidocpp_EXPORTS"
+    COMPILE_DEFINITIONS digidocpp_EXPORTS
     POSITION_INDEPENDENT_CODE YES
 )
 
@@ -246,8 +212,13 @@ add_library(digidocpp ${BUILD_TYPE}
     util/ZipSerialize.cpp
 )
 
+set(DIGIDOCPP_CONFIG_DIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}/digidocpp")
+set_property(SOURCE util/File.cpp APPEND PROPERTY COMPILE_DEFINITIONS "DIGIDOCPP_CONFIG_DIR=\"${DIGIDOCPP_CONFIG_DIR}\"")
+set_property(SOURCE Conf.cpp APPEND PROPERTY COMPILE_DEFINITIONS
+    "PKCS11_MODULE=\"${PKCS11_MODULE}\";TSA_URL=\"${TSA_URL}\";TSL_URL=\"${TSL_URL}\";SIVA_URL=\"${SIVA_URL}\""
+)
+
 set_target_properties(digidocpp PROPERTIES
-    COMPILE_DEFINITIONS "PKCS11_MODULE=\"${PKCS11_MODULE}\";TSA_URL=\"${TSA_URL}\";TSL_URL=\"${TSL_URL}\";SIVA_URL=\"${SIVA_URL}\";${digidocpp_DEFS}"
     VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
     SOVERSION 1
     PUBLIC_HEADER "${PUBLIC_HEADER}"
@@ -261,13 +232,40 @@ set_target_properties(digidocpp PROPERTIES
 target_link_libraries(digidocpp
     ${CMAKE_DL_LIBS}
     ${MINIZIP_LIBRARIES}
-    ${TARGET_LIBRARIES}
     digidocpp_priv
 )
 
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
     target_link_libraries(digidoc-tool digidocpp Threads::Threads)
+endif()
+
+if(USE_KEYCHAIN)
+    set_property(SOURCE crypto/OCSP.cpp APPEND PROPERTY COMPILE_DEFINITIONS USE_KEYCHAIN)
+    target_link_libraries(digidocpp "-framework Security")
+endif()
+
+if(LIBDIGIDOC_FOUND)
+    target_sources(digidocpp PRIVATE DDoc.cpp)
+    target_include_directories(digidocpp PRIVATE ${LIBDIGIDOC_INCLUDE_DIR})
+    if(LIBDIGIDOC_LINKED)
+        set_property(SOURCE Container.cpp DDoc.cpp APPEND PROPERTY COMPILE_DEFINITIONS LINKED_LIBDIGIDOC)
+        target_link_libraries(digidocpp ${LIBDIGIDOC_LIBRARY})
+        if(${BUILD_TYPE} STREQUAL "STATIC")
+            find_package(Iconv)
+            find_package(LibXml2)
+            target_link_libraries(digidocpp ${ICONV_LIBRARIES} ${LIBXML2_LIBRARIES})
+        endif()
+    else()
+        set_property(SOURCE Container.cpp APPEND PROPERTY COMPILE_DEFINITIONS DYNAMIC_LIBDIGIDOC)
+    endif()
+endif()
+
+if(PODOFO_FOUND)
+    target_sources(digidocpp PRIVATE PDF.cpp SignatureCAdES_B.cpp SignatureCAdES_T.cpp)
+    target_include_directories(digidocpp PRIVATE ${PODOFO_INCLUDE_DIR})
+    target_link_libraries(digidocpp ${PODOFO_LIBRARIES})
+    set_property(SOURCE Container.cpp APPEND PROPERTY COMPILE_DEFINITIONS PDF_SUPPORT)
 endif()
 
 if(SWIG_FOUND)
