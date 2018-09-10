@@ -36,11 +36,6 @@ if( LIBDIGIDOC_FOUND )
     endif()
 endif()
 
-if(ANDROID)
-    find_package(Iconv)
-    list( APPEND TARGET_LIBRARIES ${ICONV_LIBRARIES} )
-endif()
-
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
 configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
 configure_file( ${CMAKE_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf )
@@ -165,14 +160,6 @@ set( CRYPTO_HEADER
     crypto/Signer.h
     crypto/X509Cert.h
 )
-
-if( WIN32 )
-    list( APPEND digidocpp_SRCS crypto/WinSigner.cpp )
-    list( APPEND CRYPTO_HEADER crypto/WinSigner.h )
-    list( APPEND TARGET_LIBRARIES Crypt32 cryptui ncrypt Ws2_32 )
-elseif( APPLE )
-    list( APPEND TARGET_LIBRARIES "-framework CoreFoundation" )
-endif()
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -324,8 +311,16 @@ install( TARGETS digidocpp
 )
 
 if(WIN32)
-    set_target_properties( digidocpp PROPERTIES DEBUG_OUTPUT_NAME "digidocppd" )
+    list(APPEND CRYPTO_HEADER crypto/WinSigner.h)
+    set_property(TARGET digidocpp APPEND PROPERTY SOURCES crypto/WinSigner.cpp)
+    target_link_libraries(digidocpp Crypt32 cryptui ncrypt Ws2_32)
+    set_target_properties(digidocpp PROPERTIES DEBUG_OUTPUT_NAME "digidocppd")
     install(FILES $<TARGET_PDB_FILE:digidocpp> $<TARGET_PDB_FILE:digidoc-tool> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+elseif(APPLE)
+    target_link_libraries(digidocpp "-framework CoreFoundation")
+elseif(ANDROID)
+    find_package(Iconv)
+    target_link_libraries(digidocpp ${ICONV_LIBRARIES})
 endif()
 
 source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/878252.p12;${CMAKE_SOURCE_DIR}/etc/798.p12" )
