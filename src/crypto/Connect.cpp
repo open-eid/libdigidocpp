@@ -78,6 +78,8 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     {
         if(_timeout == 0)
             THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
+        if(!BIO_should_retry(d))
+            THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
         auto end = chrono::high_resolution_clock::now();
         if(chrono::duration_cast<chrono::seconds>(end - start).count() >= _timeout)
             THROW("Failed to create connection with host timeout: '%s'", hostname.c_str());
