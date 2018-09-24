@@ -31,7 +31,7 @@
 namespace digidoc
 {
 
-#define SCOPE2(TYPE, VAR, DATA, FREE) std::unique_ptr<TYPE,decltype(&FREE)> VAR(DATA, FREE)
+#define SCOPE2(TYPE, VAR, DATA, FREE) std::unique_ptr<TYPE,decltype(&FREE)> VAR(static_cast<TYPE*>(DATA), FREE)
 #define SCOPE(TYPE, VAR, DATA) SCOPE2(TYPE, VAR, DATA, TYPE##_free)
 
 template<class T, typename Func>
@@ -56,22 +56,22 @@ std::vector<unsigned char> i2d(T *obj, Func func)
 */
 class OpenSSLException : public Exception
 {
-	public:
-		/**
-		* @param file filename, where the exception was thrown.
-		* @param line line of the file, where the exception was thrown.
-		* @see Exception::Exception(const std::string& file, int line, const std::string& msg)
-		*/
-		OpenSSLException(): Exception("", 0, message()) {}
-	private:
-		static std::string message()
-		{
-			unsigned long errorCode;
-			std::stringstream str;
-			while((errorCode =  ERR_get_error()) != 0)
-				str << ERR_error_string(errorCode, 0) << std::endl;
-			return str.str();
-		}
+    public:
+        /**
+        * @param file filename, where the exception was thrown.
+        * @param line line of the file, where the exception was thrown.
+        * @see Exception::Exception(const std::string& file, int line, const std::string& msg)
+        */
+        OpenSSLException(): Exception(std::string(), 0, message()) {}
+    private:
+        static std::string message()
+        {
+            unsigned long errorCode;
+            std::stringstream str;
+            while((errorCode =  ERR_get_error()) != 0)
+                str << ERR_error_string(errorCode, nullptr) << std::endl;
+            return str.str();
+        }
 };
 
 #define THROW_OPENSSLEXCEPTION(...) THROW_CAUSE(OpenSSLException(), __VA_ARGS__)
@@ -89,8 +89,8 @@ public:
             THROW_OPENSSLEXCEPTION("Failed to read PKCS12 certificate: %s.", path.c_str());
         if(!PKCS12_parse(p12.get(), pass.c_str(), key, cert, nullptr))
             THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate.");
-        else // Hack: clear PKCS12_parse error ERROR: 185073780 - error:0B080074:x509 certificate routines:X509_check_private_key:key values mismatch
-            OpenSSLException();
+        // Hack: clear PKCS12_parse error ERROR: 185073780 - error:0B080074:x509 certificate routines:X509_check_private_key:key values mismatch
+        OpenSSLException();
     }
 };
 

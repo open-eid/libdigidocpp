@@ -56,6 +56,8 @@ static void TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s)
 {
     ctx->store = s;
 }
+
+#define ASN1_STRING_get0_data ASN1_STRING_data
 #endif
 
 TS::TS(const string &url, const Digest &digest, const string &useragent)
@@ -147,7 +149,7 @@ X509Cert TS::cert() const
             return unique_ptr<STACK_OF(X509), sk_X509_free_t>(PKCS7_get0_signers(d.get(), nullptr, 0),
                 [](STACK_OF(X509) *stack) { sk_X509_free(stack); });
 #ifndef OPENSSL_NO_CMS
-        else if(cms)
+        if(cms)
             return unique_ptr<STACK_OF(X509), sk_X509_free_t>(CMS_get1_certs(cms.get()),
                 [](STACK_OF(X509) *stack) { sk_X509_pop_free(stack, X509_free); });
 #endif
@@ -227,14 +229,13 @@ TS_TST_INFO* TS::tstInfo() const
     if(d)
         return PKCS7_to_TS_TST_INFO(d.get());
 #ifndef OPENSSL_NO_CMS
-    else if(cms)
+    if(cms)
     {
         SCOPE(BIO, out, CMS_dataInit(cms.get(), nullptr));
         return d2i_TS_TST_INFO_bio(out.get(), nullptr);
     }
 #endif
-    else
-        return nullptr;
+    return nullptr;
 }
 
 void TS::verify(const Digest &digest)
@@ -287,7 +288,7 @@ void TS::verify(const Digest &digest)
         SCOPE(TS_TST_INFO, info, d2i_TS_TST_INFO_bio(out.get(), nullptr));
         ASN1_OCTET_STRING *msg = TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get()));
         if(data.size() != size_t(ASN1_STRING_length(msg)) ||
-            memcmp(data.data(), ASN1_STRING_data(msg), data.size()))
+            memcmp(data.data(), ASN1_STRING_get0_data(msg), data.size()) != 0)
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
     }
 #endif
