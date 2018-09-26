@@ -4,7 +4,7 @@ if(NOT MINIZIP_FOUND)
         list( APPEND MINIZIP_SRCS minizip/iowin32.c )
     endif()
     add_library( minizip STATIC minizip/zip.c minizip/unzip.c minizip/ioapi.c ${MINIZIP_SRCS} )
-    if(CMAKE_COMPILER_IS_GNUCC OR __COMPILER_GNU)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         set_target_properties( minizip PROPERTIES COMPILE_FLAGS "-fPIC -Wno-unused-parameter" )
     endif()
     set_target_properties( minizip PROPERTIES COMPILE_DEFINITIONS "NOUNCRYPT;NOCRYPT" )
@@ -362,14 +362,14 @@ if( FRAMEWORK )
             -change '${LIBPATH}/libcrypto.1.0.0.dylib' '@loader_path/Libraries/libcrypto.dylib'
             -change '${LIBPATH}/libssl.1.0.0.dylib' '@loader_path/Libraries/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/Libraries/libxerces-c.dylib'
-            -change '${LIBPATH}/libxml-security-c.17.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
+            -change '${LIBPATH}/libxml-security-c.20.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
             -change '${LIBPATH}/libxalan-c.111.0.dylib' '@loader_path/Libraries/libxalan-c.dylib'
             $<TARGET_FILE:digidocpp>
         COMMAND install_name_tool
             -change '${LIBPATH}/libcrypto.1.0.0.dylib' '@executable_path/../Libraries/libcrypto.dylib'
             -change '${LIBPATH}/libssl.1.0.0.dylib' '@executable_path/../Libraries/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
-            -change '${LIBPATH}/libxml-security-c.17.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
+            -change '${LIBPATH}/libxml-security-c.20.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
             -change '${LIBPATH}/libxalan-c.111.0.dylib' '@executable_path/../Libraries/libxalan-c.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
         COMMAND touch $<TARGET_FILE:digidoc-tool>
