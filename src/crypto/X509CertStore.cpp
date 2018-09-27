@@ -93,7 +93,9 @@ X509CertStore::X509CertStore()
 {
     SSL_load_error_strings();
     SSL_library_init();
-    OPENSSL_config(0);
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
+    OPENSSL_config(nullptr);
+#endif
     d->update();
 }
 
@@ -149,7 +151,7 @@ vector<X509Cert> X509CertStore::certs(const set<string> &type) const
 X509Cert X509CertStore::findIssuer(const X509Cert &cert, const set<string> &type) const
 {
     activate(cert.issuerName("C"));
-    SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(cert.handle(), NID_authority_key_identifier, 0, 0));
+    SCOPE(AUTHORITY_KEYID, akid, X509_get_ext_d2i(cert.handle(), NID_authority_key_identifier, nullptr, nullptr));
     for(const TSL::Service &s: *d)
     {
         if(type.find(s.type) == type.cend())
@@ -163,7 +165,7 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert, const set<string> &type
             }
             else
             {
-                SCOPE(ASN1_OCTET_STRING, skid, (ASN1_OCTET_STRING*)X509_get_ext_d2i(i.handle(), NID_subject_key_identifier, 0, 0));
+                SCOPE(ASN1_OCTET_STRING, skid, X509_get_ext_d2i(i.handle(), NID_subject_key_identifier, nullptr, nullptr));
                 if(skid.get() && ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) == 0)
                     return i;
             }
@@ -172,7 +174,7 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert, const set<string> &type
     return X509Cert();
 }
 
-X509_STORE* X509CertStore::createStore(const set<string> &type, time_t *t)
+X509_STORE* X509CertStore::createStore(const set<string> &type, const time_t *t)
 {
     SCOPE(X509_STORE, store, X509_STORE_new());
     if (!store)
@@ -203,7 +205,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
     case X509_V_ERR_CERT_UNTRUSTED:
     {
         X509 *x509 = X509_STORE_CTX_get0_cert(ctx);
-        SCOPE(AUTHORITY_KEYID, akid, (AUTHORITY_KEYID*)X509_get_ext_d2i(x509, NID_authority_key_identifier, 0, 0));
+        SCOPE(AUTHORITY_KEYID, akid, X509_get_ext_d2i(x509, NID_authority_key_identifier, nullptr, nullptr));
         for(const TSL::Service &s: *instance()->d)
         {
             if(type.find(s.type) == type.cend())
@@ -218,7 +220,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
                 }
                 else
                 {
-                    SCOPE(ASN1_OCTET_STRING, skid, (ASN1_OCTET_STRING*)X509_get_ext_d2i(issuer.handle(), NID_subject_key_identifier, 0, 0));
+                    SCOPE(ASN1_OCTET_STRING, skid, X509_get_ext_d2i(issuer.handle(), NID_subject_key_identifier, nullptr, nullptr));
                     if(!skid.get() || ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) != 0)
                         return false;
                 }
@@ -257,7 +259,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
 {
     activate(cert.issuerName("C"));
     const ASN1_TIME *asn1time = X509_get0_notBefore(cert.handle());
-    time_t time = util::date::ASN1TimeToTime_t(string((const char*)asn1time->data, asn1time->length), asn1time->type == V_ASN1_GENERALIZEDTIME);
+    time_t time = util::date::ASN1TimeToTime_t(string((const char*)asn1time->data, size_t(asn1time->length)), asn1time->type == V_ASN1_GENERALIZEDTIME);
     SCOPE(X509_STORE, store, createStore(X509CertStore::CA, &time));
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
     if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))
@@ -285,7 +287,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
             });
         };
         auto matchKeyUsageSet = [&](const map<X509Cert::KeyUsage,bool> &keyUsageSet){
-            return all_of(keyUsageSet.cbegin(), keyUsageSet.cend(), [&](const pair<X509Cert::KeyUsage,bool> &keyUsageBit){
+            return all_of(keyUsageSet.cbegin(), keyUsageSet.cend(), [&](pair<X509Cert::KeyUsage,bool> keyUsageBit){
                 return (find(keyUsage.cbegin(), keyUsage.cend(), keyUsageBit.first) != keyUsage.cend()) == keyUsageBit.second;
             });
         };
@@ -346,7 +348,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
     }
 
     int err = X509_STORE_CTX_get_error(csc.get());
-    Exception e(__FILE__, __LINE__, X509_verify_cert_error_string(err), OpenSSLException());
+    Exception e(EXCEPTION_PARAMS(X509_verify_cert_error_string(err)), OpenSSLException());
     switch(err)
     {
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:

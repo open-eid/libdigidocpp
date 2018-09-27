@@ -23,8 +23,8 @@
 
 #include <set>
 
-typedef struct x509_store_st X509_STORE;
-typedef struct x509_store_ctx_st X509_STORE_CTX;
+using X509_STORE = struct x509_store_st;
+using X509_STORE_CTX = struct x509_store_ctx_st;
 
 namespace digidoc
 {
@@ -41,7 +41,7 @@ namespace digidoc
           void activate(const std::string &territory) const;
           std::vector<X509Cert> certs(const std::set<std::string> &type) const;
           X509Cert findIssuer(const X509Cert &cert, const std::set<std::string> &type) const;
-          static X509_STORE* createStore(const std::set<std::string> &type, time_t *t = nullptr);
+          static X509_STORE* createStore(const std::set<std::string> &type, const time_t *t = nullptr);
           bool verify(const X509Cert &cert, bool qscd) const;
 
       private:
