@@ -2,6 +2,9 @@ Libdigidocpp library [3.13.7](https://github.com/open-eid/libdigidocpp/releases/
 --------------------------------------
 - Remove compiler warnings
 - Change SiVa service URL to https://siva.eesti.ee/V2/validate
+- Update Xml-Security-C 2.0.1 (#224), OpenSSL 1.0.2p (#222)
+- Fix crashes #223, #228, #221 and memory leaks #224
+- Code cleanups and warning fixes
 
 [Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.6...v3.13.7)
 
