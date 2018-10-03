@@ -24,7 +24,7 @@ matrix:
     env: TARGET=androidx86
 sudo: required
 dist: trusty
-osx_image: xcode9.4
+osx_image: xcode10
 services:
 - docker
 cache: ccache
