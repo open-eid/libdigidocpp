@@ -702,8 +702,7 @@ void SignatureXAdES_B::checkKeyInfo() const
 
             return certs[0].certDigest();
         }
-        else
-            THROW("SigningCertificate/SigningCertificateV2 not found");
+        THROW("SigningCertificate/SigningCertificateV2 not found");
     }();
 
     // lets check digest with x509 that was in keyInfo
@@ -971,6 +970,7 @@ void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureV
 
     // Set signature value id back to its old value.
     signature->signatureValue().id(id);
+    sigdata_.clear();
 }
 
 /**
@@ -1161,10 +1161,9 @@ vector<string> SignatureXAdES_B::signerRoles() const
         // return elements from SignerRole element or SignerRoleV2 when available
         if(roleOpt.present() && roleOpt->claimedRoles().present())
             return roleOpt->claimedRoles()->claimedRole();
-        else if(roleV2Opt.present() && roleV2Opt->claimedRoles().present())
+        if(roleV2Opt.present() && roleV2Opt->claimedRoles().present())
             return roleV2Opt->claimedRoles()->claimedRole();
-        else
-            return ClaimedRolesListType::ClaimedRoleSequence();
+        return ClaimedRolesListType::ClaimedRoleSequence();
     };
     for(const ClaimedRolesListType::ClaimedRoleType &type: claimedRoleSequence())
         roles.push_back(type.text());
@@ -1206,7 +1205,6 @@ X509Cert SignatureXAdES_B::signingCertificate() const
     {
         THROW_CAUSE( e, "Failed to read X509 certificate" );
     }
-    return X509Cert();
 }
 
 string SignatureXAdES_B::id() const
