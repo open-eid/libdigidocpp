@@ -269,7 +269,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
                     File::removeFile(tmp);
                     tsl = tslnew;
                     valid = true;
-                    
+
                     ofstream ots(File::encodeName(path + ".ts").c_str(), ofstream::out|ofstream::trunc);
                     ots << r.headers["Last-Modified"];
                     ots.close();
@@ -396,7 +396,7 @@ bool TSL::parseInfo(const X &info, Service &s, time_t &previousTime)
         if(!id.x509Certificate().present())
             continue;
         const Base64Binary &base64 = id.x509Certificate().get();
-        s.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+        s.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
     }
 
     if(SERVICESTATUS_START.find(info.serviceStatus()) != SERVICESTATUS_START.cend())
@@ -432,13 +432,13 @@ std::vector<TSL::Pointer> TSL::pointers() const
                         continue;
                     const Base64Binary &base64 = id.x509Certificate().get();
                     try {
-                        p.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
                         continue;
                     } catch(const Exception &e) {
                         DEBUG("Failed to parse %s certificate, Testing also parse as PEM: %s", p.territory.c_str(), e.msg().c_str());
                     }
                     try {
-                        p.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity(), X509Cert::Pem));
+                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.capacity(), X509Cert::Pem));
                     } catch(const Exception &e) {
                         DEBUG("Failed to parse %s certificate as PEM: %s", p.territory.c_str(), e.msg().c_str());
                     }
@@ -543,9 +543,9 @@ void TSL::validateLastModified(const string &url, int timeout)
     Connect::Result r = Connect(url, "HEAD", timeout).exec();
     if(r.isRedirect())
         r = Connect(r.headers["Location"], "HEAD", timeout).exec();
-    if(r.result.find("200") == string::npos)
+    if(!r.isOK())
         return;
-    
+
     map<string,string>::iterator it = r.headers.find("Last-Modified");
     if(it != r.headers.end())
     {
@@ -584,7 +584,7 @@ void TSL::validateLastModified(const string &url, int timeout)
         {
             WARN("Failed to parse TSL last modified date: %s", e.msg().c_str());
         }
-        
+
         if(!failureReason.empty())
         {
             THROW(failureReason.c_str());
@@ -605,10 +605,7 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
         r= Connect(url.substr(0, pos) + ".sha2", "GET", timeout).exec();
         if(r.isRedirect())
             r = Connect(r.headers["Location"], "GET", timeout).exec();
-        if(r.result.find("404") != string::npos)
-            checkTimestamp = true;
-        else if(r.result.find("200") == string::npos)
-            return;
+        checkTimestamp = !r.isOK();
     } catch(const Exception &e) {
         debugException(e);
         return DEBUG("Failed to get remote digest %s", url.c_str());
@@ -619,7 +616,7 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
         validateLastModified(url, timeout);
         return;
     }
-    
+
     Digest sha(URI_RSA_SHA256);
     vector<unsigned char> buf(10240, 0);
     ifstream is(path, ifstream::binary);
