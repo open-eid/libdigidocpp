@@ -52,8 +52,7 @@ foreach($platform in @("x86", "x64")) {
     $buildpath = $platform+$type
     switch ($buildpath)
     { 'x86Debug' {
-      $xerces_lib = 'x86/lib/xerces-c_3D.lib'
-      $xerces_dll = 'x86/bin/xerces-c_3_2D.dll'
+      $xerces_dll = 'xerces-c_3_2D.dll'
       $xalanmsg_lib = 'Win32/VC10/Debug/XalanMsgLib.lib'
       $xalanmsg_dll = 'Win32/VC10/Debug/XalanMessages_1_11D.dll'
       $xalanc_lib = 'Win32/VC10/Debug/Xalan-C_1D.lib'
@@ -62,8 +61,7 @@ foreach($platform in @("x86", "x64")) {
       $xmlsec_dll = 'Win32/VC12/Debug/xsec_1_7D.dll'
       $openssl = '/OpenSSL-Win32'
     } 'x86RelWithDebInfo' {
-      $xerces_lib = 'x86/lib/xerces-c_3.lib'
-      $xerces_dll = 'x86/bin/xerces-c_3_2.dll'
+      $xerces_dll = 'xerces-c_3_2.dll'
       $xalanmsg_lib = 'Win32/VC10/Release/XalanMsgLib.lib'
       $xalanmsg_dll = 'Win32/VC10/Release/XalanMessages_1_11.dll'
       $xalanc_lib = 'Win32/VC10/Release/Xalan-C_1.lib'
@@ -72,8 +70,7 @@ foreach($platform in @("x86", "x64")) {
       $xmlsec_dll = 'Win32/VC12/Release/xsec_1_7.dll'
       $openssl = '/OpenSSL-Win32'
     } 'x64Debug' {
-      $xerces_lib = 'x64/lib/xerces-c_3D.lib'
-      $xerces_dll = 'x64/bin/xerces-c_3_2D.dll'
+      $xerces_dll = 'xerces-c_3_2D.dll'
       $xalanmsg_lib = 'Win64/VC10/Debug/XalanMsgLib.lib'
       $xalanmsg_dll = 'Win64/VC10/Debug/XalanMessages_1_11D.dll'
       $xalanc_lib = 'Win64/VC10/Debug/Xalan-C_1D.lib'
@@ -82,8 +79,7 @@ foreach($platform in @("x86", "x64")) {
       $xmlsec_dll = 'X64/VC12/Debug/xsec_1_7D.dll'
       $openssl = '/OpenSSL-Win64'
     } 'x64RelWithDebInfo' {
-      $xerces_lib = 'x64/lib/xerces-c_3.lib'
-      $xerces_dll = 'x64/bin/xerces-c_3_2.dll'
+      $xerces_dll = 'xerces-c_3_2.dll'
       $xalanmsg_lib = 'Win64/VC10/Release/XalanMsgLib.lib'
       $xalanmsg_dll = 'Win64/VC10/Release/XalanMessages_1_11.dll'
       $xalanc_lib = 'Win64/VC10/Release/Xalan-C_1.lib'
@@ -101,7 +97,7 @@ foreach($platform in @("x86", "x64")) {
     Push-Location -Path $buildpath
     if($boost) {
       New-Item -ItemType directory -Path test > $null
-      Copy-Item "$target/xerces/$xerces_dll" test
+      Copy-Item "$target/xerces/$platform/bin/$xerces_dll" test
       Copy-Item "$target/xalan/c/Build/$xalanmsg_dll" test
       Copy-Item "$target/xalan/c/Build/$xalanc_dll" test
       Copy-Item "$target/xmlsec/Build/$xmlsec_dll" test
@@ -115,8 +111,7 @@ foreach($platform in @("x86", "x64")) {
     }
     & $vcdir\vcvarsall.bat $platform "&&" $cmake "-GNMake Makefiles" "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=../$platform" "-DCMAKE_INSTALL_LIBDIR=bin" `
       "-DOPENSSL_ROOT_DIR=$openssl" `
-      "-DXercesC_LIBRARY=$target/xerces/$xerces_lib" `
-      "-DXercesC_INCLUDE_DIR=$target/xerces/$platform/include" `
+      "-DXercesC_ROOT=$target/xerces/$platform" `
       "-DXALANC_INCLUDE_DIR=$target/xalan/c/src" `
       "-DXALANMSG_LIBRARY=$target/xalan/c/Build/$xalanmsg_lib" `
       "-DXALANC_LIBRARY=$target/xalan/c/Build/$xalanc_lib" `
@@ -124,8 +119,7 @@ foreach($platform in @("x86", "x64")) {
       "-DXMLSECURITYC_INCLUDE_DIR=$target/xmlsec" `
       "-DXSD_INCLUDE_DIR=$target/xsd/libxsd" `
       "-DXSD_EXECUTABLE=$target/xsd/bin/xsd.exe" `
-      "-DZLIB_LIBRARY=$target/zlib/$platform/lib/zlib.lib" `
-      "-DZLIB_INCLUDE_DIR=$target/zlib/$platform/include" `
+      "-DZLIB_ROOT=$target/zlib/$platform" `
       $cmakeext $libdigidocpp "&&" nmake /nologo install
     Pop-Location
   }
