@@ -240,7 +240,11 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
         result = { tsl.services(), tsl.isExpired() };
         if(result.expired)
             THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
-        tsl.validateRemoteDigest(url, timeout);
+        if(CONF(TSLOnlineDigest))
+        {
+            if(!tsl.validateRemoteDigest(url, timeout))
+                tsl.validateETag(url, timeout);
+        }
         DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
     } catch(const Exception &e) {
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
@@ -269,9 +273,9 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
                     File::removeFile(tmp);
                     tsl = tslnew;
                     valid = true;
-                    
-                    ofstream ots(File::encodeName(path + ".ts").c_str(), ofstream::out|ofstream::trunc);
-                    ots << r.headers["Last-Modified"];
+
+                    ofstream ots(File::encodeName(path + ".etag").c_str(), ofstream::out|ofstream::trunc);
+                    ots << r.headers["ETag"];
                     ots.close();
 
                     result = { tsl.services(), tsl.isExpired() };
@@ -396,7 +400,7 @@ bool TSL::parseInfo(const X &info, Service &s, time_t &previousTime)
         if(!id.x509Certificate().present())
             continue;
         const Base64Binary &base64 = id.x509Certificate().get();
-        s.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+        s.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
     }
 
     if(SERVICESTATUS_START.find(info.serviceStatus()) != SERVICESTATUS_START.cend())
@@ -432,13 +436,13 @@ std::vector<TSL::Pointer> TSL::pointers() const
                         continue;
                     const Base64Binary &base64 = id.x509Certificate().get();
                     try {
-                        p.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
                         continue;
                     } catch(const Exception &e) {
                         DEBUG("Failed to parse %s certificate, Testing also parse as PEM: %s", p.territory.c_str(), e.msg().c_str());
                     }
                     try {
-                        p.certs.push_back(X509Cert((const unsigned char*)base64.data(), base64.capacity(), X509Cert::Pem));
+                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.capacity(), X509Cert::Pem));
                     } catch(const Exception &e) {
                         DEBUG("Failed to parse %s certificate as PEM: %s", p.territory.c_str(), e.msg().c_str());
                     }
@@ -533,93 +537,71 @@ void TSL::validate(const std::vector<X509Cert> &certs)
 }
 
 /**
- * Check if HTTP Last-Modified header is the same as timestamp of the cached TSL
+ * Check if HTTP ETag header is the same as ETag of the cached TSL
  * @param url Url of the TSL
  * @param timeout Time to wait for downloading
- * @throws Exception if Last-Modified does not match cached ts and TSL loading should be triggered
+ * @throws Exception if ETag does not match cached ETag and TSL loading should be triggered
  */
-void TSL::validateLastModified(const string &url, int timeout)
+void TSL::validateETag(const string &url, int timeout)
 {
-    Connect::Result r = Connect(url, "HEAD", timeout).exec();
-    if(r.isRedirect())
-        r = Connect(r.headers["Location"], "HEAD", timeout).exec();
-    if(r.result.find("200") == string::npos)
+    Connect::Result r;
+    try {
+        r = Connect(url, "HEAD", timeout).exec();
+        if(r.isRedirect())
+            r = Connect(r.headers["Location"], "HEAD", timeout).exec();
+        if(!r.isOK())
+            return;
+    } catch(const Exception &e) {
+        debugException(e);
+        DEBUG("Failed to get ETag %s", url.c_str());
         return;
-    
-    map<string,string>::iterator it = r.headers.find("Last-Modified");
-    if(it != r.headers.end())
-    {
-        string failureReason;
-        DEBUG("Last modified: %s", it->second.c_str());
-        try
-        {
-            tm timestamp = httpTimeToTM(it->second);
-            
-            string line;
-            ifstream is(File::encodeName(path + ".ts"));
-            if(is.is_open())
-            {
-                getline(is, line);
-                DEBUG("Cached timestamp: %s", line.c_str());
-                try
-                {
-                    tm time = httpTimeToTM(line);
-                    if ((int)round(difftime(mkgmtime(timestamp), mkgmtime(time))))
-                    {
-                        failureReason = "Remote timestamp does not match";
-                    }
-                }
-                catch(const Exception &)
-                {
-                    failureReason = "Cached timestamp does not exist";
-                }
-            }
-            else
-            {
-                failureReason = "Cached timestamp does not exist";
-            }
-            
-        }
-        catch(const Exception& e)
-        {
-            WARN("Failed to parse TSL last modified date: %s", e.msg().c_str());
-        }
-        
-        if(!failureReason.empty())
-        {
-            THROW(failureReason.c_str());
-        }
     }
+
+    map<string,string>::const_iterator it = r.headers.find("ETag");
+    if(it == r.headers.cend())
+        return;
+    DEBUG("Remote ETag: %s", it->second.c_str());
+    ifstream is(File::encodeName(path + ".etag"));
+    if(!is.is_open())
+        THROW("Cached ETag does not exist");
+    std::string etag;
+    is >> etag;
+    DEBUG("Cached ETag: %s", etag.c_str());
+    if(etag != it->second)
+        THROW("Remote ETag does not match");
 }
 
-void TSL::validateRemoteDigest(const std::string &url, int timeout)
+bool TSL::validateRemoteDigest(const std::string &url, int timeout)
 {
     size_t pos = url.find_last_of("/.");
-    if(!(CONF(TSLOnlineDigest)) || pos == string::npos)
-        return;
+    if(pos == string::npos)
+        return false;
 
     Connect::Result r;
-    bool checkTimestamp = false;
     try
     {
         r= Connect(url.substr(0, pos) + ".sha2", "GET", timeout).exec();
         if(r.isRedirect())
             r = Connect(r.headers["Location"], "GET", timeout).exec();
-        if(r.result.find("404") != string::npos)
-            checkTimestamp = true;
-        else if(r.result.find("200") == string::npos)
-            return;
+        if(!r.isOK())
+            return false;
     } catch(const Exception &e) {
         debugException(e);
-        return DEBUG("Failed to get remote digest %s", url.c_str());
+        DEBUG("Failed to get remote digest %s", url.c_str());
+        return false;
     }
 
-    if(checkTimestamp)
+    vector<unsigned char> digest;
+    if(r.content.size() == 32)
+        digest.assign(r.content.c_str(), r.content.c_str() + r.content.size());
+    else
     {
-        validateLastModified(url, timeout);
-        return;
+        r.content.erase(r.content.find_last_not_of(" \n\r\t") + 1);
+        if(r.content.size() != 64)
+            return false;
+        digest = File::hexToBin(r.content);
     }
-    
+
     Digest sha(URI_RSA_SHA256);
     vector<unsigned char> buf(10240, 0);
     ifstream is(path, ifstream::binary);
@@ -630,17 +612,7 @@ void TSL::validateRemoteDigest(const std::string &url, int timeout)
             sha.update(buf.data(), size_t(is.gcount()));
     }
 
-    vector<unsigned char> digest;
-    if(r.content.size() == 32)
-        digest.assign(r.content.c_str(), r.content.c_str() + r.content.size());
-    else
-    {
-        r.content.erase(r.content.find_last_not_of(" \n\r\t") + 1);
-        if(r.content.size() != 64)
-            return;
-        digest = File::hexToBin(r.content);
-    }
-
     if(!digest.empty() && digest != sha.result())
         THROW("TSL %s remote digest does not match local. TSL might be outdated", territory().c_str());
+    return true;
 }

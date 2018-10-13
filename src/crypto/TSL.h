@@ -34,12 +34,11 @@ class TSL
 public:
     struct Qualifier { std::vector<std::string> qualifiers; std::vector<std::vector<std::string>> policySet; std::vector<std::map<X509Cert::KeyUsage,bool>> keyUsage; std::string assert_; };
     struct Validity { time_t start, end; std::vector<Qualifier> qualifiers; };
-    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; std::string type; std::string additional; };
+    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; std::string type, additional; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
 
     TSL(const std::string &file);
     bool isExpired() const;
-    void validateRemoteDigest(const std::string &url, int timeout);
     void validate(const std::vector<X509Cert> &certs);
 
     std::string type() const;
@@ -68,14 +67,15 @@ private:
         const std::string &cache, const std::string &territory, int timeout);
     template<class X>
     static bool parseInfo(const X &info, Service &s, time_t &previousTime);
+    static std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en");
+    void validateETag(const std::string &url, int timeout);
+    bool validateRemoteDigest(const std::string &url, int timeout);
 
     static const std::set<std::string> SCHEMES_URI;
     static const std::set<std::string> GENERIC_URI;
     static const std::set<std::string> SERVICESTATUS_START;
     static const std::set<std::string> SERVICESTATUS_END;
 
-    static std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en");
-    void validateLastModified(const std::string &url, int timeout);
     std::shared_ptr<tsl::TrustStatusListType> tsl;
     std::string path;
 };
