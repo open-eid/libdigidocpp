@@ -1,6 +1,7 @@
 find_package( Boost COMPONENTS unit_test_framework )
 if( Boost_INCLUDE_DIR )
     set_env(RUN_TESTS "" CACHE STRING "Run tests on build")
+    set_env(TEST_FORMAT XML CACHE STRING "Test result format (XML/JUNIT)")
     set( CMAKE_SKIP_RPATH OFF )
     include_directories(
         ${CMAKE_SOURCE_DIR}/src
@@ -21,7 +22,7 @@ if( Boost_INCLUDE_DIR )
     target_link_libraries(TSLTests digidocpp)
     if(WIN32)
         string(REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+        set_target_properties(unittests TSLTests PROPERTIES COMPILE_FLAGS "/bigobj")
     else()
         set_target_properties(unittests TSLTests PROPERTIES COMPILE_FLAGS "-Wno-unused-parameter -Wno-unused-variable")
     endif()
@@ -32,7 +33,7 @@ if( Boost_INCLUDE_DIR )
         )
     else()
         add_test(NAME runtest
-            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests  --build_info=YES --report_level=no  --logger=XML,all,${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
+            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests  --build_info=YES --report_level=no --logger=${TEST_FORMAT},all,${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
         )
     endif()
