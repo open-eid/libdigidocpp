@@ -23,17 +23,11 @@
 
 namespace digidoc
 {
-    /**
-     * Wrapper for RSA crypto function in OpenSSL. Currently implemented RSA signature
-     * verification and signing with private RSA key.
-     *
-     * @author Janari Põld
-     */
     class X509Crypto
     {
 
       public:
-          X509Crypto(const X509Cert &cert);
+          X509Crypto(X509Cert cert);
 
           bool compareIssuerToDer(const std::vector<unsigned char> &issuer) const;
           int compareIssuerToString(const std::string &name) const;
@@ -44,6 +38,5 @@ namespace digidoc
 
       private:
           X509Cert cert;
-
     };
 }
