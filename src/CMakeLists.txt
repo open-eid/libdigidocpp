@@ -171,13 +171,13 @@ set_target_properties(digidocpp_priv PROPERTIES
 
 target_link_libraries(digidocpp_priv
     ${XMLSECURITYC_LIBRARIES}
-    $<$<STREQUAL:${BUILD_TYPE},STATIC>:${XALANMSG_LIBRARY}>
+    $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:${XALANMSG_LIBRARY}>
     XercesC::XercesC
     OpenSSL::SSL
     ZLIB::ZLIB
 )
 
-add_library(digidocpp ${BUILD_TYPE}
+add_library(digidocpp
     ${digidocpp_SRCS}
     ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf
     ${CMAKE_SOURCE_DIR}/etc/878252.p12
@@ -251,7 +251,7 @@ if(LIBDIGIDOC_FOUND)
     if(LIBDIGIDOC_LINKED)
         set_property(SOURCE Container.cpp DDoc.cpp APPEND PROPERTY COMPILE_DEFINITIONS LINKED_LIBDIGIDOC)
         target_link_libraries(digidocpp ${LIBDIGIDOC_LIBRARY})
-        if(${BUILD_TYPE} STREQUAL "STATIC")
+        if(NOT ${BUILD_SHARED_LIBS})
             find_package(Iconv)
             find_package(LibXml2)
             target_link_libraries(digidocpp ${ICONV_LIBRARIES} ${LIBXML2_LIBRARIES})
@@ -377,14 +377,14 @@ if( FRAMEWORK )
         COMMAND touch $<TARGET_FILE:digidoc-tool>
     )
     add_custom_target( codesign DEPENDS digidoc-tool
-        COMMAND codesign -f -s ${SIGNCERT}
+        COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}"
             $<TARGET_FILE_DIR:digidocpp>/Libraries/*
             $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
             $<TARGET_FILE_DIR:digidocpp>/../..
         COMMAND touch $<TARGET_FILE:digidoc-tool>
     )
-    if(INSTCERT)
-        set(PKGEXTRA --sign ${INSTCERT})
+    if(SIGNCERT)
+        set(PKGEXTRA --sign "Developer ID Installer: ${SIGNCERT}")
     endif()
     add_custom_target( pkgbuild DEPENDS digidoc-tool
         COMMAND make install DESTDIR=install
@@ -397,7 +397,7 @@ if( FRAMEWORK )
         COMMAND zip -r ${CMAKE_BINARY_DIR}/libdigidocpp-dbg_${VERSION}$ENV{VER_SUFFIX}.zip libdigidocpp.dSYM
     )
 else()
-    if( ${BUILD_TYPE} STREQUAL "STATIC" )
+    if(NOT ${BUILD_SHARED_LIBS})
         install( TARGETS minizip digidocpp_priv DESTINATION ${CMAKE_INSTALL_LIBDIR} )
     endif()
     if( BUILD_TOOLS )

@@ -22,19 +22,19 @@ cd ${TARGET}
 cmake \
     -DCMAKE_C_COMPILER_WORKS=yes \
     -DCMAKE_CXX_COMPILER_WORKS=yes \
-    -DCMAKE_C_FLAGS="-std=gnu89 -Wno-implicit-function-declaration" \
     -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
     -DCMAKE_OSX_SYSROOT=${TARGET} \
     -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
     -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
-    -DBoost_INCLUDE_DIR="" \
+    -DBoost_INCLUDE_DIR=NOTFOUND \
     -DDOXYGEN_EXECUTABLE=NOTFOUND \
+    -DSWIG_EXECUTABLE=NOTFOUND \
     -DIOS=YES \
     -DFRAMEWORK=off \
     -DUSE_KEYCHAIN=off \
     -DBUILD_TOOLS=off \
-    -DBUILD_TYPE=STATIC \
+    -DBUILD_SHARED_LIBS=NO \
     ../../..
 make
 sudo make install
