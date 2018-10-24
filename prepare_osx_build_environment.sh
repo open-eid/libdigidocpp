@@ -110,7 +110,11 @@ function xerces {
     tar xf ${XERCES_DIR}.tar.xz
     cd ${XERCES_DIR}
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
-    ./configure --prefix=${TARGET_PATH} ${CONFIGURE}
+    case "${ARGS}" in
+    *ios*|*simulator*) XERCESCONFIGURE="${CONFIGURE} --enable-transcoder-iconv" ;;
+    *) XERCESCONFIGURE=${CONFIGURE} ;;
+    esac
+    ./configure --prefix=${TARGET_PATH} ${XERCESCONFIGURE}
     make -s
     sudo make install
     cd ..
