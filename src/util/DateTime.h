@@ -38,7 +38,6 @@ namespace digidoc
             time_t string2time_t(const std::string &time);
             time_t xsd2time_t(const xml_schema::DateTime &time);
             xml_schema::DateTime makeDateTime(const struct tm &lt);
-            tm httpTimeToTM(const std::string &date);
         }
     }
 }
