@@ -1,6 +1,6 @@
 Source: libdigidocpp
 Section: libs
-Priority: extra
+Priority: optional
 Maintainer: RIA <info@ria.ee>
 Build-Depends:
  cdbs,
