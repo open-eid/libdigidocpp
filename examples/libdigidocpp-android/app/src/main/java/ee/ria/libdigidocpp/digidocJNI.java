@@ -15,8 +15,6 @@ public class digidocJNI {
   public final static native long Conf_instance();
   public final static native int Conf_logLevel(long jarg1, Conf jarg1_);
   public final static native String Conf_logFile(long jarg1, Conf jarg1_);
-  public final static native String Conf_libdigidocConf(long jarg1, Conf jarg1_);
-  public final static native String Conf_certsPath(long jarg1, Conf jarg1_);
   public final static native String Conf_xsdPath(long jarg1, Conf jarg1_);
   public final static native String Conf_PKCS11Driver(long jarg1, Conf jarg1_);
   public final static native String Conf_proxyHost(long jarg1, Conf jarg1_);
@@ -36,14 +34,12 @@ public class digidocJNI {
   public final static native boolean Conf_TSLAllowExpired(long jarg1, Conf jarg1_);
   public final static native boolean Conf_TSLAutoUpdate(long jarg1, Conf jarg1_);
   public final static native String Conf_TSLCache(long jarg1, Conf jarg1_);
-  public final static native long Conf_TSLCerts(long jarg1, Conf jarg1_);
   public final static native boolean Conf_TSLOnlineDigest(long jarg1, Conf jarg1_);
   public final static native int Conf_TSLTimeOut(long jarg1, Conf jarg1_);
   public final static native String Conf_TSLUrl(long jarg1, Conf jarg1_);
   public final static native long new_ConfV2();
   public final static native void delete_ConfV2(long jarg1);
   public final static native long ConfV2_instance();
-  public final static native long ConfV2_verifyServiceCert(long jarg1, ConfV2 jarg1_);
   public final static native String appInfo();
   public final static native void terminate();
   public final static native String version();
@@ -75,6 +71,10 @@ public class digidocJNI {
   public final static native String DataFile_mediaType(long jarg1, DataFile jarg1_);
   public final static native byte[] DataFile_calcDigest(long jarg1, DataFile jarg1_, String jarg2);
   public final static native void DataFile_saveAs(long jarg1, DataFile jarg1_, String jarg2);
+  public final static native long new_Signature_Validator(long jarg1, Signature jarg1_);
+  public final static native void delete_Signature_Validator(long jarg1);
+  public final static native String Signature_Validator_diagnostics(long jarg1, Signature.Validator jarg1_);
+  public final static native int Signature_Validator_status(long jarg1, Signature.Validator jarg1_);
   public final static native String Signature_POLv1_get();
   public final static native String Signature_POLv2_get();
   public final static native void delete_Signature(long jarg1);
@@ -95,12 +95,12 @@ public class digidocJNI {
   public final static native String Signature_countryName(long jarg1, Signature jarg1_);
   public final static native long Signature_signerRoles(long jarg1, Signature jarg1_);
   public final static native String Signature_OCSPProducedAt(long jarg1, Signature jarg1_);
-  public final static native byte[] Signature_OCSPNonce(long jarg1, Signature jarg1_);
   public final static native String Signature_TimeStampTime(long jarg1, Signature jarg1_);
   public final static native String Signature_ArchiveTimeStampTime(long jarg1, Signature jarg1_);
   public final static native String Signature_streetAddress(long jarg1, Signature jarg1_);
   public final static native String Signature_signedBy(long jarg1, Signature jarg1_);
   public final static native void Signature_validate__SWIG_1(long jarg1, Signature jarg1_, String jarg2);
+  public final static native byte[] Signature_messageImprint(long jarg1, Signature jarg1_);
   public final static native byte[] Signature_signingCertificateDer(long jarg1, Signature jarg1_);
   public final static native byte[] Signature_OCSPCertificateDer(long jarg1, Signature jarg1_);
   public final static native byte[] Signature_TimeStampCertificateDer(long jarg1, Signature jarg1_);
@@ -157,7 +157,6 @@ public class digidocJNI {
   public final static native String XmlConfV2_signatureDigestUri(long jarg1, XmlConfV2 jarg1_);
   public final static native String XmlConfV2_ocsp(long jarg1, XmlConfV2 jarg1_, String jarg2);
   public final static native String XmlConfV2_TSUrl(long jarg1, XmlConfV2 jarg1_);
-  public final static native long XmlConfV2_verifyServiceCert(long jarg1, XmlConfV2 jarg1_);
   public final static native String XmlConfV2_verifyServiceUri(long jarg1, XmlConfV2 jarg1_);
   public final static native String XmlConfV2_PKCS12Cert(long jarg1, XmlConfV2 jarg1_);
   public final static native String XmlConfV2_PKCS12Pass(long jarg1, XmlConfV2 jarg1_);
@@ -233,6 +232,7 @@ public class digidocJNI {
   public final static native void Signatures_set(long jarg1, Signatures jarg1_, int jarg2, long jarg3, Signature jarg3_);
   public final static native void delete_Signatures(long jarg1);
   public final static native void initializeLib(String jarg1, String jarg2);
+  public final static native void initializeLibWithTSL(String jarg1, String jarg2, String jarg3, byte[] jarg4);
   public final static native long ConfV2_SWIGUpcast(long jarg1);
   public final static native long XmlConf_SWIGUpcast(long jarg1);
   public final static native long XmlConfV2_SWIGUpcast(long jarg1);

@@ -35,6 +35,95 @@ public class Signature {
     }
   }
 
+  static public class Validator {
+    private transient long swigCPtr;
+    protected transient boolean swigCMemOwn;
+  
+    protected Validator(long cPtr, boolean cMemoryOwn) {
+      swigCMemOwn = cMemoryOwn;
+      swigCPtr = cPtr;
+    }
+  
+    protected static long getCPtr(Validator obj) {
+      return (obj == null) ? 0 : obj.swigCPtr;
+    }
+  
+    protected void finalize() {
+      delete();
+    }
+  
+    public synchronized void delete() {
+      if (swigCPtr != 0) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          digidocJNI.delete_Signature_Validator(swigCPtr);
+        }
+        swigCPtr = 0;
+      }
+    }
+  
+    public Validator(Signature s) {
+      this(digidocJNI.new_Signature_Validator(Signature.getCPtr(s), s), true);
+    }
+  
+    public String diagnostics() {
+      return digidocJNI.Signature_Validator_diagnostics(swigCPtr, this);
+    }
+  
+    public Signature.Validator.Status status() {
+      return Signature.Validator.Status.swigToEnum(digidocJNI.Signature_Validator_status(swigCPtr, this));
+    }
+  
+    public final static class Status {
+      public final static Signature.Validator.Status Valid = new Signature.Validator.Status("Valid");
+      public final static Signature.Validator.Status Warning = new Signature.Validator.Status("Warning");
+      public final static Signature.Validator.Status NonQSCD = new Signature.Validator.Status("NonQSCD");
+      public final static Signature.Validator.Status Test = new Signature.Validator.Status("Test");
+      public final static Signature.Validator.Status Invalid = new Signature.Validator.Status("Invalid");
+      public final static Signature.Validator.Status Unknown = new Signature.Validator.Status("Unknown");
+  
+      public final int swigValue() {
+        return swigValue;
+      }
+  
+      public String toString() {
+        return swigName;
+      }
+  
+      public static Status swigToEnum(int swigValue) {
+        if (swigValue < swigValues.length && swigValue >= 0 && swigValues[swigValue].swigValue == swigValue)
+          return swigValues[swigValue];
+        for (int i = 0; i < swigValues.length; i++)
+          if (swigValues[i].swigValue == swigValue)
+            return swigValues[i];
+        throw new IllegalArgumentException("No enum " + Status.class + " with value " + swigValue);
+      }
+  
+      private Status(String swigName) {
+        this.swigName = swigName;
+        this.swigValue = swigNext++;
+      }
+  
+      private Status(String swigName, int swigValue) {
+        this.swigName = swigName;
+        this.swigValue = swigValue;
+        swigNext = swigValue+1;
+      }
+  
+      private Status(String swigName, Status swigEnum) {
+        this.swigName = swigName;
+        this.swigValue = swigEnum.swigValue;
+        swigNext = this.swigValue+1;
+      }
+  
+      private static Status[] swigValues = { Valid, Warning, NonQSCD, Test, Invalid, Unknown };
+      private static int swigNext = 0;
+      private final int swigValue;
+      private final String swigName;
+    }
+  
+  }
+
   public static String getPOLv1() {
     return digidocJNI.Signature_POLv1_get();
   }
@@ -111,10 +200,6 @@ public class Signature {
     return digidocJNI.Signature_OCSPProducedAt(swigCPtr, this);
   }
 
-  public byte[] OCSPNonce() {
-    return digidocJNI.Signature_OCSPNonce(swigCPtr, this);
-  }
-
   public String TimeStampTime() {
     return digidocJNI.Signature_TimeStampTime(swigCPtr, this);
   }
@@ -133,6 +218,10 @@ public class Signature {
 
   public void validate(String policy) {
     digidocJNI.Signature_validate__SWIG_1(swigCPtr, this, policy);
+  }
+
+  public byte[] messageImprint() {
+    return digidocJNI.Signature_messageImprint(swigCPtr, this);
   }
 
   public byte[] signingCertificateDer() {

@@ -99,10 +99,6 @@ public class XmlConfV2 extends ConfV2 {
     return digidocJNI.XmlConfV2_TSUrl(swigCPtr, this);
   }
 
-  public SWIGTYPE_p_digidoc__X509Cert verifyServiceCert() {
-    return new SWIGTYPE_p_digidoc__X509Cert(digidocJNI.XmlConfV2_verifyServiceCert(swigCPtr, this), true);
-  }
-
   public String verifyServiceUri() {
     return digidocJNI.XmlConfV2_verifyServiceUri(swigCPtr, this);
   }

@@ -56,14 +56,6 @@ public class Conf {
     return digidocJNI.Conf_logFile(swigCPtr, this);
   }
 
-  public String libdigidocConf() {
-    return digidocJNI.Conf_libdigidocConf(swigCPtr, this);
-  }
-
-  public String certsPath() {
-    return digidocJNI.Conf_certsPath(swigCPtr, this);
-  }
-
   public String xsdPath() {
     return digidocJNI.Conf_xsdPath(swigCPtr, this);
   }
@@ -138,10 +130,6 @@ public class Conf {
 
   public String TSLCache() {
     return digidocJNI.Conf_TSLCache(swigCPtr, this);
-  }
-
-  public SWIGTYPE_p_std__vectorT_digidoc__X509Cert_t TSLCerts() {
-    return new SWIGTYPE_p_std__vectorT_digidoc__X509Cert_t(digidocJNI.Conf_TSLCerts(swigCPtr, this), true);
   }
 
   public boolean TSLOnlineDigest() {
