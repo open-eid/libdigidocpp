@@ -21,6 +21,7 @@
 
 #include "Exports.h"
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -77,7 +78,7 @@ class EXP_DIGIDOC ConfV2: public Conf
 {
 public:
     ConfV2();
-    virtual ~ConfV2();
+    ~ConfV2() override;
     static ConfV2* instance();
 
     virtual X509Cert verifyServiceCert() const;
@@ -86,6 +87,19 @@ private:
     DISABLE_COPY(ConfV2);
 };
 
-typedef ConfV2 ConfCurrent;
+class EXP_DIGIDOC ConfV3: public ConfV2
+{
+public:
+    ConfV3();
+    ~ConfV3() override;
+    static ConfV3* instance();
+
+    virtual std::set<std::string> OCSPTMProfiles() const;
+
+private:
+    DISABLE_COPY(ConfV3);
+};
+
+using ConfCurrent = ConfV3;
 #define CONF(method) ConfCurrent::instance() ? ConfCurrent::instance()->method() : ConfCurrent().method()
 }

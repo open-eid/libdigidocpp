@@ -39,7 +39,6 @@
 
 using namespace digidoc;
 using namespace digidoc::util;
-using namespace digidoc::util::date;
 using namespace PoDoFo;
 using namespace std;
 
@@ -69,8 +68,8 @@ public:
     vector<unsigned char> _data;
     vector<OCSP> *ocsps;
 
-    SignaturePDF(Signer *signer, const vector<unsigned char> &data): SignatureCAdES_T(signer), _data(data) {}
-    SignaturePDF(const vector<unsigned char> &signature, const vector<unsigned char> &data): SignatureCAdES_T(signature), _data(data) {}
+    SignaturePDF(Signer *signer, vector<unsigned char> data): SignatureCAdES_T(signer), _data(std::move(data)) {}
+    SignaturePDF(const vector<unsigned char> &signature, vector<unsigned char> data): SignatureCAdES_T(signature), _data(std::move(data)) {}
 
 
     string id() const override { return _id; }
@@ -82,7 +81,7 @@ public:
 
     void validate(const std::string &policy) const override
     {
-        Exception exception(__FILE__, __LINE__, "Signature validation");
+        Exception exception(EXCEPTION_PARAMS("Signature validation"));
         try {
             SignatureCAdES_T::validate(policy);
         } catch(const Exception &e) {
@@ -122,7 +121,7 @@ public:
             throw exception;
     }
     vector<unsigned char> dataToSign() const override { return _data; }
-    void setSignatureValue(const vector<unsigned char> &) override {}
+    void setSignatureValue(const vector<unsigned char> & /*signatureValue*/) override {}
 
 
     string profile() const override
@@ -132,8 +131,8 @@ public:
     }
     vector<string> signerRoles() const override { return roles; }
 
-    virtual std::string OCSPProducedAt() const override { return ASN1TimeToXSD(ocsp().producedAt()); }
-    virtual X509Cert OCSPCertificate() const override { return ocsp().responderCert(); }
+    std::string OCSPProducedAt() const override { return date::ASN1TimeToXSD(ocsp().producedAt()); }
+    X509Cert OCSPCertificate() const override { return ocsp().responderCert(); }
 
     OCSP ocsp() const
     {
@@ -145,7 +144,7 @@ public:
             } catch(const Exception &) {
             }
         }
-        return OCSP(vector<unsigned char>());
+        return OCSP(nullptr, 0);
     }
 };
 
@@ -166,22 +165,22 @@ PDF::~PDF()
     delete d;
 }
 
-void PDF::addDataFile(const string &, const string &)
+void PDF::addDataFile(const string & /*path*/, const string & /*mediaType*/)
 {
     THROW("Not supported.");
 }
 
-void PDF::addDataFile(istream *, const string &, const string &)
+void PDF::addDataFile(istream * /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
 {
     THROW("Not supported.");
 }
 
-void PDF::addAdESSignature(istream &)
+void PDF::addAdESSignature(istream & /*signature*/)
 {
     THROW("Not supported.");
 }
 
-Container* PDF::createInternal(const string &)
+Container* PDF::createInternal(const string & /*unused*/)
 {
     return nullptr;
 }
@@ -201,6 +200,7 @@ Container* PDF::openInternal(const string &path)
     if(File::fileExtension(path) != "pdf")
         return nullptr;
 
+    DEBUG("DDoc::openInternal(%s)", path.c_str());
     ifstream *is = new ifstream(File::encodeName(path).c_str(), ifstream::binary);
     string line;
     getline(*is, line);
@@ -238,15 +238,15 @@ Container* PDF::openInternal(const string &path)
                 if(byteRange.GetSize() != 4)
                     continue;
 
-                string signature((byteRange[2].GetNumber() - 1) - (byteRange[1].GetNumber() + 1), 0);
+                string signature(size_t((byteRange[2].GetNumber() - 1) - (byteRange[1].GetNumber() + 1)), 0);
                 is->seekg(byteRange[1].GetNumber() + 1);
-                is->read(&signature[0], signature.size());
+                is->read(&signature[0], streamsize(signature.size()));
 
-                vector<unsigned char> signeddata(byteRange[1].GetNumber() + byteRange[3].GetNumber(), 0);
+                vector<unsigned char> signeddata(size_t(byteRange[1].GetNumber() + byteRange[3].GetNumber()));
                 is->seekg(byteRange[0].GetNumber());
                 is->read((char*)signeddata.data(), byteRange[1].GetNumber());
                 is->seekg(byteRange[2].GetNumber());
-                is->read((char*)&signeddata[byteRange[1].GetNumber()], byteRange[3].GetNumber());
+                is->read((char*)&signeddata[size_t(byteRange[1].GetNumber())], byteRange[3].GetNumber());
 
                 SignaturePDF *s = new SignaturePDF(File::hexToBin(signature), signeddata);
                 if(name != nullptr && name->IsString())
@@ -273,7 +273,7 @@ Container* PDF::openInternal(const string &path)
                     char *data = nullptr;
                     pdf_long length = 0;
                     stream->GetFilteredCopy(&data, &length);
-                    doc->d->ocsps.push_back(OCSP(vector<unsigned char>(data, data + length)));
+                    doc->d->ocsps.emplace_back(OCSP((const unsigned char*)data, size_t(length)));
                     podofo_free(data);
                 }
             }
@@ -288,7 +288,7 @@ Container* PDF::openInternal(const string &path)
     return doc;
 }
 
-Signature* PDF::prepareSignature(Signer *)
+Signature* PDF::prepareSignature(Signer * /*signer*/)
 {
     THROW("Not implemented.");
 }
@@ -298,12 +298,12 @@ vector<Signature *> PDF::signatures() const
     return d->signatures;
 }
 
-void PDF::removeDataFile(unsigned int)
+void PDF::removeDataFile(unsigned int /*index*/)
 {
     THROW("Not supported.");
 }
 
-void PDF::removeSignature(unsigned int)
+void PDF::removeSignature(unsigned int /*index*/)
 {
     THROW("Not supported.");
 }
@@ -349,7 +349,7 @@ Signature *PDF::sign(Signer *signer)
         PdfObject *OCSP = newdoc->GetObjects().CreateObject();
         OCSPs->GetArray().push_back(OCSP->Reference());
 
-        PdfMemoryInputStream stream((const char*)ocsp.data(), ocsp.size());
+        PdfMemoryInputStream stream((const char*)ocsp.data(), pdf_long(ocsp.size()));
         OCSP->GetStream()->SetRawData(&stream, -1);
 
         PdfRefCountedBuffer buf;
@@ -378,7 +378,7 @@ Signature *PDF::sign(Signer *signer)
         out.SetSignature(PdfData((const char*)der.data(), der.size()));
 
         DataFilePrivate *dataFile = static_cast<DataFilePrivate*>(d->dataFiles[0]);
-        dataFile->m_is.reset(new stringstream(string(buf.GetBuffer(), buf.GetSize())));
+        dataFile->m_is = make_shared<stringstream>(string(buf.GetBuffer(), buf.GetSize()));
         d->ocsps.push_back(ocspreq);
         s->ocsps = &d->ocsps;
         d->signatures.push_back(s.release());

@@ -98,6 +98,11 @@ public:
 	string xsdPath() const override { return DIGIDOCPPCONF; }
 	string ocsp(const string &) const override
 	{ return "http://demo.sk.ee/ocsp"; }
+	set<string> OCSPTMProfiles() const override {
+		set<string> profiles = ConfCurrent::OCSPTMProfiles();
+		profiles.emplace("1.3.6.1.4.1.10015.3.1.1");
+		return profiles;
+	}
 	bool PKCS12Disable() const override { return true; }
 	string TSUrl() const override { return "http://demo.sk.ee/tsa/"; }
 	bool TSLAutoUpdate() const override { return false; }

@@ -261,7 +261,7 @@ SignatureDDOC::SignatureDDOC(SignatureInfo_st *sig, DDocPrivate *priv)
     , s(sig)
 {
     if(!s)
-        throw Exception(__FILE__, __LINE__, "Null pointer in SignatureDDOC constructor");
+        throw Exception(EXCEPTION_PARAMS("Null pointer in SignatureDDOC constructor"));
 }
 
 SignatureDDOC::~SignatureDDOC() = default;
@@ -350,7 +350,7 @@ vector<unsigned char> SignatureDDOC::messageImprint() const
 {
     NotaryInfo *n = s->pNotary;
     if(n && n->mbufOcspResponse.nLen)
-        return OCSP(DDocPrivate::toVector(&n->mbufOcspResponse)).nonce();
+        return OCSP((const unsigned char*)n->mbufOcspResponse.pMem, size_t(n->mbufOcspResponse.nLen)).nonce();
     return vector<unsigned char>();
 }
 
@@ -638,6 +638,7 @@ Container* DDoc::createInternal(const string &path)
 {
     if(File::fileExtension(path) != "ddoc")
         return nullptr;
+    DEBUG("DDoc::createInternal(%s)", path.c_str());
     DDoc *doc = new DDoc();
     doc->d->filename = path;
     return doc;
@@ -668,7 +669,10 @@ std::vector<digidoc::DataFile*> DDoc::dataFiles() const
 
 Container* DDoc::openInternal(const string &path)
 {
-    return File::fileExtension(path) == "ddoc" ? new DDoc(path) : nullptr;
+    if(File::fileExtension(path) != "ddoc")
+        return nullptr;
+    DEBUG("DDoc::openInternal(%s)", path.c_str());
+    return new DDoc(path);
 }
 
 /**
@@ -808,7 +812,7 @@ Signature* DDoc::sign(Signer *signer)
     {
         d->lib->f_SignatureInfo_delete( d->doc, s->s->szId );
         d->loadSignatures();
-        throw Exception(__FILE__, __LINE__, "Failed to sign document", e);
+        THROW_CAUSE(e, "Failed to sign document");
     }
     return s;
 }

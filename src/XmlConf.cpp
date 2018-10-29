@@ -38,7 +38,7 @@ template <class A>
 class XmlConfParam: public unique_ptr<A>
 {
 public:
-    XmlConfParam(const string &_name, A def = A()): name(_name), _def(def), locked(false) {}
+    XmlConfParam(string _name, A def = {}): name(std::move(_name)), _def(std::move(def)) {}
 
     void setValue(const A &val, bool lock, bool global)
     {
@@ -62,15 +62,15 @@ public:
         return unique_ptr<A>::get() ? *unique_ptr<A>::get(): def;
     }
 
-    string name;
+    const string name;
     A _def;
-    bool locked;
+    bool locked = false;
 };
 
 class XmlConf::Private
 {
 public:
-    Private(const string &path = "", const string &schema = "");
+    Private(const string &path = {}, string schema = {});
 
     void init(const string &path, bool global);
     unique_ptr<Configuration> read(const string &path);
@@ -110,7 +110,7 @@ public:
 
 using namespace digidoc;
 
-XmlConf::Private::Private(const string &path, const string &schema)
+XmlConf::Private::Private(const string &path, string schema)
     : logLevel("log.level")
     , logFile("log.file")
     , digestUri("signer.digestUri")
@@ -131,7 +131,7 @@ XmlConf::Private::Private(const string &path, const string &schema)
     , TSLOnlineDigest("tsl.onlineDigest", true)
     , TSLTimeOut("tsl.timeOut", 10)
     , verifyServiceUri("verify.serivceUri")
-    , SCHEMA_LOC(schema)
+    , SCHEMA_LOC(std::move(schema))
 {
     try {
         XMLPlatformUtils::Initialize();
@@ -299,8 +299,8 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, const A &defined, con
     if (ofs.fail())
         THROW("Failed to open configuration: %s", USER_CONF_LOC.c_str());
     NamespaceInfomap map;
-    map[""].name = "";
-    map[""].schema = SCHEMA_LOC;
+    map[string()].name = string();
+    map[string()].schema = SCHEMA_LOC;
     configuration(ofs, *conf, map, "UTF-8", Flags::dont_initialize);
 }
 
@@ -326,28 +326,42 @@ XmlConf::XmlConf(const string &path, const string &schema)
 XmlConf::~XmlConf() { delete d; }
 
 /**
- * Initialize xml conf from path
+ * @deprecated See digidoc::XmlConfV3::XmlConfV3
  */
 XmlConfV2::XmlConfV2(const string &path, const string &schema)
     : d(new XmlConf::Private(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
 {}
 XmlConfV2::~XmlConfV2() { delete d; }
 
+/**
+ * Initialize xml conf from path
+ */
+XmlConfV3::XmlConfV3(const string &path, const string &schema)
+    : d(new XmlConf::Private(path, schema.empty() ? File::path(Conf::xsdPath(), "conf.xsd") : schema))
+{}
+XmlConfV3::~XmlConfV3() { delete d; }
+
+
 
 #define GET1(TYPE, PROP) \
 TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); } \
-TYPE XmlConfV2::PROP() const { return d->PROP.value(Conf::PROP()); }
+TYPE XmlConfV2::PROP() const { return d->PROP.value(Conf::PROP()); } \
+TYPE XmlConfV3::PROP() const { return d->PROP.value(Conf::PROP()); }
 
 #define SET1(TYPE, SET, PROP) \
 void XmlConf::SET(TYPE PROP) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
 void XmlConfV2::SET(TYPE PROP) \
+{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+void XmlConfV3::SET(TYPE PROP) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
 
 #define SET1CONST(TYPE, SET, PROP) \
-void XmlConf::SET(const TYPE &PROP) \
+void XmlConf::SET(const TYPE &(PROP)) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
-void XmlConfV2::SET(const TYPE &PROP) \
+void XmlConfV2::SET(const TYPE &(PROP)) \
+{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+void XmlConfV3::SET(const TYPE &(PROP)) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
 
 GET1(int, logLevel)
@@ -378,6 +392,12 @@ string XmlConf::ocsp(const string &issuer) const
 }
 
 string XmlConfV2::ocsp(const string &issuer) const
+{
+    auto i = d->ocsp.find(issuer);
+    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
+}
+
+string XmlConfV3::ocsp(const string &issuer) const
 {
     auto i = d->ocsp.find(issuer);
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
@@ -472,4 +492,14 @@ SET1(bool, setProxyTunnelSSL, proxyTunnelSSL)
 X509Cert XmlConfV2::verifyServiceCert() const
 {
     return ConfV2::verifyServiceCert();
+}
+
+X509Cert XmlConfV3::verifyServiceCert() const
+{
+    return ConfV3::verifyServiceCert();
+}
+
+set<string> XmlConfV3::OCSPTMProfiles() const
+{
+    return ConfV3::OCSPTMProfiles();
 }

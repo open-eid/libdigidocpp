@@ -304,3 +304,32 @@ ConfV2* ConfV2::instance() { return dynamic_cast<ConfV2*>(Conf::instance()); }
  * Gets verify service Cert
  */
 X509Cert ConfV2::verifyServiceCert() const { return X509Cert(); }
+
+
+
+/**
+ * @class digidoc::ConfV3
+ * @brief Verison 3 of configuration class to add additonial parameters.
+ *
+ * Conf contains virtual members and is not leaf class we need create
+ * subclasses to keep binary compatibility
+ * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
+ * @see digidoc::ConfV2
+ * @see @ref parameters
+ */
+/**
+ * Version 3 config with new parameters
+ */
+ConfV3::ConfV3() = default;
+
+ConfV3::~ConfV3() = default;
+
+/**
+ * Return global instance object
+ */
+ConfV3* ConfV3::instance() { return dynamic_cast<ConfV3*>(Conf::instance()); }
+
+/**
+ * Gets verify service Cert
+ */
+set<string> ConfV3::OCSPTMProfiles() const { return { "1.3.6.1.4.1.10015.4.1.2" }; }
