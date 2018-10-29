@@ -21,6 +21,7 @@
 
 #include "Conf.h"
 #include "Container.h"
+#include "crypto/Connect.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509CertStore.h"
 #include "log.h"
@@ -28,12 +29,12 @@
 
 #include <algorithm>
 
-#include <openssl/ssl.h>
 #ifdef WIN32 //hack for win32 build
 #undef OCSP_REQUEST
 #undef OCSP_RESPONSE
 #endif
 #include <openssl/ocsp.h>
+#include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
 
@@ -44,8 +45,7 @@
 using namespace digidoc;
 using namespace std;
 
-
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static int OCSP_resp_get0_id(const OCSP_BASICRESP *bs, const ASN1_OCTET_STRING **pid, const X509_NAME **pname)
 
 {
@@ -104,8 +104,21 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     OCSP_CERTID *certId = OCSP_cert_to_id(nullptr, cert.handle(), issuer.handle());
     SCOPE(OCSP_REQUEST, req, createRequest(certId, nonce,
         !Conf::instance()->PKCS12Disable() && url.find("ocsp.sk.ee") != string::npos));
-    resp.reset(sendRequest(url, req.get(), "format: " + format + " profile: " +
-        (TMProfile ? "ASiC_E_BASELINE_LT_TM" : "ASiC_E_BASELINE_LT")), OCSP_RESPONSE_free);
+
+    Connect::Result result = Connect(url, "POST", 0, " format: " + format + " profile: " +
+        (TMProfile ? "ASiC_E_BASELINE_LT_TM" : "ASiC_E_BASELINE_LT")).exec({
+        {"Content-Type", "application/ocsp-request"},
+        {"Accept", "application/ocsp-response"},
+        {"Connection", "Close"},
+        {"Cache-Control", "no-cache"}
+    }, i2d(req.get(), i2d_OCSP_REQUEST));
+
+    if(result.isForbidden())
+        THROW("OCSP service responded - Forbidden");
+    if(!result)
+        THROW("Failed to send OCSP request");
+    const unsigned char *p2 = (const unsigned char*)result.content.c_str();
+    resp.reset(d2i_OCSP_RESPONSE(nullptr, &p2, long(result.content.size())), OCSP_RESPONSE_free);
 
     switch(int respStatus = OCSP_response_status(resp.get()))
     {
@@ -160,7 +173,7 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
     OCSP_resp_get0_id(basic.get(), &hash, &name);
     if(name)
         return X509_NAME_cmp(X509_get_subject_name(cert.handle()), name) == 0;
-    else if(hash)
+    if(hash)
     {
         unsigned char sha1[SHA_DIGEST_LENGTH];
         ASN1_BIT_STRING *key = X509_get0_pubkey_bitstr(cert.handle());
@@ -186,22 +199,17 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
     if(!OCSP_request_add0_id(req.get(), certId))
         THROW_OPENSSLEXCEPTION("Failed to add certificate ID to OCSP request.");
 
-#ifdef OCSP_NATIVE_NONCE
-    if(OCSP_request_add1_nonce(req.get(), const_cast<unsigned char*>(nonce.data()), int(nonce.size())) <= 0)
-        THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
-#else
     SCOPE(ASN1_OCTET_STRING, st, ASN1_OCTET_STRING_new());
     if(nonce.empty())
     {
         st->length = 20;
-        st->data = (unsigned char*)OPENSSL_malloc(st->length);
+        st->data = (unsigned char*)OPENSSL_malloc(size_t(st->length));
         RAND_bytes(st->data, st->length);
     }
     else
         ASN1_OCTET_STRING_set(st.get(), nonce.data(), int(nonce.size()));
     if(!OCSP_REQUEST_add_ext(req.get(), X509_EXTENSION_create_by_NID(nullptr, NID_id_pkix_OCSP_Nonce, 0, st.get()), 0))
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
-#endif
 
     if(signRequest)
     {
@@ -227,8 +235,7 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
             CFRelease(certdata);
 
             CFDataRef keydata = nullptr;
-            SecItemImportExportKeyParameters params;
-            memset( &params, 0, sizeof(params) );
+            SecItemImportExportKeyParameters params{};
             params.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
             params.passphrase = CFSTR("pass");
             SecItemExport(keyref, kSecFormatWrappedPKCS8, 0, &params, &keydata);
@@ -284,96 +291,6 @@ X509Cert OCSP::responderCert() const
     return X509Cert();
 }
 
-/**
- * Sends OCSP request to the server and returns the response got from the server.
- *
- * @param req OCSP request to be sent to the OCSP server.
- * @return returns OCSP response.
- * @throws IOException throws exception if the server failed to accept request or
- *         returned incorrectly formated OCSP response.
- */
-OCSP_RESPONSE* OCSP::sendRequest(const string &_url, OCSP_REQUEST *req, const string &useragent)
-{
-    char *host = nullptr, *port = nullptr, *path = nullptr;
-    int ssl = 0;
-    if(!OCSP_parse_url(const_cast<char*>(_url.c_str()), &host, &port, &path, &ssl))
-        THROW_OPENSSLEXCEPTION("Incorrect OCSP URL provided: '%s'.", _url.c_str());
-
-    string hostname = host ? host : "";
-    if(port)
-        hostname += ":" + string(port);
-    string url = strlen(path) == 1 && path[0] == '/' && _url[_url.size() - 1] != '/' ? _url + "/" : _url;
-    OPENSSL_free(host);
-    OPENSSL_free(port);
-    OPENSSL_free(path);
-
-    string chostname = hostname;
-    Conf *c = Conf::instance();
-    if(!c->proxyHost().empty())
-    {
-        chostname = c->proxyHost();
-        if(!c->proxyPort().empty())
-            chostname += ":" + c->proxyPort();
-    }
-
-    SCOPE(BIO, connection, BIO_new_connect(const_cast<char*>(chostname.c_str())));
-    if(!connection)
-        THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", chostname.c_str());
-
-    SCOPE(SSL_CTX, ctx, nullptr);
-    if(ssl > 0)
-    {
-        ctx.reset(SSL_CTX_new(SSLv23_client_method()));
-        if(!ctx)
-            THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", chostname.c_str());
-        SSL_CTX_set_mode(ctx.get(), SSL_MODE_AUTO_RETRY);
-        BIO *sconnection = BIO_new_ssl(ctx.get(), 1);
-        if(!sconnection)
-            THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", chostname.c_str());
-        connection.reset(BIO_push(sconnection, connection.release()));
-    }
-
-    if(!BIO_do_connect(connection.get()))
-        THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", chostname.c_str());
-
-    string auth;
-    if(!c->proxyUser().empty() || !c->proxyPass().empty())
-    {
-        BIO *b64 = BIO_new(BIO_f_base64());
-        BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-        SCOPE(BIO, hash, BIO_push(b64, BIO_new(BIO_s_mem())));
-        BIO_printf(hash.get(), "%s:%s", c->proxyUser().c_str(), c->proxyPass().c_str());
-        (void)BIO_flush(hash.get());
-        char *base64 = nullptr;
-        BIO_get_mem_data(hash.get(), &base64);
-        auth.append("Basic ");
-        auth.append(base64);
-    }
-
-    string user_agent;
-    user_agent += "LIB libdigidocpp/";
-    user_agent += VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER);
-    user_agent += " APP " + appInfo() + " " + useragent;
-
-    OCSP_RESPONSE* resp = nullptr;
-    SCOPE(OCSP_REQ_CTX, rctx, OCSP_sendreq_new(connection.get(), const_cast<char*>(url.c_str()), nullptr, -1));
-    if(!rctx)
-        THROW_OPENSSLEXCEPTION("Failed to set OCSP request headers.");
-    if(!OCSP_REQ_CTX_add1_header(rctx.get(), "Host", const_cast<char*>(hostname.c_str())))
-        THROW_OPENSSLEXCEPTION("Failed to set OCSP request headers.");
-    if(!auth.empty() && !OCSP_REQ_CTX_add1_header(rctx.get(), "Proxy-Authorization", const_cast<char*>(auth.c_str())))
-        THROW_OPENSSLEXCEPTION("Failed to set OCSP request headers.");
-    if(!OCSP_REQ_CTX_add1_header(rctx.get(), "User-Agent", user_agent.c_str()))
-        THROW_OPENSSLEXCEPTION("Failed to set OCSP request headers.");
-    if(!OCSP_REQ_CTX_set1_req(rctx.get(), req))
-        THROW_OPENSSLEXCEPTION("Failed to set OCSP request headers.");
-    if(!OCSP_sendreq_nbio(&resp, rctx.get()))
-        THROW_OPENSSLEXCEPTION("Failed to send OCSP request.");
-    if(!resp)
-        THROW_OPENSSLEXCEPTION("Failed to send OCSP request.");
-    return resp;
-}
-
 vector<unsigned char> OCSP::toDer() const
 {
     return i2d(resp.get(), i2d_OCSP_RESPONSE);
@@ -413,9 +330,9 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     if(result <= 0)
         THROW_OPENSSLEXCEPTION("Failed to verify OCSP response.");
 
-    SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(0, cert.handle(), issuer.handle()));
-    int status = -1; int reason = -1;
-    if(OCSP_resp_find_status(basic.get(), certId.get(), &status, &reason, nullptr, nullptr, nullptr) <= 0)
+    SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(nullptr, cert.handle(), issuer.handle()));
+    int status = -1;
+    if(OCSP_resp_find_status(basic.get(), certId.get(), &status, nullptr, nullptr, nullptr, nullptr) <= 0)
     {
         Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
         e.setCode(Exception::CertificateUnknown);
@@ -459,14 +376,12 @@ vector<unsigned char> OCSP::nonce() const
 
     ASN1_OCTET_STRING *value = X509_EXTENSION_get_data(ext);
     nonce.assign(value->data, value->data + value->length);
-#if 1 //def OCSP_NATIVE_NONCE
     //OpenSSL OCSP created messages NID_id_pkix_OCSP_Nonce field is DER encoded twice, not a problem with java impl
     //XXX: UglyHackTM check if nonceAsn1 contains ASN1_OCTET_STRING
     //XXX: if first 2 bytes seem to be beginning of DER ASN1_OCTET_STRING then remove them
     // We assume that bdoc nonce has always octet string header
     if(nonce.size() > 2 && nonce[0] == V_ASN1_OCTET_STRING && nonce[1] == nonce.size()-2)
         nonce.erase(nonce.begin(), nonce.begin() + 2);
-#endif
     return nonce;
 }
 
