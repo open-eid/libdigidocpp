@@ -28,7 +28,7 @@ cmake \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
     -DBoost_INCLUDE_DIR="" \
     -DBUILD_TOOLS=off \
-    -DBUILD_TYPE=STATIC \
+    -DBUILD_SHARED_LIBS=NO \
     -DDOXYGEN_EXECUTABLE=NOTFOUND \
     ../../..
 make
