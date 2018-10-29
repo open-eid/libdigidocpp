@@ -23,10 +23,10 @@
 #include <string>
 #include <vector>
 
-typedef struct ocsp_response_st OCSP_RESPONSE;
-typedef struct ocsp_basic_response_st OCSP_BASICRESP;
-typedef struct ocsp_cert_id_st OCSP_CERTID;
-typedef struct ocsp_request_st OCSP_REQUEST;
+using OCSP_RESPONSE = struct ocsp_response_st;
+using OCSP_BASICRESP = struct ocsp_basic_response_st;
+using OCSP_CERTID = struct ocsp_cert_id_st;
+using OCSP_REQUEST = struct ocsp_request_st;
 
 namespace digidoc
 {
@@ -52,7 +52,6 @@ namespace digidoc
 
       private:
           OCSP_REQUEST* createRequest(OCSP_CERTID *certId, const std::vector<unsigned char> &nonce, bool signRequest);
-          OCSP_RESPONSE* sendRequest(const std::string &url, OCSP_REQUEST *req, const std::string &useragent);
 
           std::shared_ptr<OCSP_RESPONSE> resp;
           std::shared_ptr<OCSP_BASICRESP> basic;
