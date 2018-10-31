@@ -43,10 +43,10 @@ using namespace std;
  *         serialNumber             CertificateSerialNumber
  *         }
  */
-typedef struct ESS_issuer_serial {
+using ESS_ISSUER_SERIAL = struct ESS_issuer_serial {
     STACK_OF(GENERAL_NAME) *issuer;
     ASN1_INTEGER *serial;
-} ESS_ISSUER_SERIAL;
+};
 
 ASN1_SEQUENCE(ESS_ISSUER_SERIAL) = {
         ASN1_SEQUENCE_OF(ESS_ISSUER_SERIAL, issuer, GENERAL_NAME),
@@ -70,8 +70,8 @@ static int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
  *
  * @param cert X.509 certificate.
  */
-X509Crypto::X509Crypto(const X509Cert &cert)
- : cert(cert)
+X509Crypto::X509Crypto(X509Cert cert)
+ : cert(std::move(cert))
 {
 }
 
@@ -131,7 +131,7 @@ int X509Crypto::compareIssuerToString(const string &name) const
 
     for(size_t old = 0, pos = 0; ; )
     {
-        pos = name.find(",", old);
+        pos = name.find(',', old);
         if(pos == string::npos)
         {
             pos = name.size();
@@ -150,7 +150,7 @@ int X509Crypto::compareIssuerToString(const string &name) const
         string nameitem = name.substr(old, pos - old);
         old = pos + 1;
 
-        if((pos = nameitem.find("=")) == string::npos ||
+        if((pos = nameitem.find('=')) == string::npos ||
             nameitem.compare(pos-1, 1, "\\") == 0)
             continue;
 
@@ -231,8 +231,31 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
     case EVP_PKEY_RSA:
     {
         SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(key.get()));
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
         result = RSA_verify(Digest::toMethod(method), digest.data(), (unsigned int)digest.size(),
             const_cast<unsigned char*>(signature.data()), (unsigned int)signature.size(), rsa.get());
+#else
+        vector<unsigned char> out(size_t(RSA_size(rsa.get())));
+        int size = RSA_public_decrypt(int(signature.size()), signature.data(), out.data(), rsa.get(), RSA_PKCS1_PADDING);
+        if(size <= 0)
+            break;
+        out.resize(size_t(size));
+
+        const unsigned char *p = out.data();
+        SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(out.size())));
+        if(!sig)
+            break;
+        const X509_ALGOR *algor = nullptr;
+        const ASN1_OCTET_STRING *value = nullptr;
+        X509_SIG_get0(sig.get(), &algor, &value);
+
+        if(algor->parameter && ASN1_TYPE_get(algor->parameter) != V_ASN1_NULL)
+            break;
+        if(Digest::toMethod(method) == OBJ_obj2nid(algor->algorithm) &&
+            size_t(value->length) == digest.size() &&
+            memcmp(value->data, digest.data(), digest.size()) == 0)
+            result = 1;
+#endif
         break;
     }
 #ifndef OPENSSL_NO_ECDSA
