@@ -477,6 +477,15 @@ SET1CONST(string, setPKCS12Cert, PKCS12Cert)
 SET1CONST(string, setPKCS12Pass, PKCS12Pass)
 
 /**
+ * @fn void digidoc::XmlConf::setTSUrl(const std::string &url)
+ * Sets a PKCS#12 certificate password. Also adds or replaces PKCS#12 certificate password in the user configuration file.
+ *
+ * @param url Target URL to connect TSA service.
+ * @throws Exception exception is thrown if saving a TS URL into a user configuration file fails.
+ */
+SET1CONST(string, setTSUrl, TSUrl)
+
+/**
  * @fn void digidoc::XmlConf::setPKCS12Disable( bool disable )
  * Sets a PKCS#12 certificate usage. Also adds or replaces PKCS#12 certificate usage in the user configuration file.
  *

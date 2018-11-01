@@ -68,6 +68,8 @@ public:
     virtual void setTSLOnlineDigest( bool enable );
     virtual void setTSLTimeOut( int timeOut );
 
+    virtual void setTSUrl(const std::string &url);
+
 private:
     DISABLE_COPY(XmlConf);
 
@@ -122,6 +124,8 @@ public:
     virtual void setTSLOnlineDigest( bool enable );
     virtual void setTSLTimeOut( int timeOut );
 
+    virtual void setTSUrl(const std::string &url);
+
 private:
     DISABLE_COPY(XmlConfV2);
 
@@ -173,6 +177,8 @@ public:
 
     virtual void setTSLOnlineDigest( bool enable );
     virtual void setTSLTimeOut( int timeOut );
+
+    virtual void setTSUrl(const std::string &url);
 
 private:
     DISABLE_COPY(XmlConfV3);
