@@ -30,11 +30,10 @@ class SignatureCAdES_T: public SignatureCAdES_B
 public:
     SignatureCAdES_T(Signer *signer): SignatureCAdES_B(signer) {}
     SignatureCAdES_T(const std::vector<unsigned char> &data): SignatureCAdES_B(data) {}
-    virtual ~SignatureCAdES_T() = default;
 
-    virtual std::string trustedSigningTime() const override;
-    virtual void validate(const std::string &policy) const override;
-    virtual void extendSignatureProfile(const std::string &profile) override;
+    std::string trustedSigningTime() const override;
+    void validate(const std::string &policy) const override;
+    void extendSignatureProfile(const std::string &profile) override;
 
     X509Cert TimeStampCertificate() const override;
     std::string TimeStampTime() const override;

@@ -102,6 +102,12 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
 
     if(result.isForbidden())
         THROW("Time-stamp service responded - Forbidden");
+    if(result.isStatusCode("429"))
+    {
+        Exception e(EXCEPTION_PARAMS("Time-stamp service responded - Too Many Requests"));
+        e.setCode(Exception::TSTooManyRequests);
+        throw e;
+    }
     if(!result)
         THROW("Failed to send Time-stamp request");
 
@@ -118,12 +124,11 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
     d.reset(PKCS7_dup(TS_RESP_get_token(resp.get())), PKCS7_free);
 }
 
-TS::TS(const std::vector<unsigned char> &data)
+TS::TS(const unsigned char *data, size_t size)
 {
-    if(data.empty())
+    if(size == 0)
         return;
-    const unsigned char *p = data.data();
-    d.reset(d2i_PKCS7(nullptr, &p, long(data.size())), PKCS7_free);
+    d.reset(d2i_PKCS7(nullptr, &data, long(size)), PKCS7_free);
 #ifndef OPENSSL_NO_CMS
     if(d)
         return;
@@ -134,7 +139,7 @@ TS::TS(const std::vector<unsigned char> &data)
      *
      * If PKCS7 wrapped TimeStamp parsing fails, try with CMS wrapping
      */
-    SCOPE(BIO, bio, BIO_new_mem_buf((void*)data.data(), int(data.size())));
+    SCOPE(BIO, bio, BIO_new_mem_buf((void*)data, int(size)));
     cms.reset(d2i_CMS_bio(bio.get(), nullptr), CMS_ContentInfo_free);
     if(!cms || OBJ_obj2nid(CMS_get0_eContentType(cms.get())) != NID_id_smime_ct_TSTInfo)
         cms.reset();

@@ -23,7 +23,6 @@
 #include "Conf.h"
 #include "log.h"
 #include "crypto/Digest.h"
-#include "crypto/OCSP.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
@@ -36,16 +35,9 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 DIGIDOCPP_WARNING_POP
 
 using namespace digidoc;
-using namespace digidoc::util::date;
 using namespace digidoc::xades;
 using namespace xml_schema;
 using namespace std;
-
-static Base64Binary toBase64(const vector<unsigned char> &v)
-{
-    return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
-}
-
 
 SignatureXAdES_T::SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_B(id, bdoc, signer) {}
 
@@ -62,17 +54,17 @@ void SignatureXAdES_T::createUnsignedSignatureProperties()
 
 vector<unsigned char> SignatureXAdES_T::messageImprint() const
 {
-    return TS(tsBase64()).messageImprint();
+    return tsFromBase64().messageImprint();
 }
 
 X509Cert SignatureXAdES_T::TimeStampCertificate() const
 {
-    return TS(tsBase64()).cert();
+    return tsFromBase64().cert();
 }
 
 string SignatureXAdES_T::TimeStampTime() const
 {
-    return ASN1TimeToXSD(TS(tsBase64()).time());
+    return util::date::ASN1TimeToXSD(tsFromBase64().time());
 }
 
 string SignatureXAdES_T::trustedSigningTime() const
@@ -92,9 +84,10 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
 
     TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
+    vector<unsigned char> der = tsa;
     UnsignedSignaturePropertiesType::SignatureTimeStampType ts;
     ts.id(id() + Log::format("-T%u", unsignedSignatureProperties().signatureTimeStamp().size()));
-    ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(toBase64(tsa)));
+    ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(Base64Binary(der.data(), der.size())));
     unsignedSignatureProperties().signatureTimeStamp().push_back(ts);
     unsignedSignatureProperties().contentOrder().push_back(
         UnsignedSignaturePropertiesType::ContentOrderType(
@@ -103,20 +96,20 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     sigdata_.clear();
 }
 
-vector<unsigned char> SignatureXAdES_T::tsBase64() const
+TS SignatureXAdES_T::tsFromBase64() const
 {
     try {
         if(unsignedSignatureProperties().signatureTimeStamp().empty())
-            return vector<unsigned char>();
+            return TS(nullptr, 0);
         const UnsignedSignaturePropertiesType::SignatureTimeStampType &ts =
                 unsignedSignatureProperties().signatureTimeStamp().front();
         if(ts.encapsulatedTimeStamp().empty())
-            return vector<unsigned char>();
+            return TS(nullptr, 0);
         const GenericTimeStampType::EncapsulatedTimeStampType &bin =
                 ts.encapsulatedTimeStamp().front();
-        return vector<unsigned char>(bin.begin(), bin.end());
+        return TS((const unsigned char*)bin.data(), bin.size());
     } catch(const Exception &) {}
-    return vector<unsigned char>();
+    return TS(nullptr, 0);
 }
 
 void SignatureXAdES_T::validate(const std::string &policy) const
@@ -160,7 +153,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             THROW("More than one EncapsulatedTimeStamp is not supported");
         const GenericTimeStampType::EncapsulatedTimeStampType &bin = etseq.front();
 
-        TS tsa(vector<unsigned char>(bin.begin(), bin.end()));
+        TS tsa((const unsigned char*)bin.data(), bin.size());
         Digest calc(tsa.digestMethod());
         calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
         tsa.verify(calc);
