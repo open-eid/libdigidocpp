@@ -26,7 +26,6 @@
 #include "util/DateTime.h"
 
 using namespace digidoc;
-using namespace digidoc::util::date;
 using namespace std;
 
 SignatureTST::SignatureTST(istream &is, ASiC_S *asicSDoc): asicSDoc(asicSDoc)
@@ -38,9 +37,9 @@ SignatureTST::SignatureTST(istream &is, ASiC_S *asicSDoc): asicSDoc(asicSDoc)
     is.seekg(0, istream::beg);
 
     vector<unsigned char> buf(size, 0);
-    is.read((char*)buf.data(), buf.size());
+    is.read((char*)buf.data(), streamsize(buf.size()));
 
-    timestampToken = new TS(buf);
+    timestampToken = new TS(buf.data(), buf.size());
 }
 
 SignatureTST::~SignatureTST() {
@@ -54,7 +53,7 @@ X509Cert SignatureTST::TimeStampCertificate() const
 
 string SignatureTST::TimeStampTime() const
 {
-    return ASN1TimeToXSD(timestampToken->time());
+    return util::date::ASN1TimeToXSD(timestampToken->time());
 }
 
 string SignatureTST::trustedSigningTime() const
@@ -85,7 +84,7 @@ string SignatureTST::signatureMethod() const
 
 void SignatureTST::validate() const
 {
-    Exception exception(__FILE__, __LINE__, "Timestamp validation.");
+    Exception exception(EXCEPTION_PARAMS("Timestamp validation."));
 
     if (timestampToken->time().empty())
     {

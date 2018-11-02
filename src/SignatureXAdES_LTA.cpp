@@ -44,20 +44,10 @@ DIGIDOCPP_WARNING_POP
 using namespace digidoc;
 using namespace digidoc::dsig;
 using namespace digidoc::util;
-using namespace digidoc::util::date;
 using namespace digidoc::xades;
 using namespace xercesc;
 using namespace xml_schema;
 using namespace std;
-
-namespace digidoc {
-
-static Base64Binary toBase64(const vector<unsigned char> &v)
-{
-    return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
-}
-
-}
 
 SignatureXAdES_LTA::SignatureXAdES_LTA(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_LT(id, bdoc, signer) {}
 
@@ -160,9 +150,10 @@ void SignatureXAdES_LTA::extendSignatureProfile(const std::string &profile)
     Digest calc;
     calcArchiveDigest(&calc);
     TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
+    vector<unsigned char> der = tsa;
     xadesv141::ArchiveTimeStampType ts;
     ts.id(id() + "-A0");
-    ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(toBase64(tsa)));
+    ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(Base64Binary(der.data(), der.size())));
     unsignedSignatureProperties().archiveTimeStampV141().push_back(ts);
     unsignedSignatureProperties().contentOrder().push_back(
         UnsignedSignaturePropertiesType::ContentOrderType(
@@ -171,29 +162,29 @@ void SignatureXAdES_LTA::extendSignatureProfile(const std::string &profile)
     sigdata_.clear();
 }
 
-vector<unsigned char> SignatureXAdES_LTA::tsaBase64() const
+TS SignatureXAdES_LTA::tsaFromBase64() const
 {
     try {
         if(unsignedSignatureProperties().archiveTimeStampV141().empty())
-            return vector<unsigned char>();
+            return TS(nullptr, 0);
         const xadesv141::ArchiveTimeStampType &ts = unsignedSignatureProperties().archiveTimeStampV141().front();
         if(ts.encapsulatedTimeStamp().empty())
-            return vector<unsigned char>();
+            return TS(nullptr, 0);
         const GenericTimeStampType::EncapsulatedTimeStampType &bin =
                 ts.encapsulatedTimeStamp().front();
-        return vector<unsigned char>(bin.begin(), bin.end());
+        return TS((const unsigned char*)bin.data(), bin.size());
     } catch(const Exception &) {}
-    return vector<unsigned char>();
+    return TS(nullptr, 0);
 }
 
 X509Cert SignatureXAdES_LTA::ArchiveTimeStampCertificate() const
 {
-    return TS(tsaBase64()).cert();
+    return tsaFromBase64().cert();
 }
 
 string SignatureXAdES_LTA::ArchiveTimeStampTime() const
 {
-    return ASN1TimeToXSD(TS(tsaBase64()).time());
+    return date::ASN1TimeToXSD(tsaFromBase64().time());
 }
 
 void SignatureXAdES_LTA::validate(const string &policy) const
@@ -222,7 +213,7 @@ void SignatureXAdES_LTA::validate(const string &policy) const
             THROW("Missing EncapsulatedTimeStamp");
 
         const GenericTimeStampType::EncapsulatedTimeStampType &bin = ts.encapsulatedTimeStamp().front();
-        TS tsa(vector<unsigned char>(bin.begin(), bin.end()));
+        TS tsa((const unsigned char*)bin.data(), bin.size());
         Digest calc(tsa.digestMethod());
         calcArchiveDigest(&calc);
         tsa.verify(calc);
