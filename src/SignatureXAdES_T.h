@@ -25,21 +25,21 @@ namespace digidoc
 {
 
 namespace xades { class UnsignedSignaturePropertiesType; }
+class TS;
 
 class SignatureXAdES_T: public SignatureXAdES_B
 {
 public:
     SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer);
     SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
-    virtual ~SignatureXAdES_T() override = default;
 
-    virtual std::string trustedSigningTime() const override;
-    virtual std::vector<unsigned char> messageImprint() const override;
+    std::string trustedSigningTime() const override;
+    std::vector<unsigned char> messageImprint() const override;
 
     X509Cert TimeStampCertificate() const override;
     std::string TimeStampTime() const override;
-    virtual void validate(const std::string &policy) const override;
-    virtual void extendSignatureProfile(const std::string &profile) override;
+    void validate(const std::string &policy) const override;
+    void extendSignatureProfile(const std::string &profile) override;
 
 protected:
     void createUnsignedSignatureProperties();
@@ -48,7 +48,7 @@ protected:
 private:
     DISABLE_COPY(SignatureXAdES_T);
 
-    std::vector<unsigned char> tsBase64() const;
+    TS tsFromBase64() const;
 
 };
 

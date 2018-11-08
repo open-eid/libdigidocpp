@@ -29,7 +29,6 @@
 #include <util/DateTime.h>
 
 using namespace digidoc;
-using namespace digidoc::util::date;
 using namespace std;
 
 void SignatureCAdES_T::extendSignatureProfile(const string &profile)
@@ -38,11 +37,11 @@ void SignatureCAdES_T::extendSignatureProfile(const string &profile)
         return;
     ASN1_OCTET_STRING *signature = CMS_SignerInfo_get0_signature(d->si);
     Digest digest;
-    digest.update(signature->data, signature->length);
+    digest.update(signature->data, size_t(signature->length));
     vector<unsigned char> tsa = TS(CONF(TSUrl), digest);
     if(tsa.empty())
         THROW("Failed to add TimeStamp info");
-    if(CMS_unsigned_add1_attr_by_NID(d->si, NID_id_smime_aa_timeStampToken, V_ASN1_SEQUENCE, tsa.data(), tsa.size()) != 1)
+    if(CMS_unsigned_add1_attr_by_NID(d->si, NID_id_smime_aa_timeStampToken, V_ASN1_SEQUENCE, tsa.data(), int(tsa.size())) != 1)
         THROW("Failed to add TimeStamp info");
 }
 
@@ -53,25 +52,25 @@ string SignatureCAdES_T::trustedSigningTime() const
 }
 
 X509Cert SignatureCAdES_T::TimeStampCertificate() const { return ts().cert(); }
-string SignatureCAdES_T::TimeStampTime() const { return ASN1TimeToXSD(ts().time()); }
+string SignatureCAdES_T::TimeStampTime() const { return util::date::ASN1TimeToXSD(ts().time()); }
 
 TS SignatureCAdES_T::ts() const
 {
     int pos = CMS_unsigned_get_attr_by_NID(d->si, NID_id_smime_aa_timeStampToken, -1);
     if(pos == -1)
-        return TS(vector<unsigned char>());
+        return TS(nullptr, 0);
     X509_ATTRIBUTE *attr = CMS_unsigned_get_attr(d->si, pos);
     if(!attr)
-        return TS(vector<unsigned char>());
+        return TS(nullptr, 0);
     ASN1_TYPE *type = X509_ATTRIBUTE_get0_type(attr, 0);
     if(!type || type->type != V_ASN1_SEQUENCE)
-        return TS(vector<unsigned char>());
-    return TS(vector<unsigned char>(type->value.sequence->data, type->value.sequence->data+type->value.sequence->length));
+        return TS(nullptr, 0);
+    return TS(type->value.sequence->data, size_t(type->value.sequence->length));
 }
 
 void SignatureCAdES_T::validate(const std::string &policy) const
 {
-    Exception exception(__FILE__, __LINE__, "Signature validation");
+    Exception exception(EXCEPTION_PARAMS("Signature validation"));
     try {
         SignatureCAdES_B::validate(policy);
     } catch(const Exception &e) {
@@ -82,7 +81,7 @@ void SignatureCAdES_T::validate(const std::string &policy) const
     try {
         ASN1_OCTET_STRING *signature = CMS_SignerInfo_get0_signature(d->si);
         Digest digest;
-        digest.update(signature->data, signature->length);
+        digest.update(signature->data, size_t(signature->length));
         ts().verify(digest);
     } catch(const Exception &e) {
         exception.addCause(e);

@@ -42,6 +42,7 @@ namespace digidoc
               OCSPCertMissing          = 9,
               OCSPTimeSlot             = 7,
               OCSPRequestUnauthorized  = 11,
+              TSTooManyRequests        = 18,
               //Pin exceptions
               PINCanceled              = 2,
               PINFailed                = 4,
