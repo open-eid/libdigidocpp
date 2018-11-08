@@ -41,16 +41,16 @@ namespace digidoc
       public:
           OCSP(const X509Cert &cert, const X509Cert &issuer,
                const std::vector<unsigned char> &nonce, const std::string &format, bool TMProfile);
-          OCSP(const std::vector<unsigned char> &data);
+          OCSP(const unsigned char *data, size_t size);
 
           std::vector<unsigned char> nonce() const;
           std::string producedAt() const;
-          bool compareResponderCert(const X509Cert &cert) const;
           X509Cert responderCert() const;
           std::vector<unsigned char> toDer() const;
           void verifyResponse(const X509Cert &cert) const;
 
       private:
+          bool compareResponderCert(const X509Cert &cert) const;
           OCSP_REQUEST* createRequest(OCSP_CERTID *certId, const std::vector<unsigned char> &nonce, bool signRequest);
 
           std::shared_ptr<OCSP_RESPONSE> resp;

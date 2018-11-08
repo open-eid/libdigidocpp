@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(signerParameters)
     signer->setSignatureProductionPlace("Tartu", "Tartumaa", "12345", "Estonia");
 
     vector<string> roles;
-    roles.push_back( "Role1" );
+    roles.emplace_back("Role1");
     signer->setSignerRoles( roles );
 
     BOOST_CHECK_EQUAL(signer->signerRoles(), roles);
@@ -168,9 +168,9 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(DocSuite)
 #ifdef LINKED_LIBDIGIDOC
-typedef boost::mpl::list<ASiCE,DDoc> DocTypes;
+using DocTypes = boost::mpl::list<ASiCE,DDoc>;
 #else
-typedef boost::mpl::list<ASiCE> DocTypes;
+using DocTypes = boost::mpl::list<ASiCE>;
 #endif
 BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
 {
@@ -315,7 +315,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     if(d->mediaType() == ASiCE::TYPE)
     {
         unique_ptr<Signer> signer3(new PKCS12Signer("signerEC.p12", "signerEC"));
-        Signature *s3 = 0;
+        Signature *s3 = nullptr;
         BOOST_CHECK_NO_THROW(s3 = d->sign(signer3.get()));
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
         if(s3)
@@ -389,12 +389,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 {
     unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
     vector<string> data;
-    data.push_back("0123456789~#%&()=`@{[]}'");
-    data.push_back("öäüõ");
+    data.emplace_back("0123456789~#%&()=`@{[]}'");
+    data.emplace_back("öäüõ");
     for(vector<string>::const_iterator i = data.begin(); i != data.end(); ++i)
     {
         unique_ptr<Container> d(Container::create("test." + Doc::EXT));
-        const Signature *s1 = 0;
+        const Signature *s1 = nullptr;
         BOOST_CHECK_NO_THROW(d->addDataFile(*i + ".txt", "text/plain"));
         if(Doc::EXT == DDoc::EXT)
             return;
@@ -417,10 +417,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
     signer1->setSignatureProductionPlace("Tartu", "Tartumaa", "12345", "Estonia");
 
     vector<string> roles;
-    roles.push_back( "Role1" );
+    roles.emplace_back("Role1");
     signer1->setSignerRoles( roles );
 
-    const Signature *s1 = 0;
+    const Signature *s1 = nullptr;
     BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
     BOOST_CHECK_NO_THROW(d->addDataFile("test2.bin", "text/plain"));
     if(Doc::EXT == DDoc::EXT)
@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
         BOOST_CHECK_EQUAL(s1->stateOrProvince(), "Tartumaa");
         BOOST_CHECK_EQUAL(s1->postalCode(), "12345");
         BOOST_CHECK_EQUAL(s1->countryName(), "Estonia");
-        time_t t = time(0);
+        time_t t = time(nullptr);
         struct tm *t2 = gmtime(&t);
         string time = util::date::xsd2string(util::date::makeDateTime(*t2));
         BOOST_WARN_EQUAL(s1->claimedSigningTime().substr(0, 16), time.substr(0, 16));

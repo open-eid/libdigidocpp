@@ -154,12 +154,11 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
 #endif
 }
 
-OCSP::OCSP(const vector<unsigned char> &data)
+OCSP::OCSP(const unsigned char *data, size_t size)
 {
-    if(data.empty())
+    if(size == 0)
         return;
-    const unsigned char *p = data.data();
-    resp.reset(d2i_OCSP_RESPONSE(nullptr, &p, (unsigned int)data.size()), OCSP_RESPONSE_free);
+    resp.reset(d2i_OCSP_RESPONSE(nullptr, &data, (unsigned int)size), OCSP_RESPONSE_free);
     if(resp)
        basic.reset(OCSP_response_get1_basic(resp.get()), OCSP_BASICRESP_free);
 }
@@ -177,8 +176,8 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
     {
         unsigned char sha1[SHA_DIGEST_LENGTH];
         ASN1_BIT_STRING *key = X509_get0_pubkey_bitstr(cert.handle());
-        return EVP_Digest(key->data, size_t(key->length), sha1, nullptr, EVP_sha1(), nullptr) == 1 &&
-            memcmp(hash->data, &sha1, size_t(hash->length)) == 0;
+        SHA1(key->data, size_t(key->length), sha1);
+        return memcmp(hash->data, &sha1, size_t(hash->length)) == 0;
     }
     return false;
 }

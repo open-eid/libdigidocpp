@@ -35,16 +35,10 @@ DIGIDOCPP_WARNING_POP
 #include <ctime>
 
 using namespace digidoc;
-using namespace digidoc::util::date;
 using namespace digidoc::dsig;
 using namespace digidoc::xades;
 using namespace std;
 using namespace xml_schema;
-
-static Base64Binary toBase64(const vector<unsigned char> &v)
-{
-    return v.empty() ? Base64Binary() : Base64Binary(v.data(), v.size());
-}
 
 SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer)
 : SignatureXAdES_T(id, bdoc, signer)
@@ -71,15 +65,11 @@ SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool 
     }
 }
 
-/**
- * @return nonce value
- */
 vector<unsigned char> SignatureXAdES_LT::messageImprint() const
 {
-    if(profile().find(ASiC_E::ASIC_TM_PROFILE) == string::npos)
-        return SignatureXAdES_T::messageImprint();
-    vector<unsigned char> respBuf = getOCSPResponseValue();
-    return respBuf.empty() ? vector<unsigned char>() : OCSP(respBuf).nonce();
+    if(profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos)
+        return getOCSPResponseValue().nonce();
+    return SignatureXAdES_T::messageImprint();
 }
 
 /**
@@ -87,8 +77,7 @@ vector<unsigned char> SignatureXAdES_LT::messageImprint() const
  */
 X509Cert SignatureXAdES_LT::OCSPCertificate() const
 {
-    vector<unsigned char> respBuf = getOCSPResponseValue();
-    return respBuf.empty() ? X509Cert() : OCSP(respBuf).responderCert();
+    return getOCSPResponseValue().responderCert();
 }
 
 /**
@@ -96,10 +85,7 @@ X509Cert SignatureXAdES_LT::OCSPCertificate() const
  */
 string SignatureXAdES_LT::OCSPProducedAt() const
 {
-    vector<unsigned char> respBuf = getOCSPResponseValue();
-    if(respBuf.empty())
-        return "";
-    return ASN1TimeToXSD(OCSP(respBuf).producedAt());
+    return util::date::ASN1TimeToXSD(getOCSPResponseValue().producedAt());
 }
 
 string SignatureXAdES_LT::trustedSigningTime() const
@@ -146,7 +132,7 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
         vector<Exception> ocspExceptions;
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: revSeq.front().oCSPValues()->encapsulatedOCSPValue())
         {
-            OCSP ocsp(vector<unsigned char>(resp.begin(), resp.end()));
+            OCSP ocsp((const unsigned char*)resp.data(), resp.size());
             try {
                 ocsp.verifyResponse(signingCertificate());
                 foundSignerOCSP = true;
@@ -157,6 +143,15 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
 
             if(profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos)
             {
+                vector<string> policies = ocsp.responderCert().certificatePolicies();
+                const set<string> trusted = CONF(OCSPTMProfiles);
+                if(!std::any_of(policies.cbegin(), policies.cend(), [&](const string &policy) { return trusted.find(policy) != trusted.cend(); }))
+                {
+                    EXCEPTION_ADD(exception, "OCSP Responder does not meet TM requirements");
+                    break;
+                }
+                DEBUG("OCSP Responder contains valid TM OID");
+
                 string method = Digest::digestInfoUri(ocsp.nonce());
                 if(method.empty())
                     THROW("Nonce digest method is missing");
@@ -173,9 +168,9 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
             }
             else
             {
-                struct tm producedAt = ASN1TimeToTM(ocsp.producedAt());
+                struct tm producedAt = util::date::ASN1TimeToTM(ocsp.producedAt());
                 time_t producedAt_t = util::date::mkgmtime(producedAt);
-                time_t timeT = string2time_t(TimeStampTime());
+                time_t timeT = util::date::string2time_t(TimeStampTime());
                 if((producedAt_t - timeT > 15 * 60 || timeT - producedAt_t > 15 * 60) &&
                     !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
                 {
@@ -252,7 +247,8 @@ void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert
                 UnsignedSignaturePropertiesType::certificateValuesId, values.size() - 1));
     }
 
-    CertificateValuesType::EncapsulatedX509CertificateType certData(toBase64(x509));
+    vector<unsigned char> der = x509;
+    CertificateValuesType::EncapsulatedX509CertificateType certData(Base64Binary(der.data(), der.size()));
     certData.id(certId);
     values[0].encapsulatedX509Certificate().push_back(certData);
 }
@@ -263,7 +259,8 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
 
     createUnsignedSignatureProperties();
 
-    OCSPValuesType::EncapsulatedOCSPValueType ocspValueData(toBase64(ocsp.toDer()));
+    vector<unsigned char> der = ocsp.toDer();
+    OCSPValuesType::EncapsulatedOCSPValueType ocspValueData(Base64Binary(der.data(), der.size()));
     ocspValueData.id(id);
 
     OCSPValuesType ocspValue;
@@ -284,31 +281,31 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
  * which contains whole OCSP response
  * @param data will contain DER encoded OCSP response bytes
  */
-vector<unsigned char> SignatureXAdES_LT::getOCSPResponseValue() const
+OCSP SignatureXAdES_LT::getOCSPResponseValue() const
 {
     try
     {
         if(unsignedSignatureProperties().revocationValues().empty())
-            return vector<unsigned char>();
+            return OCSP(nullptr, 0);
         const RevocationValuesType &t = unsignedSignatureProperties().revocationValues().front();
         if(!t.oCSPValues().present() || t.oCSPValues()->encapsulatedOCSPValue().empty())
-            return vector<unsigned char>();
+            return OCSP(nullptr, 0);
         // Return OCSP response that matches with signingCertificate
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
         {
             try {
                 vector<unsigned char> data(resp.begin(), resp.end());
-                OCSP(data).verifyResponse(signingCertificate());
-                return data;
+                OCSP ocsp((const unsigned char*)resp.data(), resp.size());
+                ocsp.verifyResponse(signingCertificate());
+                return ocsp;
             } catch(const Exception &) {
             }
         }
         // Return first OCSP response when chains are not complete and validation fails
         const OCSPValuesType::EncapsulatedOCSPValueType &resp = t.oCSPValues()->encapsulatedOCSPValue().at(0);
-        return vector<unsigned char>(resp.begin(), resp.end());
+        return OCSP((const unsigned char*)resp.data(), resp.size());
     }
     catch(const Exception &)
     {}
-    return vector<unsigned char>();
+    return OCSP(nullptr, 0);
 }
-

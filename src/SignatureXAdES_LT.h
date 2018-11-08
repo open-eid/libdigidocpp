@@ -25,29 +25,27 @@
 namespace digidoc
 {
 
-namespace xades { class OCSPRefType; }
 class OCSP;
 class SignatureXAdES_LT: public SignatureXAdES_T
 {
 public:
     SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer);
     SignatureXAdES_LT(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
-    virtual ~SignatureXAdES_LT() override = default;
 
-    virtual std::string trustedSigningTime() const override;
+    std::string trustedSigningTime() const override;
 
     std::vector<unsigned char> messageImprint() const override;
     X509Cert OCSPCertificate() const override;
     std::string OCSPProducedAt() const override;
-    virtual void validate(const std::string &policy) const override;
-    virtual void extendSignatureProfile(const std::string &profile) override;
+    void validate(const std::string &policy) const override;
+    void extendSignatureProfile(const std::string &profile) override;
 
 private:
     DISABLE_COPY(SignatureXAdES_LT);
 
     void addOCSPValue(const std::string &id, const OCSP &ocsp);
     void addCertificateValue(const std::string& certId, const X509Cert& x509);
-    std::vector<unsigned char> getOCSPResponseValue() const;
+    OCSP getOCSPResponseValue() const;
 };
 
 }
