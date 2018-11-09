@@ -107,7 +107,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
         if(cert.handle())
         {
-            SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, 0);
+            SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
             SSL_CTX_set_cert_verify_callback(ssl.get(), [](X509_STORE_CTX *store, void *cert) -> int {
                 X509 *x509 = X509_STORE_CTX_get0_cert(store);
                 return x509 && X509_cmp(x509, (X509*)cert) == 0 ? 1 : 0;
@@ -150,26 +150,27 @@ void Connect::addHeader(const string &key, const string &value)
     BIO_printf(d, "%s: %s\r\n", key.c_str(), value.c_str());
 }
 
-void Connect::addHeaders(initializer_list<pair<string,string>> list)
+void Connect::addHeaders(initializer_list<pair<string,string>> headers)
 {
-    for(const pair<string,string> &it: list)
+    for(const pair<string,string> &it: headers)
         addHeader(it.first, it.second);
 }
 
-Connect::Result Connect::exec(initializer_list<pair<string,string>> list,
-    const vector<unsigned char> &send)
+Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
+    const vector<unsigned char> &data)
 {
-    addHeaders(list);
-    return exec(send);
+    return exec(headers, data.data(), data.size());
 }
 
-Connect::Result Connect::exec(const vector<unsigned char> &send)
+Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
+    const unsigned char *data, size_t size)
 {
-    if(!send.empty())
+    addHeaders(headers);
+    if(size != 0)
     {
-        addHeader("Content-Length", to_string(send.size()));
+        addHeader("Content-Length", to_string(size));
         BIO_printf(d, "\r\n");
-        BIO_write(d, send.data(), int(send.size()));
+        BIO_write(d, data, int(size));
     }
     else
         BIO_printf(d, "\r\n");
@@ -180,7 +181,7 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
     r.content.resize(1024);
     chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
     do {
-        if(rc > 0 && size_t(pos += rc) >= r.content.size())
+        if(rc > 0 && (pos += size_t(rc)) >= r.content.size())
             r.content.resize(r.content.size()*2);
         rc = BIO_read(d, &r.content[pos], int(r.content.size() - pos));
         if(rc == -1 && BIO_should_read(d) != 1)
@@ -218,8 +219,8 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
     if(it != r.headers.cend())
     {
         z_stream s;
-        s.zalloc = Z_NULL;
-        s.zfree = Z_NULL;
+        s.zalloc = nullptr;
+        s.zfree = nullptr;
         s.next_in = (Bytef*)r.content.c_str();
         s.avail_in = uInt(r.content.size());
         s.total_out = 0;
@@ -238,7 +239,7 @@ Connect::Result Connect::exec(const vector<unsigned char> &send)
             if(s.total_out >= out.size())
                 out.resize(out.size() * 2);
             s.next_out = (Bytef*)&out[s.total_out];
-            s.avail_out = uInt(out.size()) - s.total_out;
+            s.avail_out = uInt(uLong(out.size()) - s.total_out);
             switch(inflate(&s, Z_NO_FLUSH))
             {
             case Z_OK:
