@@ -281,6 +281,9 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
             find(policies.cbegin(), policies.cend(), X509Cert::QCP_NATURAL_QSCD) != policies.cend() ||
             find(qcstatement.cbegin(), qcstatement.cend(), X509Cert::QC_SSCD) != qcstatement.cend();
 
+        bool isESeal =  // Special treamtent for E-Seals
+            find(policies.cbegin(), policies.cend(), X509Cert::QCP_LEGAL) != policies.cend() ||
+            find(qcstatement.cbegin(), qcstatement.cend(), X509Cert::QCT_ESEAL) != qcstatement.cend();
         auto matchPolicySet = [&](const vector<string> &policySet){
             return all_of(policySet.cbegin(), policySet.cend(), [&](const string &policy){
                 return find(policies.cbegin(), policies.cend(), policy) != policies.cend();
@@ -328,16 +331,13 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
                 else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCNoSSCD" ||
                         qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCNoQSCD")
                     isQSCD = false;
-                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForLegalPerson")
-                    DEBUG("QCForLegalPerson qualified?");
-                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForESeal")
-                    DEBUG("QCForESeal qualified?");
-                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForWSA")
-                    DEBUG("QCForWSA qualified?");
+                else if(qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForLegalPerson" ||
+                        qc == "http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForESeal")
+                    isESeal = true;
             }
         }
 
-        if(!isQCCompliant || !isQSCD)
+        if(!((isQCCompliant && isQSCD) || isESeal))
         {
             Exception e(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
             e.setCode(Exception::CertificateIssuerMissing);

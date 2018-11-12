@@ -73,7 +73,8 @@ void SignatureSiVa::validate() const
 
 void SignatureSiVa::validate(const std::string &policy) const
 {
-    static const std::set<std::string> QES = { "QESIG", "QESEAL", "QES" };
+    static const std::set<std::string> QES = { "QESIG", "QES", "QESEAL",
+        "ADESEAL_QC", "ADESEAL" }; // Special treamtent for E-Seals
     Exception e(EXCEPTION_PARAMS("Signature validation"));
     if(_indication == "TOTAL-PASSED")
     {
@@ -137,7 +138,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
     else
         reqObj << "documentType" << ext;
     string req = reqObj.json();
-    Connect::Result r = Connect(url, "POST", 0, "", CONF(verifyServiceCert)).exec({
+    Connect::Result r = Connect(url, "POST", 0, string(), CONF(verifyServiceCert)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
     }, vector<unsigned char>(req.cbegin(), req.cend()));
 
@@ -154,7 +155,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         for(const jsonxx::Value *error: result.get<jsonxx::Array>("requestErrors").values())
         {
             string message = error->get<jsonxx::Object>().get<string>("message");
-            e.addCause(Exception(EXCEPTION_PARAMS(message.c_str())));
+            EXCEPTION_ADD(e, message.c_str());
         }
         throw e;
     }
@@ -182,7 +183,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         for(const jsonxx::Value *error: signature.get<jsonxx::Array>("errors", jsonxx::Array()).values())
         {
             string message = error->get<jsonxx::Object>().get<string>("content");
-            s->_errors.push_back(Exception(EXCEPTION_PARAMS(message.c_str())));
+            s->_errors.emplace_back(EXCEPTION(message.c_str()));
         }
         d->signatures.push_back(s);
     }
@@ -197,22 +198,22 @@ SiVaContainer::~SiVaContainer()
     delete d;
 }
 
-void SiVaContainer::addDataFile(const string &, const string &)
+void SiVaContainer::addDataFile(const string & /*path*/, const string & /*mediaType*/)
 {
     THROW("Not supported.");
 }
 
-void SiVaContainer::addDataFile(istream *, const string &, const string &)
+void SiVaContainer::addDataFile(istream * /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
 {
     THROW("Not supported.");
 }
 
-void SiVaContainer::addAdESSignature(istream &)
+void SiVaContainer::addAdESSignature(istream & /*signature*/)
 {
     THROW("Not supported.");
 }
 
-Container* SiVaContainer::createInternal(const string &)
+Container* SiVaContainer::createInternal(const string & /*unused*/)
 {
     return nullptr;
 }
@@ -229,7 +230,7 @@ vector<DataFile *> SiVaContainer::dataFiles() const
 
 Container* SiVaContainer::openInternal(const string &path)
 {
-    static set<string> supported = {"PDF", "DDOC"};
+    static const set<string> supported = {"PDF", "DDOC"};
     string ext = File::fileExtension(path);
     transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
     return supported.find(ext) != supported.cend() ? new SiVaContainer(path, ext) : nullptr;
@@ -273,7 +274,7 @@ std::stringstream* SiVaContainer::parseDDoc(std::istream *is)
             }
         }
 
-        DOMImplementationLS *pImplement = (DOMImplementationLS*)DOMImplementationRegistry::getDOMImplementation(X("LS"));
+        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(X("LS"));
         unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
         unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
         MemBufFormatTarget out;
@@ -300,7 +301,7 @@ std::stringstream* SiVaContainer::parseDDoc(std::istream *is)
     }
 }
 
-Signature* SiVaContainer::prepareSignature(Signer *)
+Signature* SiVaContainer::prepareSignature(Signer * /*signer*/)
 {
     THROW("Not implemented.");
 }
@@ -310,22 +311,22 @@ vector<Signature *> SiVaContainer::signatures() const
     return d->signatures;
 }
 
-void SiVaContainer::removeDataFile(unsigned int)
+void SiVaContainer::removeDataFile(unsigned int /*index*/)
 {
     THROW("Not supported.");
 }
 
-void SiVaContainer::removeSignature(unsigned int)
+void SiVaContainer::removeSignature(unsigned int /*index*/)
 {
     THROW("Not implemented.");
 }
 
-void SiVaContainer::save(const string &)
+void SiVaContainer::save(const string & /*path*/)
 {
     THROW("Not implemented.");
 }
 
-Signature *SiVaContainer::sign(Signer *)
+Signature *SiVaContainer::sign(Signer * /*signer*/)
 {
     THROW("Not implemented.");
 }
