@@ -27,7 +27,7 @@ matrix:
     env: TARGET=androidx86
 sudo: required
 dist: trusty
-osx_image: xcode10
+osx_image: xcode10.1
 services:
 - docker
 cache: ccache
@@ -53,7 +53,8 @@ before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
         aws s3 cp ${HASH}.zip s3://open-eid/libdigidocpp-cache/${TARGET}/${HASH}.zip --acl public-read;
       fi
     fi
-  fi
+  fi;
+  mkdir ../upload
 script: case ${TARGET} in
   *ios*|*simulator*)
     cd examples/libdigidocpp-ios && ./build-library.sh ${TARGET} && cd ../..;
@@ -65,16 +66,18 @@ script: case ${TARGET} in
   *osx*)
     mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/Library/libdigidocpp -DOPENSSL_ROOT_DIR=/Library/libdigidocpp ..;
     make all pkcs11sign zipdebug embedlibs pkgbuild && cd ..;
+    cp build/libdigidocpp*.pkg ../upload;
     ;;
   *)
     docker run -e BUILD_NUMBER=${BUILD_NUMBER} -e RUN_TESTS=${RUN_TESTS} -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -e TARGET=${TARGET} -v ${HOME}:${HOME} -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
       apt-get update -qq; 
       apt-get install -y dh-make devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev git curl wget ruby;
-      export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}").${BUILD_NUMBER};
+      export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}");
+      export VERSIONEX=${VERSION}.${BUILD_NUMBER}
       export DEBFULLNAME="Travis";
       export DEBEMAIL="travis-ci@travis-ci.org";
-      dh_make --createorig --addmissing --defaultless -y -p libdigidocpp_${VERSION};
-      dch --distribution $(lsb_release -cs) -v ${VERSION} "Release ${VERSION}.";
+      dh_make --createorig --addmissing --defaultless -y -p libdigidocpp_${VERSIONEX};
+      dch --distribution $(lsb_release -cs) -v ${VERSIONEX} "Release ${VERSIONEX}.";
       dpkg-buildpackage -rfakeroot -us -uc;
       if [ "${TARGET}" = "ubuntu:16.04" ]; then
         export COVERITY_SCAN_PROJECT_NAME="open-eid/libdigidocpp";
@@ -85,19 +88,30 @@ script: case ${TARGET} in
         wget -O - https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh | bash;
       fi;
       lintian ../*.deb;
-      git clean -dxf';
+      git clean -dxf;
+      cd ..;
+      mv libdigidocpp libdigidocpp-${VERSION};
+      tar czf libdigidocpp-${VERSION}.tar.gz --exclude-vcs libdigidocpp-${VERSION};
+      mv libdigidocpp-${VERSION} libdigidocpp;
+      cp libdigidocpp*.* upload';
   esac
 
-before_deploy:
-- export VERSION=${TRAVIS_TAG:1}
-- cd ..
-- mv libdigidocpp libdigidocpp-${VERSION}
-- tar czf libdigidocpp-${VERSION}.tar.gz --exclude-vcs libdigidocpp-${VERSION}
 deploy:
-  provider: releases
+- provider: releases
   api_key: ${GITHUB_ACCESS_TOKEN}
   file: libdigidocpp-${VERSION}.tar.gz
   skip_cleanup: true
   on:
     tags: true
     condition: "$TRAVIS_OS_NAME = linux"
+- provider: s3
+  access_key_id: ${AWS_ACCESS_KEY_ID}
+  secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+  region: ${AWS_DEFAULT_REGION}
+  bucket: open-eid
+  skip_cleanup: true
+  local_dir: ../upload
+  upload-dir: libdigidocpp-nightly/${BUILD_NUMBER}
+  acl: public_read
+  on:
+    condition: $TRAVIS_REPO_SLUG = "open-eid/libdigidocpp"
