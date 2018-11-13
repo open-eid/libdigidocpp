@@ -31,7 +31,11 @@
   #else
     #define DEPRECATED_DIGIDOCPP
   #endif
-  #define DIGIDOCPP_NOEXCEPT _NOEXCEPT
+  #if _MSC_VER >= 1900
+    #define DIGIDOCPP_NOEXCEPT noexcept
+  #else
+    #define DIGIDOCPP_NOEXCEPT
+  #endif
   #define DIGIDOCPP_WARNING_PUSH __pragma(warning(push))
   #define DIGIDOCPP_WARNING_POP __pragma(warning(pop))
   #define DIGIDOCPP_WARNING_DISABLE_CLANG(text)

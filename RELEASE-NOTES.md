@@ -1,3 +1,13 @@
+Libdigidocpp library [3.13.8](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.8) release notes
+--------------------------------------
+- Use ETag instead Last-Modified to verify cached file (#238)
+- Fix signature verify with OpenSSL 1.1 (#240)
+- Check OCSP TM OID (#247)
+- Handle TSA error code 429 and cleanup some code (#250)
+- Upload artifacts to AWS (#253)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.7...v3.13.8)
+
 Libdigidocpp library [3.13.7](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.7) release notes
 --------------------------------------
 - Remove compiler warnings
