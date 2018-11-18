@@ -32,28 +32,23 @@ namespace digidoc
     /**
      * ZIP file implementation of the ISerialize interface. Saves files to ZIP file
      * and extracts the ZIP file on demand. Uses ZLib to implement ZIP file operations.
-     *
-     * @author Janari Põld
      */
-    class ZipSerializePrivate;
     class ZipSerialize
     {
       public:
           struct Properties { std::string comment; tm time; unsigned long size; };
-          enum {
-              DontCompress = 1
-          };
-          ZipSerialize(const std::string &path, bool create);
+          enum Flags { NoFlags = 0, DontCompress = 1 };
+          ZipSerialize(std::string path, bool create);
           ~ZipSerialize();
 
           std::vector<std::string> list() const;
           void extract(const std::string &file, std::ostream &os) const;
-          void addFile(const std::string &containerPath, std::istream &is, const Properties &prop, unsigned int flags = 0);
+          void addFile(const std::string &containerPath, std::istream &is, const Properties &prop, Flags flags = NoFlags);
           Properties properties(const std::string &file) const;
-          void save();
 
       private:
           DISABLE_COPY(ZipSerialize);
-          ZipSerializePrivate *d;
+          class Private;
+          Private *d;
     };
 }

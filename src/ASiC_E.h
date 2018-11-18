@@ -44,7 +44,7 @@ namespace digidoc
           static const std::string ASIC_TSA_PROFILE;
           static const std::string MANIFEST_NAMESPACE;
 
-          ~ASiC_E();
+          ~ASiC_E() final;
           void save(const std::string &path = "") override;
           std::vector<DataFile*> metaFiles() const;
 
