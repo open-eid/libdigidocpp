@@ -29,6 +29,7 @@ class EXP_DIGIDOC XmlConf: public Conf
 public:
     explicit XmlConf(const std::string &path = "", const std::string &schema = "");
     ~XmlConf() override;
+    static XmlConf* instance();
 
     int logLevel() const override;
     std::string logFile() const override;
@@ -84,6 +85,7 @@ class EXP_DIGIDOC XmlConfV2: public ConfV2
 public:
     explicit XmlConfV2(const std::string &path = "", const std::string &schema = "");
     ~XmlConfV2() override;
+    static XmlConfV2* instance();
 
     int logLevel() const override;
     std::string logFile() const override;
@@ -137,6 +139,7 @@ class EXP_DIGIDOC XmlConfV3: public ConfV3
 public:
     explicit XmlConfV3(const std::string &path = {}, const std::string &schema = {});
     ~XmlConfV3() override;
+    static XmlConfV3* instance();
 
     int logLevel() const override;
     std::string logFile() const override;
