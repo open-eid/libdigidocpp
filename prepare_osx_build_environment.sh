@@ -4,7 +4,7 @@ set -e
 XERCES_DIR=xerces-c-3.2.2
 XMLSEC_DIR=xml-security-c-2.0.1
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.0.2p
+OPENSSL_DIR=openssl-1.0.2q
 #OPENSSL_DIR=openssl-1.1.0i
 LIBXML2_DIR=libxml2-2.9.8
 ANDROID_NDK=android-ndk-r14b

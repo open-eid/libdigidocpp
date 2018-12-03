@@ -3,14 +3,14 @@ param(
 	[string]$target = "C:\build",
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
 	[string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
-	[string]$vstarget = "12",
+	[string]$vstarget = "14",
 	[string]$vsver = "$($vstarget).0",
 	[string]$msbuildparams = "VisualStudioVersion=$vsver;PlatformToolset=v$($vstarget)0",
 	[string]$msbuild = "C:\Program Files (x86)\MSBuild\$vsver\Bin\MSBuild.exe",
 	[string]$VSINSTALLDIR = "C:\Program Files (x86)\Microsoft Visual Studio $vsver",
 	[string]$devenv = "$VSINSTALLDIR\Common7\IDE\devenv.exe",
 	[string]$vcvars = "$VSINSTALLDIR\VC\vcvarsall.bat",
-	[string]$opensslver = "openssl-1.0.2p",
+	[string]$opensslver = "openssl-1.0.2q",
 	[string]$xercesver = "xerces-c-3.2.2",
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-1.7.3",
@@ -62,10 +62,9 @@ function xerces() {
 	foreach($platform in @("x86", "x64")) {
 		foreach($type in @("Debug", "RelWithDebInfo")) {
 			$buildpath = $platform+$type
-			$arch = If ($platform -ne "x86") {"x86_amd64"} Else {"x86"}
 			New-Item -ItemType directory -Path $buildpath > $null
 			Push-Location -Path $buildpath
-			& $vcvars $arch "&&" $cmake "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=$target\xerces\$platform" "-GNMake Makefiles" .. "&&" nmake /nologo install # > $null
+			& $vcvars $platform "&&" $cmake "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=$target\xerces\$platform" "-GNMake Makefiles" .. "&&" nmake /nologo install # > $null
 			Pop-Location
 			Remove-Item $buildpath -Force -Recurse
 		}
@@ -130,8 +129,7 @@ function zlib() {
 	foreach($platform in @("x86", "x64")) {
 		& $7zip x "$zlibver.tar" > $null
 		Push-Location -Path $zlibver
-		$arch = If ($platform -ne "x86") {"x86_amd64"} Else {"x86"}
-		& $vcvars $arch "&&" $cmake -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\zlib\$platform" "-GNMake Makefiles" . "&&" nmake /nologo install
+		& $vcvars $platform "&&" $cmake -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\zlib\$platform" "-GNMake Makefiles" . "&&" nmake /nologo install
 		Pop-Location
 		Remove-Item $zlibver -Force -Recurse
 	}
@@ -146,8 +144,7 @@ function freetype() {
 	foreach($platform in @("x86", "x64")) {
 		New-Item -ItemType directory -Path build > $null
 		Push-Location -Path build
-		$arch = If ($platform -ne "x86") {"x86_amd64"} Else {"x86"}
-		& $vcvars $arch "&&" $cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\freetype\$platform" "-GNMake Makefiles" .. "&&" nmake /nologo install
+		& $vcvars $platform "&&" $cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\freetype\$platform" "-GNMake Makefiles" .. "&&" nmake /nologo install
 		Pop-Location
 		Remove-Item build -Force -Recurse
 	}
@@ -167,8 +164,7 @@ function podofo() {
 		del cmake/modules/FindZLIB.cmake
 		(Get-Content CMakeLists.txt) -replace '\$\{PNG_LIBRARIES\}', '' | Set-Content CMakeLists.txt
 		(Get-Content src/doc/PdfSignatureField.cpp) -replace 'adbe.pkcs7.detached', 'ETSI.CAdES.detached' | Set-Content src/doc/PdfSignatureField.cpp
-		$arch = If ($platform -ne "x86") {"x86_amd64"} Else {"x86"}
-		& $vcvars $arch "&&" $cmake "-GNMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DPODOFO_BUILD_LIB_ONLY=YES `
+		& $vcvars $platform "&&" $cmake "-GNMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DPODOFO_BUILD_LIB_ONLY=YES `
 			"-DCMAKE_INSTALL_PREFIX=$target\podofo\$platform" -DPODOFO_BUILD_STATIC=NO -DPODOFO_BUILD_SHARED=YES `
 			"-DZLIB_INCLUDE_DIR=$target\zlib\$platform\include" "-DZLIB_LIBRARY_RELEASE=$target\zlib\$platform\lib\zlib.lib" `
 			"-DFREETYPE_INCLUDE_DIR=$target\freetype\$platform\include\freetype2" "-DFREETYPE_LIBRARY=$target\freetype\$platform\lib\freetype.lib" . "&&" nmake /nologo install
