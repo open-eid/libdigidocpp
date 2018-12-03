@@ -48,8 +48,11 @@
 class DigiDocConf: public digidoc::XmlConfCurrent
 {
 public:
-    DigiDocConf(std::string _cache, std::string _tslUrl = std::string(), std::vector<X509Cert> _tslCerts = std::vector<X509Cert>())
-        : digidoc::XmlConfCurrent(), cache(std::move(_cache)), tslUrl(std::move(_tslUrl)), tslCerts(std::move(_tslCerts)) {}
+    DigiDocConf(std::string _cache, std::string _tslUrl = {}, std::vector<X509Cert> _tslCerts = {})
+        : digidoc::XmlConfCurrent(std::string(), _cache.empty() ? std::string() : util::File::path(_cache, "conf.xsd"))
+        , cache(std::move(_cache))
+        , tslUrl(std::move(_tslUrl))
+        , tslCerts(std::move(_tslCerts)) {}
     int logLevel() const override { return 4; }
     std::string logFile() const override { return cache.empty() ? digidoc::XmlConfCurrent::logFile() : cache + "/digidocpp.log"; }
     std::string PKCS12Cert() const override
