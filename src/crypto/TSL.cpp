@@ -45,7 +45,6 @@ DIGIDOCPP_WARNING_POP
 using namespace digidoc;
 using namespace digidoc::tsl;
 using namespace digidoc::util;
-using namespace digidoc::util::date;
 using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
@@ -199,18 +198,18 @@ void TSL::debugException(const digidoc::Exception &e)
 bool TSL::isExpired() const
 {
     return !tsl || !tsl->schemeInformation().nextUpdate().dateTime().present() ||
-        xsd2time_t(tsl->schemeInformation().nextUpdate().dateTime().get()) < time(nullptr);
+        date::xsd2time_t(tsl->schemeInformation().nextUpdate().dateTime().get()) < time(nullptr);
 }
 
 string TSL::issueDate() const
 {
-    return !tsl ? string() : xsd2string(tsl->schemeInformation().listIssueDateTime());
+    return !tsl ? string() : date::xsd2string(tsl->schemeInformation().listIssueDateTime());
 }
 
 string TSL::nextUpdate() const
 {
     return !tsl || !tsl->schemeInformation().nextUpdate().dateTime().present() ?
-        string() : xsd2string(tsl->schemeInformation().nextUpdate().dateTime().get());
+        string() : date::xsd2string(tsl->schemeInformation().nextUpdate().dateTime().get());
 }
 
 string TSL::operatorName() const
@@ -254,9 +253,9 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
             try
             {
                 ofstream file(File::encodeName(tmp).c_str(), ofstream::binary);
-                Connect::Result r = Connect(url, "GET", timeout).exec({{"Accept-Encoding", "gzip"}}, vector<unsigned char>());
+                Connect::Result r = Connect(url, "GET", timeout).exec({{"Accept-Encoding", "gzip"}});
                 if(r.isRedirect())
-                    r = Connect(r.headers["Location"], "GET", timeout).exec({{"Accept-Encoding", "gzip"}}, vector<unsigned char>());
+                    r = Connect(r.headers["Location"], "GET", timeout).exec({{"Accept-Encoding", "gzip"}});
                 if(!r.isOK() || r.content.empty())
                     THROW("HTTP status code is not 200 or content is empty");
                 file << r.content;
@@ -404,10 +403,10 @@ bool TSL::parseInfo(const X &info, Service &s, time_t &previousTime)
     }
 
     if(SERVICESTATUS_START.find(info.serviceStatus()) != SERVICESTATUS_START.cend())
-        s.validity.push_back({xsd2time_t(info.statusStartingTime()), previousTime, qualifiers});
+        s.validity.push_back({date::xsd2time_t(info.statusStartingTime()), previousTime, qualifiers});
     else if(SERVICESTATUS_END.find(info.serviceStatus()) == SERVICESTATUS_END.cend())
         DEBUG("Unknown service status %s", info.serviceStatus().c_str());
-    previousTime = xsd2time_t(info.statusStartingTime());
+    previousTime = date::xsd2time_t(info.statusStartingTime());
     return true;
 }
 

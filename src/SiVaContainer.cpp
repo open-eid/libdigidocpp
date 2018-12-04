@@ -140,7 +140,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
     string req = reqObj.json();
     Connect::Result r = Connect(url, "POST", 0, string(), CONF(verifyServiceCert)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
-    }, vector<unsigned char>(req.cbegin(), req.cend()));
+    }, (const unsigned char*)req.c_str(), req.size());
 
     if(!r.isOK() && !r.isStatusCode("400"))
         THROW("Failed to send request to SiVa");

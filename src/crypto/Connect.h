@@ -63,10 +63,11 @@ public:
         int timeout = 0, const std::string &useragent = std::string(), const X509Cert &cert = X509Cert());
     ~Connect();
     void addHeader(const std::string &key, const std::string &value);
-    void addHeaders(std::initializer_list<std::pair<std::string,std::string>> list);
-    Result exec(const std::vector<unsigned char> &data = std::vector<unsigned char>());
-    Result exec(std::initializer_list<std::pair<std::string,std::string>> list,
+    void addHeaders(std::initializer_list<std::pair<std::string,std::string>> headers);
+    Result exec(std::initializer_list<std::pair<std::string,std::string>> headers,
         const std::vector<unsigned char> &data);
+    Result exec(std::initializer_list<std::pair<std::string,std::string>> headers = {},
+        const unsigned char *data = nullptr, size_t size = 0);
 
 private:
     DISABLE_COPY(Connect);
