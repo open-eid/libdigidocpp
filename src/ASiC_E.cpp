@@ -69,7 +69,6 @@ ASiC_E::ASiC_E(const string &path)
     : ASiContainer(MIMETYPE_ASIC_E)
     , d(new Private)
 {
-    DEBUG("ASiC_E::ASiC_E(%s)", path.c_str());
     auto zip = load(path, true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
     parseManifestAndLoadFiles(*zip);
 }
@@ -125,12 +124,11 @@ void ASiC_E::save(const string &path)
         signature->saveToXml(ofs);
         s.addFile(file, ofs, zproperty(file));
     }
-
-    s.save();
 }
 
 Container* ASiC_E::createInternal(const string &path)
 {
+    DEBUG("ASiC_E::createInternal(%s)", path.c_str());
     ASiC_E *doc = new ASiC_E();
     doc->zpath(path);
     return doc;
@@ -161,6 +159,7 @@ void ASiC_E::addAdESSignature(istream &sigdata)
 
 Container* ASiC_E::openInternal(const string &path)
 {
+    DEBUG("ASiC_E::openInternal(%s)", path.c_str());
     return new ASiC_E(path);
 }
 
@@ -213,7 +212,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     DEBUG("ASiC_E::readManifest()");
 
     const vector<string> &list = z.list();
-    size_t mcount = count(list.begin(), list.end(), "META-INF/manifest.xml");
+    size_t mcount = count(list.cbegin(), list.cend(), "META-INF/manifest.xml");
     if(mcount < 1)
         THROW("Manifest file is missing");
     if(mcount > 1)
@@ -245,10 +244,10 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 mimeFound = true;
                 continue;
             }
-            else if(file.full_path().back() == '/') // Skip Directory entries
+            if(file.full_path().back() == '/') // Skip Directory entries
                 continue;
 
-            size_t fcount = count(list.begin(), list.end(), file.full_path());
+            size_t fcount = count(list.cbegin(), list.cend(), file.full_path());
             if(fcount < 1)
                 THROW("File described in manifest '%s' does not exist in BDOC container.", file.full_path().c_str());
             if(fcount > 1)
