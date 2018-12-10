@@ -5,6 +5,6 @@ includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 
 Name: libdigidocpp
 Description: Libdigidocpp C++ library for handling digitally signed documents
-Version: @DIGIDOCPP_VERSION@
+Version: @VERSION@
 Libs: -L${libdir} -ldigidocpp
 Cflags: -I${includedir}
