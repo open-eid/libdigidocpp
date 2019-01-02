@@ -5,11 +5,11 @@ Uses [http://swig.org/](http://swig.org/) tools for generating bindings.
 
 For compiling and running the DigiDocCSharp sample C# project, do as follows:
 
-1. Install the "Eesti_ID_kaart-CPP-teek-arendajale" (Estonian ID-card Libdigidocpp library for developers) package, version 3.10.3-beta or higher. The installation packages are available from https://github.com/open-eid/libdigidocpp/releases
+1. Install the "libdigidocpp-3.13.8.msi" package, version 3.10.3-beta or higher. The installation packages are available from https://github.com/open-eid/libdigidocpp/releases
 2. Open the C# sample project from source\examples\DigiDocCSharp folder located in the installation directory
 3. Add the C# source files files from include\digidocpp_csharp folder to the digidoc folder of the opened project (in Solution Explorer view, right click on the digidoc folder, choose Add->Existing item)
 4. Build the solution, DigiDocCSharp.exe executable is created
-4. Libdigidocpp library's binaries (in the x64 or x86 folder of the "Eesti_ID_kaart-CPP-teek-arendajale" package's installation directory) need to be accessible for running the DigiDocCSharp executable. You can either copy the DigiDocCSharp.exe to the x64 or x86 folder, depending on the platform or set the working directory of the project accordingly or add the binaries' folder to PATH variable.
+4. Libdigidocpp library's binaries (in the x64 or x86 folder of the "libdigidocpp" package's installation directory) need to be accessible for running the DigiDocCSharp executable. You can either copy the DigiDocCSharp.exe to the x64 or x86 folder, depending on the platform or set the working directory of the project accordingly or add the binaries' folder to PATH variable.
 5. Run the DigiDocCSharp.exe sample program with the commands described in the next section
 
 ## Commands of the sample application Program.cs

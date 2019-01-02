@@ -73,7 +73,7 @@ private:
 class WebSignerPrivate: public digidoc::Signer
 {
 public:
-    WebSignerPrivate(const digidoc::X509Cert &cert): _cert(cert) {}
+    WebSignerPrivate(digidoc::X509Cert cert): _cert(std::move(cert)) {}
 
 private:
     digidoc::X509Cert cert() const override { return _cert; }
@@ -159,7 +159,7 @@ extern "C"
 #ifdef SWIGCSHARP
 %typemap(cstype) std::vector<unsigned char> "byte[]"
 %typemap(csin,
-		 pre= "	global::System.IntPtr cPtr$csinput = (global::System.IntPtr)digidocPINVOKE.ByteVector_to($csinput, $csinput.Length);
+         pre= "	global::System.IntPtr cPtr$csinput = digidocPINVOKE.ByteVector_to($csinput, $csinput.Length);
 	global::System.Runtime.InteropServices.HandleRef handleRef$csinput = new global::System.Runtime.InteropServices.HandleRef(this, cPtr$csinput);"
 ) std::vector<unsigned char> "handleRef$csinput"
 %typemap(csout, excode=SWIGEXCODE) std::vector<unsigned char> {
@@ -193,6 +193,7 @@ extern "C"
 %feature("notabstract") digidoc::Signature;  // Breaks PHP if abstract
 #endif
 
+%ignore digidoc::initialize(const std::string &appInfo, initCallBack callBack);
 #ifdef SWIGJAVA
 %ignore digidoc::initialize;
 #endif
@@ -212,6 +213,8 @@ extern "C"
 // Other
 %ignore digidoc::Conf::libdigidocConf;
 %ignore digidoc::Conf::certsPath;
+%ignore digidoc::ConfV3::OCSPTMProfiles;
+%ignore digidoc::XmlConfV3::OCSPTMProfiles;
 %ignore digidoc::Signature::Validator::warnings;
 %ignore digidoc::Signature::OCSPNonce;
 
@@ -240,10 +243,12 @@ namespace digidoc {
     {
         initializeLib(appName, path);
     }
+#ifdef SWIGJAVA
     static void initializeLibWithTSL(const std::string &appName, const std::string &path, const std::string &tslUrl, const std::vector<unsigned char> &tslCert)
     {
         initializeLib(appName, path, tslUrl, tslCert);
     }
+#endif
 }
 
 // override X509Cert methods to return byte array
@@ -273,10 +278,10 @@ namespace digidoc {
 }
 
 %extend digidoc::Container {
-    Signature* prepareWebSignature(const std::vector<unsigned char> &cert, const std::string &profile = "",
-                                   const std::vector<std::string> &roles = std::vector<std::string>(),
-                                   const std::string &city = "", const std::string &state = "",
-                                   const std::string &postalCode = "", const std::string &country = "")
+    Signature* prepareWebSignature(const std::vector<unsigned char> &cert, const std::string &profile = std::string(),
+                                   const std::vector<std::string> &roles = {},
+                                   const std::string &city = std::string(), const std::string &state = std::string(),
+                                   const std::string &postalCode = std::string(), const std::string &country = std::string())
     {
         WebSignerPrivate signer(X509Cert(cert, X509Cert::Der));
         signer.setProfile(profile);
