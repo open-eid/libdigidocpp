@@ -79,10 +79,8 @@ function xalan() {
 	Rename-Item "xalan-c-1.11" xalan
 	Push-Location -Path xalan
 	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xerces-char16_t.patch
+	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xalan-winproj.patch
 	$xalanproj = "c\Projects\Win32\VC10\Xalan.sln"
-	Get-ChildItem c\Projects\Win32\VC10 *.vcxproj -recurse | ForEach {
-		(Get-Content $_.FullName) -replace '\<SmallerTypeCheck\>true\<\/SmallerTypeCheck\>', '' | Set-Content $_.FullName
-	}
 	$Env:XERCESCROOT="$target\xerces\x86"
 	New-Item -ItemType directory -Path "c\Build\Win32\VC10\Release" -Force > $null
 	New-Item -ItemType directory -Path "c\Build\Win32\VC10\Debug" -Force > $null

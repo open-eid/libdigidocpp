@@ -7,6 +7,7 @@
 * xalan-CMakeLists.txt - Xalan-C cmake project for static build
 
 # Windows patches
+* xalan-winproj.patch - Xalan-C Visual Studio project fixes
 * xerces-char16_t.patch - Xalan-C build fixes with VS2015 and xerces-c 3.2.0
   https://issues.apache.org/jira/browse/XALANC-773
 * xml-security-c-1.7.3-VC12.zip - Updated VS project files
