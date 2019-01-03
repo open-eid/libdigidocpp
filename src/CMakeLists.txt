@@ -230,9 +230,8 @@ set_target_properties(digidocpp PROPERTIES
 )
 
 target_link_libraries(digidocpp
-    ${CMAKE_DL_LIBS}
-    ${MINIZIP_LIBRARIES}
-    digidocpp_priv
+    PRIVATE ${CMAKE_DL_LIBS} ${MINIZIP_LIBRARIES}
+    PUBLIC digidocpp_priv
 )
 
 if( BUILD_TOOLS )
@@ -242,7 +241,7 @@ endif()
 
 if(USE_KEYCHAIN)
     set_property(SOURCE crypto/OCSP.cpp APPEND PROPERTY COMPILE_DEFINITIONS USE_KEYCHAIN)
-    target_link_libraries(digidocpp "-framework Security")
+    target_link_libraries(digidocpp PRIVATE "-framework Security")
 endif()
 
 if(LIBDIGIDOC_FOUND)
@@ -250,11 +249,11 @@ if(LIBDIGIDOC_FOUND)
     target_include_directories(digidocpp PRIVATE ${LIBDIGIDOC_INCLUDE_DIR})
     if(LIBDIGIDOC_LINKED)
         set_property(SOURCE Container.cpp DDoc.cpp APPEND PROPERTY COMPILE_DEFINITIONS LINKED_LIBDIGIDOC)
-        target_link_libraries(digidocpp ${LIBDIGIDOC_LIBRARY})
+        target_link_libraries(digidocpp PRIVATE ${LIBDIGIDOC_LIBRARY})
         if(NOT ${BUILD_SHARED_LIBS})
             find_package(Iconv)
             find_package(LibXml2)
-            target_link_libraries(digidocpp ${ICONV_LIBRARIES} ${LIBXML2_LIBRARIES})
+            target_link_libraries(digidocpp PRIVATE ${ICONV_LIBRARIES} ${LIBXML2_LIBRARIES})
         endif()
     else()
         set_property(SOURCE Container.cpp APPEND PROPERTY COMPILE_DEFINITIONS DYNAMIC_LIBDIGIDOC)
@@ -264,7 +263,7 @@ endif()
 if(PODOFO_FOUND)
     target_sources(digidocpp PRIVATE PDF.cpp SignatureCAdES_B.cpp SignatureCAdES_T.cpp)
     target_include_directories(digidocpp PRIVATE ${PODOFO_INCLUDE_DIR})
-    target_link_libraries(digidocpp ${PODOFO_LIBRARIES})
+    target_link_libraries(digidocpp PRIVATE ${PODOFO_LIBRARIES})
     set_property(SOURCE Container.cpp APPEND PROPERTY COMPILE_DEFINITIONS PDF_SUPPORT)
 endif()
 
@@ -315,14 +314,14 @@ install( TARGETS digidocpp
 if(WIN32)
     list(APPEND CRYPTO_HEADER crypto/WinSigner.h)
     set_property(TARGET digidocpp APPEND PROPERTY SOURCES crypto/WinSigner.cpp)
-    target_link_libraries(digidocpp Crypt32 cryptui ncrypt Ws2_32)
+    target_link_libraries(digidocpp PRIVATE Crypt32 cryptui ncrypt Ws2_32)
     set_target_properties(digidocpp PROPERTIES DEBUG_OUTPUT_NAME "digidocppd")
     install(FILES $<TARGET_PDB_FILE:digidocpp> $<TARGET_PDB_FILE:digidoc-tool> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
 elseif(APPLE)
-    target_link_libraries(digidocpp "-framework CoreFoundation")
+    target_link_libraries(digidocpp PUBLIC "-framework CoreFoundation")
 elseif(ANDROID)
     find_package(Iconv)
-    target_link_libraries(digidocpp ${ICONV_LIBRARIES})
+    target_link_libraries(digidocpp PRIVATE ${ICONV_LIBRARIES})
 endif()
 
 source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/878252.p12;${CMAKE_SOURCE_DIR}/etc/798.p12" )

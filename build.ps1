@@ -3,7 +3,6 @@ param(
   [string]$buildver = "0",
   [string]$msiversion = "3.13.9.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
-  [string]$msbuild = "C:\Program Files (x86)\MSBuild\$Env:VisualStudioVersion\Bin\MSBuild.exe",
   [string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
   [string]$vcdir = "C:\Program Files (x86)\Microsoft Visual Studio $Env:VisualStudioVersion\VC",
   [string]$heat = "$env:WIX\bin\heat.exe",
