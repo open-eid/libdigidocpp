@@ -7,9 +7,7 @@ param(
 	[string]$vsver = "$($vstarget).0",
 	[string]$msbuildparams = "VisualStudioVersion=$vsver;PlatformToolset=v$($vstarget)0",
 	[string]$msbuild = "C:\Program Files (x86)\MSBuild\$vsver\Bin\MSBuild.exe",
-	[string]$VSINSTALLDIR = "C:\Program Files (x86)\Microsoft Visual Studio $vsver",
-	[string]$devenv = "$VSINSTALLDIR\Common7\IDE\devenv.exe",
-	[string]$vcvars = "$VSINSTALLDIR\VC\vcvarsall.bat",
+	[string]$vcvars = "C:\Program Files (x86)\Microsoft Visual Studio $vsver\VC\vcvarsall.bat",
 	[string]$opensslver = "openssl-1.0.2q",
 	[string]$xercesver = "xerces-c-3.2.2",
 	[string]$xalanver = "xalan_c-1.11",
@@ -103,16 +101,15 @@ function xmlsec() {
 	$client.DownloadFile("https://archive.apache.org/dist/santuario/c-library/$xmlsecver.tar.gz", "$target\$xmlsecver.tar.gz")
 	& $7zip x "$xmlsecver.tar.gz" > $null
 	& $7zip x "$xmlsecver.tar" > $null
-	& $7zip x -y "$libdigidocpp\patches\$xmlsecver-VC12.zip" > $null
-	$env:XALAN_PATH = "$target\xalan\c"
 	Rename-Item $xmlsecver xmlsec
-	$xsecproj = "xmlsec\Projects\VC12.0\xsec\xsec_lib\xsec_lib.vcxproj"
-	$Env:XERCES_PATH="$target\xerces\x86"
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32" $xsecproj
-	$Env:XERCES_PATH="$target\xerces\x64"
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64" $xsecproj
-	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64" $xsecproj
+	Push-Location -Path xmlsec
+	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xml-security-c-1.7.3-VC12.patch
+	$xsecproj = "Projects\VC12.0\xsec\xsec_lib\xsec_lib.vcxproj"
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32;XERCES_PATH=$target\xerces\x86;XALAN_PATH=$target\xalan\c" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32;XERCES_PATH=$target\xerces\x86;XALAN_PATH=$target\xalan\c" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64;XERCES_PATH=$target\xerces\x64;XALAN_PATH=$target\xalan\c" $xsecproj
+	& $msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64;XERCES_PATH=$target\xerces\x64;XALAN_PATH=$target\xalan\c" $xsecproj
+	Pop-Location
 }
 
 function xsd() {
@@ -157,9 +154,9 @@ function podofo() {
 	foreach($platform in @("x86", "x64")) {
 		& $7zip x "$podofover.tar" > $null
 		Push-Location -Path $podofover
-		del cmake/modules/FindFREETYPE.cmake
-		del cmake/modules/FindOpenSSL.cmake
-		del cmake/modules/FindZLIB.cmake
+		Remove-Item cmake/modules/FindFREETYPE.cmake
+		Remove-Item cmake/modules/FindOpenSSL.cmake
+		Remove-Item cmake/modules/FindZLIB.cmake
 		(Get-Content CMakeLists.txt) -replace '\$\{PNG_LIBRARIES\}', '' | Set-Content CMakeLists.txt
 		(Get-Content src/doc/PdfSignatureField.cpp) -replace 'adbe.pkcs7.detached', 'ETSI.CAdES.detached' | Set-Content src/doc/PdfSignatureField.cpp
 		& $vcvars $platform "&&" $cmake "-GNMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DPODOFO_BUILD_LIB_ONLY=YES `
