@@ -51,7 +51,6 @@
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_java.dll"/>
 <?endif?>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.exe"/>
-                <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\878252.p12"/>
                 <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\798.p12"/>
                 <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\digidocpp.conf"/>
               </Component>
@@ -118,7 +117,6 @@
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_java.dll" Id="digidoc_java.dll_64"/>
 <?endif?>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.exe" Id="digidoc_tool.exe_64"/>
-                <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\878252.p12" Id="_878252.p12_64"/>
                 <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\798.p12" Id="_798.p12_64"/>
                 <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\digidocpp.conf" Id="digidocpp.conf_64"/>
               </Component>

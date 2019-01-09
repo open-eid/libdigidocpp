@@ -69,7 +69,7 @@ string Conf::libdigidocConf() const
 #ifdef _WIN32
     return File::dllPath("digidoc.dll") + "digidoc.ini";
 #else
-    return string();
+    return {};
 #endif
 }
 
@@ -91,7 +91,7 @@ int Conf::logLevel() const {
 /**
  * Gets log file location. Default log goes to standard out stream
  */
-string Conf::logFile() const { return string(); }
+string Conf::logFile() const { return {}; }
 
 /**
  * Return default digest type as URI
@@ -145,52 +145,34 @@ string Conf::ocsp(const string &issuer) const
  * Gets Certificate store location.
  * @deprecated unused
  */
-string Conf::certsPath() const { return string(); }
+string Conf::certsPath() const { return {}; }
 
 /**
  * Gets proxy host address.
  */
-string Conf::proxyHost() const { return string(); }
+string Conf::proxyHost() const { return {}; }
 
 /**
  * Gets proxy port number.
  */
-string Conf::proxyPort() const { return string(); }
+string Conf::proxyPort() const { return {}; }
 
 /**
  * Gets proxy user name.
  */
-string Conf::proxyUser() const { return string(); }
+string Conf::proxyUser() const { return {}; }
 
 /**
  * Gets proxy login password.
  */
-string Conf::proxyPass() const { return string(); }
+string Conf::proxyPass() const { return {}; }
 
 /**
  * Gets PKCS12 certificate file location.
  *
  * Used for signing OCSP request
  */
-string Conf::PKCS12Cert() const
-{
-    string oldPath = File::confPath() + "878252.p12";
-    string newPath = File::confPath() + "798.p12";
-    static const bool isValid = [&]{
-        try {
-            X509 *tmp = nullptr;
-            EVP_PKEY *key = nullptr;
-            OpenSSL::parsePKCS12(oldPath, PKCS12Pass(), &key, &tmp);
-            EVP_PKEY_free(key);
-            SCOPE(X509, cert, tmp);
-            return X509Cert(cert.get()).isValid();
-        } catch(const Exception &e) {
-            WARN("Failed to parse PKCS12 certificate: %s %s", oldPath.c_str(), e.msg().c_str());
-        }
-        return true;
-    }();
-    return isValid ? oldPath : newPath;
-}
+string Conf::PKCS12Cert() const { return File::confPath() + "798.p12"; }
 
 /**
  * Gets PKCS12 password.
@@ -239,10 +221,7 @@ bool Conf::TSLAllowExpired() const { return false; }
 /**
  * TSL master list's (LOTL) signing certificates
  */
-vector<X509Cert> Conf::TSLCerts() const
-{
-    return tslcerts;
-}
+vector<X509Cert> Conf::TSLCerts() const { return tslcerts; }
 
 /**
  * Compare local TSL digest with digest published online to check for newer version
