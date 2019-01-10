@@ -29,7 +29,7 @@
 #include <sstream>
 #include <Windows.h>
 #include <ncrypt.h>
-#include <WinCrypt.h>
+#include <wincrypt.h>
 #include <cryptuiapi.h>
 
 using namespace digidoc;
@@ -45,7 +45,7 @@ typedef BOOL (WINAPI * PFNCCERTDISPLAYPROC)(
   __in  void *pvCallbackData
 );
 
-typedef struct _CRYPTUI_SELECTCERTIFICATE_STRUCT {
+using CRYPTUI_SELECTCERTIFICATE_STRUCT = struct {
   DWORD               dwSize;
   HWND                hwndParent;
   DWORD               dwFlags;
@@ -62,23 +62,18 @@ typedef struct _CRYPTUI_SELECTCERTIFICATE_STRUCT {
   DWORD               cPropSheetPages;
   LPCPROPSHEETPAGEW   rgPropSheetPages;
   HCERTSTORE          hSelectedCertStore;
-} CRYPTUI_SELECTCERTIFICATE_STRUCT, *PCRYPTUI_SELECTCERTIFICATE_STRUCT;
-
-typedef const CRYPTUI_SELECTCERTIFICATE_STRUCT
-  *PCCRYPTUI_SELECTCERTIFICATE_STRUCT;
+};
 
 PCCERT_CONTEXT WINAPI CryptUIDlgSelectCertificateW(
-  __in  PCCRYPTUI_SELECTCERTIFICATE_STRUCT pcsc
+  __in const CRYPTUI_SELECTCERTIFICATE_STRUCT *pcsc
 );
-
-#define CryptUIDlgSelectCertificate CryptUIDlgSelectCertificateW
 
 }  // extern "C"
 
 namespace digidoc
 {
 
-class WinSignerPrivate
+class WinSigner::Private
 {
 public:
     static BOOL WINAPI CertFilter(PCCERT_CONTEXT cert_context,
@@ -87,22 +82,23 @@ public:
     X509Cert cert;
     HCRYPTPROV_OR_NCRYPT_KEY_HANDLE key = 0;
     DWORD spec = 0;
-    BOOL freeKey = false;
+    BOOL freeKey = FALSE;
     string pin;
+    vector<unsigned char> thumbprint;
     bool selectFirst = false;
 };
 
 }
 
-BOOL WinSignerPrivate::CertFilter(PCCERT_CONTEXT cert_context, BOOL *, void *)
+BOOL WinSigner::Private::CertFilter(PCCERT_CONTEXT cert_context, BOOL * /* is_initial_selected_cert */, void * /* callback_data */)
 {
     DWORD flags = CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG|CRYPT_ACQUIRE_COMPARE_KEY_FLAG|CRYPT_ACQUIRE_SILENT_FLAG;
     HCRYPTPROV_OR_NCRYPT_KEY_HANDLE key = 0;
     DWORD spec = 0;
-    BOOL freeKey = false;
-    CryptAcquireCertificatePrivateKey(cert_context, flags, 0, &key, &spec, &freeKey);
+    BOOL freeKey = FALSE;
+    CryptAcquireCertificatePrivateKey(cert_context, flags, nullptr, &key, &spec, &freeKey);
     if(!key)
-        return false;
+        return FALSE;
     switch(spec)
     {
     case CERT_NCRYPT_KEY_SPEC:
@@ -117,10 +113,9 @@ BOOL WinSignerPrivate::CertFilter(PCCERT_CONTEXT cert_context, BOOL *, void *)
         break;
     }
 
-    X509Cert cert(vector<unsigned char>(cert_context->pbCertEncoded,
-        cert_context->pbCertEncoded+cert_context->cbCertEncoded));
-    vector<X509Cert::KeyUsage> usage = cert.keyUsage();
-    return find(usage.cbegin(), usage.cend(), X509Cert::NonRepudiation) != usage.cend();
+    BYTE keyUsage = 0;
+    CertGetIntendedKeyUsage(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, cert_context->pCertInfo, &keyUsage, 1);
+    return (keyUsage & CERT_NON_REPUDIATION_KEY_USAGE) > 0;
 }
 
 /**
@@ -136,7 +131,7 @@ BOOL WinSignerPrivate::CertFilter(PCCERT_CONTEXT cert_context, BOOL *, void *)
  * @throws Exception exception is thrown if the loading failed.
  */
 WinSigner::WinSigner(const string &pin, bool selectFirst)
- : d(new WinSignerPrivate)
+    : d(new Private)
 {
     setPin(pin);
     setSelectFirst(selectFirst);
@@ -170,12 +165,17 @@ X509Cert WinSigner::cert() const
         return d->cert;
 
     PCCERT_CONTEXT cert_context = nullptr;
-    if(d->selectFirst)
+    if(!d->thumbprint.empty())
+    {
+        CRYPT_HASH_BLOB hashBlob = { DWORD(d->thumbprint.size()), PBYTE(d->thumbprint.data()) };
+        cert_context = CertFindCertificateInStore(store, X509_ASN_ENCODING|PKCS_7_ASN_ENCODING, 0, CERT_FIND_HASH, PVOID(&hashBlob), nullptr);
+    }
+    else if(d->selectFirst)
     {
         PCCERT_CONTEXT find = nullptr;
-        while(find = CertFindCertificateInStore(store, X509_ASN_ENCODING|PKCS_7_ASN_ENCODING, 0, CERT_FIND_ANY, NULL, find))
+        while((find = CertFindCertificateInStore(store, X509_ASN_ENCODING|PKCS_7_ASN_ENCODING, 0, CERT_FIND_ANY, nullptr, find)))
         {
-            if(d->CertFilter(find, 0, 0))
+            if(d->CertFilter(find, nullptr, nullptr))
             {
                 cert_context = find;
                 break;
@@ -184,20 +184,20 @@ X509Cert WinSigner::cert() const
     }
     else
     {
-        CRYPTUI_SELECTCERTIFICATE_STRUCT pcsc = { sizeof(pcsc) };
-        pcsc.pFilterCallback = WinSignerPrivate::CertFilter;
+        CRYPTUI_SELECTCERTIFICATE_STRUCT pcsc = {};
+        pcsc.dwSize = sizeof(pcsc);
+        pcsc.pFilterCallback = Private::CertFilter;
         pcsc.pvCallbackData = d;
         pcsc.cDisplayStores = 1;
         pcsc.rghDisplayStores = &store;
-        cert_context = CryptUIDlgSelectCertificate(&pcsc);
+        cert_context = CryptUIDlgSelectCertificateW(&pcsc);
     }
     if(!cert_context)
         THROW("No certificates selected");
 
-    d->cert = X509Cert(vector<unsigned char>(cert_context->pbCertEncoded,
-        cert_context->pbCertEncoded+cert_context->cbCertEncoded));
+    d->cert = X509Cert(cert_context->pbCertEncoded, cert_context->cbCertEncoded);
     DWORD flags = CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG|CRYPT_ACQUIRE_COMPARE_KEY_FLAG;
-    CryptAcquireCertificatePrivateKey(cert_context, flags, 0, &d->key, &d->spec, &d->freeKey);
+    CryptAcquireCertificatePrivateKey(cert_context, flags, nullptr, &d->key, &d->spec, &d->freeKey);
     CertFreeCertificateContext(cert_context);
 
     return d->cert;
@@ -221,12 +221,20 @@ void WinSigner::setSelectFirst(bool first)
     d->selectFirst = first;
 }
 
+/**
+ * Sets property select certificate with specified thumbprint
+ * @see WinSigner::WinSigner
+ */
+void WinSigner::setThumbprint(const vector<unsigned char> &thumbprint)
+{
+    d->thumbprint = thumbprint;
+}
+
 vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigned char> &digest) const
 {
     DEBUG("sign(method = %s, digest = length=%d)", method.c_str(), digest.size());
 
-    BCRYPT_PKCS1_PADDING_INFO padInfo;
-    padInfo.pszAlgId = nullptr;
+    BCRYPT_PKCS1_PADDING_INFO padInfo = { nullptr };
     ALG_ID alg = 0;
     if(method == URI_RSA_SHA1) { padInfo.pszAlgId = NCRYPT_SHA1_ALGORITHM; alg = CALG_SHA1; }
     else if(method == URI_RSA_SHA224) { padInfo.pszAlgId = L"SHA224"; }
@@ -291,13 +299,13 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
             THROW("Failed to sign");
         }
         DWORD size = 0;
-        if(!CryptSignHashW(hash, AT_SIGNATURE, 0, 0, nullptr, &size)) {
+        if(!CryptSignHashW(hash, AT_SIGNATURE, nullptr, 0, nullptr, &size)) {
             err = LONG(GetLastError());
             CryptDestroyHash(hash);
             break;
         }
         signature.resize(size);
-        if(!CryptSignHashW(hash, AT_SIGNATURE, 0, 0, signature.data(), &size))
+        if(!CryptSignHashW(hash, AT_SIGNATURE, nullptr, 0, signature.data(), &size))
             err = LONG(GetLastError());
         std::reverse(signature.begin(), signature.end());
 

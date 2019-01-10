@@ -137,11 +137,11 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
     char pin[16];
     size_t pinMax = 16;
 
-    string prompt = "Please enter PIN for token '%s' or <enter> to cancel: ";
+    const char *prompt = "Please enter PIN for token '%s' or <enter> to cancel: ";
 #if defined(_WIN32)
     // something that acts wildly similarily with getpass()
     {
-        printf( prompt.c_str(), certificate.subjectName("CN").c_str() );
+        printf(prompt, certificate.subjectName("CN").c_str());
         size_t i = 0;
         int c;
         while ( (c = _getch()) != '\r' )
@@ -176,7 +176,7 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
                 }
                 // NO BREAK, fall through to the one-character deletes
             case '\b':
-            case '127':
+            case 127:
                 if ( i == 0 )
                 {
                     // nothing to delete
@@ -202,7 +202,7 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
             }
             case  27: // ESC
                 fputc('\n', stdout );
-                printf( prompt.c_str(), certificate.subjectName("CN").c_str() );
+                printf(prompt, certificate.subjectName("CN").c_str());
                 i = 0;
                 break;
             }
@@ -211,7 +211,7 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
         pin[i] = '\0';
     }
 #else
-    char* pwd = getpass(Log::format(prompt.c_str(), certificate.subjectName("CN").c_str()).c_str());
+    char* pwd = getpass(Log::format(prompt, certificate.subjectName("CN").c_str()).c_str());
     strncpy(pin, pwd, pinMax);
 #endif
 
@@ -235,7 +235,7 @@ public:
 
 private:
     X509Cert cert() const override { return _cert; }
-    vector<unsigned char> sign(const string &, const vector<unsigned char> &) const override
+    vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const override
     {
         THROW("Not implemented");
     }
@@ -247,8 +247,7 @@ private:
 class ToolConfig: public XmlConfCurrent
 {
 public:
-    ToolConfig(): XmlConfCurrent()
-      , _logLevel(XmlConfCurrent::logLevel())
+    ToolConfig(): _logLevel(XmlConfCurrent::logLevel())
       , expired(XmlConfCurrent::TSLAllowExpired())
       , tslcerts(XmlConfCurrent::TSLCerts())
       , _logFile(XmlConfCurrent::logFile())
@@ -325,6 +324,7 @@ static void printUsage(const char *executable)
 #ifdef _WIN32
     << "      --cng          - Use CNG api for signing under windows." << endl
     << "      --selectFirst  - Select first certificate in store." << endl
+    << "      --thumbprint=  - Select certificate in store with specified thumbprint (HEX)." << endl
 #endif
     << "      --pkcs11[=]    - default is " << (CONF(PKCS11Driver)) << ". Path of PKCS11 driver." << endl
     << "      --pkcs12=      - pkcs12 signer certificate (use --pin for password)" << endl
@@ -352,8 +352,8 @@ struct Params
         if(param.empty())
             return string();
 #ifdef _WIN32
-        int len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), 0, 0);
-        wstring out(len, 0);
+        int len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), nullptr, 0);
+        wstring out(size_t(len), 0);
         len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), &out[0], len);
         return File::decodeName(out);
 #else
@@ -362,6 +362,7 @@ struct Params
     }
 
     string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
+    vector<unsigned char> thumbprint;
     vector<pair<string,string> > files;
     vector<string> roles;
     bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
@@ -396,24 +397,25 @@ Params::Params(int argc, char *argv[])
         if(arg.find("--profile=") == 0)
         {
             profile = arg.substr(10);
-            size_t pos = profile.find(".");
+            size_t pos = profile.find('.');
             profile = profiles.at(profile.substr(0, pos)) + (pos == string::npos ? "" : profile.substr(pos));
         }
         else if(arg.find("--file=") == 0)
         {
-            string arg2(i+1 < argc ? decodeParameter(argv[i+1]) : "");
+            string arg2(i+1 < argc ? decodeParameter(argv[i+1]) : string());
             files.push_back(pair<string,string>(arg.substr(7),
                 arg2.find("--mime=") == 0 ? arg2.substr(7) : "application/octet-stream"));
         }
 #ifdef _WIN32
         else if(arg == "--cng") cng = true;
         else if(arg == "--selectFirst") selectFirst = true;
+        else if(arg.find("--thumbprint=") == 0) thumbprint = File::hexToBin(arg.substr(arg.find('=') + 1));
 #endif
         else if(arg.find("--pkcs11") == 0)
         {
             cng = false;
-            if(arg.find("=") != string::npos)
-                pkcs11 = arg.substr(arg.find("=") + 1);
+            if(arg.find('=') != string::npos)
+                pkcs11 = arg.substr(arg.find('=') + 1);
         }
         else if(arg.find("--pkcs12=") == 0)
         {
@@ -526,7 +528,7 @@ static int open(int argc, char* argv[])
         string arg(Params::decodeParameter(argv[i]));
         if(arg == "--list")
             continue;
-        else if(arg.find("--warnings=") == 0)
+        if(arg.find("--warnings=") == 0)
         {
             if(arg.substr(11, 6) == "ignore") reportwarnings = Params::WIgnore;
             if(arg.substr(11, 5) == "error") reportwarnings = Params::WError;
@@ -534,7 +536,7 @@ static int open(int argc, char* argv[])
         else if(arg.find("--extractAll") == 0)
         {
             extractPath = ".";
-            size_t pos = arg.find("=");
+            size_t pos = arg.find('=');
             if(pos != string::npos)
                 extractPath = arg.substr(pos + 1);
         }
@@ -758,7 +760,11 @@ static unique_ptr<Signer> getSigner(const Params &p)
     unique_ptr<Signer> signer;
 #ifdef _WIN32
     if(p.cng)
-        signer.reset(new WinSigner(p.pin, p.selectFirst));
+    {
+        WinSigner *win = new WinSigner(p.pin, p.selectFirst);
+        win->setThumbprint(p.thumbprint);
+        signer.reset(win);
+    }
     else
 #endif
     if(!p.pkcs12.empty())
@@ -796,8 +802,7 @@ static int signContainer(Container *doc, Signer *signer, bool dontValidate = fal
         }
         return EXIT_SUCCESS;
     }
-    else
-        return EXIT_FAILURE;
+    return EXIT_FAILURE;
 }
 
 /**
@@ -830,7 +835,7 @@ static int create(int argc, char* argv[])
             doc->addDataFile(file.first, file.second);
 
         int returnCode = EXIT_SUCCESS;
-        if(true == p.doSign)
+        if(p.doSign)
             returnCode = signContainer(doc.get(), getSigner(p).get(), p.dontValidate);
         doc->save();
         return returnCode;
@@ -971,7 +976,7 @@ static int websign(int argc, char* argv[])
     return returnCode;
 }
 
-static int tslcmd(int , char* [])
+static int tslcmd(int /*argc*/, char* /*argv*/[])
 {
     int returnCode = EXIT_SUCCESS;
     string cache = CONF(TSLCache);
