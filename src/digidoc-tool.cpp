@@ -161,7 +161,7 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
             case EOF:
             {
                 fputs( "[EOF]\n", stdout );
-                Exception e( __FILE__, __LINE__, "PIN acquisition canceled with [EOF].");
+                Exception e(EXCEPTION_PARAMS("PIN acquisition canceled with [EOF]."));
                 e.setCode( Exception::PINCanceled );
                 throw e;
             }
@@ -189,14 +189,14 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
             case  3: // CTRL+C
             {
                 fputs( "^C\n", stdout );
-                Exception e( __FILE__, __LINE__, "PIN acquisition canceled with ^C.");
+                Exception e(EXCEPTION_PARAMS("PIN acquisition canceled with ^C."));
                 e.setCode( Exception::PINCanceled );
                 throw e;
             }
             case  26: // CTRL+Z
             {
                 fputs( "^Z\n", stdout );
-                Exception e( __FILE__, __LINE__, "PIN acquisition canceled with ^Z.");
+                Exception e(EXCEPTION_PARAMS("PIN acquisition canceled with ^Z."));
                 e.setCode( Exception::PINCanceled );
                 throw e;
             }
@@ -220,7 +220,7 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
     string result(pin);
     if(result.empty())
     {
-        Exception e( __FILE__, __LINE__, "PIN acquisition canceled.");
+        Exception e(EXCEPTION_PARAMS("PIN acquisition canceled."));
         e.setCode( Exception::PINCanceled );
         throw e;
     }
@@ -231,7 +231,7 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
 class WebSigner: public Signer
 {
 public:
-    WebSigner(X509Cert cert): _cert(std::move(cert)) {}
+    explicit WebSigner(X509Cert cert): _cert(std::move(cert)) {}
 
 private:
     X509Cert cert() const override { return _cert; }
@@ -980,7 +980,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
 {
     int returnCode = EXIT_SUCCESS;
     string cache = CONF(TSLCache);
-    TSL t("");
+    TSL t({});
     cout << "TSL: " << t.url() << endl
         << "         Type: " << t.type() << endl
         << "    Territory: " << t.territory() << endl
@@ -999,6 +999,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
     }
     for(const TSL::Service &s: t.services())
     {
+        cout << " Service: " << s.name << endl;
         for(const X509Cert &x: s.certs)
             cout << "    Cert: " << x << endl;
     }
@@ -1026,6 +1027,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
         }
         for(const TSL::Service &s: tp.services())
         {
+            cout << "          Service: " << s.name << endl;
             for(const X509Cert &x: s.certs)
                 cout << "             Cert: " << x << endl;
         }

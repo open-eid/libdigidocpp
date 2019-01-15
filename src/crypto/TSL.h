@@ -34,7 +34,7 @@ class TSL
 public:
     struct Qualifier { std::vector<std::string> qualifiers; std::vector<std::vector<std::string>> policySet; std::vector<std::map<X509Cert::KeyUsage,bool>> keyUsage; std::string assert_; };
     struct Validity { time_t start, end; std::vector<Qualifier> qualifiers; };
-    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; std::string type, additional; };
+    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; std::string type, additional, name; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
 
     TSL(const std::string &file);
