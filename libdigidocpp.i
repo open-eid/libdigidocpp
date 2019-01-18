@@ -134,6 +134,58 @@ extern "C"
   [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_to")]
   public static extern global::System.IntPtr ByteVector_to(
     [global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPArray)]byte[] data, int size);
+
+  public class UTF8Marshaler : global::System.Runtime.InteropServices.ICustomMarshaler {
+    static UTF8Marshaler static_instance = new UTF8Marshaler();
+
+    public global::System.IntPtr MarshalManagedToNative(object managedObj) {
+        if (managedObj == null)
+            return global::System.IntPtr.Zero;
+        if (!(managedObj is string))
+            throw new global::System.Runtime.InteropServices.MarshalDirectiveException(
+                   "UTF8Marshaler must be used on a string.");
+
+        // not null terminated
+        byte[] strbuf = global::System.Text.Encoding.UTF8.GetBytes((string)managedObj);
+        global::System.IntPtr buffer = global::System.Runtime.InteropServices.Marshal.AllocHGlobal(strbuf.Length + 1);
+        global::System.Runtime.InteropServices.Marshal.Copy(strbuf, 0, buffer, strbuf.Length);
+
+        // write the terminating null
+        global::System.Runtime.InteropServices.Marshal.WriteByte(buffer + strbuf.Length, 0);
+        return buffer;
+    }
+
+    public unsafe object MarshalNativeToManaged(global::System.IntPtr pNativeData) {
+        byte* walk = (byte*)pNativeData;
+
+        // find the end of the string
+        while (*walk != 0) {
+            walk++;
+        }
+        int length = (int)(walk - (byte*)pNativeData);
+
+        // should not be null terminated
+        byte[] strbuf = new byte[length];
+        // skip the trailing null
+        global::System.Runtime.InteropServices.Marshal.Copy((global::System.IntPtr)pNativeData, strbuf, 0, length);
+        return global::System.Text.Encoding.UTF8.GetString(strbuf);
+    }
+
+    public void CleanUpNativeData(global::System.IntPtr pNativeData) {
+        global::System.Runtime.InteropServices.Marshal.FreeHGlobal(pNativeData);
+    }
+
+    public void CleanUpManagedData(object managedObj) {
+    }
+
+    public int GetNativeDataSize() {
+        return -1;
+    }
+
+    public static global::System.Runtime.InteropServices.ICustomMarshaler GetInstance(string cookie) {
+        return static_instance;
+    }
+  }
 %}
 
 #ifdef SWIGJAVA
@@ -221,6 +273,17 @@ extern "C"
 // Handle standard C++ types
 %include "std_string.i"
 %include "std_vector.i"
+#ifdef SWIGCSHARP
+namespace std {
+  %typemap(imtype,
+    inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]",
+    outattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]")
+    string "string"
+  %typemap(imtype,
+    inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]",
+    outattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]") const string & "string"
+}
+#endif
 // Expose selected DigiDoc classes
 %include "Conf.h"
 %include "Container.h"
