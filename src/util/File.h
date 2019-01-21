@@ -24,9 +24,9 @@
 #include <stack>
 
 #ifdef _WIN32
-typedef std::wstring f_string;
+using f_string = std::wstring;
 #else
-typedef std::string f_string;
+using f_string = std::string;
 #endif
 
 namespace digidoc
@@ -36,8 +36,6 @@ namespace digidoc
 
         /**
          * Implements common file-system operations for current platform
-         *
-         * @author Janari Põld
          */
         class File
         {
@@ -46,7 +44,6 @@ namespace digidoc
               static std::string cwd();
               static std::string env(const std::string &varname);
               static bool fileExists(const std::string& path);
-              static bool directoryExists(const std::string& path);
               static f_string encodeName(const std::string &fileName);
               static std::string decodeName(const f_string &localFileName);
               static bool isRelative(const std::string &path);

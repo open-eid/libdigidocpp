@@ -254,30 +254,6 @@ bool File::fileExists(const string& path)
     return !((fileInfo.st_mode & S_IFMT) == S_IFDIR);
 }
 
-/**
- * Checks whether directory exists and is type of directory.
- *
- * @param path path to the directory, which existence is checked.
- * @return returns true if the directory is a directory and it exists.
- */
-bool File::directoryExists(const string& path)
-{
-    f_string _path = encodeName(path);
-#ifdef _WIN32
-    // stat will fail on win32 if path ends with backslash
-    if(!_path.empty() && (_path[_path.size() - 1] == L'/' || _path[_path.size() - 1] == L'\\'))
-        _path = _path.substr(0, _path.size() - 1);
-    // TODO:XXX: "C:" is not a directory, so create recursively will
-    // do stack overflow in case first-dir in root doesn't exist.
-#endif
-
-    f_statbuf fileInfo;
-    if(f_stat(_path.c_str(), &fileInfo) != 0)
-        return false;
-
-    return (fileInfo.st_mode & S_IFMT) == S_IFDIR;
-}
-
 #ifdef _WIN32
 string File::dllPath(const string &dll)
 {
@@ -356,7 +332,7 @@ string File::frameworkResourcesPath(const string &name)
         }
     }
     CFRelease(identifier);
-    result.resize(strlen(&result[0]));
+    result.resize(strlen(result.c_str()));
     if(!result.empty()) result += "/";
     return result;
 }
@@ -371,7 +347,7 @@ string File::frameworkResourcesPath(const string &name)
 string File::directory(const string& path)
 {
     size_t pos = path.find_last_of("/\\");
-    return pos == string::npos ? "" : path.substr(0, pos);
+    return pos == string::npos ? string() : path.substr(0, pos);
 }
 
 /**
@@ -433,43 +409,31 @@ DIGIDOCPP_WARNING_POP
 void File::createDirectory(const string& path)
 {
     if(path.empty())
-    {
         THROW("Can not create directory with no name.");
-    }
 
-    if(directoryExists(path))
-    {
+    string dirPath = path;
+    if(dirPath[dirPath.size() - 1] == '/' || dirPath[dirPath.size() - 1] == '\\')
+        dirPath = dirPath.substr(0, dirPath.size() - 1);
+
+    f_string _path = encodeName(dirPath);
+    f_statbuf fileInfo;
+    if(f_stat(_path.c_str(), &fileInfo) == 0 && (fileInfo.st_mode & S_IFMT) == S_IFDIR)
         return;
-    }
-
-    string parentDir(path);
-    if(parentDir[parentDir.size() - 1] == '/' || parentDir[parentDir.size() - 1] == '\\')
-    {
-        parentDir = parentDir.substr(0, parentDir.size() - 1);
-    }
-    parentDir = parentDir.substr(0, parentDir.find_last_of("/\\"));
-
-    if(!directoryExists(parentDir))
-    {
-        createDirectory(parentDir);
-    }
+    createDirectory(directory(dirPath));
 
 #ifdef _WIN32
-    int result = _wmkdir(encodeName(path).c_str());
+    int result = _wmkdir(_path.c_str());
     if ( result )
         DEBUG("Creating directory '%s' failed with errno = %d", path.c_str(), errno);
     else
         DEBUG("Created directory '%s'", path.c_str());
 #else
     umask(0);
-    int result = mkdir(encodeName(path).c_str(), 0700);
+    int result = mkdir(_path.c_str(), 0700);
     DEBUG("Created directory '%s' with result = %d", path.c_str(), result);
 #endif
-
-    if(result || !directoryExists(path))
-    {
+    if(result)
         THROW("Failed to create directory '%s'", path.c_str());
-    }
 }
 
 /**
@@ -514,8 +478,7 @@ vector<string> File::listFiles(const string& directory)
     dirent* entry;
     while((entry = readdir(pDir)) != nullptr)
     {
-        if(string(".").compare(entry->d_name) == 0
-        || string("..").compare(entry->d_name) == 0)
+        if(string(".") == entry->d_name || string("..") == entry->d_name)
             continue;
 
         sprintf(fullPath, "%s/%s", _directory.c_str(), entry->d_name);

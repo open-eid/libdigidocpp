@@ -275,9 +275,7 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, const A &defined, con
         THROW("(in set %s) Failed to parse configuration: %s", param.name.c_str(), e.what());
     }
 
-    string path = File::directory(USER_CONF_LOC);
-    if (!File::directoryExists(path))
-        File::createDirectory(path);
+    File::createDirectory(File::directory(USER_CONF_LOC));
     ofstream ofs(File::encodeName(USER_CONF_LOC).c_str());
     if (ofs.fail())
         THROW("Failed to open configuration: %s", USER_CONF_LOC.c_str());
