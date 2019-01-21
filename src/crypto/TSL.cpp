@@ -169,6 +169,7 @@ vector<TSL::Service> TSL::services() const
                 continue;
             Service s;
             s.type = serviceInfo.serviceTypeIdentifier();
+            s.name = toString(serviceInfo.serviceName());
             time_t previousTime = 0;
             if(!parseInfo(serviceInfo, s, previousTime))
                 continue;
@@ -241,8 +242,14 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
             THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
         if(CONF(TSLOnlineDigest))
         {
-            if(!tsl.validateRemoteDigest(url, timeout))
+            try {
                 tsl.validateETag(url, timeout);
+            }
+            catch(const Exception &e)
+            {
+                debugException(e);
+                tsl.validateRemoteDigest(url, timeout);
+            }
         }
         DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
     } catch(const Exception &e) {
