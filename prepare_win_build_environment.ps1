@@ -11,7 +11,7 @@ param(
 	[string]$opensslver = "openssl-1.0.2q",
 	[string]$xercesver = "xerces-c-3.2.2",
 	[string]$xalanver = "xalan_c-1.11",
-	[string]$xmlsecver = "xml-security-c-2.0.1",
+	[string]$xmlsecver = "xml-security-c-2.0.2",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
 	[string]$zlibver = "zlib-1.2.11",
 	[string]$freetypever = "freetype-2.9.1",
@@ -53,7 +53,7 @@ function openssl() {
 }
 
 function xerces() {
-	$client.DownloadFile("http://www.eu.apache.org/dist/xerces/c/3/sources/$xercesver.zip", "$target\$xercesver.zip")
+	$client.DownloadFile("https://archive.apache.org/dist/xerces/c/3/sources/$xercesver.zip", "$target\$xercesver.zip")
 	& $7zip x "$xercesver.zip" > $null
 	Push-Location -Path $xercesver
 	(Get-Content CMakeLists.txt) -replace 'add_subdirectory\(doc\)', '' -replace 'add_subdirectory\(tests\)', '' -replace 'add_subdirectory\(samples\)', '' | Set-Content CMakeLists.txt

@@ -2,7 +2,7 @@
 set -e
 
 XERCES_DIR=xerces-c-3.2.2
-XMLSEC_DIR=xml-security-c-2.0.1
+XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.0.2q
 #OPENSSL_DIR=openssl-1.1.0i
@@ -104,7 +104,7 @@ esac
 function xerces {
     echo Building ${XERCES_DIR}
     if [ ! -f ${XERCES_DIR}.tar.xz ]; then
-        curl -O http://www.eu.apache.org/dist/xerces/c/3/sources/${XERCES_DIR}.tar.xz
+        curl -O https://archive.apache.org/dist/xerces/c/3/sources/${XERCES_DIR}.tar.xz
     fi
     rm -rf ${XERCES_DIR}
     tar xf ${XERCES_DIR}.tar.xz
