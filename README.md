@@ -79,12 +79,17 @@
 ### Windows
 
 1. Install dependencies and necessary tools from
-	* [Visual Studio Community 2015](https://www.visualstudio.com/downloads/)
+	* [Visual Studio Community 2013/2015/2017](https://www.visualstudio.com/downloads/)
 	* [http://www.cmake.org](http://www.cmake.org) - NB! Build scripts use 32-bit version of CMake
 	* [7-zip](http://www.7-zip.org) - Optional, for prepare script
 	* [Perl](https://www.perl.org/get.html) - Optional, for OpenSSL prepare script
 	* [swigwin-3.0.12.zip](http://swig.org/download.html) - Optional, for C# bindings
 	* [Wix toolset](http://wixtoolset.org/releases/) - Optional, for creating Windows installation packages
+
+   Toolset:
+        * 120 - Visual Studio 2013
+        * 140 - Visual Studio 2015
+        * 141 - Visual Studio 2017 
 
 2. Fetch the source
 
@@ -93,7 +98,7 @@
 
 3. Prepare
 
-        powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1
+        powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 -toolset 140
 
 4. Configure
 
@@ -114,7 +119,7 @@
 
 6. Alternative to steps 4. and 5. -
 
-        powershell -ExecutionPolicy ByPass -File build.ps1
+        powershell -ExecutionPolicy ByPass -File build.ps1 -toolset 140
 
     The build script builds executables and installation media for all
     platforms (x86 and x64 / Debug and Release with debug symbols)

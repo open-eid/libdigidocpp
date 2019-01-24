@@ -4,7 +4,7 @@ param(
   [string]$msiversion = "3.13.9.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
   [string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
-  [string]$vcdir = "C:\Program Files (x86)\Microsoft Visual Studio $Env:VisualStudioVersion\VC",
+  [string]$toolset = "140",
   [string]$heat = "$env:WIX\bin\heat.exe",
   [string]$candle = "$env:WIX\bin\candle.exe",
   [string]$light = "$env:WIX\bin\light.exe",
@@ -15,6 +15,12 @@ param(
   [string]$sign = $null,
   [switch]$source = $false
 )
+
+switch ($toolset) {
+'120' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" }
+'140' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" }
+'141' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+}
 
 $libdigidocpp = split-path -parent $MyInvocation.MyCommand.Definition
 $cmakeext = @()
@@ -108,7 +114,7 @@ foreach($platform in @("x86", "x64")) {
         Copy-Item "$target/libxml2/$platform/bin/libxml2.dll" test
       }
     }
-    & $vcdir\vcvarsall.bat $platform "&&" $cmake "-GNMake Makefiles" "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=../$platform" "-DCMAKE_INSTALL_LIBDIR=bin" `
+    & $vcvars $platform "&&" $cmake "-GNMake Makefiles" "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=../$platform" "-DCMAKE_INSTALL_LIBDIR=bin" `
       "-DOPENSSL_ROOT_DIR=$openssl" `
       "-DXercesC_ROOT=$target/xerces/$platform" `
       "-DXALANC_INCLUDE_DIR=$target/xalan/c/src" `
@@ -140,9 +146,8 @@ if($doxygen) {
   & $heat dir x86/share/doc/libdigidocpp -nologo -cg Documentation -gg -scom -sreg -sfrag -srd -dr DocumentationFolder -var var.docLocation -out DocFilesFragment.wxs
 }
 & $heat dir x86/include -nologo -cg Headers -gg -scom -sreg -sfrag -srd -dr HeadersFolder -var var.headersLocation -out HeadersFragment.wxs
-& $candle -nologo "-dICON=$libdigidocpp/cmake/modules/ID.ico" "-dMSI_VERSION=$msiversion" "-dPREFIX=$target" `
-  "-dVCINSTALLDIR=$vcdir" "-dheadersLocation=x86/include" "-dlibdigidocpp=." $candleext `
-  $libdigidocpp\libdigidocpp.wxs HeadersFragment.wxs
+& $vcvars x86 "&&" $candle -nologo "-dICON=$libdigidocpp/cmake/modules/ID.ico" "-dMSI_VERSION=$msiversion" "-dPREFIX=$target" `
+  "-dheadersLocation=x86/include" "-dlibdigidocpp=." $candleext $libdigidocpp\libdigidocpp.wxs HeadersFragment.wxs
 & $light -nologo -out $msi_name -ext WixUIExtension `
   "-dWixUIBannerBmp=$libdigidocpp/cmake/modules/banner.bmp" `
   "-dWixUIDialogBmp=$libdigidocpp/cmake/modules/dlgbmp.bmp" `
