@@ -27,11 +27,10 @@
 namespace digidoc
 {
     class X509Cert;
-
-    class EXP_DIGIDOC Signature
+    class DIGIDOCPP_EXPORT Signature
     {
       public:
-        class EXP_DIGIDOC Validator
+        class DIGIDOCPP_EXPORT Validator
         {
         public:
             enum Status
@@ -90,7 +89,7 @@ namespace digidoc
           //TM profile properties
           virtual std::string OCSPProducedAt() const;
           virtual X509Cert OCSPCertificate() const;
-          DEPRECATED_DIGIDOCPP virtual std::vector<unsigned char> OCSPNonce() const;
+          DIGIDOCPP_DEPRECATED virtual std::vector<unsigned char> OCSPNonce() const;
 
           //TS profile properties
           virtual X509Cert TimeStampCertificate() const;

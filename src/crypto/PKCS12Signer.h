@@ -23,7 +23,7 @@
 
 namespace digidoc
 {
-    class EXP_DIGIDOC PKCS12Signer : public Signer
+    class DIGIDOCPP_EXPORT PKCS12Signer : public Signer
     {
 
       public:

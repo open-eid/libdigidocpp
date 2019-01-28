@@ -24,7 +24,7 @@
 namespace digidoc
 {
     class PKCS11SignerPrivate;
-    class EXP_DIGIDOC PKCS11Signer : public Signer
+    class DIGIDOCPP_EXPORT PKCS11Signer : public Signer
     {
 
       public:

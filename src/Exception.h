@@ -26,7 +26,7 @@
 
 namespace digidoc
 {
-    class EXP_DIGIDOC Exception
+    class DIGIDOCPP_EXPORT Exception
     {
       public:
           /**

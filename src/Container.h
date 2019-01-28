@@ -30,14 +30,14 @@ class DataFile;
 class Exception;
 class Signature;
 class Signer;
-typedef void (*initCallBack)(const Exception *e);
+using initCallBack = void (*)(const Exception *e);
 
-EXP_DIGIDOC std::string appInfo();
-EXP_DIGIDOC void initialize(const std::string &appInfo = "libdigidocpp", initCallBack callBack = nullptr);
-EXP_DIGIDOC void terminate();
-EXP_DIGIDOC std::string version();
+DIGIDOCPP_EXPORT std::string appInfo();
+DIGIDOCPP_EXPORT void initialize(const std::string &appInfo = "libdigidocpp", initCallBack callBack = nullptr);
+DIGIDOCPP_EXPORT void terminate();
+DIGIDOCPP_EXPORT std::string version();
 
-class EXP_DIGIDOC Container
+class DIGIDOCPP_EXPORT Container
 {
 public:
     virtual ~Container();

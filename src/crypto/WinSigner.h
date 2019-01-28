@@ -23,7 +23,7 @@
 
 namespace digidoc
 {
-    class EXP_DIGIDOC WinSigner : public Signer
+    class DIGIDOCPP_EXPORT WinSigner : public Signer
     {
 
       public:

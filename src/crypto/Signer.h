@@ -24,7 +24,7 @@
 namespace digidoc
 {
     class X509Cert;
-    class EXP_DIGIDOC Signer
+    class DIGIDOCPP_EXPORT Signer
     {
 
       public:
