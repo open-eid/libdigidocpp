@@ -61,8 +61,8 @@ using plugin = Container *(*)(const std::string &);
 namespace digidoc
 {
 static string m_appInfo = "libdigidocpp";
-static vector<plugin> m_createList = vector<plugin>();
-static vector<plugin> m_openList = vector<plugin>();
+static vector<plugin> m_createList = {};
+static vector<plugin> m_openList = {};
 }
 
 /**
@@ -133,7 +133,7 @@ void digidoc::initialize(const string &appInfo, initCallBack callBack)
 
     if(callBack)
     {
-        thread([=]{
+        thread([callBack]{
             try {
                 X509CertStore::instance();
                 callBack(nullptr);
@@ -296,7 +296,7 @@ Container* Container::open(const string &path)
  * @fn digidoc::Container::save
  * Saves the container.
  *
- * @throws Exception is thrown if there was a failure saving BDOC container. For example added
+ * @throws Exception is thrown if there was a failure saving container. For example added
  * data file does not exist.
  */
 

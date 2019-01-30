@@ -95,7 +95,7 @@ vector<DataFile*> ASiC_E::metaFiles() const
 void ASiC_E::save(const string &path)
 {
     if(dataFiles().empty())
-        THROW("Can not save, BDoc container is empty.");
+        THROW("Can not save, container is empty.");
     if(mediaType() != MIMETYPE_ASIC_E)
         THROW("'%s' format is not supported", mediaType().c_str());
 
@@ -212,7 +212,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     DEBUG("ASiC_E::readManifest()");
 
     const vector<string> &list = z.list();
-    size_t mcount = count(list.cbegin(), list.cend(), "META-INF/manifest.xml");
+    size_t mcount = size_t(count(list.cbegin(), list.cend(), "META-INF/manifest.xml"));
     if(mcount < 1)
         THROW("Manifest file is missing");
     if(mcount > 1)
@@ -240,16 +240,16 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             if(file.full_path() == "/")
             {
                 if(mediaType() != file.media_type())
-                    THROW("Manifest has incorrect BDOC container media type defined '%s', expecting '%s'.", file.media_type().c_str(), mediaType().c_str());
+                    THROW("Manifest has incorrect container media type defined '%s', expecting '%s'.", file.media_type().c_str(), mediaType().c_str());
                 mimeFound = true;
                 continue;
             }
             if(file.full_path().back() == '/') // Skip Directory entries
                 continue;
 
-            size_t fcount = count(list.cbegin(), list.cend(), file.full_path());
+            size_t fcount = size_t(count(list.cbegin(), list.cend(), file.full_path()));
             if(fcount < 1)
-                THROW("File described in manifest '%s' does not exist in BDOC container.", file.full_path().c_str());
+                THROW("File described in manifest '%s' does not exist in container.", file.full_path().c_str());
             if(fcount > 1)
                 THROW("Found multiple references of file '%s' in zip container.", file.full_path().c_str());
 
@@ -293,7 +293,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             if(file == "mimetype" || file.compare(0, 8,"META-INF") == 0)
                 continue;
             if(manifestFiles.find(file) == manifestFiles.end())
-                THROW("File '%s' found in BDOC container is not described in manifest.", file.c_str());
+                THROW("File '%s' found in container is not described in manifest.", file.c_str());
         }
     }
     catch(const xsd::cxx::xml::invalid_utf16_string &)
@@ -344,7 +344,7 @@ Signature *ASiC_E::sign(Signer* signer)
     catch(const Exception& e)
     {
         deleteSignature(s);
-        THROW_CAUSE(e, "Failed to sign BDOC container.");
+        THROW_CAUSE(e, "Failed to sign container.");
     }
     return s;
 }

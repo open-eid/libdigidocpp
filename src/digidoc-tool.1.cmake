@@ -1,12 +1,12 @@
 .\" Manpage for digidoc-tool
 .TH digidoc-tool 1 "${BUILD_DATE}" "${VERSION}" "digidoc-tool man page"
 .SH NAME
-digidoc-tool \- open/create/verify BDoc format files
+digidoc-tool \- open/create/verify ASiC-E/ASiC-S/BDoc format files
 .SH SYNOPSIS
 digidoc-tool COMMAND [OPTIONS] FILE
 .SH OPTIONS
 Command create:
-  Example: digidoc-tool create --file=file1.txt --file=file2.txt demo-container.bdoc
+  Example: digidoc-tool create --file=file1.txt --file=file2.txt demo-container.asice
   Available options:
     --file=        - The option can occur multiple times. File(s) to be signed
     --mime=        - can be after --file parameter. Default value is application/octet-stream
@@ -19,7 +19,7 @@ Command createBatch:
     for additional options look sign command
 
 Command open:
-  Example: digidoc-tool open container-file.bdoc
+  Example: digidoc-tool open container-file.asice
   Available options:
     --warnings=(ignore,warning,error) - warning handling
     --policy=(POLv1,POLv2) - Signature Validation Policy (default POLv2)
@@ -27,25 +27,25 @@ Command open:
     --extractAll[=path] - extracts documents (to path when provided)
 
 Command add:
-  Example: digidoc-tool add --file=file1.txt container-file.bdoc
+  Example: digidoc-tool add --file=file1.txt container-file.asice
   Available options:
     --file=        - The option can occur multiple times. File(s) to be added to the container
     --mime=        - can be after --file parameter. Default value is application/octet-stream
 
 Command remove:
-  Example: digidoc-tool remove --document=0 --document=1 --signature=1 container-file.bdoc
+  Example: digidoc-tool remove --document=0 --document=1 --signature=1 container-file.asice
   Available options:
     --document=    - documents to remove
     --signature=   - signatures to remove
 
 Command websign:
-  Example: digidoc-tool sign --cert=signer.crt demo-container.bdoc
+  Example: digidoc-tool sign --cert=signer.crt demo-container.asice
   Available options:
     --cert=        - signer token certificate
     for additional options look sign command
 
 Command sign:
-  Example: digidoc-tool sign demo-container.bdoc
+  Example: digidoc-tool sign demo-container.asice
   Available options:
     --profile=     - signature profile, TM, time-mark, TS, time-stamp
     --XAdESEN      - use XAdES EN profile
@@ -64,5 +64,7 @@ Command sign:
 
 All commands:
     --nocolor       - Disable terminal colors
+    --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug
+    --logfile=      - File to log, empty to console
 .SH SEE ALSO
 cdigidoc(1), qdigidocclient(1), qesteidutil(1)
