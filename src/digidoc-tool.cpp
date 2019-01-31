@@ -278,7 +278,7 @@ static void printUsage(const char *executable)
     cout
     << "Usage: " << executable << " COMMAND [OPTIONS] FILE" << endl << endl
     << "  Command create:" << endl
-    << "    Example: " << executable << " create --file=file1.txt --file=file2.txt demo-container.bdoc" << endl
+    << "    Example: " << executable << " create --file=file1.txt --file=file2.txt demo-container.asice" << endl
     << "    Available options:" << endl
     << "      --file=        - The option can occur multiple times. File(s) to be signed" << endl
     << "      --mime=        - can be after --file parameter. Default value is application/octet-stream" << endl
@@ -289,29 +289,29 @@ static void printUsage(const char *executable)
     << "    Available options:" << endl
     << "      for additional options look sign command" << endl << endl
     << "  Command open:" << endl
-    << "    Example: " << executable << " open container-file.bdoc" << endl
+    << "    Example: " << executable << " open container-file.asice" << endl
     << "    Available options:" << endl
     << "      --warnings=(ignore,warning,error) - warning handling" << endl
     << "      --policy=(POLv1,POLv2) - Signature Validation Policy (default POLv2)" << endl
     << "                               http://open-eid.github.io/SiVa/siva/appendix/validation_policy/" << endl
     << "      --extractAll[=path] - extracts documents (to path when provided)" << endl << endl
     << "  Command add:" << endl
-    << "    Example: " << executable << " add --file=file1.txt container-file.bdoc" << endl
+    << "    Example: " << executable << " add --file=file1.txt container-file.asice" << endl
     << "    Available options:" << endl
     << "      --file=        - The option can occur multiple times. File(s) to be added to the container" << endl
     << "      --mime=        - can be after --file parameter. Default value is application/octet-stream" << endl << endl
     << "  Command remove:" << endl
-    << "    Example: " << executable << " remove --document=0 --document=1 --signature=1 container-file.bdoc" << endl
+    << "    Example: " << executable << " remove --document=0 --document=1 --signature=1 container-file.asice" << endl
     << "    Available options:" << endl
     << "      --document=    - documents to remove" << endl
     << "      --signature=   - signatures to remove" << endl << endl
     << "  Command websign:" << endl
-    << "    Example: " << executable << " sign --cert=signer.crt demo-container.bdoc" << endl
+    << "    Example: " << executable << " sign --cert=signer.crt demo-container.asice" << endl
     << "    Available options:" << endl
     << "      --cert=        - signer token certificate" << endl
     << "      for additional options look sign command" << endl << endl
     << "  Command sign:" << endl
-    << "    Example: " << executable << " sign demo-container.bdoc" << endl
+    << "    Example: " << executable << " sign demo-container.asice" << endl
     << "    Available options:" << endl
     << "      --profile=     - signature profile, TM, time-mark, TS, time-stamp" << endl
     << "      --XAdESEN      - use XAdES EN profile" << endl
@@ -398,12 +398,12 @@ Params::Params(int argc, char *argv[])
         {
             profile = arg.substr(10);
             size_t pos = profile.find('.');
-            profile = profiles.at(profile.substr(0, pos)) + (pos == string::npos ? "" : profile.substr(pos));
+            profile = profiles.at(profile.substr(0, pos)) + (pos == string::npos ? std::string() : profile.substr(pos));
         }
         else if(arg.find("--file=") == 0)
         {
             string arg2(i+1 < argc ? decodeParameter(argv[i+1]) : string());
-            files.push_back(pair<string,string>(arg.substr(7),
+            files.emplace_back(pair<string,string>(arg.substr(7),
                 arg2.find("--mime=") == 0 ? arg2.substr(7) : "application/octet-stream"));
         }
 #ifdef _WIN32

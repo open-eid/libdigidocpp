@@ -57,6 +57,8 @@ std::vector<Exception::ExceptionCode> Exception::ignores = std::vector<Exception
  * OCSP Response is not in valid time slot
  * @var digidoc::Exception::OCSPRequestUnauthorized
  * OCSP Responder requires the OCSP request to be signed
+ * @var digidoc::Exception::TSTooManyRequests
+ * TSA service requests have reached limit
  *
  * @var digidoc::Exception::PINCanceled
  * PIN cancelled exception
@@ -68,9 +70,9 @@ std::vector<Exception::ExceptionCode> Exception::ignores = std::vector<Exception
  * PIN locked error
  *
  * @var digidoc::Exception::ReferenceDigestWeak
- * One or more referenced objects in BDoc container are calculated by using weaker digest method that recommended
+ * One or more referenced objects in container are calculated by using weaker digest method that recommended
  * @var digidoc::Exception::SignatureDigestWeak
- * The digest that is signed in BDoc container has been calculated by using weaker digest method than recommended
+ * The digest that is signed in container has been calculated by using weaker digest method than recommended
  * @var digidoc::Exception::DataFileNameSpaceWarning
  * DDoc warning: &lt;DataFile&gt; XML element is missing xmlns attribute 
  * @var digidoc::Exception::IssuerNameSpaceWarning

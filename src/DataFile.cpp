@@ -40,7 +40,7 @@ using namespace std;
  * Calculates digest for data file. If digest is already calculated returns it,
  * otherwise calculates the digest.
  *
- * Supported uris for BDoc:
+ * Supported uris:
  * - http://www.w3.org/2000/09/xmldsig#sha1
  * - http://www.w3.org/2001/04/xmldsig-more#sha224
  * - http://www.w3.org/2001/04/xmlenc#sha256
