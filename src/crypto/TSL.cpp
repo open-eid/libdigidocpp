@@ -241,16 +241,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
         if(result.expired)
             THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
         if(CONF(TSLOnlineDigest))
-        {
-            try {
-                tsl.validateETag(url, timeout);
-            }
-            catch(const Exception &e)
-            {
-                debugException(e);
-                tsl.validateRemoteDigest(url, timeout);
-            }
-        }
+             tsl.validateETag(url, timeout);
         DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
     } catch(const Exception &e) {
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
@@ -565,7 +556,8 @@ void TSL::validateETag(const string &url, int timeout)
 
     map<string,string>::const_iterator it = r.headers.find("ETag");
     if(it == r.headers.cend())
-        return;
+        validateRemoteDigest(url, timeout);
+
     DEBUG("Remote ETag: %s", it->second.c_str());
     ifstream is(File::encodeName(path + ".etag"));
     if(!is.is_open())
