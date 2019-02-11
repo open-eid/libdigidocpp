@@ -543,9 +543,9 @@ void TSL::validateETag(const string &url, int timeout)
 {
     Connect::Result r;
     try {
-        r = Connect(url, "HEAD", timeout).exec();
+        r = Connect(url, "HEAD", timeout).exec({{"Accept-Encoding", "gzip"}});
         if(r.isRedirect())
-            r = Connect(r.headers["Location"], "HEAD", timeout).exec();
+            r = Connect(r.headers["Location"], "HEAD", timeout).exec({{"Accept-Encoding", "gzip"}});
         if(!r.isOK())
             return;
     } catch(const Exception &e) {

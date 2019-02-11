@@ -215,6 +215,9 @@ Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
     if(pos != string::npos)
         r.content.erase(0, pos + 4);
 
+    if(r.content.empty())
+        return r;
+
     const auto it = r.headers.find("Content-Encoding");
     if(it != r.headers.cend())
     {
