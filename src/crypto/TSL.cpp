@@ -556,7 +556,10 @@ void TSL::validateETag(const string &url, int timeout)
 
     map<string,string>::const_iterator it = r.headers.find("ETag");
     if(it == r.headers.cend())
+    {
         validateRemoteDigest(url, timeout);
+        return;
+    }
 
     DEBUG("Remote ETag: %s", it->second.c_str());
     ifstream is(File::encodeName(path + ".etag"));
