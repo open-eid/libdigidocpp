@@ -204,6 +204,22 @@ extern "C"
 %ignore digidoc::Signature::Validator::warnings;
 %ignore digidoc::Signature::OCSPNonce;
 
+%newobject digidoc::Container::open;
+%newobject digidoc::Container::create;
+
+%typemap(javacode) digidoc::Conf %{
+  public Conf transfer() {
+    swigCMemOwn = false;
+    return this;
+  }
+%}
+%typemap(cscode) digidoc::Conf %{
+  public Conf transfer() {
+    swigCMemOwn = false;
+    return this;
+  }
+%}
+
 // Handle standard C++ types
 %include "std_string.i"
 %include "std_vector.i"
