@@ -83,6 +83,8 @@ public class libdigidocpp {
 
     static void sign(String[] args)
     {
+        DigiDocConf conf = new DigiDocConf(null);
+        Conf.init(conf.transfer());
         init();
         try
         {

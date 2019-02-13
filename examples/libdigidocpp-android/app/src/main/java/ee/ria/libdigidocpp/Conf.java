@@ -35,6 +35,11 @@ public class Conf {
     }
   }
 
+  public Conf transfer() {
+    swigCMemOwn = false;
+    return this;
+  }
+
   public Conf() {
     this(digidocJNI.new_Conf(), true);
   }

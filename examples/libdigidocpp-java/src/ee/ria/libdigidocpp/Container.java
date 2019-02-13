@@ -83,12 +83,12 @@ public class Container {
 
   public static Container create(String path) {
     long cPtr = digidocJNI.Container_create(path);
-    return (cPtr == 0) ? null : new Container(cPtr, false);
+    return (cPtr == 0) ? null : new Container(cPtr, true);
   }
 
   public static Container open(String path) {
     long cPtr = digidocJNI.Container_open(path);
-    return (cPtr == 0) ? null : new Container(cPtr, false);
+    return (cPtr == 0) ? null : new Container(cPtr, true);
   }
 
   public Signature prepareWebSignature(byte[] cert, String profile, StringVector roles, String city, String state, String postalCode, String country) {
