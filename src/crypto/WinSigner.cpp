@@ -299,13 +299,13 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
             THROW("Failed to sign");
         }
         DWORD size = 0;
-        if(!CryptSignHashW(hash, AT_SIGNATURE, nullptr, 0, nullptr, &size)) {
+        if(!CryptSignHashW(hash, d->spec, nullptr, 0, nullptr, &size)) {
             err = LONG(GetLastError());
             CryptDestroyHash(hash);
             break;
         }
         signature.resize(size);
-        if(!CryptSignHashW(hash, AT_SIGNATURE, nullptr, 0, signature.data(), &size))
+        if(!CryptSignHashW(hash, d->spec, nullptr, 0, signature.data(), &size))
             err = LONG(GetLastError());
         std::reverse(signature.begin(), signature.end());
 
