@@ -20,10 +20,6 @@
 #include "Signer.h"
 
 #include "Conf.h"
-#include "log.h"
-#include "crypto/Digest.h"
-#include "crypto/X509Crypto.h"
-#include "crypto/X509Cert.h"
 
 using namespace digidoc;
 using namespace std;
@@ -51,7 +47,7 @@ public:
  * Constructor
  */
 Signer::Signer()
-    : d(new Signer::Private)
+    : d(new Private)
 {}
 
 /**
@@ -89,6 +85,7 @@ void Signer::setSignatureProductionPlace(const string &city,
 void Signer::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
 {
+    setENProfile(true);
     d->city = city;
     d->streetAddress = streetAddress;
     d->stateOrProvince = stateOrProvince;
