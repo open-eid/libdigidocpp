@@ -99,7 +99,7 @@ script: case ${TARGET} in
 deploy:
 - provider: releases
   api_key: ${GITHUB_ACCESS_TOKEN}
-  file: libdigidocpp-${VERSION}.tar.gz
+  file: ../upload/libdigidocpp-${TRAVIS_TAG:1}.tar.gz
   skip_cleanup: true
   on:
     tags: true
@@ -114,4 +114,5 @@ deploy:
   upload-dir: libdigidocpp-nightly/${BUILD_NUMBER}
   acl: public_read
   on:
+    branch: master
     condition: $TRAVIS_REPO_SLUG = "open-eid/libdigidocpp"
