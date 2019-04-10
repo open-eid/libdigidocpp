@@ -1,3 +1,12 @@
+Libdigidocpp library [3.13.9](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.9) release notes
+--------------------------------------
+- Update dependencies (#285, #275, #274, #268, #266, #265, #258)
+- Optimize TSL loading and SiVa request (#271, #252, #280)
+- Update TSL trust certificates (#287)
+- Improve C# and java bindings (#282, #278, #272, #270)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.8...v3.13.9)
+
 Libdigidocpp library [3.13.8](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.8) release notes
 --------------------------------------
 - Use ETag instead Last-Modified to verify cached file (#238)
