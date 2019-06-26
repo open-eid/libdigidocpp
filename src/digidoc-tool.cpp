@@ -247,25 +247,50 @@ private:
 class ToolConfig: public XmlConfCurrent
 {
 public:
-    ToolConfig(): _logLevel(XmlConfCurrent::logLevel())
-      , expired(XmlConfCurrent::TSLAllowExpired())
-      , tslcerts(XmlConfCurrent::TSLCerts())
-      , _logFile(XmlConfCurrent::logFile())
-      , tslurl(XmlConfCurrent::TSLUrl())
-      , uri(XmlConfCurrent::digestUri())
-      , siguri(XmlConfCurrent::signatureDigestUri()) {}
+    enum Warning {
+        WError,
+        WWarning,
+        WIgnore
+    };
+
+    ToolConfig(int argc, char *argv[]);
     int logLevel() const override { return _logLevel; }
     string logFile() const override { return _logFile; }
     string digestUri() const override { return uri; }
     string signatureDigestUri() const override { return siguri; }
     bool TSLAllowExpired() const override { return expired; }
     vector<X509Cert> TSLCerts() const override { return tslcerts; }
+    string TSUrl() const override { return tsurl; }
     string TSLUrl() const override { return tslurl; }
 
+    static string decodeParameter(const string &param)
+    {
+        if(param.empty())
+            return string();
+#ifdef _WIN32
+        int len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), nullptr, 0);
+        wstring out(size_t(len), 0);
+        len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), &out[0], len);
+        return File::decodeName(out);
+#else
+        return File::decodeName(param);
+#endif
+    }
+
+    // Config
     int _logLevel;
-    bool expired;
+    bool expired = false;
     vector<X509Cert> tslcerts;
-    string _logFile, tslurl, uri, siguri;
+    string _logFile, tsurl, tslurl, uri, siguri;
+
+    // Params
+    string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
+    vector<unsigned char> thumbprint;
+    vector<pair<string,string> > files;
+    vector<string> roles;
+    bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
+    static const map<string,string> profiles;
+    static string RED, GREEN, YELLOW, RESET;
 };
 
 
@@ -331,6 +356,7 @@ static void printUsage(const char *executable)
     << "      --pin=         - default asks pin from prompt" << endl
     << "      --sha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl
+    << "      --tsurl         - option to change TS URL (default " << (CONF(TSUrl)) << ")" << endl
     << "      --dontValidate= - Don't validate container" << endl << endl
     << "  All commands:" << endl
     << "      --nocolor       - Disable terminal colors" << endl
@@ -338,39 +364,7 @@ static void printUsage(const char *executable)
     << "      --logfile=      - File to log, empty to console" << endl;
 }
 
-struct Params
-{
-    enum Warning {
-        WError,
-        WWarning,
-        WIgnore
-    };
-
-    Params(int argc, char *argv[]);
-    static string decodeParameter(const string &param)
-    {
-        if(param.empty())
-            return string();
-#ifdef _WIN32
-        int len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), nullptr, 0);
-        wstring out(size_t(len), 0);
-        len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), &out[0], len);
-        return File::decodeName(out);
-#else
-        return File::decodeName(param);
-#endif
-    }
-
-    string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
-    vector<unsigned char> thumbprint;
-    vector<pair<string,string> > files;
-    vector<string> roles;
-    bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
-    static const map<string,string> profiles;
-    static string RED, GREEN, YELLOW, RESET;
-};
-
-const map<string,string> Params::profiles = {
+const map<string,string> ToolConfig::profiles = {
     {"BES", "BES"},
     {"EPES", "EPES"},
     {"TM", "time-mark"},
@@ -382,15 +376,21 @@ const map<string,string> Params::profiles = {
     {"time-mark-archive", "time-mark-archive"},
     {"time-stamp-archive", "time-stamp-archive"},
 };
-string Params::RED = "\033[31m";
-string Params::GREEN = "\033[32m";
-string Params::YELLOW = "\033[33m";
-string Params::RESET = "\033[0m";
+string ToolConfig::RED = "\033[31m";
+string ToolConfig::GREEN = "\033[32m";
+string ToolConfig::YELLOW = "\033[33m";
+string ToolConfig::RESET = "\033[0m";
 
-Params::Params(int argc, char *argv[])
+ToolConfig::ToolConfig(int argc, char *argv[])
+    : _logLevel(XmlConfCurrent::logLevel())
+    , expired(XmlConfCurrent::TSLAllowExpired())
+    , tslcerts(XmlConfCurrent::TSLCerts())
+    , _logFile(XmlConfCurrent::logFile())
+    , tsurl(XmlConfCurrent::TSUrl())
+    , tslurl(XmlConfCurrent::TSLUrl())
+    , uri(XmlConfCurrent::digestUri())
+    , siguri(XmlConfCurrent::signatureDigestUri())
 {
-    ToolConfig *conf = static_cast<ToolConfig*>(Conf::instance());
-
     for(int i = 2; i < argc; i++)
     {
         string arg(decodeParameter(argv[i]));
@@ -432,77 +432,78 @@ Params::Params(int argc, char *argv[])
         else if(arg.find("--postalCode=") == 0) postalCode = arg.substr(13);
         else if(arg.find("--country=") == 0) country = arg.substr(10);
         else if(arg.find("--role=") == 0) roles.push_back(arg.substr(7));
-        else if(arg == "--sha224") conf->uri = URI_SHA224;
-        else if(arg == "--sha256") conf->uri = URI_SHA256;
-        else if(arg == "--sha384") conf->uri = URI_SHA384;
-        else if(arg == "--sha512") conf->uri = URI_SHA512;
-        else if(arg == "--sigsha224") conf->siguri = URI_SHA224;
-        else if(arg == "--sigsha256") conf->siguri = URI_SHA256;
-        else if(arg == "--sigsha384") conf->siguri = URI_SHA384;
-        else if(arg == "--sigsha512") conf->siguri = URI_SHA512;
-        else if(arg.find("--tslurl=") == 0) conf->tslurl = arg.substr(9);
-        else if(arg.find("--tslcert=") == 0) conf->tslcerts = { X509Cert(arg.substr(10)) };
-        else if(arg == "--TSLAllowExpired") conf->expired = true;
+        else if(arg == "--sha224") uri = URI_SHA224;
+        else if(arg == "--sha256") uri = URI_SHA256;
+        else if(arg == "--sha384") uri = URI_SHA384;
+        else if(arg == "--sha512") uri = URI_SHA512;
+        else if(arg == "--sigsha224") siguri = URI_SHA224;
+        else if(arg == "--sigsha256") siguri = URI_SHA256;
+        else if(arg == "--sigsha384") siguri = URI_SHA384;
+        else if(arg == "--sigsha512") siguri = URI_SHA512;
+        else if(arg.find("--tsurl") == 0) tsurl = arg.substr(8);
+        else if(arg.find("--tslurl=") == 0) tslurl = arg.substr(9);
+        else if(arg.find("--tslcert=") == 0) tslcerts = { X509Cert(arg.substr(10)) };
+        else if(arg == "--TSLAllowExpired") expired = true;
         else if(arg == "--dontsign") doSign = false;
         else if(arg == "--nocolor") RED = GREEN = YELLOW = RESET = string();
-        else if(arg.find("--loglevel=") == 0) conf->_logLevel = stoi(arg.substr(11));
-        else if(arg.find("--logfile=") == 0) conf->_logFile = arg.substr(10);
+        else if(arg.find("--loglevel=") == 0) _logLevel = stoi(arg.substr(11));
+        else if(arg.find("--logfile=") == 0) _logFile = arg.substr(10);
         else path = arg;
     }
 }
 
-static int validateSignature(const Signature *s, Params::Warning warning = Params::WWarning)
+static int validateSignature(const Signature *s, ToolConfig::Warning warning = ToolConfig::WWarning)
 {
     int returnCode = EXIT_SUCCESS;
     Signature::Validator v(s);
     cout << "    Validation: ";
     switch (v.status()) {
     case Signature::Validator::Valid:
-        cout << Params::GREEN << "OK";
+        cout << ToolConfig::GREEN << "OK";
         break;
     case Signature::Validator::Warning:
-        if(warning == Params::WError)
+        if(warning == ToolConfig::WError)
         {
-            cout << Params::RED << "FAILED (Warning)";
+            cout << ToolConfig::RED << "FAILED (Warning)";
             returnCode = EXIT_FAILURE;
         }
         else
-            cout << Params::YELLOW << "OK (Warning)";
+            cout << ToolConfig::YELLOW << "OK (Warning)";
         break;
     case Signature::Validator::NonQSCD:
-        if(warning == Params::WError)
+        if(warning == ToolConfig::WError)
         {
-            cout << Params::RED << "FAILED (NonQSCD)";
+            cout << ToolConfig::RED << "FAILED (NonQSCD)";
             returnCode = EXIT_FAILURE;
         }
         else
-            cout << Params::YELLOW << "OK (NonQSCD)";
+            cout << ToolConfig::YELLOW << "OK (NonQSCD)";
         break;
     case Signature::Validator::Test:
-        if(warning == Params::WError)
+        if(warning == ToolConfig::WError)
         {
-            cout << Params::RED << "OK (Test)";
+            cout << ToolConfig::RED << "OK (Test)";
             returnCode = EXIT_FAILURE;
         }
         else
-            cout << Params::YELLOW << "OK (Test)";
+            cout << ToolConfig::YELLOW << "OK (Test)";
         break;
     case Signature::Validator::Unknown:
-        cout << Params::RED << "FAILED (Unknown)";
+        cout << ToolConfig::RED << "FAILED (Unknown)";
         returnCode = EXIT_FAILURE;
         break;
     case Signature::Validator::Invalid:
-        cout << Params::RED << "FAILED (Invalid)";
+        cout << ToolConfig::RED << "FAILED (Invalid)";
         returnCode = EXIT_FAILURE;
         break;
     }
-    cout << Params::RESET << endl;
-    if(!v.warnings().empty() && warning != Params::WIgnore)
+    cout << ToolConfig::RESET << endl;
+    if(!v.warnings().empty() && warning != ToolConfig::WIgnore)
     {
-        cout << "    Warnings: " << Params::YELLOW;
+        cout << "    Warnings: " << ToolConfig::YELLOW;
         for(Exception::ExceptionCode code: v.warnings())
             cout << code;
-        cout << Params::RESET << endl;
+        cout << ToolConfig::RESET << endl;
     }
     if(!v.diagnostics().empty())
         cout << "    Exception:" << endl << v.diagnostics() << endl;
@@ -518,20 +519,20 @@ static int validateSignature(const Signature *s, Params::Warning warning = Param
  */
 static int open(int argc, char* argv[])
 {
-    Params::Warning reportwarnings = Params::WWarning;
+    ToolConfig::Warning reportwarnings = ToolConfig::WWarning;
     string path, extractPath, policy;
     int returnCode = EXIT_SUCCESS;
 
     // Parse command line arguments.
     for(int i = 2; i < argc; i++)
     {
-        string arg(Params::decodeParameter(argv[i]));
+        string arg(ToolConfig::decodeParameter(argv[i]));
         if(arg == "--list")
             continue;
         if(arg.find("--warnings=") == 0)
         {
-            if(arg.substr(11, 6) == "ignore") reportwarnings = Params::WIgnore;
-            if(arg.substr(11, 5) == "error") reportwarnings = Params::WError;
+            if(arg.substr(11, 6) == "ignore") reportwarnings = ToolConfig::WIgnore;
+            if(arg.substr(11, 5) == "error") reportwarnings = ToolConfig::WError;
         }
         else if(arg.find("--extractAll") == 0)
         {
@@ -572,7 +573,7 @@ static int open(int argc, char* argv[])
                     file->saveAs(dst);
                     cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
                 } catch(const Exception &e) {
-                    cout << "  Document " << file->fileName() << " extraction: " << Params::RED << "FAILED" << Params::RESET << endl;
+                    cout << "  Document " << file->fileName() << " extraction: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
                     cout << "  Exception:" << endl << e;
                     return EXIT_FAILURE;
                 }
@@ -658,7 +659,7 @@ static int remove(int argc, char *argv[])
     string path;
     for(int i = 2; i < argc; i++)
     {
-        string arg(Params::decodeParameter(argv[i]));
+        string arg(ToolConfig::decodeParameter(argv[i]));
         if(arg.find("--document=") == 0)
             documents.push_back(atoi(arg.substr(11).c_str()));
         else if(arg.find("--signature=") == 0)
@@ -715,16 +716,15 @@ static int remove(int argc, char *argv[])
 /**
  * Add items to the container.
  *
- * @param argc number of command line arguments.
- * @param argv command line arguments.
+ * @param p ToolConfig object.
+ * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int add(int argc, char *argv[])
+static int add(const ToolConfig &p, char *program)
 {
-    Params p(argc, argv);
     if(p.path.empty() || p.files.empty())
     {
-        printUsage(argv[0]);
+        printUsage(program);
         return EXIT_FAILURE;
     }
 
@@ -755,7 +755,7 @@ static int add(int argc, char *argv[])
  * @param p Params object containing the info needed for Signer creation
  * @return Signer
  */
-static unique_ptr<Signer> getSigner(const Params &p)
+static unique_ptr<Signer> getSigner(const ToolConfig &p)
 {
     unique_ptr<Signer> signer;
 #ifdef _WIN32
@@ -794,9 +794,9 @@ static int signContainer(Container *doc, Signer *signer, bool dontValidate = fal
             return EXIT_SUCCESS;
         try {
             signature->validate();
-            cout << "    Validation: " << Params::GREEN << "OK" << Params::RESET << endl;
+            cout << "    Validation: " << ToolConfig::GREEN << "OK" << ToolConfig::RESET << endl;
         } catch(const Exception &e) {
-            cout << "    Validation: " << Params::RED << "FAILED" << Params::RESET << endl;
+            cout << "    Validation: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
             cout << "     Exception:" << endl << e;
             return EXIT_FAILURE;
         }
@@ -808,16 +808,15 @@ static int signContainer(Container *doc, Signer *signer, bool dontValidate = fal
 /**
  * Create new container and sign unless explicitly requested not to sign
  *
- * @param argc number of command line arguments.
- * @param argv command line arguments.
+ * @param p ToolConfig object.
+ * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int create(int argc, char* argv[])
+static int create(const ToolConfig &p, char *program)
 {
-    Params p(argc, argv);
     if(p.path.empty() || p.files.empty())
     {
-        printUsage(argv[0]);
+        printUsage(program);
         return EXIT_FAILURE;
     }
 
@@ -845,20 +844,18 @@ static int create(int argc, char* argv[])
     }
 }
 
-
 /**
  * Create new container.
  *
- * @param argc number of command line arguments.
- * @param argv command line arguments.
+ * @param p ToolConfig object
+ * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int createBatch(int argc, char* argv[])
+static int createBatch(const ToolConfig &p, char *program)
 {
-    Params p(argc, argv);
     if(p.path.empty())
     {
-        printUsage(argv[0]);
+        printUsage(program);
         return EXIT_FAILURE;
     }
 
@@ -894,16 +891,15 @@ static int createBatch(int argc, char* argv[])
 /**
  * Sign container.
  *
- * @param argc number of command line arguments.
- * @param argv command line arguments.
+ * @param p ToolConfig object.
+ * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int sign(int argc, char* argv[])
+static int sign(const ToolConfig &p, char *program)
 {
-    Params p(argc, argv);
     if(p.path.empty())
     {
-        printUsage(argv[0]);
+        printUsage(program);
         return EXIT_FAILURE;
     }
 
@@ -926,12 +922,11 @@ static int sign(int argc, char* argv[])
     }
 }
 
-static int websign(int argc, char* argv[])
+static int websign(const ToolConfig &p, char *program)
 {
-    Params p(argc, argv);
     if(p.path.empty())
     {
-        printUsage(argv[0]);
+        printUsage(program);
         return EXIT_FAILURE;
     }
 
@@ -991,9 +986,9 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
     try {
         cout << "  Signature: ";
         t.validate(CONF(TSLCerts));
-        cout << Params::GREEN << "VALID" << Params::RESET << endl;
+        cout << ToolConfig::GREEN << "VALID" << ToolConfig::RESET << endl;
     } catch(const Exception &e) {
-        cout << Params::RED << "INVALID" << Params::RESET << endl;
+        cout << ToolConfig::RED << "INVALID" << ToolConfig::RESET << endl;
         cout << "Caught Exception:" << endl << e;
         returnCode = EXIT_FAILURE;
     }
@@ -1019,9 +1014,9 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
         try {
             cout << "        Signature: ";
             tp.validate(p.certs);
-            cout << Params::GREEN << "VALID" << Params::RESET << endl;
+            cout << ToolConfig::GREEN << "VALID" << ToolConfig::RESET << endl;
         } catch(const Exception &e) {
-            cout << Params::RED << "INVALID" << Params::RESET << endl;
+            cout << ToolConfig::RED << "INVALID" << ToolConfig::RESET << endl;
             cout << "Caught Exception:" << endl << e;
             returnCode = EXIT_FAILURE;
         }
@@ -1048,9 +1043,9 @@ int main(int argc, char *argv[])
     printf("  digidoc-tool version: %s\n", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER));
     printf("  libdigidocpp version: %s\n", version().c_str());
 
+    ToolConfig *conf = new ToolConfig(argc, argv);
     try {
-        Conf::init(new ToolConfig);
-        Params(argc, argv);
+        Conf::init(conf);
         stringstream info;
         info << "digidoc-tool/" << VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER) << " (";
 #ifdef _WIN32
@@ -1081,17 +1076,17 @@ int main(int argc, char *argv[])
     if(command == "open")
         returnCode = open(argc, argv);
     else if(command == "create")
-        returnCode = create(argc, argv);
+        returnCode = create(*conf, argv[0]);
     else if(command == "add")
-        returnCode = add(argc, argv);
+        returnCode = add(*conf, argv[0]);
     else if(command == "createBatch")
-        returnCode = createBatch(argc, argv);
+        returnCode = createBatch(*conf, argv[0]);
     else if(command == "remove")
         returnCode = remove(argc, argv);
     else if(command == "sign")
-        returnCode = sign(argc, argv);
+        returnCode = sign(*conf, argv[0]);
     else if(command == "websign")
-        returnCode = websign(argc, argv);
+        returnCode = websign(*conf, argv[0]);
     else if(command == "tsl")
         returnCode = tslcmd(argc, argv);
     else if(command == "version")
