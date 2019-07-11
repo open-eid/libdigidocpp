@@ -38,10 +38,7 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-namespace digidoc
-{
-
-class PKCS11SignerPrivate
+class PKCS11Signer::Private
 {
 public:
     vector<CK_BYTE> attribute(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE obj, CK_ATTRIBUTE_TYPE type) const;
@@ -54,7 +51,7 @@ public:
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
         return (h = LoadLibraryW(_driver.c_str())) != 0;
 #else
-		return false;
+        return false;
 #endif
     }
 
@@ -88,9 +85,7 @@ public:
     string pin;
 };
 
-}
-
-vector<CK_BYTE> PKCS11SignerPrivate::attribute(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE obj, CK_ATTRIBUTE_TYPE type) const
+vector<CK_BYTE> PKCS11Signer::Private::attribute(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE obj, CK_ATTRIBUTE_TYPE type) const
 {
     vector<CK_BYTE> value;
     CK_ATTRIBUTE attr = { type, nullptr, 0 };
@@ -103,7 +98,7 @@ vector<CK_BYTE> PKCS11SignerPrivate::attribute(CK_SESSION_HANDLE session, CK_OBJ
     return value;
 }
 
-vector<CK_OBJECT_HANDLE> PKCS11SignerPrivate::findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls, const vector<CK_BYTE> &id) const
+vector<CK_OBJECT_HANDLE> PKCS11Signer::Private::findObject(CK_SESSION_HANDLE session, CK_OBJECT_CLASS cls, const vector<CK_BYTE> &id) const
 {
     vector<CK_OBJECT_HANDLE> result;
     CK_BBOOL _true = CK_TRUE;
@@ -149,7 +144,7 @@ vector<CK_OBJECT_HANDLE> PKCS11SignerPrivate::findObject(CK_SESSION_HANDLE sessi
  * @throws Exception exception is thrown if the provided PKCS#11 driver loading failed.
  */
 PKCS11Signer::PKCS11Signer(const string &driver)
- : d(new PKCS11SignerPrivate)
+    : d(new Private)
 {
     string load = driver;
     if(driver.empty())
@@ -209,14 +204,14 @@ X509Cert PKCS11Signer::cert() const
     CK_ULONG size = 0;
     if(d->f->C_GetSlotList(true, 0, &size) != CKR_OK)
         THROW("Could not find any ID-Cards in any readers");
-    vector<CK_SLOT_ID> slots(size, 0);
+    vector<CK_SLOT_ID> slots(size);
     if(size && d->f->C_GetSlotList(true, slots.data(), &size) != CKR_OK)
         THROW("Could not find any ID-Cards in any readers");
 
     // Iterate over all found slots, if the slot has a token, check if the token has any certificates.
-    CK_SESSION_HANDLE session = 0;
+    CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
     vector<X509Cert> certificates;
-    vector<PKCS11SignerPrivate::SignSlot> certSlotMapping;
+    vector<Private::SignSlot> certSlotMapping;
     for(const CK_SLOT_ID &slot: slots)
     {
         if(session)
@@ -227,7 +222,7 @@ X509Cert PKCS11Signer::cert() const
         {
             X509Cert x509(d->attribute(session, obj, CKA_VALUE));
             vector<X509Cert::KeyUsage> usage = x509.keyUsage();
-            if(!x509.isValid() || find(usage.cbegin(), usage.cend(), X509Cert::NonRepudiation) == usage.cend())
+            if(!x509.isValid() || find(usage.cbegin(), usage.cend(), X509Cert::NonRepudiation) == usage.cend() || x509.isCA())
                 continue;
             certSlotMapping.push_back({ x509, slot, d->attribute(session, obj, CKA_ID) });
             certificates.push_back(x509);
@@ -245,7 +240,7 @@ X509Cert PKCS11Signer::cert() const
         THROW("No certificate selected.");
 
     // Find the corresponding slot and PKCS11 certificate struct.
-    for(const PKCS11SignerPrivate::SignSlot &slot: certSlotMapping)
+    for(const Private::SignSlot &slot: certSlotMapping)
     {
         if(slot.certificate == selectedCert)
             d->sign = slot;
@@ -320,7 +315,7 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
 
     // Login if required.
     CK_TOKEN_INFO token;
-    CK_SESSION_HANDLE session = 0;
+    CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
     if(d->f->C_GetTokenInfo(d->sign.slot, &token) != CKR_OK ||
        d->f->C_OpenSession(d->sign.slot, CKF_SERIAL_SESSION, 0, 0, &session) != CKR_OK)
         THROW("Signing slot or certificate are not selected.");
@@ -383,7 +378,7 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
     if(d->f->C_Sign(session, data.data(), CK_ULONG(data.size()), 0, &size) != CKR_OK)
         THROW("Failed to sign digest");
 
-    vector<unsigned char> signature(size, 0);
+    vector<unsigned char> signature(size);
     rv = d->f->C_Sign(session, data.data(), CK_ULONG(data.size()), signature.data(), CK_ULONG_PTR(&size));
     if(rv != CKR_OK)
         THROW("Failed to sign digest");
