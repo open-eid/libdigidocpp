@@ -23,6 +23,7 @@
 #include "File.h"
 
 #include "../log.h"
+#include "DateTime.h"
 
 #include <algorithm>
 #include <ctime>
@@ -276,12 +277,12 @@ string File::dllPath(const string &dll)
  * @param path path which modified time will be checked.
  * @return returns given path modified time.
  */
-tm* File::modifiedTime(const string &path)
+struct tm File::modifiedTime(const string &path)
 {
     f_statbuf fileInfo;
     if(f_stat(encodeName(path).c_str(), &fileInfo) != 0)
-        return gmtime(nullptr);
-    return gmtime((const time_t*)&fileInfo.st_mtime);
+        return date::gmtime(time(nullptr));
+    return date::gmtime(fileInfo.st_mtime);
 }
 
 string File::fileExtension(const std::string &path)

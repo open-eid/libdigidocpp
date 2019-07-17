@@ -28,11 +28,10 @@
 #include <ctime>
 #endif
 
-using namespace digidoc;
-using namespace digidoc::util::date;
+using namespace digidoc::util;
 using namespace std;
 
-tm digidoc::util::date::ASN1TimeToTM(const std::string &date, bool generalizedtime)
+tm date::ASN1TimeToTM(const std::string &date, bool generalizedtime)
 {
     const char* t = date.c_str();
     struct tm time{};
@@ -107,13 +106,13 @@ tm digidoc::util::date::ASN1TimeToTM(const std::string &date, bool generalizedti
     return time;
 }
 
-time_t digidoc::util::date::ASN1TimeToTime_t(const string &date, bool generalizedtime)
+time_t date::ASN1TimeToTime_t(const string &date, bool generalizedtime)
 {
     tm t = ASN1TimeToTM(date, generalizedtime);
     return mkgmtime(t);
 }
 
-string digidoc::util::date::ASN1TimeToXSD(const string &date, bool generalizedtime)
+string date::ASN1TimeToXSD(const string &date, bool generalizedtime)
 {
     if(date.empty())
         return date;
@@ -121,11 +120,23 @@ string digidoc::util::date::ASN1TimeToXSD(const string &date, bool generalizedti
     return xsd2string(makeDateTime(datetime));
 }
 
+struct tm date::gmtime(time_t t)
+{
+    struct tm tm;
+#ifdef _WIN32
+    if(gmtime_s(&tm, &t) != 0)
+#else
+    if(gmtime_r(&t, &tm) == nullptr)
+#endif
+        THROW("Failed to convert time_t to tm");
+    return tm;
+}
+
 /// Dedicated helper for converting xml-schema-style DateTyme into a Zulu-string.
 ///
 /// @param time GMT time as code-synth xml-schema type.
 /// @return a string format of date-time e.g. "2007-12-25T14:06:01Z".
-string digidoc::util::date::xsd2string(const xml_schema::DateTime& time)
+string date::xsd2string(const xml_schema::DateTime& time)
 {
     stringstream stream;
     stream << setfill('0') << dec
@@ -138,7 +149,7 @@ string digidoc::util::date::xsd2string(const xml_schema::DateTime& time)
     return stream.str();
 }
 
-time_t digidoc::util::date::string2time_t(const string &time)
+time_t date::string2time_t(const string &time)
 {
     class xsdparse: public xml_schema::DateTime
     {
@@ -147,7 +158,7 @@ time_t digidoc::util::date::string2time_t(const string &time)
     return xsd2time_t(xsdparse(time));
 }
 
-time_t digidoc::util::date::xsd2time_t(const xml_schema::DateTime &xml)
+time_t date::xsd2time_t(const xml_schema::DateTime &xml)
 {
     struct tm t = {
         int(xml.seconds()),
@@ -167,7 +178,7 @@ time_t digidoc::util::date::xsd2time_t(const xml_schema::DateTime &xml)
     return mkgmtime(t);
 }
 
-time_t digidoc::util::date::mkgmtime(struct tm &t)
+time_t date::mkgmtime(struct tm &t)
 {
 #ifdef _WIN32
     return _mkgmtime(&t);
@@ -176,7 +187,7 @@ time_t digidoc::util::date::mkgmtime(struct tm &t)
 #endif
 }
 
-xml_schema::DateTime digidoc::util::date::makeDateTime(const struct tm& lt)
+xml_schema::DateTime date::makeDateTime(const struct tm& lt)
 {
     return xml_schema::DateTime(
         lt.tm_year + 1900,

@@ -25,13 +25,11 @@
 #include <crypto/Signer.h>
 #include <crypto/X509Cert.h>
 #include <crypto/X509CertStore.h>
-#include <util/DateTime.h>
 
 #include <openssl/bio.h>
 #include <openssl/ts.h>
 
 using namespace digidoc;
-using namespace digidoc::util::date;
 using namespace std;
 
 SignatureCAdES_B::SignatureCAdES_B(Signer *signer)
@@ -114,16 +112,17 @@ SignatureCAdES_B::~SignatureCAdES_B()
 
 string SignatureCAdES_B::claimedSigningTime() const
 {
+    string time;
     int pos = CMS_signed_get_attr_by_NID(d->si, NID_pkcs9_signingTime, -1);
     if(pos == -1)
-        return string();
+        return time;
     X509_ATTRIBUTE *attr = CMS_signed_get_attr(d->si, pos);
     if(!attr)
-        return string();
+        return time;
     ASN1_TYPE *type = X509_ATTRIBUTE_get0_type(attr, 0);
     if(!type || type->type != V_ASN1_UTCTIME)
-        return string();
-    string time((char*)type->value.utctime->data, type->value.utctime->length);
+        return time;
+    time.assign((char*)type->value.utctime->data, size_t(type->value.utctime->length));
     return (time.compare(0, 2, "50") <= 0 ? "20" : "19") + time;
 }
 
