@@ -84,7 +84,7 @@ class DDoc: public Container
 public:
     ~DDoc() final;
 
-    void save(const std::string &path = "") override;
+    void save(const std::string &path = {}) override;
     std::string mediaType() const override;
 
     void addDataFile(const std::string &path, const std::string &mediaType) override;

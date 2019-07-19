@@ -30,10 +30,11 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#define LIBDIGIDOCPP_NORETURN __declspec(noreturn)
 #else
 #include <dlfcn.h>
+#define LIBDIGIDOCPP_NORETURN __attribute__((__noreturn__))
 #endif
-
 
 namespace digidoc
 {
@@ -164,7 +165,7 @@ public:
 
 	void throwCodeError(int err, const std::string &msg, int line) const;
 	void throwDocOpenError( int line ) const;
-	void throwError(const std::string &msg, int line, int err = -1,
+	LIBDIGIDOCPP_NORETURN void throwError(const std::string &msg, int line, int err = -1,
         Exception::ExceptionCode e = Exception::General) const;
 	void throwSignError( SignatureInfo *sig, int err, const std::string &msg, int line ) const;
 };
