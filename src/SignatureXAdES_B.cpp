@@ -168,7 +168,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
         else if(Conf::instance()->digestUri() == URI_SHA384) data = &p->second.SHA384;
         else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;
         DigestAlgAndValueType policyDigest(DigestMethodType(digestUri),
-            Base64Binary(&data->front(), data->size()));
+            Base64Binary(data->data(), data->size()));
 
         SignaturePolicyIdType policyId(identifier, policyDigest);
 
@@ -795,7 +795,7 @@ string SignatureXAdES_B::addReference(const string& uri, const string& digestUri
         reference.type(type);
 
     SignedInfoType::ReferenceSequence &seq = signature->signedInfo().reference();
-    reference.id(id() + Log::format("-RefId%u", seq.size()));
+    reference.id(id() + Log::format("-RefId%lu", (unsigned long)seq.size()));
     seq.push_back(reference);
 
     return reference.id().get();
