@@ -1127,6 +1127,13 @@ Array &Array::operator=(const Value &value) {
 Value::Value(const Value &other) : type_(INVALID_) {
   import( other );
 }
+Value &Value::operator=(const Value &other) {
+  if( this != &other ) {
+    reset();
+    import(other);
+  }
+  return *this;
+}
 bool Value::empty() const {
   if( type_ == INVALID_ ) return true;
   if( type_ == STRING_ && string_value_ == 0 ) return true;

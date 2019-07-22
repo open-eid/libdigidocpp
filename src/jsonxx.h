@@ -282,6 +282,7 @@ class Value {
     import(t);
     return *this;
   }
+  Value &operator =( const Value &other );
   Value(const Value &other);
   template<typename T>
   Value( const T&t ) : type_(INVALID_) { import(t); }
