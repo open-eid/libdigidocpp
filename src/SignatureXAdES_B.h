@@ -46,15 +46,15 @@ namespace digidoc
 
           SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer);
           SignatureXAdES_B(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
-          virtual ~SignatureXAdES_B();
+          ~SignatureXAdES_B() override;
 
           std::string id() const override;
           std::string claimedSigningTime() const override;
-          virtual std::string trustedSigningTime() const override;
+          std::string trustedSigningTime() const override;
           X509Cert signingCertificate() const override;
           std::string signatureMethod() const override;
-          void validate() const override final;
-          virtual void validate(const std::string &policy) const override;
+          void validate() const final;
+          void validate(const std::string &policy) const override;
           std::vector<unsigned char> dataToSign() const override;
           void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
 
@@ -70,7 +70,7 @@ namespace digidoc
           std::vector<std::string> signerRoles() const override;
 
           std::string addReference(const std::string& uri, const std::string& digestUri,
-            const std::vector<unsigned char> &digestValue, const std::string& type = "");
+            const std::vector<unsigned char> &digestValue, const std::string& type = std::string());
           void addDataObjectFormat(const std::string& uri, const std::string& mime);
 
           void saveToXml(std::ostream &os) const;
@@ -80,7 +80,7 @@ namespace digidoc
           xades::QualifyingPropertiesType& qualifyingProperties() const;
           xades::SignedSignaturePropertiesType& getSignedSignatureProperties() const;
           void calcDigestOnNode(Digest* calc, const std::string& ns,
-                const std::string& tagName, const std::string &id = "") const;
+                const std::string& tagName, const std::string &id = std::string()) const;
 
           static const std::string ASIC_NAMESPACE;
           static const std::string XADES_NAMESPACE;
@@ -105,7 +105,7 @@ namespace digidoc
               const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
           void setSignerRoles(const std::vector<std::string>& signerRoles);
           void setSignerRolesV2(const std::vector<std::string>& signerRoles);
-          void setSigningTime(const struct tm *signingTime);
+          void setSigningTime(const struct tm &signingTime);
 
           // offline checks
           void checkSignatureValue() const;

@@ -22,14 +22,15 @@
 #include "DataFile_p.h"
 #include "log.h"
 #include "Signature.h"
+#include "util/DateTime.h"
 #include "util/File.h"
 #include "util/ZipSerialize.h"
 
 #include <algorithm>
 #include <ctime>
 #include <fstream>
-#include <sstream>
 #include <map>
+#include <sstream>
 
 using namespace digidoc;
 using namespace digidoc::util;
@@ -45,11 +46,7 @@ public:
         map<string, ZipSerialize::Properties>::const_iterator i = properties.find(file);
         if(i != properties.end())
             return i->second;
-
-        time_t t = time(0);
-        tm *filetime = gmtime(&t);
-        ZipSerialize::Properties prop = { appInfo(), *filetime, 0 };
-        return properties[file] = prop;
+        return properties[file] = { appInfo(), date::gmtime(time(nullptr)), 0 };
     }
 
     string mimetype, path;
@@ -110,7 +107,7 @@ unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeReq
         if(supported.find(d->mimetype) == supported.cend())
             THROW("Incorrect mimetype '%s'", d->mimetype.c_str());
     }
-    
+
     return z;
 }
 
@@ -167,7 +164,6 @@ iostream* ASiContainer::dataStream(const string &path, const ZipSerialize &z) co
         data = new fstream(File::encodeName(File::tempFileName()).c_str(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
     else
         data = new stringstream;
-    
     z.extract(path, *data);
     return data;
 }
@@ -186,18 +182,14 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
 {
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
-    
+
     if(!File::fileExists(path))
         THROW("Document file '%s' does not exist.", path.c_str());
-    
-    for(const DataFile *file: d->documents)
-    {
-        if(path.compare(file->fileName()) == 0)
-            THROW("Document with same file name '%s' already exists '%s'.", path.c_str(), file->fileName().c_str());
-    }
-    
-    tm *filetime = File::modifiedTime(path);
-    ZipSerialize::Properties prop = { appInfo(), *filetime, File::fileSize(path) };
+
+    if(any_of(d->documents.cbegin(), d->documents.cend(), [&](const DataFile *file) { return path == file->fileName(); }))
+        THROW("Document with same file name '%s' already exists.", path.c_str());
+
+    ZipSerialize::Properties prop = { appInfo(), File::modifiedTime(path), File::fileSize(path) };
     zproperty(File::fileName(path), prop);
     istream *is;
     if(prop.size > MAX_MEM_FILE)
@@ -213,7 +205,6 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
         file.close();
         is = data;
     }
-    
     addDataFile(is, File::fileName(path), mediaType);
 }
 
@@ -221,13 +212,8 @@ void ASiContainer::addDataFile(istream *is, const string &fileName, const string
 {
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
-    
-    for(DataFile *file: d->documents)
-    {
-        if(fileName == file->fileName())
-            THROW("Document with same file name '%s' already exists '%s'.", fileName.c_str(), file->fileName().c_str());
-    }
-    
+    if(any_of(d->documents.cbegin(), d->documents.cend(), [&](DataFile *file) { return fileName == file->fileName(); }))
+        THROW("Document with same file name '%s' already exists.", fileName.c_str());
     d->documents.push_back(new DataFilePrivate(is, fileName, mediaType));
 }
 
@@ -243,17 +229,11 @@ void ASiContainer::removeDataFile(unsigned int id)
 {
     if(!d->signatures.empty())
         THROW("Can not remove document from container which has signatures, remove all signatures before removing document.");
-    
-    if(d->documents.size() > id)
-    {
-        vector<DataFile*>::iterator it = (d->documents.begin() + id);
-        delete *it;
-        d->documents.erase(it);
-    }
-    else
-    {
+    if(id >= d->documents.size())
         THROW("Incorrect document id %u, there are only %u documents in container.", id, dataFiles().size());
-    }
+    vector<DataFile*>::iterator it = (d->documents.begin() + id);
+    delete *it;
+    d->documents.erase(it);
 }
 
 void ASiContainer::addSignature(Signature *signature)
@@ -270,16 +250,11 @@ void ASiContainer::addSignature(Signature *signature)
  */
 void ASiContainer::removeSignature(unsigned int id)
 {
-    if(d->signatures.size() > id)
-    {
-        vector<Signature*>::iterator it = (d->signatures.begin() + id);
-        delete *it;
-        d->signatures.erase(it);
-    }
-    else
-    {
+    if(id >= d->signatures.size())
         THROW("Incorrect signature id %u, there are only %u signatures in container.", id, d->signatures.size());
-    }
+    vector<Signature*>::iterator it = (d->signatures.begin() + id);
+    delete *it;
+    d->signatures.erase(it);
 }
 
 void ASiContainer::deleteSignature(Signature* s)
@@ -330,11 +305,11 @@ string ASiContainer::readMimetype(istream &is)
     // does not contain UTF-8 BOM reset pos
     if(!(bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF))
         is.seekg(0, ios::beg);
-    
+
     string text;
     is >> text;
     if(is.fail())
         THROW("Failed to read mimetype.");
-    
+
     return text;
 }

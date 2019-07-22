@@ -211,13 +211,12 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     }
     signature->signedInfo().signatureMethod(Uri( X509Crypto(c).isRSAKey() ?
         Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()) ));
-    time_t t = time(nullptr);
-    setSigningTime(gmtime(&t));
+    setSigningTime(date::gmtime(time(nullptr)));
 
     string digestMethod = Conf::instance()->digestUri();
     for(const DataFile *f: bdoc->dataFiles())
     {
-        string id = addReference(File::toUriPath(f->fileName()), digestMethod, f->calcDigest(digestMethod), "");
+        string id = addReference(File::toUriPath(f->fileName()), digestMethod, f->calcDigest(digestMethod), {});
         addDataObjectFormat("#" + id, f->mediaType());
     }
 
@@ -410,21 +409,21 @@ string SignatureXAdES_B::SPUri() const
     const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
             getSignedSignatureProperties().signaturePolicyIdentifier();
     if(!identifier.present())
-        return string();
+        return {};
 
     const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
     if(!id.present())
-        return string();
+        return {};
 
     const SignaturePolicyIdType::SigPolicyQualifiersOptional &qual = id->sigPolicyQualifiers();
     if(!qual.present())
-        return string();
+        return {};
 
     for(const SigPolicyQualifiersListType::SigPolicyQualifierType &i: qual->sigPolicyQualifier())
         if(i.sPURI().present())
             return i.sPURI().get();
 
-    return string();
+    return {};
 }
 
 void SignatureXAdES_B::validate() const
@@ -917,6 +916,7 @@ void SignatureXAdES_B::setSignerRoles(const vector<string> &roles)
         return;
 
     ClaimedRolesListType claimedRoles;
+    claimedRoles.claimedRole().reserve(roles.size());
     for(const string &role: roles)
         claimedRoles.claimedRole().push_back(role);
 
@@ -937,6 +937,7 @@ void SignatureXAdES_B::setSignerRolesV2(const vector<string> &roles)
         return;
 
     ClaimedRolesListType claimedRoles;
+    claimedRoles.claimedRole().reserve(roles.size());
     for(const string &role: roles)
         claimedRoles.claimedRole().push_back(role);
 
@@ -950,9 +951,9 @@ void SignatureXAdES_B::setSignerRolesV2(const vector<string> &roles)
  *
  * @param signingTime signing time.
  */
-void SignatureXAdES_B::setSigningTime(const struct tm *signingTime)
+void SignatureXAdES_B::setSigningTime(const struct tm &signingTime)
 {
-    getSignedSignatureProperties().signingTime(util::date::makeDateTime(*signingTime));
+    getSignedSignatureProperties().signingTime(date::makeDateTime(signingTime));
 }
 
 /**
@@ -1096,7 +1097,7 @@ string SignatureXAdES_B::city() const
             getSignedSignatureProperties().signatureProductionPlaceV2();
     if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->city().present())
         return sigProdPlaceV2Optional->city().get();
-    return string();
+    return {};
 }
 
 string SignatureXAdES_B::stateOrProvince() const
@@ -1110,7 +1111,7 @@ string SignatureXAdES_B::stateOrProvince() const
             getSignedSignatureProperties().signatureProductionPlaceV2();
     if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->stateOrProvince().present())
         return sigProdPlaceV2Optional->stateOrProvince().get();
-    return string();
+    return {};
 }
 
 string SignatureXAdES_B::streetAddress() const
@@ -1119,7 +1120,7 @@ string SignatureXAdES_B::streetAddress() const
             getSignedSignatureProperties().signatureProductionPlaceV2();
     if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->streetAddress().present())
         return sigProdPlaceV2Optional->streetAddress().get();
-    return string();
+    return {};
 }
 
 string SignatureXAdES_B::postalCode() const
@@ -1133,7 +1134,7 @@ string SignatureXAdES_B::postalCode() const
             getSignedSignatureProperties().signatureProductionPlaceV2();
     if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->postalCode().present())
         return sigProdPlaceV2Optional->postalCode().get();
-    return string();
+    return {};
 }
 
 string SignatureXAdES_B::countryName() const
@@ -1147,7 +1148,7 @@ string SignatureXAdES_B::countryName() const
             getSignedSignatureProperties().signatureProductionPlaceV2();
     if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->countryName().present())
         return sigProdPlaceV2Optional->countryName().get();
-    return string();
+    return {};
 }
 
 vector<string> SignatureXAdES_B::signerRoles() const
@@ -1157,16 +1158,17 @@ vector<string> SignatureXAdES_B::signerRoles() const
         getSignedSignatureProperties().signerRole();
     const SignedSignaturePropertiesType::SignerRoleV2Optional &roleV2Opt =
         getSignedSignatureProperties().signerRoleV2();
-    auto claimedRoleSequence = [&]() -> ClaimedRolesListType::ClaimedRoleSequence const {
+    const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence = [&]() -> ClaimedRolesListType::ClaimedRoleSequence const {
         // return elements from SignerRole element or SignerRoleV2 when available
         if(roleOpt.present() && roleOpt->claimedRoles().present())
             return roleOpt->claimedRoles()->claimedRole();
         if(roleV2Opt.present() && roleV2Opt->claimedRoles().present())
             return roleV2Opt->claimedRoles()->claimedRole();
         return ClaimedRolesListType::ClaimedRoleSequence();
-    };
-    for(const ClaimedRolesListType::ClaimedRoleType &type: claimedRoleSequence())
-        roles.push_back(type.text());
+    }();
+    roles.reserve(claimedRoleSequence.size());
+    for(const ClaimedRolesListType::ClaimedRoleType &type: claimedRoleSequence)
+        roles.emplace_back(type.text());
     return roles;
 }
 
@@ -1176,7 +1178,7 @@ string SignatureXAdES_B::claimedSigningTime() const
         getSignedSignatureProperties().signingTime();
     if ( !sigTimeOpt.present() )
         return string();
-    return util::date::xsd2string(sigTimeOpt.get());
+    return date::xsd2string(sigTimeOpt.get());
 }
 
 X509Cert SignatureXAdES_B::signingCertificate() const
