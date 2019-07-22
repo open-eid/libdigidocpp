@@ -86,7 +86,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
     vector<unsigned char> der = tsa;
     UnsignedSignaturePropertiesType::SignatureTimeStampType ts;
-    ts.id(id() + Log::format("-T%u", unsignedSignatureProperties().signatureTimeStamp().size()));
+    ts.id(id() + Log::format("-T%lu", (unsigned long)unsignedSignatureProperties().signatureTimeStamp().size()));
     ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(Base64Binary(der.data(), der.size())));
     unsignedSignatureProperties().signatureTimeStamp().push_back(ts);
     unsignedSignatureProperties().contentOrder().push_back(
