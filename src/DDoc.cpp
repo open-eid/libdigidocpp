@@ -106,16 +106,13 @@ DDocLibrary::DDocLibrary()
 {
     if(!f_initDigiDocLib)
         return;
-
 #ifdef WIN32
     f_initDigiDocLib();
+    string path = File::dllPath("digidoc.dll") + "digidoc.ini";
+    f_initConfigStore(path.empty());
+#else
+    f_initConfigStore(nullptr);
 #endif
-DIGIDOCPP_WARNING_PUSH
-DIGIDOCPP_WARNING_DISABLE_MSVC(4996)
-DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
-    string path = Conf::instance()->libdigidocConf();
-DIGIDOCPP_WARNING_POP
-    f_initConfigStore(!path.empty() ? path.c_str() : nullptr);
     f_setGUIVersion( appInfo().c_str() );
 }
 
@@ -207,7 +204,7 @@ void DDocPrivate::throwDocOpenError( int line ) const
         throwError("Document not open", line);
 }
 
-void DDocPrivate::throwError(const string &msg, int line, int err, Exception::ExceptionCode code) const
+LIBDIGIDOCPP_NORETURN void DDocPrivate::throwError(const string &msg, int line, int err, Exception::ExceptionCode code) const
 {
     Exception e(__FILE__, line, msg);
     e.setCode(code);
@@ -338,8 +335,9 @@ string SignatureDDOC::countryName() const
 vector<string> SignatureDDOC::signerRoles() const
 {
     vector<string> roles;
+    roles.reserve(size_t(s->signerRole.nClaimedRoles));
     for(int i = 0; i < s->signerRole.nClaimedRoles; ++i)
-        roles.push_back(s->signerRole.pClaimedRoles[i]);
+        roles.emplace_back(s->signerRole.pClaimedRoles[i]);
     return roles;
 }
 
@@ -354,7 +352,7 @@ vector<unsigned char> SignatureDDOC::messageImprint() const
     return vector<unsigned char>();
 }
 
-void SignatureDDOC::extendSignatureProfile(const string &)
+void SignatureDDOC::extendSignatureProfile(const string & /*profile*/)
 {
     Conf *c = Conf::instance();
     if(!c->proxyHost().empty())
@@ -493,10 +491,10 @@ void DDoc::load(const std::string &path)
     {
         ::DataFile *data = d->lib->f_getDataFile(d->doc, i);
 #ifndef DDOC_MEMORY
-        string path = File::tempFileName();
+        string temp = File::tempFileName();
         int err = d->lib->f_ddocSaxExtractDataFile(d->doc, d->filename.c_str(),
-            path.c_str(), data->szId, CHARSET_UTF_8);
-        istream *is = new ifstream(File::encodeName(path).c_str(), ifstream::binary);
+            temp.c_str(), data->szId, CHARSET_UTF_8);
+        istream *is = new ifstream(File::encodeName(temp).c_str(), ifstream::binary);
 #else
         long size = 0;
         void *filedata = nullptr;
@@ -573,7 +571,7 @@ void DDoc::addDataFile(const string &path, const string &mediaType)
         new DataFilePrivate(is, File::fileName(path), mediaType, data->szId, DDocPrivate::toVector(&data->mbufDigest)));
 }
 
-void DDoc::addDataFile(istream *, const string &, const string &)
+void DDoc::addDataFile(istream * /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
 {
     THROW("Stream API is not supported with DDoc.");
 }
@@ -586,7 +584,7 @@ void DDoc::addDataFile(istream *, const string &, const string &)
  */
 void DDoc::addAdESSignature(istream &sigdata)
 {
-#if USE_SIGFROMMEMORY
+#ifdef USE_SIGFROMMEMORY
     stringstream ofs;
     ofs << sigdata.rdbuf();
     ofs.flush();
@@ -613,7 +611,6 @@ void DDoc::addAdESSignature(istream &sigdata)
     {
         d->lib->f_SignedDoc_free( sigDoc );
         d->throwError("Failed to sign document", __LINE__);
-        return;
     }
 
     d->doc->pSignatures = signatures;

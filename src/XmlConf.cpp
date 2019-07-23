@@ -179,8 +179,8 @@ void XmlConf::Private::init(const string& path, bool global)
                 proxyPass.setValue(p, p.lock(), global);
             else if(p.name() == PKCS12Cert.name)
             {
-                string path = File::isRelative(p) ? File::confPath() + p : string(p);
-                PKCS12Cert.setValue(path, p.lock(), global);
+                string file = File::isRelative(p) ? File::confPath() + p : string(p);
+                PKCS12Cert.setValue(file, p.lock(), global);
             }
             else if(p.name() == PKCS12Pass.name)
                 PKCS12Pass.setValue(p, p.lock(), global);

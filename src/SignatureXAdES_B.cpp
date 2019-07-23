@@ -216,8 +216,8 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     string digestMethod = Conf::instance()->digestUri();
     for(const DataFile *f: bdoc->dataFiles())
     {
-        string id = addReference(File::toUriPath(f->fileName()), digestMethod, f->calcDigest(digestMethod), {});
-        addDataObjectFormat("#" + id, f->mediaType());
+        string referenceId = addReference(File::toUriPath(f->fileName()), digestMethod, f->calcDigest(digestMethod), {});
+        addDataObjectFormat("#" + referenceId, f->mediaType());
     }
 
     Digest calc(digestMethod);
