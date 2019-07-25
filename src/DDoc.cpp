@@ -109,7 +109,7 @@ DDocLibrary::DDocLibrary()
 #ifdef WIN32
     f_initDigiDocLib();
     string path = File::dllPath("digidoc.dll") + "digidoc.ini";
-    f_initConfigStore(path.empty());
+    f_initConfigStore(path.c_str());
 #else
     f_initConfigStore(nullptr);
 #endif
