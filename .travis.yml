@@ -8,7 +8,7 @@ matrix:
     env: TARGET=ubuntu:18.04
     sudo: false
   - os: linux
-    env: TARGET=ubuntu:18.10
+    env: TARGET=ubuntu:19.04
     sudo: false
   - os: linux
     env: TARGET=i386/ubuntu:16.04
