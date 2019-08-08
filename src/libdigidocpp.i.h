@@ -24,6 +24,8 @@
 #include "crypto/X509Cert.h"
 #include "util/File.h"
 
+#include <map>
+
 namespace digidoc {
 
 class SWIGEXPORT DigiDocConf: public digidoc::XmlConfCurrent
@@ -37,6 +39,11 @@ public:
 
     int logLevel() const override { return 4; }
     std::string logFile() const override { return cache.empty() ? digidoc::XmlConfCurrent::logFile() : cache + "/digidocpp.log"; }
+    std::string ocsp(const std::string &issuer) const override
+    {
+        auto pos = OCSPUrls.find(issuer);
+        return pos == OCSPUrls.end() ? std::string() : pos->second;
+    }
     std::string PKCS12Cert() const override
     {
         return cache.empty() ? digidoc::XmlConfCurrent::PKCS12Cert() :
@@ -46,6 +53,8 @@ public:
     std::string TSLCache() const override { return cache.empty() ? digidoc::XmlConfCurrent::TSLCache() : cache; }
     std::vector<X509Cert> TSLCerts() const override { return tslCerts.empty() ? digidoc::XmlConfCurrent::TSLCerts() : tslCerts; };
     std::string TSLUrl() const override { return tslUrl.empty() ? digidoc::XmlConfCurrent::TSLUrl() : tslUrl; }
+    X509Cert verifyServiceCert() const override { return !serviceCert ? digidoc::XmlConfCurrent::verifyServiceCert() : serviceCert; }
+    std::string verifyServiceUri() const override { return serviceUrl.empty() ? digidoc::XmlConfCurrent::verifyServiceUri() : serviceUrl; }
     std::string xsdPath() const override { return cache.empty() ? digidoc::XmlConfCurrent::xsdPath() : cache; }
 
     void setTSLCert(const std::vector<unsigned char> &tslCert)
@@ -53,7 +62,8 @@ public:
         if(tslCert.empty()) tslCerts.clear();
         else tslCerts = { X509Cert(tslCert, X509Cert::Der) };
     }
-    void setTSLUrl(std::string _tslUrl) { tslUrl = std::move(_tslUrl); }
+    void setTSLUrl(std::string url) { tslUrl = std::move(url); }
+    void setOCSPUrls(std::map<std::string,std::string> urls) { OCSPUrls = urls; }
     void setOCSPTMProfiles(const std::vector<std::string> &_TMProfiles)
     {
         for(const std::string &profile: _TMProfiles)
@@ -61,11 +71,15 @@ public:
         if(_TMProfiles.empty())
             TMProfiles.clear();
     }
+    void setVerifyServiceCert(const std::vector<unsigned char> &cert) { serviceCert = X509Cert(cert.data(), cert.size(), X509Cert::Der); }
+    void setVerifyServiceUri(std::string url) { serviceUrl = std::move(url); }
 
 private:
-    std::string cache, tslUrl;
+    std::string cache, tslUrl, serviceUrl;
     std::vector<X509Cert> tslCerts;
     std::set<std::string> TMProfiles;
+    std::map<std::string,std::string> OCSPUrls;
+    X509Cert serviceCert;
 };
 
 static void initializeLib(const std::string &appName, const std::string &path)
