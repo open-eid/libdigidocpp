@@ -16,7 +16,7 @@
 
 1. Install dependencies
 
-        sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev
+        sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev zlib1g-dev
 
 	* doxygen - Optional, for API documentation
 	* libboost-test-dev - Optional, for unittests
