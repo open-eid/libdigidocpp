@@ -8,7 +8,7 @@ matrix:
     env: TARGET=ubuntu:18.04
     sudo: false
   - os: linux
-    env: TARGET=ubuntu:18.10
+    env: TARGET=ubuntu:19.04
     sudo: false
   - os: linux
     env: TARGET=i386/ubuntu:16.04
@@ -71,7 +71,7 @@ script: case ${TARGET} in
   *)
     docker run -e BUILD_NUMBER=${BUILD_NUMBER} -e RUN_TESTS=${RUN_TESTS} -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -e TARGET=${TARGET} -v ${HOME}:${HOME} -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
       apt-get update -qq; 
-      apt-get install -y dh-make devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev libminizip-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev git curl wget ruby;
+      apt-get install -y dh-make devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev git curl wget ruby;
       export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}");
       export VERSIONEX=${VERSION}.${BUILD_NUMBER}.$(lsb_release -rs)
       export DEBFULLNAME="Travis";
