@@ -54,7 +54,7 @@ public:
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
         return (h = LoadLibraryW(_driver.c_str())) != 0;
 #else
-		return false;
+        return false;
 #endif
     }
 
@@ -207,14 +207,14 @@ X509Cert PKCS11Signer::cert() const
 
     // Load all slots.
     CK_ULONG size = 0;
-    if(d->f->C_GetSlotList(true, 0, &size) != CKR_OK)
+    if(d->f->C_GetSlotList(true, nullptr, &size) != CKR_OK)
         THROW("Could not find any ID-Cards in any readers");
-    vector<CK_SLOT_ID> slots(size, 0);
+    vector<CK_SLOT_ID> slots(size);
     if(size && d->f->C_GetSlotList(true, slots.data(), &size) != CKR_OK)
         THROW("Could not find any ID-Cards in any readers");
 
     // Iterate over all found slots, if the slot has a token, check if the token has any certificates.
-    CK_SESSION_HANDLE session = 0;
+    CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
     vector<X509Cert> certificates;
     vector<PKCS11SignerPrivate::SignSlot> certSlotMapping;
     for(const CK_SLOT_ID &slot: slots)
@@ -269,7 +269,7 @@ X509Cert PKCS11Signer::cert() const
  * @throws Exception should throw an exception if the login operation
  * should be canceled.
  */
-string PKCS11Signer::pin(const X509Cert &) const
+string PKCS11Signer::pin(const X509Cert & /*certificate*/) const
 {
     return d->pin;
 }
@@ -312,7 +312,7 @@ void PKCS11Signer::setPin(const string &pin)
  */
 vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsigned char> &digest) const
 {
-    DEBUG("sign(mehthod = %s, digest = length=%d)", method.c_str(), digest.size());
+    DEBUG("sign(mehthod = %s, digest = length=%lu)", method.c_str(), (unsigned long)digest.size());
 
     // Check that sign slot and certificate are selected.
     if(!d->sign.certificate)
@@ -320,16 +320,16 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
 
     // Login if required.
     CK_TOKEN_INFO token;
-    CK_SESSION_HANDLE session = 0;
+    CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
     if(d->f->C_GetTokenInfo(d->sign.slot, &token) != CKR_OK ||
-       d->f->C_OpenSession(d->sign.slot, CKF_SERIAL_SESSION, 0, 0, &session) != CKR_OK)
+       d->f->C_OpenSession(d->sign.slot, CKF_SERIAL_SESSION, nullptr, nullptr, &session) != CKR_OK)
         THROW("Signing slot or certificate are not selected.");
 
     CK_RV rv = CKR_OK;
     if(token.flags & CKF_LOGIN_REQUIRED)
     {
         if(token.flags & CKF_PROTECTED_AUTHENTICATION_PATH)
-            rv = d->f->C_Login(session, CKU_USER, 0, 0);
+            rv = d->f->C_Login(session, CKU_USER, nullptr, 0);
         else
         {
             string _pin = pin(d->sign.certificate);
@@ -359,7 +359,7 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
             throw e;
         }
         default:
-            Exception e(EXCEPTION_PARAMS("Failed to login to token '%s': %ul", token.label, rv));
+            Exception e(EXCEPTION_PARAMS("Failed to login to token '%s': %lu", token.label, rv));
             e.setCode(Exception::PINFailed);
             throw e;
         }
@@ -374,16 +374,16 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
     CK_ATTRIBUTE attribute = { CKA_KEY_TYPE, &keyType, sizeof(keyType) };
     d->f->C_GetAttributeValue(session, key[0], &attribute, 1);
 
-    CK_MECHANISM mech = { keyType == CKK_ECDSA ? CKM_ECDSA : CKM_RSA_PKCS, 0, 0 };
+    CK_MECHANISM mech = { keyType == CKK_ECDSA ? CKM_ECDSA : CKM_RSA_PKCS, nullptr, 0 };
     if(d->f->C_SignInit(session, &mech, key[0]) != CKR_OK)
         THROW("Failed to sign digest");
 
     vector<CK_BYTE> data = keyType == CKK_RSA ? Digest::addDigestInfo(digest, method) : digest;
     CK_ULONG size = 0;
-    if(d->f->C_Sign(session, data.data(), CK_ULONG(data.size()), 0, &size) != CKR_OK)
+    if(d->f->C_Sign(session, data.data(), CK_ULONG(data.size()), nullptr, &size) != CKR_OK)
         THROW("Failed to sign digest");
 
-    vector<unsigned char> signature(size, 0);
+    vector<unsigned char> signature(size);
     rv = d->f->C_Sign(session, data.data(), CK_ULONG(data.size()), signature.data(), CK_ULONG_PTR(&size));
     if(rv != CKR_OK)
         THROW("Failed to sign digest");

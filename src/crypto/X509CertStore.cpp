@@ -81,7 +81,7 @@ public:
     {
         vector<TSL::Service> list = TSL::parse(CONF(TSLTimeOut));
         swap(list);
-        INFO("Loaded %d certificates into TSL certificate store.", size());
+        INFO("Loaded %lu certificates into TSL certificate store.", (unsigned long)size());
     }
 };
 
@@ -93,7 +93,7 @@ X509CertStore::X509CertStore()
 {
     SSL_load_error_strings();
     SSL_library_init();
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     OPENSSL_config(nullptr);
 #endif
     d->update();
@@ -221,7 +221,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
                 else
                 {
                     SCOPE(ASN1_OCTET_STRING, skid, X509_get_ext_d2i(issuer.handle(), NID_subject_key_identifier, nullptr, nullptr));
-                    if(!skid.get() || ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) != 0)
+                    if(!skid || ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) != 0)
                         return false;
                 }
                 SCOPE(EVP_PKEY, pub, X509_get_pubkey(issuer.handle()));
