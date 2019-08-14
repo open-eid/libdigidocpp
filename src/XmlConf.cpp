@@ -238,6 +238,21 @@ unique_ptr<Configuration> XmlConf::Private::read(const string &path)
         THROW("Failed to parse configuration: %s (%s) - %s",
             path.c_str(), SCHEMA_LOC.c_str(), e.what());
     }
+    catch(const xsd::cxx::xml::properties<char>::argument & /* e */)
+    {
+        THROW("Failed to parse configuration: %s (%s)",
+            path.c_str(), SCHEMA_LOC.c_str());
+    }
+    catch(const xsd::cxx::xml::invalid_utf8_string & /* e */)
+    {
+        THROW("Failed to parse configuration: %s (%s)",
+            path.c_str(), SCHEMA_LOC.c_str());
+    }
+    catch(const xsd::cxx::xml::invalid_utf16_string & /* e */)
+    {
+        THROW("Failed to parse configuration: %s (%s)",
+            path.c_str(), SCHEMA_LOC.c_str());
+    }
     return unique_ptr<Configuration>(new Configuration);
 }
 

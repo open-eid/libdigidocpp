@@ -115,8 +115,11 @@ TSL::TSL(const string &file)
     }
     catch(XMLException &e)
     {
-        string msg = xsd::cxx::xml::transcode<char>(e.getMessage());
-        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), msg.c_str());
+        try {
+            WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), X(e.getMessage()).toString().c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+             WARN("Failed to parse TSL %s %s", territory().c_str(), file.c_str());
+        }
     }
     catch(const Exception &e)
     {
@@ -318,8 +321,8 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
     return { list, false };
 }
 
-template<class X>
-bool TSL::parseInfo(const X &info, Service &s, time_t &previousTime)
+template<class Info>
+bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
 {
     vector<Qualifier> qualifiers;
     if(info.serviceInformationExtensions().present())
@@ -514,14 +517,20 @@ void TSL::validate(const std::vector<X509Cert> &certs)
         sig->load();
         if(!sig->verify())
         {
-            string msg = xsd::cxx::xml::transcode<char>(sig->getErrMsgs());
-            THROW("TSL %s Signature is invalid: %s", territory().c_str(), msg.c_str());
+            try {
+                THROW("TSL %s Signature is invalid: %s", territory().c_str(), X(sig->getErrMsgs()).toString().c_str());
+            } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+                THROW("TSL %s Signature is invalid", territory().c_str());
+            }
         }
     }
     catch(XSECException &e)
     {
-        string msg = xsd::cxx::xml::transcode<char>(e.getMsg());
-        THROW("TSL %s Signature is invalid: %s", territory().c_str(), msg.c_str());
+        try {
+            THROW("TSL %s Signature is invalid: %s", territory().c_str(), X(e.getMsg()).toString().c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+            THROW("TSL %s Signature is invalid", territory().c_str());
+        }
     }
     catch(const Exception &)
     {
