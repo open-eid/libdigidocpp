@@ -75,7 +75,7 @@ X509Cert PKCS12Signer::cert() const
 
 vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsigned char> &digest) const
 {
-    DEBUG("PKCS12Signer::sign(method = %s, digest = %d)", method.c_str(), digest.size());
+    DEBUG("PKCS12Signer::sign(method = %s, digest = %lu)", method.c_str(), (unsigned long)digest.size());
 
     int result = 0;
     vector<unsigned char> signature;
@@ -124,6 +124,6 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
     default: THROW("Unsupported private key");
     }
     if(result != 1)
-        THROW_CAUSE(OpenSSLException(), "Failed to sign the digest");
+        THROW_OPENSSLEXCEPTION("Failed to sign the digest");
     return signature;
 }

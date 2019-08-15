@@ -300,9 +300,9 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     {
         THROW("Failed to parse manifest XML: %s", Conf::instance()->xsdPath().c_str());
     }
-    catch(const xsd::cxx::xml::properties<char>::argument &e)
+    catch(const xsd::cxx::xml::properties<char>::argument & /* e */)
     {
-        THROW("Failed to parse manifest XML: %s %s", e, Conf::instance()->xsdPath().c_str());
+        THROW("Failed to parse manifest XML: %s", Conf::instance()->xsdPath().c_str());
     }
     catch(const xsd::cxx::tree::unexpected_element<char> &e)
     {

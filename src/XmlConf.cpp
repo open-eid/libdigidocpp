@@ -209,11 +209,11 @@ void XmlConf::Private::init(const string& path, bool global)
     }
     catch(const Exception &e)
     {
-        WARN("Failed to parse configuration: %s %s %u", path.c_str(), global, e.msg().c_str());
+        WARN("Failed to parse configuration: %s %d %s", path.c_str(), global, e.msg().c_str());
     }
     catch(const xml_schema::Exception &e)
     {
-        WARN("Failed to parse configuration: %s %s %u", path.c_str(), global, e.what());
+        WARN("Failed to parse configuration: %s %d %s", path.c_str(), global, e.what());
     }
 }
 

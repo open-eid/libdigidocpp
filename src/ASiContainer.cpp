@@ -230,7 +230,7 @@ void ASiContainer::removeDataFile(unsigned int id)
     if(!d->signatures.empty())
         THROW("Can not remove document from container which has signatures, remove all signatures before removing document.");
     if(id >= d->documents.size())
-        THROW("Incorrect document id %u, there are only %u documents in container.", id, dataFiles().size());
+        THROW("Incorrect document id %u, there are only %lu documents in container.", id, (unsigned long)dataFiles().size());
     vector<DataFile*>::iterator it = (d->documents.begin() + id);
     delete *it;
     d->documents.erase(it);
@@ -251,7 +251,7 @@ void ASiContainer::addSignature(Signature *signature)
 void ASiContainer::removeSignature(unsigned int id)
 {
     if(id >= d->signatures.size())
-        THROW("Incorrect signature id %u, there are only %u signatures in container.", id, d->signatures.size());
+        THROW("Incorrect signature id %u, there are only %lu signatures in container.", id, (unsigned long)d->signatures.size());
     vector<Signature*>::iterator it = (d->signatures.begin() + id);
     delete *it;
     d->signatures.erase(it);

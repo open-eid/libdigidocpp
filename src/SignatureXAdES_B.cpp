@@ -670,7 +670,7 @@ void SignatureXAdES_B::checkKeyInfo() const
         {
             const CertIDListType::CertSequence &certs = sigCertOpt->cert();
             if(certs.size() != 1)
-                THROW("Number of SigningCertificates is %d, must be 1", certs.size());
+                THROW("Number of SigningCertificates is %lu, must be 1", (unsigned long)certs.size());
 
             // Verify Issuer Name
             const X509IssuerSerialType::X509IssuerNameType &certIssuerName = certs[0].issuerSerial().x509IssuerName();
@@ -689,7 +689,7 @@ void SignatureXAdES_B::checkKeyInfo() const
         {
             const CertIDListV2Type::CertSequence &certs = sigCertV2Opt->cert();
             if(certs.size() != 1)
-                THROW("Number of SigningCertificatesV2 is %d, must be 1", certs.size());
+                THROW("Number of SigningCertificatesV2 is %lu, must be 1", (unsigned long)certs.size());
 
             // Verify IssuerSerialV2, optional parameter
             if(certs[0].issuerSerialV2().present())
