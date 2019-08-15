@@ -90,13 +90,19 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
     }
     catch(XSECException &e)
     {
-        string s = xsd::cxx::xml::transcode<char>(e.getMsg());
-        THROW("Failed to calculate digest: %s", s.c_str());
+        try {
+            THROW("Failed to calculate digest: %s", X(e.getMsg()).toString().c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+            THROW("Failed to calculate digest");
+        }
     }
     catch(XMLException &e)
     {
-        string s = xsd::cxx::xml::transcode<char>(e.getMessage());
-        THROW("Failed to calculate digest: %s", s.c_str());
+        try {
+            THROW("Failed to calculate digest: %s", X(e.getMessage()).toString().c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+            THROW("Failed to calculate digest");
+        }
     }
     catch(...)
     {

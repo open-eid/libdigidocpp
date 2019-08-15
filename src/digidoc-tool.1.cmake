@@ -60,11 +60,12 @@ Command sign:
     --pin=         - default asks pin from prompt
     --sha(224,256,384,512) - set default digest method (default sha256)
     --sigsha(224,256,384,512) - set default digest method (default sha256)
-    --dontValidate= - Don't validate container
+    --tsurl         - option to change TS URL (default http://demo.sk.ee/tsa)
+    --dontValidate  - Don't validate container
 
 All commands:
     --nocolor       - Disable terminal colors
     --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug
     --logfile=      - File to log, empty to console
 .SH SEE ALSO
-cdigidoc(1), qdigidocclient(1), qesteidutil(1)
+cdigidoc(1), qdigidoc4(1)

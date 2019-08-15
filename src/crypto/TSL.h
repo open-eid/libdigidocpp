@@ -65,8 +65,8 @@ private:
     static void debugException(const Exception &e);
     static Result parse(const std::string &url, const std::vector<X509Cert> &certs,
         const std::string &cache, const std::string &territory, int timeout);
-    template<class X>
-    static bool parseInfo(const X &info, Service &s, time_t &previousTime);
+    template<class Info>
+    static bool parseInfo(const Info &info, Service &s, time_t &previousTime);
     static std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en");
     void validateETag(const std::string &url, int timeout);
     bool validateRemoteDigest(const std::string &url, int timeout);

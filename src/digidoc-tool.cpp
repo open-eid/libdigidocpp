@@ -357,7 +357,7 @@ static void printUsage(const char *executable)
     << "      --sha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --tsurl         - option to change TS URL (default " << (CONF(TSUrl)) << ")" << endl
-    << "      --dontValidate= - Don't validate container" << endl << endl
+    << "      --dontValidate  - Don't validate container" << endl << endl
     << "  All commands:" << endl
     << "      --nocolor       - Disable terminal colors" << endl
     << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
@@ -1070,29 +1070,33 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
-    string command(argv[1]);
-
     int returnCode = EXIT_FAILURE;
-    if(command == "open")
-        returnCode = open(argc, argv);
-    else if(command == "create")
-        returnCode = create(*conf, argv[0]);
-    else if(command == "add")
-        returnCode = add(*conf, argv[0]);
-    else if(command == "createBatch")
-        returnCode = createBatch(*conf, argv[0]);
-    else if(command == "remove")
-        returnCode = remove(argc, argv);
-    else if(command == "sign")
-        returnCode = sign(*conf, argv[0]);
-    else if(command == "websign")
-        returnCode = websign(*conf, argv[0]);
-    else if(command == "tsl")
-        returnCode = tslcmd(argc, argv);
-    else if(command == "version")
-        returnCode = EXIT_SUCCESS;
-    else
-        printUsage(argv[0]);
+    try {
+        string command(argv[1]);
+        if(command == "open")
+            returnCode = open(argc, argv);
+        else if(command == "create")
+            returnCode = create(*conf, argv[0]);
+        else if(command == "add")
+            returnCode = add(*conf, argv[0]);
+        else if(command == "createBatch")
+            returnCode = createBatch(*conf, argv[0]);
+        else if(command == "remove")
+            returnCode = remove(argc, argv);
+        else if(command == "sign")
+            returnCode = sign(*conf, argv[0]);
+        else if(command == "websign")
+            returnCode = websign(*conf, argv[0]);
+        else if(command == "tsl")
+            returnCode = tslcmd(argc, argv);
+        else if(command == "version")
+            returnCode = EXIT_SUCCESS;
+        else
+            printUsage(argv[0]);
+    } catch(const Exception &e) {
+        cout << "Caught Exception:" << endl << e;
+        returnCode = EXIT_FAILURE;
+    }
 
     digidoc::terminate();
 
