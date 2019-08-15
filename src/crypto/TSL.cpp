@@ -574,8 +574,8 @@ void TSL::validateETag(const string &url, int timeout)
     ifstream is(File::encodeName(path + ".etag"));
     if(!is.is_open())
         THROW("Cached ETag does not exist");
-    std::string etag;
-    is >> etag;
+    string etag(it->second.size(), 0);
+    is.read(&etag[0], streamsize(etag.size()));
     DEBUG("Cached ETag: %s", etag.c_str());
     if(etag != it->second)
         THROW("Remote ETag does not match");
