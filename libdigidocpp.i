@@ -223,6 +223,7 @@ extern "C"
 // Handle standard C++ types
 %include "std_string.i"
 %include "std_vector.i"
+%include "std_map.i"
 #ifdef SWIGCSHARP
 namespace std {
   %typemap(imtype,
@@ -254,6 +255,7 @@ namespace std {
 %include "libdigidocpp.i.h"
 
 %template(StringVector) std::vector<std::string>;
+%template(StringMap) std::map<std::string,std::string>;
 %template(DataFiles) std::vector<digidoc::DataFile*>;
 %template(Signatures) std::vector<digidoc::Signature*>;
 

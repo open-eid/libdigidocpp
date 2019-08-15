@@ -4,6 +4,8 @@ param(
   [string]$msiversion = "3.13.9.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
   [string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
+  [string]$nmake = "nmake.exe",
+  [string]$generator = "NMake Makefiles",
   [string]$toolset = "140",
   [string]$heat = "$env:WIX\bin\heat.exe",
   [string]$candle = "$env:WIX\bin\candle.exe",
@@ -114,7 +116,7 @@ foreach($platform in @("x86", "x64")) {
         Copy-Item "$target/libxml2/$platform/bin/libxml2.dll" test
       }
     }
-    & $vcvars $platform "&&" $cmake "-GNMake Makefiles" "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=../$platform" "-DCMAKE_INSTALL_LIBDIR=bin" `
+    & $vcvars $platform "&&" $cmake "-G$generator" "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=../$platform" "-DCMAKE_INSTALL_LIBDIR=bin" `
       "-DOPENSSL_ROOT_DIR=$openssl" `
       "-DXercesC_ROOT=$target/xerces/$platform" `
       "-DXALANC_INCLUDE_DIR=$target/xalan/c/src" `
@@ -125,7 +127,7 @@ foreach($platform in @("x86", "x64")) {
       "-DXSD_INCLUDE_DIR=$target/xsd/libxsd" `
       "-DXSD_EXECUTABLE=$target/xsd/bin/xsd.exe" `
       "-DZLIB_ROOT=$target/zlib/$platform" `
-      $cmakeext $libdigidocpp "&&" nmake /nologo install
+      $cmakeext $libdigidocpp "&&" $nmake /nologo install
     Pop-Location
   }
 }
