@@ -23,13 +23,12 @@
 
 namespace digidoc
 {
-    class PKCS11SignerPrivate;
     class DIGIDOCPP_EXPORT PKCS11Signer : public Signer
     {
 
       public:
           PKCS11Signer(const std::string& driver = "");
-          virtual ~PKCS11Signer();
+          ~PKCS11Signer() override;
 
           void setPin(const std::string &pin);
 
@@ -42,6 +41,7 @@ namespace digidoc
           std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const override;
 
           DISABLE_COPY(PKCS11Signer);
-          PKCS11SignerPrivate *d;
+          class Private;
+          Private *d;
     };
 }
