@@ -1043,9 +1043,9 @@ int main(int argc, char *argv[])
     printf("  digidoc-tool version: %s\n", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER));
     printf("  libdigidocpp version: %s\n", version().c_str());
 
-    ToolConfig *conf = new ToolConfig(argc, argv);
+    ToolConfig *conf = nullptr;
     try {
-        Conf::init(conf);
+        Conf::init(conf = new ToolConfig(argc, argv));
         stringstream info;
         info << "digidoc-tool/" << VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER) << " (";
 #ifdef _WIN32
