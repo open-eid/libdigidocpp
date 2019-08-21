@@ -157,6 +157,10 @@ void SignatureXAdES_T::validate(const std::string &policy) const
         Digest calc(tsa.digestMethod());
         calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
         tsa.verify(calc);
+
+        time_t validateTime = util::date::ASN1TimeToTime_t(tsa.time());
+        if(!signingCertificate().isValid(&validateTime))
+            THROW("Signing certificate was not valid on signing time");
     } catch(const Exception &e) {
         exception.addCause(e);
     }
