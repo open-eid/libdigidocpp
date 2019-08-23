@@ -36,7 +36,7 @@
 using namespace digidoc;
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10010000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 /*-
  * IssuerSerial ::= SEQUENCE {
  *         issuer                   GeneralNames,
@@ -48,11 +48,13 @@ using ESS_ISSUER_SERIAL = struct ESS_issuer_serial {
     ASN1_INTEGER *serial;
 };
 
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
 ASN1_SEQUENCE(ESS_ISSUER_SERIAL) = {
         ASN1_SEQUENCE_OF(ESS_ISSUER_SERIAL, issuer, GENERAL_NAME),
         ASN1_SIMPLE(ESS_ISSUER_SERIAL, serial, ASN1_INTEGER)
 } static_ASN1_SEQUENCE_END(ESS_ISSUER_SERIAL)
 IMPLEMENT_ASN1_FUNCTIONS_const(ESS_ISSUER_SERIAL)
+#endif
 #else
 static int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
 {
