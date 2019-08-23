@@ -31,7 +31,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
      </ClCompile>
      <Link>
 -      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib%(AdditionalDependencies)</AdditionalDependencies>
-+      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
        <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
        <GenerateDebugInformation>true</GenerateDebugInformation>
        <SubSystem>Windows</SubSystem>
@@ -73,7 +73,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
      </ClCompile>
      <Link>
 -      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib%(AdditionalDependencies)</AdditionalDependencies>
-+      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
        <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
        <GenerateDebugInformation>true</GenerateDebugInformation>
        <SubSystem>Windows</SubSystem>
@@ -108,7 +108,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
      </ClCompile>
      <Link>
 -      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-+      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
        <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
        <SubSystem>Windows</SubSystem>
        <OptimizeReferences>true</OptimizeReferences>
@@ -148,7 +148,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
      </ClCompile>
      <Link>
 -      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-+      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
        <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
        <SubSystem>Windows</SubSystem>
        <OptimizeReferences>true</OptimizeReferences>
@@ -188,7 +188,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
      </ClCompile>
      <Link>
 -      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-+      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
        <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
        <GenerateDebugInformation>true</GenerateDebugInformation>
        <SubSystem>Windows</SubSystem>
@@ -229,7 +229,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
      </ClCompile>
      <Link>
 -      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-+      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
        <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
        <GenerateDebugInformation>true</GenerateDebugInformation>
        <SubSystem>Windows</SubSystem>
@@ -263,7 +263,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
      </ClCompile>
      <Link>
 -      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-+      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
        <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
        <SubSystem>Windows</SubSystem>
        <OptimizeReferences>true</OptimizeReferences>
@@ -302,7 +302,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
      </ClCompile>
      <Link>
 -      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-+      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
        <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
        <SubSystem>Windows</SubSystem>
        <OptimizeReferences>true</OptimizeReferences>

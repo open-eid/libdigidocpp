@@ -67,6 +67,7 @@ foreach($platform in @("x86", "x64")) {
       $xmlsec_lib = 'Win32/VC15/Debug/xsec_2D.lib'
       $xmlsec_dll = 'Win32/VC15/Debug/xsec_2_0D.dll'
       $openssl = '/OpenSSL-Win32'
+      $openssl_dll = ''
     } 'x86RelWithDebInfo' {
       $xerces_dll = 'xerces-c_3_2.dll'
       $xalanmsg_lib = 'Win32/VC10/Release/XalanMsgLib.lib'
@@ -76,6 +77,7 @@ foreach($platform in @("x86", "x64")) {
       $xmlsec_lib = 'Win32/VC15/Release/xsec_2.lib'
       $xmlsec_dll = 'Win32/VC15/Release/xsec_2_0.dll'
       $openssl = '/OpenSSL-Win32'
+      $openssl_dll = ''
     } 'x64Debug' {
       $xerces_dll = 'xerces-c_3_2D.dll'
       $xalanmsg_lib = 'Win64/VC10/Debug/XalanMsgLib.lib'
@@ -85,6 +87,7 @@ foreach($platform in @("x86", "x64")) {
       $xmlsec_lib = 'X64/VC15/Debug/xsec_2D.lib'
       $xmlsec_dll = 'X64/VC15/Debug/xsec_2_0D.dll'
       $openssl = '/OpenSSL-Win64'
+      $openssl_dll = '-x64'
     } 'x64RelWithDebInfo' {
       $xerces_dll = 'xerces-c_3_2.dll'
       $xalanmsg_lib = 'Win64/VC10/Release/XalanMsgLib.lib'
@@ -94,6 +97,7 @@ foreach($platform in @("x86", "x64")) {
       $xmlsec_lib = 'X64/VC15/Release/xsec_2.lib'
       $xmlsec_dll = 'X64/VC15/Release/xsec_2_0.dll'
       $openssl = '/OpenSSL-Win64'
+      $openssl_dll = '-x64'
     }}
     if($libdigidoc) {
       $cmakeext += "-DLIBDIGIDOC_LIBRARY=$libdigidoc/$platform/bin/digidoc.lib"
@@ -109,8 +113,8 @@ foreach($platform in @("x86", "x64")) {
       Copy-Item "$target/xalan/c/Build/$xalanc_dll" test
       Copy-Item "$target/xmlsec/Build/$xmlsec_dll" test
       Copy-Item "$target/zlib/$platform/bin/zlib1.dll" test
-      Copy-Item "$openssl/bin/ssleay32.dll" test
-      Copy-Item "$openssl/bin/libeay32.dll" test
+      Copy-Item "$openssl/bin/libssl-1_1$openssl_dll.dll" test
+      Copy-Item "$openssl/bin/libcrypto-1_1$openssl_dll.dll" test
       if($libdigidoc) {
         Copy-Item "$libdigidoc/$platform/bin/digidoc.dll" test
         Copy-Item "$target/libxml2/$platform/bin/libxml2.dll" test
