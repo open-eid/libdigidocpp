@@ -7,48 +7,48 @@
 //
 
 #import "AppDelegate.h"
-#import "DetailViewController.h"
 
+#include <digidocpp/Conf.h>
 #include <digidocpp/Container.h>
 #include <digidocpp/Exception.h>
-#include <digidocpp/Conf.h>
+#include <digidocpp/crypto/X509Cert.h>
 
 class DigiDocConf: public digidoc::ConfCurrent
 {
 public:
-    std::string TSLCache() const
+    int logLevel() const override
+    {
+        return 4;
+    }
+
+    std::string logFile() const override
+    {
+        return [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/libdigidocpp.log"].UTF8String;
+    }
+
+    std::string TSLCache() const override
     {
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
-        NSString *libraryDirectory = [paths objectAtIndex:0];
+        NSString *libraryDirectory = paths[0];
+        [NSFileManager.defaultManager createFileAtPath:[libraryDirectory stringByAppendingPathComponent:@"EE_T.xml"] contents:nil attributes:nil];
         return libraryDirectory.UTF8String;
     }
 
-    std::string xsdPath() const
+    std::string xsdPath() const override
     {
-        NSString *path = [[NSBundle mainBundle] pathForResource:@"schema" ofType:@""];
-        return path.UTF8String;
+        return [NSBundle.mainBundle pathForResource:@"schema" ofType:@""].UTF8String;
     }
 };
 
-@interface AppDelegate () <UISplitViewControllerDelegate>
-
-@end
-
 @implementation AppDelegate
-
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     try {
         digidoc::Conf::init(new DigiDocConf);
-        digidoc::initialize();
+        digidoc::initialize("libdigidocpp iOS");
     } catch(const digidoc::Exception &e) {
         NSLog(@"%s", e.msg().c_str());
     }
-    // Override point for customization after application launch.
-    UISplitViewController *splitViewController = (UISplitViewController *)self.window.rootViewController;
-    UINavigationController *navigationController = [splitViewController.viewControllers lastObject];
-    navigationController.topViewController.navigationItem.leftBarButtonItem = splitViewController.displayModeButtonItem;
-    splitViewController.delegate = self;
     return YES;
 }
 
@@ -71,19 +71,7 @@ public:
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {
-    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     digidoc::terminate();
-}
-
-#pragma mark - Split view
-
-- (BOOL)splitViewController:(UISplitViewController *)splitViewController collapseSecondaryViewController:(UIViewController *)secondaryViewController ontoPrimaryViewController:(UIViewController *)primaryViewController {
-    if ([secondaryViewController isKindOfClass:[UINavigationController class]] && [[(UINavigationController *)secondaryViewController topViewController] isKindOfClass:[DetailViewController class]] && ([(DetailViewController *)[(UINavigationController *)secondaryViewController topViewController] detailItem] == nil)) {
-        // Return YES to indicate that we have handled the collapse by doing nothing; the secondary controller will be discarded.
-        return YES;
-    } else {
-        return NO;
-    }
 }
 
 @end
