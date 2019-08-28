@@ -312,7 +312,7 @@ install( TARGETS digidocpp
 
 if(WIN32)
     list(APPEND CRYPTO_HEADER crypto/WinSigner.h)
-    set_property(TARGET digidocpp APPEND PROPERTY SOURCES crypto/WinSigner.cpp)
+    target_sources(digidocpp PRIVATE crypto/WinSigner.cpp)
     target_link_libraries(digidocpp PRIVATE Crypt32 cryptui ncrypt Ws2_32)
     set_target_properties(digidocpp PROPERTIES DEBUG_OUTPUT_NAME "digidocppd")
     install(FILES $<TARGET_PDB_FILE:digidocpp> $<TARGET_PDB_FILE:digidoc-tool> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
@@ -341,7 +341,7 @@ if( FRAMEWORK )
         COMMAND install_name_tool -id 'libcrypto.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libcrypto.dylib
         COMMAND install_name_tool -id 'libssl.dylib'
-            -change '${LIBPATH}/libcrypto.1.0.0.dylib' '@loader_path/libcrypto.dylib'
+            -change '${LIBPATH}/libcrypto.1.1.dylib' '@loader_path/libcrypto.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libssl.dylib
         COMMAND install_name_tool -id 'libxerces-c.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libxerces-c.dylib
@@ -352,22 +352,22 @@ if( FRAMEWORK )
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/libxerces-c.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libxalan-c.dylib
         COMMAND install_name_tool -id 'libxml-security-c.dylib'
-            -change '${LIBPATH}/libcrypto.1.0.0.dylib' '@loader_path/libcrypto.dylib'
-            -change '${LIBPATH}/libssl.1.0.0.dylib' '@loader_path/libssl.dylib'
+            -change '${LIBPATH}/libcrypto.1.1.dylib' '@loader_path/libcrypto.dylib'
+            -change '${LIBPATH}/libssl.1.1.dylib' '@loader_path/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/libxerces-c.dylib'
             -change '${LIBPATH}/libxalan-c.111.0.dylib' '@loader_path/libxalan-c.dylib'
             -change '${LIBPATH}/libxalanMsg.111.0.dylib' '@loader_path/libxalanMsg.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libxml-security-c.dylib
         COMMAND install_name_tool
-            -change '${LIBPATH}/libcrypto.1.0.0.dylib' '@loader_path/Libraries/libcrypto.dylib'
-            -change '${LIBPATH}/libssl.1.0.0.dylib' '@loader_path/Libraries/libssl.dylib'
+            -change '${LIBPATH}/libcrypto.1.1.dylib' '@loader_path/Libraries/libcrypto.dylib'
+            -change '${LIBPATH}/libssl.1.1.dylib' '@loader_path/Libraries/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/Libraries/libxerces-c.dylib'
             -change '${LIBPATH}/libxml-security-c.20.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
             -change '${LIBPATH}/libxalan-c.111.0.dylib' '@loader_path/Libraries/libxalan-c.dylib'
             $<TARGET_FILE:digidocpp>
         COMMAND install_name_tool
-            -change '${LIBPATH}/libcrypto.1.0.0.dylib' '@executable_path/../Libraries/libcrypto.dylib'
-            -change '${LIBPATH}/libssl.1.0.0.dylib' '@executable_path/../Libraries/libssl.dylib'
+            -change '${LIBPATH}/libcrypto.1.1.dylib' '@executable_path/../Libraries/libcrypto.dylib'
+            -change '${LIBPATH}/libssl.1.1.dylib' '@executable_path/../Libraries/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
             -change '${LIBPATH}/libxml-security-c.20.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
             -change '${LIBPATH}/libxalan-c.111.0.dylib' '@executable_path/../Libraries/libxalan-c.dylib'

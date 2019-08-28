@@ -3,10 +3,12 @@ param(
 	[string]$target = "C:\build",
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
 	[string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
+	[string]$nmake = "nmake.exe",
+	[string]$generator = "NMake Makefiles",
 	[string]$toolset = "140",
 	[string]$windowssdkversion = $(Get-Item "hklm:\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0").GetValue("ProductVersion"),
 	[string]$msbuildparams = "PlatformToolset=v$toolset;WindowsTargetPlatformVersion=$($windowssdkversion).0",
-	[string]$opensslver = "openssl-1.0.2r",
+	[string]$opensslver = "openssl-1.1.1c",
 	[string]$xercesver = "xerces-c-3.2.2",
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-2.0.2",
@@ -41,16 +43,16 @@ $client = new-object System.Net.WebClient
 
 function openssl() {
 	$client.DownloadFile("https://www.openssl.org/source/$opensslver.tar.gz", "$target\$opensslver.tar.gz")
-	& $7zip x "$opensslver.tar.gz" > $null
-	& $7zip x "$opensslver.tar" > $null
+	& $7zip x -y "$opensslver.tar.gz" > $null
+	& $7zip x -y "$opensslver.tar" > $null
 	Push-Location -Path $opensslver
-	& $vcvars x86 "&&" perl Configure VC-WIN32 no-asm no-hw no-engines "&&" ms\do_ms "&&" nmake /nologo -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win32 OPENSSLDIR=\OpenSSL-Win32\bin
+	& $vcvars x86 "&&" perl Configure VC-WIN32 no-asm no-hw no-engine no-tests "&&" nmake /nologo install_sw INSTALLTOP=\OpenSSL-Win32 OPENSSLDIR=\OpenSSL-Win32\bin ENGINESDIR=\OpenSSL-Win32\lib\engines-1_1
 	Pop-Location
 	Remove-Item $opensslver -Force -Recurse
 
-	& $7zip x "$opensslver.tar" > $null
+	& $7zip x -y "$opensslver.tar" > $null
 	Push-Location -Path $opensslver
-	& $vcvars x64 "&&" perl Configure VC-WIN64A no-asm no-hw no-engines "&&" ms\do_win64a "&&" nmake /nologo -f ms\ntdll.mak install INSTALLTOP=\OpenSSL-Win64 OPENSSLDIR=\OpenSSL-Win64\bin
+	& $vcvars x64 "&&" perl Configure VC-WIN64A no-asm no-hw no-engine no-tests "&&" nmake /nologo install_sw INSTALLTOP=\OpenSSL-Win64 OPENSSLDIR=\OpenSSL-Win64\bin ENGINESDIR=\OpenSSL-Win64\lib\engines-1_1
 	Pop-Location
 	Remove-Item $opensslver -Force -Recurse
 	Remove-Item "$opensslver.tar"
@@ -66,7 +68,7 @@ function xerces() {
 			$buildpath = $platform+$type
 			New-Item -ItemType directory -Path $buildpath > $null
 			Push-Location -Path $buildpath
-			& $vcvars $platform "&&" $cmake "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=$target\xerces\$platform" "-GNMake Makefiles" .. "&&" nmake /nologo install # > $null
+			& $vcvars $platform "&&" $cmake "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=$target\xerces\$platform" "-G$generator" .. "&&" $nmake /nologo install # > $null
 			Pop-Location
 			Remove-Item $buildpath -Force -Recurse
 		}
@@ -128,7 +130,7 @@ function zlib() {
 	foreach($platform in @("x86", "x64")) {
 		& $7zip x "$zlibver.tar" > $null
 		Push-Location -Path $zlibver
-		& $vcvars $platform "&&" $cmake -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\zlib\$platform" "-GNMake Makefiles" . "&&" nmake /nologo install
+		& $vcvars $platform "&&" $cmake -DBUILD_SHARED_LIBS=YES -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\zlib\$platform" "-G$generator" . "&&" $nmake /nologo install
 		Pop-Location
 		Remove-Item $zlibver -Force -Recurse
 	}
@@ -143,7 +145,7 @@ function freetype() {
 	foreach($platform in @("x86", "x64")) {
 		New-Item -ItemType directory -Path build > $null
 		Push-Location -Path build
-		& $vcvars $platform "&&" $cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\freetype\$platform" "-GNMake Makefiles" .. "&&" nmake /nologo install
+		& $vcvars $platform "&&" $cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_INSTALL_PREFIX=$target\freetype\$platform" "-G$generator" .. "&&" $nmake /nologo install
 		Pop-Location
 		Remove-Item build -Force -Recurse
 	}
@@ -163,10 +165,10 @@ function podofo() {
 		Remove-Item cmake/modules/FindZLIB.cmake
 		(Get-Content CMakeLists.txt) -replace '\$\{PNG_LIBRARIES\}', '' | Set-Content CMakeLists.txt
 		(Get-Content src/doc/PdfSignatureField.cpp) -replace 'adbe.pkcs7.detached', 'ETSI.CAdES.detached' | Set-Content src/doc/PdfSignatureField.cpp
-		& $vcvars $platform "&&" $cmake "-GNMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DPODOFO_BUILD_LIB_ONLY=YES `
+		& $vcvars $platform "&&" $cmake "-G$generator" -DCMAKE_BUILD_TYPE=Release -DPODOFO_BUILD_LIB_ONLY=YES `
 			"-DCMAKE_INSTALL_PREFIX=$target\podofo\$platform" -DPODOFO_BUILD_STATIC=NO -DPODOFO_BUILD_SHARED=YES `
 			"-DZLIB_INCLUDE_DIR=$target\zlib\$platform\include" "-DZLIB_LIBRARY_RELEASE=$target\zlib\$platform\lib\zlib.lib" `
-			"-DFREETYPE_INCLUDE_DIR=$target\freetype\$platform\include\freetype2" "-DFREETYPE_LIBRARY=$target\freetype\$platform\lib\freetype.lib" . "&&" nmake /nologo install
+			"-DFREETYPE_INCLUDE_DIR=$target\freetype\$platform\include\freetype2" "-DFREETYPE_LIBRARY=$target\freetype\$platform\lib\freetype.lib" . "&&" $nmake /nologo install
 		Pop-Location
 		Remove-Item $podofover -Force -Recurse
 	}

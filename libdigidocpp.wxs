@@ -38,8 +38,8 @@
               <Component Id="LibrariesX86" Guid="{57A72AF6-5458-4106-BFC8-A611DAF89A59}">
                 <File Source="$(var.VCPATH)\x86\Microsoft.VC$(var.VCVER).CRT\$(var.VCP).dll"/>
                 <File Source="$(var.VCPATH)\x86\Microsoft.VC$(var.VCVER).CRT\$(var.VCRT).dll"/>
-                <File Source="C:\OpenSSL-Win32\bin\libeay32.dll"/>
-                <File Source="C:\OpenSSL-Win32\bin\ssleay32.dll"/>
+                <File Source="C:\OpenSSL-Win32\bin\libcrypto-1_1.dll"/>
+                <File Source="C:\OpenSSL-Win32\bin\libssl-1_1.dll"/>
                 <File Source="$(var.PREFIX)\zlib\x86\bin\zlib1.dll"/>
 <?ifdef var.libdigidoc ?>
                 <File Source="$(var.PREFIX)\libxml2\x86\bin\libxml2.dll"/>
@@ -104,8 +104,8 @@
               <Component Id="LibrariesX64" Guid="{1A068454-C881-49D3-A3C4-58D513C2BFE9}">
                 <File Source="$(var.VCPATH)\x64\Microsoft.VC$(var.VCVER).CRT\$(var.VCP).dll" Id="$(var.VCP)_64.dll"/>
                 <File Source="$(var.VCPATH)\x64\Microsoft.VC$(var.VCVER).CRT\$(var.VCRT).dll" Id="$(var.VCRT)_64.dll"/>
-                <File Source="C:\OpenSSL-Win64\bin\libeay32.dll" Id="libeay32_64.dll"/>
-                <File Source="C:\OpenSSL-Win64\bin\ssleay32.dll" Id="ssleay32_64.dll"/>
+                <File Source="C:\OpenSSL-Win64\bin\libcrypto-1_1-x64.dll"/>
+                <File Source="C:\OpenSSL-Win64\bin\libssl-1_1-x64.dll"/>
                 <File Source="$(var.PREFIX)\zlib\x64\bin\zlib1.dll" Id="zlib1_64.dll"/>
 <?ifdef var.libdigidoc ?>
                 <File Source="$(var.PREFIX)\libxml2\x64\bin\libxml2.dll" Id="libxml2.dll_64"/>

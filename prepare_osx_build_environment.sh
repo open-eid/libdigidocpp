@@ -4,8 +4,7 @@ set -e
 XERCES_DIR=xerces-c-3.2.2
 XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.0.2r
-#OPENSSL_DIR=openssl-1.1.1b
+OPENSSL_DIR=openssl-1.1.1c
 LIBXML2_DIR=libxml2-2.9.9
 ANDROID_NDK=android-ndk-r14b
 FREETYPE_DIR=freetype-2.9.1
@@ -38,6 +37,7 @@ case "$@" in
   esac
   echo "Building for Android ${ARCH} ${API}"
 
+  OPENSSL_DIR=openssl-1.0.2s
   TARGET_PATH=/Library/libdigidocpp.android${ARCH}
   SYSROOT=${TARGET_PATH}/sysroot
   export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
@@ -68,6 +68,7 @@ case "$@" in
   ;;
 *ios*)
   echo "Building for iOS"
+  OPENSSL_DIR=openssl-1.0.2s
   TARGET_PATH=/Library/libdigidocpp.iphoneos
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
@@ -79,6 +80,7 @@ case "$@" in
   ;;
 *simulator*)
   echo "Building for iOS Simulator"
+  OPENSSL_DIR=openssl-1.0.2s
   TARGET_PATH=/Library/libdigidocpp.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
@@ -270,7 +272,7 @@ function openssl {
         sudo lipo -create ${SSL} -output ${TARGET_PATH}/lib/libssl.a
         ;;
     *)
-        KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw enable-ec_nistp_64_gcc_128
+        KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
         make -s
         sudo make install_sw
         ;;
