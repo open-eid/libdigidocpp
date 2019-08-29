@@ -6,7 +6,7 @@ XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.1.1c
 LIBXML2_DIR=libxml2-2.9.9
-ANDROID_NDK=android-ndk-r14b
+ANDROID_NDK=android-ndk-r17c
 FREETYPE_DIR=freetype-2.9.1
 FONTCONFIG_DIR=fontconfig-2.13.1
 PODOFO_DIR=podofo-0.9.4
@@ -18,33 +18,30 @@ case "$@" in
   *x86*)
     ARCH=x86
     ARCH_ABI="x86"
-    API=19
     CROSS_COMPILE=i686-linux-android
     ;;
   *arm64*)
     ARCH=arm64
     ARCH_ABI="arm64-v8a"
-    API=21
     CROSS_COMPILE=aarch64-linux-android
-    export LIBS="-liconv"
     ;;
   *)
     ARCH=arm
     ARCH_ABI="armeabi-v7a"
-    API=19
     CROSS_COMPILE=arm-linux-androideabi
     ;;
   esac
-  echo "Building for Android ${ARCH} ${API}"
+  echo "Building for Android ${ARCH}"
 
-  OPENSSL_DIR=openssl-1.0.2s
   TARGET_PATH=/Library/libdigidocpp.android${ARCH}
   SYSROOT=${TARGET_PATH}/sysroot
+  export ANDROID_NDK_HOME=${TARGET_PATH}
   export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
   export CC=clang
   export CXX=clang++
-  export CFLAGS=""
+  export CFLAGS="-Oz"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
+  export LIBS="-liconv"
   CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking"
   ARCHS=${ARCH}
 
@@ -55,15 +52,14 @@ case "$@" in
     rm -rf ${ANDROID_NDK}
     unzip -qq ${ANDROID_NDK}-darwin-x86_64.zip
     cd ${ANDROID_NDK}
-    patch -Np1 -i ../patches/iconv.c.patch
     sudo ./build/tools/make_standalone_toolchain.py \
-      --arch=${ARCH} --api=${API} --stl=libc++ --install-dir=${TARGET_PATH}
+      --arch=${ARCH} --api=21 --stl=libc++ --install-dir=${TARGET_PATH}
+    cd ..
 
     #iconv for xerces
-    sudo cp sources/android/support/include/iconv.h ${SYSROOT}/usr/include/
-    sudo ${CROSS_COMPILE}-gcc -I${SYSROOT}/usr/include -std=c99 -o ${SYSROOT}/usr/lib/libiconv.o -c sources/android/support/src/musl-locale/iconv.c
+    sudo cp patches/android-iconv/iconv.h ${SYSROOT}/usr/include/
+    sudo ${CROSS_COMPILE}-gcc -I${SYSROOT}/usr/include -std=c99 -o ${SYSROOT}/usr/lib/libiconv.o -c patches/android-iconv/iconv.c
     sudo ${CROSS_COMPILE}-ar rcs ${SYSROOT}/usr/lib/libiconv.a ${SYSROOT}/usr/lib/libiconv.o
-    cd ..
   fi
   ;;
 *ios*)
@@ -112,6 +108,7 @@ function xerces {
     tar xf ${XERCES_DIR}.tar.xz
     cd ${XERCES_DIR}
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
+    sed -ie 's!SUBDIRS = doc src tests samples!SUBDIRS = src!' Makefile.in 
     case "${ARGS}" in
     *ios*|*simulator*) XERCESCONFIGURE="${CONFIGURE} --enable-transcoder-iconv" ;;
     *) XERCESCONFIGURE=${CONFIGURE} ;;
@@ -238,14 +235,7 @@ function openssl {
 
     case "${ARGS}" in
     *android*)
-        perl -pi -e 's/-mandroid/-fno-integrated-as/g' Configure
-        perl -pi -e 's/.code\t32/#if defined(__thumb2__) || defined(__clang__)\n.syntax unified\n#endif\n#if defined(__thumb2__)\n.thumb\n#else\n.code   32\n#endif/g' crypto/modes/asm/ghash-armv4.pl 
-        unset CROSS_COMPILE
-        case "${ARGS}" in
-        *x86*) ./Configure android-x86 --openssldir=${TARGET_PATH} no-hw no-asm ;;
-        *arm64*) ./Configure linux-generic64 --openssldir=${TARGET_PATH} no-hw no-asm -fomit-frame-pointer ;;
-        *) ./Configure android-armv7 --openssldir=${TARGET_PATH} no-hw no-asm ;;
-        esac
+        ./Configure android-${ARCH} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-hw no-engine no-tests no-shared
         make -s
         sudo make install_sw
         ;;
