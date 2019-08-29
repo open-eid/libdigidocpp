@@ -6,7 +6,7 @@
 //  Copyright (c) 2015 RIA. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
+#import "AppDelegate.h"
 
 #include <digidocpp/Container.h>
 #include <digidocpp/DataFile.h>
@@ -41,7 +41,6 @@
 @end
 
 @interface MasterViewController : UITableViewController {
-    std::unique_ptr<digidoc::Container> doc;
 #if TESTING
     NSMutableArray *result;
 #endif
@@ -52,12 +51,6 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    try {
-        NSString *path = [NSBundle.mainBundle pathForResource:@"test" ofType:@"bdoc"];
-        doc.reset(digidoc::Container::open(path.UTF8String));
-    } catch(const digidoc::Exception &e) {
-        NSLog(@"%s", e.msg().c_str());
-    }
 #if TESTING
     self.tableView.contentInset = UIEdgeInsetsMake(20, 0, 0, 0);
     URLTableViewCell *urlView = [self.tableView dequeueReusableCellWithIdentifier:@"URL"];
@@ -180,7 +173,7 @@
 #if TESTING
     if (result.count > 0) return 1;
 #endif
-    return 1 + (doc ? doc->signatures().size() : 0);
+    return 1 + (APP.doc ? APP.doc->signatures().size() : 0);
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -189,9 +182,9 @@
 #if TESTING
             if (result.count > 0) return [result[result.count - 1][@"f"] isEqualToString:@"DONE"] ? 2 : 1;
 #endif
-            return (doc ? doc->dataFiles().size() : 0);
+            return (APP.doc ? APP.doc->dataFiles().size() : 0);
         default:
-            return 2;
+            return 3;
     }
 }
 
@@ -233,13 +226,13 @@
                 break;
             }
 #endif
-            const digidoc::DataFile *data = doc->dataFiles().at(indexPath.row);
+            const digidoc::DataFile *data = APP.doc->dataFiles().at(indexPath.row);
             cell.textLabel.text = [NSString stdstring:data->fileName()];
             break;
         }
         default:
         {
-            const digidoc::Signature *signature = doc->signatures().at(indexPath.section - 1);
+            const digidoc::Signature *signature = APP.doc->signatures().at(indexPath.section - 1);
             switch (indexPath.row) {
                 case 0:
                     cell.textLabel.text = [NSString stdstring:signature->signedBy()];
@@ -254,6 +247,8 @@
                     case digidoc::Signature::Validator::Invalid: cell.textLabel.text = @"Invalid"; break;
                     }
                     break;
+                case 2:
+                    cell.textLabel.text = [NSString stdstring:signature->trustedSigningTime()];
                 default:
                     break;
             }
