@@ -144,21 +144,19 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     if(OCSP_resp_find_status(basic.get(), certId, nullptr, nullptr, nullptr, &thisUpdate, &nextUpdate) != 1)
         THROW("Failed to find CERT_ID from OCSP response.");
 
-#if 0
     if(!OCSP_check_validity(thisUpdate, nextUpdate, 15*60, 2*60))
     {
         Exception e(EXCEPTION_PARAMS("OCSP response not in valid time slot."));
         e.setCode(Exception::OCSPTimeSlot);
         throw e;
     }
-#endif
 }
 
 OCSP::OCSP(const unsigned char *data, size_t size)
 {
     if(size == 0)
         return;
-    resp.reset(d2i_OCSP_RESPONSE(nullptr, &data, (unsigned int)size), OCSP_RESPONSE_free);
+    resp.reset(d2i_OCSP_RESPONSE(nullptr, &data, long(size)), OCSP_RESPONSE_free);
     if(resp)
        basic.reset(OCSP_response_get1_basic(resp.get()), OCSP_BASICRESP_free);
 }
