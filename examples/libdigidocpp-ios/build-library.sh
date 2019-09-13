@@ -4,12 +4,12 @@ case "$@" in
 *simulator*)
   echo "Building for iOS Simulator"
   TARGET=iphonesimulator
-  : ${ARCHS:="i386 x86_64"}
+  : ${ARCHS:="x86_64"}
   ;;
 *)
   echo "Building for iOS"
   TARGET=iphoneos
-  : ${ARCHS:="armv7 armv7s arm64"}
+  : ${ARCHS:="armv7 arm64"}
   ;;
 esac
 
@@ -27,6 +27,7 @@ cmake \
     -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
     -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
+    -DXercesC_ROOT=${TARGET_PATH} \
     -DBoost_INCLUDE_DIR=NOTFOUND \
     -DDOXYGEN_EXECUTABLE=NOTFOUND \
     -DSWIG_EXECUTABLE=NOTFOUND \

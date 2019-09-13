@@ -16,9 +16,9 @@ matrix:
   - os: osx
     env: TARGET=osx
   - os: osx
-    env: TARGET=ios ARCHS="armv7 arm64"
+    env: TARGET=ios
   - os: osx
-    env: TARGET=simulator ARCHS="x86_64"
+    env: TARGET=simulator
   - os: osx
     env: TARGET=androidarm
   - os: osx
@@ -27,7 +27,7 @@ matrix:
     env: TARGET=androidx86
 sudo: required
 dist: bionic
-osx_image: xcode10.1
+osx_image: xcode11
 services:
 - docker
 cache: ccache
@@ -64,7 +64,7 @@ script: case ${TARGET} in
     sudo /Library/libdigidocpp.${TARGET}/bin/*strip -s /Library/libdigidocpp.${TARGET}/lib/*.so;
     ;;
   *osx*)
-    mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/Library/libdigidocpp -DOPENSSL_ROOT_DIR=/Library/libdigidocpp ..;
+    mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/Library/libdigidocpp -DOPENSSL_ROOT_DIR=/Library/libdigidocpp -DXercesC_ROOT=/Library/libdigidocpp ..;
     make all pkcs11sign zipdebug embedlibs pkgbuild && cd ..;
     cp build/libdigidocpp*.pkg ../upload;
     ;;

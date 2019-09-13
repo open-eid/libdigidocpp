@@ -8,7 +8,7 @@ param(
 	[string]$toolset = "140",
 	[string]$windowssdkversion = $(Get-Item "hklm:\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0").GetValue("ProductVersion"),
 	[string]$msbuildparams = "PlatformToolset=v$toolset;WindowsTargetPlatformVersion=$($windowssdkversion).0",
-	[string]$opensslver = "openssl-1.1.1c",
+	[string]$opensslver = "openssl-1.1.1d",
 	[string]$xercesver = "xerces-c-3.2.2",
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-2.0.2",

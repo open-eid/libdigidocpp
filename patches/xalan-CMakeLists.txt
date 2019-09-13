@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
+if(POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
 project(xalan-c)
 find_package(XercesC REQUIRED)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -12,7 +15,8 @@ add_custom_command(OUTPUT LocalMsgIndex.hpp LocalMsgData.hpp COMMENT "Generating
 	COMMAND ${CMAKE_SOURCE_DIR}/MsgCreator -TYPE inmem -LOCALE en_US -OUTDIR ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/xalanc/NLS/en_US/XalanMsg_en_US.xlf
 )
 
-add_library(xalanMsg STATIC xalanc/Utils/XalanMsgLib/XalanMsgLib.cpp LocalMsgIndex.hpp)
+add_library(xalanMsg xalanc/Utils/XalanMsgLib/XalanMsgLib.cpp LocalMsgIndex.hpp)
+set_target_properties(xalanMsg PROPERTIES VERSION 111.0)
 target_link_libraries(xalanMsg XercesC::XercesC)
 
 add_definitions(-DXALAN_INMEM_MSG_LOADER -DXALAN_USE_XERCES_LOCAL_CODEPAGE_TRANSCODERS)
@@ -29,7 +33,8 @@ file(GLOB SOURCES
 	xalanc/XalanExtensions/*.cpp
 	xalanc/XalanEXSLT/*.cpp
 )
-add_library(xalan-c STATIC ${SOURCES})
+add_library(xalan-c ${SOURCES})
+set_target_properties(xalan-c PROPERTIES VERSION 111.0)
 target_link_libraries(xalan-c xalanMsg)
 
 install(DIRECTORY xalanc DESTINATION include FILES_MATCHING PATTERN "*.hpp")
