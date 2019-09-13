@@ -4,7 +4,7 @@ set -e
 XERCES_DIR=xerces-c-3.2.2
 XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.1.1c
+OPENSSL_DIR=openssl-1.1.1d
 LIBXML2_DIR=libxml2-2.9.9
 ANDROID_NDK=android-ndk-r17c
 FREETYPE_DIR=freetype-2.9.1
@@ -64,11 +64,10 @@ case "$@" in
   ;;
 *ios*)
   echo "Building for iOS"
-  OPENSSL_DIR=openssl-1.0.2s
   TARGET_PATH=/Library/libdigidocpp.iphoneos
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
-  : ${ARCHS:="armv7 armv7s arm64"}
+  : ${ARCHS:="armv7 arm64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
@@ -76,11 +75,10 @@ case "$@" in
   ;;
 *simulator*)
   echo "Building for iOS Simulator"
-  OPENSSL_DIR=openssl-1.0.2s
   TARGET_PATH=/Library/libdigidocpp.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
-  : ${ARCHS:="i386 x86_64"}
+  : ${ARCHS:="x86_64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
@@ -127,44 +125,43 @@ function xalan {
     rm -rf xalan-c-1.11
     tar xf xalan_c-1.11-src.tar.gz
     cd xalan-c-1.11/c
-    export XERCESCROOT=${TARGET_PATH}
-    export XALANCROOT=${PWD}
+    cp ../../patches/xalan-CMakeLists.txt src/CMakeLists.txt
+    cp ../../patches/MsgCreator src
     case "${ARGS}" in
     *android*)
-      cp ../../patches/xalan-CMakeLists.txt src/CMakeLists.txt
       cmake \
         -DCMAKE_SYSTEM_NAME=Android \
         -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN=${TARGET_PATH} \
         -DCMAKE_ANDROID_ARCH_ABI=${ARCH_ABI} \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+        -DXercesC_ROOT=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE="Release" \
-        src
-      cp ../../patches/MsgCreator src
-      make -s
-      sudo make install
+        -DBUILD_SHARED_LIBS=NO \
+        src && make -s && sudo make install
       ;;
     *ios*|*simulator*)
-      cp ../../patches/xalan-CMakeLists.txt src/CMakeLists.txt
       cmake \
-        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
         -DCMAKE_C_COMPILER_WORKS=yes \
         -DCMAKE_CXX_COMPILER_WORKS=yes \
-        -DCMAKE_BUILD_TYPE="Release" \
         -DCMAKE_OSX_SYSROOT=${SYSROOT} \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
-        src
-      cp ../../patches/MsgCreator src
-      make -s
-      sudo make install
+        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+        -DXercesC_ROOT=${TARGET_PATH} \
+        -DCMAKE_BUILD_TYPE="Release" \
+        -DBUILD_SHARED_LIBS=NO \
+        src && make -s && sudo make install
       ;;
     *)
-      export LDFLAGS="-headerpad_max_install_names"
-      ./runConfigure -p macosx -b 64 -P ${TARGET_PATH}
-      make -s
-      sudo XALANCROOT=${PWD} make install
+      cmake \
+        -DCMAKE_MACOSX_RPATH=NO \
+        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+        -DXercesC_ROOT=${TARGET_PATH} \
+        -DCMAKE_BUILD_TYPE="Release" \
+        -DBUILD_SHARED_LIBS=YES \
+        src && make -s && sudo make install
       sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.dylib
       sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
-      sudo install_name_tool -change libxalanMsg.dylib ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
+      sudo install_name_tool -change libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
       ;;
     esac
     cd ../..
@@ -233,6 +230,9 @@ function openssl {
     tar xf ${OPENSSL_DIR}.tar.gz
     cd ${OPENSSL_DIR}
 
+    sed -ie 's!, "apps"!!' Configure
+    sed -ie 's!, "fuzz"!!' Configure
+    sed -ie 's!, "test"!!' Configure
     case "${ARGS}" in
     *android*)
         ./Configure android-${ARCH} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-hw no-engine no-tests no-shared
@@ -240,26 +240,32 @@ function openssl {
         sudo make install_sw
         ;;
     *ios*|*simulator*)
-        CRYPTO=""
-        SSL=""
+        first="run"
         for ARCH in ${ARCHS}
         do
-            sed -ie 's!MAKEDEPPROG=makedepend!MAKEDEPPROG=$(CC) -M!' Makefile.org
-            if [[ "${ARCH}" == "x86_64" ]]; then
-                ./Configure darwin64-x86_64-cc --openssldir=${TARGET_PATH} no-hw
-                sed -ie 's!^CFLAG=!CFLAG=-isysroot '${SYSROOT}' !' Makefile
+            case "${ARCH}" in
+            *x86_64*)
+                CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine
+                ;;
+            *arm64*)
+                CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine
+                ;;
+            *)
+                CC="" CFLAGS="" ./Configure ios-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine
+                ;;
+            esac
+            make -s > /dev/null
+            if [ "${first}" == "run" ]; then
+                sudo make install_sw > /dev/null
+                first=""
             else
-                ./Configure iphoneos-cross --openssldir=${TARGET_PATH} no-hw -Wno-ignored-optimization-argument
-                sed -ie 's!-isysroot $(CROSS_TOP)/SDKs/$(CROSS_SDK)!-arch '${ARCH}' -isysroot '${SYSROOT}'!' Makefile
+                make install_sw DESTDIR=${PWD}/${ARCH} > /dev/null
+                lipo -create ${ARCH}/${TARGET_PATH}/lib/libcrypto.a ${TARGET_PATH}/lib/libcrypto.a -output libcrypto.a
+                lipo -create ${ARCH}/${TARGET_PATH}/lib/libssl.a ${TARGET_PATH}/lib/libssl.a -output libssl.a
+                sudo mv libcrypto.a libssl.a ${TARGET_PATH}/lib/
             fi
-            make -s depend all install_sw INSTALL_PREFIX=${PWD}/${ARCH} > /dev/null
-            make clean
-            sudo cp -R ${ARCH}/${TARGET_PATH}/include/openssl ${TARGET_PATH}/include
-            CRYPTO="${CRYPTO} ${ARCH}/${TARGET_PATH}/lib/libcrypto.a"
-            SSL="${SSL} ${ARCH}/${TARGET_PATH}/lib/libssl.a"
+            make distclean
         done
-        sudo lipo -create ${CRYPTO} -output ${TARGET_PATH}/lib/libcrypto.a
-        sudo lipo -create ${SSL} -output ${TARGET_PATH}/lib/libssl.a
         ;;
     *)
         KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128

@@ -27,6 +27,7 @@ cmake \
     -DCMAKE_C_FLAGS="-DIOAPI_NO_64 -Oz" \
     -DCMAKE_CXX_FLAGS="-Oz" \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
+    -DXercesC_ROOT=${TARGET_PATH} \
     -DBoost_INCLUDE_DIR="" \
     -DBUILD_TOOLS=off \
     -DBUILD_SHARED_LIBS=NO \

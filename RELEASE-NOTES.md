@@ -1,3 +1,17 @@
+Libdigidocpp library [3.14.1](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.1) release notes
+--------------------------------------
+- Fix LGTM and Coverity warnings and errors
+- Add TSUrl parameter to digidoc-tool (#293)
+- 
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.0...v3.14.1)
+
+Libdigidocpp library [3.14.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.0) release notes
+--------------------------------------
+- Update LOTL URL (#304)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.13.9...v3.14.0)
+
 Libdigidocpp library [3.13.9](https://github.com/open-eid/libdigidocpp/releases/tag/v3.13.9) release notes
 --------------------------------------
 - Update dependencies (#285, #275, #274, #268, #266, #265, #258)
