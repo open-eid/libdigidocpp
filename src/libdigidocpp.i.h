@@ -57,10 +57,15 @@ public:
     std::string verifyServiceUri() const override { return serviceUrl.empty() ? digidoc::XmlConfCurrent::verifyServiceUri() : serviceUrl; }
     std::string xsdPath() const override { return cache.empty() ? digidoc::XmlConfCurrent::xsdPath() : cache; }
 
-    void setTSLCert(const std::vector<unsigned char> &tslCert)
+    void setTSLCert(const std::vector<unsigned char> &cert)
     {
-        if(tslCert.empty()) tslCerts.clear();
-        else tslCerts = { X509Cert(tslCert, X509Cert::Der) };
+        if(cert.empty()) tslCerts.clear();
+        else tslCerts = { X509Cert(cert, X509Cert::Der) };
+    }
+    void addTSLCert(const std::vector<unsigned char> &cert)
+    {
+        if(!cert.empty())
+            tslCerts.push_back(X509Cert(cert, X509Cert::Der));
     }
     void setTSLUrl(std::string url) { tslUrl = std::move(url); }
     void setOCSPUrls(std::map<std::string,std::string> urls) { OCSPUrls = urls; }
