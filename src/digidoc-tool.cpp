@@ -228,22 +228,6 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
     return result;
 }
 
-class WebSigner: public Signer
-{
-public:
-    explicit WebSigner(X509Cert cert): _cert(std::move(cert)) {}
-
-private:
-    X509Cert cert() const override { return _cert; }
-    vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const override
-    {
-        THROW("Not implemented");
-    }
-
-    X509Cert _cert;
-};
-
-
 class ToolConfig: public XmlConfCurrent
 {
 public:
@@ -263,6 +247,7 @@ public:
     string TSUrl() const override { return tsurl; }
     string TSLUrl() const override { return tslurl; }
 
+    unique_ptr<Signer> getSigner(bool getwebsigner = false) const;
     static string decodeParameter(const string &param)
     {
         if(param.empty())
@@ -398,7 +383,7 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         {
             profile = arg.substr(10);
             size_t pos = profile.find('.');
-            profile = profiles.at(profile.substr(0, pos)) + (pos == string::npos ? std::string() : profile.substr(pos));
+            profile = profiles.at(profile.substr(0, pos)) + (pos == string::npos ? string() : profile.substr(pos));
         }
         else if(arg.find("--file=") == 0)
         {
@@ -450,6 +435,50 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg.find("--logfile=") == 0) _logFile = arg.substr(10);
         else path = arg;
     }
+}
+
+/**
+ * Create Signer object from Params.
+ *
+ * @param getwebsigner get WebSigner object
+ * @return Signer
+ */
+unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
+{
+    unique_ptr<Signer> signer;
+    if(getwebsigner)
+    {
+        class WebSigner: public Signer
+        {
+        public:
+            WebSigner(X509Cert cert): _cert(move(cert)) {}
+            X509Cert cert() const override { return _cert; }
+            vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const override
+            {
+                THROW("Not implemented");
+            }
+            X509Cert _cert;
+        };
+        signer.reset(new WebSigner(X509Cert(cert, X509Cert::Pem)));
+    }
+#ifdef _WIN32
+    else if(cng)
+    {
+        WinSigner *win = new WinSigner(pin, selectFirst);
+        win->setThumbprint(thumbprint);
+        signer.reset(win);
+    }
+    else
+#endif
+    if(!pkcs12.empty())
+        signer.reset(new PKCS12Signer(pkcs12, pin));
+    else
+        signer.reset(new ConsolePinSigner(pkcs11, pin));
+    signer->setENProfile(XAdESEN);
+    signer->setSignatureProductionPlaceV2(city, street, state, postalCode, country);
+    signer->setSignerRoles(roles);
+    signer->setProfile(profile);
+    return signer;
 }
 
 static int validateSignature(const Signature *s, ToolConfig::Warning warning = ToolConfig::WWarning)
@@ -750,35 +779,6 @@ static int add(const ToolConfig &p, char *program)
 }
 
 /**
- * Create Signer object from Params.
- *
- * @param p Params object containing the info needed for Signer creation
- * @return Signer
- */
-static unique_ptr<Signer> getSigner(const ToolConfig &p)
-{
-    unique_ptr<Signer> signer;
-#ifdef _WIN32
-    if(p.cng)
-    {
-        WinSigner *win = new WinSigner(p.pin, p.selectFirst);
-        win->setThumbprint(p.thumbprint);
-        signer.reset(win);
-    }
-    else
-#endif
-    if(!p.pkcs12.empty())
-        signer.reset(new PKCS12Signer(p.pkcs12, p.pin));
-    else
-        signer.reset(new ConsolePinSigner(p.pkcs11, p.pin));
-    signer->setENProfile(p.XAdESEN);
-    signer->setSignatureProductionPlaceV2(p.city, p.street, p.state, p.postalCode, p.country);
-    signer->setSignerRoles(p.roles);
-    signer->setProfile(p.profile);
-    return signer;
-}
-
-/**
  * Sign the container.
  *
  * @param doc the container that is to be signed
@@ -786,9 +786,9 @@ static unique_ptr<Signer> getSigner(const ToolConfig &p)
  * @param dontValidate Do not validate result
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int signContainer(Container *doc, Signer *signer, bool dontValidate = false)
+static int signContainer(Container *doc, const unique_ptr<Signer> &signer, bool dontValidate = false)
 {
-    if(Signature *signature = doc->sign(signer))
+    if(Signature *signature = doc->sign(signer.get()))
     {
         if(dontValidate)
             return EXIT_SUCCESS;
@@ -835,7 +835,7 @@ static int create(const ToolConfig &p, char *program)
 
         int returnCode = EXIT_SUCCESS;
         if(p.doSign)
-            returnCode = signContainer(doc.get(), getSigner(p).get(), p.dontValidate);
+            returnCode = signContainer(doc.get(), p.getSigner(), p.dontValidate);
         doc->save();
         return returnCode;
     } catch(const Exception &e) {
@@ -861,7 +861,7 @@ static int createBatch(const ToolConfig &p, char *program)
 
     unique_ptr<Signer> signer;
     try {
-        signer = getSigner(p);
+        signer = p.getSigner();
     } catch(const Exception &e) {
         cout << "Caught Exception:" << endl << e;
         return EXIT_FAILURE;
@@ -872,11 +872,11 @@ static int createBatch(const ToolConfig &p, char *program)
     {
         if(file.compare(file.size() - 6, 6, ".asice") == 0)
             continue;
-        std::cout << "Signing file: " << file << endl;
+        cout << "Signing file: " << file << endl;
         try {
             unique_ptr<Container> doc(Container::create(file + ".asice"));
             doc->addDataFile(file, "application/octet-stream");
-            if(signContainer(doc.get(), signer.get(), p.dontValidate) == EXIT_FAILURE)
+            if(signContainer(doc.get(), signer, p.dontValidate) == EXIT_FAILURE)
                 returnCode = EXIT_FAILURE;
             doc->save();
         } catch(const Exception &e) {
@@ -913,7 +913,7 @@ static int sign(const ToolConfig &p, char *program)
     }
 
     try {
-        int returnCode = signContainer(doc.get(), getSigner(p).get(), p.dontValidate);
+        int returnCode = signContainer(doc.get(), p.getSigner(), p.dontValidate);
         doc->save();
         return returnCode;
     } catch(const Exception &e) {
@@ -944,12 +944,7 @@ static int websign(const ToolConfig &p, char *program)
         for(const pair<string,string> &file: p.files)
             doc->addDataFile(file.first, file.second);
 
-        unique_ptr<Signer> signer(new WebSigner(X509Cert(p.cert, X509Cert::Pem)));
-        signer->setENProfile(p.XAdESEN);
-        signer->setSignatureProductionPlaceV2(p.city, p.street, p.state, p.postalCode, p.country);
-        signer->setSignerRoles(p.roles);
-        signer->setProfile(p.profile);
-        if(Signature *signature = doc->prepareSignature(signer.get()))
+        if(Signature *signature = doc->prepareSignature(p.getSigner(true).get()))
         {
             cout << "Signature method: " << signature->signatureMethod() << endl
                  << "Digest to sign:   " << signature->dataToSign() << endl

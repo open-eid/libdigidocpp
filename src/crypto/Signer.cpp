@@ -85,7 +85,8 @@ void Signer::setSignatureProductionPlace(const string &city,
 void Signer::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
 {
-    setENProfile(true);
+    if(!streetAddress.empty())
+        setENProfile(true);
     d->city = city;
     d->streetAddress = streetAddress;
     d->stateOrProvince = stateOrProvince;
