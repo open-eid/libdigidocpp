@@ -35,13 +35,9 @@ env:
   global:
   - BUILD_NUMBER=${TRAVIS_BUILD_NUMBER}
   - RUN_TESTS=ALL
-  - PATH=${PATH}:$HOME/.local/bin:$HOME/Library/Python/2.7/bin;
   - AWS_DEFAULT_REGION=eu-west-1
-
 before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-    sudo easy_install pip;
-    brew install swig;
-    pip install --user awscli > /dev/null;
+    brew install swig awscli doxygen;
     HASH=($(shasum prepare_osx_build_environment.sh));
     aws s3 cp s3://open-eid/libdigidocpp-cache/${TARGET}/${HASH}.zip ${HASH}.zip --no-sign-request;
     if [ $? -eq 0 ]; then
@@ -95,7 +91,6 @@ script: case ${TARGET} in
       mv libdigidocpp-${VERSION} libdigidocpp;
       cp libdigidocpp*.* upload';
   esac
-
 deploy:
 - provider: releases
   api_key: ${GITHUB_ACCESS_TOKEN}
@@ -104,6 +99,13 @@ deploy:
   on:
     tags: true
     condition: "$TRAVIS_OS_NAME = linux"
+- provider: pages
+  skip_cleanup: true
+  github_token: ${GITHUB_ACCESS_TOKEN}
+  local_dir: build/doc
+  on:
+    branch: master
+    condition: "$TARGET = osx"
 - provider: s3
   access_key_id: ${AWS_ACCESS_KEY_ID}
   secret_access_key: ${AWS_SECRET_ACCESS_KEY}
