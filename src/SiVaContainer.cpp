@@ -131,12 +131,10 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
     }
 
     string url = CONF(verifyServiceUri);
-    const bool isV2 = url.find("V2") != string::npos;
-    jsonxx::Object reqObj = jsonxx::Object() <<"filename" << File::fileName(path) << "document" << b64;
-    if(isV2)
-        reqObj << "signaturePolicy" << "POLv4";
-    else
-        reqObj << "documentType" << ext;
+    jsonxx::Object reqObj = jsonxx::Object() 
+        <<"filename" << File::fileName(path) 
+        << "document" << b64
+        << "signaturePolicy" << "POLv4";
     string req = reqObj.json();
     Connect::Result r = Connect(url, "POST", 0, string(), CONF(verifyServiceCert)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
@@ -160,14 +158,8 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         throw e;
     }
 
-    jsonxx::Object base;
-    if(isV2)
-    {
-        jsonxx::Object report = result.get<jsonxx::Object>("validationReport");
-        base = report.get<jsonxx::Object>("validationConclusion");
-    }
-    else
-        base = result;
+    jsonxx::Object report = result.get<jsonxx::Object>("validationReport");
+    jsonxx::Object base = report.get<jsonxx::Object>("validationConclusion");
     for(const jsonxx::Value *obj: base.get<jsonxx::Array>("signatures", jsonxx::Array()).values())
     {
         SignatureSiVa *s = new SignatureSiVa;
