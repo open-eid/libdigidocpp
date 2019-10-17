@@ -18,7 +18,7 @@ matrix:
   - os: osx
     env: TARGET=ios
   - os: osx
-    env: TARGET=simulator
+    env: TARGET=iossimulator
   - os: osx
     env: TARGET=androidarm
   - os: osx
@@ -27,7 +27,7 @@ matrix:
     env: TARGET=androidx86
 sudo: required
 dist: bionic
-osx_image: xcode11
+osx_image: xcode11.1
 services:
 - docker
 cache: ccache
@@ -52,17 +52,12 @@ before_install: if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
   fi;
   mkdir ../upload
 script: case ${TARGET} in
-  *ios*|*simulator*)
-    cd examples/libdigidocpp-ios && ./build-library.sh ${TARGET} && cd ../..;
-    ;;
-  *android*)
-    cd examples/libdigidocpp-android && ./build-library.sh ${TARGET} && cd ../..;
-    sudo /Library/libdigidocpp.${TARGET}/bin/*strip -s /Library/libdigidocpp.${TARGET}/lib/*.so;
+  *ios*|*simulator*|*android*)
+    ./build-library.sh ${TARGET} install/strip;
     ;;
   *osx*)
-    mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/Library/libdigidocpp -DOPENSSL_ROOT_DIR=/Library/libdigidocpp -DXercesC_ROOT=/Library/libdigidocpp ..;
-    make all pkcs11sign zipdebug embedlibs pkgbuild && cd ..;
-    cp build/libdigidocpp*.pkg ../upload;
+    ./build-library.sh ${TARGET} all pkcs11sign zipdebug embedlibs pkgbuild;
+    cp macOS/libdigidocpp*.pkg ../upload;
     ;;
   *)
     docker run -e BUILD_NUMBER=${BUILD_NUMBER} -e RUN_TESTS=${RUN_TESTS} -e COVERITY_SCAN_TOKEN=${COVERITY_SCAN_TOKEN} -e TRAVIS_BRANCH=${TRAVIS_BRANCH} -e TARGET=${TARGET} -v ${HOME}:${HOME} -t "${TARGET}" /bin/bash -c "cd $(pwd);"'
