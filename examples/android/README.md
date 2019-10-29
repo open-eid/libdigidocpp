@@ -2,19 +2,8 @@
 
 ### OSX
 
-1. Install dependencies from
-	* [http://www.cmake.org](http://www.cmake.org)
-	* [http://swig.org](http://swig.org)
-
-2. Prepare
-
-        sh ../../prepare_osx_build_environment.sh [androidarm|androidarm64|androidx86] all
-
-3. Build library
-
-        sh build-library.sh [arm|arm64|x86]
-
-4. Build example and run
+1. Install dependencies see [README.md](../../README.md#osx)
+2. Build example and run
 
         open project with Android Studio, build and run
 

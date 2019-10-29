@@ -55,27 +55,17 @@
         git clone --recursive https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Prepare
+3. Prepare dependencies (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86)
 
-        sh prepare_osx_build_environment.sh all
+        sh prepare_osx_build_environment.sh osx all
 
-4. Configure
+4. Configure, build and install (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86)
 
-        mkdir build
-        cd build
-        cmake ..
+        ./build-library.sh osx install
 
-5. Build
+5. Execute
 
-        make
-
-6. Install
-
-        sudo make install
-
-7. Execute
-
-        /usr/local/bin/digidoc-tool
+        /Library/libdigidocpp/bin/digidoc-tool
 
 ### Windows
 
@@ -129,11 +119,8 @@
 
         src/digidoc-tool.exe
 
-### iOS Experimental
-[examples/libdigidocpp-ios/README.md](examples/libdigidocpp-ios/README.md)
-
-### Android Experimental
-[examples/libdigidocpp-android/README.md](examples/libdigidocpp-android/README.md)
+### Examples
+[examples/README.md](examples/README.md)
 
 ## Support
 Official builds are provided through official distribution point [installer.id.ee](https://installer.id.ee). If you want support, you need to be using official builds. Contact our support via [www.id.ee](http://www.id.ee) for assistance.
