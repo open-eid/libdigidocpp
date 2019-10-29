@@ -21,6 +21,7 @@
 
 #include "Conf.h"
 #include "Container.h"
+#include "DataFile_p.h"
 #include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/X509Cert.h"
@@ -30,7 +31,6 @@
 #include "util/File.h"
 
 #include <libdigidoc/DigiDocObj.h>
-#include <libdigidoc/DigiDocSAXParser.h>
 
 #include <fstream>
 
@@ -46,63 +46,6 @@ using namespace std;
 DDocLibrary* DDocLibrary::m_instance = nullptr;
 
 DDocLibrary::DDocLibrary()
-    : ref(0)
-#ifndef LINKED_LIBDIGIDOC
-#if defined(_WIN32)
-    , h(LoadLibrary(TEXT("digidoc.dll")))
-    #define symr(x) f_##x(sym_##x(h ? GetProcAddress(h, #x) : nullptr))
-#elif defined(__APPLE__)
-    , h(dlopen("libdigidoc.dylib", RTLD_LAZY))
-    #define symr(x) f_##x(sym_##x(h ? dlsym(h, #x) : nullptr))
-#else
-    , h(dlopen("libdigidoc.so.2", RTLD_LAZY))
-    #define symr(x) f_##x(sym_##x(h ? dlsym(h, #x) : nullptr))
-#endif
-#else
-    #define symr(x) f_##x(x)
-#endif
-    , symr(calculateDataFileSizeAndDigest)
-    , symr(cleanupConfigStore)
-    , symr(clearErrors)
-    , symr(convertStringToTimestamp)
-    , symr(createDataFileInMemory)
-    , symr(createOrReplacePrivateConfigItem)
-    , symr(createSignedDoc)
-    , symr(DataFile_delete)
-    , symr(DataFile_new)
-#ifdef USE_SIGFROMMEMORY
-    , symr(ddocAddSignatureFromMemory)
-#endif
-    , symr(ddocGetDataFileCachedData)
-    , symr(ddocGetDataFileFilename)
-    , symr(ddocMemBuf_free)
-    , symr(ddocPrepareSignature)
-    , symr(ddocSAXGetDataFile)
-    , symr(ddocSaxReadSignedDocFromFile)
-    , symr(ddocSaxReadSignedDocFromMemory)
-    , symr(ddocSigInfo_GetOCSPRespondersCert)
-    , symr(ddocSigInfo_GetSignatureValue_Value)
-    , symr(ddocSigInfo_GetSignersCert)
-    , symr(ddocSigInfo_SetSignatureValue)
-    , symr(finalizeDigiDocLib)
-    , symr(freeLibMem)
-    , symr(getCountOfDataFiles)
-    , symr(getCountOfSignatures)
-    , symr(getDataFile)
-    , symr(getErrorClass)
-    , symr(getErrorInfo)
-    , symr(getErrorString)
-    , symr(getSignature)
-    , symr(hasUnreadErrors)
-    , symr(initDigiDocLib)
-    , symr(initConfigStore)
-    , symr(notarizeSignature)
-    , symr(ddocSaxExtractDataFile)
-    , symr(setGUIVersion)
-    , symr(SignatureInfo_delete)
-    , symr(SignedDoc_free)
-    , symr(SignedDoc_new)
-    , symr(verifySignatureAndNotary)
 {
     if(!f_initDigiDocLib)
         return;

@@ -22,11 +22,10 @@
 #include <libdigidoc/DigiDocConfig.h>
 #include <libdigidoc/DigiDocConvert.h>
 #include <libdigidoc/DigiDocGen.h>
+#include <libdigidoc/DigiDocSAXParser.h>
 
 #include "DDoc.h"
-#include "DataFile_p.h"
 #include "Exception.h"
-#include "Signature.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -38,51 +37,6 @@
 
 namespace digidoc
 {
-typedef int (*sym_calculateDataFileSizeAndDigest)( SignedDoc*, const char*, const char*, int );
-typedef void (*sym_cleanupConfigStore)( ConfigurationStore* );
-typedef void (*sym_clearErrors)();
-typedef int (*sym_convertStringToTimestamp)( const SignedDoc*, const char*, Timestamp* );
-typedef int (*sym_createDataFileInMemory)(::DataFile**, SignedDoc*, const char*,
-	const char*, const char*, const char*, const char*, long);
-typedef int (*sym_createOrReplacePrivateConfigItem)(ConfigurationStore*, const char*, const char* );
-typedef int (*sym_createSignedDoc)( SignedDoc*, const char*, const char* );
-typedef int (*sym_DataFile_delete)( SignedDoc*, const char* );
-typedef int (*sym_DataFile_new)( ::DataFile**, SignedDoc*, const char*, const char*,
-	const char*, const char*, long, const byte*, int, const char*, const char* );
-typedef int (*sym_ddocAddSignatureFromMemory)(SignedDoc*, const char*, const void*, int);
-typedef int (*sym_ddocGetDataFileCachedData)(SignedDoc*, const char*, void**, long*);
-typedef int (*sym_ddocGetDataFileFilename)(SignedDoc*, const char*, void**, int*);
-typedef int (*sym_ddocMemBuf_free)(DigiDocMemBuf*);
-typedef int (*sym_ddocPrepareSignature)( SignedDoc*, SignatureInfo**, const char*, const char*,
-	const char*, const char*, const char*, X509*, const char* );
-typedef int (*sym_ddocSAXGetDataFile)(SignedDoc*, const char*, const char*, DigiDocMemBuf*, int);
-typedef int (*sym_ddocSaxReadSignedDocFromFile)( SignedDoc**, const char*, int, long );
-typedef int (*sym_ddocSaxReadSignedDocFromMemory)(SignedDoc**, const void*, int, long);
-typedef X509* (*sym_ddocSigInfo_GetOCSPRespondersCert)( const SignatureInfo * );
-typedef DigiDocMemBuf* (*sym_ddocSigInfo_GetSignatureValue_Value)( SignatureInfo* );
-typedef X509* (*sym_ddocSigInfo_GetSignersCert)( const SignatureInfo* );
-typedef int (*sym_ddocSigInfo_SetSignatureValue)( SignatureInfo*, const char*, long );
-typedef void (*sym_finalizeDigiDocLib)();
-typedef void (*sym_freeLibMem)(void*);
-typedef int (*sym_getCountOfDataFiles)( const SignedDoc* );
-typedef int (*sym_getCountOfSignatures)( const SignedDoc* );
-typedef ::DataFile* (*sym_getDataFile)( const SignedDoc*, int );
-typedef ErrorClass (*sym_getErrorClass)( int );
-typedef ErrorInfo* (*sym_getErrorInfo)();
-typedef char* (*sym_getErrorString)( int );
-typedef SignatureInfo* (*sym_getSignature)( const SignedDoc*, int );
-typedef int (*sym_hasUnreadErrors)();
-typedef void (*sym_initDigiDocLib)();
-typedef int (*sym_initConfigStore)( const char* );
-typedef int (*sym_notarizeSignature)( SignedDoc*, SignatureInfo* );
-typedef int (*sym_ddocSaxExtractDataFile)( SignedDoc*, const char*,
-	const char*, const char*, const char* );
-typedef void (*sym_setGUIVersion)( const char* );
-typedef int (*sym_SignatureInfo_delete)( SignedDoc*, const char* );
-typedef void (*sym_SignedDoc_free)( SignedDoc* );
-typedef int (*sym_SignedDoc_new)( SignedDoc**, const char*, const char* );
-typedef int (*sym_verifySignatureAndNotary)( SignedDoc*, SignatureInfo*, const char* );
-
 class DDocLibrary
 {
 private:
@@ -90,21 +44,29 @@ private:
 	~DDocLibrary();
 
 	static DDocLibrary *m_instance;
-	unsigned int ref;
+    unsigned int ref = 0;
 
-#ifndef LINKED_LIBDIGIDOC
-#ifdef _WIN32
-	HINSTANCE h;
+#ifdef LINKED_LIBDIGIDOC
+    #define symd(x) using sym_##x = decltype(&x); \
+        sym_##x f_##x = x
+#elif defined(_WIN32)
+    HINSTANCE h = LoadLibrary(TEXT("digidoc.dll"));
+    #define symd(x) using sym_##x = decltype(&x); \
+        sym_##x f_##x = sym_##x(h ? GetProcAddress(h, #x) : nullptr)
+#elif defined(__APPLE__)
+    void *h = dlopen("libdigidoc.dylib", RTLD_LAZY);
+    #define symd(x) using sym_##x = decltype(&x); \
+        sym_##x f_##x = sym_##x(h ? dlsym(h, #x) : nullptr)
 #else
-	void *h;
-#endif
+    void *h = dlopen("libdigidoc.so.2", RTLD_LAZY);
+    #define symd(x) using sym_##x = decltype(&x); \
+        sym_##x f_##x = sym_##x(h ? dlsym(h, #x) : nullptr)
 #endif
 
 public:
 	static void destroy();
 	static DDocLibrary *instance();
 
-#define symd(x) sym_##x f_##x
     symd(calculateDataFileSizeAndDigest);
     symd(cleanupConfigStore);
     symd(clearErrors);
@@ -114,7 +76,9 @@ public:
     symd(createSignedDoc);
     symd(DataFile_delete);
     symd(DataFile_new);
+#ifdef USE_SIGFROMMEMORY
     symd(ddocAddSignatureFromMemory);
+#endif
     symd(ddocGetDataFileCachedData);
     symd(ddocGetDataFileFilename);
     symd(ddocMemBuf_free);
