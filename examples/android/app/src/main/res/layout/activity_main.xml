@@ -7,7 +7,7 @@
     android:paddingRight="16dp"
     android:paddingBottom="16dp"
     android:scrollbars="vertical"
-    tools:context="ee.ria.libdigidocpp.MainActivity">
+    tools:context=".MainActivity">
 
     <EditText
         android:id="@+id/search"

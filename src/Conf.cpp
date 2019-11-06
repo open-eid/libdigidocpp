@@ -130,7 +130,6 @@ string Conf::ocsp(const string &issuer) const
         {"TEST of KLASS3-SK 2010", "http://demo.sk.ee/ocsp"},
         {"TEST of KLASS3-SK 2016", "http://demo.sk.ee/ocsp"},
         //Finland Test
-        {"VRK CA for Test Purposes", "http://demo.sk.ee/ocsp"},
         {"VRK CA for Test Purposes - G2", "http://demo.sk.ee/ocsp"},
         //Latvia Test - disabled, issuer name is identical with live certificates
         //{"E-ME SI (CA1)", "http://demo.sk.ee/ocsp"},
