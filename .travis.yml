@@ -8,7 +8,7 @@ matrix:
     env: TARGET=ubuntu:18.04
     sudo: false
   - os: linux
-    env: TARGET=ubuntu:19.04
+    env: TARGET=ubuntu:19.10
     sudo: false
   - os: linux
     env: TARGET=i386/ubuntu:16.04
@@ -97,7 +97,7 @@ deploy:
 - provider: pages
   skip_cleanup: true
   github_token: ${GITHUB_ACCESS_TOKEN}
-  local_dir: build/doc
+  local_dir: macOS/doc
   on:
     branch: master
     condition: "$TARGET = osx"

@@ -81,7 +81,7 @@ case "$@" in
   export MACOSX_DEPLOYMENT_TARGET
 esac
 
-rm -rf ${TARGET}
+sudo rm -rf ${TARGET}
 mkdir -p ${TARGET}
 cd ${TARGET}
 cmake \

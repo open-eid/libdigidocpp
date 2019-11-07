@@ -2,7 +2,9 @@ Libdigidocpp library [3.14.1](https://github.com/open-eid/libdigidocpp/releases/
 --------------------------------------
 - Fix LGTM and Coverity warnings and errors
 - Add TSUrl parameter to digidoc-tool (#293)
-- 
+- Update OpenSSL to 1.1.1
+- Add stricter validation rules (#317, #295)
+- SiVa V3 compatibility
 
 [Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.0...v3.14.1)
 
