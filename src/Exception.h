@@ -38,6 +38,7 @@ namespace digidoc
               CertificateIssuerMissing = 10,
               CertificateRevoked       = 5,
               CertificateUnknown       = 6,
+              OCSPBeforeTimeStamp      = 19,
               OCSPResponderMissing     = 8,
               OCSPCertMissing          = 9,
               OCSPTimeSlot             = 7,
