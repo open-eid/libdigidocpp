@@ -40,13 +40,6 @@ namespace digidoc
     class ASiContainer: public Container
     {
       public:
-        
-          enum ASiCFormat
-          {
-              Unknown,
-              Simple,
-              Extended
-          };
           static const std::string ASICE_EXTENSION;
           static const std::string ASICE_EXTENSION_ABBR;
           static const std::string ASICS_EXTENSION;
@@ -57,11 +50,11 @@ namespace digidoc
           static const std::string MIMETYPE_ASIC_S;
           static const std::string MIMETYPE_ADOC;
 
-          virtual ~ASiContainer();
+          ~ASiContainer() override;
           std::string mediaType() const override;
 
           void addDataFile(const std::string &path, const std::string &mediaType) override;
-          void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType) override;
+          void addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType) override;
           std::vector<DataFile*> dataFiles() const override;
           void removeDataFile(unsigned int id) override;
 
@@ -85,7 +78,7 @@ namespace digidoc
           ASiContainer(const std::string &mimetype);
 
           void addSignature(Signature *signature);
-          std::iostream* dataStream(const std::string &path, const ZipSerialize &z) const;
+          std::unique_ptr<std::iostream> dataStream(const std::string &path, const ZipSerialize &z) const;
           std::unique_ptr<ZipSerialize> load(const std::string &path, bool requireMimetype, const std::set<std::string> &supported);
           void deleteSignature(Signature* s);
 

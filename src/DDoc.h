@@ -36,7 +36,7 @@ class SignatureDDOCPrivate;
 class SignatureDDOC: public Signature
 {
 public:
-    ~SignatureDDOC() final;
+    ~SignatureDDOC() override;
 
     std::string id() const override;
     std::string claimedSigningTime() const override;
@@ -82,13 +82,13 @@ private:
 class DDoc: public Container
 {
 public:
-    ~DDoc() final;
+    ~DDoc() override;
 
     void save(const std::string &path = {}) override;
     std::string mediaType() const override;
 
     void addDataFile(const std::string &path, const std::string &mediaType) override;
-    void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType) override;
+    void addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType) override;
     std::vector<DataFile*> dataFiles() const override;
     void removeDataFile(unsigned int id) override;
 

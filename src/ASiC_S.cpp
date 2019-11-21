@@ -46,54 +46,51 @@ ASiC_S::ASiC_S(): ASiContainer(MIMETYPE_ASIC_S)
 ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
 {
     auto z = load(path, false, {MIMETYPE_ASIC_S});
-    loadContainer(*z.get());
+    loadContainer(*z);
 }
 
-void ASiC_S::save(const string &)
+void ASiC_S::save(const string & /*path*/)
 {
     THROW("Not implemented.");
 }
 
 void ASiC_S::addDataFile(const string &path, const string &mediaType)
 {
-    if (dataFiles().size() > 0)
+    if(!dataFiles().empty())
         THROW("Can not add document to ASiC-S container which already contains a document.");
         
     ASiContainer::addDataFile(path, mediaType);
 }
 
-void ASiC_S::addDataFile(istream *is, const string &fileName, const string &mediaType)
+void ASiC_S::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
 {
-    if (dataFiles().size() > 0)
+    if(!dataFiles().empty())
         THROW("Can not add document to ASiC-S container which already contains a document.");
-    
-    ASiContainer::addDataFile(is, fileName, mediaType);
+
+    ASiContainer::addDataFile(move(is), fileName, mediaType);
 }
 
-Container* ASiC_S::createInternal(const string &)
+Container* ASiC_S::createInternal(const string & /*path*/)
 {
     return nullptr;
 }
 
-void ASiC_S::addAdESSignature(istream &)
+void ASiC_S::addAdESSignature(istream & /*signature*/)
 {
     THROW("Not implemented.");
 }
 
 Container* ASiC_S::openInternal(const string &path)
 {
-    if (detectContainerFormat(path) == ASiCFormat::Simple)
-    {
-        return new ASiC_S(path);
-    }
-
-    return nullptr;
+    if (!isContainerSimpleFormat(path))
+        return nullptr;
+    DEBUG("ASiC_S::openInternal(%s)", path.c_str());
+    return new ASiC_S(path);
 }
 
 void ASiC_S::extractTimestamp(const ZipSerialize &z)
 {
-    auto data = dataStream("META-INF/timestamp.tst", z);
-    addSignature(new SignatureTST(*data, this));
+    addSignature(new SignatureTST(dataStream("META-INF/timestamp.tst", z), this));
 }
 
 /**
@@ -137,12 +134,12 @@ void ASiC_S::loadContainer(const ZipSerialize &z)
     extractTimestamp(z);
 }
 
-Signature* ASiC_S::prepareSignature(Signer *)
+Signature* ASiC_S::prepareSignature(Signer * /*signer*/)
 {
     THROW("Not implemented.");
 }
 
-Signature *ASiC_S::sign(Signer *)
+Signature *ASiC_S::sign(Signer * /*signer*/)
 {
     THROW("Not implemented.");
 }
@@ -161,18 +158,13 @@ bool ASiC_S::isTimestampedASiC_S(const vector<string> &list)
     {
         const auto directory = File::directory(file);
         if(directory.empty() || directory == "/" || directory == "./")
-        {
             dataFiles++;
-        }
-        
         if(file == "META-INF/timestamp.tst")
-        {
             hasTimestamp = true;
-        }
     }
-    
+
     isASiCS = hasTimestamp && (dataFiles == 1);
-    
+
     DEBUG("ASiCS Container: %s", isASiCS ? "yes" : "no");
     return isASiCS;
 }
@@ -184,56 +176,35 @@ bool ASiC_S::isTimestampedASiC_S(const vector<string> &list)
  * @param path Path of the container.
  * @throws Exception
  */
-ASiContainer::ASiCFormat ASiC_S::detectContainerFormat(const string &path)
+bool ASiC_S::isContainerSimpleFormat(const string &path)
 {
-    DEBUG("detectContainerFormat(path = '%s')", path.c_str());
-    auto containerFormat = ASiCFormat::Unknown;
-    
+    DEBUG("isContainerSimpleFormat(path = '%s')", path.c_str());
     const auto extension = util::File::fileExtension(path);
     if(extension == ASICE_EXTENSION || extension == ASICE_EXTENSION_ABBR ||
        extension == BDOC_EXTENSION)
+        return false;
+    if(extension == ASICS_EXTENSION || extension == ASICS_EXTENSION_ABBR)
+        return true;
+
+    DEBUG("Check if ASiC/zip containter");
+    try
     {
-        containerFormat = ASiCFormat::Extended;
-    }
-    else if(extension == ASICS_EXTENSION || extension == ASICS_EXTENSION_ABBR)
-    {
-        containerFormat = ASiCFormat::Simple;
-    }
-    else
-    {
-        DEBUG("Check if ASiC/zip containter");
-        try
+        ZipSerialize z(path, false);
+        vector<string> list = z.list();
+        if(find(list.begin(), list.end(), "mimetype") != list.end())
         {
-            ZipSerialize z(path, false);
-            
-            vector<string> list = z.list();
-            if(find(list.begin(), list.end(), "mimetype") != list.end())
-            {
-                stringstream iss;
-                z.extract("mimetype", iss);
-                string mimetype = readMimetype(iss);
-                if(mimetype == MIMETYPE_ASIC_S)
-                {
-                    containerFormat = ASiCFormat::Simple;
-                }
-                else if(mimetype == MIMETYPE_ASIC_E)
-                {
-                    containerFormat = ASiCFormat::Extended;
-                }
-            }
-            
-            if(containerFormat == ASiCFormat::Unknown && isTimestampedASiC_S(list))
-            {
-                containerFormat = ASiCFormat::Simple;
-            }
+            stringstream iss;
+            z.extract("mimetype", iss);
+            if(readMimetype(iss) == MIMETYPE_ASIC_S)
+                return true;
         }
-        catch(const Exception &)
-        {
-            // Ignore the exception: not ASiC/zip document
-        }
-        
+        if(isTimestampedASiC_S(list))
+            return true;
     }
-    
-    DEBUG("ASiC Format: %d", containerFormat);
-    return containerFormat;
+    catch(const Exception &)
+    {
+        // Ignore the exception: not ASiC/zip document
+    }
+
+    return false;
 }

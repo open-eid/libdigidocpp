@@ -51,7 +51,7 @@ const string ASiC_E::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns
 class ASiC_E::Private
 {
 public:
-    std::vector<DataFile*> metadata;
+    vector<DataFile*> metadata;
 };
 
 /**
@@ -258,13 +258,12 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 THROW("Found multiple references of file '%s' in zip container.", file.full_path().c_str());
 
             manifestFiles.insert(file.full_path());
-            iostream *data = dataStream(file.full_path(), z);
             if(mediaType() == MIMETYPE_ADOC &&
                (file.full_path().compare(0, 9, "META-INF/") == 0 ||
                 file.full_path().compare(0, 9, "metadata/") == 0))
-                d->metadata.push_back(new DataFilePrivate(data, file.full_path(), file.media_type()));
+                d->metadata.push_back(new DataFilePrivate(dataStream(file.full_path(), z), file.full_path(), file.media_type()));
             else
-                addDataFile(data, file.full_path(), file.media_type());
+                addDataFile(dataStream(file.full_path(), z), file.full_path(), file.media_type());
         }
         if(!mimeFound)
             THROW("Manifest is missing mediatype file entry.");
@@ -277,7 +276,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
              * 3) The root element of each "*signatures*.xml" content shall be either:
              */
             if(file.compare(0, 9, "META-INF/") == 0 &&
-               file.find("signatures") != std::string::npos)
+               file.find("signatures") != string::npos)
             {
                 if(count(list.begin(), list.end(), file) > 1)
                     THROW("Multiple signature files with same name found '%s'", file.c_str());

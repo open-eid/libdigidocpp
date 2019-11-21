@@ -183,6 +183,7 @@ extern "C"
 %ignore digidoc::DataFile::saveAs(std::ostream &os) const;
 %ignore digidoc::Container::addAdESSignature(std::istream &signature);
 %ignore digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
+%ignore digidoc::Container::addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType);
 // Other
 %ignore digidoc::Conf::libdigidocConf;
 %ignore digidoc::Conf::certsPath;

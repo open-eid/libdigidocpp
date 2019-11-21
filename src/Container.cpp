@@ -217,10 +217,25 @@ Container::~Container() = default;
  */
 
 /**
- * @fn digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType)
  * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer).
  *
  * Takes ownership std::istream *is object.
+ * @deprecated digidoc::Container::addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType)
+ * @param is input stream from where data is read
+ * @param fileName data file name in the container
+ * @param mediaType MIME type of the data file, for example “text/plain” or “application/msword”
+ * @throws Exception exception is thrown if the data file path is incorrect or a data file
+ * with same file name already exists. Also, no data file can be added if the container
+ * already has one or more signatures.
+ * @note Data files can be removed from container only after all signatures are removed.
+ */
+void Container::addDataFile(istream *is, const string &fileName, const string &mediaType)
+{
+    addDataFile(unique_ptr<istream>(is), fileName, mediaType);
+}
+
+/**
+ * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer).
  *
  * @param is input stream from where data is read
  * @param fileName data file name in the container
@@ -230,6 +245,10 @@ Container::~Container() = default;
  * already has one or more signatures.
  * @note Data files can be removed from container only after all signatures are removed.
  */
+void Container::addDataFile(unique_ptr<istream> /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
+{
+    THROW("Not implemented.");
+}
 
 /**
  * Adds signature to the container.

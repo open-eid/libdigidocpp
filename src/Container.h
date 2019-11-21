@@ -21,6 +21,7 @@
 
 #include "Exports.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -48,7 +49,7 @@ public:
     virtual std::string mediaType() const = 0;
 
     virtual void addDataFile(const std::string &path, const std::string &mediaType) = 0;
-    virtual void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType) = 0;
+    DIGIDOCPP_DEPRECATED virtual void addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType);
     virtual std::vector<DataFile*> dataFiles() const = 0;
     virtual void removeDataFile(unsigned int index) = 0;
 
@@ -58,6 +59,8 @@ public:
     virtual std::vector<Signature*> signatures() const = 0;
     virtual void removeSignature(unsigned int index) = 0;
     virtual Signature* sign(Signer *signer) = 0;
+
+    virtual void addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType);
 
     static Container* create(const std::string &path);
     static Container* open(const std::string &path);

@@ -157,13 +157,13 @@ vector<Signature *> ASiContainer::signatures() const
  * @param z Zip container.
  * @return returns data as a stream.
  */
-iostream* ASiContainer::dataStream(const string &path, const ZipSerialize &z) const
+unique_ptr<iostream> ASiContainer::dataStream(const string &path, const ZipSerialize &z) const
 {
-    iostream *data = nullptr;
+    unique_ptr<iostream> data;
     if(d->properties[path].size > MAX_MEM_FILE)
-        data = new fstream(File::encodeName(File::tempFileName()).c_str(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
+        data.reset(new fstream(File::encodeName(File::tempFileName()).c_str(), fstream::in|fstream::out|fstream::binary|fstream::trunc));
     else
-        data = new stringstream;
+        data.reset(new stringstream);
     z.extract(path, *data);
     return data;
 }
@@ -191,10 +191,10 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
 
     ZipSerialize::Properties prop = { appInfo(), File::modifiedTime(path), File::fileSize(path) };
     zproperty(File::fileName(path), prop);
-    istream *is;
+    unique_ptr<istream> is;
     if(prop.size > MAX_MEM_FILE)
     {
-        is = new ifstream(File::encodeName(path).c_str(), ifstream::binary);
+        is.reset(new ifstream(File::encodeName(path).c_str(), ifstream::binary));
     }
     else
     {
@@ -203,18 +203,18 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
         if(file)
             *data << file.rdbuf();
         file.close();
-        is = data;
+        is.reset(data);
     }
-    addDataFile(is, File::fileName(path), mediaType);
+    addDataFile(move(is), File::fileName(path), mediaType);
 }
 
-void ASiContainer::addDataFile(istream *is, const string &fileName, const string &mediaType)
+void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
 {
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
     if(any_of(d->documents.cbegin(), d->documents.cend(), [&](DataFile *file) { return fileName == file->fileName(); }))
         THROW("Document with same file name '%s' already exists.", fileName.c_str());
-    d->documents.push_back(new DataFilePrivate(is, fileName, mediaType));
+    d->documents.push_back(new DataFilePrivate(move(is), fileName, mediaType));
 }
 
 /**
