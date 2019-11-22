@@ -62,7 +62,7 @@ using namespace std;
  * Returns data file name
  */
 /**
- * @fn digidoc::DataFile::fileName
+ * @fn digidoc::DataFile::fileSize
  * Returns data file size
  */
 /**

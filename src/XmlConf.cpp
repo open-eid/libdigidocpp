@@ -491,6 +491,8 @@ SET1CONST(string, setTSUrl, TSUrl)
 SET1(bool, setPKCS12Disable, PKCS12Disable)
 
 /**
+ * @fn void digidoc::XmlConf::setProxyTunnelSSL(bool enable)
+ *
  * Enables SSL proxy connections
  * @throws Exception exception is thrown if saving into a user configuration file fails.
  */
