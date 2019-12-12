@@ -118,11 +118,11 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
         const UnsignedSignaturePropertiesType::RevocationValuesSequence &revSeq =
             unsignedSignatureProperties().revocationValues();
         if(revSeq.empty())
-            THROW_MAIN(exception, "RevocationValues object is missing");
+            THROW_MAIN(exception, "RevocationValues object is missing")
         if(revSeq.size() > 1)
-            THROW_MAIN(exception, "More than one RevocationValues object is not supported");
+            THROW_MAIN(exception, "More than one RevocationValues object is not supported")
         if(!revSeq.front().oCSPValues().present())
-            THROW_MAIN(exception, "OCSPValues is missing");
+            THROW_MAIN(exception, "OCSPValues is missing")
 
         /*
          * Find OCSP response that matches with signingCertificate.
@@ -171,8 +171,19 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
                 struct tm producedAt = util::date::ASN1TimeToTM(ocsp.producedAt());
                 time_t producedAt_t = util::date::mkgmtime(producedAt);
                 time_t timeT = util::date::string2time_t(TimeStampTime());
-                if((producedAt_t - timeT > 15 * 60 || timeT - producedAt_t > 15 * 60) &&
-                    !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
+                if(timeT > producedAt_t)
+                {
+                    /*
+                     * ETSI TS 103 171 V2.1.1 (2012-03)
+                     * 8 Requirements for LT-Level Conformance
+                     * This clause defines those requirements that XAdES signatures conformant to T-Level, have to fulfil to also be
+                     * conformant to LT-Level.
+                     */
+                    Exception e(EXCEPTION_PARAMS("TimeStamp time is greater than OCSP producedAt TS: %s OCSP: %s", TimeStampTime().c_str(), ocsp.producedAt().c_str()));
+                    e.setCode(Exception::OCSPBeforeTimeStamp);
+                    exception.addCause(e);
+                }
+                if((producedAt_t - timeT > 15 * 60) && !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
                 {
                     Exception e(EXCEPTION_PARAMS("TimeStamp time and OCSP producedAt are over 15m off TS: %s OCSP: %s", TimeStampTime().c_str(), ocsp.producedAt().c_str()));
                     e.setCode(Exception::ProducedATLateWarning);
@@ -286,10 +297,10 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
     try
     {
         if(unsignedSignatureProperties().revocationValues().empty())
-            return OCSP(nullptr, 0);
+            return OCSP();
         const RevocationValuesType &t = unsignedSignatureProperties().revocationValues().front();
         if(!t.oCSPValues().present() || t.oCSPValues()->encapsulatedOCSPValue().empty())
-            return OCSP(nullptr, 0);
+            return OCSP();
         // Return OCSP response that matches with signingCertificate
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
         {
@@ -307,5 +318,5 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
     }
     catch(const Exception &)
     {}
-    return OCSP(nullptr, 0);
+    return OCSP();
 }

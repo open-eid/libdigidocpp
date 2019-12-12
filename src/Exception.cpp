@@ -49,6 +49,8 @@ std::vector<Exception::ExceptionCode> Exception::ignores = std::vector<Exception
  * Certificate status is revoked in OCSP response
  * @var digidoc::Exception::CertificateUnknown
  * Certificate status is unknown in OCSP response
+ * @var digidoc::Exception::OCSPBeforeTimeStamp
+ * OCSP producedAt time is before TimeStamp time
  * @var digidoc::Exception::OCSPResponderMissing
  * OCSP Responder is missing
  * @var digidoc::Exception::OCSPCertMissing
