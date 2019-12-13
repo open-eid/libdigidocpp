@@ -35,7 +35,7 @@
 using namespace digidoc;
 using namespace std;
 
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) || DOXYGEN
 
 extern "C" {
 

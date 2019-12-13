@@ -9,15 +9,6 @@ Additional documentation about the library can be found from GitHub wiki section
 
 /*! \page manual Libdigidocpp Programmer's Guide
 
-<b>Version history</b>
-<table>
-<tr><th>Date</th><th>Library's Version</th><th>Changes</th>
-<tr><td>17.02.2015</td><td>3.10</td><td>Updated according to v3.10 of the library</td></tr>
-<tr><td>11.06.2015</td><td>3.11</td><td>Updated according to v3.11 of the library</td></tr>
-<tr><td>22.02.2016</td><td>3.12</td><td>Updated according to v3.12 of the library</td></tr>
-</tr>
-</table>
-
 \section introduction Introduction
 Libdigidocpp is the C++ library for creating applications handling digital signatures, their creation and verification. The digitally signed files are created in "DigiDoc format" (with .ddoc, .bdoc or .asice file extensions), compliant to XML Advanced Electronic Signatures (XAdES), technical standard published by European Telecommunication Standards Institute (ETSI).
 
@@ -50,18 +41,18 @@ The following chapters provides an overview of BDOC 2.1 digitally signed file fo
 
 
 \subsubsection container BDOC container format
-The ETSI standard TS 102 918 \ref ASiC "ASiC" called Associated Signature Containers (ASiC) defines format of container for encapsulation of signed files and signatures with extra information. The ETSI TS 103 174 \ref ASiC-BP "ASiC Baseline Profile" profiles in further on. The container type used in case of BDOC 2.1 documents is Associated Signature Extended form (ASiC-E).
+The ETSI standard \ref ASiC "TS 102 918" called Associated Signature Containers (ASiC) defines format of container for encapsulation of signed files and signatures with extra information. The ETSI \ref ASiC-BP "TS 103 174" "ASiC Baseline Profile" profiles in further on. The container type used in case of BDOC 2.1 documents is Associated Signature Extended form (ASiC-E).
 
 ASiC-E container is a ZIP file consisting of the following objects:
-- a file named "mimetype", containing only the following value: application/vnd.etsi.asic-e+zip  
+- a file named "mimetype", containing only the following value: application/vnd.etsi.asic-e+zip
 - data files in original format.
 - META-INF subdirectory, consisting of:
 	- manifest.xml – a file containing list of all folders and files in the container. The list does not contain the "mimetype" file and files in META-INF subdirectory.
 	- signatures*.xml – one file for each signature, ‘*’ in the file’s name denotes the sequence number of a signature (counting starts from zero). The signatures*.xml file also incorporates certificates, validity confirmation and meta-data about the signer.
 
-When BDOC 2.1 container is signed then all files in the container are signed, except of the mimetype file and files in META-INF subdirectory. 
+When BDOC 2.1 container is signed then all files in the container are signed, except of the mimetype file and files in META-INF subdirectory.
 
-Original files (which were signed) along with the signature(s), validation confirmation(s) and certificates are encapsulated within the container. As a result, it is possible to verify signature validity without any additional external information – the verifier should trust the issuer of signer’s certificate and the OCSP responder’s certificate. 
+Original files (which were signed) along with the signature(s), validation confirmation(s) and certificates are encapsulated within the container. As a result, it is possible to verify signature validity without any additional external information – the verifier should trust the issuer of signer’s certificate and the OCSP responder’s certificate.
 
 \image html asic.png "BDOC 2.1 container's contents"
 
@@ -70,7 +61,7 @@ Original files (which were signed) along with the signature(s), validation confi
 
 \subsubsection profiles BDOC signature profiles
 
-The format of the BDOC 2.1 digitally signed file is based on ETSI TS 101 903 standard called XML Advanced Electronic Signatures (\ref XAdES "XAdES"). The XAdES standard defines formats for advanced electronic signatures that remain valid over long periods of time. The ETSI standard TS 103 171 \ref XAdES-BP "XAdES Baseline Profile" further profiles the XAdES signature by putting limitations on choices. 
+The format of the BDOC 2.1 digitally signed file is based on ETSI \ref XAdES "TS 101 903" standard called XML Advanced Electronic Signatures ("XAdES"). The XAdES standard defines formats for advanced electronic signatures that remain valid over long periods of time. The ETSI standard \ref XAdES-BP "TS 103 171" "XAdES Baseline Profile" further profiles the XAdES signature by putting limitations on choices.
 
 BDOC 2.1 specification defines two profiles of qualified BDOC signatures: BDOC with time-mark and BDOC with time-stamp. Both of the profiles offer long-term validation possibility by incorporating the necessary validation data in the signature. Both of the profiles are compliant to XAdES LT-Level requirements.
 
@@ -281,7 +272,7 @@ Online Certificate Status Protocol, an Internet protocol used for obtaining the 
 </td></tr><tr><td>OCSP Responder</td><td>
 OCSP Server, maintains a store of CA-published CRLs and an up-to-date list of valid and invalid certificates. After the OCSP responder receives a validation request (typically an HTTP or HTTPS transmission), the OCSP responder either validates the status of the certificate using its own authentication database or calls upon the OCSP responder that originally issued the certificate to validate the request. After formulating a response, the OCSP responder returns the signed response, and the original certificate is either approved or rejected, based on whether or not the OCSP responder validates the certificate.
 </td></tr><tr><td>SK</td><td>
-AS Sertifitseerimiskeskus (Certification Centre Ltd.). Certificate Authority in Estonia
+SK ID Solutions AS. Certificate Authority in Estonia
 </td></tr><tr><td>time-mark</td><td>
 Mechanism used for adding certificate validity and signing time information with the signature. 
 The information is provided with a special OCSP confirmation (also referred to as time-mark) - hash value of the binary value of the signature (along with hash algorithm identifier in case of BDOC 2.1 document format) must be present in the "nonce" field of the OCSP confirmation. In this case, signature creation time is the issuance time of the OCSP confirmation (producedAt value in the confirmation), additional time-stamp service is not required. The respective signature profile is TM profile (supported in case of DIGIDOC-XML 1.3 and BDOC 2.1 document formats).
@@ -325,7 +316,7 @@ The following table gives overview of functional features that are supported wit
   <td>
 - BDOC 2.1 - the main document format to be used, described in \ref BDOC "BDOC2.1:2013".
 - DIGIDOC-XML 1.3 – alternative supported file format, described in \ref DDOC "DigiDoc format". Note that using BDOC 2.1 format is preferred for new documents. 
-\note - DIGIDOC-XML 1.3 support has been added to Libdicidocpp via CDigiDoc library (the C library of DigiDoc system, see \ref CDigiDoc "CDigiDoc Programmer's Guide"). Note that the document format is tested in Libdigidocpp indirectly via DigiDoc3 Client desktop application which uses the library as a base layer. 
+\note - DIGIDOC-XML 1.3 support has been added to Libdicidocpp via CDigiDoc library (the C library of DigiDoc system, see \ref CDigiDoc "CDigiDoc Programmer's Guide"). Note that the document format is tested in Libdigidocpp indirectly via DigiDoc desktop application which uses the library as a base layer. 
 
 \note - Older DigiDoc file formats SK-XML, DIGIDOC-XML 1.1 and DIGIDOC-XML 1.2 are supported only for backward compatibility in case of digital signature verification and data file extraction operations (creating new files and modifying existing files is not supported).
 
@@ -355,7 +346,7 @@ In Libdigidocpp, validation of BDOC 2.1 time-stamp signatures with archive time-
 <td>Cryptographic token type</td>
 <td>
 - Smart card, e.g. Estonian ID card. Supported signature creation modules are PKCS#11 and Windows CryptoAPI.  
-\note Usage of USB cryptostick (Aladdin eToken with Digital Stamp  certificate (http://sk.ee/en/services/Digital-stamp)) has been tested indirectly with Libdigidocpp - testing has been carried out via DigiDoc3 Client desktop application which uses Libdigidocpp as a base layer. 
+\note Usage of USB cryptostick (Aladdin eToken with Digital Stamp  certificate (http://sk.ee/en/services/Digital-stamp)) has been tested indirectly with Libdigidocpp - testing has been carried out via DigiDoc desktop application which uses Libdigidocpp as a base layer. 
 </td>
 </tr>
 <tr><td>Public-key algorithm</td>
@@ -639,7 +630,7 @@ Information of trusted CA certificates (trust anchors) is used to validate the t
 
 Libdigidocpp library uses Trust Service Status List (TSL) as a source of trust anchor information (see also \ref TSL-overview and \ref TSL "TSL standard" for more information). A TSL list is a signed XML file that contains data of trusted CA certificates, OCSP responder service and time-stamping service certificates. Note that since v3.10, only TSL lists' based trust anchors are supported by the library.
 
-By default, the trusted certificates' information is obtained from European Commission's official TSL list (https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml). The default TSL behaviour can be changed by altering the configuration parameters listed below. 
+By default, the trusted certificates' information is obtained from European Commission's official TSL list (https://ec.europa.eu/tools/lotl/eu-lotl.xml). The default TSL behaviour can be changed by altering the configuration parameters listed below. 
 
 \note - The TSL URL and TSL signing certificate values are not configurable via the digidocpp.conf configuration file. The default values are fixed in source code and can be accessed via methods digidoc::Conf::TSLCerts() and digidoc::Conf::TSLUrl(). The library's user has to create a subclass and override the methods in order to define other values. See also \ref initialization. 
 \note - When using digidoc-tool utility program then it is possible to specify necessary TSL parameters on the command line. See also \ref utility.
@@ -801,7 +792,7 @@ Note that Libdigidocpp uses internal memory buffers in case of all the operation
 Libdigidocpp's initialization method conducts the following operations: 
 1. initializes dependent libraries (see also \ref libraries)
 2. loads configuration settings from default configuration files 
-3. initializes trust anchors: initializes TSL lists (if TSL support is enabled in the library and USE_TSL build parameter has been set during build time). See \ref TSL-init for more information about the TSL initialization process.
+3. initializes trust anchors: initializes TSL lists. See \ref TSL-init for more information about the TSL initialization process.
 
 
 If you would like to use non-default configuration settings then call out the configuration file's initialization before initializing the library, for example:
@@ -828,6 +819,7 @@ Create a new container object and specify the DigiDoc document's type, for examp
     digidoc::Container *doc = digidoc::Container::create("<output-file's-path>"); // create new container
 \endcode
 Container class is used to incorporate the data of a DigiDoc document.
+This method hands ownership of result to the caller.
 
 The output file name's extension is used by the library to determine the container format that is used. E.g., in case of *.ddoc extension, the container is created in DIGIDOC-XML 1.3 format, in case of *.asice or *.bdoc extensions, BDOC 2.1 container format is used. 
 
@@ -837,6 +829,7 @@ The output file name's extension is used by the library to determine the contain
 \subsubsection adddatafile Adding data files
 Data files can be added to a DigiDoc container in two alternative ways:
 1. adding the data from an input stream (i.e. the data file contents can be read from internal memory buffer):
+This method takes ownership of stream (is) object;
 \code{.cpp}
     void digidoc::Container::addDataFile(std::istream *is, // input stream
     const std::string &fileName, // file name that is written to the container
@@ -873,7 +866,7 @@ It is possible to add a signature to a container only if it contains at least on
 
 To start adding signatures, firstly declare pointer to the Signature object to be created:
 \code{.cpp}
-    digidoc::Signature *signature = 0;
+    digidoc::Signature *signature = nullptr;
 \endcode
 
 Signing can be done by using PKCS#11 module for accessing the signature token. PKCS#11 module is the default module for singing with smart card (e.g. Estonian ID card or any other smart card provided that you have the external native language PKCS#11 driver for it). See also \ref pkcs11-settings.
@@ -881,7 +874,7 @@ Signing can be done by using PKCS#11 module for accessing the signature token. P
     digidoc::PKCS11Signer *signer = new digidoc::PKCS11Signer("<PKCS11-driver-path>");
     // optionally specify PKCS#11 driver's location. If left  unspecified then location is
     // looked up from configuration file's parameter "pkcs11.driver.path".
-	std::string pin = "<pin-code>"; //PIN2 in case of Estonian ID cards
+    std::string pin = "<pin-code>"; //PIN2 in case of Estonian ID cards
     signer->setPin(pin); 
 \endcode
 If you would like to add PIN insertion dialog window for the signer to enter the PIN code then you can write a new class which extends the PKCS11Signer class, overwrite the std::string pin(const X509Cert &cert) method and write your own PIN dialog implementation code there.
@@ -919,10 +912,10 @@ In case of BDOC format, you can also use a different digest algorithm for calcul
 
 \paragraph API-sign-create Create the signature
 The signing method also adds validation data from external services (OCSP and/or time-stamping servers). Note that the OCSP responder and time-stamping server settings (in case of TS profile) should be configured before calling out the following method (see also \ref initialization and \ref parameters). By default, the RIA's time-stamping service http://dd-at.ria.ee/tsa is used. 
-
+Container holds the Signature object reference and there is no need cleanup memory.
 
 \code{.cpp}
-signature = doc.sign(signer);
+Signature *signature = doc->sign(signer);
 \endcode
 
 
@@ -937,10 +930,20 @@ The validation method above validates the signed data files', signer certificate
 \note See also \ref validate about more information for validating existing signatures and signature containers.
 
 
+
+\paragraph savesig Save container changes 
+After the signature has been added and validated, container changes should be saved (\ref containeropen):
+\code{.cpp}
+    doc->save();
+\endcode
+
+
+
 \subsection websigning Creating and signing a DigiDoc document (external signing, e.g. in browser)
 External signing (two-step signing) can be used in case of signing in web applications, where the signature value is calculated externally, via a browser plug-in or extension. 
 
 In order to conduct web signing with Libdigidocpp library, do as follows:
+Container holds the Signature object reference and there is no need cleanup memory.
 
 1. In Container class, prepare signature XML structure:
 \code{.cpp}
@@ -950,11 +953,14 @@ virtual Signature* digidoc::Container::prepareSignature(Signer *signer);
 2. In Signature class, get the hash to be signed in browser:
 \code{.cpp}
 std::vector<unsigned char> digidoc::Signature::dataToSign() const;
+std::string digidoc::Signature::id() const;
 \endcode
+ID can be used when container is saved with digidoc::Container::save and later reloaded to locate signature object.
 
 3. Sign the hash in browser (e.g. use the <a href="https://github.com/open-eid/hwcrypto.js">hwcrypto.js library </a>)
 
-4. Add RSA signature value to the signature XML structure:
+4. Add RSA or ECDSA signature value to the signature XML structure:
+When container was stored on disk before reload container with digidoc::Container::open and use digidoc::Container::signatures to enumerate signatures to locate correct object with previosly selected ID.
 \code{.cpp}
 void digidoc::Signature::setSignatureValue(const std::vector<unsigned char> &signatureValue);
 \endcode
@@ -1021,7 +1027,7 @@ The check for old file formats is implemented in method:
 \code{.cpp}
  checkOldFormatVer(SignedDoc* pSigDoc);
  \endcode
-2.	It is possible to check the source code of DigiDoc3 Client desktop application, accessible from https://github.com/open-eid/qdigidoc.
+2.	It is possible to check the source code of DigiDoc desktop application, accessible from https://github.com/open-eid/DigiDoc4-Client.
 
 
 \subsubsection validation-status Determining the validation status
@@ -1052,7 +1058,7 @@ has not been added to trusted list). Notes:
 - If the CA will later be added to the trusted
 list/trust store then the validation status can change to any of the other statuses described in the current table.
 
-Suggested warning message (also displayed in DigiDoc3 Client): "Signature status is displayed as unknown if you don't have all validity confirmation service certificates and/or certificate authority certificates installed into your computer"<br/>
+Suggested warning message (also displayed in DigiDoc desktop application): "Signature status is displayed as unknown if you don't have all validity confirmation service certificates and/or certificate authority certificates installed into your computer"<br/>
 
 More info: http://www.id.ee/index.php?id=35941<br/>
 
@@ -1103,7 +1109,7 @@ In special cases, validation errors can be regarded as minor technical errors an
 status has to be made by the library's user according to the requirements of the specific information system.
 
 It is recommended to use the validation status VALID WITH WARNINGS in case of the error situations that are included in the table below - these error situations are regarded as VALID WITH WARNINGS in DigiDoc applications and software libraries, including:
-- DigiDoc3 Client desktop application,
+- DigiDoc desktop application,
 - JDigiDoc, Libdigidocpp and CDigiDoc software libraries' utility programs.
 
 <B>Table 1. Validation error codes recommended to be handled as VALID WITH WARNINGS </b>
@@ -1122,7 +1128,7 @@ SignatureDigestWeak</td>
   <td>BDOC 2.1</td>
   <td>Weaker digest method (SHA-1) has been used than recommended when calculating either &lt;Reference&gt; or &lt;Signature&gt; element's digest value.
 
-  Suggested warning message (also displayed in DigiDoc3 Client):
+  Suggested warning message (also displayed in DigiDoc desktop application):
 "The current BDOC container uses weaker encryption method than officially accepted in Estonia."
 
 - Sample file: weak-sha1-warning-TS.asice (time-stamp profile)
@@ -1148,7 +1154,7 @@ DDOC 1.2<br>
 DDOC 1.3</td>
   <td>&lt;DataFile&gt; element's xmlns attribute is missing.
 
-  Suggested warning message (also displayed in DigiDoc3 Client): "This DigiDoc documents has not been created according to specification, but the digital signatures is legally valid. You are not allowed to add or remove signatures to this container."
+  Suggested warning message (also displayed in DigiDoc desktop application): "This DigiDoc documents has not been created according to specification, but the digital signatures is legally valid. You are not allowed to add or remove signatures to this container."
 
   More info: http://www.id.ee/?id=36213 
   
@@ -1162,7 +1168,7 @@ DDOC 1.2<br>
 DDOC 1.3</td>
   <td>&lt;IssuerSerial&gt;&lt;X509IssuerName&gt; and/or &lt;IssuerSerial&gt;&lt;X509SerialNumber&gt; element's xmlns attribute is missing.
 
-  Suggested warning message (also displayed in DigiDoc3 Client): "This DigiDoc documents
+  Suggested warning message (also displayed in DigiDoc desktop application): "This DigiDoc documents
 has not been created according to specification, but the digital signatures is legally valid. You are not allowed to add or remove signatures to this container."
 
 More info: http://www.id.ee/?id=36213 
@@ -1177,7 +1183,7 @@ DDOC 1.1<br>
 DDOC 1.2</td>
   <td>DigiDoc file's version is older than currently supported. Note that the error situation affects only the container and not the signatures, therefore, in DigiDoc libraries, it is returned and displayed only at container level.
 
-  Suggested warning message (also displayed in DigiDoc3 Client): "The current file is a DigiDoc container that is not supported officially any longer. You are not allowed to
+  Suggested warning message (also displayed in DigiDoc desktop application): "The current file is a DigiDoc container that is not supported officially any longer. You are not allowed to
 add or remove signatures to this container" 
 
 More info:
@@ -1715,7 +1721,7 @@ In case of <b>BDOC 2.1 documents</b>, Libdigidocpp library uses Trust Service st
 \warning TSL lists are used only in case of BDOC 2.1 document format. For DIGIDOC-XML 1.3 (DDOC) documents, the \ref CDigiDoc "CDigiDoc library's" trusted CA certificates mechanism is used. 
 
 Libdigidocpp library uses the <b>European Commission’s TSL list </b> as the basis of retrieving data of trusted certificates. The European Commission's TSL list is also referred to as List of Trusted Lists (LOTL), meaning that it is central list that contains references to other TSL lists, in this case the national TSL lists of the European Union's member states. 
-\note The European Commission's TSL that contains URL's and certificates of the national TSL lists can be downloaded here: https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml
+\note The European Commission's TSL that contains URL's and certificates of the national TSL lists can be downloaded here: https://ec.europa.eu/tools/lotl/eu-lotl.xml
 
 Each of the national TSL list contains data (including the certificates) of the trust service providers that are approved in this particular country. Libdigidocpp supports <b>all national TSL lists that are referred to in the LOTL (more than 30 countries). </b> 
 
@@ -1730,7 +1736,7 @@ Note that TSL lists are supported since v3.9 of the library. Since v3.10 of the 
 TSL lists' initialization process is done during each initialization of the library. By default, the TSL itself and its freshness is checked on-line:
 1. It is checked if LOTL (the master TSL list, tl-mp.xml) is present at the tsl.cache location 
 
-2. If there is no such list present in the cache directory and the online updating mechanism is enabled (see \ref CA-settings, "tsl.autoupdate") then the TSL list is downloaded from the list's URL (https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl-mp.xml) and saved to tsl.cache directory
+2. If there is no such list present in the cache directory and the online updating mechanism is enabled (see \ref CA-settings, "tsl.autoupdate") then the TSL list is downloaded from the list's URL (https://ec.europa.eu/tools/lotl/eu-lotl.xml) and saved to tsl.cache directory
 \note tsl.autoupdate can be disabled but then the TSL list(s) must be manually saved to the tsl.cache location.
 
 \note the TSL lists are not distributed along with the library's installation package, meaning that during the first initialization of the library, the TSL lists need to be downloaded on-line or must be manually copied to the tsl.cache location.
@@ -1757,7 +1763,7 @@ TSL lists' initialization process is done during each initialization of the libr
 Libdigidocpp library supports the following identity tokens:
 - Estonian national eID card and Digi-ID
 
-The library is also tested with the following tokens (indirectly via the DigiDoc3 Client desktop application that uses Libdigidocpp as a base component):
+The library is also tested with the following tokens (indirectly via the DigiDoc desktop application that uses Libdigidocpp as a base component):
 - Finnish national eID card
 - Latvian national eID card
 - Lithuanian national eID card
@@ -1809,7 +1815,7 @@ It is expected that either a time-mark or time-stamp and OCSP confirmation have 
 	-	the ASN.1 block value produced in the previous step is included in the OCSP request’s "nonce" field and must be present in the respective field of the OCSP response.
 5.	In case of signing with ECC keys (by using ECDSA algorithm), concatenation method is used for creating signature value.
 6.	In case of BDOC 2.1 documents, SHA-256 hash function is used by default when calculating data file digests and the digest that is signed. In case of Estonian ID cards with certificates issued before 2011, the SHA-224 digest type will be automatically selected and used for calculating signature value’s digest (the final digest that is signed), other options are not supported here. Note that other digest in the signature (e.g. data file digests, signer certificate’s digest) are still calculated with SHA-256 (the default digest type). 
-7.	When a hash function that is weaker than SHA-256 (or SHA-224 in the special case with pre-2011 ID-cards) has been used then a warning message about weak digest method is produced to the user. It is recommended to regard the error as a validation warning (identically to DigiDoc3. Client application and digidoc-tool.cpp utility program). 
+7.	When a hash function that is weaker than SHA-256 (or SHA-224 in the special case with pre-2011 ID-cards) has been used then a warning message about weak digest method is produced to the user. It is recommended to regard the error as a validation warning (identically to DigiDoc desktop application and digidoc-tool.cpp utility program). 
 8.	During signature creation, it is checked that there is only one &lt;ClaimedRole&gt; element in the signature, which contains the signer’s role and optionally the signer’s resolution. If the &lt;ClaimedRole&gt; element contains both role and resolution then they must be separated with a slash mark, e.g. "role / resolution". Note that when setting the resolution value then role must also be specified. 
 9.	The signature policy document’s hash value in &lt;SigPolicyHash&gt; element is checked during validation process (even though it is not mandatory according to BDOC 2.1 specification \ref BDOC "BDOC2.1:2013", chap. 5.2). The hash value must correspond to the hash value of the document that is located at https://www.sk.ee/repository/bdoc-spec20.pdf.
 10.	&lt;Transforms&gt; element is allowed in the signature since v3.10 of the library for interoperability purposes. The transformation algorithms are not applied during signature validation.
@@ -1825,8 +1831,8 @@ It is expected that either a time-mark or time-stamp and OCSP confirmation have 
 \subsection cert-notes Certificate related notes
 1.	Valid signatures (qualified electronic signatures) can be created with a certificate that has "Non-repudiation" value (also referred to as "Content Commitment") in its "Key usage" field. The requirement is based on the following sources:
 	-	\ref nat-cert "ETSI TS 102 280 (V1.1.1)": "X.509 V3 Certificate Profile for Certificates Issued to Natural Persons"; chap. 5.4.3;
-	-	Profile of certificates issued to private persons by AS Sertifitseerimiskeskus: "Certificates on identity card of Republic of Estonia", version 3.3; appendix A.3.3 (see \ref sknatcert "ESTEID profile");
-	-	Profile of certificates issued to legal entities by AS Sertifitseerimiskeskus: "Profile of institution certificates and Certificate Revocation Lists", version 1.3; chap. 3.2.2 (see \ref skinstcert "Institution certificate profile").
+	-	Profile of certificates issued to private persons by SK ID Solutions AS: "Certificates on identity card of Republic of Estonia", version 3.3; appendix A.3.3 (see \ref sknatcert "ESTEID profile");
+	-	Profile of certificates issued to legal entities by SK ID Solutions AS: "Profile of institution certificates and Certificate Revocation Lists", version 1.3; chap. 3.2.2 (see \ref skinstcert "Institution certificate profile").
 2.	Signature can be created with a certificate that doesn’t have "Non-repudiation" value in its "Key-Usage" field when specific parameters have been set but validation of such signature will produce a respective error message and the signature is not considered as a qualified electronic signature.
 3.	During signature validation, it is checked that the validity periods of the signer’s certificate and all the certificates in its CA chain include the signature creation time (value of the producedAt field in OCSP response).
 	

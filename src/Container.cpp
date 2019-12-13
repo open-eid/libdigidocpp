@@ -191,7 +191,9 @@ Container::~Container() = default;
 
 /**
  * @fn digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType)
- * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer)
+ * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer).
+ *
+ * Takes ownership std::istream *is object.
  *
  * @param is input stream from where data is read
  * @param fileName data file name in the container
@@ -224,6 +226,8 @@ void Container::addAdESSignature(const std::vector<unsigned char> &signature)
 
 /**
  * Create a new container object and specify the DigiDoc container type
+ *
+ * This method gives ownership of object to caller
  */
 Container* Container::create(const std::string &path)
 {
@@ -238,6 +242,8 @@ Container* Container::create(const std::string &path)
 /**
  * @fn digidoc::Container::dataFiles
  * List of all the data files in the container
+ *
+ * Container holds ownership of data files objects
  */
 
 /**
@@ -259,6 +265,8 @@ unsigned int Container::newSignatureId() const
 /**
  * Opens container from a file
  *
+ * This method gives ownership of object to caller
+ *
  * @param path
  * @throws Exception
  */
@@ -271,6 +279,21 @@ Container* Container::open(const string &path)
     }
     return ASiC_E::openInternal(path);
 }
+
+/**
+ * @fn digidoc::Container::prepareSignature(Signer *signer)
+ *
+ * Prepares Signature object that can later signed.
+ *
+ * Container holds ownership of Signature object
+ *
+ * @see digidoc::Signature::dataToSign
+ * @see digidoc::Signature::setSignatureValue
+ * @see digidoc::Signature::extendSignatureProfile
+ *
+ * @param signer signer implementation.
+ * @throws Exception exception is thrown if signing the container failed.
+ */
 
 /**
  * @fn digidoc::Container::removeDataFile
@@ -302,12 +325,25 @@ Container* Container::open(const string &path)
 
 /**
  * @fn digidoc::Container::sign(Signer *signer)
+ *
  * Signs all data files in container.
+ *
+ * This method does not take ownership of signer object.
+ * Container holds ownership of Signature object.
  *
  * @param signer signer implementation.
  * @throws Exception exception is thrown if signing the container failed.
  */
 
+/**
+ * Adds container implementation
+ *
+ * It must contain static members:
+ * * static Container* createInternal(const std::string &path);
+ * * static Container* openInternal(const std::string &path);
+ *
+ * @see Container::create, Container::open
+ */
 template<class T>
 void Container::addContainerImplementation()
 {
@@ -318,4 +354,6 @@ void Container::addContainerImplementation()
 /**
  * @fn digidoc::Container::signatures
  * Returns list of all container's signatures.
+ *
+ * Container holds ownership of signature objects
  */

@@ -27,7 +27,7 @@ matrix:
     env: TARGET=androidx86
 sudo: required
 dist: bionic
-osx_image: xcode11.1
+osx_image: xcode11.2
 services:
 - docker
 cache: ccache
@@ -93,14 +93,16 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-    condition: "$TRAVIS_OS_NAME = linux"
+    repo: open-eid/libdigidocpp
+    condition: $TARGET = "ubuntu:18.04"
 - provider: pages
   skip_cleanup: true
   github_token: ${GITHUB_ACCESS_TOKEN}
   local_dir: macOS/doc
   on:
     branch: master
-    condition: "$TARGET = osx"
+    repo: open-eid/libdigidocpp
+    condition: $TARGET = osx
 - provider: s3
   access_key_id: ${AWS_ACCESS_KEY_ID}
   secret_access_key: ${AWS_SECRET_ACCESS_KEY}
@@ -112,4 +114,4 @@ deploy:
   acl: public_read
   on:
     branch: master
-    condition: $TRAVIS_REPO_SLUG = "open-eid/libdigidocpp"
+    repo: open-eid/libdigidocpp
