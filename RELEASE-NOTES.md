@@ -1,3 +1,11 @@
+Libdigidocpp library [3.14.2](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.2) release notes
+--------------------------------------
+- Check that OCSP producedAt is later than TimeStamp (#324)
+- Update documentation (#326)
+- Other code and build cleanups
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.1...v3.14.2)
+
 Libdigidocpp library [3.14.1](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.1) release notes
 --------------------------------------
 - Fix LGTM and Coverity warnings and errors
