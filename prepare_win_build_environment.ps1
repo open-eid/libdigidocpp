@@ -2,7 +2,7 @@
 param(
 	[string]$target = "C:\build",
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
-	[string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
+	[string]$cmake = "cmake.exe",
 	[string]$nmake = "nmake.exe",
 	[string]$generator = "NMake Makefiles",
 	[string]$toolset = "140",
@@ -27,9 +27,9 @@ param(
 )
 
 switch ($toolset) {
-'120' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" }
 '140' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" }
 '141' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+'142' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" }
 }
 
 $libdigidocpp = split-path -parent $MyInvocation.MyCommand.Definition
@@ -38,7 +38,6 @@ if(!(Test-Path -Path $target)){
 }
 Push-Location -Path $target
 
-[Net.ServicePointManager]::SecurityProtocol = 'Tls12'
 $client = new-object System.Net.WebClient
 
 function openssl() {
