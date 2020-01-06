@@ -164,6 +164,8 @@ void digidoc::terminate()
     XMLPlatformUtils::Terminate();
 
     util::File::deleteTempFiles();
+    m_createList.clear();
+    m_openList.clear();
     m_appInfo.clear();
 }
 
