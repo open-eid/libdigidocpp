@@ -3,7 +3,7 @@
 if [ "$#" -eq 0 ]; then
   echo "Usage:"
   echo "  $0 target [maketask]"
-  echo "  target: osx ios iossimulator androidarm androidarm64 androidx86"
+  echo "  target: osx ios iossimulator androidarm androidarm64 androidx86 androidx86_64"
   echo "To control iOS, macOS builds set environment variables:"
   echo " minimum deployment target"
   echo " - MACOSX_DEPLOYMENT_TARGET=10.11"
@@ -17,6 +17,10 @@ fi
 case "$@" in
 *android*)
   case "$@" in
+  *x86_64*)
+    TARGET=androidx86_64
+    ARCH="x86_64"
+    ;;
   *x86*)
     TARGET=androidx86
     ARCH="x86"
@@ -33,6 +37,7 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp.${TARGET}
   CMAKEARGS="
     -DCMAKE_SYSTEM_NAME=Android \
+    -DCMAKE_SYSTEM_VERSION=21 \
     -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN=${TARGET_PATH} \
     -DCMAKE_ANDROID_ARCH_ABI=${ARCH} \
     -DCMAKE_C_FLAGS='-DIOAPI_NO_64' \
@@ -81,7 +86,7 @@ case "$@" in
   export MACOSX_DEPLOYMENT_TARGET
 esac
 
-sudo rm -rf ${TARGET}
+rm -rf ${TARGET}
 mkdir -p ${TARGET}
 cd ${TARGET}
 cmake \
@@ -91,5 +96,6 @@ cmake \
     -DXercesC_ROOT=${TARGET_PATH} \
     ${CMAKEARGS} \
     ..
+make
 sudo make ${@:2}
 cd ..

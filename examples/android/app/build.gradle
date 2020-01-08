@@ -47,11 +47,16 @@ task copyLibs {
         }.files
         into 'src/main/jniLibs/arm64-v8a'
     }
-
     copy {
         from fileTree('/Library/libdigidocpp.androidx86') {
             include 'lib/libdigidoc_java.so', 'i686-linux-android/lib/libc++_shared.so'
         }.files
         into 'src/main/jniLibs/x86'
+    }
+    copy {
+        from fileTree('/Library/libdigidocpp.androidx86_64') {
+            include 'lib/libdigidoc_java.so', 'x86_64-linux-android/lib64/libc++_shared.so'
+        }.files
+        into 'src/main/jniLibs/x86_64'
     }
 }

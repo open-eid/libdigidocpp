@@ -6,7 +6,7 @@ XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.1.1d
 LIBXML2_DIR=libxml2-2.9.9
-ANDROID_NDK=android-ndk-r17c
+ANDROID_NDK=android-ndk-r18b
 FREETYPE_DIR=freetype-2.9.1
 FONTCONFIG_DIR=fontconfig-2.13.1
 PODOFO_DIR=podofo-0.9.4
@@ -15,6 +15,11 @@ ARGS="$@"
 case "$@" in
 *android*)
   case "$@" in
+  *x86_64*)
+    ARCH=x86_64
+    ARCH_ABI="x86_64"
+    CROSS_COMPILE=x86_64-linux-android
+    ;;
   *x86*)
     ARCH=x86
     ARCH_ABI="x86"
@@ -42,7 +47,7 @@ case "$@" in
   export CFLAGS="-Oz"
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   export LIBS="-liconv"
-  CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking"
+  CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking --with-pic"
   ARCHS=${ARCH}
 
   if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
@@ -62,23 +67,23 @@ case "$@" in
     sudo ${CROSS_COMPILE}-ar rcs ${SYSROOT}/usr/lib/libiconv.a ${SYSROOT}/usr/lib/libiconv.o
   fi
   ;;
-*ios*)
-  echo "Building for iOS"
-  TARGET_PATH=/Library/libdigidocpp.iphoneos
-  CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
-  SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
-  : ${ARCHS:="armv7 arm64"}
-  : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
-  export IPHONEOS_DEPLOYMENT_TARGET
-  export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
-  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
-  ;;
 *simulator*)
   echo "Building for iOS Simulator"
   TARGET_PATH=/Library/libdigidocpp.iphonesimulator
   CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
   : ${ARCHS:="x86_64"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
+  export IPHONEOS_DEPLOYMENT_TARGET
+  export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
+  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
+  ;;
+*ios*)
+  echo "Building for iOS"
+  TARGET_PATH=/Library/libdigidocpp.iphoneos
+  CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
+  SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
+  : ${ARCHS:="armv7 arm64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
@@ -131,6 +136,7 @@ function xalan {
     *android*)
       cmake \
         -DCMAKE_SYSTEM_NAME=Android \
+        -DCMAKE_SYSTEM_VERSION=21 \
         -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN=${TARGET_PATH} \
         -DCMAKE_ANDROID_ARCH_ABI=${ARCH_ABI} \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
@@ -245,7 +251,7 @@ function openssl {
         do
             case "${ARCH}" in
             *x86_64*)
-                CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine
+                CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine
                 ;;
             *arm64*)
                 CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine
@@ -408,14 +414,14 @@ case "$@" in
 *)
     echo "Usage:"
     echo "  $0 [target] [task]"
-    echo "  target: osx ios simulator androidarm androidarm64 androidx86"
+    echo "  target: osx ios iossimulator androidarm androidarm64 androidx86 androidx86_64"
     echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
     echo "To control iOS, macOS builds set environment variables:"
     echo " minimum deployment target"
     echo " - MACOSX_DEPLOYMENT_TARGET=10.11"
     echo " - IPHONEOS_DEPLOYMENT_TARGET=9.0"
     echo " archs to build on iOS"
-    echo " - ARCHS=\"armv7 armv7s arm64\" (iOS)"
-    echo " - ARCHS=\"i386 x86_64\" (iPhoneSimulator)"
+    echo " - ARCHS=\"armv7 arm64\" (iOS)"
+    echo " - ARCHS=\"x86_64\" (iPhoneSimulator)"
     ;;
 esac
