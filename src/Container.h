@@ -34,7 +34,9 @@ using initCallBack = void (*)(const Exception *e);
 
 DIGIDOCPP_EXPORT std::string appInfo();
 DIGIDOCPP_EXPORT void initialize(const std::string &appInfo = "libdigidocpp", initCallBack callBack = nullptr);
+DIGIDOCPP_EXPORT void initialize(const std::string &appInfo, const std::string &userAgent, initCallBack callBack = nullptr);
 DIGIDOCPP_EXPORT void terminate();
+DIGIDOCPP_EXPORT std::string userAgent();
 DIGIDOCPP_EXPORT std::string version();
 
 class DIGIDOCPP_EXPORT Container

@@ -55,11 +55,10 @@ using namespace digidoc;
 
 #define VER_STR_HELPER(x)	#x
 #define VER_STR(x)		VER_STR_HELPER(x)
-#define FILE_VER		MAJOR_VER,MINOR_VER,RELEASE_VER,BUILD_VER
-#define FILE_VER_STR	VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER) "\0"
+#define FILE_VER_STR	VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
 
 #define EXCEPTION_PARAMS(...) __FILE__, __LINE__, Log::format(__VA_ARGS__)
-#define EXCEPTION(...) Exception(__FILE__, __LINE__, Log::format(__VA_ARGS__))
+#define EXCEPTION(...) Exception(EXCEPTION_PARAMS(__VA_ARGS__))
 #define EXCEPTION_ADD(_main, ...) _main.addCause(EXCEPTION(__VA_ARGS__))
 #define THROW(...) throw EXCEPTION(__VA_ARGS__)
 #define THROW_CAUSE(_cause, ...) throw Exception(EXCEPTION_PARAMS(__VA_ARGS__), _cause)

@@ -94,4 +94,11 @@ static void initializeLib(const std::string &appName, const std::string &path)
     initialize(appName);
 }
 
+static void initializeLib(const std::string &appName, const std::string &userAgent, const std::string &path)
+{
+    if(!Conf::instance())
+        Conf::init(new DigiDocConf(path));
+    initialize(appName, userAgent);
+}
+
 }

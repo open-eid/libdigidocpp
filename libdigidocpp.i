@@ -33,21 +33,6 @@
 #include "crypto/WinSigner.h"
 #endif
 
-class WebSignerPrivate: public digidoc::Signer
-{
-public:
-    WebSignerPrivate(digidoc::X509Cert cert): _cert(std::move(cert)) {}
-
-private:
-    digidoc::X509Cert cert() const override { return _cert; }
-    std::vector<unsigned char> sign(const std::string &, const std::vector<unsigned char> &) const override
-    {
-        THROW("Not implemented");
-    }
-
-    digidoc::X509Cert _cert;
-};
-
 static std::string parseException(const digidoc::Exception &e) {
     std::string msg = e.msg();
     for(const digidoc::Exception &ex: e.causes())
@@ -185,6 +170,7 @@ extern "C"
 %ignore digidoc::initialize;
 #endif
 %ignore digidoc::initialize(const std::string &appInfo, initCallBack callBack);
+%ignore digidoc::initialize(const std::string &appInfo, const std::string &userAgent, initCallBack callBack);
 // ignore X509Cert and implement later cert as ByteVector
 %ignore digidoc::Conf::TSLCerts;
 %ignore digidoc::ConfV2::verifyServiceCert;
@@ -285,12 +271,22 @@ namespace std {
     }
 }
 %extend digidoc::Container {
-    Signature* prepareWebSignature(const std::vector<unsigned char> &cert, const std::string &profile = std::string(),
+    Signature* prepareWebSignature(const std::vector<unsigned char> &cert, const std::string &profile = {},
                                    const std::vector<std::string> &roles = {},
-                                   const std::string &city = std::string(), const std::string &state = std::string(),
-                                   const std::string &postalCode = std::string(), const std::string &country = std::string())
+                                   const std::string &city = {}, const std::string &state = {},
+                                   const std::string &postalCode = {}, const std::string &country = {})
     {
-        WebSignerPrivate signer(X509Cert(cert, X509Cert::Der));
+        class : public digidoc::Signer
+        {
+        public:
+            digidoc::X509Cert cert() const override { return _cert; }
+            std::vector<unsigned char> sign(const std::string &, const std::vector<unsigned char> &) const override
+            {
+                THROW("Not implemented");
+            }
+            digidoc::X509Cert _cert;
+        } signer;
+        signer._cert = X509Cert(cert, X509Cert::Der);
         signer.setProfile(profile);
         signer.setSignatureProductionPlace(city, state, postalCode, country);
         signer.setSignerRoles(roles);

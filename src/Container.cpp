@@ -60,7 +60,8 @@ using plugin = Container *(*)(const std::string &);
 
 namespace digidoc
 {
-static string m_appInfo = "libdigidocpp";
+static string m_appName = "libdigidocpp";
+static string m_userAgent = "libdigidocpp";
 static vector<plugin> m_createList = {};
 static vector<plugin> m_openList = {};
 }
@@ -79,15 +80,23 @@ static vector<plugin> m_openList = {};
 /**
  * Returns registered application name
  */
-string digidoc::appInfo() { return m_appInfo; }
+string digidoc::appInfo() { return m_appName; }
+
+/**
+ * Returns user-agent info
+ */
+string digidoc::userAgent() { return m_userAgent; }
 
 /**
  * Returns libdigidocpp library version
  */
 string digidoc::version() {
-    string ver = VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER);
+    string ver = FILE_VER_STR;
 #if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
     ver += "_ddoc";
+#endif
+#ifdef PDF_SUPPORT
+    ver += "_siva";
 #endif
     return ver;
 }
@@ -97,12 +106,27 @@ string digidoc::version() {
  * loads configuration settings from default configuration files (see \ref conf) and initializes
  * certificate store using TSL lists
  *
- * @param appInfo Application name for user agent string
+ * @param appInfo Application name for user agent string and container comments
  * @param callBack Callback when background thread TSL loading is completed
  */
 void digidoc::initialize(const string &appInfo, initCallBack callBack)
 {
-    m_appInfo = appInfo;
+    initialize(appInfo, appInfo, callBack);
+}
+
+/**
+ * Libdigidocpp’s initialization method: initializes dependent libraries,
+ * loads configuration settings from default configuration files (see \ref conf) and initializes
+ * certificate store using TSL lists
+ *
+ * @param appInfo Application name for container comments
+ * @param userAgent Application info for user agent string
+ * @param callBack Callback when background thread TSL loading is completed
+ */
+void digidoc::initialize(const string &appInfo, const string &userAgent, initCallBack callBack)
+{
+    m_appName = appInfo;
+    m_userAgent = userAgent;
 
     try {
         XMLPlatformUtils::Initialize();
@@ -166,7 +190,8 @@ void digidoc::terminate()
     util::File::deleteTempFiles();
     m_createList.clear();
     m_openList.clear();
-    m_appInfo.clear();
+    m_appName.clear();
+    m_userAgent.clear();
 }
 
 /**
