@@ -144,6 +144,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     if(OCSP_resp_find_status(basic.get(), certId, nullptr, nullptr, nullptr, &thisUpdate, &nextUpdate) != 1)
         THROW("Failed to find CERT_ID from OCSP response.");
 
+    DEBUG("OCSP producedAt: %s", producedAt().c_str());
     if(!OCSP_check_validity(thisUpdate, nextUpdate, 15*60, 2*60))
     {
         Exception e(EXCEPTION_PARAMS("OCSP response not in valid time slot."));
