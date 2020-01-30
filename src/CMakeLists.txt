@@ -138,14 +138,6 @@ set( CRYPTO_HEADER
     crypto/X509Cert.h
 )
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${XMLSECURITYC_INCLUDE_DIRS}
-    ${XSD_INCLUDE_DIR}
-    ${MINIZIP_INCLUDE_DIR}
-)
-
 add_library(digidocpp_priv STATIC
     ${xsd_SRCS}
     log.cpp
@@ -167,6 +159,13 @@ add_library(digidocpp_priv STATIC
 set_target_properties(digidocpp_priv PROPERTIES
     COMPILE_DEFINITIONS digidocpp_EXPORTS
     POSITION_INDEPENDENT_CODE YES
+)
+
+target_include_directories(digidocpp_priv PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${XSD_INCLUDE_DIR}
+    ${XMLSECURITYC_INCLUDE_DIRS}
 )
 
 target_link_libraries(digidocpp_priv
@@ -228,6 +227,8 @@ set_target_properties(digidocpp PROPERTIES
     MACOSX_RPATH YES
 )
 
+target_include_directories(digidocpp PRIVATE ${MINIZIP_INCLUDE_DIR})
+
 target_link_libraries(digidocpp
     PRIVATE ${CMAKE_DL_LIBS} ${MINIZIP_LIBRARIES}
     PUBLIC digidocpp_priv
@@ -268,7 +269,7 @@ endif()
 
 if(SWIG_FOUND)
     include(${SWIG_USE_FILE})
-    set_property(SOURCE ../libdigidocpp.i PROPERTY CPLUSPLUS ON)
+    set_property(SOURCE ../libdigidocpp.i PROPERTY CPLUSPLUS ON INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR})
     if(JAVA_INCLUDE_PATH)
         set(CMAKE_SWIG_FLAGS -package ee.ria.libdigidocpp)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/java)
@@ -278,7 +279,7 @@ if(SWIG_FOUND)
             swig_add_library(digidoc_java TYPE SHARED LANGUAGE java SOURCES ../libdigidocpp.i)
         endif()
         swig_link_libraries(digidoc_java digidocpp)
-        set_target_properties(digidoc_java PROPERTIES DEBUG_OUTPUT_NAME "digidoc_javad")
+        set_target_properties(digidoc_java PROPERTIES DEBUG_OUTPUT_NAME "digidoc_javad" SWIG_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR})
         target_include_directories(digidoc_java PRIVATE ${JAVA_INCLUDE_PATH})
         if(JAVA_INCLUDE_PATH2)
             target_include_directories(digidoc_java PRIVATE ${JAVA_INCLUDE_PATH2})
@@ -294,7 +295,7 @@ if(SWIG_FOUND)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/csharp)
         swig_add_library(digidoc_csharp TYPE SHARED LANGUAGE csharp SOURCES ../libdigidocpp.i)
         swig_link_libraries(digidoc_csharp digidocpp)
-        set_target_properties(digidoc_csharp PROPERTIES DEBUG_OUTPUT_NAME "digidoc_csharpd")
+        set_target_properties(digidoc_csharp PROPERTIES DEBUG_OUTPUT_NAME "digidoc_csharpd" SWIG_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR})
         install(TARGETS digidoc_csharp DESTINATION ${CMAKE_INSTALL_BINDIR})
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/csharp/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_csharp FILES_MATCHING PATTERN "*.cs")
         install(FILES $<TARGET_PDB_FILE:digidoc_csharp> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
