@@ -3,7 +3,7 @@ param(
   [string]$buildver = "0",
   [string]$msiversion = "3.14.2.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
-  [string]$cmake = "C:\Program Files (x86)\CMake\bin\cmake.exe",
+  [string]$cmake = "cmake.exe",
   [string]$nmake = "nmake.exe",
   [string]$generator = "NMake Makefiles",
   [string]$toolset = "140",
@@ -19,9 +19,9 @@ param(
 )
 
 switch ($toolset) {
-'120' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" }
 '140' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" }
 '141' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+'142' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" }
 }
 
 $libdigidocpp = split-path -parent $MyInvocation.MyCommand.Definition
