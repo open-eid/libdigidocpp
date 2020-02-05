@@ -17,7 +17,7 @@ add_custom_command(OUTPUT LocalMsgIndex.hpp LocalMsgData.hpp COMMENT "Generating
 
 add_library(xalanMsg xalanc/Utils/XalanMsgLib/XalanMsgLib.cpp LocalMsgIndex.hpp)
 set_target_properties(xalanMsg PROPERTIES VERSION 111.0)
-target_link_libraries(xalanMsg XercesC::XercesC)
+target_include_directories(xalanMsg PRIVATE ${XercesC_INCLUDE_DIRS})
 
 add_definitions(-DXALAN_INMEM_MSG_LOADER -DXALAN_USE_XERCES_LOCAL_CODEPAGE_TRANSCODERS)
 file(GLOB SOURCES
@@ -35,7 +35,7 @@ file(GLOB SOURCES
 )
 add_library(xalan-c ${SOURCES})
 set_target_properties(xalan-c PROPERTIES VERSION 111.0)
-target_link_libraries(xalan-c xalanMsg)
+target_link_libraries(xalan-c xalanMsg XercesC::XercesC)
 
 install(DIRECTORY xalanc DESTINATION include FILES_MATCHING PATTERN "*.hpp")
 install(FILES ${CMAKE_BINARY_DIR}/LocalMsgIndex.hpp DESTINATION include/xalanc/PlatformSupport)
