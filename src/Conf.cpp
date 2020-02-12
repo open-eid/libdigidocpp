@@ -20,7 +20,6 @@
 #include "Conf.h"
 
 #include "crypto/Digest.h"
-#include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509Cert.h"
 #include "log.h"
 #include "tslcerts.h"
@@ -63,15 +62,9 @@ void Conf::init(Conf *conf)
 
 /**
  * Returns libdigidoc library configuration file's (digidoc.ini) file location
+ * @deprecated unused
  */
-string Conf::libdigidocConf() const
-{
-#ifdef _WIN32
-    return File::dllPath("digidoc.dll") + "digidoc.ini";
-#else
-    return {};
-#endif
-}
+string Conf::libdigidocConf() const { return {}; }
 
 /**
  * Returns log level.
@@ -115,26 +108,10 @@ string Conf::PKCS11Driver() const { return PKCS11_MODULE; }
 string Conf::ocsp(const string &issuer) const
 {
     static const map<string,string> ocsplist = {
-        //Estonia Live
         {"ESTEID-SK 2011", "http://ocsp.sk.ee"},
         {"ESTEID-SK 2015", "http://ocsp.sk.ee"},
-        {"EID-SK 2011", "http://ocsp.sk.ee"},
-        {"EID-SK 2016", "http://ocsp.sk.ee"},
         {"KLASS3-SK 2010", "http://ocsp.sk.ee"},
         {"KLASS3-SK 2016", "http://ocsp.sk.ee"},
-        //Estonia Test
-        {"TEST of ESTEID-SK 2011", "http://demo.sk.ee/ocsp"},
-        {"TEST of ESTEID-SK 2015", "http://demo.sk.ee/ocsp"},
-        {"TEST of EID-SK 2011", "http://demo.sk.ee/ocsp"},
-        {"TEST of EID-SK 2016", "http://demo.sk.ee/ocsp"},
-        {"TEST of KLASS3-SK 2010", "http://demo.sk.ee/ocsp"},
-        {"TEST of KLASS3-SK 2016", "http://demo.sk.ee/ocsp"},
-        //Finland Test
-        {"VRK CA for Test Purposes - G2", "http://demo.sk.ee/ocsp"},
-        //Latvia Test - disabled, issuer name is identical with live certificates
-        //{"E-ME SI (CA1)", "http://demo.sk.ee/ocsp"},
-        //Lithuania Test
-        {"Nacionalinis sertifikavimo centras (IssuingCA A)", "http://demo.sk.ee/ocsp"},
     };
     auto pos = ocsplist.find(issuer);
     return pos == ocsplist.end() ? string() : pos->second;
