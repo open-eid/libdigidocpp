@@ -15,7 +15,16 @@ include(VersionInfo)
 include(GNUInstallDirs)
 
 set_env( TSL_URL "https://ec.europa.eu/tools/lotl/eu-lotl.xml" CACHE STRING "TSL trust list primary URL" )
-set_env( TSL_CERTS "${CMAKE_SOURCE_DIR}/etc/tl-mp1.crt;${CMAKE_SOURCE_DIR}/etc/tl-mp2.crt;${CMAKE_SOURCE_DIR}/etc/tl-mp3.crt;${CMAKE_SOURCE_DIR}/etc/tl-mp4.crt;${CMAKE_SOURCE_DIR}/etc/tl-mp5.crt;${CMAKE_SOURCE_DIR}/etc/tl-mp6.crt;${CMAKE_SOURCE_DIR}/etc/tl-mp7.crt;${CMAKE_SOURCE_DIR}/etc/tl-mp8.crt" CACHE FILEPATH "TSL trust list signing certificates" )
+set_env( TSL_CERTS
+    "${CMAKE_SOURCE_DIR}/etc/tl-mp1.crt"
+    "${CMAKE_SOURCE_DIR}/etc/tl-mp2.crt"
+    "${CMAKE_SOURCE_DIR}/etc/tl-mp3.crt"
+    "${CMAKE_SOURCE_DIR}/etc/tl-mp4.crt"
+    "${CMAKE_SOURCE_DIR}/etc/tl-mp5.crt"
+    "${CMAKE_SOURCE_DIR}/etc/tl-mp6.crt"
+    "${CMAKE_SOURCE_DIR}/etc/tl-mp7.crt"
+    "${CMAKE_SOURCE_DIR}/etc/tl-mp8.crt"
+    CACHE FILEPATH "TSL trust list signing certificates" )
 set_env( TSA_URL "http://dd-at.ria.ee/tsa" CACHE STRING "Default TSA URL" )
 set_env( SIVA_URL "https://siva.eesti.ee/V3/validate" CACHE STRING "Default SiVa validation service URL" )
 set( LIBDIGIDOC_LINKED YES CACHE BOOL "Link with libdigidoc or load runtime with dlopen" )
