@@ -35,6 +35,8 @@
 using namespace digidoc;
 using namespace std;
 
+#define THROW_NETWORKEXCEPTION(...) { Exception ex(EXCEPTION_PARAMS(__VA_ARGS__), OpenSSLException()); ex.setCode(Exception::NetworkError); throw ex; }
+
 #if OPENSSL_VERSION_NUMBER < 0x10010000L
 static X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
 {
@@ -49,7 +51,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     char *_host = nullptr, *_port = nullptr, *_path = nullptr;
     int usessl = 0;
     if(!OCSP_parse_url(const_cast<char*>(_url.c_str()), &_host, &_port, &_path, &usessl))
-        THROW_OPENSSLEXCEPTION("Incorrect URL provided: '%s'.", _url.c_str());
+        THROW_NETWORKEXCEPTION("Incorrect URL provided: '%s'.", _url.c_str());
 
     string host = _host ? _host : "";
     string port = _port ? _port : "80";
@@ -70,19 +72,19 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     DEBUG("Connecting to Host: %s timeout: %i", hostname.c_str(), _timeout);
     d = BIO_new_connect(const_cast<char*>(hostname.c_str()));
     if(!d)
-        THROW_OPENSSLEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
+        THROW_NETWORKEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str());
 
     BIO_set_nbio(d, _timeout > 0);
     auto start = chrono::high_resolution_clock::now();
     while(BIO_do_connect(d) != 1)
     {
         if(_timeout == 0)
-            THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
+            THROW_NETWORKEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
         if(!BIO_should_retry(d))
-            THROW_OPENSSLEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
+            THROW_NETWORKEXCEPTION("Failed to connect to host: '%s'", hostname.c_str());
         auto end = chrono::high_resolution_clock::now();
         if(chrono::duration_cast<chrono::seconds>(end - start).count() >= _timeout)
-            THROW("Failed to create connection with host timeout: '%s'", hostname.c_str());
+            THROW_NETWORKEXCEPTION("Failed to create connection with host timeout: '%s'", hostname.c_str());
         this_thread::sleep_for(chrono::milliseconds(50));
     }
 
@@ -96,13 +98,13 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
             _timeout = 1; // Don't wait additional data on read, case proxy tunnel
             Result r = exec();
             if(!r.isOK() || r.result.find("established") == string::npos)
-                THROW_OPENSSLEXCEPTION("Failed to create proxy connection with host: '%s'", hostname.c_str());
+                THROW_NETWORKEXCEPTION("Failed to create proxy connection with host: '%s'", hostname.c_str());
             _timeout = timeout; // Restore
         }
 
         ssl.reset(SSL_CTX_new(SSLv23_client_method()), SSL_CTX_free);
         if(!ssl)
-            THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
+            THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
         SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
         SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
         if(cert.handle())
@@ -115,15 +117,15 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         }
         BIO *sbio = BIO_new_ssl(ssl.get(), 1);
         if(!sbio)
-            THROW_OPENSSLEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
+            THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
         d = BIO_push(sbio, d);
         while(BIO_do_handshake(d) != 1)
         {
             if(_timeout == 0)
-                THROW("Failed to create ssl connection with host: '%s'", hostname.c_str());
+                THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
             auto end = chrono::high_resolution_clock::now();
             if(chrono::duration_cast<chrono::seconds>(end - start).count() >= _timeout)
-                THROW("Failed to create ssl connection with host timeout: '%s'", hostname.c_str());
+                THROW_NETWORKEXCEPTION("Failed to create ssl connection with host timeout: '%s'", hostname.c_str());
             this_thread::sleep_for(chrono::milliseconds(50));
         }
     }
@@ -247,7 +249,7 @@ Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
             {
             case Z_OK:
             case Z_STREAM_END: break;
-            default: THROW("Failed to decompress HTTP content");
+            default: THROW_NETWORKEXCEPTION("Failed to decompress HTTP content");
             }
         } while(s.avail_out == 0);
         out.resize(s.total_out);

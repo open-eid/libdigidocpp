@@ -58,8 +58,7 @@ using namespace digidoc;
 #define FILE_VER_STR	VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
 
 #define EXCEPTION_PARAMS(...) __FILE__, __LINE__, Log::format(__VA_ARGS__)
-#define EXCEPTION(...) Exception(EXCEPTION_PARAMS(__VA_ARGS__))
-#define EXCEPTION_ADD(_main, ...) _main.addCause(EXCEPTION(__VA_ARGS__))
-#define THROW(...) throw EXCEPTION(__VA_ARGS__)
+#define EXCEPTION_ADD(_main, ...) _main.addCause(Exception(EXCEPTION_PARAMS(__VA_ARGS__)))
+#define THROW(...) throw Exception(EXCEPTION_PARAMS(__VA_ARGS__))
 #define THROW_CAUSE(_cause, ...) throw Exception(EXCEPTION_PARAMS(__VA_ARGS__), _cause)
 #define THROW_MAIN(_main, ...) { EXCEPTION_ADD(_main, __VA_ARGS__); throw _main; }
