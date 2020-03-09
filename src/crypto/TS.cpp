@@ -122,6 +122,7 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
     d.reset(PKCS7_dup(TS_RESP_get_token(resp.get())), PKCS7_free);
+    DEBUG("TSA time %s", time().c_str());
 }
 
 TS::TS(const unsigned char *data, size_t size)

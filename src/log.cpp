@@ -20,6 +20,7 @@
 #include "log.h"
 
 #include "Conf.h"
+#include "util/DateTime.h"
 #include "util/File.h"
 
 #include <fstream>
@@ -63,7 +64,7 @@ string Log::formatArgList(const char* fmt, va_list args)
     string result(2048, 0);
     int size = vsnprintf(&result[0], result.size() + 1, fmt, args);
     if(size == -1)
-        return "";
+        return {};
     result.resize(size);
     return result;
 }
@@ -81,12 +82,13 @@ void Log::out(LogType type, const char *file, unsigned int line, const char *for
         f.open(File::encodeName(conf->logFile()).c_str(), fstream::out|fstream::app);
         o = &f;
     }
+    *o << date::xsd2string(date::makeDateTime(date::gmtime(time(nullptr)))) << " ";
     switch(type)
     {
-    case ErrorType: *o << "ERROR"; break;
-    case WarnType: *o << "WARN"; break;
-    case InfoType: *o << "INFO"; break;
-    case DebugType: *o << "DEBUG"; break;
+    case ErrorType: *o << "E"; break;
+    case WarnType: *o << "W"; break;
+    case InfoType: *o << "I"; break;
+    case DebugType: *o << "D"; break;
     }
     *o << " [" << File::fileName(file) << ":" << line << "] - ";
 
