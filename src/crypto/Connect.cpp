@@ -133,8 +133,8 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         addHeader("Host", host);
     else
         addHeader("Host", host + ":" + port);
-    addHeader("User-Agent", "LIB libdigidocpp/" +
-        string(VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)) + " APP " + appInfo() + useragent);
+    if(!userAgent().empty())
+        addHeader("User-Agent", "LIB libdigidocpp/" + string(FILE_VER_STR) + " APP " + userAgent() + useragent);
     if(usessl == 0)
         sendProxyAuth();
 }

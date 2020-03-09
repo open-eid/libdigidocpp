@@ -1035,14 +1035,14 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
 int main(int argc, char *argv[])
 {
     printf("Version\n");
-    printf("  digidoc-tool version: %s\n", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER));
+    printf("  digidoc-tool version: %s\n", FILE_VER_STR);
     printf("  libdigidocpp version: %s\n", version().c_str());
 
     ToolConfig *conf = nullptr;
     try {
         Conf::init(conf = new ToolConfig(argc, argv));
         stringstream info;
-        info << "digidoc-tool/" << VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER) << " (";
+        info << "digidoc-tool/" << FILE_VER_STR << " (";
 #ifdef _WIN32
         info << "Windows";
 #elif __APPLE__
@@ -1051,7 +1051,7 @@ int main(int argc, char *argv[])
         info << "Unknown";
 #endif
         info << ")";
-        digidoc::initialize(info.str());
+        digidoc::initialize("digidoc-tool", info.str());
     } catch(const Exception &e) {
         cout << "Failed to initalize library:" << endl;
         cout << "Caught Exception:" << endl << e;
