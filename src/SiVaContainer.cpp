@@ -175,7 +175,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
         for(const jsonxx::Value *error: signature.get<jsonxx::Array>("errors", jsonxx::Array()).values())
         {
             string message = error->get<jsonxx::Object>().get<string>("content");
-            s->_errors.emplace_back(EXCEPTION(message.c_str()));
+            s->_errors.emplace_back(Exception(EXCEPTION_PARAMS(message.c_str())));
         }
         d->signatures.push_back(s);
     }
