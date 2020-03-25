@@ -8,13 +8,13 @@ param(
 	[string]$toolset = "140",
 	[string]$windowssdkversion = $(Get-Item "hklm:\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0").GetValue("ProductVersion"),
 	[string]$msbuildparams = "PlatformToolset=v$toolset;WindowsTargetPlatformVersion=$($windowssdkversion).0",
-	[string]$opensslver = "openssl-1.1.1d",
+	[string]$opensslver = "openssl-1.1.1e",
 	[string]$xercesver = "xerces-c-3.2.2",
 	[string]$xalanver = "xalan_c-1.11",
 	[string]$xmlsecver = "xml-security-c-2.0.2",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
 	[string]$zlibver = "zlib-1.2.11",
-	[string]$freetypever = "freetype-2.9.1",
+	[string]$freetypever = "freetype-2.10.1",
 	[string]$podofover = "podofo-0.9.4",
 	[switch]$openssl = $false,
 	[switch]$xerces = $false,
@@ -77,7 +77,7 @@ function xerces() {
 }
 
 function xalan() {
-	$client.DownloadFile("http://www.eu.apache.org/dist/xalan/xalan-c/sources/$xalanver-src.zip", "$target\$xalanver.zip")
+	$client.DownloadFile("https://archive.apache.org/dist/xalan/xalan-c/sources/$xalanver-src.zip", "$target\$xalanver.zip")
 	& $7zip x "$xalanver.zip" > $null
 	Rename-Item "xalan-c-1.11" xalan
 	Push-Location -Path xalan
