@@ -4,10 +4,10 @@ set -e
 XERCES_DIR=xerces-c-3.2.2
 XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.1.1d
-LIBXML2_DIR=libxml2-2.9.9
+OPENSSL_DIR=openssl-1.1.1e
+LIBXML2_DIR=libxml2-2.9.10
 ANDROID_NDK=android-ndk-r18b
-FREETYPE_DIR=freetype-2.9.1
+FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
 PODOFO_DIR=podofo-0.9.4
 ARGS="$@"
@@ -41,17 +41,17 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp.android${ARCH}
   SYSROOT=${TARGET_PATH}/sysroot
   export ANDROID_NDK_HOME=${TARGET_PATH}
-  export PATH=${TARGET_PATH}/bin:${TARGET_PATH}/${CROSS_COMPILE}/bin:$PATH
+  export PATH=${TARGET_PATH}/bin:$PATH
   export CC=clang
   export CXX=clang++
-  export CFLAGS="-Oz"
+  export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
   export LIBS="-liconv"
   CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking --with-pic"
   ARCHS=${ARCH}
 
   if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
-    curl -O https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
+    curl -O -L https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
   fi
   if [ ! -d ${TARGET_PATH} ]; then
     rm -rf ${ANDROID_NDK}
@@ -105,7 +105,7 @@ esac
 function xerces {
     echo Building ${XERCES_DIR}
     if [ ! -f ${XERCES_DIR}.tar.xz ]; then
-        curl -O https://archive.apache.org/dist/xerces/c/3/sources/${XERCES_DIR}.tar.xz
+        curl -O -L https://archive.apache.org/dist/xerces/c/3/sources/${XERCES_DIR}.tar.xz
     fi
     rm -rf ${XERCES_DIR}
     tar xf ${XERCES_DIR}.tar.xz
@@ -125,7 +125,7 @@ function xerces {
 function xalan {
     echo Building xalan-c-1.11
     if [ ! -f xalan_c-1.11-src.tar.gz ]; then
-        curl -O http://www.eu.apache.org/dist/xalan/xalan-c/sources/xalan_c-1.11-src.tar.gz
+        curl -O -L https://archive.apache.org/dist/xalan/xalan-c/sources/xalan_c-1.11-src.tar.gz
     fi
     rm -rf xalan-c-1.11
     tar xf xalan_c-1.11-src.tar.gz
@@ -176,7 +176,7 @@ function xalan {
 function xml_security {
     echo Building ${XMLSEC_DIR}
     if [ ! -f ${XMLSEC_DIR}.tar.gz ]; then
-        curl -O https://archive.apache.org/dist/santuario/c-library/${XMLSEC_DIR}.tar.gz
+        curl -O -L https://archive.apache.org/dist/santuario/c-library/${XMLSEC_DIR}.tar.gz
     fi
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
@@ -201,7 +201,7 @@ function libxml2 {
       ;;
     esac
     if [ ! -f ${LIBXML2_DIR}.tar.gz ]; then
-        curl -O http://xmlsoft.org/sources/${LIBXML2_DIR}.tar.gz
+        curl -O -L http://xmlsoft.org/sources/${LIBXML2_DIR}.tar.gz
     fi
     rm -rf ${LIBXML2_DIR}
     tar xf ${LIBXML2_DIR}.tar.gz
@@ -218,7 +218,7 @@ function libxml2 {
 function xsd {
     echo Building ${XSD}
     if [ ! -f ${XSD}.tar.bz2 ]; then
-        curl -O https://www.codesynthesis.com/download/xsd/4.0/macosx/i686/${XSD}.tar.bz2
+        curl -O -L https://www.codesynthesis.com/download/xsd/4.0/macosx/i686/${XSD}.tar.bz2
     fi
     rm -rf ${XSD}
     tar xf ${XSD}.tar.bz2
@@ -230,7 +230,7 @@ function xsd {
 function openssl {
     echo Building ${OPENSSL_DIR}
     if [ ! -f ${OPENSSL_DIR}.tar.gz ]; then
-        curl -O https://www.openssl.org/source/${OPENSSL_DIR}.tar.gz
+        curl -O -L https://www.openssl.org/source/${OPENSSL_DIR}.tar.gz
     fi
     rm -rf ${OPENSSL_DIR}
     tar xf ${OPENSSL_DIR}.tar.gz
@@ -300,7 +300,7 @@ function freetype {
 function fontconfig {
     echo Building ${FONTCONFIG_DIR}
     if [ ! -f ${FONTCONFIG_DIR}.tar.bz2 ]; then
-        curl -O https://www.freedesktop.org/software/fontconfig/release//${FONTCONFIG_DIR}.tar.bz2
+        curl -O -L https://www.freedesktop.org/software/fontconfig/release//${FONTCONFIG_DIR}.tar.bz2
     fi
     rm -rf ${FONTCONFIG_DIR}
     tar xf ${FONTCONFIG_DIR}.tar.bz2
