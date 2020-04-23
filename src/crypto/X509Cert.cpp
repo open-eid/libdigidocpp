@@ -27,9 +27,9 @@
 #include <openssl/pem.h>
 #include <openssl/x509v3.h>
 
+#include <cstring>
 #include <functional>
 #include <sstream>
-#include <cstring>
 
 using namespace digidoc;
 using namespace std;
@@ -52,16 +52,16 @@ static const ASN1_TIME *X509_get0_notAfter(const X509 *x)
  *        nameRegistrationAuthorities NameRegistrationAuthorities OPTIONAL
  *        }
  */
-typedef struct SemanticsInformation_st {
+using SemanticsInformation = struct SemanticsInformation_st {
     ASN1_OBJECT *semanticsIdentifier;
     //NameRegistrationAuthorities nameRegistrationAuthorities;
-} SemanticsInformation;
+};
 DECLARE_ASN1_FUNCTIONS(SemanticsInformation)
 
 /**
  * QcType ::= SEQUENCE OF OBJECT IDENTIFIER
  */
-typedef STACK_OF(ASN1_OBJECT) QcType;
+using QcType = STACK_OF(ASN1_OBJECT);
 DECLARE_ASN1_FUNCTIONS(QcType)
 
 /**
@@ -69,7 +69,7 @@ DECLARE_ASN1_FUNCTIONS(QcType)
  *     statementId        OBJECT IDENTIFIER,
  *     statementInfo      ANY DEFINED BY statementId OPTIONAL}
  */
-typedef struct QCStatement_st {
+using QCStatement = struct QCStatement_st {
     ASN1_OBJECT *statementId;
 #ifndef TEMPLATE
     ASN1_TYPE *statementInfo;
@@ -79,13 +79,13 @@ typedef struct QCStatement_st {
         ASN1_TYPE *other;
     } statementInfo;
 #endif
-} QCStatement;
+};
 DECLARE_ASN1_FUNCTIONS(QCStatement)
 
 /**
  * QCStatements ::= SEQUENCE OF QCStatement
  */
-typedef STACK_OF(QCStatement) QCStatements;
+using QCStatements = STACK_OF(QCStatement);
 DECLARE_ASN1_FUNCTIONS(QCStatements)
 
 /**
@@ -232,12 +232,12 @@ X509Cert::X509Cert(const unsigned char *bytes, size_t size, Format format)
     if(format == Der)
     {
         const unsigned char *p = bytes;
-        cert.reset(d2i_X509(0, &p, (unsigned int)size), X509_free);
+        cert.reset(d2i_X509(nullptr, &p, long(size)), X509_free);
     }
     else
     {
         SCOPE(BIO, bio, BIO_new_mem_buf((void*)bytes, int(size)));
-        cert.reset(PEM_read_bio_X509(bio.get(), 0, 0, 0), X509_free);
+        cert.reset(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr), X509_free);
     }
     if(!cert)
         THROW_OPENSSLEXCEPTION("Failed to parse X509 certificate from bytes given");
@@ -258,9 +258,9 @@ X509Cert::X509Cert(const string &path, Format format)
     if(!bio)
         THROW_OPENSSLEXCEPTION("Failed to open X.509 certificate file '%s'", path.c_str());
     if(format == Der)
-        cert.reset(d2i_X509_bio(bio.get(), 0), X509_free);
+        cert.reset(d2i_X509_bio(bio.get(), nullptr), X509_free);
     else
-        cert.reset(PEM_read_bio_X509(bio.get(), 0, 0, 0), X509_free);
+        cert.reset(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr), X509_free);
     if(!cert)
         THROW_OPENSSLEXCEPTION("Failed to parse X509 certificate from bytes given");
 }
@@ -301,7 +301,7 @@ string X509Cert::serial() const
     string serial;
     if(!cert)
         return serial;
-    SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), 0), BN_free);
+    SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), nullptr), BN_free);
     if(!!bn)
     {
         char *str = BN_bn2dec(bn.get());
@@ -336,7 +336,7 @@ vector<X509Cert::KeyUsage> X509Cert::keyUsage() const
     vector<KeyUsage> usage;
     if(!cert)
         return usage;
-    SCOPE(ASN1_BIT_STRING, keyusage, (ASN1_BIT_STRING*)X509_get_ext_d2i(cert.get(), NID_key_usage, 0, 0));
+    SCOPE(ASN1_BIT_STRING, keyusage, X509_get_ext_d2i(cert.get(), NID_key_usage, nullptr, nullptr));
     if(!keyusage)
         return usage;
 
@@ -356,12 +356,11 @@ vector<string> X509Cert::certificatePolicies() const
     vector<string> pol;
     if(!cert)
         return pol;
-    CERTIFICATEPOLICIES *cp = (CERTIFICATEPOLICIES*)X509_get_ext_d2i(cert.get(), NID_certificate_policies, 0, 0);
+    SCOPE(CERTIFICATEPOLICIES, cp, X509_get_ext_d2i(cert.get(), NID_certificate_policies, nullptr, nullptr));
     if(!cp)
         return pol;
-    for(int i = 0; i < sk_POLICYINFO_num(cp); ++i)
-        pol.push_back(toOID(sk_POLICYINFO_value(cp, i)->policyid));
-    sk_POLICYINFO_pop_free(cp, POLICYINFO_free);
+    for(int i = 0; i < sk_POLICYINFO_num(cp.get()); ++i)
+        pol.push_back(toOID(sk_POLICYINFO_value(cp.get(), i)->policyid));
     return pol;
 }
 
@@ -377,18 +376,18 @@ vector<string> X509Cert::qcStatements() const
     if(pos == -1)
         return result;
     X509_EXTENSION *ext = X509_get_ext(cert.get(), pos);
-    QCStatements *qc = (QCStatements*)ASN1_item_unpack(X509_EXTENSION_get_data(ext), ASN1_ITEM_rptr(QCStatements));
+    SCOPE(QCStatements, qc, ASN1_item_unpack(X509_EXTENSION_get_data(ext), ASN1_ITEM_rptr(QCStatements)));
     if(!qc)
         return result;
 
-    for(int i = 0; i < sk_num((const stack_st*)qc); ++i)
+    for(int i = 0; i < sk_num((const stack_st*)qc.get()); ++i)
     {
-        QCStatement *s = (QCStatement*)sk_value((const stack_st*)qc, i);
+        QCStatement *s = (QCStatement*)sk_value((const stack_st*)qc.get(), i);
         string oid = toOID(s->statementId);
         if(oid == QC_SYNTAX2)
         {
 #ifndef TEMPLATE
-            SemanticsInformation *si = (SemanticsInformation*)ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(SemanticsInformation));
+            SCOPE(SemanticsInformation, si, ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(SemanticsInformation)));
             if(!si)
                 continue;
             oid = toOID(si->semanticsIdentifier);
@@ -396,28 +395,24 @@ vector<string> X509Cert::qcStatements() const
             oid = toOID(s->statementInfo.semanticsInformation->semanticsIdentifier);
 #endif
             result.push_back(oid);
-            SemanticsInformation_free(si);
         }
         else if(oid == QC_QCT)
         {
 #ifndef TEMPLATE
-            STACK_OF(ASN1_OBJECT) *qct = (STACK_OF(ASN1_OBJECT)*)ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(QcType));
+            SCOPE(QcType, qct, ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(QcType)));
             if(!qct)
                 continue;
-            for(int j = 0; j < sk_ASN1_OBJECT_num(qct); ++j)
+            for(int j = 0; j < sk_ASN1_OBJECT_num(qct.get()); ++j)
             {
-                oid = toOID(sk_ASN1_OBJECT_value(qct, j));
+                oid = toOID(sk_ASN1_OBJECT_value(qct.get(), j));
 #else
 #endif
                 result.push_back(oid);
             }
-            sk_ASN1_OBJECT_pop_free(qct, ASN1_OBJECT_free);
         }
         else
             result.push_back(oid);
     }
-    typedef void (*cast_free) (void *);
-    sk_pop_free((stack_st*)qc, cast_free(QCStatement_free));
     return result;
 }
 
@@ -505,7 +500,7 @@ bool X509Cert::isCA() const
 {
     if(!cert)
         return false;
-    SCOPE(BASIC_CONSTRAINTS, cons, (BASIC_CONSTRAINTS*)X509_get_ext_d2i(cert.get(), NID_basic_constraints, 0, 0));
+    SCOPE(BASIC_CONSTRAINTS, cons, X509_get_ext_d2i(cert.get(), NID_basic_constraints, nullptr, nullptr));
     return cons && cons->ca > 0;
 }
 
@@ -557,7 +552,9 @@ bool X509Cert::operator ==(const X509Cert &other) const
         return true;
     if(!cert || !other.cert)
         return false;
-    return X509_cmp(cert.get(), other.cert.get()) == 0;
+    // Workaround OpenSSL 1.1.1f issues
+    return vector<unsigned char>(*this) == vector<unsigned char>(other);
+    //return X509_cmp(cert.get(), other.cert.get()) == 0;
 }
 
 /**
@@ -577,6 +574,7 @@ IMPLEMENT_ASN1_FUNCTIONS(SemanticsInformation)
 ASN1_ITEM_TEMPLATE(QcType) =
     ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, statements, ASN1_OBJECT)
 ASN1_ITEM_TEMPLATE_END(QcType)
+IMPLEMENT_ASN1_FUNCTIONS(QcType)
 
 #ifdef TEMPLATE
 ASN1_ADB_TEMPLATE(statementdefault) = ASN1_SIMPLE(QCStatement, statementInfo.other, ASN1_ANY);
@@ -598,3 +596,4 @@ IMPLEMENT_ASN1_FUNCTIONS(QCStatement)
 ASN1_ITEM_TEMPLATE(QCStatements) =
     ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, statements, QCStatement)
 ASN1_ITEM_TEMPLATE_END(QCStatements)
+IMPLEMENT_ASN1_FUNCTIONS(QCStatements)
