@@ -1,10 +1,10 @@
 #!/bin/sh
 set -e
 
-XERCES_DIR=xerces-c-3.2.2
+XERCES_DIR=xerces-c-3.2.3
 XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.1.1e
+OPENSSL_DIR=openssl-1.1.1g
 LIBXML2_DIR=libxml2-2.9.10
 ANDROID_NDK=android-ndk-r18b
 FREETYPE_DIR=freetype-2.10.1
