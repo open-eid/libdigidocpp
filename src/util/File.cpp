@@ -50,8 +50,8 @@ using namespace digidoc::util;
 using namespace std;
 
 #ifdef _WIN32
-#define f_stat      _wstat
-using f_statbuf = struct _stat;
+#define f_stat      _wstat64
+using f_statbuf = struct _stat64;
 #else
 #define f_stat      stat
 using f_statbuf = struct stat;
@@ -151,23 +151,6 @@ string File::confPath()
 #endif
 }
 
-string File::cwd()
-{
-#ifdef _WIN32
-#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    return "./";
-#endif
-    wchar_t *path = _wgetcwd(nullptr, 0);
-#else
-    char *path = getcwd(nullptr, 0);
-#endif
-    string ret;
-    if( path )
-        ret = decodeName( path );
-    free( path );
-    return ret;
-}
-
 string File::env(const string &varname)
 {
 #ifdef _WIN32
@@ -187,7 +170,7 @@ string File::env(const string &varname)
  * @param fileName path
  * @return encoded path
  */
-f_string File::encodeName(const string &fileName)
+File::f_string File::encodeName(const string &fileName)
 {
     if(fileName.empty())
         return f_string();
@@ -247,12 +230,7 @@ string File::decodeName(const f_string &localFileName)
 bool File::fileExists(const string& path)
 {
     f_statbuf fileInfo;
-    f_string _path = encodeName(path);
-    if(f_stat(_path.c_str(), &fileInfo) != 0)
-        return false;
-
-    // XXX: != S_IFREG
-    return !((fileInfo.st_mode & S_IFMT) == S_IFDIR);
+    return f_stat(encodeName(path).c_str(), &fileInfo) == 0 && (fileInfo.st_mode & S_IFMT) == S_IFREG;
 }
 
 #ifdef _WIN32
@@ -289,7 +267,7 @@ string File::fileExtension(const std::string &path)
 {
     size_t pos = path.find_last_of('.');
     if(pos == string::npos)
-        return string();
+        return {};
     string ext = path.substr(pos + 1);
     transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
     return ext;
@@ -542,13 +520,13 @@ vector<string> File::listFiles(const string& directory)
 
 string File::fullPathUrl(const string &path)
 {
-    string result = path;
-    // Under windows replace the path delimiters
 #ifdef _WIN32
+    // Under windows replace the path delimiters
+    string result = path;
     replace(result.begin(), result.end(), '\\', '/');
     return "file:///" + File::toUri(result);
 #else
-    return "file://" + File::toUri(result);
+    return "file://" + File::toUri(path);
 #endif
 }
 
@@ -633,13 +611,13 @@ string File::toUriPath(const string &path)
 string File::fromUriPath(const string &path)
 {
     string ret;
-    char data[] = "0x00";
+    char data[] = "00";
     for(string::const_iterator i = path.begin(); i != path.end(); ++i)
     {
         if(*i == '%' && (distance(i, path.end()) > 2) && isxdigit(*(i+1)) && isxdigit(*(i+2)))
         {
-            data[2] = *(++i);
-            data[3] = *(++i);
+            data[0] = *(++i);
+            data[1] = *(++i);
             ret += static_cast<char>(strtoul(data, nullptr, 16));
         }
         else {
