@@ -28,10 +28,11 @@
 #include "util/File.h"
 #include "util/ZipSerialize.h"
 #include "xml/OpenDocument_manifest.hxx"
-#include "xercesc/util/OutOfMemoryException.hpp"
+#include "xml/SecureDOMParser.h"
+
+#include <xercesc/util/OutOfMemoryException.hpp>
 
 #include <fstream>
-#include <istream>
 #include <set>
 
 using namespace digidoc;
@@ -88,9 +89,9 @@ vector<DataFile*> ASiC_E::metaFiles() const
  * Saves the container using the <code>serializer</code> implementation provided in
  * <code>readFrom()</code> method.
  *
- * @throws IOException is thrown if there was a failure saving BDOC container. For example added
+ * @throws Exception is thrown if there was a failure saving BDOC container. For example added
  *         document does not exist.
- * @throws ContainerException is thrown if ASiC_E class is not correctly initialized.
+ * @throws Exception is thrown if ASiC_E class is not correctly initialized.
  */
 void ASiC_E::save(const string &path)
 {
@@ -138,7 +139,7 @@ Container* ASiC_E::createInternal(const string &path)
  * Adds signature to the container. Default profile is TM
  *
  * @param sigdata signature, which is added to the container.
- * @throws ContainerException throws exception if there are no documents in container.
+ * @throws Exception throws exception if there are no documents in container.
  */
 void ASiC_E::addAdESSignature(istream &sigdata)
 {
@@ -171,7 +172,7 @@ Container* ASiC_E::openInternal(const string &path)
  *
  *
  * @return returns created manifest file path.
- * @throws IOException exception is thrown if manifest file creation failed.
+ * @throws Exception exception is thrown if manifest file creation failed.
  */
 void ASiC_E::createManifest(ostream &os)
 {
@@ -180,17 +181,21 @@ void ASiC_E::createManifest(ostream &os)
     try
     {
         Manifest manifest;
-        manifest.file_entry().push_back(File_entry("/", mediaType()));
+        manifest.file_entry().push_back({"/", mediaType()});
         for(const DataFile *file: dataFiles())
-            manifest.file_entry().push_back(File_entry(file->fileName(), file->mediaType()));
+            manifest.file_entry().push_back({file->fileName(), file->mediaType()});
 
         xml_schema::NamespaceInfomap map;
         map["manifest"].name = ASiC_E::MANIFEST_NAMESPACE;
-        manifest::manifest(os, manifest, map, "", xml_schema::Flags::dont_initialize);
+        manifest::manifest(os, manifest, map, {}, xml_schema::Flags::dont_initialize);
         if(os.fail())
             THROW("Failed to create manifest XML");
     }
-    catch(const xml_schema::Exception& e)
+    catch(const xercesc::DOMException &e)
+    {
+        THROW("Failed to create manifest XML file. Error: %s", X(e.getMessage()).toString().c_str());
+    }
+    catch(const xml_schema::Exception &e)
     {
         THROW("Failed to create manifest XML file. Error: %s", e.what());
     }
@@ -204,8 +209,7 @@ void ASiC_E::createManifest(ostream &os)
  * (see iconv --list for the list of supported encoding values for libiconv).
  *
  * @param path directory on disk of the BDOC container.
- * @throws IOException exception is thrown if the manifest.xml file parsing failed.
- * @throws ContainerException
+ * @throws Exception exception is thrown if the manifest.xml file parsing failed.
  */
 void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 {
@@ -225,7 +229,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
         xml_schema::Properties properties;
         properties.schema_location(ASiC_E::MANIFEST_NAMESPACE,
             File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
-        unique_ptr<Manifest> manifest(manifest::manifest(manifestdata, xml_schema::Flags::dont_initialize|xml_schema::Flags::dont_validate, properties).release());
+        unique_ptr<Manifest> manifest = manifest::manifest(manifestdata, xml_schema::Flags::dont_initialize|xml_schema::Flags::dont_validate, properties);
 
         set<string> manifestFiles;
         bool mimeFound = false;
