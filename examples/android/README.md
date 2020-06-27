@@ -1,8 +1,8 @@
 # Build instructions for Android
 
-### OSX
+### macOS
 
-1. Install dependencies see [README.md](../../README.md#osx)
+1. Install dependencies see [README.md](../../README.md#macOS)
 2. Build example and run
 
         open project with Android Studio, build and run

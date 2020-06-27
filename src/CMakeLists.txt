@@ -1,12 +1,8 @@
 if(NOT MINIZIP_FOUND)
     message(STATUS "MiniZip not found; using bundled copy.")
-    if(WIN32)
-        list( APPEND MINIZIP_SRCS minizip/iowin32.c )
-    endif()
-    add_library( minizip STATIC minizip/zip.c minizip/unzip.c minizip/ioapi.c ${MINIZIP_SRCS} )
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        set_target_properties( minizip PROPERTIES COMPILE_FLAGS "-Wno-unused-parameter -Wno-unused-value" )
-    endif()
+    add_library(minizip STATIC minizip/zip.c minizip/unzip.c minizip/ioapi.c)
+    target_sources(minizip PRIVATE $<$<C_COMPILER_ID:MSVC>:minizip/iowin32.c>)
+    target_compile_options(minizip PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-parameter -Wno-unused-value>)
     set_target_properties(minizip PROPERTIES COMPILE_DEFINITIONS "NOUNCRYPT;NOCRYPT" POSITION_INDEPENDENT_CODE YES)
     target_link_libraries(minizip ZLIB::ZLIB)
     set( MINIZIP_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/minizip )
@@ -385,13 +381,11 @@ if( FRAMEWORK )
             $<TARGET_FILE_DIR:digidocpp>/../..
         COMMAND touch $<TARGET_FILE:digidoc-tool>
     )
-    if(SIGNCERT)
-        set(PKGEXTRA --sign "Developer ID Installer: ${SIGNCERT}")
-    endif()
     add_custom_target( pkgbuild DEPENDS digidoc-tool
         COMMAND make install DESTDIR=install
-        COMMAND pkgbuild --root install ${PKGEXTRA}
+        COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>"
             ${CMAKE_BINARY_DIR}/libdigidocpp_${VERSION}$ENV{VER_SUFFIX}.pkg
+        COMMAND_EXPAND_LISTS
     )
     add_custom_target( zipdebug DEPENDS digidoc-tool
         COMMAND dsymutil -o libdigidocpp.dSYM $<TARGET_FILE:digidocpp>

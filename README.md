@@ -44,7 +44,7 @@
 
         /usr/local/bin/digidoc-tool
 
-### OSX
+### macOS
 
 1. Install dependencies from
 	* [XCode](https://itunes.apple.com/en/app/xcode/id497799835?mt=12)
