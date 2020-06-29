@@ -1,8 +1,8 @@
 # Build instructions for iOS
 
-### OSX
+### macOS
 
-1. Install dependencies see [README.md](../../README.md#osx)
+1. Install dependencies see [README.md](../../README.md#macOS)
 2. Build example
 
         xcodebuild -project libdigidocpp.xcodeproj
