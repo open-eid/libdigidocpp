@@ -2,16 +2,13 @@ language: c++
 matrix:
   include:
   - os: linux
-    env: TARGET=ubuntu:16.04
-    sudo: false
-  - os: linux
     env: TARGET=ubuntu:18.04
     sudo: false
   - os: linux
     env: TARGET=ubuntu:20.04
     sudo: false
   - os: linux
-    env: TARGET=i386/ubuntu:16.04
+    env: TARGET=i386/ubuntu:18.04
     sudo: false
   - os: osx
     env: TARGET=osx
@@ -29,7 +26,7 @@ matrix:
     env: TARGET=androidx86_64
 sudo: required
 dist: bionic
-osx_image: xcode11.4
+osx_image: xcode11.6
 services:
 - docker
 cache: ccache
@@ -74,7 +71,7 @@ script: case ${TARGET} in
       dh_make --createorig --addmissing --defaultless -y -p libdigidocpp_${VERSIONEX};
       dch --distribution $(lsb_release -cs) -v ${VERSIONEX} "Release ${VERSIONEX}.";
       dpkg-buildpackage -rfakeroot -us -uc;
-      if [[ "${IMAGE}" = "ubuntu:16.04" && "${TRAVIS_BRANCH}" = "coverity_scan" ]]; then
+      if [[ "${IMAGE}" = "ubuntu:18.04" && "${TRAVIS_BRANCH}" = "coverity_scan" ]]; then
         export COVERITY_SCAN_PROJECT_NAME="open-eid/libdigidocpp";
         export COVERITY_SCAN_NOTIFICATION_EMAIL="raul@metsma.ee";
         export COVERITY_SCAN_BRANCH_PATTERN=coverity_scan;
