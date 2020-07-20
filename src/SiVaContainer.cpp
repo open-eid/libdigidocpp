@@ -205,9 +205,9 @@ void SiVaContainer::addAdESSignature(istream & /*signature*/)
     THROW("Not supported.");
 }
 
-Container* SiVaContainer::createInternal(const string & /*unused*/)
+unique_ptr<Container> SiVaContainer::createInternal(const string & /*unused*/)
 {
-    return nullptr;
+    return {};
 }
 
 string SiVaContainer::mediaType() const
@@ -220,12 +220,12 @@ vector<DataFile *> SiVaContainer::dataFiles() const
     return d->dataFiles;
 }
 
-Container* SiVaContainer::openInternal(const string &path)
+unique_ptr<Container> SiVaContainer::openInternal(const string &path)
 {
     static const set<string> supported = {"PDF", "DDOC"};
     string ext = File::fileExtension(path);
     transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
-    return supported.find(ext) != supported.cend() ? new SiVaContainer(path, ext) : nullptr;
+    return unique_ptr<Container>(supported.find(ext) != supported.cend() ? new SiVaContainer(path, ext) : nullptr);
 }
 
 stringstream* SiVaContainer::parseDDoc(istream *is)

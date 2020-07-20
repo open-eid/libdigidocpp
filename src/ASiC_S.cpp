@@ -70,9 +70,9 @@ void ASiC_S::addDataFile(unique_ptr<istream> is, const string &fileName, const s
     ASiContainer::addDataFile(move(is), fileName, mediaType);
 }
 
-Container* ASiC_S::createInternal(const string & /*path*/)
+unique_ptr<Container> ASiC_S::createInternal(const string & /*path*/)
 {
-    return nullptr;
+    return {};
 }
 
 void ASiC_S::addAdESSignature(istream & /*signature*/)
@@ -80,12 +80,12 @@ void ASiC_S::addAdESSignature(istream & /*signature*/)
     THROW("Not implemented.");
 }
 
-Container* ASiC_S::openInternal(const string &path)
+unique_ptr<Container> ASiC_S::openInternal(const string &path)
 {
     if (!isContainerSimpleFormat(path))
         return nullptr;
     DEBUG("ASiC_S::openInternal(%s)", path.c_str());
-    return new ASiC_S(path);
+    return unique_ptr<Container>(new ASiC_S(path));
 }
 
 void ASiC_S::extractTimestamp(const ZipSerialize &z)

@@ -32,6 +32,7 @@
 #ifdef _WIN32
 #include "crypto/WinSigner.h"
 #endif
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
 
 static std::string parseException(const digidoc::Exception &e) {
     std::string msg = e.msg();
@@ -190,6 +191,9 @@ extern "C"
 %ignore digidoc::ConfV3::OCSPTMProfiles;
 %ignore digidoc::Signature::Validator::warnings;
 %ignore digidoc::Signature::OCSPNonce;
+// unique_ptr: There is no special smart pointer handling available for std::weak_ptr and std::unique_ptr yet.
+%ignore digidoc::Container::createPtr;
+%ignore digidoc::Container::openPtr;
 
 %newobject digidoc::Container::open;
 %newobject digidoc::Container::create;

@@ -127,10 +127,10 @@ void ASiC_E::save(const string &path)
     }
 }
 
-Container* ASiC_E::createInternal(const string &path)
+unique_ptr<Container> ASiC_E::createInternal(const string &path)
 {
     DEBUG("ASiC_E::createInternal(%s)", path.c_str());
-    ASiC_E *doc = new ASiC_E();
+    unique_ptr<ASiC_E> doc = unique_ptr<ASiC_E>(new ASiC_E);
     doc->zpath(path);
     return doc;
 }
@@ -158,10 +158,10 @@ void ASiC_E::addAdESSignature(istream &sigdata)
     }
 }
 
-Container* ASiC_E::openInternal(const string &path)
+unique_ptr<Container> ASiC_E::openInternal(const string &path)
 {
     DEBUG("ASiC_E::openInternal(%s)", path.c_str());
-    return new ASiC_E(path);
+    return unique_ptr<Container>(new ASiC_E(path));
 }
 
 /**

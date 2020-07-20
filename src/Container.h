@@ -62,8 +62,10 @@ public:
 
     virtual void addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType);
 
-    static Container* create(const std::string &path);
-    static Container* open(const std::string &path);
+    DIGIDOCPP_DEPRECATED static Container* create(const std::string &path);
+    static std::unique_ptr<Container> createPtr(const std::string &path);
+    DIGIDOCPP_DEPRECATED static Container* open(const std::string &path);
+    static std::unique_ptr<Container> openPtr(const std::string &path);
     template<class T>
     static void addContainerImplementation();
 

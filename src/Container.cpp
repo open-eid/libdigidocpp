@@ -56,7 +56,7 @@ using namespace digidoc;
 using namespace std;
 using namespace xercesc;
 
-using plugin = Container *(*)(const std::string &);
+using plugin = unique_ptr<Container> (*)(const std::string &);
 
 namespace digidoc
 {
@@ -273,17 +273,27 @@ void Container::addAdESSignature(const std::vector<unsigned char> &signature)
 /**
  * Create a new container object and specify the DigiDoc container type
  *
+ * @deprecated use Container::createPtr
  * This method gives ownership of object to caller
  */
 Container* Container::create(const std::string &path)
 {
+    return createPtr(path).release();
+}
+
+/**
+ * Create a new container object and specify the DigiDoc container type
+ */
+unique_ptr<Container> Container::createPtr(const std::string &path)
+{
     for(auto create: m_createList)
     {
-        if(Container *container = create(path))
+        if(unique_ptr<Container> container = create(path))
             return container;
     }
     return ASiC_E::createInternal(path);
 }
+
 
 /**
  * @fn digidoc::Container::dataFiles
@@ -313,14 +323,26 @@ unsigned int Container::newSignatureId() const
  *
  * This method gives ownership of object to caller
  *
+ * @deprecated use Container::openPtr
  * @param path
  * @throws Exception
  */
 Container* Container::open(const string &path)
 {
+    return openPtr(path).release();
+}
+
+/**
+ * Opens container from a file
+ *
+ * @param path
+ * @throws Exception
+ */
+unique_ptr<Container> Container::openPtr(const string &path)
+{
     for(auto open: m_openList)
     {
-        if(Container *container = open(path))
+        if(unique_ptr<Container> container = open(path))
             return container;
     }
     return ASiC_E::openInternal(path);

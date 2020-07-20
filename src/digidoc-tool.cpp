@@ -584,7 +584,7 @@ static int open(int argc, char* argv[])
 
     unique_ptr<Container> doc;
     try {
-        doc.reset(Container::open(path));
+        doc = Container::openPtr(path);
     } catch(const Exception &e) {
         cout << "Failed to parse container" << endl;
         cout << "  Exception:" << endl << e;
@@ -705,7 +705,7 @@ static int remove(int argc, char *argv[])
 
     unique_ptr<Container> doc;
     try {
-        doc.reset(Container::open(path));
+        doc = Container::openPtr(path);
     } catch(const Exception &e) {
         cout << "Failed to parse container" << endl;
         cout << "  Exception:" << endl << e;
@@ -759,7 +759,7 @@ static int add(const ToolConfig &p, char *program)
 
     unique_ptr<Container> doc;
     try {
-        doc.reset(Container::open(p.path));
+        doc = Container::openPtr(p.path);
     } catch(const Exception &e) {
         cout << "Failed to parse container" << endl;
         cout << "  Exception:" << endl << e;
@@ -822,7 +822,7 @@ static int create(const ToolConfig &p, char *program)
 
     unique_ptr<Container> doc;
     try {
-        doc.reset(Container::create(p.path));
+        doc = Container::createPtr(p.path);
     } catch(const Exception &e) {
         cout << "Failed to parse container" << endl;
         cout << "  Exception:" << endl << e;
@@ -874,7 +874,7 @@ static int createBatch(const ToolConfig &p, char *program)
             continue;
         cout << "Signing file: " << file << endl;
         try {
-            unique_ptr<Container> doc(Container::create(file + ".asice"));
+            unique_ptr<Container> doc = Container::createPtr(file + ".asice");
             doc->addDataFile(file, "application/octet-stream");
             if(signContainer(doc.get(), signer, p.dontValidate) == EXIT_FAILURE)
                 returnCode = EXIT_FAILURE;
@@ -905,7 +905,7 @@ static int sign(const ToolConfig &p, char *program)
 
     unique_ptr<Container> doc;
     try {
-        doc.reset(Container::open(p.path));
+        doc = Container::openPtr(p.path);
     } catch(const Exception &e) {
         cout << "Failed to parse container" << endl;
         cout << "  Exception:" << endl << e;
@@ -932,7 +932,7 @@ static int websign(const ToolConfig &p, char *program)
 
     unique_ptr<Container> doc;
     try {
-        doc.reset(Container::create(p.path));
+        doc = Container::createPtr(p.path);
     } catch(const Exception &e) {
         cout << "Failed to parse container" << endl;
         cout << "  Exception:" << endl << e;

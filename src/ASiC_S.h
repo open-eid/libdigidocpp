@@ -43,8 +43,8 @@ namespace digidoc
         Signature* prepareSignature(Signer *signer) override;
         Signature* sign(Signer* signer) override;
 
-        static Container* createInternal(const std::string &path);
-        static Container* openInternal(const std::string &path);
+        static std::unique_ptr<Container> createInternal(const std::string &path);
+        static std::unique_ptr<Container> openInternal(const std::string &path);
 
     private:
         ASiC_S();

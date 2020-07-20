@@ -74,8 +74,8 @@ public:
     void removeSignature(unsigned int id) override;
     Signature* sign(Signer* signer) override;
 
-    static Container* createInternal(const std::string &path);
-    static Container* openInternal(const std::string &path);
+    static std::unique_ptr<Container> createInternal(const std::string &path);
+    static std::unique_ptr<Container> openInternal(const std::string &path);
 
 private:
     SiVaContainer(const std::string &path, const std::string &ext);
