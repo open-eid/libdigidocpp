@@ -71,9 +71,9 @@ void SignatureSiVa::validate() const
     validate(POLv2);
 }
 
-void SignatureSiVa::validate(const std::string &policy) const
+void SignatureSiVa::validate(const string &policy) const
 {
-    static const std::set<std::string> QES = { "QESIG", "QES", "QESEAL",
+    static const set<string> QES = { "QESIG", "QES", "QESEAL",
         "ADESEAL_QC", "ADESEAL" }; // Special treamtent for E-Seals
     Exception e(EXCEPTION_PARAMS("Signature validation"));
     if(_indication == "TOTAL-PASSED")
@@ -110,7 +110,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
     else
     {
         d->mediaType = "application/pdf";
-        d->dataFiles.push_back(new DataFilePrivate(ifs.release(), File::fileName(path), "application/pdf", File::fileName(path)));
+        d->dataFiles.push_back(new DataFilePrivate(move(ifs), File::fileName(path), "application/pdf", File::fileName(path)));
     }
 
     XMLByte buf[48*100];
@@ -195,7 +195,7 @@ void SiVaContainer::addDataFile(const string & /*path*/, const string & /*mediaT
     THROW("Not supported.");
 }
 
-void SiVaContainer::addDataFile(istream * /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
+void SiVaContainer::addDataFile(unique_ptr<istream> /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
 {
     THROW("Not supported.");
 }
@@ -205,9 +205,9 @@ void SiVaContainer::addAdESSignature(istream & /*signature*/)
     THROW("Not supported.");
 }
 
-Container* SiVaContainer::createInternal(const string & /*unused*/)
+unique_ptr<Container> SiVaContainer::createInternal(const string & /*unused*/)
 {
-    return nullptr;
+    return {};
 }
 
 string SiVaContainer::mediaType() const
@@ -220,15 +220,15 @@ vector<DataFile *> SiVaContainer::dataFiles() const
     return d->dataFiles;
 }
 
-Container* SiVaContainer::openInternal(const string &path)
+unique_ptr<Container> SiVaContainer::openInternal(const string &path)
 {
     static const set<string> supported = {"PDF", "DDOC"};
     string ext = File::fileExtension(path);
     transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
-    return supported.find(ext) != supported.cend() ? new SiVaContainer(path, ext) : nullptr;
+    return unique_ptr<Container>(supported.find(ext) != supported.cend() ? new SiVaContainer(path, ext) : nullptr);
 }
 
-std::stringstream* SiVaContainer::parseDDoc(std::istream *is)
+stringstream* SiVaContainer::parseDDoc(istream *is)
 {
     try
     {
@@ -247,7 +247,7 @@ std::stringstream* SiVaContainer::parseDDoc(std::istream *is)
             {
                 XMLSize_t size = 0;
                 XMLByte *data = Base64::decodeToXMLByte(b64, &size);
-                d->dataFiles.push_back(new DataFilePrivate(new stringstream(string((const char*)data, size)),
+                d->dataFiles.push_back(new DataFilePrivate(unique_ptr<istream>(new stringstream(string((const char*)data, size))),
                     X(item->getAttribute(X("Filename"))), X(item->getAttribute(X("MimeType"))), X(item->getAttribute(X("Id")))));
                 delete data;
             }

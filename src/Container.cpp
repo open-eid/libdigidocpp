@@ -56,7 +56,7 @@ using namespace digidoc;
 using namespace std;
 using namespace xercesc;
 
-using plugin = Container *(*)(const std::string &);
+using plugin = unique_ptr<Container> (*)(const std::string &);
 
 namespace digidoc
 {
@@ -217,10 +217,25 @@ Container::~Container() = default;
  */
 
 /**
- * @fn digidoc::Container::addDataFile(std::istream *is, const std::string &fileName, const std::string &mediaType)
  * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer).
  *
  * Takes ownership std::istream *is object.
+ * @deprecated digidoc::Container::addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType)
+ * @param is input stream from where data is read
+ * @param fileName data file name in the container
+ * @param mediaType MIME type of the data file, for example “text/plain” or “application/msword”
+ * @throws Exception exception is thrown if the data file path is incorrect or a data file
+ * with same file name already exists. Also, no data file can be added if the container
+ * already has one or more signatures.
+ * @note Data files can be removed from container only after all signatures are removed.
+ */
+void Container::addDataFile(istream *is, const string &fileName, const string &mediaType)
+{
+    addDataFile(unique_ptr<istream>(is), fileName, mediaType);
+}
+
+/**
+ * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer).
  *
  * @param is input stream from where data is read
  * @param fileName data file name in the container
@@ -230,6 +245,10 @@ Container::~Container() = default;
  * already has one or more signatures.
  * @note Data files can be removed from container only after all signatures are removed.
  */
+void Container::addDataFile(unique_ptr<istream> /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
+{
+    THROW("Not implemented.");
+}
 
 /**
  * Adds signature to the container.
@@ -254,17 +273,27 @@ void Container::addAdESSignature(const std::vector<unsigned char> &signature)
 /**
  * Create a new container object and specify the DigiDoc container type
  *
+ * @deprecated use Container::createPtr
  * This method gives ownership of object to caller
  */
 Container* Container::create(const std::string &path)
 {
+    return createPtr(path).release();
+}
+
+/**
+ * Create a new container object and specify the DigiDoc container type
+ */
+unique_ptr<Container> Container::createPtr(const std::string &path)
+{
     for(auto create: m_createList)
     {
-        if(Container *container = create(path))
+        if(unique_ptr<Container> container = create(path))
             return container;
     }
     return ASiC_E::createInternal(path);
 }
+
 
 /**
  * @fn digidoc::Container::dataFiles
@@ -294,14 +323,26 @@ unsigned int Container::newSignatureId() const
  *
  * This method gives ownership of object to caller
  *
+ * @deprecated use Container::openPtr
  * @param path
  * @throws Exception
  */
 Container* Container::open(const string &path)
 {
+    return openPtr(path).release();
+}
+
+/**
+ * Opens container from a file
+ *
+ * @param path
+ * @throws Exception
+ */
+unique_ptr<Container> Container::openPtr(const string &path)
+{
     for(auto open: m_openList)
     {
-        if(Container *container = open(path))
+        if(unique_ptr<Container> container = open(path))
             return container;
     }
     return ASiC_E::openInternal(path);

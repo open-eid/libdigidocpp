@@ -30,7 +30,7 @@ namespace digidoc
 class SignatureTST: public Signature
 {
 public:
-    SignatureTST(std::istream &sigdata, ASiC_S *asicSDoc);
+    SignatureTST(std::unique_ptr<std::istream> sigdata, ASiC_S *asicSDoc);
     virtual ~SignatureTST();
 
     virtual std::string trustedSigningTime() const override;

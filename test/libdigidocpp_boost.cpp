@@ -174,12 +174,12 @@ using DocTypes = boost::mpl::list<ASiCE>;
 #endif
 BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
 {
-    unique_ptr<Container> d(Container::create("test." + Doc::EXT));
+    unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 0U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 0U);
     BOOST_CHECK_EQUAL(d->mediaType(), Doc::TYPE);
 
-    d.reset(Container::open("test." + Doc::EXT));
+    d = Container::openPtr("test." + Doc::EXT);
     if(!d)
        return;
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
 {
-    unique_ptr<Container> d(Container::create("test." + Doc::EXT));
+    unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
 
     BOOST_CHECK_THROW(d->removeDataFile(0U), Exception);
 
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     if(d->mediaType() == DDoc::TYPE)
         return;
 
-    d.reset(Container::open("test." + Doc::EXT));
+    d = Container::openPtr("test." + Doc::EXT);
     const DataFile *data = d->dataFiles().front();
     BOOST_CHECK_NO_THROW(data->saveAs("test1.tmp"));
 
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 {
-    unique_ptr<Container> d(Container::create("test." + Doc::EXT));
+    unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
 
     BOOST_CHECK_THROW(d->removeSignature(0U), Exception);
 
@@ -326,7 +326,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_NO_THROW(d->save());
 
         // Reload from file and validate
-        d.reset(Container::open(Doc::EXT + ".tmp"));
+        d = Container::openPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
         if((s3 = d->signatures().back()))
         {
@@ -365,14 +365,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 
         // Save with no SignatureValue and later add signautre value, time-mark
         signer2->setProfile("time-mark");
-        d.reset(Container::create(Doc::EXT + ".tmp"));
+        d = Container::createPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
         Signature *s = nullptr;
         BOOST_CHECK_NO_THROW(s = d->prepareSignature(signer2.get()));
         vector<unsigned char> signatureValue;
         BOOST_CHECK_NO_THROW(signatureValue = signer2->sign(s->signatureMethod(), s->dataToSign()));
         BOOST_CHECK_NO_THROW(d->save());
-        d.reset(Container::open(Doc::EXT + ".tmp"));
+        d = Container::openPtr(Doc::EXT + ".tmp");
         s = d->signatures().back();
         BOOST_CHECK_NO_THROW(s->setSignatureValue(signatureValue));
         BOOST_CHECK_NO_THROW(s->extendSignatureProfile(signer2->profile()));
@@ -393,7 +393,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
     data.emplace_back("öäüõ");
     for(vector<string>::const_iterator i = data.begin(); i != data.end(); ++i)
     {
-        unique_ptr<Container> d(Container::create("test." + Doc::EXT));
+        unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
         const Signature *s1 = nullptr;
         BOOST_CHECK_NO_THROW(d->addDataFile(*i + ".txt", "text/plain"));
         if(Doc::EXT == DDoc::EXT)
@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
         if(s1)
             s1->validate();
         d->save(*i + Doc::EXT + ".tmp");
-        d.reset(Container::open(*i + Doc::EXT + ".tmp"));
+        d = Container::openPtr(*i + Doc::EXT + ".tmp");
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
         s1 = d->signatures().front();
         s1->validate();
@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
 {
-    unique_ptr<Container> d(Container::create("test." + Doc::EXT));
+    unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
     unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
 
     signer1->setSignatureProductionPlace("Tartu", "Tartumaa", "12345", "Estonia");
@@ -447,7 +447,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
     }
 
     BOOST_CHECK_NO_THROW(d->save(Doc::EXT + ".tmp")); //Check if reloading and binary files work
-    d.reset(Container::open(Doc::EXT + ".tmp"));
+    d = Container::openPtr(Doc::EXT + ".tmp");
     if(d->signatures().size() == 1U)
         BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
 
@@ -510,7 +510,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(ASiCSTestSuite)
 BOOST_AUTO_TEST_CASE(OpenValidASiCSContainer)
 {
-    unique_ptr<Container> d(Container::open("test.asics"));
+    unique_ptr<Container> d = Container::openPtr("test.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_CASE(OpenValidASiCSContainer)
 
 BOOST_AUTO_TEST_CASE(OpenValidASiCSContainerWithOtherMeta)
 {
-    unique_ptr<Container> d(Container::open("test-meta.asics"));
+    unique_ptr<Container> d = Container::openPtr("test-meta.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
@@ -544,7 +544,7 @@ BOOST_AUTO_TEST_CASE(OpenValidASiCSContainerWithOtherMeta)
 
 BOOST_AUTO_TEST_CASE(OpenInvalidTsASiCSContainer)
 {
-    unique_ptr<Container> d(Container::open("test-invalidts.asics"));
+    unique_ptr<Container> d = Container::openPtr("test-invalidts.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
@@ -558,7 +558,7 @@ BOOST_AUTO_TEST_CASE(OpenInvalidTsASiCSContainer)
 
 BOOST_AUTO_TEST_CASE(TeRaASiCSContainer)
 {
-    unique_ptr<Container> d(Container::open("test-tera.asics"));
+    unique_ptr<Container> d = Container::openPtr("test-tera.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
@@ -576,7 +576,7 @@ BOOST_AUTO_TEST_CASE(TeRaASiCSContainer)
 
 BOOST_AUTO_TEST_CASE(TeRaEmptyASiCSContainer)
 {
-    unique_ptr<Container> d(Container::open("test-tera-empty.asics"));
+    unique_ptr<Container> d = Container::openPtr("test-tera-empty.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
@@ -591,6 +591,6 @@ BOOST_AUTO_TEST_CASE(TeRaEmptyASiCSContainer)
 
 BOOST_AUTO_TEST_CASE(OpenInvalidMimetypeContainer)
 {
-    BOOST_CHECK_THROW(Container::open("test-invalid.asics"), Exception);
+    BOOST_CHECK_THROW(Container::openPtr("test-invalid.asics"), Exception);
 }
 BOOST_AUTO_TEST_SUITE_END()

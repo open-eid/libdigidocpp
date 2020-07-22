@@ -86,14 +86,14 @@ DataFile::DataFile() = default;
 DataFile::~DataFile() = default;
 
 
-DataFilePrivate::DataFilePrivate(istream *is, string filename, string mediatype,
+DataFilePrivate::DataFilePrivate(unique_ptr<istream> is, string filename, string mediatype,
                    string id, vector<unsigned char> digestValue)
-    : m_id(std::move(id))
-    , m_filename(std::move(filename))
-    , m_mediatype(std::move(mediatype))
-    , m_digestValue(std::move(digestValue))
+    : m_is(move(is))
+    , m_id(move(id))
+    , m_filename(move(filename))
+    , m_mediatype(move(mediatype))
+    , m_digestValue(move(digestValue))
 {
-    m_is.reset(is);
     m_is->seekg(0, istream::end);
     istream::pos_type pos = m_is->tellg();
     m_size = pos < 0 ? 0 : (unsigned long)pos;

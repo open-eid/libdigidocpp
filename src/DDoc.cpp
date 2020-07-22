@@ -201,7 +201,7 @@ SignatureDDOC::SignatureDDOC(SignatureInfo_st *sig, DDocPrivate *priv)
     , s(sig)
 {
     if(!s)
-        throw Exception(EXCEPTION_PARAMS("Null pointer in SignatureDDOC constructor"));
+        THROW("Null pointer in SignatureDDOC constructor");
 }
 
 SignatureDDOC::~SignatureDDOC() = default;
@@ -437,16 +437,16 @@ void DDoc::load(const std::string &path)
         string temp = File::tempFileName();
         int err = d->lib->f_ddocSaxExtractDataFile(d->doc, d->filename.c_str(),
             temp.c_str(), data->szId, CHARSET_UTF_8);
-        istream *is = new ifstream(File::encodeName(temp).c_str(), ifstream::binary);
+        unique_ptr<istream> is(new ifstream(File::encodeName(temp).c_str(), ifstream::binary));
 #else
         long size = 0;
         void *filedata = nullptr;
         int err = d->lib->f_ddocGetDataFileCachedData(d->doc, data->szId, &filedata, &size);
-        istream *is = nullptr;
+        unique_ptr<istream> is;
         if(err == 0 && size > 0)
-            is = new stringstream(string(reinterpret_cast<const char*>(filedata), size));
+            is.reset(new stringstream(string(reinterpret_cast<const char*>(filedata), size)));
         else
-            is = new stringstream;
+            is.reset(new stringstream);
 #endif
         if(err)
         {
@@ -459,7 +459,7 @@ void DDoc::load(const std::string &path)
         int size = 0;
         d->lib->f_ddocGetDataFileFilename(d->doc, data->szId, (void**)&filename, &size);
         d->documents.push_back(
-            new DataFilePrivate(is, filename, data->szMimeType, data->szId, DDocPrivate::toVector(&data->mbufDigest)));
+            new DataFilePrivate(move(is), filename, data->szMimeType, data->szId, DDocPrivate::toVector(&data->mbufDigest)));
         if(filename)
             d->lib->f_freeLibMem(filename);
     }
@@ -495,7 +495,7 @@ void DDoc::addDataFile(const string &path, const string &mediaType)
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
 
-    ifstream *is = new ifstream(File::encodeName(path).c_str(), ifstream::binary);
+    unique_ptr<ifstream> is(new ifstream(File::encodeName(path).c_str(), ifstream::binary));
     ::DataFile *data = nullptr;
 #ifndef DDOC_MEMORY
     int err = d->lib->f_DataFile_new(&data, d->doc, nullptr, path.c_str(),
@@ -511,10 +511,10 @@ void DDoc::addDataFile(const string &path, const string &mediaType)
         CONTENT_EMBEDDED_BASE64, mediaType.c_str(), buf.str().c_str(), buf.str().size());
 #endif
     d->documents.push_back(
-        new DataFilePrivate(is, File::fileName(path), mediaType, data->szId, DDocPrivate::toVector(&data->mbufDigest)));
+        new DataFilePrivate(move(is), File::fileName(path), mediaType, data->szId, DDocPrivate::toVector(&data->mbufDigest)));
 }
 
-void DDoc::addDataFile(istream * /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
+void DDoc::addDataFile(unique_ptr<istream> /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
 {
     THROW("Stream API is not supported with DDoc.");
 }
@@ -574,12 +574,12 @@ void DDoc::addAdESSignature(istream &sigdata)
     load(fileName);
 }
 
-Container* DDoc::createInternal(const string &path)
+unique_ptr<Container> DDoc::createInternal(const string &path)
 {
     if(File::fileExtension(path) != "ddoc")
         return nullptr;
     DEBUG("DDoc::createInternal(%s)", path.c_str());
-    DDoc *doc = new DDoc();
+    unique_ptr<DDoc> doc = unique_ptr<DDoc>(new DDoc());
     doc->d->filename = path;
     return doc;
 }
@@ -607,12 +607,12 @@ std::vector<digidoc::DataFile*> DDoc::dataFiles() const
     return d->documents;
 }
 
-Container* DDoc::openInternal(const string &path)
+unique_ptr<Container> DDoc::openInternal(const string &path)
 {
     if(File::fileExtension(path) != "ddoc")
         return nullptr;
     DEBUG("DDoc::openInternal(%s)", path.c_str());
-    return new DDoc(path);
+    return unique_ptr<Container>(new DDoc(path));
 }
 
 /**
