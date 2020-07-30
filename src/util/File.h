@@ -23,12 +23,6 @@
 
 #include <stack>
 
-#ifdef _WIN32
-using f_string = std::wstring;
-#else
-using f_string = std::string;
-#endif
-
 namespace digidoc
 {
     namespace util
@@ -40,8 +34,12 @@ namespace digidoc
         class File
         {
           public:
+#ifdef _WIN32
+              using f_string = std::wstring;
+#else
+              using f_string = std::string;
+#endif
               static std::string confPath();
-              static std::string cwd();
               static std::string env(const std::string &varname);
               static bool fileExists(const std::string& path);
               static f_string encodeName(const std::string &fileName);
