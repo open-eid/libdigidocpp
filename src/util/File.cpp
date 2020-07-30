@@ -50,8 +50,8 @@ using namespace digidoc::util;
 using namespace std;
 
 #ifdef _WIN32
-#define f_stat      _wstat
-using f_statbuf = struct _stat;
+#define f_stat      _wstat64
+using f_statbuf = struct _stat64;
 #else
 #define f_stat      stat
 using f_statbuf = struct stat;
