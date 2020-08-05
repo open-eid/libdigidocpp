@@ -28,7 +28,7 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-std::vector<Exception::ExceptionCode> Exception::ignores = std::vector<Exception::ExceptionCode>();
+std::vector<Exception::ExceptionCode> Exception::ignores {};
 
 /**
  * @class digidoc::Exception
@@ -61,6 +61,8 @@ std::vector<Exception::ExceptionCode> Exception::ignores = std::vector<Exception
  * OCSP Response is not in valid time slot
  * @var digidoc::Exception::OCSPRequestUnauthorized
  * OCSP Responder requires the OCSP request to be signed
+ * @var digidoc::Exception::TSForbidden
+ * TSA service responds forbidden
  * @var digidoc::Exception::TSTooManyRequests
  * TSA service requests have reached limit
  *
@@ -111,10 +113,7 @@ Exception::Exception(const string& file, int line, const string& msg)
  * @see causes()
  */
 Exception::Exception(const string& file, int line, const string& msg, const Exception& cause)
- : m_file(File::fileName(file))
- , m_msg(msg)
- , m_line(line)
- , m_code(General)
+    : Exception(file, line, msg)
 {
     addCause(cause);
 }
@@ -127,14 +126,7 @@ Exception::Exception(const Exception &other) = default;
 /**
  * Move constructor
  */
-Exception::Exception(Exception &&other) DIGIDOCPP_NOEXCEPT
-    : m_file(std::move(other.m_file))
-    , m_msg(std::move(other.m_msg))
-    , m_line(other.m_line)
-    , m_causes(std::move(other.m_causes))
-    , m_code(other.m_code)
-{
-}
+Exception::Exception(Exception &&other) DIGIDOCPP_NOEXCEPT = default;
 
 /**
  * Releases memory
@@ -149,18 +141,7 @@ Exception &Exception::operator=(const Exception &other) = default;
 /**
  * Move operator
  */
-Exception &Exception::operator=(Exception &&other) DIGIDOCPP_NOEXCEPT
-{
-    if(this != &other)
-    {
-        m_file = std::move(other.m_file);
-        m_msg = std::move(other.m_msg);
-        m_line = other.m_line;
-        m_causes = std::move(other.m_causes);
-        m_code = other.m_code;
-    }
-    return *this;
-}
+Exception &Exception::operator=(Exception &&other) DIGIDOCPP_NOEXCEPT = default;
 
 /**
  * Returns exception file
@@ -218,4 +199,4 @@ void Exception::setWarningIgnoreList(const std::vector<ExceptionCode> &list) { i
 /**
  * Verifies if Warning exception is in igonre list
  */
-bool Exception::hasWarningIgnore(ExceptionCode code) { return find(ignores.begin(), ignores.end(), code) != ignores.end(); }
+bool Exception::hasWarningIgnore(ExceptionCode code) { return find(ignores.cbegin(), ignores.cend(), code) != ignores.cend(); }

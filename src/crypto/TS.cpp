@@ -101,7 +101,11 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
     }, i2d(req.get(), i2d_TS_REQ));
 
     if(result.isForbidden())
-        THROW("Time-stamp service responded - Forbidden");
+    {
+        Exception e(EXCEPTION_PARAMS("Time-stamp service responded - Forbidden"));
+        e.setCode(Exception::TSForbidden);
+        throw e;
+    }
     if(result.isStatusCode("429"))
     {
         Exception e(EXCEPTION_PARAMS("Time-stamp service responded - Too Many Requests"));
@@ -171,24 +175,16 @@ string TS::digestMethod() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
     if(!info)
-        return string();
+        return {};
     X509_ALGOR *algo = TS_MSG_IMPRINT_get_algo(TS_TST_INFO_get_msg_imprint(info.get()));
-    switch(OBJ_obj2nid(algo->algorithm))
-    {
-    case NID_sha1: return URI_SHA1;
-    case NID_sha224: return URI_SHA224;
-    case NID_sha256: return URI_SHA256;
-    case NID_sha384: return URI_SHA384;
-    case NID_sha512: return URI_SHA512;
-    default: return string();
-    }
+    return Digest::toUri(OBJ_obj2nid(algo->algorithm));
 }
 
 vector<unsigned char> TS::digestValue() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
     if(!info)
-        return vector<unsigned char>();
+        return {};
     return i2d(TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get())), i2d_ASN1_OCTET_STRING);
 }
 
@@ -196,7 +192,7 @@ vector<unsigned char> TS::messageImprint() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
     if(!info)
-        return vector<unsigned char>();
+        return {};
     return i2d(TS_TST_INFO_get_msg_imprint(info.get()), i2d_TS_MSG_IMPRINT);
 }
 
@@ -208,7 +204,7 @@ string TS::serial() const
         return serial;
 
     SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), nullptr), BN_free);
-    if(!!bn)
+    if(bn)
     {
         char *str = BN_bn2dec(bn.get());
         if(str)
