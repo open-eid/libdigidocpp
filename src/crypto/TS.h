@@ -24,7 +24,7 @@
 
 using PKCS7 = struct pkcs7_st;
 using CMS_ContentInfo = struct CMS_ContentInfo_st;
-using TS_TST_INFO = struct TS_tst_info_st ;
+using TS_TST_INFO = struct TS_tst_info_st;
 namespace digidoc {
 
 class X509Cert;
@@ -32,8 +32,8 @@ class X509Cert;
 class TS
 {
 public:
-    TS(const std::string &url, const Digest &digest, const std::string &useragent = std::string());
-    TS(const unsigned char *data, size_t size);
+    TS(const std::string &url, const Digest &digest, const std::string &useragent = {});
+    TS(const unsigned char *data = nullptr, size_t size = 0);
 
     X509Cert cert() const;
     std::string digestMethod() const;
