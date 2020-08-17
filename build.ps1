@@ -15,6 +15,7 @@ param(
   [string]$libdigidoc = $null,
   [string]$boost = $null,
   [string]$sign = $null,
+  [string]$crosssign = $null,
   [switch]$source = $false
 )
 
@@ -131,21 +132,11 @@ foreach($platform in @("x86", "x64")) {
       "-DXSD_INCLUDE_DIR=$target/xsd/libxsd" `
       "-DXSD_EXECUTABLE=$target/xsd/bin/xsd.exe" `
       "-DZLIB_ROOT=$target/zlib/$platform" `
+      "-DSIGNCERT=$sign" `
+      "-DCROSSSIGNCERT=$crosssign" `
       $cmakeext $libdigidocpp "&&" $nmake /nologo install
     Pop-Location
   }
-}
-
-Function Sign($filename) {
-  signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
-    /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 "$filename"
-}
-
-if($sign) {
-  Sign("x86\bin\*.dll")
-  Sign("x86\bin\*.exe")
-  Sign("x64\bin\*.dll")
-  Sign("x64\bin\*.exe")
 }
 
 if($doxygen) {
@@ -160,5 +151,6 @@ if($doxygen) {
   $lightext libdigidocpp.wixobj HeadersFragment.wixobj
  
 if($sign) {
-  Sign($msi_name)
+  signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
+    /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 "$msi_name"
 }

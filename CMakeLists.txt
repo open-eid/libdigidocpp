@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(libdigidocpp VERSION 3.14.4)
 if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
@@ -31,6 +31,7 @@ set( LIBDIGIDOC_LINKED YES CACHE BOOL "Link with libdigidoc or load runtime with
 set( BUILD_TOOLS YES CACHE BOOL "Build digidoc-tool" )
 set( BUILD_SHARED_LIBS YES CACHE BOOL "Build library as SHARED or STATIC" )
 set( SIGNCERT "" CACHE STRING "Common name of certificate to used sign binaries, empty skip signing" )
+set( CROSSSIGNCERT "" CACHE STRING "Common name of certificate to used cross sign binaries, empty skip signing" )
 if( APPLE )
     set( FRAMEWORK YES CACHE BOOL "Build library as Mac OS X Framework" )
     set( USE_KEYCHAIN YES CACHE BOOL "Use keychain to store PKCS12 access certificate" )
