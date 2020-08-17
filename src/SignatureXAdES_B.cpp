@@ -509,7 +509,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
         sig->setURIResolver(uriresolver.get());
         sig->setKeyInfoResolver(keyresolver.get());
-        sig->registerIdAttributeName(X("ID"));
+        sig->registerIdAttributeName(u"ID");
         sig->setIdByAttributeName(true);
         sig->load();
 
@@ -1020,12 +1020,12 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
         // Select node, on which the digest is calculated.
         if(id.empty())
         {
-            DOMNodeList* nodeList = doc->getElementsByTagNameNS(X(ns), X(tagName));
+            DOMNodeList* nodeList = doc->getElementsByTagNameNS(xml::string(ns).c_str(), xml::string(tagName).c_str());
             if(nodeList->getLength() == 1)
                 node = nodeList->item(0);
         }
         else
-            node = doc->getElementById(X(id));
+            node = doc->getElementById(xml::string(id).c_str());
 
         // Make sure that exactly one node was found.
         if(!node)
@@ -1040,13 +1040,24 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
     }
     catch(const XMLException& e)
     {
-        ArrayJanitor<char> msg(XMLString::transcode(e.getMessage()));
-        THROW( "Failed to parse signature XML: %s", msg.get() );
+        try {
+            string msg = xml::transcode<char>(e.getMessage());
+            THROW("Failed to parse signature XML: %s", msg.c_str());
+        } catch(const xml::invalid_utf16_string & /* ex */) {
+            THROW("Failed to parse signature XML.");
+        }
     }
     catch(const DOMException& e)
     {
-        ArrayJanitor<char> msg(XMLString::transcode(e.getMessage()));
-        THROW( "Failed to parse signature XML: %s", msg.get() );
+        try {
+            string msg = xml::transcode<char>(e.getMessage());
+            THROW("Failed to parse signature XML: %s", msg.c_str());
+        } catch(const xml::invalid_utf16_string & /* ex */) {
+            THROW("Failed to parse signature XML.");
+        }
+    }
+    catch(const xml::invalid_utf16_string & /* ex */) {
+        THROW("Failed to parse signature XML.");
     }
     catch(...)
     {

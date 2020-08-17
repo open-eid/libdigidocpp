@@ -65,7 +65,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
         sig->setURIResolver(uriresolver.get());
         sig->setKeyInfoResolver(keyresolver.get());
-        sig->registerIdAttributeName(X("ID"));
+        sig->registerIdAttributeName(u"ID");
         sig->setIdByAttributeName(true);
         sig->load();
 
@@ -88,10 +88,14 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         s << e;
         THROW("Failed to calculate digest: %s", s.str().c_str());
     }
+    catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+        THROW("Failed to calculate digest");
+    }
     catch(XSECException &e)
     {
         try {
-            THROW("Failed to calculate digest: %s", X(e.getMsg()).toString().c_str());
+            string result = xsd::cxx::xml::transcode<char>(e.getMsg());
+            THROW("Failed to calculate digest: %s", result.c_str());
         } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
             THROW("Failed to calculate digest");
         }
@@ -99,7 +103,8 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
     catch(XMLException &e)
     {
         try {
-            THROW("Failed to calculate digest: %s", X(e.getMessage()).toString().c_str());
+            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
+            THROW("Failed to calculate digest: %s", result.c_str());
         } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
             THROW("Failed to calculate digest");
         }
@@ -172,15 +177,15 @@ TS SignatureXAdES_LTA::tsaFromBase64() const
 {
     try {
         if(unsignedSignatureProperties().archiveTimeStampV141().empty())
-            return TS(nullptr, 0);
+            return TS();
         const xadesv141::ArchiveTimeStampType &ts = unsignedSignatureProperties().archiveTimeStampV141().front();
         if(ts.encapsulatedTimeStamp().empty())
-            return TS(nullptr, 0);
+            return TS();
         const GenericTimeStampType::EncapsulatedTimeStampType &bin =
                 ts.encapsulatedTimeStamp().front();
         return TS((const unsigned char*)bin.data(), bin.size());
     } catch(const Exception &) {}
-    return TS(nullptr, 0);
+    return TS();
 }
 
 X509Cert SignatureXAdES_LTA::ArchiveTimeStampCertificate() const

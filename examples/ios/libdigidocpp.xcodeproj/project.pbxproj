@@ -50,6 +50,7 @@
 		4ECD5FB82010A38900BCC616 /* libminizip.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libminizip.a; path = "$(SDKPATH)/lib/libminizip.a"; sourceTree = "<absolute>"; };
 		4ECD5FB92010A38900BCC616 /* libdigidocpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp.a; path = "$(SDKPATH)/lib/libdigidocpp.a"; sourceTree = "<absolute>"; };
 		4ECD5FBA2010A38900BCC616 /* libdigidocpp_priv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp_priv.a; path = "$(SDKPATH)/lib/libdigidocpp_priv.a"; sourceTree = "<absolute>"; };
+		4ED367C424EA910E0020905B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4EF2169420496F780013677E /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -78,6 +79,7 @@
 		4E76638F1B5A37AC00672ACF = {
 			isa = PBXGroup;
 			children = (
+				4ED367C424EA910E0020905B /* README.md */,
 				4E76639A1B5A37AC00672ACF /* libdigidocpp */,
 				4E7663991B5A37AC00672ACF /* Products */,
 				4ECD5FA82010A15A00BCC616 /* Frameworks */,

@@ -27,41 +27,19 @@
 namespace digidoc {
 class Digest;
 
-class X
-{
-public :
-    X(const char *txt): xmlch(xercesc::XMLString::transcode(txt)) {}
-    X(const std::string &txt): xmlch(xercesc::XMLString::transcode(txt.c_str())) {}
-    X(const XMLCh *txt): cch(xercesc::XMLString::transcode(txt)) {}
-    ~X()
-    {
-        if(xmlch)
-            xercesc::XMLString::release(&xmlch);
-        if(cch)
-            xercesc::XMLString::release(&cch);
-    }
-    operator XMLCh*() const { return xmlch; }
-    operator char*() const { return cch; }
-    std::string toString() const { return std::string(cch); }
-    operator std::string() const { return toString(); }
-private :
-    XMLCh *xmlch = nullptr;
-    char *cch = nullptr;
-};
-
 class SecureDOMParser: public xercesc::DOMLSParserImpl
 {
 public:
-    SecureDOMParser(const std::string &schema_location = std::string());
+    SecureDOMParser(const std::string &schema_location = {});
 
     static void calcDigestOnNode(Digest *calc, const std::string &algorithmType,
         xercesc::DOMDocument *doc, xercesc::DOMNode *node);
 
-    virtual void doctypeDecl(const xercesc::DTDElementDecl& root,
+    void doctypeDecl(const xercesc::DTDElementDecl& root,
                const XMLCh* const             public_id,
                const XMLCh* const             system_id,
                const bool                     has_internal,
-               const bool                     has_external);
+               const bool                     has_external) final;
 
     std::unique_ptr<xercesc::DOMDocument> parseIStream(std::istream &is);
 };

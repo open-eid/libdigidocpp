@@ -157,6 +157,11 @@ set_target_properties(digidocpp_priv PROPERTIES
     POSITION_INDEPENDENT_CODE YES
 )
 
+target_compile_definitions(digidocpp_priv PUBLIC
+    $<$<CXX_COMPILER_ID:AppleClang>:XSD_CXX11_TEMPLATE_ALIAS>
+    $<$<CXX_COMPILER_ID:Clang>:XSD_CXX11_TEMPLATE_ALIAS>
+)
+
 target_include_directories(digidocpp_priv PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}

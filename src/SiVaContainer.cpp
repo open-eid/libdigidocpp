@@ -40,6 +40,9 @@
 #include <xercesc/framework/MemBufFormatTarget.hpp>
 #include <xercesc/util/Base64.hpp>
 
+#define XSD_CXX11
+#include <xsd/cxx/xml/string.hxx>
+
 #include <algorithm>
 #include <fstream>
 #include <set>
@@ -287,17 +290,20 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path)
 
 stringstream* SiVaContainer::parseDDoc(std::unique_ptr<std::istream> is, bool useHashCode)
 {
+    auto transcode = [](const XMLCh *chr) {
+        return xsd::cxx::xml::transcode<char>(chr);
+    };
     try
     {
         unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(*is));
-        DOMNodeList *nodeList = dom->getElementsByTagName(X("DataFile"));
+        DOMNodeList *nodeList = dom->getElementsByTagName(u"DataFile");
         for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
         {
             DOMElement *item = static_cast<DOMElement*>(nodeList->item(i));
             if(!item)
                 continue;
 
-            if(XMLString::compareString(item->getAttribute(X("ContentType")), X("HASHCODE")) == 0)
+            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"HASHCODE") == 0)
                 continue;
 
             if(const XMLCh *b64 = item->getTextContent())
@@ -305,7 +311,7 @@ stringstream* SiVaContainer::parseDDoc(std::unique_ptr<std::istream> is, bool us
                 XMLSize_t size = 0;
                 XMLByte *data = Base64::decodeToXMLByte(b64, &size);
                 d->dataFiles.push_back(new DataFilePrivate(unique_ptr<istream>(new stringstream(string((const char*)data, size))),
-                    X(item->getAttribute(X("Filename"))), X(item->getAttribute(X("MimeType"))), X(item->getAttribute(X("Id")))));
+                    transcode(item->getAttribute(u"Filename")), transcode(item->getAttribute(u"MimeType")), transcode(item->getAttribute(u"Id"))));
                 delete data;
             }
 
@@ -317,30 +323,43 @@ stringstream* SiVaContainer::parseDDoc(std::unique_ptr<std::istream> is, bool us
             XMLSize_t size = 0;
             if(XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))
             {
-                item->setAttribute(X("ContentType"), X("HASHCODE"));
-                item->setAttribute(X("DigestType"), X("sha1"));
-                item->setAttribute(X("DigestValue"), X((const char*)out));
+                item->setAttribute(u"ContentType", u"HASHCODE");
+                item->setAttribute(u"DigestType", u"sha1");
+                xsd::cxx::xml::string outXMLCh(reinterpret_cast<const char*>(out));
+                item->setAttribute(u"DigestValue", outXMLCh.c_str());
                 item->setTextContent(nullptr);
                 delete out;
             }
         }
 
-        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(X("LS"));
+        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(u"LS");
         unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
         unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
         MemBufFormatTarget out;
         pDomLsOutput->setByteStream(&out);
-        pSerializer->setNewLine(X("\n"));
+        pSerializer->setNewLine(u"\n");
         pSerializer->write(dom.get(), pDomLsOutput.get());
         return new stringstream(string((const char*)out.getRawBuffer(), out.getLen()));
     }
     catch(const XMLException& e)
     {
-        THROW("Failed to parse DDoc XML: %s", X(e.getMessage()).toString().c_str());
+        try {
+            string result = transcode(e.getMessage());
+            THROW("Failed to parse DDoc XML: %s", result.c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+            THROW("Failed to parse DDoc XML.");
+        }
     }
     catch(const DOMException& e)
     {
-        THROW("Failed to parse DDoc XML: %s", X(e.getMessage()).toString().c_str());
+        try {
+            string result = transcode(e.getMessage());
+            THROW("Failed to parse DDoc XML: %s", result.c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+            THROW("Failed to parse DDoc XML.");
+        }
+    } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+        THROW("Failed to parse DDoc XML.");
     }
     catch(const Exception &)
     {
