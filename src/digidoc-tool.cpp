@@ -316,7 +316,7 @@ static void printUsage(const char *executable)
     << "      --document=    - documents to remove" << endl
     << "      --signature=   - signatures to remove" << endl << endl
     << "  Command websign:" << endl
-    << "    Example: " << executable << " sign --cert=signer.crt demo-container.asice" << endl
+    << "    Example: " << executable << " websign --cert=signer.crt demo-container.asice" << endl
     << "    Available options:" << endl
     << "      --cert=        - signer token certificate" << endl
     << "      for additional options look sign command" << endl << endl
@@ -326,7 +326,7 @@ static void printUsage(const char *executable)
     << "      --profile=     - signature profile, TM, time-mark, TS, time-stamp" << endl
     << "      --XAdESEN      - use XAdES EN profile" << endl
     << "      --city=        - city of production place" << endl
-    << "      --street=      - streetAddress of production place in XAdES profile" << endl
+    << "      --street=      - streetAddress of production place in XAdES EN profile" << endl
     << "      --state=       - state of production place" << endl
     << "      --postalCode=  - postalCode of production place" << endl
     << "      --country=     - country of production place" << endl
