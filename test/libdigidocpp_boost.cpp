@@ -92,10 +92,9 @@ BOOST_AUTO_TEST_CASE(signerParameters)
     BOOST_CHECK_EQUAL(signer->postalCode(), "12345");
     BOOST_CHECK_EQUAL(signer->countryName(), "Estonia");
 
-    const unsigned char digest[] = "Signature";
+    const vector<unsigned char> digest = {'S', 'i', 'g', 'n', 'a', 't', 'u', 'r', 'e', '\0' };
     vector<unsigned char> signature;
-    BOOST_CHECK_NO_THROW(signature = signer->sign("http://www.w3.org/2001/04/xmlenc#sha256",
-        vector<unsigned char>(digest, digest+sizeof(digest))));
+    BOOST_CHECK_NO_THROW(signature = signer->sign("http://www.w3.org/2001/04/xmlenc#sha256", digest));
 
     const vector<unsigned char> sig = {
         0x17, 0x2F, 0x5B, 0x7D, 0x16, 0x27, 0x32, 0x86, 0x4E, 0xF1, 0x97, 0x62,
@@ -388,21 +387,18 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 {
     unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
-    vector<string> data;
-    data.emplace_back("0123456789~#%&()=`@{[]}'");
-    data.emplace_back("öäüõ");
-    for(vector<string>::const_iterator i = data.begin(); i != data.end(); ++i)
+    for(const string &data : {"0123456789~#%&()=`@{[]}'", "öäüõ"})
     {
         unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
         const Signature *s1 = nullptr;
-        BOOST_CHECK_NO_THROW(d->addDataFile(*i + ".txt", "text/plain"));
+        BOOST_CHECK_NO_THROW(d->addDataFile(data + ".txt", "text/plain"));
         if(Doc::EXT == DDoc::EXT)
             return;
         BOOST_CHECK_NO_THROW(s1 = d->sign(signer1.get()));
         if(s1)
             s1->validate();
-        d->save(*i + Doc::EXT + ".tmp");
-        d = Container::openPtr(*i + Doc::EXT + ".tmp");
+        d->save(data + Doc::EXT + ".tmp");
+        d = Container::openPtr(data + Doc::EXT + ".tmp");
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
         s1 = d->signatures().front();
         s1->validate();

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><tsl:TrustServiceStatusList xmlns:tsl="http://uri.etsi.org/02231/v2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ecc="http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/#" xmlns:tslx="http://uri.etsi.org/02231/v2/additionaltypes#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Id="TEST-EE" TSLTag="http://uri.etsi.org/02231/TSLTag">
    <tsl:SchemeInformation>
       <tsl:TSLVersionIdentifier>5</tsl:TSLVersionIdentifier>
-      <tsl:TSLSequenceNumber>5</tsl:TSLSequenceNumber>
+      <tsl:TSLSequenceNumber>6</tsl:TSLSequenceNumber>
       <tsl:TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</tsl:TSLType>
       <tsl:SchemeOperatorName>
          <tsl:Name xml:lang="en">SK Test Authority</tsl:Name>
@@ -70,9 +70,9 @@
             </tsl:AdditionalInformation>
          </tsl:OtherTSLPointer>
       </tsl:PointersToOtherTSL>
-      <tsl:ListIssueDateTime>2015-08-20T21:00:00Z</tsl:ListIssueDateTime>
+      <tsl:ListIssueDateTime>2020-08-21T12:26:28Z</tsl:ListIssueDateTime>
       <tsl:NextUpdate>
-         <tsl:dateTime>2020-08-20T21:00:00Z</tsl:dateTime>
+         <tsl:dateTime>2024-08-20T21:00:00Z</tsl:dateTime>
       </tsl:NextUpdate>
       <tsl:DistributionPoints>
          <tsl:URI>https://demo.sk.ee/TSL/EE_T.xml</tsl:URI>
@@ -358,15 +358,15 @@
          </tsl:TSPServices>
       </tsl:TrustServiceProvider>
    </tsl:TrustServiceProviderList>
-<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI="#TEST-EE"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>quRl4uh82i2HHZgJv9PiMN1R+5ncwzWaofvMGbRUqrE=</DigestValue></Reference></SignedInfo><SignatureValue>d33VqGeHXiDSwDbNBAR29jemMJDIPElaDsDInDNBXxSossVci8Xxmrng6dSuIHa2dpRjaXwZpNKD
-9ijL2hI6U00Su+v9L7DbcuDiip7cbtYviRpNYkPHtaMZZBW0lLwx5eefjXWehXgbI0oGFQBk1xKj
-/ivAlbsoYwa5lhwrOaPCNoAO1na7nZGQ5nJ0s+nsGxjoAVQe9boY/njmtq0XMHsJRyHMR1TMran8
-knYeEL+egU2NOdVhJK0wFPc6mCsqwVpE1tdguas7odkOdpS7dow+7DLXi6/C0fm24YqqzCLvOa0t
-zipm/+lox946s77S0+FM/FA++A5PjzG/o0ZIc5SlBz00Eo3J7DwGchH55EVsYJQ67QPl8W8v5Jdx
-zWiYVNAqCoJJWaNuA4ITAqIRxBVQEUikGJF+Td7UvHPowx0tm0LEgRQTtecqhfE1BmBzShsY+l1k
-Oa9auLCpDDny85eoCKbk49Ua3pmTIerJ2AC2J78CfRrG7e/efxJ4vCEvGWX07pv3f7roCW0Z4UY1
-flxERECNx93Qp1MPYRKnR56b+/kZ4EKymvhn4fIQJmPa9YvrFoSGp6vrM72EaGroUapF8edZF2bC
-9VHNVYyhTJ1x1tGfw8LNzrp50BS1gSguDzGEoy1Me9QLyqQnjPyzc6J9YC/a6PPuOSiJE5CHt20=</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIEvDCCAqQCCQC/HGif/u6k6TANBgkqhkiG9w0BAQUFADAgMQswCQYDVQQGEwJFRTERMA8GA1UE
+<ds:Signature Id="S0"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#TEST-EE"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>fdaBskXrz6ukEbF4nQMjgsZfmKzyWFFbKJLZ6wHeg7Y=</ds:DigestValue></ds:Reference><ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>SW/TsBhs3NezLZat1f6LzwvWuK+ptXdvWssaKf2QI24=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>OVmBFIEtN0/oFLy8HwUERcfU+ib9ss8RooFUvy7syeRyYsgJRU2GSNmXYoeAZaVrLlGSW/5OymsL
+uU5tmJIlIUa0xAk5BzJJVby82mj99MRPzA7AkNWYN+4gcioIqrbA1/ebNT9pBGvSEpm7WRNYgjyc
+qKBhRpnxElJ+pIQavc2P1H2sZ64ML3qThJsT+7Amq03L2VZfsDgadjU6YA3bmq+YynHY6my3IxSE
+M6sO9nCGE2zA/c2LRsx+uQyWTpFMUvtW5NjMJFn+RnfIBovmu5EiqJHj5cngxBEmfQqT+tJhKcAc
+RPWYvi/xuHAVhQTA7hCGycwkl5SLw0LMgkuZBuXxoF/7BPPbbPphTR517eG/kNQNbykyXWmvhIFr
+nOWlAoKBzyy0r33dCN2sOwQpHbinb8VEO5nA+b1eKIa2MVFBEWn9NfGocJX3jQZ22sk4P/lfqO/e
+WRidjHfsm7UiScxnmGWNCzXVq+fY4k5z/ualXsSzZVtvlWeA688TdeTeuKYu5wRgw7EWFdtqlFAD
+ZGC2EaO6GkyNb9YDJ9ptvv5hyOpBSw6cw+AejEJ4hkDv9L8Pq8JHquOPaRUlRXtYePxmP371EjMZ
+rvhiC8eQkyUf6QuLFM/e2EENrNU8XybolEBAJYCPbh0n4OHEnZxM7Uga8I9tomq8TE3Ozwn220E=</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIEvDCCAqQCCQC/HGif/u6k6TANBgkqhkiG9w0BAQUFADAgMQswCQYDVQQGEwJFRTERMA8GA1UE
 AxMIVGVzdCBUU0wwHhcNMTQwNjI1MDkxMDMwWhcNMTUwNjI1MDkxMDMwWjAgMQswCQYDVQQGEwJF
 RTERMA8GA1UEAxMIVGVzdCBUU0wwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDCU3Nd
 eUa4xMF78VfYPGDDGC4yd2bYboF4C2R7mfUcoaIGOZ4VCShl9ojjQY0a4/7QEI5FPDwvziydN9UF
@@ -387,4 +387,4 @@ VG/Y7ZBMQTcoWJZ23q07tDQSXCDfgl1AhhaAxgsCnf+yfwWaxHjhygx40VzJnEiBTzAVnqDGW0ce
 zpRnP8huueen38ptKjI46JFR+CgW0ckyFpNtE5AaR0vJuJl8lSpAkXtmIC6iGxsnszV519MXZxpX
 I0QXAhZQmkw7HPvy/aWxqmX8yyy5Yh2en25631GHt5LtSc1iiGpX0/x+rAiRjDcU5AAEOB4XWF3+
 NSc7Tyl09trfisQcWp9vCEFSIAwhiErpMvmP+yK/Emh7nZwqU4ueAj3OvggqPsg0Soaixr/UQC9T
-+rIwifv1Bh2q+VXGqdLG62Ay5Q==</X509Certificate></X509Data></KeyInfo></Signature></tsl:TrustServiceStatusList>
++rIwifv1Bh2q+VXGqdLG62Ay5Q==</ds:X509Certificate></ds:X509Data></ds:KeyInfo><ds:Object><xades:QualifyingProperties Target="#S0"><xades:SignedProperties Id="SignedProperties"><xades:SignedSignatureProperties><xades:SigningTime>2020-08-21T09:26:28Z</xades:SigningTime><xades:SigningCertificate><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>L9opMx+XtpwkcJpXA+VC09wsWXF5ienDCae986cpzSE=</ds:DigestValue></xades:CertDigest><xades:IssuerSerial><ds:X509IssuerName>CN=Test TSL, C=EE</ds:X509IssuerName><ds:X509SerialNumber>13770996796978275561</ds:X509SerialNumber></xades:IssuerSerial></xades:Cert></xades:SigningCertificate></xades:SignedSignatureProperties></xades:SignedProperties></xades:QualifyingProperties></ds:Object></ds:Signature></tsl:TrustServiceStatusList>
