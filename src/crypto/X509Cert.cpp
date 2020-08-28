@@ -34,7 +34,7 @@
 using namespace digidoc;
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static const ASN1_TIME *X509_get0_notBefore(const X509 *x)
 {
     return x->cert_info->validity->notBefore;
@@ -552,6 +552,14 @@ X509Cert& X509Cert::operator =(X509Cert &&other)
     if(this != &other)
         cert = move(other.cert);
     return *this;
+}
+
+/**
+ * Equal operator to compare two objects
+ */
+bool X509Cert::operator ==(X509 *other) const
+{
+    return operator==(X509Cert(other));
 }
 
 /**

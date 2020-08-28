@@ -72,13 +72,17 @@ static ostream &operator<<(ostream &os, const Exception::ExceptionCode code)
     switch(code)
     {
     case Exception::General: os << "General"; break;
+    case Exception::NetworkError: os << "NetworkError"; break;
     case Exception::CertificateIssuerMissing: os << "CertificateIssuerMissing"; break;
     case Exception::CertificateRevoked: os << "CertificateRevoked"; break;
     case Exception::CertificateUnknown: os << "CertificateUnknown"; break;
+    case Exception::OCSPBeforeTimeStamp: os << "OCSPBeforeTimeStamp"; break;
     case Exception::OCSPResponderMissing: os << "OCSPResponderMissing"; break;
     case Exception::OCSPCertMissing: os << "OCSPCertMissing"; break;
     case Exception::OCSPTimeSlot: os << "OCSPTimeSlot"; break;
     case Exception::OCSPRequestUnauthorized: os << "OCSPRequestUnauthorized"; break;
+    case Exception::TSForbidden: os << "TSForbidden"; break;
+    case Exception::TSTooManyRequests: os << "TSTooManyRequests"; break;
     case Exception::PINCanceled: os << "PINCanceled"; break;
     case Exception::PINFailed: os << "PINFailed"; break;
     case Exception::PINIncorrect: os << "PINIncorrect"; break;
@@ -89,7 +93,7 @@ static ostream &operator<<(ostream &os, const Exception::ExceptionCode code)
     case Exception::IssuerNameSpaceWarning: os << "IssuerNameSpaceWarning"; break;
     case Exception::ProducedATLateWarning: os << "ProducedATLateWarning"; break;
     case Exception::MimeTypeWarning: os << "MimeTypeWarning"; break;
-    default: os << code;
+    case Exception::DDocError: os << "DDocError"; break;
     }
     return os;
 }

@@ -334,7 +334,7 @@ XmlConfV2::~XmlConfV2() { delete d; }
 XmlConfV2* XmlConfV2::instance() { return dynamic_cast<XmlConfV2*>(Conf::instance()); }
 
 /**
- * Initialize xml conf from path
+ * @deprecated See digidoc::XmlConfV4::XmlConfV4
  */
 XmlConfV3::XmlConfV3(const string &path, const string &schema)
     : d(new XmlConf::Private(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
@@ -342,12 +342,22 @@ XmlConfV3::XmlConfV3(const string &path, const string &schema)
 XmlConfV3::~XmlConfV3() { delete d; }
 XmlConfV3* XmlConfV3::instance() { return dynamic_cast<XmlConfV3*>(Conf::instance()); }
 
+/**
+ * Initialize xml conf from path
+ */
+XmlConfV4::XmlConfV4(const string &path, const string &schema)
+    : d(new XmlConf::Private(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
+{}
+XmlConfV4::~XmlConfV4() { delete d; }
+XmlConfV4* XmlConfV4::instance() { return dynamic_cast<XmlConfV4*>(Conf::instance()); }
+
 
 
 #define GET1(TYPE, PROP) \
 TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); } \
 TYPE XmlConfV2::PROP() const { return d->PROP.value(Conf::PROP()); } \
-TYPE XmlConfV3::PROP() const { return d->PROP.value(Conf::PROP()); }
+TYPE XmlConfV3::PROP() const { return d->PROP.value(Conf::PROP()); } \
+TYPE XmlConfV4::PROP() const { return d->PROP.value(Conf::PROP()); }
 
 #define SET1(TYPE, SET, PROP) \
 void XmlConf::SET(TYPE PROP) \
@@ -355,6 +365,8 @@ void XmlConf::SET(TYPE PROP) \
 void XmlConfV2::SET(TYPE PROP) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
 void XmlConfV3::SET(TYPE PROP) \
+{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+void XmlConfV4::SET(TYPE PROP) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
 
 #define SET1CONST(TYPE, SET, PROP) \
@@ -363,6 +375,8 @@ void XmlConf::SET(const TYPE &(PROP)) \
 void XmlConfV2::SET(const TYPE &(PROP)) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
 void XmlConfV3::SET(const TYPE &(PROP)) \
+{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+void XmlConfV4::SET(const TYPE &(PROP)) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
 
 GET1(int, logLevel)
@@ -399,6 +413,12 @@ string XmlConfV2::ocsp(const string &issuer) const
 }
 
 string XmlConfV3::ocsp(const string &issuer) const
+{
+    auto i = d->ocsp.find(issuer);
+    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
+}
+
+string XmlConfV4::ocsp(const string &issuer) const
 {
     auto i = d->ocsp.find(issuer);
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
@@ -511,7 +531,22 @@ X509Cert XmlConfV3::verifyServiceCert() const
     return ConfV3::verifyServiceCert();
 }
 
+X509Cert XmlConfV4::verifyServiceCert() const
+{
+    return ConfV4::verifyServiceCert();
+}
+
 set<string> XmlConfV3::OCSPTMProfiles() const
 {
     return d->ocspTMProfiles.empty() ? ConfV3::OCSPTMProfiles() : d->ocspTMProfiles;
+}
+
+set<string> XmlConfV4::OCSPTMProfiles() const
+{
+    return d->ocspTMProfiles.empty() ? ConfV3::OCSPTMProfiles() : d->ocspTMProfiles;
+}
+
+vector<X509Cert> XmlConfV4::verifyServiceCerts() const
+{
+    return ConfV4::verifyServiceCerts();
 }

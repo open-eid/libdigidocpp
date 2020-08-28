@@ -145,7 +145,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
         {"document", b64},
         {"signaturePolicy", "POLv4"}
     }).dump();
-    Connect::Result r = Connect(url, "POST", 0, {}, CONF(verifyServiceCert)).exec({
+    Connect::Result r = Connect(url, "POST", 0, {}, CONF(verifyServiceCerts)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
     }, (const unsigned char*)req.c_str(), req.size());
 

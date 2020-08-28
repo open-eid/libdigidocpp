@@ -100,6 +100,19 @@ private:
     DISABLE_COPY(ConfV3);
 };
 
-using ConfCurrent = ConfV3;
+class DIGIDOCPP_EXPORT ConfV4: public ConfV3
+{
+public:
+    ConfV4();
+    ~ConfV4() override;
+    static ConfV4* instance();
+
+    virtual std::vector<X509Cert> verifyServiceCerts() const;
+
+private:
+    DISABLE_COPY(ConfV4);
+};
+
+using ConfCurrent = ConfV4;
 #define CONF(method) ConfCurrent::instance() ? ConfCurrent::instance()->method() : ConfCurrent().method()
 }

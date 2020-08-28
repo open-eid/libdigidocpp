@@ -36,7 +36,7 @@
 using namespace digidoc;
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
 {
     return ctx->cert;
@@ -166,7 +166,7 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert, const set<string> &type
             else
             {
                 SCOPE(ASN1_OCTET_STRING, skid, X509_get_ext_d2i(i.handle(), NID_subject_key_identifier, nullptr, nullptr));
-                if(skid.get() && ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) == 0)
+                if(skid && ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) == 0)
                     return i;
             }
         }
@@ -210,8 +210,8 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
         {
             if(type.find(s.type) == type.cend())
                 continue;
-            auto certFound = find_if(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
-                if(X509_cmp(x509, issuer.handle()) == 0)
+            if(!any_of(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
+                if(issuer == x509)
                     return true;
                 if(!akid || !akid->keyid)
                 {
@@ -229,8 +229,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
                     return true;
                 OpenSSLException(); //Clear errors
                 return false;
-            });
-            if(certFound == s.certs.cend())
+            }))
                 continue;
             X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&s.validity[0]));
             X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
@@ -273,24 +272,28 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
         const vector<string> policies = cert.certificatePolicies();
         const vector<string> qcstatement = cert.qcStatements();
         const vector<X509Cert::KeyUsage> keyUsage = cert.keyUsage();
+        auto containsPolicy = [&policies](const string &policy) {
+            return find(policies.cbegin(), policies.cend(), policy) != policies.cend();
+        };
+        auto containsQCStatement = [&qcstatement](const string &statement) {
+            return find(qcstatement.cbegin(), qcstatement.cend(), statement) != qcstatement.cend();
+        };
 
-        bool isQCCompliant = find(qcstatement.cbegin(), qcstatement.cend(), X509Cert::QC_COMPLIANT) != qcstatement.cend();
+        bool isQCCompliant = containsQCStatement(X509Cert::QC_COMPLIANT);
         bool isQSCD =
-            find(policies.cbegin(), policies.cend(), X509Cert::QCP_PUBLIC_WITH_SSCD) != policies.cend() ||
-            find(policies.cbegin(), policies.cend(), X509Cert::QCP_LEGAL_QSCD) != policies.cend() ||
-            find(policies.cbegin(), policies.cend(), X509Cert::QCP_NATURAL_QSCD) != policies.cend() ||
-            find(qcstatement.cbegin(), qcstatement.cend(), X509Cert::QC_SSCD) != qcstatement.cend();
+            containsPolicy(X509Cert::QCP_PUBLIC_WITH_SSCD) ||
+            containsPolicy(X509Cert::QCP_LEGAL_QSCD) ||
+            containsPolicy(X509Cert::QCP_NATURAL_QSCD) ||
+            containsQCStatement(X509Cert::QC_SSCD);
 
         bool isESeal =  // Special treamtent for E-Seals
-            find(policies.cbegin(), policies.cend(), X509Cert::QCP_LEGAL) != policies.cend() ||
-            find(qcstatement.cbegin(), qcstatement.cend(), X509Cert::QCT_ESEAL) != qcstatement.cend();
-        auto matchPolicySet = [&](const vector<string> &policySet){
-            return all_of(policySet.cbegin(), policySet.cend(), [&](const string &policy){
-                return find(policies.cbegin(), policies.cend(), policy) != policies.cend();
-            });
+            containsPolicy(X509Cert::QCP_LEGAL) ||
+            containsQCStatement(X509Cert::QCT_ESEAL);
+        auto matchPolicySet = [&containsPolicy](const vector<string> &policySet){
+            return all_of(policySet.cbegin(), policySet.cend(), containsPolicy);
         };
-        auto matchKeyUsageSet = [&](const map<X509Cert::KeyUsage,bool> &keyUsageSet){
-            return all_of(keyUsageSet.cbegin(), keyUsageSet.cend(), [&](pair<X509Cert::KeyUsage,bool> keyUsageBit){
+        auto matchKeyUsageSet = [&keyUsage](const map<X509Cert::KeyUsage,bool> &keyUsageSet){
+            return all_of(keyUsageSet.cbegin(), keyUsageSet.cend(), [&keyUsage](const pair<X509Cert::KeyUsage,bool> &keyUsageBit){
                 return (find(keyUsage.cbegin(), keyUsage.cend(), keyUsageBit.first) != keyUsage.cend()) == keyUsageBit.second;
             });
         };
@@ -306,7 +309,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
             else if(q.assert_ == "atLeastOne")
             {
                 if(!(any_of(q.policySet.cbegin(), q.policySet.cend(), matchPolicySet) ||
-                     any_of(q.keyUsage.cbegin(), q.keyUsage.cend(), matchKeyUsageSet) ))
+                     any_of(q.keyUsage.cbegin(), q.keyUsage.cend(), matchKeyUsageSet)))
                     continue;
             }
             else
