@@ -34,9 +34,9 @@ public:
     std::string id() const override { return _id; }
     std::string claimedSigningTime() const override { return _signingTime; }
     std::string trustedSigningTime() const override { return _bestTime.empty() ? _signingTime : _bestTime; }
-    X509Cert signingCertificate() const override { return X509Cert(); }
+    X509Cert signingCertificate() const override { return _signingCertificate; }
     std::string signedBy() const override { return _signedBy; }
-    std::string signatureMethod() const override { return std::string(); }
+    std::string signatureMethod() const override { return _signatureMethod; }
     void validate() const override;
     void validate(const std::string &policy) const override;
     std::vector<unsigned char> dataToSign() const override;
@@ -44,13 +44,34 @@ public:
 
     // Xades properties
     std::string profile() const override { return _profile; }
+    std::string city() const override { return _city; };
+    std::string stateOrProvince() const override { return _stateOrProvince; };
+    std::string postalCode() const override { return _postalCode; };
+    std::string countryName() const override { return _country; };
+    std::vector<std::string> signerRoles() const override { return _signerRoles; };
+
+    //TM profile properties
+    X509Cert OCSPCertificate() const override { return _ocspCertificate; };
+
+    //TS profile properties
+    X509Cert TimeStampCertificate() const override { return _tsCertificate; };
+
+    //TSA profile properties
+    X509Cert ArchiveTimeStampCertificate() const override { return _tsaCertificate; };
+
+    // Other
+    std::vector<unsigned char> messageImprint() const override { return  _messageImprint; };
 
 private:
     SignatureSiVa() = default;
     DISABLE_COPY(SignatureSiVa);
 
-    std::string _id, _profile, _signedBy, _signingTime, _bestTime, _indication, _subIndication, _signatureLevel;
-    std::vector<Exception> _errors;
+    X509Cert _signingCertificate, _ocspCertificate, _tsCertificate, _tsaCertificate;
+    std::string _id, _profile, _signedBy, _signatureMethod, _signingTime, _bestTime, _indication, _subIndication, _signatureLevel;
+    std::string _city, _stateOrProvince, _postalCode, _country;
+    std::vector<std::string> _signerRoles;
+    std::vector<unsigned char> _messageImprint;
+    std::vector<Exception> _exceptions;
 
     friend SiVaContainer;
 };
@@ -78,10 +99,10 @@ public:
     static std::unique_ptr<Container> openInternal(const std::string &path);
 
 private:
-    SiVaContainer(const std::string &path, const std::string &ext);
+    SiVaContainer(const std::string &path, const std::string &ext, bool useHashCode);
     DISABLE_COPY(SiVaContainer);
 
-    std::stringstream* parseDDoc(std::istream *is);
+    std::stringstream* parseDDoc(std::unique_ptr<std::istream> is, bool useHashCode);
 
     class Private;
     Private *d;

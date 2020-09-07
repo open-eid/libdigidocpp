@@ -31,6 +31,7 @@
 #include "crypto/Connect.h"
 #include "crypto/Digest.h"
 #include "util/File.h"
+#include "xml/xml.hxx"
 #include "xml/SecureDOMParser.h"
 
 #include "jsonxx.cc"
@@ -61,7 +62,7 @@ vector<unsigned char> SignatureSiVa::dataToSign() const
     THROW("Not implemented.");
 }
 
-void SignatureSiVa::setSignatureValue(const vector<unsigned char> &)
+void SignatureSiVa::setSignatureValue(const vector<unsigned char> & /*signatureValue*/)
 {
     THROW("Not implemented.");
 }
@@ -76,36 +77,36 @@ void SignatureSiVa::validate(const string &policy) const
     static const set<string> QES = { "QESIG", "QES", "QESEAL",
         "ADESEAL_QC", "ADESEAL" }; // Special treamtent for E-Seals
     Exception e(EXCEPTION_PARAMS("Signature validation"));
+    for(const Exception &exception: _exceptions)
+        e.addCause(exception);
     if(_indication == "TOTAL-PASSED")
     {
-        if(QES.find(_signatureLevel) != QES.cend() || _signatureLevel.empty() || policy == POLv1)
+        if(QES.count(_signatureLevel) || _signatureLevel.empty() || policy == POLv1)
+        {
+            if(!e.causes().empty())
+                throw e;
             return;
+        }
         Exception ex(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
         ex.setCode(Exception::CertificateIssuerMissing);
         e.addCause(ex);
-    }
-    else
-    {
-        for(const Exception &error: _errors)
-            e.addCause(error);
     }
     if(!e.causes().empty())
         throw e;
 }
 
 
-SiVaContainer::SiVaContainer(const string &path, const string &ext)
+SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHashCode)
     : d(new Private)
 {
-    DEBUG("SiVaContainer::SiVaContainer(%s, %s)", path.c_str(), ext.c_str());
+    DEBUG("SiVaContainer::SiVaContainer(%s, %s, %d)", path.c_str(), ext.c_str(), useHashCode);
     unique_ptr<istream> ifs(new ifstream(File::encodeName(path).c_str(), ifstream::binary));
     istream *is = ifs.get();
-    unique_ptr<stringstream> ddoc;
     if(ext == "DDOC")
     {
         d->mediaType = "application/x-ddoc";
-        ddoc.reset(parseDDoc(ifs.get()));
-        is = ddoc.get();
+        ifs.reset(parseDDoc(move(ifs), useHashCode));
+        is = ifs.get();
     }
     else
     {
@@ -131,12 +132,12 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
     }
 
     string url = CONF(verifyServiceUri);
-    jsonxx::Object reqObj = jsonxx::Object() 
-        <<"filename" << File::fileName(path) 
+    jsonxx::Object reqObj = jsonxx::Object()
+        << "filename" << File::fileName(path)
         << "document" << b64
         << "signaturePolicy" << "POLv4";
     string req = reqObj.json();
-    Connect::Result r = Connect(url, "POST", 0, string(), CONF(verifyServiceCert)).exec({
+    Connect::Result r = Connect(url, "POST", 0, {}, CONF(verifyServiceCert)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
     }, (const unsigned char*)req.c_str(), req.size());
 
@@ -160,22 +161,70 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext)
 
     jsonxx::Object report = result.get<jsonxx::Object>("validationReport");
     jsonxx::Object base = report.get<jsonxx::Object>("validationConclusion");
-    for(const jsonxx::Value *obj: base.get<jsonxx::Array>("signatures", jsonxx::Array()).values())
+    for(const jsonxx::Value *obj: base.get<jsonxx::Array>("signatures", {}).values())
     {
         SignatureSiVa *s = new SignatureSiVa;
         jsonxx::Object signature = obj->get<jsonxx::Object>();
         s->_id = signature.get<string>("id");
         s->_signingTime = signature.get<string>("claimedSigningTime");
-        s->_bestTime = signature.get<jsonxx::Object>("info", jsonxx::Object()).get<string>("bestSignatureTime", string());
+        s->_bestTime = signature.get<jsonxx::Object>("info", {}).get<string>("bestSignatureTime", {});
         s->_profile = signature.get<string>("signatureFormat");
         s->_indication = signature.get<string>("indication");
-        s->_subIndication = signature.get<string>("subIndication", string());
+        s->_subIndication = signature.get<string>("subIndication", {});
         s->_signedBy = signature.get<string>("signedBy");
-        s->_signatureLevel = signature.get<string>("signatureLevel", string());
-        for(const jsonxx::Value *error: signature.get<jsonxx::Array>("errors", jsonxx::Array()).values())
+        s->_signatureMethod = signature.get<string>("signatureMethod", {});
+        s->_signatureLevel = signature.get<string>("signatureLevel", {});
+        jsonxx::Object info = signature.get<jsonxx::Object>("info", {});
+        if(info.has<string>("timeAssertionMessageImprint"))
+        {
+            string base64 = info.get<string>("timeAssertionMessageImprint");
+            XMLSize_t size = 0;
+            XMLByte *message = Base64::decode((const XMLByte*)base64.c_str(), &size);
+            s->_messageImprint.assign(message, message + size);
+            delete message;
+        }
+        for(const jsonxx::Value *signerRole: info.get<jsonxx::Array>("signerRole", {}).values())
+            s->_signerRoles.push_back(signerRole->get<jsonxx::Object>().get<string>("claimedRole"));
+        jsonxx::Object signatureProductionPlace = info.get<jsonxx::Object>("signatureProductionPlace", {});
+        s->_city = signatureProductionPlace.get<string>("city", {});
+        s->_stateOrProvince = signatureProductionPlace.get<string>("stateOrProvince", {});
+        s->_postalCode = signatureProductionPlace.get<string>("postalCode", {});
+        s->_country = signatureProductionPlace.get<string>("countryName", {});
+        for(const jsonxx::Value *certificates: signature.get<jsonxx::Array>("certificates", {}).values())
+        {
+            jsonxx::Object certificate = certificates->get<jsonxx::Object>();
+            string content = certificate.get<string>("content");
+            XMLSize_t size = 0;
+            XMLByte *der = Base64::decode((const XMLByte*)content.c_str(), &size);
+            if(certificate.get<string>("type") == "SIGNING")
+                s->_signingCertificate = X509Cert(der, size, X509Cert::Der);
+            if(certificate.get<string>("type") == "REVOCATION")
+                s->_ocspCertificate = X509Cert(der, size, X509Cert::Der);
+            if(certificate.get<string>("type") == "SIGNATURE_TIMESTAMP")
+                s->_tsCertificate = X509Cert(der, size, X509Cert::Der);
+            if(certificate.get<string>("type") == "ARCHIVE_TIMESTAMP")
+                s->_tsaCertificate = X509Cert(der, size, X509Cert::Der);
+            delete der;
+        }
+        for(const jsonxx::Value *error: signature.get<jsonxx::Array>("errors", {}).values())
         {
             string message = error->get<jsonxx::Object>().get<string>("content");
-            s->_errors.emplace_back(Exception(EXCEPTION_PARAMS(message.c_str())));
+            if(message.find("Bad digest for DataFile") == 0 && useHashCode)
+                THROW(message.c_str());
+            s->_exceptions.emplace_back(EXCEPTION_PARAMS(message.c_str()));
+        }
+        for(const jsonxx::Value *warning: signature.get<jsonxx::Array>("warnings", {}).values())
+        {
+            string message = warning->get<jsonxx::Object>().get<string>("content");
+            Exception ex(EXCEPTION_PARAMS(message.c_str()));
+            if(message == "X509IssuerName has none or invalid namespace: null" ||
+                message == "X509SerialNumber has none or invalid namespace: null")
+                ex.setCode(Exception::IssuerNameSpaceWarning);
+            else if(message.find("Bad digest for DataFile") == 0)
+                ex.setCode(Exception::DataFileNameSpaceWarning);
+            else if(message == "Old and unsupported format: SK-XML version: 1.0")
+                continue;
+            WARN("%s", message.c_str());
         }
         d->signatures.push_back(s);
     }
@@ -205,7 +254,7 @@ void SiVaContainer::addAdESSignature(istream & /*signature*/)
     THROW("Not supported.");
 }
 
-unique_ptr<Container> SiVaContainer::createInternal(const string & /*unused*/)
+unique_ptr<Container> SiVaContainer::createInternal(const string & /*path*/)
 {
     return {};
 }
@@ -225,10 +274,18 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path)
     static const set<string> supported = {"PDF", "DDOC"};
     string ext = File::fileExtension(path);
     transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
-    return unique_ptr<Container>(supported.find(ext) != supported.cend() ? new SiVaContainer(path, ext) : nullptr);
+    if(!supported.count(ext))
+        return {};
+    try {
+        return unique_ptr<Container>(new SiVaContainer(path, ext, true));
+    } catch(const Exception &e) {
+        if(e.msg().find("Bad digest for DataFile") == 0)
+            return unique_ptr<Container>(new SiVaContainer(path, ext, false));
+        throw;
+    }
 }
 
-stringstream* SiVaContainer::parseDDoc(istream *is)
+stringstream* SiVaContainer::parseDDoc(std::unique_ptr<std::istream> is, bool useHashCode)
 {
     try
     {
@@ -252,6 +309,8 @@ stringstream* SiVaContainer::parseDDoc(istream *is)
                 delete data;
             }
 
+            if(!useHashCode)
+                continue;
             Digest calc(URI_SHA1);
             SecureDOMParser::calcDigestOnNode(&calc, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315", dom.get(), item);
             vector<unsigned char> digest = calc.result();
