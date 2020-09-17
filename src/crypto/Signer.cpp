@@ -20,6 +20,11 @@
 #include "Signer.h"
 
 #include "Conf.h"
+#include "crypto/Digest.h"
+#include "crypto/OpenSSLHelpers.h"
+#include "crypto/X509Cert.h"
+
+#include <openssl/x509.h>
 
 using namespace digidoc;
 using namespace std;
@@ -209,7 +214,24 @@ void Signer::setENProfile(bool enable)
  */
 string Signer::method() const
 {
-    return d->method;
+    X509Cert c = cert();
+    EVP_PKEY *key = X509_get0_pubkey(c.handle());
+    if(!key)
+        return d->method;
+
+    switch(EVP_PKEY_base_id(key))
+    {
+#ifndef OPENSSL_NO_ECDSA
+    case EVP_PKEY_EC:
+        switch(EVP_PKEY_bits(key)) {
+        case 224: return URI_SHA224;
+        case 256: return URI_SHA256;
+        case 384: return URI_SHA384;
+        default: return URI_SHA512;
+        }
+#endif
+    default: return d->method;
+    }
 }
 
 /**

@@ -317,6 +317,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         Signature *s3 = nullptr;
         BOOST_CHECK_NO_THROW(s3 = d->sign(signer3.get()));
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
+        BOOST_CHECK_EQUAL(s3->signatureMethod(), "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256");
         if(s3)
         {
             BOOST_CHECK_EQUAL(s3->signingCertificate(), signer3->cert());
@@ -385,6 +386,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         s = d->signatures().back();
         BOOST_CHECK_NO_THROW(s->validate());
         BOOST_CHECK_EQUAL(s->signatureMethod(), signer1->method());
+        unique_ptr<Signer> signer4(new PKCS12Signer("signerEC384.p12", "signerEC"));
+        signer4->setProfile("BES");
+        d = Container::createPtr(Doc::EXT + ".tmp");
+        BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+        Signature *s4 = nullptr;
+        BOOST_CHECK_NO_THROW(s4 = d->sign(signer4.get()));
+        BOOST_CHECK_EQUAL(s4->signatureMethod(), "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384");
     }
 
     // Remove second Signature
