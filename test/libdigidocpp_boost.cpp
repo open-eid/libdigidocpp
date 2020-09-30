@@ -377,6 +377,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_NO_THROW(s->extendSignatureProfile(signer2->profile()));
         BOOST_CHECK_NO_THROW(d->save());
         BOOST_CHECK_NO_THROW(s->validate());
+
+        d = Container::createPtr(Doc::EXT + ".tmp");
+        signer1->setMethod("http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1");
+        BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+        BOOST_CHECK_NO_THROW(d->sign(signer1.get()));
+        s = d->signatures().back();
+        BOOST_CHECK_NO_THROW(s->validate());
+        BOOST_CHECK_EQUAL(s->signatureMethod(), signer1->method());
     }
 
     // Remove second Signature

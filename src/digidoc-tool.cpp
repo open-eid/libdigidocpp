@@ -341,6 +341,7 @@ static void printUsage(const char *executable)
     << "      --pin=         - default asks pin from prompt" << endl
     << "      --sha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl
+    << "      --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256)" << endl
     << "      --tsurl         - option to change TS URL (default " << (CONF(TSUrl)) << ")" << endl
     << "      --dontValidate  - Don't validate container" << endl << endl
     << "  All commands:" << endl
@@ -425,6 +426,10 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg == "--sigsha256") siguri = URI_SHA256;
         else if(arg == "--sigsha384") siguri = URI_SHA384;
         else if(arg == "--sigsha512") siguri = URI_SHA512;
+        else if(arg == "--sigpsssha224") siguri = URI_RSA_PSS_SHA224;
+        else if(arg == "--sigpsssha256") siguri = URI_RSA_PSS_SHA256;
+        else if(arg == "--sigpsssha384") siguri = URI_RSA_PSS_SHA384;
+        else if(arg == "--sigpsssha512") siguri = URI_RSA_PSS_SHA512;
         else if(arg.find("--tsurl") == 0) tsurl = arg.substr(8);
         else if(arg.find("--tslurl=") == 0) tslurl = arg.substr(9);
         else if(arg.find("--tslcert=") == 0) tslcerts = { X509Cert(arg.substr(10)) };

@@ -29,9 +29,10 @@
 #include <openssl/ts.h>
 #include <openssl/x509v3.h>
 
+#include <algorithm>
+#include <array>
 #include <cstring>
 #include <iterator>
-#include <set>
 
 using namespace digidoc;
 using namespace std;
@@ -55,16 +56,6 @@ ASN1_SEQUENCE(ESS_ISSUER_SERIAL) = {
 } static_ASN1_SEQUENCE_END(ESS_ISSUER_SERIAL)
 IMPLEMENT_ASN1_FUNCTIONS_const(ESS_ISSUER_SERIAL)
 #endif
-#else
-static int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
-{
-    if(!r || !s) return 0;
-    BN_clear_free(sig->r);
-    BN_clear_free(sig->s);
-    sig->r = r;
-    sig->s = s;
-    return 1;
-}
 #endif
 
 /**
@@ -119,7 +110,7 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
  */
 int X509Crypto::compareIssuerToString(const string &name) const
 {
-    static const std::set<std::string> list{
+    static const std::array<std::string, 18> list = {
         "CN", "commonName",
         "L", "localityName",
         "ST", "stateOrProvinceName",
@@ -157,7 +148,7 @@ int X509Crypto::compareIssuerToString(const string &name) const
             continue;
 
         string obj = nameitem.substr(0, pos);
-        if(list.find(obj) == list.end())
+        if(std::find(list.cbegin(), list.cend(), obj) == list.cend())
             continue;
 
         ASN1_OBJECT *obja = OBJ_txt2obj(obj.c_str(), 0);
@@ -223,52 +214,61 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
     if(signature.empty())
         THROW("Signature value is empty.");
 
-    SCOPE(EVP_PKEY, key, X509_get_pubkey(cert.handle()));
+    EVP_PKEY *key = X509_get0_pubkey(cert.handle());
     if(!key)
         THROW("Certificate does not have a public key, can not verify signature.");
 
     int result = 0;
-    switch(EVP_PKEY_base_id(key.get()))
+    switch(EVP_PKEY_base_id(key))
     {
     case EVP_PKEY_RSA:
     {
-        SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(key.get()));
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
-        result = RSA_verify(Digest::toMethod(method), digest.data(), (unsigned int)digest.size(),
-            const_cast<unsigned char*>(signature.data()), (unsigned int)signature.size(), rsa.get());
+        RSA *rsa = EVP_PKEY_get0_RSA(key);
+        auto decrypt = [rsa, &signature](int padding) {
+            vector<unsigned char> decrypted(size_t(RSA_size(rsa)));
+            int size = RSA_public_decrypt(int(signature.size()), signature.data(), decrypted.data(), rsa, padding);
+            if(size <= 0)
+                decrypted.clear();
+            return decrypted;
+        };
+        int nid = Digest::toMethod(method);
+
+        if(Digest::isRsaPssUri(method)) {
+            vector<unsigned char> decrypted = decrypt(RSA_NO_PADDING);
+            result = RSA_verify_PKCS1_PSS_mgf1(rsa, digest.data(), EVP_get_digestbynid(nid), nullptr, decrypted.data(), RSA_PSS_SALTLEN_DIGEST);
+        } else {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+            result = RSA_verify(Digest::toMethod(method), digest.data(), (unsigned int)digest.size(),
+                const_cast<unsigned char*>(signature.data()), (unsigned int)signature.size(), rsa);
 #else
-        vector<unsigned char> out(size_t(RSA_size(rsa.get())));
-        int size = RSA_public_decrypt(int(signature.size()), signature.data(), out.data(), rsa.get(), RSA_PKCS1_PADDING);
-        if(size <= 0)
-            break;
-        out.resize(size_t(size));
+            vector<unsigned char> out = decrypt(RSA_PKCS1_PADDING);
+            const unsigned char *p = out.data();
+            SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(out.size())));
+            if(!sig)
+                break;
+            const X509_ALGOR *algor = nullptr;
+            const ASN1_OCTET_STRING *value = nullptr;
+            X509_SIG_get0(sig.get(), &algor, &value);
 
-        const unsigned char *p = out.data();
-        SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(out.size())));
-        if(!sig)
-            break;
-        const X509_ALGOR *algor = nullptr;
-        const ASN1_OCTET_STRING *value = nullptr;
-        X509_SIG_get0(sig.get(), &algor, &value);
-
-        if(algor->parameter && ASN1_TYPE_get(algor->parameter) != V_ASN1_NULL)
-            break;
-        if(Digest::toMethod(method) == OBJ_obj2nid(algor->algorithm) &&
-            size_t(value->length) == digest.size() &&
-            memcmp(value->data, digest.data(), digest.size()) == 0)
-            result = 1;
+            if(algor->parameter && ASN1_TYPE_get(algor->parameter) != V_ASN1_NULL)
+                break;
+            if(nid == OBJ_obj2nid(algor->algorithm) &&
+                size_t(value->length) == digest.size() &&
+                memcmp(value->data, digest.data(), digest.size()) == 0)
+                result = 1;
 #endif
+        }
         break;
     }
 #ifndef OPENSSL_NO_ECDSA
     case EVP_PKEY_EC:
     {
-        SCOPE(EC_KEY, ec, EVP_PKEY_get1_EC_KEY(key.get()));
+        EC_KEY *ec = EVP_PKEY_get0_EC_KEY(key);
         SCOPE(ECDSA_SIG, sig, ECDSA_SIG_new());
         ECDSA_SIG_set0(sig.get(),
             BN_bin2bn(signature.data(), int(signature.size()/2), nullptr),
             BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), nullptr));
-        result = ECDSA_do_verify(digest.data(), int(digest.size()), sig.get(), ec.get());
+        result = ECDSA_do_verify(digest.data(), int(digest.size()), sig.get(), ec);
         break;
     }
 #endif

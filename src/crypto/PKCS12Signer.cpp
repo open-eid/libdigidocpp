@@ -34,14 +34,6 @@ public:
     EVP_PKEY *key = nullptr;
 };
 
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
-static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps)
-{
-    if(pr) *pr = sig->r;
-    if(ps) *ps = sig->s;
-}
-#endif
-
 /**
  * @class digidoc::PKCS12Signer
  * @brief Implements <code>Signer</code> interface for PKCS#12 files.
@@ -83,23 +75,31 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
     {
     case EVP_PKEY_RSA:
     {
-        SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(d->key));
-        signature.resize(size_t(RSA_size(rsa.get())));
+        RSA *rsa = EVP_PKEY_get0_RSA(d->key);
+        signature.resize(size_t(RSA_size(rsa)));
         int nid = Digest::toMethod(method);
-        unsigned int size = (unsigned int)signature.size();
-        result = RSA_sign(nid, digest.data(), (unsigned int)digest.size(), signature.data(), &size, rsa.get());
+        if(Digest::isRsaPssUri(method)) {
+            vector<unsigned char> em(signature.size());
+            if (!RSA_padding_add_PKCS1_PSS_mgf1(rsa, em.data(), digest.data(), EVP_get_digestbynid(nid), nullptr, RSA_PSS_SALTLEN_DIGEST))
+                break;
+            if(RSA_private_encrypt(RSA_size(rsa), em.data(), signature.data(), rsa, RSA_NO_PADDING) == RSA_size(rsa))
+                result = 1;
+        } else {
+            unsigned int size = (unsigned int)signature.size();
+            result = RSA_sign(nid, digest.data(), (unsigned int)digest.size(), signature.data(), &size, rsa);
+        }
         break;
     }
 #ifndef OPENSSL_NO_ECDSA
     case EVP_PKEY_EC:
     {
-        SCOPE(EC_KEY, ec, EVP_PKEY_get1_EC_KEY(d->key));
-        SCOPE(ECDSA_SIG, sig, ECDSA_do_sign(digest.data(), int(digest.size()), ec.get()));
+        EC_KEY *ec = EVP_PKEY_get0_EC_KEY(d->key);
+        SCOPE(ECDSA_SIG, sig, ECDSA_do_sign(digest.data(), int(digest.size()), ec));
         if(!sig)
              break;
 
         size_t keyLen = 0;
-        if(const EC_GROUP *group = EC_KEY_get0_group(ec.get()))
+        if(const EC_GROUP *group = EC_KEY_get0_group(ec))
         {
             BIGNUM *order = BN_new();
             if (EC_GROUP_get_order(group, order, nullptr))

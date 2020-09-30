@@ -153,6 +153,8 @@ extern "C" {
 
 #define ck_mechanism_type_t CK_MECHANISM_TYPE
 
+#define ck_rsa_pkcs_mgf_type_t CK_RSA_PKCS_MGF_TYPE
+
 #define ck_mechanism _CK_MECHANISM
 #define parameter pParameter
 #define parameter_len ulParameterLen
@@ -355,8 +357,16 @@ typedef unsigned long ck_key_type_t;
 #define CKK_BLOWFISH		(0x20UL)
 #define CKK_TWOFISH		(0x21UL)
 #define CKK_GOSTR3410		(0x30UL)
+#define CKK_GOSTR3411		(0x31UL)
+#define CKK_GOST28147		(0x32UL)
 #define CKK_VENDOR_DEFINED	(1UL << 31)
 
+// A mask for new GOST algorithms.
+// For details visit https://tc26.ru/standarts/perevody/guidelines-the-pkcs-11-extensions-for-implementing-the-gost-r-34-10-2012-and-gost-r-34-11-2012-russian-standards-.html
+#define NSSCK_VENDOR_PKCS11_RU_TEAM     (CKK_VENDOR_DEFINED | 0x54321000)
+#define CK_VENDOR_PKCS11_RU_TEAM_TK26   NSSCK_VENDOR_PKCS11_RU_TEAM
+
+#define CKK_GOSTR3410_512	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x003)
 
 typedef unsigned long ck_certificate_type_t;
 
@@ -454,6 +464,20 @@ typedef unsigned long ck_attribute_type_t;
 #define CKA_SUPPORTED_CMS_ATTRIBUTES	(0x503UL)
 #define CKA_WRAP_TEMPLATE		(CKF_ARRAY_ATTRIBUTE | 0x211UL)
 #define CKA_UNWRAP_TEMPLATE		(CKF_ARRAY_ATTRIBUTE | 0x212UL)
+#define CKA_OTP_FORMAT			(0x220UL)
+#define CKA_OTP_LENGTH			(0x221UL)
+#define CKA_OTP_TIME_INTERVAL		(0x222UL)
+#define CKA_OTP_USER_FRIENDLY_MODE	(0x223UL)
+#define CKA_OTP_CHALLENGE_REQUIREMENT	(0x224UL)
+#define CKA_OTP_TIME_REQUIREMENT	(0x225UL)
+#define CKA_OTP_COUNTER_REQUIREMENT	(0x226UL)
+#define CKA_OTP_PIN_REQUIREMENT		(0x227UL)
+#define CKA_OTP_USER_IDENTIFIER		(0x22AUL)
+#define CKA_OTP_SERVICE_IDENTIFIER	(0x22BUL)
+#define CKA_OTP_SERVICE_LOGO		(0x22CUL)
+#define CKA_OTP_SERVICE_LOGO_TYPE	(0x22DUL)
+#define CKA_OTP_COUNTER			(0x22EUL)
+#define CKA_OTP_TIME			(0x22FUL)
 #define CKA_ALLOWED_MECHANISMS		(CKF_ARRAY_ATTRIBUTE | 0x600UL)
 #define CKA_VENDOR_DEFINED		(1UL << 31)
 
@@ -494,6 +518,10 @@ typedef unsigned long ck_mechanism_type_t;
 #define CKM_DSA_KEY_PAIR_GEN		(0x10UL)
 #define	CKM_DSA				(0x11UL)
 #define CKM_DSA_SHA1			(0x12UL)
+#define CKM_DSA_SHA224			(0x13UL)
+#define CKM_DSA_SHA256			(0x14UL)
+#define CKM_DSA_SHA384			(0x15UL)
+#define CKM_DSA_SHA512			(0x16UL)
 #define CKM_DH_PKCS_KEY_PAIR_GEN	(0x20UL)
 #define CKM_DH_PKCS_DERIVE		(0x21UL)
 #define	CKM_X9_42_DH_KEY_PAIR_GEN	(0x30UL)
@@ -506,6 +534,8 @@ typedef unsigned long ck_mechanism_type_t;
 #define CKM_SHA256_RSA_PKCS_PSS		(0x43UL)
 #define CKM_SHA384_RSA_PKCS_PSS		(0x44UL)
 #define CKM_SHA512_RSA_PKCS_PSS		(0x45UL)
+#define CKM_SHA224_RSA_PKCS		(0x46UL)
+#define CKM_SHA224_RSA_PKCS_PSS		(0x47UL)
 #define CKM_RC2_KEY_GEN			(0x100UL)
 #define CKM_RC2_ECB			(0x101UL)
 #define	CKM_RC2_CBC			(0x102UL)
@@ -527,6 +557,7 @@ typedef unsigned long ck_mechanism_type_t;
 #define CKM_DES3_MAC			(0x134UL)
 #define CKM_DES3_MAC_GENERAL		(0x135UL)
 #define CKM_DES3_CBC_PAD		(0x136UL)
+#define CKM_DES3_CMAC			(0x138UL)
 #define CKM_CDMF_KEY_GEN		(0x140UL)
 #define CKM_CDMF_ECB			(0x141UL)
 #define CKM_CDMF_CBC			(0x142UL)
@@ -551,6 +582,9 @@ typedef unsigned long ck_mechanism_type_t;
 #define CKM_SHA256			(0x250UL)
 #define CKM_SHA256_HMAC			(0x251UL)
 #define CKM_SHA256_HMAC_GENERAL		(0x252UL)
+#define CKM_SHA224			(0x255UL)
+#define CKM_SHA224_HMAC			(0x256UL)
+#define CKM_SHA224_HMAC_GENERAL		(0x257UL)
 #define CKM_SHA384			(0x260UL)
 #define CKM_SHA384_HMAC			(0x261UL)
 #define CKM_SHA384_HMAC_GENERAL		(0x262UL)
@@ -655,6 +689,10 @@ typedef unsigned long ck_mechanism_type_t;
 #define CKM_EC_KEY_PAIR_GEN		(0x1040UL)
 #define CKM_ECDSA			(0x1041UL)
 #define CKM_ECDSA_SHA1			(0x1042UL)
+#define CKM_ECDSA_SHA224		(0x1043UL)
+#define CKM_ECDSA_SHA256		(0x1044UL)
+#define CKM_ECDSA_SHA384		(0x1045UL)
+#define CKM_ECDSA_SHA512		(0x1046UL)
 #define CKM_ECDH1_DERIVE		(0x1050UL)
 #define CKM_ECDH1_COFACTOR_DERIVE	(0x1051UL)
 #define CKM_ECMQV_DERIVE		(0x1052UL)
@@ -671,13 +709,47 @@ typedef unsigned long ck_mechanism_type_t;
 #define CKM_AES_MAC			(0x1083UL)
 #define CKM_AES_MAC_GENERAL		(0x1084UL)
 #define CKM_AES_CBC_PAD			(0x1085UL)
+#define CKM_AES_CTR				(0x1086UL)
+#define CKM_AES_GCM				(0x1087UL)
+#define CKM_AES_CCM				(0x1088UL)
+#define CKM_AES_CTS				(0x1089UL)
+#define CKM_AES_CMAC			(0x108AUL)
+#define CKM_BLOWFISH_KEY_GEN    (0x1090UL)
+#define CKM_BLOWFISH_CBC        (0x1091UL)
+#define CKM_TWOFISH_KEY_GEN     (0x1092UL)
+#define CKM_TWOFISH_CBC         (0x1093UL)
+#define CKM_DES_ECB_ENCRYPT_DATA	(0x1100UL)
+#define CKM_DES_CBC_ENCRYPT_DATA	(0x1101UL)
+#define CKM_DES3_ECB_ENCRYPT_DATA	(0x1102UL)
+#define CKM_DES3_CBC_ENCRYPT_DATA	(0x1103UL)
+#define CKM_AES_ECB_ENCRYPT_DATA	(0x1104UL)
+#define CKM_AES_CBC_ENCRYPT_DATA	(0x1105UL)
 #define CKM_GOSTR3410_KEY_PAIR_GEN	(0x1200UL)
 #define CKM_GOSTR3410			(0x1201UL)
 #define CKM_GOSTR3410_WITH_GOSTR3411	(0x1202UL)
+#define CKM_GOSTR3410_KEY_WRAP  (0x1203UL)
+#define CKM_GOSTR3410_DERIVE    (0x1204UL)
+#define CKM_GOSTR3410_512_KEY_PAIR_GEN	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x005)
+#define CKM_GOSTR3410_512	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x006)
+#define CKM_GOSTR3410_12_DERIVE	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x007)
+#define CKM_GOSTR3410_WITH_GOSTR3411_12_256	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x008)
+#define CKM_GOSTR3410_WITH_GOSTR3411_12_512	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x009)
 #define CKM_GOSTR3411			(0x1210UL)
+#define CKM_GOSTR3411_HMAC      (0x1211UL)
+#define CKM_GOSTR3411_12_256	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x012)
+#define CKM_GOSTR3411_12_512	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x013)
+#define CKM_GOSTR3411_12_256_HMAC	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x014)
+#define CKM_GOSTR3411_12_512_HMAC	(CK_VENDOR_PKCS11_RU_TEAM_TK26 | 0x015)
+#define CKM_GOST28147_KEY_GEN   (0x1220UL)
+#define CKM_GOST28147_ECB       (0x1221UL)
+#define CKM_GOST28147           (0x1222UL)
+#define CKM_GOST28147_MAC       (0x1223UL)
+#define CKM_GOST28147_KEY_WRAP  (0x1224UL)
+
 #define CKM_DSA_PARAMETER_GEN		(0x2000UL)
 #define CKM_DH_PKCS_PARAMETER_GEN	(0x2001UL)
 #define CKM_X9_42_DH_PARAMETER_GEN	(0x2002UL)
+#define CKM_AES_KEY_WRAP		(0x2109UL)
 #define CKM_VENDOR_DEFINED		(1UL << 31)
 
 
@@ -711,10 +783,78 @@ struct ck_mechanism_info
 #define CKF_DERIVE		(1UL << 19)
 #define CKF_EXTENSION		(1UL << 31)
 
+#define CKF_EC_F_P			(1UL << 20)
+#define CKF_EC_F_2M			(1UL << 21)
+#define CKF_EC_ECPARAMETERS	(1UL << 22)
+#define CKF_EC_NAMEDCURVE	(1UL << 23)
+#define CKF_EC_UNCOMPRESS	(1UL << 24)
+#define CKF_EC_COMPRESS		(1UL << 25)
 
 /* Flags for C_WaitForSlotEvent.  */
 #define CKF_DONT_BLOCK				(1UL)
 
+/* Flags for Key derivation */
+#define CKD_NULL			(0x1UL)
+#define CKD_SHA1_KDF			(0x2UL)
+#define CKD_SHA224_KDF			(0x5UL)
+#define CKD_SHA256_KDF			(0x6UL)
+#define CKD_SHA384_KDF			(0x7UL)
+#define CKD_SHA512_KDF			(0x8UL)
+
+typedef struct CK_ECDH1_DERIVE_PARAMS {
+	unsigned long  kdf;
+	unsigned long  ulSharedDataLen;
+	unsigned char *  pSharedData;
+	unsigned long  ulPublicDataLen;
+	unsigned char *  pPublicData;
+} CK_ECDH1_DERIVE_PARAMS;
+
+typedef struct CK_ECMQV_DERIVE_PARAMS {
+	unsigned long kdf;
+	unsigned long ulSharedDataLen;
+	unsigned char * pSharedData;
+	unsigned long ulPublicDataLen;
+	unsigned char * pPublicData;
+	unsigned long ulPrivateDataLen;
+	CK_OBJECT_HANDLE hPrivateData;
+	unsigned long ulPublicDataLen2;
+	unsigned char * pPublicData2;
+	CK_OBJECT_HANDLE publicKey;
+} CK_ECMQV_DERIVE_PARAMS;
+
+typedef unsigned long ck_rsa_pkcs_mgf_type_t;
+typedef unsigned long CK_RSA_PKCS_OAEP_SOURCE_TYPE;
+
+typedef struct CK_RSA_PKCS_OAEP_PARAMS {
+	CK_MECHANISM_TYPE hashAlg;
+	CK_RSA_PKCS_MGF_TYPE mgf;
+	CK_RSA_PKCS_OAEP_SOURCE_TYPE source;
+	void *pSourceData;
+	unsigned long ulSourceDataLen;
+} CK_RSA_PKCS_OAEP_PARAMS;
+
+typedef struct CK_RSA_PKCS_PSS_PARAMS {
+	ck_mechanism_type_t hashAlg;
+	CK_RSA_PKCS_MGF_TYPE mgf;
+	unsigned long sLen;
+} CK_RSA_PKCS_PSS_PARAMS;
+
+#define CKG_MGF1_SHA1			(0x00000001UL)
+#define CKG_MGF1_SHA224		(0x00000005UL)
+#define CKG_MGF1_SHA256		(0x00000002UL)
+#define CKG_MGF1_SHA384		(0x00000003UL)
+#define CKG_MGF1_SHA512		(0x00000004UL)
+
+#define CKZ_DATA_SPECIFIED	(0x00000001UL)
+
+typedef struct CK_GCM_PARAMS {
+	void * pIv;
+	unsigned long ulIvLen;
+	unsigned long ulIvBits;
+	void * pAAD;
+	unsigned long ulAADLen;
+	unsigned long ulTagBits;
+} CK_GCM_PARAMS;
 
 typedef unsigned long ck_rv_t;
 
@@ -780,7 +920,7 @@ _CK_DECLARE_FUNCTION (C_SetOperationState,
 		       unsigned char *operation_state,
 		       unsigned long operation_state_len,
 		       ck_object_handle_t encryption_key,
-		       ck_object_handle_t authentiation_key));
+		       ck_object_handle_t authentication_key));
 _CK_DECLARE_FUNCTION (C_Login,
 		      (ck_session_handle_t session, ck_user_type_t user_type,
 		       unsigned char *pin, unsigned long pin_len));
@@ -1252,6 +1392,8 @@ typedef struct ck_date *CK_DATE_PTR;
 
 typedef ck_mechanism_type_t *CK_MECHANISM_TYPE_PTR;
 
+typedef ck_rsa_pkcs_mgf_type_t *CK_RSA_PKCS_MGF_TYPE_PTR;
+
 typedef struct ck_mechanism CK_MECHANISM;
 typedef struct ck_mechanism *CK_MECHANISM_PTR;
 
@@ -1321,6 +1463,8 @@ typedef struct ck_c_initialize_args *CK_C_INITIALIZE_ARGS_PTR;
 #undef ck_date
 
 #undef ck_mechanism_type_t
+
+#undef ck_rsa_pkcs_mgf_type_t
 
 #undef ck_mechanism
 #undef parameter

@@ -36,6 +36,11 @@
 #define URI_RSA_SHA384 "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384"
 #define URI_RSA_SHA512 "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
 
+#define URI_RSA_PSS_SHA224 "http://www.w3.org/2007/05/xmldsig-more#sha224-rsa-MGF1"
+#define URI_RSA_PSS_SHA256 "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1"
+#define URI_RSA_PSS_SHA384 "http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1"
+#define URI_RSA_PSS_SHA512 "http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1"
+
 #define URI_ECDSA_SHA1 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"
 #define URI_ECDSA_SHA224 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha224"
 #define URI_ECDSA_SHA256 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
@@ -50,15 +55,17 @@ namespace digidoc
     class Digest
     {
       public:
-          Digest(const std::string &uri = std::string());
+          Digest(const std::string &uri = {});
           ~Digest();
-          void reset(const std::string &uri = std::string());
+          void reset(const std::string &uri = {});
           void update(const std::vector<unsigned char> &data);
           void update(const unsigned char *data, size_t length);
           std::vector<unsigned char> result() const;
           std::string uri() const;
 
+          static bool isRsaPssUri(const std::string &uri);
           static std::string toRsaUri(const std::string &uri);
+          static std::string toRsaPssUri(const std::string &uri);
           static std::string toEcUri(const std::string &uri);
           static int toMethod(const std::string &uri);
           static std::string toUri(int nid);
