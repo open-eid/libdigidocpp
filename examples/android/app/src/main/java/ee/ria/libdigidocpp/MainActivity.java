@@ -12,7 +12,6 @@ import android.support.v4.content.ContextCompat;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -23,7 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,13 +30,11 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -122,11 +118,11 @@ public class MainActivity extends Activity {
 			sc.init(null, new X509TrustManager[]{
 					new X509TrustManager() {
 						@Override
-						public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+						public void checkClientTrusted(X509Certificate[] chain, String authType) {
 						}
 
 						@Override
-						public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+						public void checkServerTrusted(X509Certificate[] chain, String authType) {
 						}
 
 						@Override
@@ -136,22 +132,14 @@ public class MainActivity extends Activity {
 					}
 			}, null);
 			HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-			HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
-				@Override
-				public boolean verify(String hostname, SSLSession session) {
-					return true;
-				}
-			});
+			HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		findViewById(R.id.run).setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View button) {
-				button.setEnabled(false);
-				new DownloadTask(MainActivity.this).execute();
-			}
+		findViewById(R.id.run).setOnClickListener(button -> {
+			button.setEnabled(false);
+			new DownloadTask(MainActivity.this).execute();
 		});
 	}
 
@@ -166,16 +154,13 @@ public class MainActivity extends Activity {
 
 	private void runTest(File path) {
 		final TextView content = findViewById(R.id.content);
-		File[] list = path.listFiles(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				String lowerCase = name.toLowerCase();
-				return lowerCase.endsWith(".asice") || lowerCase.endsWith(".sce") ||
-						lowerCase.endsWith(".asics") || lowerCase.endsWith(".scs") ||
-						lowerCase.endsWith(".bdoc") || lowerCase.endsWith(".ddoc") ||
-						lowerCase.endsWith(".adoc") || lowerCase.endsWith(".edoc") ||
-						lowerCase.endsWith(".pdf");
-			}
+		File[] list = path.listFiles((dir, name) -> {
+			String lowerCase = name.toLowerCase();
+			return lowerCase.endsWith(".asice") || lowerCase.endsWith(".sce") ||
+					lowerCase.endsWith(".asics") || lowerCase.endsWith(".scs") ||
+					lowerCase.endsWith(".bdoc") || lowerCase.endsWith(".ddoc") ||
+					lowerCase.endsWith(".adoc") || lowerCase.endsWith(".edoc") ||
+					lowerCase.endsWith(".pdf");
 		});
 		if (list == null || list.length == 0) {
 			return;
@@ -236,19 +221,19 @@ public class MainActivity extends Activity {
 		}
 
 		try {
-			FileInputStream in = new FileInputStream(cache + "/digidocpp.log");
-			byte[] logContent = new byte[(int) in.getChannel().size()];
-			in.read(logContent);
-			in.close();
-			new UploadTask(this, "text/plain", logContent).execute();
-			new UploadTask(this, "application/json", r.toString().getBytes()).execute();
+			try (FileInputStream in = new FileInputStream(cache + "/digidocpp.log")) {
+				byte[] logContent = new byte[(int) in.getChannel().size()];
+				in.read(logContent);
+				new UploadTask(this, "text/plain", logContent).execute();
+				new UploadTask(this, "application/json", r.toString().getBytes()).execute();
+			}
 
-			in = new FileInputStream(cache + "/digidocpp.log");
-			saveToFile(in, Environment.getExternalStorageDirectory().getAbsolutePath() + "/digidocpp.log");
-			in.close();
-			FileOutputStream out = new FileOutputStream(Environment.getExternalStorageDirectory().getAbsolutePath() + "/result.json");
-			out.write(r.toString().getBytes(StandardCharsets.UTF_8));
-			out.close();
+			try (FileInputStream in = new FileInputStream(cache + "/digidocpp.log")) {
+				saveToFile(in, Environment.getExternalStorageDirectory().getAbsolutePath() + "/digidocpp.log");
+			}
+			try (FileOutputStream out = new FileOutputStream(Environment.getExternalStorageDirectory().getAbsolutePath() + "/result.json")) {
+				out.write(r.toString().getBytes(StandardCharsets.UTF_8));
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -300,18 +285,17 @@ public class MainActivity extends Activity {
 				if (connection.getResponseCode() >= 400) {
 					throw new IOException("Failed to connect service" + connection.getResponseMessage());
 				}
-				InputStream is = connection.getInputStream();
-				ZipInputStream zis = new ZipInputStream(is);
-				ZipEntry ze;
-				while ((ze = zis.getNextEntry()) != null) {
-					try {
-						saveToFile(zis, path + "/" + ze.getName());
-					} catch (Exception e) {
-						e.printStackTrace();
+				try (InputStream is = connection.getInputStream();
+					ZipInputStream zis = new ZipInputStream(is)) {
+					ZipEntry ze;
+					while ((ze = zis.getNextEntry()) != null) {
+						try {
+							saveToFile(zis, path + "/" + ze.getName());
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 					}
 				}
-				is.close();
-				zis.close();
 				return null;
 			} catch(Exception e) {
 				return e;
@@ -345,9 +329,9 @@ public class MainActivity extends Activity {
 				connection.setRequestMethod("PUT");
 				connection.setRequestProperty("Content-Type", contentType);
 				connection.setFixedLengthStreamingMode(data.length);
-				OutputStream os = connection.getOutputStream();
-				os.write(data);
-				os.close();
+				try (OutputStream os = connection.getOutputStream()) {
+					os.write(data);
+				}
 				if (connection.getResponseCode() != 200) {
 					throw new IOException("Failed to upload data" + connection.getResponseMessage());
 				}

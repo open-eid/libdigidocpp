@@ -25,8 +25,8 @@ matrix:
   - os: osx
     env: TARGET=androidx86_64
 sudo: required
-dist: bionic
-osx_image: xcode11.6
+dist: focal
+osx_image: xcode12
 services:
 - docker
 cache: ccache
