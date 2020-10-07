@@ -7,7 +7,7 @@
  * [Architecture of ID-software](http://open-eid.github.io)
 
 ## Building
-[![Build Status](https://travis-ci.org/open-eid/libdigidocpp.svg?branch=master)](https://travis-ci.org/open-eid/libdigidocpp)
+[![Build Status](https://travis-ci.com/open-eid/libdigidocpp.svg?branch=master)](https://travis-ci.com/open-eid/libdigidocpp)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/open-eid/libdigidocpp?branch=master&svg=true)](https://ci.appveyor.com/project/open-eid/libdigidocpp)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/727/badge.svg)](https://scan.coverity.com/projects/727)
 [![LGTM alerts](https://img.shields.io/lgtm/alerts/g/open-eid/libdigidocpp.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/open-eid/libdigidocpp/alerts/)
@@ -123,6 +123,6 @@
 [examples/README.md](examples/README.md)
 
 ## Support
-Official builds are provided through official distribution point [installer.id.ee](https://installer.id.ee). If you want support, you need to be using official builds. Contact our support via [www.id.ee](http://www.id.ee) for assistance.
+Official builds are provided through official distribution point [id.ee](https://www.id.ee/en/article/install-id-software/). If you want support, you need to be using official builds. Contact our support via [www.id.ee](http://www.id.ee) for assistance.
 
 Source code is provided on "as is" terms with no warranty (see license for more information). Do not file Github issues with generic support requests.
