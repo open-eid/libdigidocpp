@@ -1,3 +1,23 @@
+Libdigidocpp library [3.14.4](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.4) release notes
+--------------------------------------
+- Use unique_ptr on Container::create/open (#355)
+- Deprecate std::istream *is method and add std::unique_ptr alternative
+- Fix encoding on macOS when LC_ALL is defined (#346)
+- Use 64 bit stat on windows (#349)
+- Implement SiVa V3 changes (#354)
+- Documentation updates and code fixes
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.3...v3.14.4)
+
+Libdigidocpp library [3.14.3](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.3) release notes
+--------------------------------------
+- Change SiVa URL (#335)
+- Split user-agent and application name handling (#333)
+- Update OpenSSL 1.1.1g and Xerces-C 3.2.3 (#347)
+- Workaround OpenSSL 1.1.1f issues (#348)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.2...v3.14.3)
+
 Libdigidocpp library [3.14.2](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.2) release notes
 --------------------------------------
 - Check that OCSP producedAt is later than TimeStamp (#324)
