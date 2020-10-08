@@ -1,7 +1,7 @@
 Libdigidocpp library [3.14.4](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.4) release notes
 --------------------------------------
 - Use unique_ptr on Container::create/open (#355)
-- Deprecate std::istream *is method and add std::unique_ptr alternative
+- Deprecate std::istream *is method and add std::unique_ptr<std::istream> alternative
 - Fix encoding on macOS when LC_ALL is defined (#346)
 - Use 64 bit stat on windows (#349)
 - Implement SiVa V3 changes (#354)

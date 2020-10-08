@@ -5,7 +5,7 @@ if(NOT MINIZIP_FOUND)
     target_compile_options(minizip PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-parameter -Wno-unused-value>)
     set_target_properties(minizip PROPERTIES COMPILE_DEFINITIONS "NOUNCRYPT;NOCRYPT" POSITION_INDEPENDENT_CODE YES)
     target_link_libraries(minizip ZLIB::ZLIB)
-    set( MINIZIP_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/minizip )
+    set(MINIZIP_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/minizip)
     set( MINIZIP_LIBRARIES minizip )
 endif()
 
@@ -224,7 +224,7 @@ set_target_properties(digidocpp PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION YES
 )
 
-target_include_directories(digidocpp PRIVATE ${MINIZIP_INCLUDE_DIR})
+target_include_directories(digidocpp PRIVATE ${MINIZIP_INCLUDE_DIRS})
 
 target_link_libraries(digidocpp
     PRIVATE ${CMAKE_DL_LIBS} ${MINIZIP_LIBRARIES}
@@ -337,6 +337,7 @@ elseif(ANDROID)
     target_link_libraries(digidocpp PRIVATE ${ICONV_LIBRARIES})
     set_property(SOURCE minizip/ioapi.c APPEND PROPERTY COMPILE_DEFINITIONS IOAPI_NO_64)
     set_property(TARGET minizip digidocpp_priv digidocpp APPEND PROPERTY COMPILE_DEFINITIONS __ANDROID_API__=${CMAKE_SYSTEM_VERSION})
+    set_target_properties(digidocpp PROPERTIES INTERPROCEDURAL_OPTIMIZATION NO)
 endif()
 
 source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/798.p12" )
