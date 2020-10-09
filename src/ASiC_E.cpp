@@ -28,7 +28,6 @@
 #include "util/File.h"
 #include "util/ZipSerialize.h"
 #include "xml/OpenDocument_manifest.hxx"
-#include "xml/SecureDOMParser.h"
 
 #include <xercesc/util/OutOfMemoryException.hpp>
 
@@ -193,7 +192,12 @@ void ASiC_E::createManifest(ostream &os)
     }
     catch(const xercesc::DOMException &e)
     {
-        THROW("Failed to create manifest XML file. Error: %s", X(e.getMessage()).toString().c_str());
+        try {
+            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
+            THROW("Failed to create manifest XML file. Error: %s", result.c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+            THROW("Failed to create manifest XML file.");
+        }
     }
     catch(const xml_schema::Exception &e)
     {

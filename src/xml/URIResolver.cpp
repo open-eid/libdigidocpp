@@ -21,7 +21,6 @@
 
 #include "ASiC_E.h"
 #include "DataFile_p.h"
-#include "SecureDOMParser.h"
 #include "util/File.h"
 
 DIGIDOCPP_WARNING_PUSH
@@ -29,6 +28,8 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xercesc/util/BinInputStream.hpp>
 #include <xsec/framework/XSECException.hpp>
 DIGIDOCPP_WARNING_POP
+
+#include <xsd/cxx/xml/string.hxx>
 
 #include <istream>
 
@@ -40,7 +41,7 @@ using namespace digidoc::util;
 class IStreamInputStream: public BinInputStream
 {
 public:
-    IStreamInputStream(istream *is): is_(is)
+    explicit IStreamInputStream(istream *is): is_(is)
     {
         is_->clear();
         is_->seekg(0);
@@ -76,7 +77,7 @@ BinInputStream* URIResolver::resolveURI(const XMLCh *uri)
 #ifdef _WIN32
     string _uri = File::decodeName(reinterpret_cast<const wchar_t *>(uri));
 #else
-    string _uri = X(uri).toString();
+    string _uri = xsd::cxx::xml::transcode<char>(uri);
 #endif
     if(strncmp(_uri.c_str(), "/", 1) == 0) _uri.erase(0, 1);
     for(const DataFile *file: doc_->dataFiles())

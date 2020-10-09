@@ -83,7 +83,7 @@ public:
             NSLog(@"Failed to copy/move file %@", error);
             return NO;
         }
-        self.doc = digidoc::Container::open(path.UTF8String);
+        self.doc = digidoc::Container::openPtr(path.UTF8String).release();
         return YES;
     } catch(const digidoc::Exception &e) {
         NSLog(@"%s", e.msg().c_str());

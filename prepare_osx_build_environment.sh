@@ -45,7 +45,7 @@ case "$@" in
   export CC=clang
   export CXX=clang++
   export CFLAGS=""
-  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
+  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   export LIBS="-liconv"
   CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking --with-pic"
   ARCHS=${ARCH}
@@ -76,7 +76,7 @@ case "$@" in
   : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
-  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
+  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
 *ios*)
   echo "Building for iOS"
@@ -87,7 +87,7 @@ case "$@" in
   : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
-  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
+  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
 *)
   echo "Building for OSX"
@@ -98,7 +98,7 @@ case "$@" in
   : ${MACOSX_DEPLOYMENT_TARGET:="10.11"}
   export MACOSX_DEPLOYMENT_TARGET
   export CFLAGS=""
-  export CXXFLAGS="${CFLAGS} -Wno-null-conversion"
+  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
 esac
 

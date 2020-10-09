@@ -48,6 +48,9 @@ XALAN_USING_XALAN(XPathEvaluator)
 XALAN_USING_XALAN(XalanTransformer)
 #endif
 
+#define XSD_CXX11
+#include <xsd/cxx/xml/string.hxx>
+
 #include <algorithm>
 #include <sstream>
 #include <thread>
@@ -137,10 +140,12 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
         XSECPlatformUtils::Initialise();
     }
     catch (const XMLException &e) {
-        char *msg = XMLString::transcode(e.getMessage());
-        string result = msg;
-        XMLString::release(&msg);
-        THROW("Error during initialisation of Xerces: %s", result.c_str());
+        try {
+            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
+            THROW("Error during initialisation of Xerces: %s", result.c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+            THROW("Error during initialisation of Xerces.");
+        }
     }
 
     if(!Conf::instance())
@@ -314,7 +319,7 @@ unsigned int Container::newSignatureId() const
 {
     vector<Signature*> list = signatures();
     for(unsigned int id = 0; ; ++id)
-        if(!any_of(list.cbegin(), list.cend(), [&](Signature *s){ return s->id() == Log::format("S%u", id); }))
+        if(!any_of(list.cbegin(), list.cend(), [id](Signature *s){ return s->id() == Log::format("S%u", id); }))
             return id;
 }
 

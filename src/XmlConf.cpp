@@ -118,10 +118,12 @@ XmlConf::Private::Private(const string &path, string schema)
         XMLPlatformUtils::Initialize();
     }
     catch (const XMLException &e) {
-        char *msg = XMLString::transcode(e.getMessage());
-        string result = msg;
-        XMLString::release(&msg);
-        THROW("Error during initialisation of Xerces: %s", result.c_str());
+        try {
+            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
+            THROW("Error during initialisation of Xerces: %s", result.c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+            THROW("Error during initialisation of Xerces");
+        }
     }
 
 #ifdef _WIN32

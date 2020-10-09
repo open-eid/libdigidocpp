@@ -26,7 +26,6 @@
 #include "util/DateTime.h"
 #include "util/File.h"
 #include "xml/ts_119612v020201_201601xsd.hxx"
-#include "xml/SecureDOMParser.h"
 
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
@@ -116,7 +115,8 @@ TSL::TSL(const string &file)
     catch(XMLException &e)
     {
         try {
-            WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), X(e.getMessage()).toString().c_str());
+            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
+            WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), result.c_str());
         } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
              WARN("Failed to parse TSL %s %s", territory().c_str(), file.c_str());
         }
@@ -400,7 +400,7 @@ bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
         if(!id.x509Certificate().present())
             continue;
         const Base64Binary &base64 = id.x509Certificate().get();
-        s.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+        s.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.size()));
     }
 
     if(SERVICESTATUS_START.find(info.serviceStatus()) != SERVICESTATUS_START.cend())
@@ -436,13 +436,13 @@ std::vector<TSL::Pointer> TSL::pointers() const
                         continue;
                     const Base64Binary &base64 = id.x509Certificate().get();
                     try {
-                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.capacity()));
+                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.size()));
                         continue;
                     } catch(const Exception &e) {
                         DEBUG("Failed to parse %s certificate, Testing also parse as PEM: %s", p.territory.c_str(), e.msg().c_str());
                     }
                     try {
-                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.capacity(), X509Cert::Pem));
+                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.size(), X509Cert::Pem));
                     } catch(const Exception &e) {
                         DEBUG("Failed to parse %s certificate as PEM: %s", p.territory.c_str(), e.msg().c_str());
                     }
@@ -500,7 +500,7 @@ void TSL::validate(const std::vector<X509Cert> &certs)
         !tsl->signature()->keyInfo()->x509Data().front().x509Certificate().empty())
     {
         const Base64Binary &base64 = tsl->signature()->keyInfo()->x509Data().front().x509Certificate().front();
-        signingCert = X509Cert((const unsigned char*)base64.data(), base64.capacity());
+        signingCert = X509Cert((const unsigned char*)base64.data(), base64.size());
     }
 
     if(find(certs.cbegin(), certs.cend(), signingCert) == certs.cend())
@@ -512,13 +512,14 @@ void TSL::validate(const std::vector<X509Cert> &certs)
         unique_ptr<DSIGSignature, decltype(deleteSig)> sig(prov.newSignatureFromDOM(tsl->_node()->getOwnerDocument()), deleteSig);
         //sig->setKeyInfoResolver(new XSECKeyInfoResolverDefault);
         sig->setSigningKey(OpenSSLCryptoX509(signingCert.handle()).clonePublicKey());
-        sig->registerIdAttributeName(X("ID"));
+        sig->registerIdAttributeName(u"ID");
         sig->setIdByAttributeName(true);
         sig->load();
         if(!sig->verify())
         {
             try {
-                THROW("TSL %s Signature is invalid: %s", territory().c_str(), X(sig->getErrMsgs()).toString().c_str());
+                string result = xsd::cxx::xml::transcode<char>(sig->getErrMsgs());
+                THROW("TSL %s Signature is invalid: %s", territory().c_str(), result.c_str());
             } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
                 THROW("TSL %s Signature is invalid", territory().c_str());
             }
@@ -527,10 +528,14 @@ void TSL::validate(const std::vector<X509Cert> &certs)
     catch(XSECException &e)
     {
         try {
-            THROW("TSL %s Signature is invalid: %s", territory().c_str(), X(e.getMsg()).toString().c_str());
+            string result = xsd::cxx::xml::transcode<char>(e.getMsg());
+            THROW("TSL %s Signature is invalid: %s", territory().c_str(), result.c_str());
         } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
             THROW("TSL %s Signature is invalid", territory().c_str());
         }
+    }
+    catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+        THROW("Failed to parse DDoc XML.");
     }
     catch(const Exception &)
     {
