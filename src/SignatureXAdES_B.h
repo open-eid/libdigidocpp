@@ -37,13 +37,6 @@ namespace digidoc
     {
 
       public:
-          struct Policy
-          {
-              const std::string DESCRIPTION, URI;
-              const std::vector<unsigned char> SHA1, SHA224, SHA256, SHA384, SHA512;
-          };
-          static const std::map<std::string,Policy> policylist;
-
           SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer);
           SignatureXAdES_B(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
           ~SignatureXAdES_B() override;
@@ -70,7 +63,7 @@ namespace digidoc
           std::vector<std::string> signerRoles() const override;
 
           std::string addReference(const std::string& uri, const std::string& digestUri,
-            const std::vector<unsigned char> &digestValue, const std::string& type = std::string());
+              const std::vector<unsigned char> &digestValue, const std::string& type = {});
           void addDataObjectFormat(const std::string& uri, const std::string& mime);
 
           void saveToXml(std::ostream &os) const;
@@ -80,7 +73,7 @@ namespace digidoc
           xades::QualifyingPropertiesType& qualifyingProperties() const;
           xades::SignedSignaturePropertiesType& getSignedSignatureProperties() const;
           void calcDigestOnNode(Digest* calc, const std::string& ns,
-                const std::string& tagName, const std::string &id = std::string()) const;
+              const std::string& tagName, const std::string &id = {}, const std::string &canonicalizationMethod = {}) const;
 
           static const std::string ASIC_NAMESPACE;
           static const std::string XADES_NAMESPACE;
@@ -95,6 +88,13 @@ namespace digidoc
 
       private:
           DISABLE_COPY(SignatureXAdES_B);
+
+          struct Policy
+          {
+              const std::string DESCRIPTION, URI;
+              const std::vector<unsigned char> SHA1, SHA224, SHA256, SHA384, SHA512;
+          };
+          static const std::map<std::string,Policy> policylist;
 
           void setKeyInfo(const X509Cert& cert);
           void setSigningCertificate(const X509Cert& cert);
