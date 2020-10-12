@@ -54,6 +54,12 @@ DIGIDOCPP_WARNING_POP
 #define HAVE_WORKING_REGEX
 #endif
 
+#if XSEC_VERSION_MAJOR < 2
+#define XSEC_CONST
+#else
+#define XSEC_CONST const
+#endif
+
 using namespace digidoc;
 using namespace digidoc::asic;
 using namespace digidoc::dsig;
@@ -355,15 +361,15 @@ string SignatureXAdES_B::policy() const
     const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
             getSignedSignatureProperties().signaturePolicyIdentifier();
     if(!identifier.present())
-        return string();
+        return {};
 
     const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
     if(!id.present())
-        return string();
+        return {};
 
     const ObjectIdentifierType::IdentifierType &objid = id->sigPolicyId().identifier();
     if(!objid.qualifier().present() || objid.qualifier().get() != QualifierType::OIDAsURN)
-        return string();
+        return {};
 
     return objid;
 }
@@ -499,8 +505,7 @@ void SignatureXAdES_B::validate(const string &policy) const
     try {
         stringstream ofs;
         saveToXml(ofs);
-        unique_ptr<SecureDOMParser> parser(new SecureDOMParser);
-        unique_ptr<DOMDocument> doc(parser->parseIStream(ofs));
+        unique_ptr<DOMDocument> doc(SecureDOMParser().parseIStream(ofs));
 
         XSECProvider prov;
         auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
@@ -530,7 +535,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         s << e;
         EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.str().c_str());
     }
-    catch(XSECException &e)
+    catch(XSEC_CONST XSECException &e)
     {
         string s = xml::transcode<char>(e.getMsg());
         EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
@@ -1004,17 +1009,13 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
         // Therefore we have to use Xerces to parse the XML file each time a digest needs to be
         // calculated on a XML node. If you are parsing XML files with a parser that doesn't
         // preserve the white spaces you are DOOMED!
-
-        // Initialize Xerces parser.
-        unique_ptr<SecureDOMParser> parser(new SecureDOMParser);
-
         // Parse and return a copy of the Xerces DOM tree.
         // Save to file an parse it again, to make XML Canonicalization work
         // correctly as expected by the Canonical XML 1.0 specification.
         // Hope, the next Canonical XMl specification fixes the white spaces preserving "bug".
         stringstream ofs;
         saveToXml(ofs);
-        unique_ptr<DOMDocument> doc(parser->parseIStream(ofs));
+        unique_ptr<DOMDocument> doc(SecureDOMParser().parseIStream(ofs));
 
         DOMNode *node = nullptr;
         // Select node, on which the digest is calculated.
@@ -1188,7 +1189,7 @@ string SignatureXAdES_B::claimedSigningTime() const
     const SignedSignaturePropertiesType::SigningTimeOptional& sigTimeOpt =
         getSignedSignatureProperties().signingTime();
     if ( !sigTimeOpt.present() )
-        return string();
+        return {};
     return date::xsd2string(sigTimeOpt.get());
 }
 
