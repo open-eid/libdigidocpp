@@ -63,7 +63,7 @@ script: case ${TARGET} in
       set -e;
       apt-get update -qq; 
       export DEBIAN_FRONTEND=noninteractive;
-      apt-get install -y dh-make devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev git curl wget ruby;
+      apt-get install -y dh-make devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev git;
       export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}");
       export VERSIONEX=${VERSION}.${BUILD_NUMBER}.$(lsb_release -rs)
       export DEBFULLNAME="Travis";
@@ -71,13 +71,16 @@ script: case ${TARGET} in
       dh_make --createorig --addmissing --defaultless -y -p libdigidocpp_${VERSIONEX};
       dch --distribution $(lsb_release -cs) -v ${VERSIONEX} "Release ${VERSIONEX}.";
       dpkg-buildpackage -rfakeroot -us -uc;
-      if [[ "${IMAGE}" = "ubuntu:18.04" && "${TRAVIS_BRANCH}" = "coverity_scan" ]]; then
+      if [[ "${TARGET}" = "ubuntu:18.04" && "${TRAVIS_BRANCH}" = "coverity_scan" ]]; then
+        apt-get install -y curl wget ruby;
         export COVERITY_SCAN_PROJECT_NAME="open-eid/libdigidocpp";
         export COVERITY_SCAN_NOTIFICATION_EMAIL="raul@metsma.ee";
         export COVERITY_SCAN_BRANCH_PATTERN=coverity_scan;
         export COVERITY_SCAN_BUILD_COMMAND_PREPEND="cmake .";
         export COVERITY_SCAN_BUILD_COMMAND=make;
+        set +e;
         wget -O - https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh | bash;
+        set -e;
       fi;
       lintian ../*.deb;
       git clean -dxf;
