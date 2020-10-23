@@ -41,6 +41,12 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/utils/XSECBinTXFMInputStream.hpp>
 DIGIDOCPP_WARNING_POP
 
+#if XSEC_VERSION_MAJOR < 2
+#define XSEC_CONST
+#else
+#define XSEC_CONST const
+#endif
+
 using namespace digidoc;
 using namespace digidoc::dsig;
 using namespace digidoc::util;
@@ -91,7 +97,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
     catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
         THROW("Failed to calculate digest");
     }
-    catch(XSECException &e)
+    catch(XSEC_CONST XSECException &e)
     {
         try {
             string result = xsd::cxx::xml::transcode<char>(e.getMsg());
@@ -177,15 +183,15 @@ TS SignatureXAdES_LTA::tsaFromBase64() const
 {
     try {
         if(unsignedSignatureProperties().archiveTimeStampV141().empty())
-            return TS();
+            return {};
         const xadesv141::ArchiveTimeStampType &ts = unsignedSignatureProperties().archiveTimeStampV141().front();
         if(ts.encapsulatedTimeStamp().empty())
-            return TS();
+            return {};
         const GenericTimeStampType::EncapsulatedTimeStampType &bin =
                 ts.encapsulatedTimeStamp().front();
         return TS((const unsigned char*)bin.data(), bin.size());
     } catch(const Exception &) {}
-    return TS();
+    return {};
 }
 
 X509Cert SignatureXAdES_LTA::ArchiveTimeStampCertificate() const

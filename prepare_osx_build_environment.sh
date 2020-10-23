@@ -182,6 +182,9 @@ function xml_security {
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
+    sed -ie 's!#define XSEC_EXPORT!#define XSEC_EXPORT __attribute__ ((visibility("default")))!' xsec/framework/XSECDefs.hpp
+    CFLAGS="${CFLAGS} -fvisibility=hidden" \
+    CXXFLAGS="${CXXFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" \
     xerces_CFLAGS="-I${TARGET_PATH}/include" xerces_LIBS="-L${TARGET_PATH}/lib -lxalanMsg -lxalan-c -lxerces-c" \
     openssl_CFLAGS="-I${TARGET_PATH}/include" openssl_LIBS="-L${TARGET_PATH}/lib -lcrypto" \
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xalan=${TARGET_PATH}

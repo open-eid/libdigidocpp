@@ -41,6 +41,12 @@ DIGIDOCPP_WARNING_POP
 #include <fstream>
 #include <future>
 
+#if XSEC_VERSION_MAJOR < 2
+#define XSEC_CONST
+#else
+#define XSEC_CONST const
+#endif
+
 using namespace digidoc;
 using namespace digidoc::tsl;
 using namespace digidoc::util;
@@ -400,7 +406,7 @@ bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
         if(!id.x509Certificate().present())
             continue;
         const Base64Binary &base64 = id.x509Certificate().get();
-        s.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.size()));
+        s.certs.emplace_back((const unsigned char*)base64.data(), base64.size());
     }
 
     if(SERVICESTATUS_START.find(info.serviceStatus()) != SERVICESTATUS_START.cend())
@@ -436,13 +442,13 @@ std::vector<TSL::Pointer> TSL::pointers() const
                         continue;
                     const Base64Binary &base64 = id.x509Certificate().get();
                     try {
-                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.size()));
+                        p.certs.emplace_back((const unsigned char*)base64.data(), base64.size());
                         continue;
                     } catch(const Exception &e) {
                         DEBUG("Failed to parse %s certificate, Testing also parse as PEM: %s", p.territory.c_str(), e.msg().c_str());
                     }
                     try {
-                        p.certs.emplace_back(X509Cert((const unsigned char*)base64.data(), base64.size(), X509Cert::Pem));
+                        p.certs.emplace_back((const unsigned char*)base64.data(), base64.size(), X509Cert::Pem);
                     } catch(const Exception &e) {
                         DEBUG("Failed to parse %s certificate as PEM: %s", p.territory.c_str(), e.msg().c_str());
                     }
@@ -525,7 +531,7 @@ void TSL::validate(const std::vector<X509Cert> &certs)
             }
         }
     }
-    catch(XSECException &e)
+    catch(XSEC_CONST XSECException &e)
     {
         try {
             string result = xsd::cxx::xml::transcode<char>(e.getMsg());
