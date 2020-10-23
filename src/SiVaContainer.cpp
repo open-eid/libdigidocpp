@@ -303,7 +303,7 @@ stringstream* SiVaContainer::parseDDoc(std::unique_ptr<std::istream> is, bool us
             if(!item)
                 continue;
 
-            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"HASHCODE") == 0)
+            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"EMBEDDED_BASE64") != 0)
                 continue;
 
             if(const XMLCh *b64 = item->getTextContent())
