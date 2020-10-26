@@ -47,8 +47,8 @@ public:
 #ifdef _WIN32
     bool load(const string &driver)
     {
-        wstring _driver = File::encodeName(driver);
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+        wstring _driver = File::encodeName(driver);
         return (h = LoadLibraryW(_driver.c_str())) != 0;
 #else
         return false;
@@ -169,8 +169,6 @@ PKCS11Signer::PKCS11Signer(const string &driver)
  */
 PKCS11Signer::~PKCS11Signer()
 {
-    DEBUG("~PKCS11Signer()");
-
     if(d->f)
     {
         d->f->C_Finalize(nullptr);

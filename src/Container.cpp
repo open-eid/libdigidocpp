@@ -183,16 +183,20 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
  */
 void digidoc::terminate()
 {
-    Conf::init(nullptr);
+    try {
+        Conf::init(nullptr);
 
-    XSECPlatformUtils::Terminate();
+        XSECPlatformUtils::Terminate();
 #ifdef USE_XALAN
-    XalanTransformer::terminate();
-    XPathEvaluator::terminate();
+        XalanTransformer::terminate();
+        XPathEvaluator::terminate();
 #endif
-    XMLPlatformUtils::Terminate();
+        XMLPlatformUtils::Terminate();
 
-    util::File::deleteTempFiles();
+        util::File::deleteTempFiles();
+    } catch (...) {
+        // Don't throw on terminate
+    }
     m_createList.clear();
     m_openList.clear();
     m_appName.clear();

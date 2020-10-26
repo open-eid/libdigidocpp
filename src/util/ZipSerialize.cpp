@@ -80,7 +80,6 @@ ZipSerialize::ZipSerialize(string path, bool create)
  */
 ZipSerialize::~ZipSerialize()
 {
-    DEBUG("ZipSerialize::~ZipSerialize()");
     if(d->create) zipClose(d->create, nullptr);
     if(d->open) unzClose(d->open);
     delete d;

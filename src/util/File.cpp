@@ -57,11 +57,12 @@ using f_statbuf = struct _stat64;
 using f_statbuf = struct stat;
 #endif
 
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__)
 #include <cerrno>
 #include <iconv.h>
 #include <cstdlib>
 #include <cstring>
+#include <langinfo.h>
 
 /**
  * Helper method for converting from non-UTF-8 encoded strings to UTF-8.
@@ -75,16 +76,7 @@ using f_statbuf = struct stat;
  */
 string File::convertUTF8(const string &str_in, bool to_UTF)
 {
-    string charset("C");
-    char *env_lang = getenv("LANG");
-    if(env_lang && charset.compare(env_lang) != 0)
-    {
-        charset = env_lang;
-        size_t locale_start = charset.rfind(".");
-        if(locale_start != string::npos)
-            charset = charset.substr(locale_start+1);
-    }
-
+    string charset = nl_langinfo(CODESET);
     // no conversion needed for UTF-8
     if(charset == "UTF-8" || charset == "utf-8")
         return str_in;
@@ -155,14 +147,14 @@ string File::env(const string &varname)
 {
 #ifdef _WIN32
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    return string();
+    return {};
 #endif
     if(wchar_t *var = _wgetenv(encodeName(varname).c_str()))
 #else
     if(char *var = getenv(encodeName(varname).c_str()))
 #endif
         return decodeName(var);
-    return string();
+    return {};
 }
 
 /**
@@ -173,7 +165,7 @@ string File::env(const string &varname)
 File::f_string File::encodeName(const string &fileName)
 {
     if(fileName.empty())
-        return f_string();
+        return {};
 #if defined(_WIN32)
     int len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), nullptr, 0);
     f_string out(size_t(len), 0);
@@ -187,6 +179,8 @@ File::f_string File::encodeName(const string &fileName)
     CFStringGetCString(ref, &out[0], CFIndex(out.size()), kCFStringEncodingUTF8);
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
+#elif defined(__ANDROID__)
+    f_stirng out = fileName;
 #else
     f_string out = convertUTF8(fileName,false);
 #endif
@@ -201,7 +195,7 @@ File::f_string File::encodeName(const string &fileName)
 string File::decodeName(const f_string &localFileName)
 {
     if(localFileName.empty())
-        return string();
+        return {};
 #if defined(_WIN32)
     int len = WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), nullptr, 0, nullptr, nullptr);
     string out(size_t(len), 0);
@@ -215,6 +209,8 @@ string File::decodeName(const f_string &localFileName)
     CFStringGetCString(ref, &out[0], CFIndex(out.size()), kCFStringEncodingUTF8);
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
+#elif defined(__ANDROID__)
+    stirng out = fileName;
 #else
     string out = convertUTF8(localFileName,true);
 #endif
@@ -244,7 +240,7 @@ string File::dllPath(const string &dll)
     path.resize(size);
     return File::directory(File::decodeName(path)) + "\\";
 #else
-	return "./";
+    return "./";
 #endif
 }
 #endif
