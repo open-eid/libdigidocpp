@@ -180,7 +180,7 @@ File::f_string File::encodeName(const string &fileName)
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
 #elif defined(__ANDROID__)
-    f_stirng out = fileName;
+    f_string out = fileName;
 #else
     f_string out = convertUTF8(fileName,false);
 #endif
@@ -210,7 +210,7 @@ string File::decodeName(const f_string &localFileName)
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
 #elif defined(__ANDROID__)
-    stirng out = fileName;
+    string out = localFileName;
 #else
     string out = convertUTF8(localFileName,true);
 #endif
