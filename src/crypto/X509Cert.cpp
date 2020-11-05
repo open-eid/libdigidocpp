@@ -86,6 +86,13 @@ DECLARE_ASN1_FUNCTIONS(QCStatement)
  * QCStatements ::= SEQUENCE OF QCStatement
  */
 using QCStatements = STACK_OF(QCStatement);
+#if OPENSSL_VERSION_NUMBER < 0x10010000L
+#include <openssl/safestack.h>
+#define sk_QCStatement_num(st) sk_num((_STACK*)st)
+#define sk_QCStatement_value(st, i) (QCStatement*)sk_value((_STACK*)st, i)
+#else
+DEFINE_STACK_OF(QCStatement)
+#endif
 DECLARE_ASN1_FUNCTIONS(QCStatements)
 
 /**
@@ -380,13 +387,15 @@ vector<string> X509Cert::qcStatements() const
     if(!qc)
         return result;
 
-    for(int i = 0; i < sk_num((const stack_st*)qc.get()); ++i)
+    for(int i = 0; i < sk_QCStatement_num(qc.get()); ++i)
     {
-        QCStatement *s = (QCStatement*)sk_value((const stack_st*)qc.get(), i);
+        QCStatement *s = sk_QCStatement_value(qc.get(), i);
         string oid = toOID(s->statementId);
         if(oid == QC_SYNTAX2)
         {
 #ifndef TEMPLATE
+            if(!s->statementInfo)
+                continue;
             SCOPE(SemanticsInformation, si, ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(SemanticsInformation)));
             if(!si)
                 continue;
@@ -399,6 +408,8 @@ vector<string> X509Cert::qcStatements() const
         else if(oid == QC_QCT)
         {
 #ifndef TEMPLATE
+            if(!s->statementInfo)
+                continue;
             SCOPE(QcType, qct, ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(QcType)));
             if(!qct)
                 continue;
