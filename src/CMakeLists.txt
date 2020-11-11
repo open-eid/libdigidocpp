@@ -276,17 +276,10 @@ if(SWIG_FOUND)
     if(JAVA_INCLUDE_PATH)
         set(CMAKE_SWIG_FLAGS -package ee.ria.libdigidocpp)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/java)
-        if (CMAKE_VERSION VERSION_LESS 3.8.0)
-            swig_add_module(digidoc_java java ../libdigidocpp.i)
-        else()
-            swig_add_library(digidoc_java TYPE SHARED LANGUAGE java SOURCES ../libdigidocpp.i)
-        endif()
+        swig_add_library(digidoc_java TYPE SHARED LANGUAGE java SOURCES ../libdigidocpp.i)
         swig_link_libraries(digidoc_java digidocpp)
         set_target_properties(digidoc_java PROPERTIES DEBUG_OUTPUT_NAME "digidoc_javad")
-        target_include_directories(digidoc_java PRIVATE ${JAVA_INCLUDE_PATH})
-        if(JAVA_INCLUDE_PATH2)
-            target_include_directories(digidoc_java PRIVATE ${JAVA_INCLUDE_PATH2})
-        endif()
+        target_include_directories(digidoc_java PRIVATE ${JAVA_INCLUDE_PATH} $<$<BOOL:${JAVA_INCLUDE_PATH2}>:${JAVA_INCLUDE_PATH2}>)
         install(TARGETS digidoc_java DESTINATION ${CMAKE_INSTALL_LIBDIR})
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ee/ria/libdigidocpp FILES_MATCHING PATTERN "*.java")
         if(WIN32)
@@ -356,7 +349,7 @@ if( FRAMEWORK )
     get_filename_component( LIBPATH ${XercesC_LIBRARIES} PATH )
     add_custom_target( embedlibs DEPENDS digidoc-tool
         COMMAND mkdir -p $<TARGET_FILE_DIR:digidocpp>/Libraries
-        COMMAND ln -s -f Versions/Current/Libraries $<TARGET_FILE_DIR:digidocpp>/../..
+        COMMAND ln -s -f Versions/Current/Libraries $<TARGET_BUNDLE_DIR:digidocpp>
         COMMAND cp ${OPENSSL_LIBRARIES} ${XercesC_LIBRARIES} ${XMLSECURITYC_LIBRARIES} ${XALANMSG_LIBRARY}
             $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND chmod 644 $<TARGET_FILE_DIR:digidocpp>/Libraries/*
@@ -400,7 +393,7 @@ if( FRAMEWORK )
         COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}"
             $<TARGET_FILE_DIR:digidocpp>/Libraries/*
             $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
-            $<TARGET_FILE_DIR:digidocpp>/../..
+            $<TARGET_BUNDLE_DIR:digidocpp>
         COMMAND touch $<TARGET_FILE:digidoc-tool>
     )
     add_custom_target( pkgbuild DEPENDS digidoc-tool

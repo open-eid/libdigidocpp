@@ -102,7 +102,7 @@ private:
     SiVaContainer(const std::string &path, const std::string &ext, bool useHashCode);
     DISABLE_COPY(SiVaContainer);
 
-    std::stringstream* parseDDoc(std::unique_ptr<std::istream> is, bool useHashCode);
+    std::stringstream* parseDDoc(std::istream &is, bool useHashCode);
 
     class Private;
     Private *d;

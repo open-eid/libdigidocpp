@@ -55,6 +55,8 @@ using namespace xercesc;
 class SiVaContainer::Private
 {
 public:
+    string path;
+    unique_ptr<istream> data;
     vector<DataFile*> dataFiles;
     vector<Signature*> signatures;
     string mediaType;
@@ -103,12 +105,13 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     : d(new Private)
 {
     DEBUG("SiVaContainer::SiVaContainer(%s, %s, %d)", path.c_str(), ext.c_str(), useHashCode);
-    unique_ptr<istream> ifs(new ifstream(File::encodeName(path).c_str(), ifstream::binary));
+    unique_ptr<istream> ifs(new ifstream(File::encodeName(d->path = path).c_str(), ifstream::binary));
     istream *is = ifs.get();
     if(ext == "DDOC")
     {
         d->mediaType = "application/x-ddoc";
-        ifs.reset(parseDDoc(move(ifs), useHashCode));
+        d->data = move(ifs);
+        ifs.reset(parseDDoc(*d->data.get(), useHashCode));
         is = ifs.get();
     }
     else
@@ -288,14 +291,14 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path)
     }
 }
 
-stringstream* SiVaContainer::parseDDoc(std::unique_ptr<std::istream> is, bool useHashCode)
+stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
 {
     auto transcode = [](const XMLCh *chr) {
         return xsd::cxx::xml::transcode<char>(chr);
     };
     try
     {
-        unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(*is));
+        unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(is));
         DOMNodeList *nodeList = dom->getElementsByTagName(u"DataFile");
         for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
         {
@@ -391,9 +394,19 @@ void SiVaContainer::removeSignature(unsigned int /*index*/)
     THROW("Not implemented.");
 }
 
-void SiVaContainer::save(const string & /*path*/)
+void SiVaContainer::save(const string &path)
 {
-    THROW("Not implemented.");
+    string to = path.empty() ? d->path : path;
+    if(d->data)
+    {
+        ofstream ofs(File::encodeName(to).c_str(), ofstream::binary);
+        d->data->clear();
+        d->data->seekg(0);
+        ofs << d->data->rdbuf();
+        ofs.close();
+    }
+    else
+        d->dataFiles[0]->saveAs(to);
 }
 
 Signature *SiVaContainer::sign(Signer * /*signer*/)
