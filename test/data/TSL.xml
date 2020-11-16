@@ -1,447 +1,109 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><TrustServiceStatusList xmlns="http://uri.etsi.org/02231/v2#" xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="http://uri.etsi.org/02231/v2/additionaltypes#" xmlns:ns4="http://uri.etsi.org/01903/v1.3.2#" xmlns:ns5="http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/#" xmlns:ns6="http://uri.etsi.org/01903/v1.4.1#" Id="ID0001" TSLTag="http://uri.etsi.org/19612/TSLTag">
-    <SchemeInformation>
-        <TSLVersionIdentifier>5</TSLVersionIdentifier>
-        <TSLSequenceNumber>151</TSLSequenceNumber>
-        <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists</TSLType>
-        <SchemeOperatorName>
-            <Name xml:lang="en">European Commission</Name>
-            <Name xml:lang="et">Euroopa Komisjon</Name>
-            <Name xml:lang="lv">Eiropas Komisija</Name>
-            <Name xml:lang="lt">Europos Komisija</Name>
-            <Name xml:lang="fi">Euroopan komissio</Name>
-        </SchemeOperatorName>
-        <SchemeOperatorAddress>
-            <PostalAddresses>
-                <PostalAddress xml:lang="fr">
-                    <StreetAddress>Rue de la Loi 200</StreetAddress>
-                    <Locality>Bruxelles</Locality>
-                    <PostalCode>1049</PostalCode>
-                    <CountryName>BE</CountryName>
-                </PostalAddress>
-                <PostalAddress xml:lang="nl">
-                    <StreetAddress>Wetstraat 200</StreetAddress>
-                    <Locality>Brussel</Locality>
-                    <PostalCode>1049</PostalCode>
-                    <CountryName>BE</CountryName>
-                </PostalAddress>
-                <PostalAddress xml:lang="en">
-                    <StreetAddress>Rue de la Loi/Wetstraat 200</StreetAddress>
-                    <Locality>Brussels</Locality>
-                    <PostalCode>1049</PostalCode>
-                    <CountryName>BE</CountryName>
-                </PostalAddress>
-            </PostalAddresses>
-            <ElectronicAddress>
-                <URI xml:lang="en">mailto:EC-TL-Service@ec.europa.eu</URI>
-                <URI xml:lang="en">https://ec.europa.eu/digital-agenda/en/eu-trusted-lists-certification-service-providers</URI>
-            </ElectronicAddress>
-        </SchemeOperatorAddress>
-        <SchemeName>
-            <Name xml:lang="en">EU:Trusted list including information related to the qualified trust service providers which are supervised by the issuing Member State, together with information related to the qualified trust services provided by them, in accordance with the relevant provisions laid down in Regulation (EU) No 910/2014 of the European Parliament and of the Council of 23 July 2014 on electronic identification and trust services for electronic transactions in the internal market and repealing Directive 1999/93/EC.</Name>
-            <Name xml:lang="et">EU:Nimekiri kooskõlas komisjoni 16. oktoobri 2009. aasta otsuse 2009/767/EÜ (millega kehtestatakse meetmed elektrooniliste haldustoimingute kasutamise lihtsustamiseks ühtsete kontaktpunktide kaudu, mis on sätestatud Euroopa Parlamendi ja nõukogu direktiivis 2006/123/EÜ teenuste kohta siseturul; muudetud komisjoni otsusega 2010/425/EL ja komisjoni rakendusotsusega 2013/662/EL) artikli 2 lõikega 4; nimekirjas esitatakse teave, mille liikmesriigid on edastanud komisjoni otsuse 2009/767/EÜ artikli 2 lõike 3 kohaselt.</Name>
-            <Name xml:lang="lv">EU:Saraksts, kas saskaņā ar 2. panta 4. punktu Komisijas 2009. gada 16. oktobra Lēmumā 2009/767/EK par pasākumiem, lai veicinātu procedūru veikšanu elektroniski, izmantojot vienotos kontaktpunktus atbilstoši Eiropas Parlamenta un Direktīva 2006/123/EK par pakalpojumiem iekšējā tirgū, kurā grozījumi izdarīti ar Komisijas Lēmumu 2010/425/ES un Komisijas Īstenošanas Lēmumu 2013/662/ES, ietver informāciju, ko dalībvalstis paziņojušas saskaņā ar Komisijas Lēmuma 2009/767/EK 2. panta 3. punktu.</Name>
-            <Name xml:lang="lt">EU:Sąrašas, kuriame pagal  2009 m. spalio 16 d. Komisijos sprendimo 2009/767/EB, kuriuo pagal Europos Parlamento ir Tarybos direktyvą 2006/123/EB dėl paslaugų vidaus rinkoje nustatomos priemonės procedūroms, atliekamoms naudojantis elektroninėmis priemonėmis ir kontaktinių centrų paslaugomis, palengvinti, su pakeitimais, padarytais Komisijos sprendimu 2010/425/ES ir Komisijos įgyvendinimo sprendimu 2013/662/ES, 2 straipsnio 4 dalį pateikiama informacija, kurią valstybės narės pateikė pagal Komisijos sprendimo 2009/767/EB 2 straipsnio 3 dalį.</Name>
-            <Name xml:lang="fi">EU:Luettelo, joka sisältää toimenpiteistä sähköisten menettelyjen käytön edistämiseksi keskitettyjä asiointipisteitä käyttäen palveluista sisämarkkinoilla annetun Euroopan parlamentin ja neuvoston direktiivin 2006/123/EY mukaisesti 16 päivänä lokakuuta 2009 tehdyn komission päätöksen 2009/767/EY, sellaisena kuin se on muutettuna komission päätöksellä 2010/425/EU ja komission täytäntöönpanopäätöksellä 2013/662/EU, 2 artiklan 4 kohdan mukaisesti tiedot, jotka jäsenvaltiot ovat ilmoittaneet komission päätöksen 2009/767/EY 2 artiklan 3 kohdan mukaisesti:</Name>
-        </SchemeName>
-        <SchemeInformationURI>
-            <URI xml:lang="en">http://eur-lex.europa.eu/legal-content/EN/TXT/?uri=uriserv:OJ.C_.2016.233.01.0001.01.ENG</URI>
-            <URI xml:lang="en">https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl.html#en</URI>
-            <URI xml:lang="et">https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl.html#et</URI>
-            <URI xml:lang="lv">https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl.html#lv</URI>
-            <URI xml:lang="lt">https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl.html#lt</URI>
-            <URI xml:lang="fi">https://ec.europa.eu/information_society/policy/esignature/trusted-list/tl.html#fi</URI>
-        </SchemeInformationURI>
-        <StatusDeterminationApproach>http://uri.etsi.org/TrstSvc/TrustedList/StatusDetn/EUlistofthelists</StatusDeterminationApproach>
-        <SchemeTypeCommunityRules>
-            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUlistofthelists</URI>
-        </SchemeTypeCommunityRules>
-        <SchemeTerritory>EU</SchemeTerritory>
-        <PolicyOrLegalNotice>
-            <TSLLegalNotice xml:lang="en">In accordance with Art. 4(3) of Commission Implementing Decision (EU) 2015/1505 of 8 September 2015 laying down technical specifications and formats relating to trusted lists pursuant to Article 22(5) of Regulation (EU) No 910/2014 of the European Parliament and of the Council on electronic identification and trust services for electronic transactions in the internal market, the present list contains the information notified by Member States pursuant to Art. 4(1) and Art. 4(2) of Commission Implementing Decision (EU) 2015/1505.
-The European Commission maintains this website as an interoperability tool designed to facilitate the practical use of national Trusted Lists. Our goal is to keep this information timely and accurate. If errors are brought to our attention, we will try to correct them. However, the Commission accepts no responsibility or liability whatsoever with regard to the content of national Trusted Lists which lies exclusively with the Member States.
-It is our goal to minimise disruption caused by technical errors. However, some data or information on our site may have been created or structured in files or formats that are not error-free and we cannot guarantee that our service will not be interrupted or otherwise affected by such problems. The European Commission accepts no responsibility with regard to such problems incurred as a result of using this site or any linked external sites.
-This disclaimer is not intended to limit the liability of the European Commission in contravention of any requirements laid down in applicable national law nor to exclude its liability for matters which may not be excluded under that law.</TSLLegalNotice>
-            <TSLLegalNotice xml:lang="et">Vastavalt Komisjoni 8. septembri 2015. aasta rakendusotsus (EL) 2015/1505, millega kehtestatakse usaldusnimekirjade tehnilised kirjeldused ja vormingud vastavalt Euroopa Parlamendi ja nõukogu määruse (EL) nr 910/2014 (e-identimise ja e-tehingute jaoks vajalike usaldusteenuste kohta siseturul) artikli 22 lõikele 5 artikli 4 lõikele 3, sisaldab käesolev loetelu liikmesriikide vastavalt komisjoni rakendusotsuse (EL) 2015/1505 artikli 4 lõikele 1 ja artikli 4 lõikele 2 esitatud teavet.
-Euroopa Komisjon haldab asjaomast veebisaiti koostalitlusvõime vahendina, mis hõlbustab liikmesriikide usaldusnimekirjade praktilist kasutamist. Eesmärk on pakkuda õigeaegset ja täpset teavet. Märgatud vigu püüame parandada. Samas ei võta komisjon endale vastutust ega mingeid kohustusi liikmesriikide usaldusnimekirjade sisu suhtes, mille eest vastutavad üksnes liikmesriigid ise.
-Meie eesmärk on vähendada tehniliste vigade tõttu tekkinud häireid. Osa veebisaidil olevatest andmetest või teabest võib aga olla loodud või paigutatud vigastesse failidesse või vormingutesse ning seega ei saa me tagada, et sellised probleemid meie teenust ei häiri või muul moel ei mõjuta. Euroopa Komisjon ei võta endale vastutust seoses kõnealuste probleemidega, mis tulenevad käesoleva veebisaidi või seonduvate välissaitide kasutamisest.
-Käesoleva vastutamatusesätte eesmärk ei ole Euroopa Komisjoni vastutuse piiramine, mis oleks vastuolus kohaldatavas liikmesriigi õigusaktis sätestatud nõuetega ega komisjoni vastutuse kõrvaldamine küsimustes, mida ei tohi asjaomase õigusakti alusel kõrvale jätta.</TSLLegalNotice>
-            <TSLLegalNotice xml:lang="lv">Šajā sarakstā ir iekļauta informācija, kuru dalībvalstis Komisijai ir paziņojušas saskaņā ar 4. panta 3. punktu Komisijas 2015. gada 8. septembra Īstenošanas lēmums (ES) 2015/1505, kurā saskaņā ar Eiropas Parlamenta un Padomes Regulas (ES) Nr. 910/2014 par elektronisko identifikāciju un uzticamības pakalpojumiem elektronisko darījumu veikšanai iekšējā tirgū 22. panta 5. punktu izklāstītas tehniskās specifikācijas un formāti, kas attiecas uz uzticamības sarakstiem. Šis saraksts publicēts atbilstīgi Komisijas Īstenošanas lēmuma (ES) 2015/1505 4. panta 1. un 2. punktu.
-Eiropas Komisija uztur šo tīmekļa vietni, lai sekmētu dalībvalstu uzticamo sarakstu praktisku un savstarpēju izmantošanu. Mēs darām visu, lai nodrošinātu, ka šī informācija ir sniegta laicīgi un ir pareiza. Centīsimies labot norādītās kļūdas. Tomēr Komisija neuzņemas nekādu atbildību vai saistības attiecībā uz dalībvalstu uzticamajos sarakstos sniegto informāciju, jo par tiem atbild vienīgi dalībvalstis.
-Mēs darām visu, lai līdz minimumam samazinātu traucējumus, ko rada tehniskas kļūmes. Tomēr atsevišķos gadījumos dati vai informācija, kas iekļauta mūsu vietnē, ir sagatavota vai organizēta datnēs vai formātos, kas nefunkcionē nevainojami, un mēs nevaram garantēt, ka šādas problēmas nepārtrauks vai citādi neietekmēs mūsu pakalpojumus. Eiropas Komisija neuzņemas nekādu atbildību par problēmām, kas rodas, izmantojot šo vietni vai kādu citu ārēju vietni, uz kuru esam snieguši hipersaiti.
-Šī atruna neierobežo Eiropas Komisijas atbildību tad, ja nav ievērotas spēkā esošo valsts tiesību aktu prasības, un neierobežo tās atbildību gadījumos, kad saskaņā ar tiesību aktiem tai atbildība ir jāuzņemas.</TSLLegalNotice>
-            <TSLLegalNotice xml:lang="lt">Remiantis 2015 m. rugsėjo 8 d. Komisijos įgyvendinimo sprendimas (ES) 2015/1505, kuriuo pagal Europos Parlamento ir Tarybos reglamento (ES) Nr. 910/2014 dėl elektroninės atpažinties ir elektroninių operacijų patikimumo užtikrinimo paslaugų vidaus rinkoje 22 straipsnio 5 dalį nustatomos patikimų sąrašų techninės specifikacijos ir formatai, 4 straipsnio 3 dalimi, šiame sąraše pateikiama informacija, kurią valstybės narės perdavė pagal Komisijos įgyvendinimo sprendimo (ES) 2015/1505 4 straipsnio 1 ir 2.
-Ši Europos Komisijos administruojama interneto svetainė – sąveiki priemonė, skirta praktiniam naudojimuisi valstybių narių patikimais sąrašais palengvinti. Siekiame laiku teikti tikslią informaciją ir ištaisyti visas pastebėtas klaidas. Tačiau Komisija neprisiima atsakomybės ar teisinių įsipareigojimų dėl valstybių narių patikimų sąrašų turinio. Už jį atsakingos tik valstybės narės.
-Siekiame, kad būtų kuo mažiau nesklandumų dėl techninių klaidų. Tačiau tam tikri mūsų interneto svetainėje skelbiami duomenys gali būti sukurti ar susisteminti tokiose rinkmenose arba tokiais formatais, kuriuose pasitaiko klaidų, todėl negalime užtikrinti, kad tokios problemos nesutrikdys mūsų darbo ar jo kaip nors kitaip nepaveiks. Europos Komisija neprisiima atsakomybės už tokio pobūdžio problemas, kylančias naudojantis šia interneto svetaine arba kitomis su ja susietomis išorės svetainėmis.
-Šiuo atsakomybės apribojimu nesiekiama sumažinti Europos Komisijos teisinių įsipareigojimų nepažeisti jokių taikytinų nacionalinės teisės reikalavimų ar neprisiimti teisinių įsipareigojimų už tai, už ką pagal tą teisę nuo atsakomybės neatleidžiama.</TSLLegalNotice>
-            <TSLLegalNotice xml:lang="fi">Tämä luettelo sisältää komission täytäntöönpanopäätöksen (EU) 2015/1505 4 artiklan 3 kohdan mukaisesti tiedot, jotka EU-maat ovat toimittaneet komission täytäntöönpanopäätöksen (EU) 2015/1505 4 artiklan 1 ja 2 kohdan mukaisesti (Komission täytäntöönpanopäätös (EU) 2015/1505, annettu 8 päivänä syyskuuta 2015, luotettujen luetteloiden teknisten eritelmien ja muotoseikkojen vahvistamisesta sähköisestä tunnistamisesta ja sähköisiin transaktioihin liittyvistä luottamuspalveluista sisämarkkinoilla annetun Euroopan parlamentin ja neuvoston asetuksen (EU) N:o 910/2014 22 artiklan 5 kohdan mukaisesti).
-Euroopan komissio ylläpitää tätä verkkosivustoa helpottaakseen kansallisten luotettavien luetteloiden käyttöä. Pyrimme pitämään tiedot ajantasaisina ja virheettöminä. Pyrimme korjaamaan tietoomme tulleet virheet. Komissio ei kuitenkaan voi olla vastuussa kansallisten luotettavien luetteloiden sisällöstä, joka on yksinomaan jäsenvaltioiden vastuulla.
-Tavoitteenamme on minimoida teknisten häiriöiden aiheuttamat haitat. Jotkin tiedot sivustollamme on voitu luoda tai muotoilla sellaiseen muotoon tai sellaisiin tiedostoihin, jotka eivät ole virheettömiä, emmekä voi taata, ettei palvelumme keskeydy tai etteivät kyseiset ongelmat muutoin vaikuta siihen. Euroopan komissio ei vastaa ongelmista, jotka johtuvat tämän sivuston tai siihen linkitettyjen ulkopuolisten sivustojen käytöstä.
-Tämän vastuuvapauslausekkeen tarkoituksena ei ole rajoittaa Euroopan komission vastuuta vastoin sovellettavan kansallisen lain vaatimuksia tai poistaa komission vastuuta seikoista, joiden osalta vastuuta ei sovellettavan kansallisen lain mukaan voida poistaa.</TSLLegalNotice>
-        </PolicyOrLegalNotice>
-        <HistoricalInformationPeriod>65535</HistoricalInformationPeriod>
-        <PointersToOtherTSL>
-            <OtherTSLPointer>
-                <ServiceDigitalIdentities>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIDtDCCApygAwIBAgIJAOGr7PilHGMwMA0GCSqGSIb3DQEBBQUAMHExLjAsBgNVBAMTJUVzdG9uaWFuIFRydXN0ZWQgTGlzdCBTY2hlbWUgT3BlcmF0b3IxCzAJBgNVBAYTAkVFMTIwMAYDVQQKEylFc3RvbmlhbiBUZWNobmljYWwgU3VydmVpbGxhbmNlIEF1dGhvcml0eTAeFw0xMDEwMjkxMzIyNTBaFw0yMDExMDUxMzIyNTBaMHExLjAsBgNVBAMTJUVzdG9uaWFuIFRydXN0ZWQgTGlzdCBTY2hlbWUgT3BlcmF0b3IxCzAJBgNVBAYTAkVFMTIwMAYDVQQKEylFc3RvbmlhbiBUZWNobmljYWwgU3VydmVpbGxhbmNlIEF1dGhvcml0eTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALhdQ9c33Y98JC0pl34+rg+qXLgdjEQaBM9gpxOpIpeqwrcXi5xbLmh4mk6imennbRaZXgJRqrOkx77B+UsBwn6uPgeZenJ1kFGvAOR9aePbgxJ5AggMr4wJXSa03OSGDhptsmMFc86qtnht94mDf1UCn1CNYA7qQHzu4MQwqJ2Ist7IIki89VZD5I4Y5AItMKlEjnHAOw/dlMfI8SxE2vvxCIyQu+rhfGPfwotHi0POyKtkX9Y+JSqEVqRXNw7B2x+d9mRYUJ8EqDvj5ag9dtgyXLsfJ4HdUJMqvoT6QnfwlBbaFusTm3R8SNVXl/8LHDoM5naOSKAOGRSe2OnxAJ8CAwEAAaNPME0wDAYDVR0TBAUwAwIBADALBgNVHQ8EBAMCB4AwHQYDVR0OBBYEFAon+QooAKxPsgZlsTxvK/8synsxMBEGA1UdJQQKMAgGBgQAkTcDADANBgkqhkiG9w0BAQUFAAOCAQEACansBzvd2iwBlZg50oueEtUlFyE+do+FmI4apydq2bM3kdeikWGERSbV1EzD86j7jpNKEOvlPTkV7fZl+7uCJ3OuCrzHEzuaZnvFPkN7Rmj4P1AGh5UK4UVWJwTceuhzIf4D6+/5CNY6U8iEHIqvAmTVOPSKEvxdBv7GKHy6x897icQa8ttHq+xCLmc0+6zpbzSZ5dOmFG3kzJuZPqtqa89Lqf7x6IRRKgUd+C+JsKDMjEde/eYnM8yxdVlzEWe6Z0qKVvPTuiCnhTNhaaQM3aiw61RMTes2Ik4wSGY75XZjQV5gVszHJBEntktcduGWCuJ24qS2lb1M2/8bE43Fkg==</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIDvjCCAqagAwIBAgIJAMx8n7ZaTrHwMA0GCSqGSIb3DQEBBQUAMHYxMzAxBgNVBAMTKkVzdG9uaWFuIFRydXN0ZWQgTGlzdCBTY2hlbWUgT3BlcmF0b3IgMjAxNDELMAkGA1UEBhMCRUUxMjAwBgNVBAoTKUVzdG9uaWFuIFRlY2huaWNhbCBTdXJ2ZWlsbGFuY2UgQXV0aG9yaXR5MB4XDTE0MDQxNzA4MTUzOFoXDTI0MDQyNDA4MTUzOFowdjEzMDEGA1UEAxMqRXN0b25pYW4gVHJ1c3RlZCBMaXN0IFNjaGVtZSBPcGVyYXRvciAyMDE0MQswCQYDVQQGEwJFRTEyMDAGA1UEChMpRXN0b25pYW4gVGVjaG5pY2FsIFN1cnZlaWxsYW5jZSBBdXRob3JpdHkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC8iDN5MzWga97Mz6eQFjCsk2en4g8ujRUQemyIc/nJ3LDSTu0ZWXLksZAoHtHwPAgHafU70nUeAUZ25Wl/jk6SyX2wY29Wka97/mWgFCb5H066T1KI+euQf6R0jhsSqGNaZrhUrs0G4jRzjcQ303YT1JiJVMh9hdGVj5KrVsGymXZh0zYrp237AWlcvxNBeiYlskASaEKbRuEpEdw4jeK0nVvfPfDj3XkLfRvX9QXRikRlPyzMKzFf7bXJRQ90hWI9IqMUP0RkvDSqqrteYV0wB8GKEaDMnqjvEXuhhoGtqusm5K3F5no+cUiY7JsalTzs3MACJSTwjZrCSxAeKr5DAgMBAAGjTzBNMAwGA1UdEwQFMAMCAQAwCwYDVR0PBAQDAgeAMB0GA1UdDgQWBBRXB3a0i0xYnYUj4nzNK/pwBrmORTARBgNVHSUECjAIBgYEAJE3AwAwDQYJKoZIhvcNAQEFBQADggEBAGoHM4yIlIXt8CxNLe1sNxymcJyB8oJbvJwlwCUvapaJieVCSQMmtIrn+3uAAdhMijZSQWPB+5DsLWk7ewyridr2bs+UOc0uJ+ay7zrHIj/g+YDIA0DQ7L6JYabiXNJlQhPNm1LxJ9UZSt+h5anl+nSUSV/C2HQgjtgw1Sm6vYf4/EGGaYGAwOvPPOcaYKbcvcpiKkNhhl+nnfAw/RSz4X5Ow5UWNqDsNSv/xIbuw8vORLn6FcYxVScCFAQQGLl4CYQ9IFyQhsvk7xbOCpD09hd4dqvoPHCRkNjuJt9MBO169WlAL6J+coJ2Xo9JxCgfAU2HI7iGbsAnBj4jdHaa+sI=</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                </ServiceDigitalIdentities>
-                <TSLLocation>http://sr.riik.ee/tsl/estonian-tsl.xml</TSLLocation>
-                <AdditionalInformation>
-                    <OtherInformation>
-                        <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTerritory>EE</SchemeTerritory>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <ns3:MimeType>application/vnd.etsi.tsl+xml</ns3:MimeType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeOperatorName>
-                            <Name xml:lang="en">Estonian Technical Regulatory Authority</Name>
-                            <Name xml:lang="et">Tehnilise Järelevalve Amet</Name>
-                            <Name xml:lang="en">Estonian Technical Surveillance Authority</Name>
-                        </SchemeOperatorName>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTypeCommunityRules>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon</URI>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EE</URI>
-                        </SchemeTypeCommunityRules>
-                    </OtherInformation>
-                </AdditionalInformation>
-            </OtherTSLPointer>
-            <OtherTSLPointer>
-                <ServiceDigitalIdentities>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>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</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>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</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                </ServiceDigitalIdentities>
-                <TSLLocation>https://www.viestintavirasto.fi/attachments/TSL-Ficora.xml</TSLLocation>
-                <AdditionalInformation>
-                    <OtherInformation>
-                        <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTerritory>FI</SchemeTerritory>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <ns3:MimeType>application/vnd.etsi.tsl+xml</ns3:MimeType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeOperatorName>
-                            <Name xml:lang="en">Finnish Communications Regulatory Authority</Name>
-                            <Name xml:lang="fi">Viestintavirasto</Name>
-                        </SchemeOperatorName>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTypeCommunityRules>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon</URI>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/FI</URI>
-                        </SchemeTypeCommunityRules>
-                    </OtherInformation>
-                </AdditionalInformation>
-            </OtherTSLPointer>
-            <OtherTSLPointer>
-                <ServiceDigitalIdentities>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIDwzCCAqugAwIBAgIFEuK7zLkwDQYJKoZIhvcNAQELBQAwcTELMAkGA1UEBhMCTFQxSTBHBgNVBAoMQENvbW11bmljYXRpb25zIFJlZ3VsYXRvcnkgQXV0aG9yaXR5IG9mIHRoZSBSZXB1YmxpYyBvZiBMaXRodWFuaWExFzAVBgNVBAMMDk5lcmlqdXMgQmxhenlzMB4XDTE0MDEwMTAwMDAwMFoXDTE3MDEwMTAwMDAwMFowcTELMAkGA1UEBhMCTFQxSTBHBgNVBAoMQENvbW11bmljYXRpb25zIFJlZ3VsYXRvcnkgQXV0aG9yaXR5IG9mIHRoZSBSZXB1YmxpYyBvZiBMaXRodWFuaWExFzAVBgNVBAMMDk5lcmlqdXMgQmxhenlzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwKBYP2yM8004HUNQGbKU/6HJqXV5SaI1p/d56imQaweezz80T4yUwU5Ghfp+1X+2AC6H3HZrPxhuHEqEvUtlgzpPJDbMI7keJsQvwbv0kUG/tbSS1diP7VaRx1/unO92kkwdJgKv9EaCO4yU5Z+eVfLoQx72ZWp/nab0TllywmNVWhZj4nOl+Rm8p6hvWu/Kwt2ky0lTkSrHTvmpQkM+ZiMS3NS6IPHCovHtjLqs04u97BfOemAzy8ZcsGmcF4dIF4Zn3rgdZsV0dq1AVrfa8tRrCU6eD31TAGS6DQAwD/qn4PMdEiqYNGeY2CAQ9YjpboV5g/U4GHRwc+UjLaF3YQIDAQABo2IwYDAdBgNVHQ4EFgQU1PbRhXoxr0fYWtavjCnXbQKb+5QwCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMCBsAwEQYDVR0gBAowCDAGBgRVHSAAMBEGA1UdJQQKMAgGBgQAkTcDADANBgkqhkiG9w0BAQsFAAOCAQEAe5vJOlbUuz75xFt8JnkjjAJWct9cczvhFwZGNLsdvkiUdV6qiIefPyw6e2Hsc+mON9yYM+Km5X0ugsdy7V8vI2ycp/794mHscfPyoX3rgbPY7zPBMYJxtqfDHPcBRRGfuXxMHFou13jiM6fSYNchhlcpHkxYt5xyMOgnernV6FsGhPNgJomXnsJBQn1ClHYTXTudgHRzgAw9I+IKbONgnVZqDjqyaEar/DfduPFPh0hWXfCnIaTcDSbdWjy3llqWpxMofsTwXFpoYgDO3iG+IIZl3eipAMe2PJPqbIn5Y9FKEtssmmG1KcLPJpAT76NPWIK4nj/mYtZUhnLFsEhwQg==</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIDxzCCAq+gAwIBAgIFFD1WPq8wDQYJKoZIhvcNAQELBQAwczELMAkGA1UEBhMCTFQxSTBHBgNVBAoMQENvbW11bmljYXRpb25zIFJlZ3VsYXRvcnkgQXV0aG9yaXR5IG9mIHRoZSBSZXB1YmxpYyBvZiBMaXRodWFuaWExGTAXBgNVBAMMEFZhaWRvdGFzIFJhbW9uYXMwHhcNMTYwMTAxMDAwMDAwWhcNMTkwMTAxMDAwMDAwWjBzMQswCQYDVQQGEwJMVDFJMEcGA1UECgxAQ29tbXVuaWNhdGlvbnMgUmVndWxhdG9yeSBBdXRob3JpdHkgb2YgdGhlIFJlcHVibGljIG9mIExpdGh1YW5pYTEZMBcGA1UEAwwQVmFpZG90YXMgUmFtb25hczCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKaAn16pu+wmSKcOF+XAwinNPt+cOEcVTp0kfJvMbu1+g5a6Sbjp60iofbxtjj8CI6uJQ0BPhwxV3WuTSNO3V4+MaMK4D7hsYV4hbx5AFUc8l88qLxAFMtoBmrfHM8LEDGP62pbgLAkk7Wye2Jb2V9FHzIooCBpws+l7TxtWg4m7pmmRyU0wXiwztkLbYypyX98cQZyT0vJAaYGZIFt7PWaQtgdmJQsPXsyLU5k740EupGzgGOnsc187ll0cByHRuUQeZi5zBMJtCEECt/eClYVajV6yr0frYw59676Afe5W/ecF0uLPiJl05PLjjFF19BjCHAt7z7hKn7k+CHeTJT0CAwEAAaNiMGAwHQYDVR0OBBYEFFnVjew3yC3Q+lU+Z3pwRZk7QkglMAkGA1UdEwQCMAAwDgYDVR0PAQH/BAQDAgbAMBEGA1UdIAQKMAgwBgYEVR0gADARBgNVHSUECjAIBgYEAJE3AwAwDQYJKoZIhvcNAQELBQADggEBAIns4XuCL9eqwZUkjZfcfsDJNfotALSvdYN0VALyBZtDSIFi7uLQITM7GVczL7PYY+/VvQ3jAVQcXeF1tofsqcuk5/Ae/qb7gM/+qKjUA3fdoqxZ/dCmaloL8WEF0y1taS8Ii44XnQb9Hy3STLKqdsfawJ7bZ3MLXvBWPyAil1mfVWivttuYh0lJ0ejMd/JrYxM5ewJSzMRF9q42U+lramRik3BiuW0JvHosKbWjbvgggx4MB7f658Ul4cvB9hwewFupYlKmXUnWFLUS4/Y249N6DzxY1nYtL5cf1laA34i9SpImjlwMJSV8cBqPnbH/54hvnbUT9B8nGYMyLKs1XVg=</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                </ServiceDigitalIdentities>
-                <TSLLocation>http://www.rrt.lt/failai/LT-TSL.xml</TSLLocation>
-                <AdditionalInformation>
-                    <OtherInformation>
-                        <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTerritory>LT</SchemeTerritory>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <ns3:MimeType>application/vnd.etsi.tsl+xml</ns3:MimeType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeOperatorName>
-                            <Name xml:lang="en">Communications Regulatory Authority of the Republic of Lithuania</Name>
-                            <Name xml:lang="lt">Lietuvos Respublikos ryšių reguliavimo tarnyba</Name>
-                        </SchemeOperatorName>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTypeCommunityRules>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon</URI>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/LT</URI>
-                        </SchemeTypeCommunityRules>
-                    </OtherInformation>
-                </AdditionalInformation>
-            </OtherTSLPointer>
-            <OtherTSLPointer>
-                <ServiceDigitalIdentities>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>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</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>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</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                </ServiceDigitalIdentities>
-                <TSLLocation>http://www.dvi.gov.lv/en/wp-content/uploads/TSL/tsl-lv.xml</TSLLocation>
-                <AdditionalInformation>
-                    <OtherInformation>
-                        <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTerritory>LV</SchemeTerritory>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <ns3:MimeType>application/vnd.etsi.tsl+xml</ns3:MimeType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeOperatorName>
-                            <Name xml:lang="en">Data State Inspectorate</Name>
-                            <Name xml:lang="lv">Datu valsts inspekcija</Name>
-                        </SchemeOperatorName>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTypeCommunityRules>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/LV</URI>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon</URI>
-                        </SchemeTypeCommunityRules>
-                    </OtherInformation>
-                </AdditionalInformation>
-            </OtherTSLPointer>
-            <OtherTSLPointer>
-                <ServiceDigitalIdentities>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIDtDCCApygAwIBAgIJAOGr7PilHGMwMA0GCSqGSIb3DQEBBQUAMHExLjAsBgNVBAMTJUVzdG9uaWFuIFRydXN0ZWQgTGlzdCBTY2hlbWUgT3BlcmF0b3IxCzAJBgNVBAYTAkVFMTIwMAYDVQQKEylFc3RvbmlhbiBUZWNobmljYWwgU3VydmVpbGxhbmNlIEF1dGhvcml0eTAeFw0xMDEwMjkxMzIyNTBaFw0yMDExMDUxMzIyNTBaMHExLjAsBgNVBAMTJUVzdG9uaWFuIFRydXN0ZWQgTGlzdCBTY2hlbWUgT3BlcmF0b3IxCzAJBgNVBAYTAkVFMTIwMAYDVQQKEylFc3RvbmlhbiBUZWNobmljYWwgU3VydmVpbGxhbmNlIEF1dGhvcml0eTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALhdQ9c33Y98JC0pl34+rg+qXLgdjEQaBM9gpxOpIpeqwrcXi5xbLmh4mk6imennbRaZXgJRqrOkx77B+UsBwn6uPgeZenJ1kFGvAOR9aePbgxJ5AggMr4wJXSa03OSGDhptsmMFc86qtnht94mDf1UCn1CNYA7qQHzu4MQwqJ2Ist7IIki89VZD5I4Y5AItMKlEjnHAOw/dlMfI8SxE2vvxCIyQu+rhfGPfwotHi0POyKtkX9Y+JSqEVqRXNw7B2x+d9mRYUJ8EqDvj5ag9dtgyXLsfJ4HdUJMqvoT6QnfwlBbaFusTm3R8SNVXl/8LHDoM5naOSKAOGRSe2OnxAJ8CAwEAAaNPME0wDAYDVR0TBAUwAwIBADALBgNVHQ8EBAMCB4AwHQYDVR0OBBYEFAon+QooAKxPsgZlsTxvK/8synsxMBEGA1UdJQQKMAgGBgQAkTcDADANBgkqhkiG9w0BAQUFAAOCAQEACansBzvd2iwBlZg50oueEtUlFyE+do+FmI4apydq2bM3kdeikWGERSbV1EzD86j7jpNKEOvlPTkV7fZl+7uCJ3OuCrzHEzuaZnvFPkN7Rmj4P1AGh5UK4UVWJwTceuhzIf4D6+/5CNY6U8iEHIqvAmTVOPSKEvxdBv7GKHy6x897icQa8ttHq+xCLmc0+6zpbzSZ5dOmFG3kzJuZPqtqa89Lqf7x6IRRKgUd+C+JsKDMjEde/eYnM8yxdVlzEWe6Z0qKVvPTuiCnhTNhaaQM3aiw61RMTes2Ik4wSGY75XZjQV5gVszHJBEntktcduGWCuJ24qS2lb1M2/8bE43Fkg==</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIDvjCCAqagAwIBAgIJAMx8n7ZaTrHwMA0GCSqGSIb3DQEBBQUAMHYxMzAxBgNVBAMTKkVzdG9uaWFuIFRydXN0ZWQgTGlzdCBTY2hlbWUgT3BlcmF0b3IgMjAxNDELMAkGA1UEBhMCRUUxMjAwBgNVBAoTKUVzdG9uaWFuIFRlY2huaWNhbCBTdXJ2ZWlsbGFuY2UgQXV0aG9yaXR5MB4XDTE0MDQxNzA4MTUzOFoXDTI0MDQyNDA4MTUzOFowdjEzMDEGA1UEAxMqRXN0b25pYW4gVHJ1c3RlZCBMaXN0IFNjaGVtZSBPcGVyYXRvciAyMDE0MQswCQYDVQQGEwJFRTEyMDAGA1UEChMpRXN0b25pYW4gVGVjaG5pY2FsIFN1cnZlaWxsYW5jZSBBdXRob3JpdHkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC8iDN5MzWga97Mz6eQFjCsk2en4g8ujRUQemyIc/nJ3LDSTu0ZWXLksZAoHtHwPAgHafU70nUeAUZ25Wl/jk6SyX2wY29Wka97/mWgFCb5H066T1KI+euQf6R0jhsSqGNaZrhUrs0G4jRzjcQ303YT1JiJVMh9hdGVj5KrVsGymXZh0zYrp237AWlcvxNBeiYlskASaEKbRuEpEdw4jeK0nVvfPfDj3XkLfRvX9QXRikRlPyzMKzFf7bXJRQ90hWI9IqMUP0RkvDSqqrteYV0wB8GKEaDMnqjvEXuhhoGtqusm5K3F5no+cUiY7JsalTzs3MACJSTwjZrCSxAeKr5DAgMBAAGjTzBNMAwGA1UdEwQFMAMCAQAwCwYDVR0PBAQDAgeAMB0GA1UdDgQWBBRXB3a0i0xYnYUj4nzNK/pwBrmORTARBgNVHSUECjAIBgYEAJE3AwAwDQYJKoZIhvcNAQEFBQADggEBAGoHM4yIlIXt8CxNLe1sNxymcJyB8oJbvJwlwCUvapaJieVCSQMmtIrn+3uAAdhMijZSQWPB+5DsLWk7ewyridr2bs+UOc0uJ+ay7zrHIj/g+YDIA0DQ7L6JYabiXNJlQhPNm1LxJ9UZSt+h5anl+nSUSV/C2HQgjtgw1Sm6vYf4/EGGaYGAwOvPPOcaYKbcvcpiKkNhhl+nnfAw/RSz4X5Ow5UWNqDsNSv/xIbuw8vORLn6FcYxVScCFAQQGLl4CYQ9IFyQhsvk7xbOCpD09hd4dqvoPHCRkNjuJt9MBO169WlAL6J+coJ2Xo9JxCgfAU2HI7iGbsAnBj4jdHaa+sI=</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                   <ServiceDigitalIdentity>
-                        <DigitalId>
-                           <X509Certificate>MIIEvDCCAqQCCQC/HGif/u6k6TANBgkqhkiG9w0BAQUFADAgMQswCQYDVQQGEwJFRTERMA8GA1UEAxMIVGVzdCBUU0wwHhcNMTQwNjI1MDkxMDMwWhcNMTUwNjI1MDkxMDMwWjAgMQswCQYDVQQGEwJFRTERMA8GA1UEAxMIVGVzdCBUU0wwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDCU3NdeUa4xMF78VfYPGDDGC4yd2bYboF4C2R7mfUcoaIGOZ4VCShl9ojjQY0a4/7QEI5FPDwvziydN9UFlCRYmb7YrANXL1WS71aLapLM9KuT6e0siFgh1HLeZA0YcdL7opRCVAKxejHuWShuRdvJsNXiv/nKg35I6NPW5OP7IM4HR71CqGcWgtlFkL7sqs943vccpLZa23XQcAfngW0VdPSxuz4R/kzNkIFXBjrPSpjR74006e9csrKxJmebKfGqIIOu0waFVmXsWbj46p05PLpfsVX+lJ8O9CVtq0p4R4BzcUHh4zLJpUDZlRcK0t64EjTSnH4OgEP+qH/zhBxDb8maCRqyZT7iY6e/VBbfwub7ZhNzAnPYd7yGbBz7PIBWEqDNLtTBVq7rlYd63ap2TEvXKczh50IJEM8DTdAWpHG6iRcB17nqxI3U8iq/bPVhcT/OW4Dhb9ZdEllJzCgvpDpv/yBZ/F1tggQwrtjZ4cvZ6AXt+Bb5j5vZpcxbl1Q/2a4dcFMCXfxuuoboXPlFY1ElQGiF3oOV/iVRBNn6gnv0b3+qB1sQlLii4nS/fxwAehsH5z3m4fuLgZKfT9AcpR1e8jJQLJne0dTX0spc1yOVi8nv/PvpZGh3OI/rZfGP2pUU4RQnV96Fw/VBeYFv48+mcwMta+HpaaNTNvmzhQIDAQABMA0GCSqGSIb3DQEBBQUAA4ICAQB9gBvNxbsw/iGCXlbqrqZMjvvMqJVEsSIYe7Hb3mBiPAw50zxBTVXPY9nq5P2nD1hWK/sQMLVTbhQ/rSbiiEzMizEEhMAj5NzLrGm5qDFJeJjvqvsV+IehO9E4sKZ5GI9lhbuOcPo5N1YGSDrtqJpPPKhSv4TeOtl7Y1uCSMq8R9Y3XjNBqv0BsdlnMq6ugBQ74eiOwrIdy2jCIbzNn9ZJtbTiOnVSlaywMiaRkjslkajnFDvMj3pmh9R9/r+/cGMosCVMEqxFYcNjn2CU1S9mslnZb2U/LBYm/WhHF3V1PDN56NaIgBVJAXOJgeQGKvDKHddDMjavSanXQbZeEaikH8znON+HiasNVG/Y7ZBMQTcoWJZ23q07tDQSXCDfgl1AhhaAxgsCnf+yfwWaxHjhygx40VzJnEiBTzAVnqDGW0cezpRnP8huueen38ptKjI46JFR+CgW0ckyFpNtE5AaR0vJuJl8lSpAkXtmIC6iGxsnszV519MXZxpXI0QXAhZQmkw7HPvy/aWxqmX8yyy5Yh2en25631GHt5LtSc1iiGpX0/x+rAiRjDcU5AAEOB4XWF3+NSc7Tyl09trfisQcWp9vCEFSIAwhiErpMvmP+yK/Emh7nZwqU4ueAj3OvggqPsg0Soaixr/UQC9T+rIwifv1Bh2q+VXGqdLG62Ay5Q==</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                </ServiceDigitalIdentities>
-                <TSLLocation>http://10.0.25.57/tsl/EE_T.xml</TSLLocation>
-                <AdditionalInformation>
-                    <OtherInformation>
-                        <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTerritory>EE_T</SchemeTerritory>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <ns3:MimeType>application/vnd.etsi.tsl+xml</ns3:MimeType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeOperatorName>
-                            <Name xml:lang="en">Estonian Technical Regulatory Authority</Name>
-                            <Name xml:lang="et">Tehnilise Järelevalve Amet</Name>
-                            <Name xml:lang="en">Estonian Technical Surveillance Authority</Name>
-                        </SchemeOperatorName>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTypeCommunityRules>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon</URI>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EE</URI>
-                        </SchemeTypeCommunityRules>
-                    </OtherInformation>
-                </AdditionalInformation>
-            </OtherTSLPointer>
-            <OtherTSLPointer>
-                <ServiceDigitalIdentities>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>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</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>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</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIEvDCCAqQCCQC/HGif/u6k6TANBgkqhkiG9w0BAQUFADAgMQswCQYDVQQGEwJFRTERMA8GA1UEAxMIVGVzdCBUU0wwHhcNMTQwNjI1MDkxMDMwWhcNMTUwNjI1MDkxMDMwWjAgMQswCQYDVQQGEwJFRTERMA8GA1UEAxMIVGVzdCBUU0wwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDCU3NdeUa4xMF78VfYPGDDGC4yd2bYboF4C2R7mfUcoaIGOZ4VCShl9ojjQY0a4/7QEI5FPDwvziydN9UFlCRYmb7YrANXL1WS71aLapLM9KuT6e0siFgh1HLeZA0YcdL7opRCVAKxejHuWShuRdvJsNXiv/nKg35I6NPW5OP7IM4HR71CqGcWgtlFkL7sqs943vccpLZa23XQcAfngW0VdPSxuz4R/kzNkIFXBjrPSpjR74006e9csrKxJmebKfGqIIOu0waFVmXsWbj46p05PLpfsVX+lJ8O9CVtq0p4R4BzcUHh4zLJpUDZlRcK0t64EjTSnH4OgEP+qH/zhBxDb8maCRqyZT7iY6e/VBbfwub7ZhNzAnPYd7yGbBz7PIBWEqDNLtTBVq7rlYd63ap2TEvXKczh50IJEM8DTdAWpHG6iRcB17nqxI3U8iq/bPVhcT/OW4Dhb9ZdEllJzCgvpDpv/yBZ/F1tggQwrtjZ4cvZ6AXt+Bb5j5vZpcxbl1Q/2a4dcFMCXfxuuoboXPlFY1ElQGiF3oOV/iVRBNn6gnv0b3+qB1sQlLii4nS/fxwAehsH5z3m4fuLgZKfT9AcpR1e8jJQLJne0dTX0spc1yOVi8nv/PvpZGh3OI/rZfGP2pUU4RQnV96Fw/VBeYFv48+mcwMta+HpaaNTNvmzhQIDAQABMA0GCSqGSIb3DQEBBQUAA4ICAQB9gBvNxbsw/iGCXlbqrqZMjvvMqJVEsSIYe7Hb3mBiPAw50zxBTVXPY9nq5P2nD1hWK/sQMLVTbhQ/rSbiiEzMizEEhMAj5NzLrGm5qDFJeJjvqvsV+IehO9E4sKZ5GI9lhbuOcPo5N1YGSDrtqJpPPKhSv4TeOtl7Y1uCSMq8R9Y3XjNBqv0BsdlnMq6ugBQ74eiOwrIdy2jCIbzNn9ZJtbTiOnVSlaywMiaRkjslkajnFDvMj3pmh9R9/r+/cGMosCVMEqxFYcNjn2CU1S9mslnZb2U/LBYm/WhHF3V1PDN56NaIgBVJAXOJgeQGKvDKHddDMjavSanXQbZeEaikH8znON+HiasNVG/Y7ZBMQTcoWJZ23q07tDQSXCDfgl1AhhaAxgsCnf+yfwWaxHjhygx40VzJnEiBTzAVnqDGW0cezpRnP8huueen38ptKjI46JFR+CgW0ckyFpNtE5AaR0vJuJl8lSpAkXtmIC6iGxsnszV519MXZxpXI0QXAhZQmkw7HPvy/aWxqmX8yyy5Yh2en25631GHt5LtSc1iiGpX0/x+rAiRjDcU5AAEOB4XWF3+NSc7Tyl09trfisQcWp9vCEFSIAwhiErpMvmP+yK/Emh7nZwqU4ueAj3OvggqPsg0Soaixr/UQC9T+rIwifv1Bh2q+VXGqdLG62Ay5Q==</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                </ServiceDigitalIdentities>
-                <TSLLocation>http://10.0.25.57/tsl/FI_T.xml</TSLLocation>
-                <AdditionalInformation>
-                    <OtherInformation>
-                        <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTerritory>FI_T</SchemeTerritory>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <ns3:MimeType>application/vnd.etsi.tsl+xml</ns3:MimeType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeOperatorName>
-                            <Name xml:lang="en">Finnish Communications Regulatory Authority</Name>
-                            <Name xml:lang="fi">Viestintavirasto</Name>
-                        </SchemeOperatorName>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTypeCommunityRules>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon</URI>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/FI</URI>
-                        </SchemeTypeCommunityRules>
-                    </OtherInformation>
-                </AdditionalInformation>
-            </OtherTSLPointer>
-            <OtherTSLPointer>
-                <ServiceDigitalIdentities>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIDwzCCAqugAwIBAgIFEuK7zLkwDQYJKoZIhvcNAQELBQAwcTELMAkGA1UEBhMCTFQxSTBHBgNVBAoMQENvbW11bmljYXRpb25zIFJlZ3VsYXRvcnkgQXV0aG9yaXR5IG9mIHRoZSBSZXB1YmxpYyBvZiBMaXRodWFuaWExFzAVBgNVBAMMDk5lcmlqdXMgQmxhenlzMB4XDTE0MDEwMTAwMDAwMFoXDTE3MDEwMTAwMDAwMFowcTELMAkGA1UEBhMCTFQxSTBHBgNVBAoMQENvbW11bmljYXRpb25zIFJlZ3VsYXRvcnkgQXV0aG9yaXR5IG9mIHRoZSBSZXB1YmxpYyBvZiBMaXRodWFuaWExFzAVBgNVBAMMDk5lcmlqdXMgQmxhenlzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwKBYP2yM8004HUNQGbKU/6HJqXV5SaI1p/d56imQaweezz80T4yUwU5Ghfp+1X+2AC6H3HZrPxhuHEqEvUtlgzpPJDbMI7keJsQvwbv0kUG/tbSS1diP7VaRx1/unO92kkwdJgKv9EaCO4yU5Z+eVfLoQx72ZWp/nab0TllywmNVWhZj4nOl+Rm8p6hvWu/Kwt2ky0lTkSrHTvmpQkM+ZiMS3NS6IPHCovHtjLqs04u97BfOemAzy8ZcsGmcF4dIF4Zn3rgdZsV0dq1AVrfa8tRrCU6eD31TAGS6DQAwD/qn4PMdEiqYNGeY2CAQ9YjpboV5g/U4GHRwc+UjLaF3YQIDAQABo2IwYDAdBgNVHQ4EFgQU1PbRhXoxr0fYWtavjCnXbQKb+5QwCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMCBsAwEQYDVR0gBAowCDAGBgRVHSAAMBEGA1UdJQQKMAgGBgQAkTcDADANBgkqhkiG9w0BAQsFAAOCAQEAe5vJOlbUuz75xFt8JnkjjAJWct9cczvhFwZGNLsdvkiUdV6qiIefPyw6e2Hsc+mON9yYM+Km5X0ugsdy7V8vI2ycp/794mHscfPyoX3rgbPY7zPBMYJxtqfDHPcBRRGfuXxMHFou13jiM6fSYNchhlcpHkxYt5xyMOgnernV6FsGhPNgJomXnsJBQn1ClHYTXTudgHRzgAw9I+IKbONgnVZqDjqyaEar/DfduPFPh0hWXfCnIaTcDSbdWjy3llqWpxMofsTwXFpoYgDO3iG+IIZl3eipAMe2PJPqbIn5Y9FKEtssmmG1KcLPJpAT76NPWIK4nj/mYtZUhnLFsEhwQg==</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIDxzCCAq+gAwIBAgIFFD1WPq8wDQYJKoZIhvcNAQELBQAwczELMAkGA1UEBhMCTFQxSTBHBgNVBAoMQENvbW11bmljYXRpb25zIFJlZ3VsYXRvcnkgQXV0aG9yaXR5IG9mIHRoZSBSZXB1YmxpYyBvZiBMaXRodWFuaWExGTAXBgNVBAMMEFZhaWRvdGFzIFJhbW9uYXMwHhcNMTYwMTAxMDAwMDAwWhcNMTkwMTAxMDAwMDAwWjBzMQswCQYDVQQGEwJMVDFJMEcGA1UECgxAQ29tbXVuaWNhdGlvbnMgUmVndWxhdG9yeSBBdXRob3JpdHkgb2YgdGhlIFJlcHVibGljIG9mIExpdGh1YW5pYTEZMBcGA1UEAwwQVmFpZG90YXMgUmFtb25hczCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKaAn16pu+wmSKcOF+XAwinNPt+cOEcVTp0kfJvMbu1+g5a6Sbjp60iofbxtjj8CI6uJQ0BPhwxV3WuTSNO3V4+MaMK4D7hsYV4hbx5AFUc8l88qLxAFMtoBmrfHM8LEDGP62pbgLAkk7Wye2Jb2V9FHzIooCBpws+l7TxtWg4m7pmmRyU0wXiwztkLbYypyX98cQZyT0vJAaYGZIFt7PWaQtgdmJQsPXsyLU5k740EupGzgGOnsc187ll0cByHRuUQeZi5zBMJtCEECt/eClYVajV6yr0frYw59676Afe5W/ecF0uLPiJl05PLjjFF19BjCHAt7z7hKn7k+CHeTJT0CAwEAAaNiMGAwHQYDVR0OBBYEFFnVjew3yC3Q+lU+Z3pwRZk7QkglMAkGA1UdEwQCMAAwDgYDVR0PAQH/BAQDAgbAMBEGA1UdIAQKMAgwBgYEVR0gADARBgNVHSUECjAIBgYEAJE3AwAwDQYJKoZIhvcNAQELBQADggEBAIns4XuCL9eqwZUkjZfcfsDJNfotALSvdYN0VALyBZtDSIFi7uLQITM7GVczL7PYY+/VvQ3jAVQcXeF1tofsqcuk5/Ae/qb7gM/+qKjUA3fdoqxZ/dCmaloL8WEF0y1taS8Ii44XnQb9Hy3STLKqdsfawJ7bZ3MLXvBWPyAil1mfVWivttuYh0lJ0ejMd/JrYxM5ewJSzMRF9q42U+lramRik3BiuW0JvHosKbWjbvgggx4MB7f658Ul4cvB9hwewFupYlKmXUnWFLUS4/Y249N6DzxY1nYtL5cf1laA34i9SpImjlwMJSV8cBqPnbH/54hvnbUT9B8nGYMyLKs1XVg=</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIEvDCCAqQCCQC/HGif/u6k6TANBgkqhkiG9w0BAQUFADAgMQswCQYDVQQGEwJFRTERMA8GA1UEAxMIVGVzdCBUU0wwHhcNMTQwNjI1MDkxMDMwWhcNMTUwNjI1MDkxMDMwWjAgMQswCQYDVQQGEwJFRTERMA8GA1UEAxMIVGVzdCBUU0wwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDCU3NdeUa4xMF78VfYPGDDGC4yd2bYboF4C2R7mfUcoaIGOZ4VCShl9ojjQY0a4/7QEI5FPDwvziydN9UFlCRYmb7YrANXL1WS71aLapLM9KuT6e0siFgh1HLeZA0YcdL7opRCVAKxejHuWShuRdvJsNXiv/nKg35I6NPW5OP7IM4HR71CqGcWgtlFkL7sqs943vccpLZa23XQcAfngW0VdPSxuz4R/kzNkIFXBjrPSpjR74006e9csrKxJmebKfGqIIOu0waFVmXsWbj46p05PLpfsVX+lJ8O9CVtq0p4R4BzcUHh4zLJpUDZlRcK0t64EjTSnH4OgEP+qH/zhBxDb8maCRqyZT7iY6e/VBbfwub7ZhNzAnPYd7yGbBz7PIBWEqDNLtTBVq7rlYd63ap2TEvXKczh50IJEM8DTdAWpHG6iRcB17nqxI3U8iq/bPVhcT/OW4Dhb9ZdEllJzCgvpDpv/yBZ/F1tggQwrtjZ4cvZ6AXt+Bb5j5vZpcxbl1Q/2a4dcFMCXfxuuoboXPlFY1ElQGiF3oOV/iVRBNn6gnv0b3+qB1sQlLii4nS/fxwAehsH5z3m4fuLgZKfT9AcpR1e8jJQLJne0dTX0spc1yOVi8nv/PvpZGh3OI/rZfGP2pUU4RQnV96Fw/VBeYFv48+mcwMta+HpaaNTNvmzhQIDAQABMA0GCSqGSIb3DQEBBQUAA4ICAQB9gBvNxbsw/iGCXlbqrqZMjvvMqJVEsSIYe7Hb3mBiPAw50zxBTVXPY9nq5P2nD1hWK/sQMLVTbhQ/rSbiiEzMizEEhMAj5NzLrGm5qDFJeJjvqvsV+IehO9E4sKZ5GI9lhbuOcPo5N1YGSDrtqJpPPKhSv4TeOtl7Y1uCSMq8R9Y3XjNBqv0BsdlnMq6ugBQ74eiOwrIdy2jCIbzNn9ZJtbTiOnVSlaywMiaRkjslkajnFDvMj3pmh9R9/r+/cGMosCVMEqxFYcNjn2CU1S9mslnZb2U/LBYm/WhHF3V1PDN56NaIgBVJAXOJgeQGKvDKHddDMjavSanXQbZeEaikH8znON+HiasNVG/Y7ZBMQTcoWJZ23q07tDQSXCDfgl1AhhaAxgsCnf+yfwWaxHjhygx40VzJnEiBTzAVnqDGW0cezpRnP8huueen38ptKjI46JFR+CgW0ckyFpNtE5AaR0vJuJl8lSpAkXtmIC6iGxsnszV519MXZxpXI0QXAhZQmkw7HPvy/aWxqmX8yyy5Yh2en25631GHt5LtSc1iiGpX0/x+rAiRjDcU5AAEOB4XWF3+NSc7Tyl09trfisQcWp9vCEFSIAwhiErpMvmP+yK/Emh7nZwqU4ueAj3OvggqPsg0Soaixr/UQC9T+rIwifv1Bh2q+VXGqdLG62Ay5Q==</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                </ServiceDigitalIdentities>
-                <TSLLocation>http://10.0.25.57/tsl/LT_T.xml</TSLLocation>
-                <AdditionalInformation>
-                    <OtherInformation>
-                        <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTerritory>LT_T</SchemeTerritory>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <ns3:MimeType>application/vnd.etsi.tsl+xml</ns3:MimeType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeOperatorName>
-                            <Name xml:lang="en">Communications Regulatory Authority of the Republic of Lithuania</Name>
-                            <Name xml:lang="lt">Lietuvos Respublikos ryšių reguliavimo tarnyba</Name>
-                        </SchemeOperatorName>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTypeCommunityRules>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon</URI>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/LT</URI>
-                        </SchemeTypeCommunityRules>
-                    </OtherInformation>
-                </AdditionalInformation>
-            </OtherTSLPointer>
-            <OtherTSLPointer>
-                <ServiceDigitalIdentities>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>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</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>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</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                    <ServiceDigitalIdentity>
-                        <DigitalId>
-                            <X509Certificate>MIIEvDCCAqQCCQC/HGif/u6k6TANBgkqhkiG9w0BAQUFADAgMQswCQYDVQQGEwJFRTERMA8GA1UEAxMIVGVzdCBUU0wwHhcNMTQwNjI1MDkxMDMwWhcNMTUwNjI1MDkxMDMwWjAgMQswCQYDVQQGEwJFRTERMA8GA1UEAxMIVGVzdCBUU0wwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDCU3NdeUa4xMF78VfYPGDDGC4yd2bYboF4C2R7mfUcoaIGOZ4VCShl9ojjQY0a4/7QEI5FPDwvziydN9UFlCRYmb7YrANXL1WS71aLapLM9KuT6e0siFgh1HLeZA0YcdL7opRCVAKxejHuWShuRdvJsNXiv/nKg35I6NPW5OP7IM4HR71CqGcWgtlFkL7sqs943vccpLZa23XQcAfngW0VdPSxuz4R/kzNkIFXBjrPSpjR74006e9csrKxJmebKfGqIIOu0waFVmXsWbj46p05PLpfsVX+lJ8O9CVtq0p4R4BzcUHh4zLJpUDZlRcK0t64EjTSnH4OgEP+qH/zhBxDb8maCRqyZT7iY6e/VBbfwub7ZhNzAnPYd7yGbBz7PIBWEqDNLtTBVq7rlYd63ap2TEvXKczh50IJEM8DTdAWpHG6iRcB17nqxI3U8iq/bPVhcT/OW4Dhb9ZdEllJzCgvpDpv/yBZ/F1tggQwrtjZ4cvZ6AXt+Bb5j5vZpcxbl1Q/2a4dcFMCXfxuuoboXPlFY1ElQGiF3oOV/iVRBNn6gnv0b3+qB1sQlLii4nS/fxwAehsH5z3m4fuLgZKfT9AcpR1e8jJQLJne0dTX0spc1yOVi8nv/PvpZGh3OI/rZfGP2pUU4RQnV96Fw/VBeYFv48+mcwMta+HpaaNTNvmzhQIDAQABMA0GCSqGSIb3DQEBBQUAA4ICAQB9gBvNxbsw/iGCXlbqrqZMjvvMqJVEsSIYe7Hb3mBiPAw50zxBTVXPY9nq5P2nD1hWK/sQMLVTbhQ/rSbiiEzMizEEhMAj5NzLrGm5qDFJeJjvqvsV+IehO9E4sKZ5GI9lhbuOcPo5N1YGSDrtqJpPPKhSv4TeOtl7Y1uCSMq8R9Y3XjNBqv0BsdlnMq6ugBQ74eiOwrIdy2jCIbzNn9ZJtbTiOnVSlaywMiaRkjslkajnFDvMj3pmh9R9/r+/cGMosCVMEqxFYcNjn2CU1S9mslnZb2U/LBYm/WhHF3V1PDN56NaIgBVJAXOJgeQGKvDKHddDMjavSanXQbZeEaikH8znON+HiasNVG/Y7ZBMQTcoWJZ23q07tDQSXCDfgl1AhhaAxgsCnf+yfwWaxHjhygx40VzJnEiBTzAVnqDGW0cezpRnP8huueen38ptKjI46JFR+CgW0ckyFpNtE5AaR0vJuJl8lSpAkXtmIC6iGxsnszV519MXZxpXI0QXAhZQmkw7HPvy/aWxqmX8yyy5Yh2en25631GHt5LtSc1iiGpX0/x+rAiRjDcU5AAEOB4XWF3+NSc7Tyl09trfisQcWp9vCEFSIAwhiErpMvmP+yK/Emh7nZwqU4ueAj3OvggqPsg0Soaixr/UQC9T+rIwifv1Bh2q+VXGqdLG62Ay5Q==</X509Certificate>
-                        </DigitalId>
-                    </ServiceDigitalIdentity>
-                </ServiceDigitalIdentities>
-                <TSLLocation>http://10.0.25.57/tsl/LV_T.xml</TSLLocation>
-                <AdditionalInformation>
-                    <OtherInformation>
-                        <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTerritory>LV_T</SchemeTerritory>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <ns3:MimeType>application/vnd.etsi.tsl+xml</ns3:MimeType>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeOperatorName>
-                            <Name xml:lang="en">Data State Inspectorate</Name>
-                            <Name xml:lang="lv">Datu valsts inspekcija</Name>
-                        </SchemeOperatorName>
-                    </OtherInformation>
-                    <OtherInformation>
-                        <SchemeTypeCommunityRules>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/LV</URI>
-                            <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon</URI>
-                        </SchemeTypeCommunityRules>
-                    </OtherInformation>
-                </AdditionalInformation>
-            </OtherTSLPointer>
-        </PointersToOtherTSL>
-        <ListIssueDateTime>2016-11-28T21:00:00Z</ListIssueDateTime>
-        <NextUpdate>
-            <dateTime>2027-01-01T22:00:00Z</dateTime>
-        </NextUpdate>
-        <DistributionPoints>
-            <URI>http://10.0.25.57/tsl/trusted-test-mp.xml</URI>
-        </DistributionPoints>
-    </SchemeInformation>
-<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI="#ID0001"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>ikwr1bPGSv1PeqjZGr8ptueHaUrJtYMglwOF51+YD3c=</DigestValue></Reference></SignedInfo><SignatureValue>DVLimpacURqmNeWfs5eKBNgSuwQhm+xf21Ig+MkBHquDrmeFG13x7TSyZ3HTlz5T0ycqUkqMqX9P
-nt6zO7PC0eGSN4lkNHpm8NekTHm8ofQ6ExoPrnufVLreTHVapiDsSnXrYbh0x56p5IBhvZJ7Sou1
-rTUpiJWxDB5gQKFyt2uh0PoniRilC7A0XEGGrgTyLV43jZmASlhzCFzYzE5bgkhdbeSl+q5Wc3tt
-iKg500kE1p05gRCKJvID+3bsTXB6ls006bhFFOEuRwlD0zWpsP+16BotQuG1A4ybIpsKIdkcqiJ5
-EHfKytbVgM+NlU44oLeE2TyN3/5yIGy1hW2Sy07i43Y8POY53FZwlwzjalLuWr1Sj8OyjmX/zp5+
-dCubWOATJU2k/xsW18WS5E/mRf+8NSLurn2EG9MwP9LfFWPo/fCPYR8Z1X8e1BANaZf8MKUNb+PE
-rXxkWa3YLEEfYAnfr+wyHF9Nqj+jmiaPni+oiKqaGNhJ2sCHWkY3lqqqFXG5y6h1Ui8Y/lV7bXSe
-WzN6UkTCDBnG2vDpPY85CmkCywNIOWxsNjMlVgOsGeSimRMRxGtTZQ1j3QiCCr2EhRzORgwQ2ng1
-h6C8zZLK6T7Tq/GV3eKZ4ZX50J72zxvRaRZzvLGcw6CJQQbc+yqJ0d0Y0ZN+QG+62nmplsO9ejc=</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIEvDCCAqQCCQC/HGif/u6k6TANBgkqhkiG9w0BAQUFADAgMQswCQYDVQQGEwJFRTERMA8GA1UE
-AxMIVGVzdCBUU0wwHhcNMTQwNjI1MDkxMDMwWhcNMTUwNjI1MDkxMDMwWjAgMQswCQYDVQQGEwJF
-RTERMA8GA1UEAxMIVGVzdCBUU0wwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDCU3Nd
-eUa4xMF78VfYPGDDGC4yd2bYboF4C2R7mfUcoaIGOZ4VCShl9ojjQY0a4/7QEI5FPDwvziydN9UF
-lCRYmb7YrANXL1WS71aLapLM9KuT6e0siFgh1HLeZA0YcdL7opRCVAKxejHuWShuRdvJsNXiv/nK
-g35I6NPW5OP7IM4HR71CqGcWgtlFkL7sqs943vccpLZa23XQcAfngW0VdPSxuz4R/kzNkIFXBjrP
-SpjR74006e9csrKxJmebKfGqIIOu0waFVmXsWbj46p05PLpfsVX+lJ8O9CVtq0p4R4BzcUHh4zLJ
-pUDZlRcK0t64EjTSnH4OgEP+qH/zhBxDb8maCRqyZT7iY6e/VBbfwub7ZhNzAnPYd7yGbBz7PIBW
-EqDNLtTBVq7rlYd63ap2TEvXKczh50IJEM8DTdAWpHG6iRcB17nqxI3U8iq/bPVhcT/OW4Dhb9Zd
-EllJzCgvpDpv/yBZ/F1tggQwrtjZ4cvZ6AXt+Bb5j5vZpcxbl1Q/2a4dcFMCXfxuuoboXPlFY1El
-QGiF3oOV/iVRBNn6gnv0b3+qB1sQlLii4nS/fxwAehsH5z3m4fuLgZKfT9AcpR1e8jJQLJne0dTX
-0spc1yOVi8nv/PvpZGh3OI/rZfGP2pUU4RQnV96Fw/VBeYFv48+mcwMta+HpaaNTNvmzhQIDAQAB
-MA0GCSqGSIb3DQEBBQUAA4ICAQB9gBvNxbsw/iGCXlbqrqZMjvvMqJVEsSIYe7Hb3mBiPAw50zxB
-TVXPY9nq5P2nD1hWK/sQMLVTbhQ/rSbiiEzMizEEhMAj5NzLrGm5qDFJeJjvqvsV+IehO9E4sKZ5
-GI9lhbuOcPo5N1YGSDrtqJpPPKhSv4TeOtl7Y1uCSMq8R9Y3XjNBqv0BsdlnMq6ugBQ74eiOwrId
-y2jCIbzNn9ZJtbTiOnVSlaywMiaRkjslkajnFDvMj3pmh9R9/r+/cGMosCVMEqxFYcNjn2CU1S9m
-slnZb2U/LBYm/WhHF3V1PDN56NaIgBVJAXOJgeQGKvDKHddDMjavSanXQbZeEaikH8znON+HiasN
-VG/Y7ZBMQTcoWJZ23q07tDQSXCDfgl1AhhaAxgsCnf+yfwWaxHjhygx40VzJnEiBTzAVnqDGW0ce
-zpRnP8huueen38ptKjI46JFR+CgW0ckyFpNtE5AaR0vJuJl8lSpAkXtmIC6iGxsnszV519MXZxpX
-I0QXAhZQmkw7HPvy/aWxqmX8yyy5Yh2en25631GHt5LtSc1iiGpX0/x+rAiRjDcU5AAEOB4XWF3+
-NSc7Tyl09trfisQcWp9vCEFSIAwhiErpMvmP+yK/Emh7nZwqU4ueAj3OvggqPsg0Soaixr/UQC9T
-+rIwifv1Bh2q+VXGqdLG62Ay5Q==</X509Certificate></X509Data></KeyInfo></Signature></TrustServiceStatusList>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><TrustServiceStatusList xmlns="http://uri.etsi.org/02231/v2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:tslx="http://uri.etsi.org/02231/v2/additionaltypes#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Id="ID0001" TSLTag="http://uri.etsi.org/19612/TSLTag">
+   <SchemeInformation>
+      <TSLVersionIdentifier>5</TSLVersionIdentifier>
+      <TSLSequenceNumber>4</TSLSequenceNumber>
+      <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists</TSLType>
+      <SchemeOperatorName>
+         <Name xml:lang="en">Information System Authority</Name>
+      </SchemeOperatorName>
+      <SchemeOperatorAddress>
+         <PostalAddresses>
+            <PostalAddress xml:lang="en">
+               <StreetAddress>139A Pärnu mnt</StreetAddress>
+               <Locality>Tallinn</Locality>
+               <StateOrProvince>Harjumaa</StateOrProvince>
+               <PostalCode>15169</PostalCode>
+               <CountryName>EE</CountryName>
+            </PostalAddress>
+         </PostalAddresses>
+         <ElectronicAddress>
+            <URI xml:lang="en">mailto:ria@ria.ee</URI>
+            <URI xml:lang="en">https://www.ria.ee</URI>
+         </ElectronicAddress>
+      </SchemeOperatorAddress>
+      <SchemeName>
+         <Name xml:lang="en">EE:Supervision/Accreditation Status List of test certification services</Name>
+      </SchemeName>
+      <SchemeInformationURI>
+         <URI xml:lang="en">https://open-eid.github.io/test-TL/</URI>
+      </SchemeInformationURI>
+      <StatusDeterminationApproach>http://uri.etsi.org/TrstSvc/TrustedList/StatusDetn/EUlistofthelists</StatusDeterminationApproach>
+      <SchemeTypeCommunityRules>
+         <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUlistofthelists</URI>
+      </SchemeTypeCommunityRules>
+      <SchemeTerritory>EE</SchemeTerritory>
+      <PolicyOrLegalNotice>
+         <TSLLegalNotice xml:lang="en">The present TSL implementation of ponters to test TSL lists is not applicable to any legal frameworks</TSLLegalNotice>
+      </PolicyOrLegalNotice>
+      <HistoricalInformationPeriod>65535</HistoricalInformationPeriod>
+      <PointersToOtherTSL>
+         <OtherTSLPointer>
+            <ServiceDigitalIdentities>
+               <ServiceDigitalIdentity>
+                  <DigitalId>
+                     <X509Certificate>MIIEvDCCAqQCCQCL/COUVyiGjTANBgkqhkiG9w0BAQUFADAgMQswCQYDVQQGEwJFRTERMA8GA1UEAwwIVGVzdCBUU0wwHhcNMTgxMTE1MTI1MjU1WhcNMjgxMTEyMTI1MjU1WjAgMQswCQYDVQQGEwJFRTERMA8GA1UEAwwIVGVzdCBUU0wwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDfFK0fYeGrdngMZXZndDEpcl9pjGGNpbie3+ch5mDqObUe+OL45b4+SfPapriVRNBa+m5T1TuijP7Kb8sTNS9U3WQYvY8bEstPZnaEvdQSSVRf4j9eVg+RTJ8Y4jjZ02GbLwrpELD2Qs+ohCl8e64G29qutchv6nJqOdbL5U+d6DKyrzSpZyMRPA+UmB78KsBTs0o3wME7IA9J37YgtpUZifcC4LdgTWrX2eBICGPqi7GGKzdnI5LDhCJZnHwzva+6lBwa8fW5aXQG69uPTFmd/pNNF6+8f2FcYGljQiD6FYVKAUfYRBlw9ymKaIbNmyh9bs71ezPrI4ltOLjmZLZFRouSIaeExfzj2FkWERNG/iAuEIRolyyXjqjiQIuiEi8uo6sg1cPrD59EuWtTcMzTxuhVU8Ra37F6DrMEipqh84zQcnT0i/RNk4K723aB9uWwHJgJ5Y2/6cbta7ZkYsfQfjBC4nBRVyUlBCpEFYNePbKttYF5Cf5FraMlGzAY0W/MSIUxvRmlkjCzBod4LA+K/hQxEiw7Xa8OAZfw9l9lmSnia+fgRz3fLKxg3yklw6rA/2aISb83uVRvxgqKym3EeJ/+CsOQpwOblEBxWfQizah1Ct4NhsuKLmBbopxAXLqz25E+3BvvsM4nuwWVfoyvTVXYQ+k4V/hj2iS5buJ5twIDAQABMA0GCSqGSIb3DQEBBQUAA4ICAQAGTw5MJurTeeWy+jQikGfivrxt9lzqt+uSV8D6V1GBzBAl8m4SqSY0U8KM/gtqh9bhmQwm0qgx/mKcDKzCUKajXPKm/NbR+pjZD9Lcx4Iy0iqi9rsxSKECGM2dYAmm7GXnXvz9QUxZjteTgYoRP2s6GfosvTQiUEr/cIrYAU3wC0/94pRb9/FLVVon/aVdsh+Dqb4j7BhKLzXNCNjkv1Sv/YL1zpe/2SPxe0Bfymys97lcu1DB01e/MLfqQJThYOblMte/zGNZO24HcvROIkyoUtYy5/H4F5rsamSGMNdBfauTtYxz7lOT7qQoDNyGMN9bfjWnkVi/lV2CVooeiHIs7wLWEhYmU9DiAzcmODU9uMRRBlGOWK8UQg05exc518heICmudSbgSyQLGqzVoI4kybhmBA3w93KEXJSXlnU7hBzoYDP2d1g46Ay59UtvLycS1kxe0jVjxxRnh/f9aPbMwUYBzEC0naUzMeJtElHLHgW4HT6PLgFImgLLFh8dnYJUzn35wz10g3YBA61YUJuODpapKHixn/2X/t/8Vf1vqr/VwiwUglNQj+P78Fdb3T56JsYRG1bdf6nz5dvv4qtLoG+OjPI/tiLjh2ktqaMjeVmlQFchy/C5Lr48d9IGmo+x2ECYSWVvwzxI7PIbYBI4oaPjh2zKIrz/AlY2RmqMMA==</X509Certificate>
+                  </DigitalId>
+               </ServiceDigitalIdentity>
+            </ServiceDigitalIdentities>
+            <TSLLocation>https://open-eid.github.io/test-TL/EE_T.xml</TSLLocation>
+            <AdditionalInformation>
+               <OtherInformation>
+                  <TSLType>http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric</TSLType>
+               </OtherInformation>
+               <OtherInformation>
+                  <SchemeOperatorName>
+                     <Name xml:lang="en">SK Test Authority</Name>
+                  </SchemeOperatorName>
+               </OtherInformation>
+               <OtherInformation>
+                  <SchemeTypeCommunityRules>
+                     <URI xml:lang="en">http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon</URI>
+                  </SchemeTypeCommunityRules>
+               </OtherInformation>
+               <OtherInformation>
+                  <SchemeTerritory>EE_T</SchemeTerritory>
+               </OtherInformation>
+               <OtherInformation>
+                  <tslx:MimeType>application/vnd.etsi.tsl+xml</tslx:MimeType>
+               </OtherInformation>
+            </AdditionalInformation>
+         </OtherTSLPointer>
+      </PointersToOtherTSL>
+      <ListIssueDateTime>2020-06-03T12:06:01Z</ListIssueDateTime>
+      <NextUpdate>
+         <dateTime>2027-08-21T23:00:00Z</dateTime>
+      </NextUpdate>
+      <DistributionPoints>
+         <URI>https://open-eid.github.io/test-TL/tl-mp-test-EE.xml</URI>
+      </DistributionPoints>
+   </SchemeInformation>
+<ds:Signature Id="S0"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#ID0001"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>MHYPYGt/F6meP3aJ5QhUly4ZRgo/Y8wYHx+b3z4iTfE=</ds:DigestValue></ds:Reference><ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#SignedProperties"><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>ZYkopP9KT3r6fo+5Rmf6v+w0ihXXEe1hkiJvqG8pY7s=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>lKy5BxXKFfo2jlllWq6ar0wIgGd6M8wajvBeUOEXS9OOqPBtRcouLFl6z5MOFGOENxBpoge+gDzu&#13;
+ceZ7zFshP2jdqseotiz5G8PklIznRNzN6/3lEQ/dHZg43/hOatMnRZDD6oZUlZXBtSLPY6lToJYk&#13;
+iy2bZMs6ITzDAHqoWOccjYBqGukFSteqfcPXLskO2sQ5kb2mrAtwSNA2QJ7FEU7YiLdA1EBfCZuV&#13;
+jaauHQBikPjDyBcHkPXQ65ItCOoEtInnTmH7Vj+eFfzbbLRl2ubignEgHk45SARyupAhItLs8qje&#13;
+D+uB9Xquv3PasdyrlgvyBxyD8npE9f146IFpkxXUv5eAZQskk9T2EeBt5kMb30MV4jsBtpCjNYp9&#13;
++Ug5G8pQwOPeaTZxjQEFjyNLBKw1375tkef0mZDwYJ+Kta52BI+0vZyco7LuR3eqjX/E2vSnb2aT&#13;
+5o36y68QH1Nx+k1oeFeCVbakxN8/WF5VOwRGYxL8dh1VRPeMdrcD1BPLPXHoMsFkfUpba2y5b7A3&#13;
+gV/k9IOQeflDstCcKa6Qn300u3J05zQA2af+DM94KXEiLO/Xxs9v0jpW5VzzMHU8lKgMcxnP4opf&#13;
+0ANnYGr2Fcax4zgCiwkXPlkngOXvUApAIzgi6BTFubQkjo3fdlP23zujElQxfEI6Lj+N/jCsV1c=</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIEvDCCAqQCCQCL/COUVyiGjTANBgkqhkiG9w0BAQUFADAgMQswCQYDVQQGEwJFRTERMA8GA1UE&#13;
+AwwIVGVzdCBUU0wwHhcNMTgxMTE1MTI1MjU1WhcNMjgxMTEyMTI1MjU1WjAgMQswCQYDVQQGEwJF&#13;
+RTERMA8GA1UEAwwIVGVzdCBUU0wwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDfFK0f&#13;
+YeGrdngMZXZndDEpcl9pjGGNpbie3+ch5mDqObUe+OL45b4+SfPapriVRNBa+m5T1TuijP7Kb8sT&#13;
+NS9U3WQYvY8bEstPZnaEvdQSSVRf4j9eVg+RTJ8Y4jjZ02GbLwrpELD2Qs+ohCl8e64G29qutchv&#13;
+6nJqOdbL5U+d6DKyrzSpZyMRPA+UmB78KsBTs0o3wME7IA9J37YgtpUZifcC4LdgTWrX2eBICGPq&#13;
+i7GGKzdnI5LDhCJZnHwzva+6lBwa8fW5aXQG69uPTFmd/pNNF6+8f2FcYGljQiD6FYVKAUfYRBlw&#13;
+9ymKaIbNmyh9bs71ezPrI4ltOLjmZLZFRouSIaeExfzj2FkWERNG/iAuEIRolyyXjqjiQIuiEi8u&#13;
+o6sg1cPrD59EuWtTcMzTxuhVU8Ra37F6DrMEipqh84zQcnT0i/RNk4K723aB9uWwHJgJ5Y2/6cbt&#13;
+a7ZkYsfQfjBC4nBRVyUlBCpEFYNePbKttYF5Cf5FraMlGzAY0W/MSIUxvRmlkjCzBod4LA+K/hQx&#13;
+Eiw7Xa8OAZfw9l9lmSnia+fgRz3fLKxg3yklw6rA/2aISb83uVRvxgqKym3EeJ/+CsOQpwOblEBx&#13;
+WfQizah1Ct4NhsuKLmBbopxAXLqz25E+3BvvsM4nuwWVfoyvTVXYQ+k4V/hj2iS5buJ5twIDAQAB&#13;
+MA0GCSqGSIb3DQEBBQUAA4ICAQAGTw5MJurTeeWy+jQikGfivrxt9lzqt+uSV8D6V1GBzBAl8m4S&#13;
+qSY0U8KM/gtqh9bhmQwm0qgx/mKcDKzCUKajXPKm/NbR+pjZD9Lcx4Iy0iqi9rsxSKECGM2dYAmm&#13;
+7GXnXvz9QUxZjteTgYoRP2s6GfosvTQiUEr/cIrYAU3wC0/94pRb9/FLVVon/aVdsh+Dqb4j7BhK&#13;
+LzXNCNjkv1Sv/YL1zpe/2SPxe0Bfymys97lcu1DB01e/MLfqQJThYOblMte/zGNZO24HcvROIkyo&#13;
+UtYy5/H4F5rsamSGMNdBfauTtYxz7lOT7qQoDNyGMN9bfjWnkVi/lV2CVooeiHIs7wLWEhYmU9Di&#13;
+AzcmODU9uMRRBlGOWK8UQg05exc518heICmudSbgSyQLGqzVoI4kybhmBA3w93KEXJSXlnU7hBzo&#13;
+YDP2d1g46Ay59UtvLycS1kxe0jVjxxRnh/f9aPbMwUYBzEC0naUzMeJtElHLHgW4HT6PLgFImgLL&#13;
+Fh8dnYJUzn35wz10g3YBA61YUJuODpapKHixn/2X/t/8Vf1vqr/VwiwUglNQj+P78Fdb3T56JsYR&#13;
+G1bdf6nz5dvv4qtLoG+OjPI/tiLjh2ktqaMjeVmlQFchy/C5Lr48d9IGmo+x2ECYSWVvwzxI7PIb&#13;
+YBI4oaPjh2zKIrz/AlY2RmqMMA==</ds:X509Certificate></ds:X509Data></ds:KeyInfo><ds:Object><xades:QualifyingProperties Target="#S0"><xades:SignedProperties Id="SignedProperties"><xades:SignedSignatureProperties><xades:SigningTime>2020-06-03T09:06:01Z</xades:SigningTime><xades:SigningCertificate><xades:Cert><xades:CertDigest><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>nk6Dlz6rjsOp9TaNXJg0RNj/m53oC7RGzdDHcZ7jrfo=</ds:DigestValue></xades:CertDigest><xades:IssuerSerial><ds:X509IssuerName>CN=Test TSL, C=EE</ds:X509IssuerName><ds:X509SerialNumber>10086976385427474061</ds:X509SerialNumber></xades:IssuerSerial></xades:Cert></xades:SigningCertificate></xades:SignedSignatureProperties></xades:SignedProperties></xades:QualifyingProperties></ds:Object></ds:Signature></TrustServiceStatusList>
