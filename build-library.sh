@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ "$#" -eq 0 ]; then
   echo "Usage:"
   echo "  $0 target [maketask]"

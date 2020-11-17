@@ -227,6 +227,7 @@ set_target_properties(digidocpp PROPERTIES
     MACOSX_FRAMEWORK_IDENTIFIER "ee.ria.digidocpp"
     MACOSX_RPATH YES
     INTERPROCEDURAL_OPTIMIZATION YES
+    INTERPROCEDURAL_OPTIMIZATION_DEBUG NO
 )
 
 target_include_directories(digidocpp PRIVATE ${MINIZIP_INCLUDE_DIRS})
