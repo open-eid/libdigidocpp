@@ -180,7 +180,7 @@ void PDF::addAdESSignature(istream & /*signature*/)
     THROW("Not supported.");
 }
 
-Container* PDF::createInternal(const string & /*unused*/)
+unique_ptr<Container> PDF::createInternal(const string & /*path*/)
 {
     return nullptr;
 }
@@ -195,22 +195,19 @@ string PDF::mediaType() const
     return "application/pdf";
 }
 
-Container* PDF::openInternal(const string &path)
+unique_ptr<Container> PDF::openInternal(const string &path)
 {
     if(File::fileExtension(path) != "pdf")
-        return nullptr;
+        return {};
 
-    DEBUG("DDoc::openInternal(%s)", path.c_str());
-    ifstream *is = new ifstream(File::encodeName(path).c_str(), ifstream::binary);
+    DEBUG("PDF:openInternal(%s)", path.c_str());
+    unique_ptr<ifstream> is(new ifstream(File::encodeName(path).c_str(), ifstream::binary));
     string line;
     getline(*is, line);
     if(line.compare(0, 7, "%PDF-1.") != 0)
-    {
-        delete is;
-        return nullptr;
-    }
+        return {};
 
-    PDF *doc = new PDF(path);
+    unique_ptr<PDF> doc(new PDF(path));
     try {
         PdfMemDocument parser(path.c_str());
         for(const PdfObject *obj: parser.GetObjects())
@@ -279,12 +276,10 @@ Container* PDF::openInternal(const string &path)
             }
         }
     } catch(const PdfError &e) {
-        delete is;
-        delete doc;
         THROW_CAUSE(EXCEPTION(e.what()), "Failed to parse PDF.");
     }
 
-    doc->d->dataFiles.push_back(new DataFilePrivate(is, File::fileName(path), "application/pdf", File::fileName(path)));
+    doc->d->dataFiles.push_back(new DataFilePrivate(move(is), File::fileName(path), "application/pdf", File::fileName(path)));
     return doc;
 }
 
