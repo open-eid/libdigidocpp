@@ -234,13 +234,18 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
 {
     DEBUG("sign(method = %s, digest = length=%d)", method.c_str(), digest.size());
 
-    BCRYPT_PKCS1_PADDING_INFO padInfo = { nullptr };
+    BCRYPT_PKCS1_PADDING_INFO rsaPKCS1 = { nullptr };
+    BCRYPT_PSS_PADDING_INFO rsaPSS = { nullptr, 0 };
     ALG_ID alg = 0;
-    if(method == URI_RSA_SHA1) { padInfo.pszAlgId = NCRYPT_SHA1_ALGORITHM; alg = CALG_SHA1; }
-    else if(method == URI_RSA_SHA224) { padInfo.pszAlgId = L"SHA224"; }
-    else if(method == URI_RSA_SHA256) { padInfo.pszAlgId = NCRYPT_SHA256_ALGORITHM; alg = CALG_SHA_256; }
-    else if(method == URI_RSA_SHA384) { padInfo.pszAlgId = NCRYPT_SHA384_ALGORITHM; alg = CALG_SHA_384; }
-    else if(method == URI_RSA_SHA512) { padInfo.pszAlgId = NCRYPT_SHA512_ALGORITHM; alg = CALG_SHA_512; }
+    if(method == URI_RSA_SHA1) { rsaPKCS1.pszAlgId = NCRYPT_SHA1_ALGORITHM; alg = CALG_SHA1;}
+    else if(method == URI_RSA_SHA224) { rsaPKCS1.pszAlgId = L"SHA224";}
+    else if(method == URI_RSA_SHA256) { rsaPKCS1.pszAlgId = NCRYPT_SHA256_ALGORITHM; alg = CALG_SHA_256;}
+    else if(method == URI_RSA_SHA384) { rsaPKCS1.pszAlgId = NCRYPT_SHA384_ALGORITHM; alg = CALG_SHA_384;}
+    else if(method == URI_RSA_SHA512) { rsaPKCS1.pszAlgId = NCRYPT_SHA512_ALGORITHM; alg = CALG_SHA_512;}
+    else if(method == URI_RSA_PSS_SHA224) { rsaPSS.pszAlgId = L"SHA224"; rsaPSS.cbSalt = 24; }
+    else if(method == URI_RSA_PSS_SHA256) { rsaPSS.pszAlgId = NCRYPT_SHA256_ALGORITHM; rsaPSS.cbSalt = 32; }
+    else if(method == URI_RSA_PSS_SHA384) { rsaPSS.pszAlgId = NCRYPT_SHA384_ALGORITHM; rsaPSS.cbSalt = 48; }
+    else if(method == URI_RSA_PSS_SHA512) { rsaPSS.pszAlgId = NCRYPT_SHA512_ALGORITHM; rsaPSS.cbSalt = 64; }
     else if(method == URI_ECDSA_SHA224) {}
     else if(method == URI_ECDSA_SHA256) {}
     else if(method == URI_ECDSA_SHA384) {}
@@ -253,12 +258,6 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     {
     case CERT_NCRYPT_KEY_SPEC:
     {
-        DWORD size = 0;
-        wstring algo(5, 0);
-        err = NCryptGetProperty(d->key, NCRYPT_ALGORITHM_GROUP_PROPERTY, PBYTE(algo.data()), DWORD((algo.size() + 1) * 2), &size, 0);
-        algo.resize(size/2 - 1);
-        bool isRSA = algo == L"RSA";
-
         if(!d->pin.empty())
         {
             wstring pin = util::File::encodeName(d->pin);
@@ -267,13 +266,26 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
                 break;
         }
 
-        err = NCryptSignHash(d->key, isRSA ? &padInfo : nullptr, PBYTE(digest.data()), DWORD(digest.size()),
-            nullptr, 0, &size, isRSA ? BCRYPT_PAD_PKCS1 : 0);
+        DWORD padding = 0;
+        VOID *paddingInfo = nullptr;
+        if(rsaPSS.pszAlgId)
+        {
+            padding = BCRYPT_PAD_PSS;
+            paddingInfo = &rsaPSS;
+        }
+        else if(rsaPKCS1.pszAlgId)
+        {
+            padding = BCRYPT_PAD_PKCS1;
+            paddingInfo = &rsaPKCS1;
+        }
+        DWORD size = 0;
+        err = NCryptSignHash(d->key, paddingInfo, PBYTE(digest.data()), DWORD(digest.size()),
+            nullptr, 0, &size, padding);
         if(FAILED(err))
             break;
         signature.resize(size);
-        err = NCryptSignHash(d->key, isRSA ? &padInfo : nullptr, PBYTE(digest.data()), DWORD(digest.size()),
-            signature.data(), DWORD(signature.size()), &size, isRSA ? BCRYPT_PAD_PKCS1 : 0);
+        err = NCryptSignHash(d->key, paddingInfo, PBYTE(digest.data()), DWORD(digest.size()),
+            signature.data(), DWORD(signature.size()), &size, padding);
         break;
     }
     case AT_SIGNATURE:

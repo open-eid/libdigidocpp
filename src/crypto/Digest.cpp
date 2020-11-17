@@ -28,14 +28,6 @@
 
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static void X509_SIG_get0(const X509_SIG *sig, const X509_ALGOR **palg, const ASN1_OCTET_STRING **pdigest)
-{
-    if(palg) *palg = sig->algor;
-    if(pdigest) *pdigest = sig->digest;
-}
-#endif
-
 namespace digidoc
 {
 class Digest::Private: public vector<unsigned char>
@@ -95,7 +87,7 @@ vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> 
     const unsigned char *p = digest.data();
     SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(digest.size())));
     if(!sig)
-        return vector<unsigned char>();
+        return {};
     const ASN1_OCTET_STRING *value = nullptr;
     X509_SIG_get0(sig.get(), nullptr, &value);
     return vector<unsigned char>(value->data, value->data + value->length);
@@ -106,7 +98,7 @@ string Digest::digestInfoUri(const std::vector<unsigned char> &digest)
     const unsigned char *p = digest.data();
     SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(digest.size())));
     if(!sig)
-        return string();
+        return {};
     const X509_ALGOR *algor = nullptr;
     X509_SIG_get0(sig.get(), &algor, nullptr);
     return toUri(OBJ_obj2nid(algor->algorithm));
@@ -144,6 +136,11 @@ void Digest::reset(const string &uri)
         THROW_OPENSSLEXCEPTION("Failed to initialize %s digest calculator", uri.c_str());
 }
 
+bool Digest::isRsaPssUri(const std::string &uri)
+{
+    return uri == URI_RSA_PSS_SHA224 || uri == URI_RSA_PSS_SHA256 || uri == URI_RSA_PSS_SHA384 || uri == URI_RSA_PSS_SHA512;
+}
+
 /**
  * Converts digest method URI to OpenSSL method id (e.g. 'http://www.w3.org/2000/09/xmldsig#sha1' to NID_sha1,
  * see openssl/obj_mac.h)
@@ -160,10 +157,10 @@ void Digest::reset(const string &uri)
 int Digest::toMethod(const string &uri)
 {
     if(uri == URI_SHA1 || uri == URI_RSA_SHA1 || uri == URI_ECDSA_SHA1) return NID_sha1;
-    if(uri == URI_SHA224 || uri == URI_RSA_SHA224 || uri == URI_ECDSA_SHA224) return NID_sha224;
-    if(uri == URI_SHA256 || uri == URI_RSA_SHA256 || uri == URI_ECDSA_SHA256) return NID_sha256;
-    if(uri == URI_SHA384 || uri == URI_RSA_SHA384 || uri == URI_ECDSA_SHA384) return NID_sha384;
-    if(uri == URI_SHA512 || uri == URI_RSA_SHA512 || uri == URI_ECDSA_SHA512) return NID_sha512;
+    if(uri == URI_SHA224 || uri == URI_RSA_SHA224 || uri == URI_RSA_PSS_SHA224 || uri == URI_ECDSA_SHA224) return NID_sha224;
+    if(uri == URI_SHA256 || uri == URI_RSA_SHA256 || uri == URI_RSA_PSS_SHA256 || uri == URI_ECDSA_SHA256) return NID_sha256;
+    if(uri == URI_SHA384 || uri == URI_RSA_SHA384 || uri == URI_RSA_PSS_SHA384 || uri == URI_ECDSA_SHA384) return NID_sha384;
+    if(uri == URI_SHA512 || uri == URI_RSA_SHA512 || uri == URI_RSA_PSS_SHA512 || uri == URI_ECDSA_SHA512) return NID_sha512;
     THROW( "Digest method URI '%s' is not supported.", uri.c_str() );
 }
 
@@ -174,7 +171,26 @@ string Digest::toRsaUri(const string &uri)
     if(uri == URI_SHA256) return URI_RSA_SHA256;
     if(uri == URI_SHA384) return URI_RSA_SHA384;
     if(uri == URI_SHA512) return URI_RSA_SHA512;
-    return string();
+    if(uri == URI_RSA_SHA1 ||
+        uri == URI_RSA_SHA224 ||
+        uri == URI_RSA_SHA256 ||
+        uri == URI_RSA_SHA384 ||
+        uri == URI_RSA_SHA512 ||
+        uri == URI_RSA_PSS_SHA224 ||
+        uri == URI_RSA_PSS_SHA256 ||
+        uri == URI_RSA_PSS_SHA384 ||
+        uri == URI_RSA_PSS_SHA512)
+        return uri;
+    return {};
+}
+
+string Digest::toRsaPssUri(const string &uri)
+{
+    if(uri == URI_SHA224) return URI_RSA_PSS_SHA224;
+    if(uri == URI_SHA256) return URI_RSA_PSS_SHA256;
+    if(uri == URI_SHA384) return URI_RSA_PSS_SHA384;
+    if(uri == URI_SHA512) return URI_RSA_PSS_SHA512;
+    return {};
 }
 
 string Digest::toEcUri(const string &uri)
@@ -184,7 +200,13 @@ string Digest::toEcUri(const string &uri)
     if(uri == URI_SHA256) return URI_ECDSA_SHA256;
     if(uri == URI_SHA384) return URI_ECDSA_SHA384;
     if(uri == URI_SHA512) return URI_ECDSA_SHA512;
-    return string();
+    if(uri == URI_ECDSA_SHA1 ||
+        uri == URI_ECDSA_SHA224 ||
+        uri == URI_ECDSA_SHA256 ||
+        uri == URI_ECDSA_SHA384 ||
+        uri == URI_ECDSA_SHA512)
+        return uri;
+    return {};
 }
 
 std::string Digest::toUri(int nid)
@@ -196,7 +218,7 @@ std::string Digest::toUri(int nid)
     case NID_sha256: return URI_SHA256;
     case NID_sha384: return URI_SHA384;
     case NID_sha512: return URI_SHA512;
-    default: return string();
+    default: return {};
     }
 }
 

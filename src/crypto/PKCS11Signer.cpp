@@ -27,6 +27,8 @@
 #include "crypto/X509Cert.h"
 #include "util/File.h"
 
+#include <openssl/evp.h>
+
 #include <algorithm>
 #ifdef _WIN32
 #include <Windows.h>
@@ -367,11 +369,41 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
     CK_ATTRIBUTE attribute = { CKA_KEY_TYPE, &keyType, sizeof(keyType) };
     d->f->C_GetAttributeValue(session, key[0], &attribute, 1);
 
+    CK_RSA_PKCS_PSS_PARAMS pssParams = { CKM_SHA_1, CKG_MGF1_SHA1, 0 };
     CK_MECHANISM mech = { keyType == CKK_ECDSA ? CKM_ECDSA : CKM_RSA_PKCS, nullptr, 0 };
+    vector<CK_BYTE> data = digest;
+    if(Digest::isRsaPssUri(method)) {
+        mech.mechanism = CKM_RSA_PKCS_PSS;
+        mech.pParameter = &pssParams;
+        mech.ulParameterLen = sizeof(CK_RSA_PKCS_PSS_PARAMS);
+        int nid = Digest::toMethod(method);
+        switch(nid)
+        {
+        case NID_sha224:
+            pssParams.hashAlg = CKM_SHA224;
+            pssParams.mgf = CKG_MGF1_SHA224;
+            break;
+        case NID_sha256:
+            pssParams.hashAlg = CKM_SHA256;
+            pssParams.mgf = CKG_MGF1_SHA256;
+            break;
+        case NID_sha384:
+            pssParams.hashAlg = CKM_SHA384;
+            pssParams.mgf = CKG_MGF1_SHA384;
+            break;
+        case NID_sha512:
+            pssParams.hashAlg = CKM_SHA512;
+            pssParams.mgf = CKG_MGF1_SHA512;
+            break;
+        default: break;
+        }
+        pssParams.sLen = EVP_MD_size(EVP_get_digestbynid(nid));
+    }
+    else if(keyType == CKK_RSA)
+        data = Digest::addDigestInfo(digest, method);
     if(d->f->C_SignInit(session, &mech, key[0]) != CKR_OK)
         THROW("Failed to sign digest");
 
-    vector<CK_BYTE> data = keyType == CKK_RSA ? Digest::addDigestInfo(digest, method) : digest;
     CK_ULONG size = 0;
     if(d->f->C_Sign(session, data.data(), CK_ULONG(data.size()), nullptr, &size) != CKR_OK)
         THROW("Failed to sign digest");
