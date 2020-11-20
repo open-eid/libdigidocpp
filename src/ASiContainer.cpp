@@ -36,26 +36,16 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-namespace digidoc
-{
+#define MAX_MEM_FILE 500*1024*1024
+
 class ASiContainer::Private
 {
 public:
-    ZipSerialize::Properties readProperties(const string &file)
-    {
-        map<string, ZipSerialize::Properties>::const_iterator i = properties.find(file);
-        if(i != properties.end())
-            return i->second;
-        return properties[file] = { appInfo(), date::gmtime(time(nullptr)), 0 };
-    }
-
     string mimetype, path;
     vector<DataFile*> documents;
     vector<Signature*> signatures;
     map<string, ZipSerialize::Properties> properties;
 };
-
-}
 
 const string ASiContainer::ASICE_EXTENSION = "asice";
 const string ASiContainer::ASICE_EXTENSION_ABBR = "sce";
@@ -97,10 +87,13 @@ unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeReq
     for(const string &file: list)
         d->properties[file] = z->properties(file);
 
-    if(mimetypeRequired || find(list.begin(), list.end(), "mimetype") != list.end())
+    if(mimetypeRequired && list[0] != "mimetype")
+        THROW("required mimetype not found");
+
+    // ETSI TS 102 918: mimetype has to be the first in the archive;
+    if(list[0] == "mimetype")
     {
         stringstream data;
-        // ETSI TS 102 918: mimetype has to be the first in the archive;
         z->extract(list.front(), data);
         d->mimetype = readMimetype(data);
         DEBUG("mimetype = '%s'", d->mimetype.c_str());
@@ -121,8 +114,8 @@ string ASiContainer::mediaType() const
  */
 ASiContainer::~ASiContainer()
 {
-    for_each(d->signatures.begin(), d->signatures.end(), [](Signature *s){ delete s; });
-    for_each(d->documents.begin(), d->documents.end(), [](DataFile *file){ delete file; });
+    for_each(d->signatures.cbegin(), d->signatures.cend(), std::default_delete<Signature>());
+    for_each(d->documents.cbegin(), d->documents.cend(), std::default_delete<DataFile>());
     delete d;
 }
 
@@ -180,14 +173,10 @@ unique_ptr<iostream> ASiContainer::dataStream(const string &path, const ZipSeria
  */
 void ASiContainer::addDataFile(const string &path, const string &mediaType)
 {
-    if(!d->signatures.empty())
-        THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
-
+    string fileName = File::fileName(path);
+    addDataFileChecks(fileName, mediaType);
     if(!File::fileExists(path))
         THROW("Document file '%s' does not exist.", path.c_str());
-
-    if(any_of(d->documents.cbegin(), d->documents.cend(), [&](const DataFile *file) { return path == file->fileName(); }))
-        THROW("Document with same file name '%s' already exists.", path.c_str());
 
     ZipSerialize::Properties prop = { appInfo(), File::modifiedTime(path), File::fileSize(path) };
     zproperty(File::fileName(path), prop);
@@ -205,15 +194,31 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
         file.close();
         is.reset(data);
     }
-    addDataFile(move(is), File::fileName(path), mediaType);
+    addDataFilePrivate(move(is), fileName, mediaType);
 }
 
 void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
 {
+    addDataFileChecks(fileName, mediaType);
+    if(fileName.find_last_of("/\\") != string::npos)
+        THROW("Document file '%s' cannot contain directory path.", fileName.c_str());
+    addDataFilePrivate(move(is), fileName, mediaType);
+}
+
+void ASiContainer::addDataFileChecks(const string &fileName, const string &mediaType)
+{
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
+    if(fileName == "mimetype")
+        THROW("mimetype is reserved file.", fileName.c_str());
     if(any_of(d->documents.cbegin(), d->documents.cend(), [&](DataFile *file) { return fileName == file->fileName(); }))
         THROW("Document with same file name '%s' already exists.", fileName.c_str());
+    if(mediaType.find('/') == string::npos)
+        THROW("MediaType does not meet format requirements (RFC2045, section 5.1) '%s'.", mediaType.c_str());
+}
+
+void ASiContainer::addDataFilePrivate(unique_ptr<istream> is, const string &fileName, const string &mediaType)
+{
     d->documents.push_back(new DataFilePrivate(move(is), fileName, mediaType));
 }
 
@@ -231,7 +236,7 @@ void ASiContainer::removeDataFile(unsigned int id)
         THROW("Can not remove document from container which has signatures, remove all signatures before removing document.");
     if(id >= d->documents.size())
         THROW("Incorrect document id %u, there are only %lu documents in container.", id, (unsigned long)dataFiles().size());
-    vector<DataFile*>::iterator it = (d->documents.begin() + id);
+    vector<DataFile*>::const_iterator it = (d->documents.cbegin() + id);
     delete *it;
     d->documents.erase(it);
 }
@@ -252,15 +257,15 @@ void ASiContainer::removeSignature(unsigned int id)
 {
     if(id >= d->signatures.size())
         THROW("Incorrect signature id %u, there are only %lu signatures in container.", id, (unsigned long)d->signatures.size());
-    vector<Signature*>::iterator it = (d->signatures.begin() + id);
+    vector<Signature*>::const_iterator it = (d->signatures.cbegin() + id);
     delete *it;
     d->signatures.erase(it);
 }
 
 void ASiContainer::deleteSignature(Signature* s)
 {
-    vector<Signature*>::iterator i = find(d->signatures.begin(), d->signatures.end(), s);
-    if(i != d->signatures.end())
+    vector<Signature*>::const_iterator i = find(d->signatures.cbegin(), d->signatures.cend(), s);
+    if(i != d->signatures.cend())
         d->signatures.erase(i);
     delete s;
 }
@@ -277,14 +282,16 @@ string ASiContainer::zpath() const
 
 ZipSerialize::Properties ASiContainer::zproperty(const string &file) const
 {
-    return d->readProperties(file);
+    map<string, ZipSerialize::Properties>::const_iterator i = d->properties.find(file);
+    if(i != d->properties.cend())
+        return i->second;
+    return d->properties[file] = { appInfo(), date::gmtime(time(nullptr)), 0 };
 }
 
 void ASiContainer::zproperty(const string &file, const ZipSerialize::Properties &prop)
 {
     d->properties[file] = prop;
 }
-
 
 /**
  * Reads and parses container mimetype. Checks that the mimetype is supported.

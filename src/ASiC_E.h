@@ -33,7 +33,7 @@ namespace digidoc
      * not signed. To add or remove documents from signed container remove all the
      * signatures before modifying documents list in container.
      */
-    class ASiC_E: public ASiContainer
+    class ASiC_E final : public ASiContainer
     {
       public:
           static const std::string BES_PROFILE;
@@ -45,12 +45,12 @@ namespace digidoc
           static const std::string MANIFEST_NAMESPACE;
 
           ~ASiC_E() final;
-          void save(const std::string &path = "") override;
+          void save(const std::string &path = {}) final;
           std::vector<DataFile*> metaFiles() const;
 
-          void addAdESSignature(std::istream &sigdata) override;
-          Signature* prepareSignature(Signer *signer) override;
-          Signature* sign(Signer* signer) override;
+          void addAdESSignature(std::istream &sigdata) final;
+          Signature* prepareSignature(Signer *signer) final;
+          Signature* sign(Signer* signer) final;
 
           static std::unique_ptr<Container> createInternal(const std::string &path);
           static std::unique_ptr<Container> openInternal(const std::string &path);

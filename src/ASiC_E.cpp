@@ -76,7 +76,7 @@ ASiC_E::ASiC_E(const string &path)
 
 ASiC_E::~ASiC_E()
 {
-    for_each(d->metadata.begin(), d->metadata.end(), std::default_delete<DataFile>());
+    for_each(d->metadata.cbegin(), d->metadata.cend(), std::default_delete<DataFile>());
     delete d;
 }
 
@@ -269,7 +269,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 file.full_path().compare(0, 9, "metadata/") == 0))
                 d->metadata.push_back(new DataFilePrivate(dataStream(file.full_path(), z), file.full_path(), file.media_type()));
             else
-                addDataFile(dataStream(file.full_path(), z), file.full_path(), file.media_type());
+                addDataFilePrivate(dataStream(file.full_path(), z), file.full_path(), file.media_type());
         }
         if(!mimeFound)
             THROW("Manifest is missing mediatype file entry.");
@@ -348,7 +348,13 @@ Signature* ASiC_E::prepareSignature(Signer *signer)
 {
     if(mediaType() != MIMETYPE_ASIC_E)
         THROW("'%s' format is not supported", mediaType().c_str());
-    return newSignature<SignatureXAdES_LTA>(signer);
+    if(dataFiles().empty())
+        THROW("No documents in container, can not sign container.");
+    if(!signer)
+        THROW("Null pointer in ASiC_E::sign");
+    SignatureXAdES_LTA *signature = new SignatureXAdES_LTA(newSignatureId(), this, signer);
+    addSignature(signature);
+    return signature;
 }
 
 Signature *ASiC_E::sign(Signer* signer)

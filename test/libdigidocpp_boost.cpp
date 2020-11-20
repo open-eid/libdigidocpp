@@ -166,6 +166,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 0U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 0U);
     BOOST_CHECK_EQUAL(d->mediaType(), Doc::TYPE);
+    BOOST_CHECK_THROW(d->addDataFile("mimetype", "text/plain"), Exception);
+    BOOST_CHECK_THROW(d->addDataFile("test.txt", "textplain"), Exception);
+    BOOST_CHECK_THROW(d->addDataFile(std::unique_ptr<std::istream>(new stringstream), "folder/test.txt", "text/plain"), Exception);
+    BOOST_CHECK_THROW(d->addDataFile("test.txt", "text/plain"), Exception);
+    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+    BOOST_CHECK_THROW(d->addDataFile("test1.txt", "text/plain"), Exception);
 
     d = Container::openPtr("test." + Doc::EXT);
     if(!d)
