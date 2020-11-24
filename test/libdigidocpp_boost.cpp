@@ -151,6 +151,9 @@ BOOST_AUTO_TEST_CASE(parameters)
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of EST\\45ID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()+"EE"), -1);
 
+    digidoc::X509Crypto test(X509Cert("test.crt", X509Cert::Pem));
+    BOOST_CHECK_EQUAL(test.compareIssuerToString("CN=\\\"test\\\""), 0);
+
     unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
     vector<unsigned char> data({'H','e','l','l','o',' ','w','o','r','l','d'});
     vector<unsigned char> signature = signer1->sign("http://www.w3.org/2001/04/xmlenc#sha256", data);

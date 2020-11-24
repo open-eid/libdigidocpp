@@ -45,7 +45,7 @@ using namespace std;
  *         }
  */
 using ESS_ISSUER_SERIAL = struct ESS_issuer_serial {
-    STACK_OF(GENERAL_NAME) *issuer;
+    GENERAL_NAMES *issuer;
     ASN1_INTEGER *serial;
 };
 
@@ -64,7 +64,7 @@ IMPLEMENT_ASN1_FUNCTIONS_const(ESS_ISSUER_SERIAL)
  * @param cert X.509 certificate.
  */
 X509Crypto::X509Crypto(X509Cert cert)
- : cert(std::move(cert))
+ : cert(move(cert))
 {
 }
 
@@ -110,7 +110,7 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
  */
 int X509Crypto::compareIssuerToString(const string &name) const
 {
-    static const std::array<std::string, 18> list = {
+    static const array<string, 18> list = {
         "CN", "commonName",
         "L", "localityName",
         "ST", "stateOrProvinceName",
@@ -148,7 +148,7 @@ int X509Crypto::compareIssuerToString(const string &name) const
             continue;
 
         string obj = nameitem.substr(0, pos);
-        if(std::find(list.cbegin(), list.cend(), obj) == list.cend())
+        if(find(list.cbegin(), list.cend(), obj) == list.cend())
             continue;
 
         ASN1_OBJECT *obja = OBJ_txt2obj(obj.c_str(), 0);
@@ -156,6 +156,7 @@ int X509Crypto::compareIssuerToString(const string &name) const
 
         string value;
         char data[] = "00";
+        static const string escape = " #+,;<=>\\";
         for(string::const_iterator i = tmp.cbegin(); i != tmp.cend(); ++i)
         {
             if(*i == '\\' && distance(i, tmp.cend()) > 2 && isxdigit(*(i+1)) && isxdigit(*(i+2)))
@@ -164,6 +165,8 @@ int X509Crypto::compareIssuerToString(const string &name) const
                 data[1] = *(++i);
                 value += static_cast<char>(strtoul(data, nullptr, 16));
             }
+            else if(*i == '\\' && escape.find(*(i+1)) == string::npos)
+                value += *(++i);
             else
                 value += *i;
         }
@@ -191,8 +194,8 @@ int X509Crypto::compareIssuerToString(const string &name) const
 
 bool X509Crypto::isRSAKey() const
 {
-    SCOPE(EVP_PKEY, key, X509_get_pubkey(cert.handle()));
-    return key.get() && EVP_PKEY_base_id(key.get()) == EVP_PKEY_RSA;
+    EVP_PKEY *key = X509_get0_pubkey(cert.handle());
+    return key && EVP_PKEY_base_id(key) == EVP_PKEY_RSA;
 }
 
 /**
