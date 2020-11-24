@@ -1,0 +1,162 @@
+name: CI
+on: [push, pull_request]
+env:
+  RUN_TESTS: ALL
+  BUILD_NUMBER: ${{ github.run_number }}
+  AWS_DEFAULT_REGION: 'eu-west-1'
+jobs:
+  macos:
+    name: Build on macOS for ${{ matrix.target }}
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [osx, ios, iossimulator, androidarm, androidarm64, androidx86, androidx86_64]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: |
+        brew install swig doxygen boost xsd || brew link --overwrite xsd
+        brew unlink xerces-c
+    - name: Cache
+      uses: actions/cache@v2
+      id: cache
+      with:
+        path: cache
+        key: ${{ matrix.target }}-${{ hashFiles('prepare_osx_build_environment.sh') }}
+    - name: Build xerces-c
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: ./prepare_osx_build_environment.sh xerces ${{ matrix.target }}
+    - name: Build xalan-c
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: ./prepare_osx_build_environment.sh xalan ${{ matrix.target }}
+    - name: Build openssl
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: ./prepare_osx_build_environment.sh openssl ${{ matrix.target }}
+    - name: Build xml-security-c
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: ./prepare_osx_build_environment.sh xmlsec ${{ matrix.target }}
+    - name: Move to cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir cache
+        sudo mv /Library/libdigidocpp* cache
+    - name: Setup cache
+      run: sudo ln -s $PWD/cache/* /Library/
+    - name: Build macOS
+      if: contains(matrix.target, 'osx')
+      run: |
+        ./build-library.sh all pkcs11sign zipdebug embedlibs pkgbuild
+        mkdir upload
+        cp macOS/libdigidocpp*.pkg macOS/libdigidocpp*.zip upload
+    - name: Build ${{ matrix.target }}
+      if: ${{ !contains(matrix.target, 'osx') }}
+      run: ./build-library.sh ${{ matrix.target }} install/strip
+    - name: Archive artifacts
+      if: contains(matrix.target, 'osx')
+      uses: actions/upload-artifact@v2
+      with:
+        name: pkgs
+        path: upload
+    - name: Upload artifacts to AWS
+      if: success() && contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'master')
+      uses: shallwefootball/s3-upload-action@master
+      with:
+        aws_key_id: ${{ secrets.AWS_KEY_ID }}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws_bucket: ${{ secrets.AWS_BUCKET }}
+        source_dir: 'upload'
+        destination_dir: 'libdigidocpp-nightly/${{ github.run_number }}'
+  ubuntu:
+    name: Build on Ubuntu to ${{ matrix.container }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    strategy:
+      matrix:
+        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:20.10']
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      DEBFULLNAME: 'github-actions'
+      DEBEMAIL: 'github-actions@github.com'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: apt-get update -qq && apt-get install -y dh-make devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev
+    - name: Setup changelog
+      run: |
+        export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}")
+        export VERSIONEX=${VERSION}.${BUILD_NUMBER}.$(lsb_release -rs)
+        dh_make --createorig --addmissing --defaultless -y -p libdigidocpp_${VERSIONEX}
+        dch --distribution $(lsb_release -cs) -v ${VERSIONEX} "Release ${VERSIONEX}."
+    - name: Build packages
+      run: |
+        dpkg-buildpackage -rfakeroot -us -uc
+        mkdir upload
+        cp ../libdigidocpp*.* upload
+    - name: Lintian
+      run: lintian ../*.deb;
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: debs
+        path: upload
+    - name: Upload artifacts to AWS
+      if: success() && contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'master') && contains(matrix.target, 'osx')
+      uses: shallwefootball/s3-upload-action@master
+      with:
+        aws_key_id: ${{ secrets.AWS_KEY_ID }}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws_bucket: ${{ secrets.AWS_BUCKET }}
+        source_dir: 'upload'
+        destination_dir: 'libdigidocpp-nightly/${{ github.run_number }}'
+  pages:
+    name: Deploy pages
+    if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'master')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: sudo apt-get update -qq && sudo apt-get install -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen
+    - name: Build docs
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make docs
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build/doc
+        force_orphan: true
+  coverity:
+    name: Run Coverity tests
+    if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'coverity_scan')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: sudo apt-get update -qq && sudo apt-get install -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl wget ruby
+    - name: Build and send to Coverity
+      continue-on-error: true
+      run: |
+        export TRAVIS_BRANCH=${GITHUB_REF##*/}
+        wget -O - https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh | bash
+      env:
+        COVERITY_SCAN_PROJECT_NAME: 'open-eid/libdigidocpp'
+        COVERITY_SCAN_NOTIFICATION_EMAIL: 'raul@metsma.ee'
+        COVERITY_SCAN_BRANCH_PATTERN: 'coverity_scan'
+        COVERITY_SCAN_BUILD_COMMAND_PREPEND: 'cmake .'
+        COVERITY_SCAN_BUILD_COMMAND: 'make'
+        COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}

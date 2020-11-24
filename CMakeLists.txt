@@ -36,8 +36,6 @@ if( APPLE )
     set( FRAMEWORK YES CACHE BOOL "Build library as Mac OS X Framework" )
     set( USE_KEYCHAIN YES CACHE BOOL "Use keychain to store PKCS12 access certificate" )
 endif()
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION YES)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG NO)
 
 find_package(Doxygen)
 find_package(LibDigiDoc)
