@@ -909,6 +909,19 @@ void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const s
     getSignedSignatureProperties().signatureProductionPlaceV2(signatureProductionPlace);
 }
 
+template<typename T>
+T SignatureXAdES_B::signerRoles(const vector<string> &roles)
+{
+    ClaimedRolesListType claimedRoles;
+    claimedRoles.claimedRole().reserve(roles.size());
+    for(const string &role: roles)
+        claimedRoles.claimedRole().push_back(role);
+
+    T signerRole;
+    signerRole.claimedRoles(claimedRoles);
+    return signerRole;
+}
+
 /**
  * Sets signer claimed roles to the signature.
  * NB! Only ClaimedRoles are supported. CerifiedRoles are not supported.
@@ -917,17 +930,8 @@ void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const s
  */
 void SignatureXAdES_B::setSignerRoles(const vector<string> &roles)
 {
-    if(roles.empty())
-        return;
-
-    ClaimedRolesListType claimedRoles;
-    claimedRoles.claimedRole().reserve(roles.size());
-    for(const string &role: roles)
-        claimedRoles.claimedRole().push_back(role);
-
-    SignerRoleType signerRole;
-    signerRole.claimedRoles(claimedRoles);
-    getSignedSignatureProperties().signerRole(signerRole);
+    if(!roles.empty())
+        getSignedSignatureProperties().signerRole(signerRoles<SignerRoleType>(roles));
 }
 
 /**
@@ -938,17 +942,8 @@ void SignatureXAdES_B::setSignerRoles(const vector<string> &roles)
  */
 void SignatureXAdES_B::setSignerRolesV2(const vector<string> &roles)
 {
-    if(roles.empty())
-        return;
-
-    ClaimedRolesListType claimedRoles;
-    claimedRoles.claimedRole().reserve(roles.size());
-    for(const string &role: roles)
-        claimedRoles.claimedRole().push_back(role);
-
-    SignerRoleV2Type signerRole;
-    signerRole.claimedRoles(claimedRoles);
-    getSignedSignatureProperties().signerRoleV2(signerRole);
+    if(!roles.empty())
+        getSignedSignatureProperties().signerRoleV2(signerRoles<SignerRoleV2Type>(roles));
 }
 
 /**
@@ -1195,30 +1190,26 @@ string SignatureXAdES_B::claimedSigningTime() const
 
 X509Cert SignatureXAdES_B::signingCertificate() const
 {
-    const SignatureType::KeyInfoOptional& keyInfoOptional = signature->keyInfo();
+    const SignatureType::KeyInfoOptional &keyInfoOptional = signature->keyInfo();
     if(!keyInfoOptional.present())
         THROW("Signature does not contain signer certificate");
 
-    const KeyInfoType::X509DataSequence& x509DataSeq = keyInfoOptional->x509Data();
-    if ( x509DataSeq.empty() )
-        THROW("Signature does not contain signer certificate");
-    if(x509DataSeq.size() != 1)
-        THROW("Signature contains more than one signers certificate");
-
-    const X509DataType::X509CertificateSequence& x509CertSeq = x509DataSeq.front().x509Certificate();
-    if(x509CertSeq.empty())
-        THROW("Signature does not contain signer certificate");
-    if(x509CertSeq.size() != 1)
-        THROW("Signature contains more than one signers certificate");
-    try
+    for(const KeyInfoType::X509DataType &x509Data: keyInfoOptional->x509Data())
     {
-        const X509DataType::X509CertificateType& data = x509CertSeq.back();
-        return X509Cert((const unsigned char*)data.data(), data.size());
+        const X509DataType::X509CertificateSequence &x509CertSeq = x509Data.x509Certificate();
+        if(x509CertSeq.empty())
+            continue;
+        try
+        {
+            const X509DataType::X509CertificateType &data = x509CertSeq.back();
+            return X509Cert((const unsigned char*)data.data(), data.size());
+        }
+        catch(const Exception &e)
+        {
+            THROW_CAUSE(e, "Failed to read X509 certificate");
+        }
     }
-    catch(const Exception &e)
-    {
-        THROW_CAUSE( e, "Failed to read X509 certificate" );
-    }
+    THROW("Signature does not contain signer certificate");
 }
 
 string SignatureXAdES_B::id() const
