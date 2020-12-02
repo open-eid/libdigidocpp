@@ -153,10 +153,11 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     signature = &asicsignature->signature()[0];
     signature->id(nr);
 
-    // Signature->Object->QualifyingProperties->SignedProperties
+    // Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties
     SignedPropertiesType signedProperties;
     signedProperties.signedSignatureProperties(SignedSignaturePropertiesType());
     signedProperties.id(nr + "-SignedProperties");
+    // Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties->SignaturePolicyIdentifierType
     if(signer->profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos ||
        signer->profile().find(ASiC_E::EPES_PROFILE) != string::npos)
     {
@@ -173,8 +174,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
         else if(Conf::instance()->digestUri() == URI_SHA256) data = &p->second.SHA256;
         else if(Conf::instance()->digestUri() == URI_SHA384) data = &p->second.SHA384;
         else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;
-        DigestAlgAndValueType policyDigest(DigestMethodType(digestUri),
-            Base64Binary(data->data(), data->size()));
+        DigestAlgAndValueType policyDigest(DigestMethodType(digestUri), toBase64(*data));
 
         SignaturePolicyIdType policyId(identifier, policyDigest);
 
@@ -980,7 +980,7 @@ void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureV
 vector<unsigned char> SignatureXAdES_B::getSignatureValue() const
 {
     const SignatureType::SignatureValueType &signatureValueType = signature->signatureValue();
-    return vector<unsigned char>(signatureValueType.begin(), signatureValueType.end());
+    return {signatureValueType.begin(), signatureValueType.end()};
 }
 
 /**
@@ -1201,7 +1201,7 @@ X509Cert SignatureXAdES_B::signingCertificate() const
             continue;
         try
         {
-            const X509DataType::X509CertificateType &data = x509CertSeq.back();
+            const X509DataType::X509CertificateType &data = x509CertSeq.front();
             return X509Cert((const unsigned char*)data.data(), data.size());
         }
         catch(const Exception &e)
