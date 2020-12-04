@@ -165,9 +165,9 @@ function xalan {
         -DCMAKE_BUILD_TYPE="Release" \
         -DBUILD_SHARED_LIBS=YES \
         src && make -s && sudo make install
-      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.dylib
-      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
-      sudo install_name_tool -change libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.dylib
+      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.*.dylib
+      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.111.0.dylib \
+        -change libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.*.dylib
       ;;
     esac
     cd ../..
