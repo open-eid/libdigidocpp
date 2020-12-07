@@ -1,9 +1,9 @@
 name: CI
 on: [push, pull_request]
 env:
+  MAKEFLAGS: -j3
   RUN_TESTS: ALL
   BUILD_NUMBER: ${{ github.run_number }}
-  AWS_DEFAULT_REGION: 'eu-west-1'
 jobs:
   macos:
     name: Build on macOS for ${{ matrix.target }}
@@ -46,29 +46,20 @@ jobs:
     - name: Setup cache
       run: sudo ln -s $PWD/cache/* /Library/
     - name: Build macOS
-      if: contains(matrix.target, 'osx')
+      if: matrix.target == 'osx'
       run: |
         ./build-library.sh all pkcs11sign zipdebug embedlibs pkgbuild
         mkdir upload
         cp macOS/libdigidocpp*.pkg macOS/libdigidocpp*.zip upload
     - name: Build ${{ matrix.target }}
-      if: ${{ !contains(matrix.target, 'osx') }}
+      if: matrix.target != 'osx'
       run: ./build-library.sh ${{ matrix.target }} install/strip
     - name: Archive artifacts
-      if: contains(matrix.target, 'osx')
+      if: matrix.target == 'osx'
       uses: actions/upload-artifact@v2
       with:
         name: pkgs
         path: upload
-    - name: Upload artifacts to AWS
-      if: success() && contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'master')
-      uses: shallwefootball/s3-upload-action@master
-      with:
-        aws_key_id: ${{ secrets.AWS_KEY_ID }}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws_bucket: ${{ secrets.AWS_BUCKET }}
-        source_dir: 'upload'
-        destination_dir: 'libdigidocpp-nightly/${{ github.run_number }}'
   ubuntu:
     name: Build on Ubuntu to ${{ matrix.container }}
     runs-on: ubuntu-latest
@@ -105,15 +96,6 @@ jobs:
       with:
         name: debs
         path: upload
-    - name: Upload artifacts to AWS
-      if: success() && contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'master') && contains(matrix.target, 'osx')
-      uses: shallwefootball/s3-upload-action@master
-      with:
-        aws_key_id: ${{ secrets.AWS_KEY_ID }}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws_bucket: ${{ secrets.AWS_BUCKET }}
-        source_dir: 'upload'
-        destination_dir: 'libdigidocpp-nightly/${{ github.run_number }}'
   pages:
     name: Deploy pages
     if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'master')
@@ -155,7 +137,7 @@ jobs:
         wget -O - https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh | bash
       env:
         COVERITY_SCAN_PROJECT_NAME: 'open-eid/libdigidocpp'
-        COVERITY_SCAN_NOTIFICATION_EMAIL: 'raul@metsma.ee'
+        COVERITY_SCAN_NOTIFICATION_EMAIL: 'eid-teenusehaldus@ria.ee'
         COVERITY_SCAN_BRANCH_PATTERN: 'coverity_scan'
         COVERITY_SCAN_BUILD_COMMAND_PREPEND: 'cmake .'
         COVERITY_SCAN_BUILD_COMMAND: 'make'
