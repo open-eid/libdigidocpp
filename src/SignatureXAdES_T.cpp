@@ -39,10 +39,6 @@ using namespace digidoc::xades;
 using namespace xml_schema;
 using namespace std;
 
-SignatureXAdES_T::SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_B(id, bdoc, signer) {}
-
-SignatureXAdES_T::SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_B(sigdata, bdoc, relaxSchemaValidation) {}
-
 void SignatureXAdES_T::createUnsignedSignatureProperties()
 {
     if(qualifyingProperties().unsignedProperties().present())
@@ -87,6 +83,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     vector<unsigned char> der = tsa;
     UnsignedSignaturePropertiesType::SignatureTimeStampType ts;
     ts.id(id() + Log::format("-T%lu", (unsigned long)unsignedSignatureProperties().signatureTimeStamp().size()));
+    ts.canonicalizationMethod(signature->signedInfo().canonicalizationMethod());
     ts.encapsulatedTimeStamp().push_back(EncapsulatedPKIDataType(Base64Binary(der.data(), der.size())));
     unsignedSignatureProperties().signatureTimeStamp().push_back(ts);
     unsignedSignatureProperties().contentOrder().push_back(
@@ -100,16 +97,16 @@ TS SignatureXAdES_T::tsFromBase64() const
 {
     try {
         if(unsignedSignatureProperties().signatureTimeStamp().empty())
-            return TS(nullptr, 0);
+            return {};
         const UnsignedSignaturePropertiesType::SignatureTimeStampType &ts =
                 unsignedSignatureProperties().signatureTimeStamp().front();
         if(ts.encapsulatedTimeStamp().empty())
-            return TS(nullptr, 0);
+            return {};
         const GenericTimeStampType::EncapsulatedTimeStampType &bin =
                 ts.encapsulatedTimeStamp().front();
         return TS((const unsigned char*)bin.data(), bin.size());
     } catch(const Exception &) {}
-    return TS(nullptr, 0);
+    return {};
 }
 
 void SignatureXAdES_T::validate(const std::string &policy) const
@@ -152,10 +149,13 @@ void SignatureXAdES_T::validate(const std::string &policy) const
         if(etseq.size() > 1)
             THROW("More than one EncapsulatedTimeStamp is not supported");
         const GenericTimeStampType::EncapsulatedTimeStampType &bin = etseq.front();
+        string canonicalizationMethod;
+        if(ts.canonicalizationMethod().present())
+            canonicalizationMethod = ts.canonicalizationMethod()->algorithm();
 
         TS tsa((const unsigned char*)bin.data(), bin.size());
         Digest calc(tsa.digestMethod());
-        calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
+        calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue", {}, canonicalizationMethod);
         tsa.verify(calc);
 
         time_t validateTime = util::date::ASN1TimeToTime_t(tsa.time());

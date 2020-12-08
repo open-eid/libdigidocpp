@@ -993,7 +993,7 @@ vector<unsigned char> SignatureXAdES_B::getSignatureValue() const
  * @param tagName signature tag name.
  */
 void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
-        const string& tagName, const string &id) const
+        const string& tagName, const string &id, const string &canonicalizationMethod) const
 {
     try
     {
@@ -1027,7 +1027,7 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
         if(!node)
             THROW("Could not find '%s' node which is in '%s' namespace in signature XML.", tagName.c_str(), ns.c_str());
 
-        string algorithmType = signature->signedInfo().canonicalizationMethod().algorithm();
+        string algorithmType = canonicalizationMethod.empty() ? signature->signedInfo().canonicalizationMethod().algorithm() : canonicalizationMethod;
         SecureDOMParser::calcDigestOnNode(calc, algorithmType, doc.get(), node);
     }
     catch(const Exception& e)

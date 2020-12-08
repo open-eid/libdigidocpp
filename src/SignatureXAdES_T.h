@@ -30,8 +30,7 @@ class TS;
 class SignatureXAdES_T: public SignatureXAdES_B
 {
 public:
-    SignatureXAdES_T(unsigned int id, ASiContainer *bdoc, Signer *signer);
-    SignatureXAdES_T(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
+    using SignatureXAdES_B::SignatureXAdES_B;
 
     std::string trustedSigningTime() const override;
     std::vector<unsigned char> messageImprint() const override;
