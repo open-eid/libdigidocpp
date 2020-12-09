@@ -34,7 +34,7 @@
 #include "xml/xml.hxx"
 #include "xml/SecureDOMParser.h"
 
-#include "jsonxx.cc"
+#include "json.hpp"
 
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/framework/MemBufFormatTarget.hpp>
@@ -51,6 +51,7 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 using namespace xercesc;
+using json = nlohmann::json;
 
 class SiVaContainer::Private
 {
@@ -138,11 +139,11 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     }
 
     string url = CONF(verifyServiceUri);
-    jsonxx::Object reqObj = jsonxx::Object()
-        << "filename" << File::fileName(path)
-        << "document" << b64
-        << "signaturePolicy" << "POLv4";
-    string req = reqObj.json();
+    string req = json({
+        {"filename", File::fileName(path)},
+        {"document", b64},
+        {"signaturePolicy", "POLv4"}
+    }).dump();
     Connect::Result r = Connect(url, "POST", 0, {}, CONF(verifyServiceCert)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
     }, (const unsigned char*)req.c_str(), req.size());
@@ -150,78 +151,76 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     if(!r.isOK() && !r.isStatusCode("400"))
         THROW("Failed to send request to SiVa");
 
-    jsonxx::Object result;
-    if(!result.parse(r.content))
+    json result = json::parse(r.content, nullptr, false);
+    if(result.is_discarded())
         THROW("Failed to parse to SiVa response");
 
-    if(result.has<jsonxx::Array>("requestErrors"))
+    if(result.contains("requestErrors"))
     {
         Exception e(EXCEPTION_PARAMS("Signature validation"));
-        for(const jsonxx::Value *error: result.get<jsonxx::Array>("requestErrors").values())
-        {
-            string message = error->get<jsonxx::Object>().get<string>("message");
-            EXCEPTION_ADD(e, message.c_str());
-        }
+        for(const json &error: result["requestErrors"])
+            EXCEPTION_ADD(e, error.value<string>("message", {}).c_str());
         throw e;
     }
 
-    jsonxx::Object report = result.get<jsonxx::Object>("validationReport");
-    jsonxx::Object base = report.get<jsonxx::Object>("validationConclusion");
-    for(const jsonxx::Value *obj: base.get<jsonxx::Array>("signatures", {}).values())
+    for(const json &signature: result["validationReport"]["validationConclusion"]["signatures"])
     {
         SignatureSiVa *s = new SignatureSiVa;
-        jsonxx::Object signature = obj->get<jsonxx::Object>();
-        s->_id = signature.get<string>("id");
-        s->_signingTime = signature.get<string>("claimedSigningTime");
-        s->_bestTime = signature.get<jsonxx::Object>("info", {}).get<string>("bestSignatureTime", {});
-        s->_profile = signature.get<string>("signatureFormat");
-        s->_indication = signature.get<string>("indication");
-        s->_subIndication = signature.get<string>("subIndication", {});
-        s->_signedBy = signature.get<string>("signedBy");
-        s->_signatureMethod = signature.get<string>("signatureMethod", {});
-        s->_signatureLevel = signature.get<string>("signatureLevel", {});
-        jsonxx::Object info = signature.get<jsonxx::Object>("info", {});
-        if(info.has<string>("timeAssertionMessageImprint"))
+        s->_id = signature["id"];
+        s->_signingTime = signature["claimedSigningTime"];
+        s->_profile = signature["signatureFormat"];
+        s->_indication = signature["indication"];
+        s->_subIndication = signature.value<string>("subIndication", {});
+        s->_signedBy = signature["signedBy"];
+        s->_signatureMethod = signature.value<string>("signatureMethod", {});
+        s->_signatureLevel = signature.value<string>("signatureLevel", {});
+        json info = signature.value<json>("info", {});
+        if(!info.is_null())
         {
-            string base64 = info.get<string>("timeAssertionMessageImprint");
-            XMLSize_t size = 0;
-            XMLByte *message = Base64::decode((const XMLByte*)base64.c_str(), &size);
-            s->_messageImprint.assign(message, message + size);
-            delete message;
+            s->_bestTime = info.value<string>("bestSignatureTime", {});
+            if(info.contains("timeAssertionMessageImprint"))
+            {
+                string base64 = info["timeAssertionMessageImprint"];
+                XMLSize_t size = 0;
+                XMLByte *message = Base64::decode((const XMLByte*)base64.c_str(), &size);
+                s->_messageImprint.assign(message, message + size);
+                delete message;
+            }
+            for(const json &signerRole: info.value<json>("signerRole", {}))
+                s->_signerRoles.push_back(signerRole["claimedRole"]);
+            json signatureProductionPlace = info.value<json>("signatureProductionPlace", {});
+            if(!signatureProductionPlace.is_null())
+            {
+                s->_city = signatureProductionPlace.value<string>("city", {});
+                s->_stateOrProvince = signatureProductionPlace.value<string>("stateOrProvince", {});
+                s->_postalCode = signatureProductionPlace.value<string>("postalCode", {});
+                s->_country = signatureProductionPlace.value<string>("countryName", {});
+            }
         }
-        for(const jsonxx::Value *signerRole: info.get<jsonxx::Array>("signerRole", {}).values())
-            s->_signerRoles.push_back(signerRole->get<jsonxx::Object>().get<string>("claimedRole"));
-        jsonxx::Object signatureProductionPlace = info.get<jsonxx::Object>("signatureProductionPlace", {});
-        s->_city = signatureProductionPlace.get<string>("city", {});
-        s->_stateOrProvince = signatureProductionPlace.get<string>("stateOrProvince", {});
-        s->_postalCode = signatureProductionPlace.get<string>("postalCode", {});
-        s->_country = signatureProductionPlace.get<string>("countryName", {});
-        for(const jsonxx::Value *certificates: signature.get<jsonxx::Array>("certificates", {}).values())
+        for(const json &certificate: signature.value<json>("certificates", {}))
         {
-            jsonxx::Object certificate = certificates->get<jsonxx::Object>();
-            string content = certificate.get<string>("content");
             XMLSize_t size = 0;
-            XMLByte *der = Base64::decode((const XMLByte*)content.c_str(), &size);
-            if(certificate.get<string>("type") == "SIGNING")
+            XMLByte *der = Base64::decode((const XMLByte*)certificate.value<string>("content", {}).c_str(), &size);
+            if(certificate["type"] == "SIGNING")
                 s->_signingCertificate = X509Cert(der, size, X509Cert::Der);
-            if(certificate.get<string>("type") == "REVOCATION")
+            if(certificate["type"] == "REVOCATION")
                 s->_ocspCertificate = X509Cert(der, size, X509Cert::Der);
-            if(certificate.get<string>("type") == "SIGNATURE_TIMESTAMP")
+            if(certificate["type"] == "SIGNATURE_TIMESTAMP")
                 s->_tsCertificate = X509Cert(der, size, X509Cert::Der);
-            if(certificate.get<string>("type") == "ARCHIVE_TIMESTAMP")
+            if(certificate["type"] == "ARCHIVE_TIMESTAMP")
                 s->_tsaCertificate = X509Cert(der, size, X509Cert::Der);
             delete der;
         }
-        for(const jsonxx::Value *error: signature.get<jsonxx::Array>("errors", {}).values())
+        for(const json &error: signature.value<json>("errors", {}))
         {
-            string message = error->get<jsonxx::Object>().get<string>("content");
+            string message = error["content"];
             if(message.find("Bad digest for DataFile") == 0 && useHashCode)
                 THROW(message.c_str());
             s->_exceptions.emplace_back(EXCEPTION_PARAMS(message.c_str()));
         }
-        for(const jsonxx::Value *warning: signature.get<jsonxx::Array>("warnings", {}).values())
+        for(const json &warning: signature.value<json>("warnings", {}))
         {
-            string message = warning->get<jsonxx::Object>().get<string>("content");
+            string message = warning["content"];
             Exception ex(EXCEPTION_PARAMS(message.c_str()));
             if(message == "X509IssuerName has none or invalid namespace: null" ||
                 message == "X509SerialNumber has none or invalid namespace: null")
