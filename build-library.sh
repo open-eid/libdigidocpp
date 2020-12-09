@@ -82,7 +82,7 @@ case "$@" in
   TARGET=macOS
   TARGET_PATH=/Library/libdigidocpp
   : ${ARCHS:="x86_64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="10.11"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="10.13"}
   export MACOSX_DEPLOYMENT_TARGET
 esac
 
