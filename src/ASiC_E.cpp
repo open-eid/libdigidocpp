@@ -28,6 +28,7 @@
 #include "util/File.h"
 #include "util/ZipSerialize.h"
 #include "xml/OpenDocument_manifest.hxx"
+#include "xml/SecureDOMParser.h"
 
 #include <xercesc/util/OutOfMemoryException.hpp>
 
@@ -75,7 +76,7 @@ ASiC_E::ASiC_E(const string &path)
 
 ASiC_E::~ASiC_E()
 {
-    for_each(d->metadata.begin(), d->metadata.end(), [](DataFile *file){ delete file; });
+    for_each(d->metadata.begin(), d->metadata.end(), std::default_delete<DataFile>());
     delete d;
 }
 
@@ -230,10 +231,11 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     {
         stringstream manifestdata;
         z.extract("META-INF/manifest.xml", manifestdata);
-        xml_schema::Properties properties;
-        properties.schema_location(ASiC_E::MANIFEST_NAMESPACE,
-            File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
-        unique_ptr<Manifest> manifest = manifest::manifest(manifestdata, xml_schema::Flags::dont_initialize|xml_schema::Flags::dont_validate, properties);
+        xml_schema::Properties p;
+        p.schema_location(ASiC_E::MANIFEST_NAMESPACE,
+			File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
+		unique_ptr<xercesc::DOMDocument> doc = SecureDOMParser(p.schema_location(), true).parseIStream(manifestdata);
+        unique_ptr<Manifest> manifest = manifest::manifest(*doc, {}, p);
 
         set<string> manifestFiles;
         bool mimeFound = false;
@@ -303,6 +305,15 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 THROW("File '%s' found in container is not described in manifest.", file.c_str());
         }
     }
+    catch(const xercesc::DOMException &e)
+    {
+        try {
+            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
+            THROW("Failed to create manifest XML file. Error: %s", result.c_str());
+        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+            THROW("Failed to create manifest XML file.");
+        }
+    }
     catch(const xsd::cxx::xml::invalid_utf16_string &)
     {
         THROW("Failed to parse manifest XML: %s", Conf::instance()->xsdPath().c_str());
@@ -319,15 +330,15 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     {
         THROW("Failed to parse manifest XML: %s (xsd path: %s)", e.what(), Conf::instance()->xsdPath().c_str());
     }
-    catch (const xercesc::OutOfMemoryException &)
+    catch(const xercesc::OutOfMemoryException &)
     {
         THROW("Failed to parse manifest XML: out of memory");
     }
-    catch (const Exception &e)
+    catch(const Exception &e)
     {
         THROW_CAUSE(e, "Failed to parse manifest");
     }
-    catch (...)
+    catch(...)
     {
         THROW("Failed to parse manifest XML: Unknown exception");
     }

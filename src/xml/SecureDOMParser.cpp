@@ -42,6 +42,10 @@ using namespace xercesc;
 namespace xml = xsd::cxx::xml;
 
 SecureDOMParser::SecureDOMParser(const string &schema_location)
+    : SecureDOMParser(schema_location, schema_location.empty())
+{}
+
+SecureDOMParser::SecureDOMParser(const string &schema_location, bool dont_validate)
 {
     DOMConfiguration *conf = getDomConfig();
     // Discard comment nodes in the document.
@@ -53,22 +57,32 @@ SecureDOMParser::SecureDOMParser(const string &schema_location)
     // corresponding to their fully expanded substitution text
     // will be created.
     conf->setParameter(XMLUni::fgDOMEntities, false);
+    // Perform namespace processing.
     conf->setParameter(XMLUni::fgDOMNamespaces, true);
+    // Do not include ignorable whitespace in the DOM tree.
     conf->setParameter(XMLUni::fgDOMElementContentWhitespace, false);
     // Enable validation.
-    conf->setParameter(XMLUni::fgDOMValidate, !schema_location.empty());
-    conf->setParameter(XMLUni::fgXercesSchema, !schema_location.empty());
+    conf->setParameter(XMLUni::fgDOMValidate, !dont_validate);
+    conf->setParameter(XMLUni::fgXercesSchema, !dont_validate);
+    // This feature checks the schema grammar for additional
+    // errors. We most likely do not need it when validating
+    // instances (assuming the schema is valid).
     conf->setParameter(XMLUni::fgXercesSchemaFullChecking, false);
+    // Xerces-C++ 3.1.0 is the first version with working multi import
+    // support.
+    conf->setParameter(XMLUni::fgXercesHandleMultipleImports, !dont_validate);
+    // We will release DOM ourselves.
+    conf->setParameter(XMLUni::fgXercesUserAdoptsDOMDocument, true);
+    // Transfer properies if any.
     if(!schema_location.empty())
     {
         xml::string sl(schema_location);
         conf->setParameter(XMLUni::fgXercesSchemaExternalSchemaLocation, sl.c_str());
     }
-    // Xerces-C++ 3.1.0 is the first version with working multi import
-    // support.
-    conf->setParameter(XMLUni::fgXercesHandleMultipleImports, true);
-    // We will release the DOM document ourselves.
-    conf->setParameter(XMLUni::fgXercesUserAdoptsDOMDocument, true);
+    // If external schema location was specified, disable loading
+    // schemas via the schema location attributes in the document.
+    if(!schema_location.empty())
+        conf->setParameter(XMLUni::fgXercesLoadSchema, false);
 }
 
 void SecureDOMParser::calcDigestOnNode(Digest *calc,
@@ -118,10 +132,8 @@ void SecureDOMParser::doctypeDecl(const DTDElementDecl& root,
 
 unique_ptr<DOMDocument> SecureDOMParser::parseIStream(std::istream &is)
 {
-    // Parse the XML document.
     // Wrap the standard input stream.
-    xml::sax::std_input_source isrc(is);
-    Wrapper4InputSource wrap(&isrc, false);
+    Wrapper4InputSource wrap(new xml::sax::std_input_source(is));
     // Set error handler.
     xsd::cxx::tree::error_handler<char> eh;
     xml::dom::bits::error_handler_proxy<char> ehp(eh);
