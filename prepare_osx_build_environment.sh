@@ -4,7 +4,7 @@ set -e
 XERCES_DIR=xerces-c-3.2.3
 XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.1.1h
+OPENSSL_DIR=openssl-1.1.1i
 LIBXML2_DIR=libxml2-2.9.10
 ANDROID_NDK=android-ndk-r18b
 FREETYPE_DIR=freetype-2.10.1
@@ -95,7 +95,7 @@ case "$@" in
   CONFIGURE="--disable-static --enable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="x86_64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="10.11"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="10.13"}
   export MACOSX_DEPLOYMENT_TARGET
   export CFLAGS=""
   export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
