@@ -71,12 +71,12 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
         sig->setURIResolver(uriresolver.get());
         sig->setKeyInfoResolver(keyresolver.get());
-        sig->registerIdAttributeName(u"ID");
+        sig->registerIdAttributeName((const XMLCh*)u"ID");
         sig->setIdByAttributeName(true);
         sig->load();
 
         safeBuffer m_errStr;
-        m_errStr.sbXMLChIn(DSIGConstants::s_unicodeStrEmpty);
+        m_errStr.sbXMLChIn((const XMLCh*)u"");
 
         XMLByte buf[1024];
         DSIGReferenceList *list = sig->getReferenceList();

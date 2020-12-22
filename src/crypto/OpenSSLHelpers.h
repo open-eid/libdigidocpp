@@ -28,10 +28,12 @@
 #include <openssl/err.h>
 #include <openssl/pkcs12.h>
 
+#ifndef RSA_PSS_SALTLEN_DIGEST
+#define RSA_PSS_SALTLEN_DIGEST -1
+#endif
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 #include <openssl/x509.h>
-
-#define RSA_PSS_SALTLEN_DIGEST -1
 
 static EVP_PKEY *X509_get0_pubkey(X509 *x)
 {

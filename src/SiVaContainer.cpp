@@ -298,17 +298,18 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
     };
     try
     {
+        using cpXMLCh = const XMLCh*;
         unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(is));
-        DOMNodeList *nodeList = dom->getElementsByTagName(u"DataFile");
+        DOMNodeList *nodeList = dom->getElementsByTagName(cpXMLCh(u"DataFile"));
         for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
         {
             DOMElement *item = static_cast<DOMElement*>(nodeList->item(i));
             if(!item)
                 continue;
 
-            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"HASHCODE") == 0)
+            if(XMLString::compareString(item->getAttribute(cpXMLCh(u"ContentType")), cpXMLCh(u"HASHCODE")) == 0)
                 THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
-            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"EMBEDDED_BASE64") != 0)
+            if(XMLString::compareString(item->getAttribute(cpXMLCh(u"ContentType")), cpXMLCh("EMBEDDED_BASE64")) != 0)
                 continue;
 
             if(const XMLCh *b64 = item->getTextContent())
@@ -316,7 +317,7 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
                 XMLSize_t size = 0;
                 XMLByte *data = Base64::decodeToXMLByte(b64, &size);
                 d->dataFiles.push_back(new DataFilePrivate(unique_ptr<istream>(new stringstream(string((const char*)data, size))),
-                    transcode(item->getAttribute(u"Filename")), transcode(item->getAttribute(u"MimeType")), transcode(item->getAttribute(u"Id"))));
+                    transcode(item->getAttribute(cpXMLCh(u"Filename"))), transcode(item->getAttribute(cpXMLCh(u"MimeType"))), transcode(item->getAttribute(cpXMLCh(u"Id")))));
                 delete data;
             }
 
@@ -328,22 +329,22 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
             XMLSize_t size = 0;
             if(XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))
             {
-                item->setAttribute(u"ContentType", u"HASHCODE");
-                item->setAttribute(u"DigestType", u"sha1");
+                item->setAttribute(cpXMLCh(u"ContentType"), cpXMLCh(u"HASHCODE"));
+                item->setAttribute(cpXMLCh(u"DigestType"), cpXMLCh(u"sha1"));
                 xsd::cxx::xml::string outXMLCh(reinterpret_cast<const char*>(out));
-                item->setAttribute(u"DigestValue", outXMLCh.c_str());
+                item->setAttribute(cpXMLCh(u"DigestValue"), outXMLCh.c_str());
                 item->setTextContent(nullptr);
                 delete out;
             }
         }
 
-        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(u"LS");
+        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(cpXMLCh(u"LS"));
         unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
         unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
         unique_ptr<stringstream> result(new stringstream);
         xsd::cxx::xml::dom::ostream_format_target out(*result);
         pDomLsOutput->setByteStream(&out);
-        pSerializer->setNewLine(u"\n");
+        pSerializer->setNewLine(cpXMLCh(u"\n"));
         pSerializer->write(dom.get(), pDomLsOutput.get());
         return result.release();
     }

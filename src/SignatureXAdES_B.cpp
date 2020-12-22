@@ -514,12 +514,12 @@ void SignatureXAdES_B::validate(const string &policy) const
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
         sig->setURIResolver(uriresolver.get());
         sig->setKeyInfoResolver(keyresolver.get());
-        sig->registerIdAttributeName(u"ID");
+        sig->registerIdAttributeName((const XMLCh*)u"ID");
         sig->setIdByAttributeName(true);
         sig->load();
 
         safeBuffer m_errStr;
-        m_errStr.sbXMLChIn(DSIGConstants::s_unicodeStrEmpty);
+        m_errStr.sbXMLChIn((const XMLCh*)u"");
 
         if(!DSIGReference::verifyReferenceList(sig->getReferenceList(), m_errStr))
         //if(!sig->verify()) //xml-security-c < 2.0.0 does not support URI_ID_C14N11_NOC canonicalization
