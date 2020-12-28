@@ -10,7 +10,8 @@ if [ "$#" -eq 0 ]; then
   echo " minimum deployment target"
   echo " - MACOSX_DEPLOYMENT_TARGET=10.11"
   echo " - IPHONEOS_DEPLOYMENT_TARGET=9.0"
-  echo " archs to build on iOS"
+  echo " archs to build on macOS/iOS"
+  echo " - ARCHS=\"x86_64 arm64\" (macOS)"
   echo " - ARCHS=\"armv7 arm64\" (iOS)"
   echo " - ARCHS=\"x86_64\" (iPhoneSimulator)"
   exit
@@ -67,7 +68,6 @@ case "$@" in
     -DCMAKE_C_COMPILER_WORKS=yes \
     -DCMAKE_CXX_COMPILER_WORKS=yes \
     -DCMAKE_OSX_SYSROOT=${TARGET} \
-    -DCMAKE_OSX_ARCHITECTURES='${ARCHS// /;}' \
     -DIOS=YES \
     -DFRAMEWORK=off \
     -DUSE_KEYCHAIN=off \
@@ -81,7 +81,7 @@ case "$@" in
   echo "Building for macOS"
   TARGET=macOS
   TARGET_PATH=/Library/libdigidocpp
-  : ${ARCHS:="x86_64"}
+  : ${ARCHS:="x86_64 arm64"}
   : ${MACOSX_DEPLOYMENT_TARGET:="10.13"}
   export MACOSX_DEPLOYMENT_TARGET
 esac
@@ -92,6 +92,7 @@ cd ${TARGET}
 cmake \
     -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
     -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+    -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
     -DXercesC_ROOT=${TARGET_PATH} \
     ${CMAKEARGS} \
