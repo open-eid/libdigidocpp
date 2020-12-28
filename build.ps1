@@ -1,5 +1,5 @@
 param(
-  [string]$target = "C:\build",
+  [string]$target = "\build",
   [string]$buildver = "0",
   [string]$msiversion = "3.14.5.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
@@ -7,6 +7,7 @@ param(
   [string]$nmake = "nmake.exe",
   [string]$generator = "NMake Makefiles",
   [string]$toolset = "141",
+  [string]$vcvars = $null,
   [string]$heat = "$env:WIX\bin\heat.exe",
   [string]$candle = "$env:WIX\bin\candle.exe",
   [string]$light = "$env:WIX\bin\light.exe",
@@ -19,10 +20,12 @@ param(
   [switch]$source = $false
 )
 
-switch ($toolset) {
-'140' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" }
-'141' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" }
-'142' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+if (!$vcvars) {
+	switch ($toolset) {
+	'140' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" }
+	'141' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+	'142' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+	}
 }
 
 $libdigidocpp = split-path -parent $MyInvocation.MyCommand.Definition
