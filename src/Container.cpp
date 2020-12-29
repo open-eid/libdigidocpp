@@ -22,7 +22,6 @@
 #include "ASiC_E.h"
 #include "ASiC_S.h"
 #include "DataFile.h"
-#include "DDoc.h"
 #include "Exception.h"
 #include "log.h"
 #include "PDF.h"
@@ -151,9 +150,6 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
     if(!Conf::instance())
         Conf::init(new XmlConfCurrent);
 
-#if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
-    Container::addContainerImplementation<DDoc>();
-#endif
 #ifdef PDF_SUPPORT
     Container::addContainerImplementation<PDF>();
 #endif

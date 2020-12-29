@@ -59,7 +59,7 @@ namespace digidoc
               ProducedATLateWarning    = 16,
               MimeTypeWarning          = 17,
               //DDoc error codes
-              DDocError                = 512
+              DDocError                = 512 //DIGIDOCPP_DEPRECATED
           };
           using Causes = std::vector<Exception>;
 
