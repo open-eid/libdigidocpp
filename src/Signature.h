@@ -38,7 +38,7 @@ namespace digidoc
                 Valid,
                 Warning,
                 NonQSCD,
-                Test,
+                Test, //DIGIDOCPP_DEPRECATED
                 Invalid,
                 Unknown
             };
@@ -53,7 +53,6 @@ namespace digidoc
         private:
             DISABLE_COPY(Validator);
 
-            bool isTestCert(const X509Cert &cert);
             void parseException(const Exception &e);
 
             struct Private;

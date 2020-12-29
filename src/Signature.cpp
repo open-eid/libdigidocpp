@@ -66,37 +66,37 @@ Signature::~Signature() = default;
 /**
  * Returns signature production city.
  */
-string Signature::city() const { return string(); }
+string Signature::city() const { return {}; }
 
 /**
  * Returns signature production country.
  */
-string Signature::countryName() const { return string(); }
+string Signature::countryName() const { return {}; }
 
 /**
  * Returns signed signature hash message imprint value (TM - OCSP Nonce, TS - TimeStamp value)
  */
-vector<unsigned char> Signature::messageImprint() const { return vector<unsigned char>(); }
+vector<unsigned char> Signature::messageImprint() const { return {}; }
 
 /**
  * Returns signature production postal code.
  */
-string Signature::postalCode() const { return string(); }
+string Signature::postalCode() const { return {}; }
 
 /**
  * Returns signature production state or province.
  */
-string Signature::stateOrProvince() const { return string(); }
+string Signature::stateOrProvince() const { return {}; }
 
 /**
  * Returns signature production street address.
  */
-string Signature::streetAddress() const { return string(); }
+string Signature::streetAddress() const { return {}; }
 
 /**
  * Returns signer's roles.
  */
-vector<string> Signature::signerRoles() const { return vector<string>(); }
+vector<string> Signature::signerRoles() const { return {}; }
 
 /**
  * Return signer's certificate common name
@@ -146,10 +146,7 @@ string Signature::signedBy() const { return signingCertificate().subjectName("CN
  * @see POLv1
  * @see POLv2
  */
-void Signature::validate(const std::string & /*policy*/) const
-{
-    validate();
-}
+void Signature::validate(const std::string & /*policy*/) const { validate(); }
 
 /**
  * @fn digidoc::Signature::dataToSign
@@ -169,82 +166,53 @@ void Signature::validate(const std::string & /*policy*/) const
  *
  * @param profile Target profile
  */
-void Signature::extendSignatureProfile(const string & /*profile*/)
-{}
+void Signature::extendSignatureProfile(const string & /*profile*/) {}
 
 /**
  * Returns signature policy when it is available or empty string.
  */
-string Signature::policy() const
-{
-    return string();
-}
+string Signature::policy() const { return {}; }
 
 /**
  * Returns signature policy uri when it is available or empty string.
  */
-string Signature::SPUri() const
-{
-    return string();
-}
+string Signature::SPUri() const { return {}; }
 
 /**
  * Returns signature OCSP producedAt timestamp.
  */
-string Signature::OCSPProducedAt() const
-{
-    return string();
-}
+string Signature::OCSPProducedAt() const { return {}; }
 
 /**
  * Returns signature OCSP responder certificate.
  */
-X509Cert Signature::OCSPCertificate() const
-{
-    return X509Cert();
-}
+X509Cert Signature::OCSPCertificate() const { return X509Cert(); }
 
 /**
  * Returns signed signature message imprint in OCSP response nonce.
  * @deprecated use messageImprint
  */
-vector<unsigned char> Signature::OCSPNonce() const
-{
-    return messageImprint();
-}
+vector<unsigned char> Signature::OCSPNonce() const { return messageImprint(); }
 
 /**
  * Returns signature TimeStampToken certificate.
  */
-X509Cert Signature::TimeStampCertificate() const
-{
-    return X509Cert();
-}
+X509Cert Signature::TimeStampCertificate() const { return X509Cert(); }
 
 /**
  * Returns signature TimeStampToken time.
  */
-string Signature::TimeStampTime() const
-{
-    return string();
-}
+string Signature::TimeStampTime() const { return {}; }
 
 /**
  * Returns signature Archive TimeStampToken certificate.
  */
-X509Cert Signature::ArchiveTimeStampCertificate() const
-{
-    return X509Cert();
-}
+X509Cert Signature::ArchiveTimeStampCertificate() const { return X509Cert(); }
 
 /**
  * Returns signature Archive TimeStampToken time.
  */
-string Signature::ArchiveTimeStampTime() const
-{
-    return string();
-}
-
+string Signature::ArchiveTimeStampTime() const { return {}; }
 
 struct Signature::Validator::Private
 {
@@ -277,11 +245,7 @@ Signature::Validator::Validator(const Signature *s)
             parseException(e);
         }
         break;
-    case Invalid:
-        break;
     default:
-        if(isTestCert(s->signingCertificate()) || isTestCert(s->OCSPCertificate()))
-            d->result = std::max(d->result, Test);
         break;
     }
 }
@@ -294,52 +258,6 @@ Signature::Validator::~Validator()
 std::string Signature::Validator::diagnostics() const
 {
     return d->diagnostics;
-}
-
-bool Signature::Validator::isTestCert(const X509Cert &cert)
-{
-    enum {
-        UnknownType = 0,
-        DigiIDType = 1 << 0,
-        EstEidType = 1 << 1,
-        MobileIDType = 1 << 2,
-        OCSPType = 1 << 3,
-        TempelType = 1 << 4,
-
-        TestType = 1 << 5,
-        DigiIDTestType = TestType|DigiIDType,
-        EstEidTestType = TestType|EstEidType,
-        MobileIDTestType = TestType|MobileIDType,
-        OCSPTestType = TestType|OCSPType,
-        TempelTestType = TestType|TempelType
-    } type = UnknownType;
-    for(const std::string &i: cert.certificatePolicies())
-    {
-        if(i.compare(0, 22, "1.3.6.1.4.1.10015.1.1.") == 0)
-            type = EstEidType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.1.2.") == 0)
-            type = DigiIDType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.1.3.") == 0 ||
-            i.compare(0, 23, "1.3.6.1.4.1.10015.11.1.") == 0)
-            type = MobileIDType;
-
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.3.1.") == 0)
-            type = EstEidTestType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.3.2.") == 0)
-            type = DigiIDTestType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.3.3.") == 0 ||
-            i.compare(0, 23, "1.3.6.1.4.1.10015.11.3.") == 0)
-            type = MobileIDTestType;
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.3.7.") == 0 ||
-            (i.compare(0, 22, "1.3.6.1.4.1.10015.7.1.") == 0 &&
-            cert.issuerName("CN").find("TEST") != std::string::npos) )
-            type = TempelTestType;
-
-        else if(i.compare(0, 22, "1.3.6.1.4.1.10015.7.1.") == 0 ||
-            i.compare(0, 22, "1.3.6.1.4.1.10015.2.1.") == 0)
-            type = TempelType;
-    }
-    return type & TestType;
 }
 
 void Signature::Validator::parseException(const Exception &e)
