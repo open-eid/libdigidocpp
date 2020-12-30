@@ -1,11 +1,12 @@
 #powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 [-openssl] [-xerces] [-xalan] [-xmlsec] [-xsd] [-zlib]
 param(
-	[string]$target = "C:\build",
+	[string]$target = "\build",
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
 	[string]$cmake = "cmake.exe",
 	[string]$nmake = "nmake.exe",
 	[string]$generator = "NMake Makefiles",
 	[string]$toolset = "140",
+	[string]$vcvars = $null,
 	[string]$windowssdkversion = $(Get-Item "hklm:\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0").GetValue("ProductVersion"),
 	[string]$msbuildparams = "PlatformToolset=v$toolset;WindowsTargetPlatformVersion=$($windowssdkversion).0",
 	[string]$opensslver = "openssl-1.1.1i",
@@ -26,10 +27,12 @@ param(
 	[switch]$podofo = $false
 )
 
-switch ($toolset) {
-'140' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" }
-'141' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" }
-'142' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+if (!$vcvars) {
+	switch ($toolset) {
+	'140' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" }
+	'141' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+	'142' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+	}
 }
 
 $libdigidocpp = split-path -parent $MyInvocation.MyCommand.Definition
@@ -110,10 +113,10 @@ function xmlsec() {
 	Push-Location -Path xmlsec
 	& git apply --ignore-space-change --ignore-whitespace --whitespace=nowarn $libdigidocpp\patches\xml-security-c-2.0.1-win.patch
 	$xsecproj = "Projects\VC15.0\xsec\xsec_lib\xsec_lib.vcxproj"
-	& $vcvars x86 "&&" msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32;OPENSSLROOT=C:\OpenSSL-Win32;XERCESCROOT=$target\xerces\x86;XALANCROOT=$target\xalan\c" $xsecproj
-	& $vcvars x86 "&&" msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32;OPENSSLROOT=C:\OpenSSL-Win32;XERCESCROOT=$target\xerces\x86;XALANCROOT=$target\xalan\c" $xsecproj
-	& $vcvars x86 "&&" msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64;OPENSSLROOT=C:\OpenSSL-Win64;XERCESCROOT=$target\xerces\x64;XALANCROOT=$target\xalan\c" $xsecproj
-	& $vcvars x86 "&&" msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64;OPENSSLROOT=C:\OpenSSL-Win64;XERCESCROOT=$target\xerces\x64;XALANCROOT=$target\xalan\c" $xsecproj
+	& $vcvars x86 "&&" msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=Win32;OPENSSLROOT=\OpenSSL-Win32;XERCESCROOT=$target\xerces\x86;XALANCROOT=$target\xalan\c" $xsecproj
+	& $vcvars x86 "&&" msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=Win32;OPENSSLROOT=\OpenSSL-Win32;XERCESCROOT=$target\xerces\x86;XALANCROOT=$target\xalan\c" $xsecproj
+	& $vcvars x86 "&&" msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Release;Platform=X64;OPENSSLROOT=\OpenSSL-Win64;XERCESCROOT=$target\xerces\x64;XALANCROOT=$target\xalan\c" $xsecproj
+	& $vcvars x86 "&&" msbuild /nologo /verbosity:quiet "/p:$msbuildparams;Configuration=Debug;Platform=X64;OPENSSLROOT=\OpenSSL-Win64;XERCESCROOT=$target\xerces\x64;XALANCROOT=$target\xalan\c" $xsecproj
 	Pop-Location
 }
 

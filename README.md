@@ -7,8 +7,7 @@
  * [Architecture of ID-software](http://open-eid.github.io)
 
 ## Building
-[![Build Status](https://travis-ci.com/open-eid/libdigidocpp.svg?branch=master)](https://travis-ci.com/open-eid/libdigidocpp)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/open-eid/libdigidocpp?branch=master&svg=true)](https://ci.appveyor.com/project/open-eid/libdigidocpp)
+[![Build Status](https://github.com/open-eid/libdigidocpp/workflows/CI/badge.svg?branch=master)](https://github.com/open-eid/libdigidocpp/actions)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/727/badge.svg)](https://scan.coverity.com/projects/727)
 [![LGTM alerts](https://img.shields.io/lgtm/alerts/g/open-eid/libdigidocpp.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/open-eid/libdigidocpp/alerts/)
 

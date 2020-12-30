@@ -1,19 +1,20 @@
 name: CI
 on: [push, pull_request]
 env:
-  MAKEFLAGS: -j3
   RUN_TESTS: ALL
   BUILD_NUMBER: ${{ github.run_number }}
 jobs:
   macos:
     name: Build on macOS for ${{ matrix.target }}
     runs-on: macos-latest
+    env:
+      MAKEFLAGS: -j3
     strategy:
       matrix:
         target: [osx, ios, iossimulator, androidarm, androidarm64, androidx86, androidx86_64]
     steps:
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
       with:
         submodules: recursive
     - name: Install dependencies
@@ -47,10 +48,7 @@ jobs:
       run: sudo ln -s $PWD/cache/* /Library/
     - name: Build macOS
       if: matrix.target == 'osx'
-      run: |
-        ./build-library.sh all pkcs11sign zipdebug embedlibs pkgbuild
-        mkdir upload
-        cp macOS/libdigidocpp*.pkg macOS/libdigidocpp*.zip upload
+      run: ./build-library.sh all pkcs11sign zipdebug embedlibs pkgbuild
     - name: Build ${{ matrix.target }}
       if: matrix.target != 'osx'
       run: ./build-library.sh ${{ matrix.target }} install/strip
@@ -59,7 +57,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: pkgs
-        path: upload
+        path: macOS/libdigidocpp*.*
   ubuntu:
     name: Build on Ubuntu to ${{ matrix.container }}
     runs-on: ubuntu-latest
@@ -68,6 +66,7 @@ jobs:
       matrix:
         container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:20.10']
     env:
+      MAKEFLAGS: -j3
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: 'github-actions'
       DEBEMAIL: 'github-actions@github.com'
@@ -94,15 +93,80 @@ jobs:
     - name: Build packages
       run: |
         dpkg-buildpackage -rfakeroot -us -uc
-        mkdir upload
-        cp ../libdigidocpp*.* upload
+        mv ../libdigidocpp*.* .
     - name: Lintian
-      run: lintian ../*.deb;
+      run: lintian *.deb;
     - name: Archive artifacts
       uses: actions/upload-artifact@v2
       with:
         name: debs
-        path: upload
+        path: libdigidocpp*.*
+  windows:
+    name: Build on Windows
+    runs-on: windows-latest
+    env:
+      VCVARSALL: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
+      CACHE: "${{ github.workspace }}/cache"
+      VER_SUFFIX: ".VS142"
+      VERSION: "3.14.5.${{ github.run_number }}"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: choco install doxygen.install swig -y > $null
+    - name: Cache
+      uses: actions/cache@v2
+      id: cache
+      with:
+        path: cache
+        key: ${{ matrix.target }}-${{ hashFiles('prepare_osx_build_environment.sh') }}
+    - name: Build zlib
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -zlib
+    - name: Build xerces-c
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -xerces
+    - name: Build xalan-c
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -xalan
+    - name: Build OpenSSL
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        choco install activeperl -y > $null
+        .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -openssl
+        Copy-Item \OpenSSL-Win32 cache\OpenSSL-Win32 -recurse
+        Copy-Item \OpenSSL-Win64 cache\OpenSSL-Win64 -recurse
+    - name: Build xml-security-c
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -xmlsec
+    - name: Build xsd
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -xsd
+    - name: Setup cache
+      run: |
+        mkdir \build
+        Copy-Item cache\zlib \build\zlib -recurse
+        Copy-Item cache\xerces \build\xerces -recurse
+        Copy-Item cache\xalan \build\xalan -recurse
+        Copy-Item cache\xmlsec \build\xmlsec -recurse
+        Copy-Item cache\xsd \build\xsd -recurse
+        Copy-Item cache\OpenSSL-Win32 \OpenSSL-Win32 -recurse
+        Copy-Item cache\OpenSSL-Win64 \OpenSSL-Win64 -recurse
+    - name: Build
+      run: |
+        & .\build.ps1 `
+          -msiversion $env:VERSION `
+          -toolset $env:TOOLSET `
+          -vcvars "$env:VCVARSALL" `
+         -swig C:/ProgramData/chocolatey/bin/swig.exe `
+         -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: msi
+        path: ./*.msi
   pages:
     name: Deploy pages
     if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'master')
@@ -130,22 +194,55 @@ jobs:
     name: Run Coverity tests
     if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'coverity_scan')
     runs-on: ubuntu-latest
+    env:
+      MAKEFLAGS: -j3
+      TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+      PROJECTNAME: 'open-eid/libdigidocpp'
     steps:
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
       with:
         submodules: recursive
     - name: Install dependencies
       run: sudo apt-get update -qq && sudo apt-get install -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl wget ruby
-    - name: Build and send to Coverity
-      continue-on-error: true
+    - name: Download Coverity Build Tool
       run: |
-        export TRAVIS_BRANCH=${GITHUB_REF##*/}
-        wget -O - https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh | bash
-      env:
-        COVERITY_SCAN_PROJECT_NAME: 'open-eid/libdigidocpp'
-        COVERITY_SCAN_NOTIFICATION_EMAIL: 'eid-teenusehaldus@ria.ee'
-        COVERITY_SCAN_BRANCH_PATTERN: 'coverity_scan'
-        COVERITY_SCAN_BUILD_COMMAND_PREPEND: 'cmake .'
-        COVERITY_SCAN_BUILD_COMMAND: 'make'
-        COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+        wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=$PROJECTNAME" -O cov-analysis-linux64.tar.gz
+        mkdir cov-analysis-linux64
+        tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
+    - name: Build
+      run: |
+        cmake .
+        export PATH=$PWD/cov-analysis-linux64/bin:$PATH
+        cov-build --dir cov-int make
+    - name: Submit the result to Coverity Scan
+      run: |
+        tar czvf upload.tgz cov-int
+        curl --silent \
+          --form project=$PROJECTNAME \
+          --form token=$TOKEN \
+          --form email=eid-teenusehaldus@ria.ee \
+          --form file=@upload.tgz \
+          --form version=master \
+          --form description="Github Actions CI build" \
+          https://scan.coverity.com/builds?project=$PROJECTNAME
+  codeql:
+    name: Run CodeQL tests
+    runs-on: ubuntu-20.04
+    env:
+      MAKEFLAGS: -j3
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: sudo apt-get update -qq && sudo apt-get install -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl wget ruby
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: cpp
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v1
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
