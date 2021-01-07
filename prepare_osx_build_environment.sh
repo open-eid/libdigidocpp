@@ -182,6 +182,7 @@ function xml_security {
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
+    patch -Np1 -i ../patches/vcpkg-ports/xml-security-c/002_xml-security-c-SHA3.patch
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
     sed -ie 's!#define XSEC_EXPORT!#define XSEC_EXPORT __attribute__ ((visibility("default")))!' xsec/framework/XSECDefs.hpp
     CFLAGS="${CFLAGS} -fvisibility=hidden" \
