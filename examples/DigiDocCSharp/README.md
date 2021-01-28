@@ -13,11 +13,11 @@ For compiling and running the DigiDocCSharp sample C# project, do as follows:
 5. Run the DigiDocCSharp.exe sample program with the commands described in the next section
 
 ## Commands of the sample application Program.cs
-* DigiDocCSharp.exe -version
-* DigiDocCSharp.exe -help
-* DigiDocCSharp.exe -verify test.bdoc
-* DigiDocCSharp.exe -sign text.txt test.bdoc
-* DigiDocCSharp.exe -extract=0 test.bdoc
+* DigiDocCSharp.exe version
+* DigiDocCSharp.exe help
+* DigiDocCSharp.exe verify test.bdoc
+* DigiDocCSharp.exe sign text.txt test.bdoc
+* DigiDocCSharp.exe extract=0 test.bdoc
 
 ## API
 * [digidoc.initialize()](http://open-eid.github.io/libdigidocpp/namespacedigidoc.html#ada31d19121d7a6d98b04267f3ed8cc8f)

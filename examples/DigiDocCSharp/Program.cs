@@ -22,6 +22,7 @@ namespace DigiDocCSharp
 
             switch (args[0])
             {
+                case "add": add(args); return;
                 case "extract": extract(Convert.ToInt32(args[1]), args[2]); return;
                 case "sign": sign(args); return;
                 case "websign": websign(args); return;
@@ -30,6 +31,24 @@ namespace DigiDocCSharp
                 case "help":
                 default: help(); return;
             }
+        }
+
+        static void add(string[] args)
+        {
+            digidoc.digidoc.initialize();
+            try
+            {
+                Console.WriteLine("Creating file: " + args[args.Length - 1]);
+                Container b = Container.create(args[args.Length - 1]);
+                for (int i = 1; i < args.Length - 1; ++i)
+                    b.addDataFile(args[i], "application/octet-stream");
+                b.save();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            digidoc.digidoc.terminate();
         }
 
         static void extract(int index, string file)
@@ -63,10 +82,14 @@ namespace DigiDocCSharp
         {
             Console.WriteLine("DigiDocCSharp command [params]");
             Console.WriteLine("Command:");
+            Console.WriteLine(" help\t\tPrints utility commands");
+            Console.WriteLine(" version\tPrints utility version");
             Console.WriteLine(" extract\tExtracts files from document");
             Console.WriteLine("    num");
             Console.WriteLine("    file");
-            Console.WriteLine(" help\t\tPrints utility commands");
+            Console.WriteLine(" add\t\tCreates container with files");
+            Console.WriteLine("    datafile1 datafile2 ...");
+            Console.WriteLine("    file");
             Console.WriteLine(" sign\t\tSigns file");
             Console.WriteLine("    datafile1 datafile2 ...");
             Console.WriteLine("    file");
@@ -76,7 +99,6 @@ namespace DigiDocCSharp
             Console.WriteLine("    file");
             Console.WriteLine(" verify\t\tVerifies document signature and shows info");
             Console.WriteLine("    file");
-            Console.WriteLine(" version\tPrints utility version");
             version();
         }
 
@@ -174,7 +196,7 @@ namespace DigiDocCSharp
 
         static void version()
         {
-            Console.WriteLine("DigiDocCSharp 0.2 libdigidocpp " + digidoc.digidoc.version());
+            Console.WriteLine("DigiDocCSharp 0.3 libdigidocpp " + digidoc.digidoc.version());
         }
     }
 }
