@@ -33,12 +33,13 @@ class SWIGEXPORT DigiDocConf: public digidoc::XmlConfCurrent
 public:
     DigiDocConf(std::string _cache)
         : digidoc::XmlConfCurrent(std::string(), _cache.empty() ? std::string() : util::File::path(_cache, "conf.xsd"))
-        , cache(std::move(_cache)) {}
+        , cache(std::move(_cache))
+        , _logFile(cache.empty() ? "" : cache + "/digidocpp.log") {}
 
     static DigiDocConf* instance() { return dynamic_cast<DigiDocConf*>(Conf::instance()); };
 
-    int logLevel() const override { return 4; }
-    std::string logFile() const override { return cache.empty() ? digidoc::XmlConfCurrent::logFile() : cache + "/digidocpp.log"; }
+    int logLevel() const override { return _logLevel; }
+    std::string logFile() const override { return _logFile.empty() ? digidoc::XmlConfCurrent::logFile() : _logFile; }
     std::string ocsp(const std::string &issuer) const override
     {
         auto pos = OCSPUrls.find(issuer);
@@ -57,6 +58,8 @@ public:
     std::string verifyServiceUri() const override { return serviceUrl.empty() ? digidoc::XmlConfCurrent::verifyServiceUri() : serviceUrl; }
     std::string xsdPath() const override { return cache.empty() ? digidoc::XmlConfCurrent::xsdPath() : cache; }
 
+    void setLogLevel(int level) { _logLevel = level; }
+    void setLogFile(const std::string &file) { _logFile = file; }
     void setTSLCert(const std::vector<unsigned char> &cert)
     {
         if(cert.empty()) tslCerts.clear();
@@ -80,7 +83,8 @@ public:
     void setVerifyServiceUri(std::string url) { serviceUrl = std::move(url); }
 
 private:
-    std::string cache, tslUrl, serviceUrl;
+    int _logLevel = 4;
+    std::string cache, tslUrl, serviceUrl, _logFile;
     std::vector<X509Cert> tslCerts;
     std::set<std::string> TMProfiles;
     std::map<std::string,std::string> OCSPUrls;

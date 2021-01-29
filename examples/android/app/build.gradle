@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     defaultConfig {
         applicationId "ee.ria.libdigidocpp"
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
         if (System.getenv("BUILD_NUMBER")) {
@@ -27,7 +27,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.android.support:support-compat:28.0.0'
+    implementation 'androidx.core:core:1.0.0'
 }
 
 task schemaZip(type:Zip) {
@@ -62,5 +62,9 @@ task copyLibs {
             include 'lib/libdigidoc_java.so', 'x86_64-linux-android/lib64/libc++_shared.so'
         }.files
         into 'src/main/jniLibs/x86_64'
+    }
+    copy {
+        from fileTree('/Library/libdigidocpp.androidarm/include/ee/ria/libdigidocpp').files
+        into 'src/main/java/ee/ria/libdigidocpp/'
     }
 }
