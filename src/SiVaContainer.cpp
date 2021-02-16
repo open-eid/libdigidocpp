@@ -42,6 +42,7 @@
 
 #define XSD_CXX11
 #include <xsd/cxx/xml/string.hxx>
+#include <xsd/cxx/xml/dom/serialization-source.hxx>
 
 #include <algorithm>
 #include <fstream>
@@ -305,6 +306,8 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
             if(!item)
                 continue;
 
+            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"HASHCODE") == 0)
+                THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
             if(XMLString::compareString(item->getAttribute(u"ContentType"), u"EMBEDDED_BASE64") != 0)
                 continue;
 
@@ -337,11 +340,12 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
         DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(u"LS");
         unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
         unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
-        MemBufFormatTarget out;
+        unique_ptr<stringstream> result(new stringstream);
+        xsd::cxx::xml::dom::ostream_format_target out(*result);
         pDomLsOutput->setByteStream(&out);
         pSerializer->setNewLine(u"\n");
         pSerializer->write(dom.get(), pDomLsOutput.get());
-        return new stringstream(string((const char*)out.getRawBuffer(), out.getLen()));
+        return result.release();
     }
     catch(const XMLException& e)
     {
