@@ -20,10 +20,10 @@ int main()
     try
     {
         digidoc::initialize();
-        std::unique_ptr<Container> doc(Container::create("/tmp/test.asice"));
-        std::stringstream *s = new std::stringstream;
+        std::unique_ptr<Container> doc(Container::createPtr("/tmp/test.asice"));
+        std::unique_ptr<std::stringstream> s(new std::stringstream);
         *s << "test";
-        doc->addDataFile(s, "test.txt", "text/plain");
+        doc->addDataFile(std::move(s), "test.txt", "text/plain");
         PKCS11Signer signer;
         signer.setPin("00000");
         signer.setProfile("BES");
