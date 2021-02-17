@@ -21,6 +21,7 @@
 
 #include "Conf.h"
 #include "log.h"
+#include "crypto/Connect.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/TSL.h"
 #include "util/DateTime.h"
@@ -122,12 +123,6 @@ X509CertStore* X509CertStore::instance()
     return &INSTANCE;
 }
 
-
-/**
- * Return STACK_OF(X509) containing all certs loaded from directory
- * @return STACK_OF(X509) all certs in store.
- * throws IOException
- */
 vector<X509Cert> X509CertStore::certs(const set<string> &type) const
 {
     vector<X509Cert> certs;
@@ -139,39 +134,39 @@ vector<X509Cert> X509CertStore::certs(const set<string> &type) const
     return certs;
 }
 
-/**
- * Searches certificate by subject and returns a copy of it if found.
- * If not found returns <code>NULL</code>.
- * NB! The returned certificate must be freed with OpenSSL function X509_free(X509* cert).
- *
- * @param subject certificate subject.
- * @return returns copy of found certificate or <code>NULL</code> if certificate was not found.
- * @throws IOException exception is thrown if copying certificate failed.
- */
 X509Cert X509CertStore::findIssuer(const X509Cert &cert, const set<string> &type) const
 {
     activate(cert.issuerName("C"));
-    SCOPE(AUTHORITY_KEYID, akid, X509_get_ext_d2i(cert.handle(), NID_authority_key_identifier, nullptr, nullptr));
     for(const TSL::Service &s: *d)
     {
         if(type.find(s.type) == type.cend())
             continue;
         for(const X509Cert &i: s.certs)
         {
-            if(!akid || !akid->keyid)
-            {
-                if(X509_NAME_cmp(X509_get_subject_name(i.handle()), X509_get_issuer_name(cert.handle())))
-                    return i;
-            }
-            else
-            {
-                SCOPE(ASN1_OCTET_STRING, skid, X509_get_ext_d2i(i.handle(), NID_subject_key_identifier, nullptr, nullptr));
-                if(skid && ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) == 0)
-                    return i;
-            }
+            if(X509_check_issued(i.handle(), cert.handle()) == X509_V_OK)
+                return i;
         }
     }
     return X509Cert();
+}
+
+X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert) const
+{
+    SCOPE(AUTHORITY_INFO_ACCESS, aia, X509_get_ext_d2i(cert.handle(), NID_info_access, nullptr, nullptr));
+    if(!aia)
+        return X509Cert();
+    string url;
+    for(int i = 0; i < sk_ACCESS_DESCRIPTION_num(aia.get()); ++i)
+    {
+        ACCESS_DESCRIPTION *ad = sk_ACCESS_DESCRIPTION_value(aia.get(), i);
+        if(ad->location->type == GEN_URI &&
+            OBJ_obj2nid(ad->method) == NID_ad_ca_issuers)
+            url.assign((const char*)ad->location->d.uniformResourceIdentifier->data, ad->location->d.uniformResourceIdentifier->length);
+    }
+    if(url.empty())
+        return X509Cert();
+    Connect::Result result = Connect(url, "GET", 0, {}).exec();
+    return X509Cert((const unsigned char*)result.content.c_str(), result.content.size());
 }
 
 X509_STORE* X509CertStore::createStore(const set<string> &type, const time_t *t)
@@ -205,25 +200,15 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
     case X509_V_ERR_CERT_UNTRUSTED:
     {
         X509 *x509 = X509_STORE_CTX_get0_cert(ctx);
-        SCOPE(AUTHORITY_KEYID, akid, X509_get_ext_d2i(x509, NID_authority_key_identifier, nullptr, nullptr));
         for(const TSL::Service &s: *instance()->d)
         {
             if(type.find(s.type) == type.cend())
                 continue;
-            if(!any_of(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
+            if(none_of(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
                 if(issuer == x509)
                     return true;
-                if(!akid || !akid->keyid)
-                {
-                    if(X509_NAME_cmp(X509_get_subject_name(issuer.handle()), X509_get_issuer_name(x509)) != 0)
-                        return false;
-                }
-                else
-                {
-                    SCOPE(ASN1_OCTET_STRING, skid, X509_get_ext_d2i(issuer.handle(), NID_subject_key_identifier, nullptr, nullptr));
-                    if(!skid || ASN1_OCTET_STRING_cmp(akid->keyid, skid.get()) != 0)
-                        return false;
-                }
+                if(X509_check_issued(issuer.handle(), x509) != X509_V_OK)
+                    return false;
                 SCOPE(EVP_PKEY, pub, X509_get_pubkey(issuer.handle()));
                 if(X509_verify(x509, pub.get()) == 1)
                     return true;
