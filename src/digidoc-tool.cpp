@@ -513,6 +513,7 @@ static int validateSignature(const Signature *s, ToolConfig::Warning warning = T
         else
             cout << ToolConfig::YELLOW << "OK (NonQSCD)";
         break;
+    case Signature::Validator::Test:
     case Signature::Validator::Unknown:
         cout << ToolConfig::RED << "FAILED (Unknown)";
         returnCode = EXIT_FAILURE;
