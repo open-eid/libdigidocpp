@@ -16,7 +16,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
 -      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win32/VC15/Debug/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 -      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_XKMS_ENABLED;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;XSEC_HAVE_WINCAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 +      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win32/VC15/Debug/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-+      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;DLL_EXPORT;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
        <MinimalRebuild>false</MinimalRebuild>
        <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
        <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -58,7 +58,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
 -      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win64/VC15/Debug/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 -      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_XKMS_ENABLED;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;XSEC_HAVE_WINCAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 +      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win64/VC15/Debug/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-+      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;DLL_EXPORT;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
        <MinimalRebuild>false</MinimalRebuild>
        <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
        <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -100,7 +100,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
 -      <PrecompiledHeaderFile>
 -      </PrecompiledHeaderFile>
 +      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win32/VC15/Release/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-+      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;DLL_EXPORT;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
        <WarningLevel>Level3</WarningLevel>
        <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
        <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -140,7 +140,7 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
 -      <PrecompiledHeaderFile>
 -      </PrecompiledHeaderFile>
 +      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win64/VC15/Release/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-+      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;DLL_EXPORT;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
        <WarningLevel>Level3</WarningLevel>
        <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
        <WholeProgramOptimization>true</WholeProgramOptimization>

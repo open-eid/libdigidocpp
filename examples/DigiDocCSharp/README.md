@@ -5,7 +5,7 @@ Uses [http://swig.org/](http://swig.org/) tools for generating bindings.
 
 For compiling and running the DigiDocCSharp sample C# project, do as follows:
 
-1. Install the "libdigidocpp-3.13.8.msi" package, version 3.10.3-beta or higher. The installation packages are available from https://github.com/open-eid/libdigidocpp/releases
+1. Install the "libdigidocpp-3.14.4.msi" package or higher. The installation packages are available from https://github.com/open-eid/libdigidocpp/releases
 2. Open the C# sample project from source\examples\DigiDocCSharp folder located in the installation directory
 3. Add the C# source files files from include\digidocpp_csharp folder to the digidoc folder of the opened project (in Solution Explorer view, right click on the digidoc folder, choose Add->Existing item)
 4. Build the solution, DigiDocCSharp.exe executable is created
