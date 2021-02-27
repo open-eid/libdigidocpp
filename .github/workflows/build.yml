@@ -108,7 +108,7 @@ jobs:
       VCVARSALL: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
       CACHE: "${{ github.workspace }}/cache"
       VER_SUFFIX: ".VS142"
-      VERSION: "3.14.5.${{ github.run_number }}"
+      VERSION: "3.14.6.${{ github.run_number }}"
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -121,7 +121,7 @@ jobs:
       id: cache
       with:
         path: cache
-        key: ${{ matrix.target }}-${{ hashFiles('prepare_osx_build_environment.sh') }}
+        key: ${{ matrix.target }}-${{ hashFiles('prepare_win_build_environment.ps1') }}
     - name: Build zlib
       if: steps.cache.outputs.cache-hit != 'true'
       run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -zlib
@@ -170,10 +170,10 @@ jobs:
   pages:
     name: Deploy pages
     if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'master')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
       with:
         submodules: recursive
     - name: Install dependencies
@@ -193,7 +193,7 @@ jobs:
   coverity:
     name: Run Coverity tests
     if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'coverity_scan')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       MAKEFLAGS: -j3
       TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
@@ -237,7 +237,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt-get update -qq && sudo apt-get install -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl wget ruby
+      run: sudo apt-get update -qq && sudo apt-get install -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:

@@ -1,3 +1,11 @@
+Libdigidocpp library [3.14.5](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.5) release notes
+--------------------------------------
+- Use nlohmann json library (#380)
+- Add canonicalization algorithm to time-stamp (#369)
+- Add PSS signature support (#366)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.4...v3.14.5)
+
 Libdigidocpp library [3.14.4](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.4) release notes
 --------------------------------------
 - Use unique_ptr on Container::create/open (#355)

@@ -1,7 +1,7 @@
 param(
   [string]$target = "\build",
   [string]$buildver = "0",
-  [string]$msiversion = "3.14.5.$buildver",
+  [string]$msiversion = "3.14.6.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
   [string]$cmake = "cmake.exe",
   [string]$nmake = "nmake.exe",
@@ -13,7 +13,6 @@ param(
   [string]$light = "$env:WIX\bin\light.exe",
   [string]$swig = $null,
   [string]$doxygen = $null,
-  [string]$libdigidoc = $null,
   [string]$boost = $null,
   [string]$sign = $null,
   [string]$crosssign = $null,
@@ -40,11 +39,6 @@ if($doxygen) {
   $cmakeext += "-DDOXYGEN_EXECUTABLE=$doxygen"
   $candleext += "-ddocLocation=x86/share/doc/libdigidocpp", "DocFilesFragment.wxs"
   $lightext += "DocFilesFragment.wixobj"
-}
-if($libdigidoc) {
-  & $heat dir $libdigidoc/x86/share/libdigidoc -nologo -cg Certs -gg -scom -sreg -sfrag -srd -dr CertsFolder -var var.certsLocation -out CertsFragment.wxs
-  $candleext += "-dcertsLocation=$libdigidoc/x86/share/libdigidoc", "-dlibdigidoc=$libdigidoc", "CertsFragment.wxs"
-  $lightext += "CertsFragment.wixobj"
 }
 if($boost) {
   $cmakeext += "-DBoost_INCLUDE_DIR=$boost"
@@ -103,10 +97,6 @@ foreach($platform in @("x86", "x64")) {
       $openssl = '/OpenSSL-Win64'
       $openssl_dll = '-x64'
     }}
-    if($libdigidoc) {
-      $cmakeext += "-DLIBDIGIDOC_LIBRARY=$libdigidoc/$platform/bin/digidoc.lib"
-      $cmakeext += "-DLIBDIGIDOC_INCLUDE_DIR=$libdigidoc/$platform/include"
-    }
     Remove-Item $buildpath -Force -Recurse -ErrorAction Ignore
     New-Item -ItemType directory -Path $buildpath > $null
     Push-Location -Path $buildpath
@@ -119,10 +109,6 @@ foreach($platform in @("x86", "x64")) {
       Copy-Item "$target/zlib/$platform/bin/zlib1.dll" test
       Copy-Item "$openssl/bin/libssl-1_1$openssl_dll.dll" test
       Copy-Item "$openssl/bin/libcrypto-1_1$openssl_dll.dll" test
-      if($libdigidoc) {
-        Copy-Item "$libdigidoc/$platform/bin/digidoc.dll" test
-        Copy-Item "$target/libxml2/$platform/bin/libxml2.dll" test
-      }
     }
     & $vcvars $platform "&&" $cmake "-G$generator" "-DCMAKE_BUILD_TYPE=$type" "-DCMAKE_INSTALL_PREFIX=../$platform" "-DCMAKE_INSTALL_LIBDIR=bin" `
       "-DOPENSSL_ROOT_DIR=$openssl" `

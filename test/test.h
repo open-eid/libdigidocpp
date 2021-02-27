@@ -92,7 +92,6 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4996)
 class TestConfig: public ConfCurrent
 {
 public:
-	string libdigidocConf() const override { return path + "/digidoc.conf"; }
 	int logLevel() const override { return 4; }
 	string logFile() const override { return path + "/libdigidocpp.log"; }
 	string xsdPath() const override { return DIGIDOCPPCONF; }
