@@ -47,11 +47,6 @@ class ASiCE: public Container
 public:
     static const string TYPE, EXT;
 };
-class DDoc: public Container
-{
-public:
-    static const string TYPE, EXT;
-};
 class ASiCS: public Container
 {
 public:
@@ -61,8 +56,6 @@ const string ASiCE::TYPE = "application/vnd.etsi.asic-e+zip";
 const string ASiCE::EXT = "asice";
 const string ASiCS::TYPE = "application/vnd.etsi.asic-s+zip";
 const string ASiCS::EXT = "asics";
-const string DDoc::TYPE = "DIGIDOC-XML/1.3";
-const string DDoc::EXT = "ddoc";
 }
 
 
@@ -166,11 +159,7 @@ BOOST_AUTO_TEST_CASE(parameters)
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(DocSuite)
-#ifdef LINKED_LIBDIGIDOC
-using DocTypes = boost::mpl::list<ASiCE,DDoc>;
-#else
 using DocTypes = boost::mpl::list<ASiCE>;
-#endif
 BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
 {
     unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
@@ -198,8 +187,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     if(!d->dataFiles().empty())
     {
         const DataFile *doc1 = d->dataFiles().front();
-        if(d->mediaType() == DDoc::TYPE)
-            BOOST_CHECK_EQUAL(doc1->id(), "D0");
         BOOST_CHECK_EQUAL(doc1->fileName(), "test1.txt");
         BOOST_CHECK_EQUAL(doc1->mediaType(), "text/plain");
     }
@@ -210,8 +197,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     if(!d->dataFiles().empty())
     {
         const DataFile *doc2 = d->dataFiles().back();
-        if(d->mediaType() == DDoc::TYPE)
-            BOOST_CHECK_EQUAL(doc2->id(), "D1");
         BOOST_CHECK_EQUAL(doc2->fileName(), "test2.bin");
         BOOST_CHECK_EQUAL(doc2->mediaType(), "text/plain");
     }
@@ -222,8 +207,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     if(!d->dataFiles().empty())
     {
         const DataFile *doc3 = d->dataFiles().front();
-        if(d->mediaType() == DDoc::TYPE)
-            BOOST_CHECK_EQUAL(doc3->id(), "D1");
         BOOST_CHECK_EQUAL(doc3->fileName(), "test2.bin");
         BOOST_CHECK_EQUAL(doc3->mediaType(), "text/plain");
     }
@@ -231,9 +214,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
     // Remove second Document
     BOOST_CHECK_NO_THROW(d->removeDataFile(0U));
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 0U);
-
-    if(d->mediaType() == DDoc::TYPE)
-        return;
 
     d = Container::openPtr("test." + Doc::EXT);
     const DataFile *data = d->dataFiles().front();
@@ -276,8 +256,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     unique_ptr<Signer> signer1(new PKCS12Signer("signer1.p12", "signer1"));
     signer1->setProfile("time-mark");
     BOOST_CHECK_THROW(d->sign(signer1.get()), Exception);
-    if(Doc::EXT == DDoc::EXT)
-        return;
 
     // Add first Signature
     BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
@@ -400,8 +378,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
         unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
         const Signature *s1 = nullptr;
         BOOST_CHECK_NO_THROW(d->addDataFile(data + ".txt", "text/plain"));
-        if(Doc::EXT == DDoc::EXT)
-            return;
         BOOST_CHECK_NO_THROW(s1 = d->sign(signer1.get()));
         if(s1)
             s1->validate();
@@ -427,18 +403,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
     const Signature *s1 = nullptr;
     BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
     BOOST_CHECK_NO_THROW(d->addDataFile("test2.bin", "text/plain"));
-    if(Doc::EXT == DDoc::EXT)
-        return;
     BOOST_CHECK_NO_THROW(s1 = d->sign(signer1.get()));
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     if(s1)
     {
-        if(d->mediaType() != DDoc::TYPE)
-            BOOST_CHECK_NO_THROW(s1->validate());
+        BOOST_CHECK_NO_THROW(s1->validate());
         BOOST_CHECK_EQUAL(s1->id(), "S0");
         BOOST_CHECK_EQUAL(s1->signingCertificate(), signer1->cert());
-        if(d->mediaType() != DDoc::TYPE)
-            BOOST_CHECK_EQUAL(s1->signerRoles(), roles);
+        BOOST_CHECK_EQUAL(s1->signerRoles(), roles);
         BOOST_CHECK_EQUAL(s1->city(), "Tartu");
         BOOST_CHECK_EQUAL(s1->stateOrProvince(), "Tartumaa");
         BOOST_CHECK_EQUAL(s1->postalCode(), "12345");
