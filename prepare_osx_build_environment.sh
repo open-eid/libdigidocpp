@@ -59,7 +59,7 @@ case "$@" in
     cd ${ANDROID_NDK}
     sudo ./build/tools/make_standalone_toolchain.py \
       --arch=${ARCH} --api=21 --stl=libc++ --install-dir=${TARGET_PATH}
-    cd ..
+    cd -
 
     #iconv for xerces
     sudo cp patches/android-iconv/iconv.h ${SYSROOT}/usr/include/
@@ -94,10 +94,10 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp
   CONFIGURE="--disable-static --enable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
-  : ${ARCHS:="x86_64"}
+  : ${ARCHS:="x86_64 arm64"}
   : ${MACOSX_DEPLOYMENT_TARGET:="10.13"}
   export MACOSX_DEPLOYMENT_TARGET
-  export CFLAGS=""
+  export CFLAGS="-arch ${ARCHS// / -arch } "
   export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
 esac
@@ -119,7 +119,7 @@ function xerces {
     ./configure --prefix=${TARGET_PATH} ${XERCESCONFIGURE}
     make -s
     sudo make install
-    cd ..
+    cd -
 }
 
 function xalan {
@@ -160,6 +160,7 @@ function xalan {
     *)
       cmake \
         -DCMAKE_MACOSX_RPATH=NO \
+        -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
         -DXercesC_ROOT=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE="Release" \
@@ -170,7 +171,7 @@ function xalan {
         -change libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.*.dylib
       ;;
     esac
-    cd ../..
+    cd -
 }
 
 function xml_security {
@@ -191,7 +192,7 @@ function xml_security {
     sed -ie 's!PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)!PROGRAMS = !; s!bin_PROGRAMS = $(am__EXEEXT_2)!bin_PROGRAMS = !' xsec/Makefile
     make -s
     sudo make install
-    cd ..
+    cd -
 }
 
 function libxml2 {
@@ -215,7 +216,7 @@ function libxml2 {
     sed -ie 's!testrecurse$(EXEEXT)!!' Makefile
     make -s
     sudo make install
-    cd ..
+    cd -
 }
 
 function xsd {
@@ -248,42 +249,42 @@ function openssl {
         make -s
         sudo make install_sw
         ;;
-    *ios*|*simulator*)
-        first="run"
+    *)
         for ARCH in ${ARCHS}
         do
             case "${ARCH}" in
             *x86_64*)
-                CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine
+                case "${ARGS}" in
+                *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine ;;
+                *) CC="" CFLAGS="" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
+                esac
                 ;;
             *arm64*)
-                CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine
+                case "${ARGS}" in
+                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine ;;
+                *) CC="" CFLAGS="" MACHINE=arm64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
+                esac
                 ;;
-            *)
-                CC="" CFLAGS="" ./Configure ios-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine
-                ;;
+            *) CC="" CFLAGS="" ./Configure ios-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine
             esac
             make -s > /dev/null
-            if [ "${first}" == "run" ]; then
+            if [[ ${ARCHS} == ${ARCH}* ]]; then
                 sudo make install_sw > /dev/null
-                first=""
             else
                 make install_sw DESTDIR=${PWD}/${ARCH} > /dev/null
-                lipo -create ${ARCH}/${TARGET_PATH}/lib/libcrypto.a ${TARGET_PATH}/lib/libcrypto.a -output libcrypto.a
-                lipo -create ${ARCH}/${TARGET_PATH}/lib/libssl.a ${TARGET_PATH}/lib/libssl.a -output libssl.a
-                sudo mv libcrypto.a libssl.a ${TARGET_PATH}/lib/
+                mkdir -p universal/${TARGET_PATH}/lib
+                cd ${ARCH}
+                for i in $(find ./${TARGET_PATH}/lib -type f -depth 1); do
+                    lipo -create /$i $i -output ../universal/$i
+                done
+                cd -
+                sudo mv universal/${TARGET_PATH}/lib/* ${TARGET_PATH}/lib/
             fi
             make distclean
         done
         ;;
-    *)
-        KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
-        make -s
-        sudo make install_sw
-        ;;
     esac
-
-    cd ..
+    cd -
 }
 
 function freetype {
@@ -297,7 +298,7 @@ function freetype {
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-png=no --with-bzip2=no
     make -s
     sudo make install
-    cd ..
+    cd -
 }
 
 function fontconfig {
@@ -322,7 +323,7 @@ function fontconfig {
     esac
     make -s
     sudo make install
-    cd ..
+    cd -
 }
 
 function podofo {
@@ -394,7 +395,7 @@ function podofo {
         echo lipo
         sudo lipo -create ${PODOFO} -output ${TARGET_PATH}/lib/libpodofo.a
     fi
-    cd ..
+    cd -
 }
 
 case "$@" in
