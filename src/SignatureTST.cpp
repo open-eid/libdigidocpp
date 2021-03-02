@@ -94,10 +94,19 @@ void SignatureTST::validate() const
     {
         try
         {
-            Digest digest(timestampToken->digestMethod());
+            const string digestMethod = timestampToken->digestMethod();
+            Digest digest(digestMethod);
             auto dataFile = static_cast<const DataFilePrivate*>(asicSDoc->dataFiles().front());
             dataFile->calcDigest(&digest);
             timestampToken->verify(digest);
+
+            if(digestMethod == URI_SHA1 &&
+                !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
+            {
+                Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", digestMethod.c_str()));
+                e.setCode(Exception::ReferenceDigestWeak);
+                exception.addCause(e);
+            }
         }
         catch (const Exception& e)
         {
@@ -114,7 +123,7 @@ std::vector<unsigned char> SignatureTST::dataToSign() const
     THROW("Not implemented.");
 }
 
-void SignatureTST::setSignatureValue(const std::vector<unsigned char> &)
+void SignatureTST::setSignatureValue(const std::vector<unsigned char> & /*signatureValue*/)
 {
     THROW("Not implemented.");
 }

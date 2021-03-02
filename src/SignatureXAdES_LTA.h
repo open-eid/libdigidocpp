@@ -25,16 +25,15 @@ namespace digidoc
 {
 
 class TS;
-class SignatureXAdES_LTA: public SignatureXAdES_LT
+class SignatureXAdES_LTA final: public SignatureXAdES_LT
 {
 public:
-    SignatureXAdES_LTA(unsigned int id, ASiContainer *bdoc, Signer *signer);
-    SignatureXAdES_LTA(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
+    using SignatureXAdES_LT::SignatureXAdES_LT;
 
-    X509Cert ArchiveTimeStampCertificate() const override;
-    std::string ArchiveTimeStampTime() const override;
-    void validate(const std::string &policy) const override;
-    void extendSignatureProfile(const std::string &profile) override;
+    X509Cert ArchiveTimeStampCertificate() const final;
+    std::string ArchiveTimeStampTime() const final;
+    void validate(const std::string &policy) const final;
+    void extendSignatureProfile(const std::string &profile) final;
 
 private:
     DISABLE_COPY(SignatureXAdES_LTA);

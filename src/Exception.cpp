@@ -85,6 +85,8 @@ std::vector<Exception::ExceptionCode> Exception::ignores {};
  * DDoc warning: &lt;X509IssuerName&gt; and/or &lt;X509IssuerSerial&gt; XML element is missing xmlns attribute
  * @var digidoc::Exception::ProducedATLateWarning
  * TimeStamp and OCSP time difference is more than 15 minutes
+ * @var digidoc::Exception::MimeTypeWarning
+ * Mime type is not conformant mime-type strings
  *
  * @var digidoc::Exception::DDocError
  * DDoc libdigidoc error codes bit masked

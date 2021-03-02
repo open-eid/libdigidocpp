@@ -55,10 +55,6 @@ using namespace xercesc;
 using namespace xml_schema;
 using namespace std;
 
-SignatureXAdES_LTA::SignatureXAdES_LTA(unsigned int id, ASiContainer *bdoc, Signer *signer): SignatureXAdES_LT(id, bdoc, signer) {}
-
-SignatureXAdES_LTA::SignatureXAdES_LTA(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation): SignatureXAdES_LT(sigdata, bdoc, relaxSchemaValidation) {}
-
 void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
 {
     try {
@@ -120,8 +116,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         THROW("Failed to calculate digest");
     }
 
-    vector<string> list = {"SignedInfo", "SignatureValue", "KeyInfo"};
-    for(const string &name: list)
+    for(const string &name: {"SignedInfo", "SignatureValue", "KeyInfo"})
     {
         try {
             calcDigestOnNode(digest, URI_ID_DSIG, name);
@@ -130,18 +125,17 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         }
     }
 
-    list = {
-        "SignatureTimeStamp",
-        "CounterSignature",
-        "CompleteCertificateRefs",
-        "CompleteRevocationRefs",
-        "AttributeCertificateRefs",
-        "AttributeRevocationRefs",
-        "CertificateValues",
-        "RevocationValues",
-        "SigAndRefsTimeStamp",
-        "RefsOnlyTimeStamp" };
-    for(const string &name: list)
+    for(const string &name: {
+             "SignatureTimeStamp",
+             "CounterSignature",
+             "CompleteCertificateRefs",
+             "CompleteRevocationRefs",
+             "AttributeCertificateRefs",
+             "AttributeRevocationRefs",
+             "CertificateValues",
+             "RevocationValues",
+             "SigAndRefsTimeStamp",
+             "RefsOnlyTimeStamp" })
     {
         try {
             calcDigestOnNode(digest, XADES_NAMESPACE, name);
@@ -234,6 +228,14 @@ void SignatureXAdES_LTA::validate(const string &policy) const
         Digest calc(tsa.digestMethod());
         calcArchiveDigest(&calc);
         tsa.verify(calc);
+
+        if(tsa.digestMethod() == URI_SHA1 &&
+            !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
+        {
+            Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", tsa.digestMethod().c_str()));
+            e.setCode(Exception::ReferenceDigestWeak);
+            exception.addCause(e);
+        }
     } catch(const Exception &e) {
         exception.addCause(e);
     }
