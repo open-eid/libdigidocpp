@@ -11,11 +11,14 @@
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/727/badge.svg)](https://scan.coverity.com/projects/727)
 [![LGTM alerts](https://img.shields.io/lgtm/alerts/g/open-eid/libdigidocpp.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/open-eid/libdigidocpp/alerts/)
 
-### Ubuntu
+### Ubuntu, Fedora
 
 1. Install dependencies
 
+        # Ubuntu
         sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev zlib1g-dev
+        # Fedora
+        sudo dnf install cmake openssl-devel xerces-c-devel xml-security-c-devel zlib-devel podofo-devel vim-common https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
 
 	* doxygen - Optional, for API documentation
 	* libboost-test-dev - Optional, for unittests
