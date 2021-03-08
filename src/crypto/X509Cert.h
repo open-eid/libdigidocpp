@@ -99,6 +99,7 @@ namespace digidoc
           X509Cert& operator=(const X509Cert &other);
           X509Cert& operator=(X509Cert &&other);
           bool operator !() const;
+          bool operator ==(X509 *other) const;
           bool operator ==(const X509Cert &other) const;
           bool operator !=(const X509Cert &other) const;
 

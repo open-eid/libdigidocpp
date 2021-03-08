@@ -60,7 +60,7 @@ public:
     };
 
     Connect(const std::string &url, const std::string &method = "POST",
-        int timeout = 0, const std::string &useragent = std::string(), const X509Cert &cert = X509Cert());
+        int timeout = 0, const std::string &useragent = std::string(), const std::vector<X509Cert> &certs = {});
     ~Connect();
     void addHeader(const std::string &key, const std::string &value);
     void addHeaders(std::initializer_list<std::pair<std::string,std::string>> headers);

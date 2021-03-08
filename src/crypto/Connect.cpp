@@ -29,6 +29,7 @@
 
 #include <zlib.h>
 
+#include <algorithm>
 #include <cstring>
 #include <thread>
 
@@ -37,14 +38,14 @@ using namespace std;
 
 #define THROW_NETWORKEXCEPTION(...) { Exception ex(EXCEPTION_PARAMS(__VA_ARGS__), OpenSSLException()); ex.setCode(Exception::NetworkError); throw ex; }
 
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
 {
     return ctx->cert;
 }
 #endif
 
-Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent, const X509Cert &cert)
+Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent, const std::vector<X509Cert> &certs)
     : _timeout(timeout)
 {
     DEBUG("Connecting to URL: %s", _url.c_str());
@@ -107,13 +108,16 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
             THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str());
         SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
         SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
-        if(cert.handle())
+        if(!certs.empty())
         {
             SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
-            SSL_CTX_set_cert_verify_callback(ssl.get(), [](X509_STORE_CTX *store, void *cert) -> int {
+            SSL_CTX_set_cert_verify_callback(ssl.get(), [](X509_STORE_CTX *store, void *data) -> int {
                 X509 *x509 = X509_STORE_CTX_get0_cert(store);
-                return x509 && X509_cmp(x509, (X509*)cert) == 0 ? 1 : 0;
-            }, cert.handle());
+                vector<X509Cert> *certs = (vector<X509Cert>*)data;
+                return any_of(certs->cbegin(), certs->cend(), [x509](const X509Cert &cert) {
+                    return cert == x509;
+                }) ? 1 : 0;
+            }, const_cast<vector<X509Cert>*>(&certs));
         }
         BIO *sbio = BIO_new_ssl(ssl.get(), 1);
         if(!sbio)
