@@ -142,7 +142,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     string url = CONF(verifyServiceUri);
     string req = json({
         {"filename", File::fileName(path)},
-        {"document", b64},
+        {"document", move(b64)},
         {"signaturePolicy", "POLv4"}
     }).dump();
     Connect::Result r = Connect(url, "POST", 0, {}, CONF(verifyServiceCert)).exec({
@@ -309,7 +309,7 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
 
             if(XMLString::compareString(item->getAttribute(cpXMLCh(u"ContentType")), cpXMLCh(u"HASHCODE")) == 0)
                 THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
-            if(XMLString::compareString(item->getAttribute(cpXMLCh(u"ContentType")), cpXMLCh("EMBEDDED_BASE64")) != 0)
+            if(XMLString::compareString(item->getAttribute(cpXMLCh(u"ContentType")), cpXMLCh(u"EMBEDDED_BASE64")) != 0)
                 continue;
 
             if(const XMLCh *b64 = item->getTextContent())
