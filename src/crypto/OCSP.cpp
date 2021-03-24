@@ -328,14 +328,19 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     if(result <= 0)
         THROW_OPENSSLEXCEPTION("Failed to verify OCSP response.");
 
-    SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(nullptr, cert.handle(), issuer.handle()));
-    int status = -1;
-    if(OCSP_resp_find_status(basic.get(), certId.get(), &status, nullptr, nullptr, nullptr, nullptr) <= 0)
+    int status = V_OCSP_CERTSTATUS_UNKNOWN;
+    for(int i = 0, count = OCSP_resp_count(basic.get()); i < count; ++i)
     {
-        Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
-        e.setCode(Exception::CertificateUnknown);
-        throw e;
+        const EVP_MD *evp_md = nullptr;
+        const OCSP_CERTID *certID = OCSP_SINGLERESP_get0_id(OCSP_resp_get0(basic.get(), i));
+        ASN1_OBJECT *md = nullptr;
+        if(OCSP_id_get0_info(nullptr, &md, nullptr, nullptr, const_cast<OCSP_CERTID*>(certID)) == 1)
+            evp_md = EVP_get_digestbyobj(md);
+        SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(evp_md, cert.handle(), issuer.handle()));
+        if(OCSP_resp_find_status(basic.get(), certId.get(), &status, nullptr, nullptr, nullptr, nullptr) == 1)
+            break;
     }
+
     switch(status)
     {
     case V_OCSP_CERTSTATUS_GOOD: break;
