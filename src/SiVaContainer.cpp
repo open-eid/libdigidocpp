@@ -113,7 +113,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     {
         d->mediaType = "application/x-ddoc";
         d->data = move(ifs);
-        ifs.reset(parseDDoc(*d->data.get(), useHashCode));
+        ifs.reset(parseDDoc(*d->data, useHashCode));
         is = ifs.get();
     }
     else
@@ -179,6 +179,8 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
         if(!info.is_null())
         {
             s->_bestTime = info.value<string>("bestSignatureTime", {});
+            s->_tsTime = info.value<string>("timestampCreationTime", {});
+            s->_ocspTime = info.value<string>("ocspResponseCreationTime", {});
             if(info.contains("timeAssertionMessageImprint"))
             {
                 string base64 = info["timeAssertionMessageImprint"];

@@ -28,46 +28,49 @@ namespace digidoc
 class SiVaContainer;
 class Exception;
 
-class SignatureSiVa: public Signature
+class SignatureSiVa final: public Signature
 {
 public:
-    std::string id() const override { return _id; }
-    std::string claimedSigningTime() const override { return _signingTime; }
-    std::string trustedSigningTime() const override { return _bestTime.empty() ? _signingTime : _bestTime; }
-    X509Cert signingCertificate() const override { return _signingCertificate; }
-    std::string signedBy() const override { return _signedBy; }
-    std::string signatureMethod() const override { return _signatureMethod; }
-    void validate() const override;
-    void validate(const std::string &policy) const override;
-    std::vector<unsigned char> dataToSign() const override;
-    void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
+    std::string id() const final { return _id; }
+    std::string claimedSigningTime() const final { return _signingTime; }
+    std::string trustedSigningTime() const final { return _bestTime.empty() ? _signingTime : _bestTime; }
+    X509Cert signingCertificate() const final { return _signingCertificate; }
+    std::string signedBy() const final { return _signedBy; }
+    std::string signatureMethod() const final { return _signatureMethod; }
+    void validate() const final;
+    void validate(const std::string &policy) const final;
+    std::vector<unsigned char> dataToSign() const final;
+    void setSignatureValue(const std::vector<unsigned char> &signatureValue) final;
 
     // Xades properties
-    std::string profile() const override { return _profile; }
-    std::string city() const override { return _city; };
-    std::string stateOrProvince() const override { return _stateOrProvince; };
-    std::string postalCode() const override { return _postalCode; };
-    std::string countryName() const override { return _country; };
-    std::vector<std::string> signerRoles() const override { return _signerRoles; };
+    std::string profile() const final { return _profile; }
+    std::string city() const final { return _city; }
+    std::string stateOrProvince() const final { return _stateOrProvince; }
+    std::string postalCode() const final { return _postalCode; }
+    std::string countryName() const final { return _country; }
+    std::vector<std::string> signerRoles() const final { return _signerRoles; }
 
     //TM profile properties
-    X509Cert OCSPCertificate() const override { return _ocspCertificate; };
+    X509Cert OCSPCertificate() const final { return _ocspCertificate; }
+    std::string OCSPProducedAt() const final { return _ocspTime; }
 
     //TS profile properties
-    X509Cert TimeStampCertificate() const override { return _tsCertificate; };
+    X509Cert TimeStampCertificate() const final { return _tsCertificate; }
+    std::string TimeStampTime() const final { return _tsTime; }
 
     //TSA profile properties
-    X509Cert ArchiveTimeStampCertificate() const override { return _tsaCertificate; };
+    X509Cert ArchiveTimeStampCertificate() const final { return _tsaCertificate; }
 
     // Other
-    std::vector<unsigned char> messageImprint() const override { return  _messageImprint; };
+    std::vector<unsigned char> messageImprint() const final { return  _messageImprint; }
 
 private:
     SignatureSiVa() = default;
     DISABLE_COPY(SignatureSiVa);
 
     X509Cert _signingCertificate, _ocspCertificate, _tsCertificate, _tsaCertificate;
-    std::string _id, _profile, _signedBy, _signatureMethod, _signingTime, _bestTime, _indication, _subIndication, _signatureLevel;
+    std::string _id, _profile, _signedBy, _signatureMethod, _signingTime, _indication, _subIndication, _signatureLevel;
+    std::string _bestTime, _tsTime, _ocspTime;
     std::string _city, _stateOrProvince, _postalCode, _country;
     std::vector<std::string> _signerRoles;
     std::vector<unsigned char> _messageImprint;
@@ -76,24 +79,24 @@ private:
     friend SiVaContainer;
 };
 
-class SiVaContainer: public Container
+class SiVaContainer final: public Container
 {
 public:
-    ~SiVaContainer() override;
+    ~SiVaContainer() final;
 
-    void save(const std::string &path = {}) override;
-    std::string mediaType() const override;
+    void save(const std::string &path = {}) final;
+    std::string mediaType() const final;
 
-    void addDataFile(const std::string &path, const std::string &mediaType) override;
-    void addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType) override;
-    std::vector<DataFile*> dataFiles() const override;
-    void removeDataFile(unsigned int id) override;
+    void addDataFile(const std::string &path, const std::string &mediaType) final;
+    void addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType) final;
+    std::vector<DataFile*> dataFiles() const final;
+    void removeDataFile(unsigned int id) final;
 
-    void addAdESSignature(std::istream &sigdata) override;
-    Signature* prepareSignature(Signer *signer) override;
-    std::vector<Signature*> signatures() const override;
-    void removeSignature(unsigned int id) override;
-    Signature* sign(Signer* signer) override;
+    void addAdESSignature(std::istream &sigdata) final;
+    Signature* prepareSignature(Signer *signer) final;
+    std::vector<Signature*> signatures() const final;
+    void removeSignature(unsigned int id) final;
+    Signature* sign(Signer* signer) final;
 
     static std::unique_ptr<Container> createInternal(const std::string &path);
     static std::unique_ptr<Container> openInternal(const std::string &path);
