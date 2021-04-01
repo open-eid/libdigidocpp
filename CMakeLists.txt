@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(libdigidocpp VERSION 3.14.5)
+project(libdigidocpp VERSION 3.14.6)
 if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
 endif()
@@ -23,7 +23,6 @@ set_env( TSL_CERTS
     "${CMAKE_SOURCE_DIR}/etc/tl-mp5.crt"
     "${CMAKE_SOURCE_DIR}/etc/tl-mp6.crt"
     "${CMAKE_SOURCE_DIR}/etc/tl-mp7.crt"
-    "${CMAKE_SOURCE_DIR}/etc/tl-mp8.crt"
     CACHE FILEPATH "TSL trust list signing certificates" )
 set_env( TSA_URL "http://dd-at.ria.ee/tsa" CACHE STRING "Default TSA URL" )
 set_env( SIVA_URL "https://siva.eesti.ee/V3/validate" CACHE STRING "Default SiVa validation service URL" )
