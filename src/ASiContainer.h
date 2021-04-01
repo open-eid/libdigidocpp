@@ -57,26 +57,13 @@ namespace digidoc
           void addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType) override;
           std::vector<DataFile*> dataFiles() const override;
           void removeDataFile(unsigned int id) override;
-
-          template <class T>
-          Signature* newSignature(Signer *signer)
-          {
-              if(dataFiles().empty())
-                  THROW("No documents in container, can not sign container.");
-              if(!signer)
-                  THROW("Null pointer in ASiC_E::sign");
-                
-              T *signature = new T(newSignatureId(), this, signer);
-              addSignature(signature);
-              return signature;
-          }
-        
           void removeSignature(unsigned int id) override;
           std::vector<Signature*> signatures() const override;
 
       protected:
           ASiContainer(const std::string &mimetype);
 
+          void addDataFilePrivate(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType);
           void addSignature(Signature *signature);
           std::unique_ptr<std::iostream> dataStream(const std::string &path, const ZipSerialize &z) const;
           std::unique_ptr<ZipSerialize> load(const std::string &path, bool requireMimetype, const std::set<std::string> &supported);
@@ -92,9 +79,9 @@ namespace digidoc
       private:
           DISABLE_COPY(ASiContainer);
 
+          void addDataFileChecks(const std::string &path, const std::string &mediaType);
+
           class Private;
           Private *d;
     };
 }
-
-#define MAX_MEM_FILE 500*1024*1024
