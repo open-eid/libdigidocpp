@@ -1,3 +1,18 @@
+Libdigidocpp library [3.14.7](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.7) release notes
+--------------------------------------
+- Remove libdigidoc support (#393)
+- Build macOS arm64 (#392)
+- Improve compatibility where Xerces-C is configured uint16_t (#391)
+- Use same length digest as ECC key (#406)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.5...v3.14.7)
+
+Libdigidocpp library [3.14.6](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.6) release notes
+--------------------------------------
+- Update TSL signer certificates
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.5...v3.14.6)
+
 Libdigidocpp library [3.14.5](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.5) release notes
 --------------------------------------
 - Use nlohmann json library (#380)

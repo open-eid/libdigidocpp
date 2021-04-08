@@ -67,7 +67,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:20.10']
+        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:20.10', 'ubuntu:21.04']
     env:
       MAKEFLAGS: -j3
       DEBIAN_FRONTEND: noninteractive
@@ -81,12 +81,11 @@ jobs:
     - name: Add open-eid repo
       if: matrix.container == 'ubuntu:18.04'
       run: |
-        apt-get update -qq && apt-get install -y curl gnupg2 lsb-release
-        curl https://installer.id.ee/media/install-scripts/C6C83D68.pub | apt-key add -
-        codename=$(lsb_release -cs)
-        echo "deb https://installer.id.ee/media/ubuntu/ $codename main" | tee /etc/apt/sources.list.d/ria-repository.list
+        apt update -qq && apt install --no-install-recommends -y curl ca-certificates gnupg2 lsb-release
+        curl https://installer.id.ee/media/install-scripts/C6C83D68.pub | gpg --dearmor | tee /etc/apt/trusted.gpg.d/ria-repository.gpg > /dev/null
+        echo "deb https://installer.id.ee/media/ubuntu/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ria-repository.list
     - name: Install dependencies
-      run: apt-get update -qq && apt-get install -y dh-make devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev
+      run: apt update -qq && apt install --no-install-recommends -y lsb-release dh-make fakeroot build-essential devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev lintian
     - name: Setup changelog
       run: |
         export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}")
@@ -166,7 +165,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt-get update -qq && sudo apt-get install -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen
     - name: Build docs
       run: |
         mkdir build
@@ -193,10 +192,10 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt-get update -qq && sudo apt-get install -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl wget ruby
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
     - name: Download Coverity Build Tool
       run: |
-        wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=$PROJECTNAME" -O cov-analysis-linux64.tar.gz
+        curl --silent --data "token=$TOKEN&project=$PROJECTNAME" -o cov-analysis-linux64.tar.gz https://scan.coverity.com/download/cxx/linux64
         mkdir cov-analysis-linux64
         tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
     - name: Build
@@ -226,7 +225,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt-get update -qq && sudo apt-get install -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
