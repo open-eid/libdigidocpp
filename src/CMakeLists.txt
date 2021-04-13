@@ -167,14 +167,10 @@ target_include_directories(digidocpp_priv PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${XSD_INCLUDE_DIR}
-    ${XMLSECURITYC_INCLUDE_DIRS}
 )
 
 target_link_libraries(digidocpp_priv
-    ${XMLSECURITYC_LIBRARIES}
-    $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:${XALANMSG_LIBRARY}>
-    XercesC::XercesC
-    OpenSSL::SSL
+    XmlSecurityC::XmlSecurityC
     ZLIB::ZLIB
 )
 
@@ -325,12 +321,12 @@ if( FRAMEWORK )
         COMMAND cp $<TARGET_FILE:digidoc-tool> $<TARGET_FILE_DIR:digidocpp>/Resources )
     set_source_files_properties( ${SCHEMA_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/schema )
     set_source_files_properties( ${CRYPTO_HEADER} PROPERTIES MACOSX_PACKAGE_LOCATION Headers/crypto )
-    get_filename_component( LIBPATH ${XercesC_LIBRARIES} PATH )
+    list( GET XmlSecurityC_LIBRARIES 0 LIBPATH )
+    get_filename_component( LIBPATH ${LIBPATH} PATH )
     add_custom_target( embedlibs DEPENDS digidoc-tool
         COMMAND mkdir -p $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND ln -s -f Versions/Current/Libraries $<TARGET_BUNDLE_DIR:digidocpp>
-        COMMAND cp ${OPENSSL_LIBRARIES} ${XercesC_LIBRARIES} ${XMLSECURITYC_LIBRARIES} ${XALANMSG_LIBRARY}
-            $<TARGET_FILE_DIR:digidocpp>/Libraries
+        COMMAND cp ${XmlSecurityC_LIBRARIES} $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND chmod 644 $<TARGET_FILE_DIR:digidocpp>/Libraries/*
         COMMAND install_name_tool -id 'libcrypto.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libcrypto.dylib

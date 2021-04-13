@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<?define VCPATH = "$(env.VCTOOLSREDISTDIR)" ?>
 <?if $(env.VisualStudioVersion) = "16.0" ?>
 <?define VCVER = "142" ?>
-<?define VCPATH = "$(env.VCTOOLSREDISTDIR)" ?>
 <?elseif $(env.VisualStudioVersion) = "15.0" ?>
 <?define VCVER = "141" ?>
-<?define VCPATH = "$(env.VCTOOLSREDISTDIR)" ?>
 <?elseif $(env.VisualStudioVersion) = "14.0" ?>
 <?define VCVER = "140" ?>
 <?define VCPATH = "$(env.VCINSTALLDIR)\redist" ?>
 <?endif?>
+<?define VCPKG_X86 = "$(var.vcpkg)\installed\x86-windows-v$(var.VCVER)\bin" ?>
+<?define VCPKG_X64 = "$(var.vcpkg)\installed\x64-windows-v$(var.VCVER)\bin" ?>
+<?define VCPKG_X86D = "$(var.vcpkg)\installed\x86-windows-v$(var.VCVER)\debug\bin" ?>
+<?define VCPKG_X64D = "$(var.vcpkg)\installed\x64-windows-v$(var.VCVER)\debug\bin" ?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Name="Libdigidocpp" UpgradeCode="{93985BBA-6B59-443B-80C8-BA987407F8B8}"
@@ -32,13 +35,13 @@
               <Component Id="LibrariesX86" Guid="{57A72AF6-5458-4106-BFC8-A611DAF89A59}">
                 <File Source="$(var.VCPATH)\x86\Microsoft.VC$(var.VCVER).CRT\msvcp140.dll"/>
                 <File Source="$(var.VCPATH)\x86\Microsoft.VC$(var.VCVER).CRT\vcruntime140.dll"/>
-                <File Source="\OpenSSL-Win32\bin\libcrypto-1_1.dll"/>
-                <File Source="\OpenSSL-Win32\bin\libssl-1_1.dll"/>
-                <File Source="$(var.PREFIX)\zlib\x86\bin\zlib1.dll"/>
-                <File Source="$(var.PREFIX)\xerces\x86\bin\xerces-c_3_2.dll"/>
-                <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Release\Xalan-C_1_11.dll"/>
-                <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Release\XalanMessages_1_11.dll"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC15\Release\xsec_2_0.dll"/>
+                <File Source="$(var.VCPKG_X86)\libcrypto-1_1.dll"/>
+                <File Source="$(var.VCPKG_X86)\libssl-1_1.dll"/>
+                <File Source="$(var.VCPKG_X86)\zlib1.dll"/>
+                <File Source="$(var.VCPKG_X86)\xerces-c_3_2.dll"/>
+                <File Source="$(var.VCPKG_X86)\Xalan-C_1_11.dll"/>
+                <File Source="$(var.VCPKG_X86)\XalanMessages_1_11.dll"/>
+                <File Source="$(var.VCPKG_X86)\xsec_2_0.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.dll"/>
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.dll"/>
@@ -51,10 +54,10 @@
               <Component Id="LibrariesDevX86" Guid="{9B16F8D1-11AA-4AF4-B8C2-96B4EC7E79CD}">
                 <File Source="$(var.VCPATH)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\msvcp140d.dll"/>
                 <File Source="$(var.VCPATH)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\vcruntime140d.dll"/>
-                <File Source="$(var.PREFIX)\xerces\x86\bin\xerces-c_3_2D.dll"/>
-                <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Debug\Xalan-C_1_11D.dll"/>
-                <File Source="$(var.PREFIX)\xalan\c\Build\Win32\VC10\Debug\XalanMessages_1_11D.dll"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\Win32\VC15\Debug\xsec_2_0D.dll"/>
+                <File Source="$(var.VCPKG_X86D)\xerces-c_3_2D.dll"/>
+                <File Source="$(var.VCPKG_X86D)\Xalan-C_1_11D.dll"/>
+                <File Source="$(var.VCPKG_X86D)\XalanMessages_1_11D.dll"/>
+                <File Source="$(var.VCPKG_X86D)\xsec_2_0D.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.pdb"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.lib"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.pdb"/>
@@ -90,13 +93,13 @@
               <Component Id="LibrariesX64" Guid="{1A068454-C881-49D3-A3C4-58D513C2BFE9}">
                 <File Source="$(var.VCPATH)\x64\Microsoft.VC$(var.VCVER).CRT\msvcp140.dll" Id="msvcp140_64.dll"/>
                 <File Source="$(var.VCPATH)\x64\Microsoft.VC$(var.VCVER).CRT\vcruntime140.dll" Id="vcruntime140_64.dll"/>
-                <File Source="\OpenSSL-Win64\bin\libcrypto-1_1-x64.dll"/>
-                <File Source="\OpenSSL-Win64\bin\libssl-1_1-x64.dll"/>
-                <File Source="$(var.PREFIX)\zlib\x64\bin\zlib1.dll" Id="zlib1_64.dll"/>
-                <File Source="$(var.PREFIX)\xerces\x64\bin\xerces-c_3_2.dll" Id="xerces_c_3_2.dll_64"/>
-                <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Release\Xalan-C_1_11.dll" Id="Xalan_C_1_11.dll_64"/>
-                <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Release\XalanMessages_1_11.dll" Id="XalanMessages_1_11.dll_64"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC15\Release\xsec_2_0.dll" Id="xsec_2_0.dll_64"/>
+                <File Source="$(var.VCPKG_X64)\libcrypto-1_1-x64.dll"/>
+                <File Source="$(var.VCPKG_X64)\libssl-1_1-x64.dll"/>
+                <File Source="$(var.VCPKG_X64)\zlib1.dll" Id="zlib1_64.dll"/>
+                <File Source="$(var.VCPKG_X64)\xerces-c_3_2.dll" Id="xerces_c_3_2.dll_64"/>
+                <File Source="$(var.VCPKG_X64)\Xalan-C_1_11.dll" Id="Xalan_C_1_11.dll_64"/>
+                <File Source="$(var.VCPKG_X64)\XalanMessages_1_11.dll" Id="XalanMessages_1_11.dll_64"/>
+                <File Source="$(var.VCPKG_X64)\xsec_2_0.dll" Id="xsec_2_0.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.dll" Id="digidocpp.dll_64"/>
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.dll" Id="digidoc_csharp.dll_64"/>
@@ -109,10 +112,10 @@
               <Component Id="LibrariesDevX64" Guid="{D992688C-0D4A-4C22-BEF4-582D7FA91731}">
                 <File Source="$(var.VCPATH)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\msvcp140d.dll" Id="msvcp140d_64.dll"/>
                 <File Source="$(var.VCPATH)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\vcruntime140d.dll" Id="vcruntime140d_64.dll"/>
-                <File Source="$(var.PREFIX)\xerces\x64\bin\xerces-c_3_2D.dll" Id="xerces_c_3_2D.dll_64"/>
-                <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Debug\Xalan-C_1_11D.dll" Id="Xalan_C_1_11D.dll_64"/>
-                <File Source="$(var.PREFIX)\xalan\c\Build\Win64\VC10\Debug\XalanMessages_1_11D.dll" Id="XalanMessages_1_11D.dll_64"/>
-                <File Source="$(var.PREFIX)\xmlsec\Build\X64\VC15\Debug\xsec_2_0D.dll" Id="xsec_2_0D.dll_64"/>
+                <File Source="$(var.VCPKG_X64D)\xerces-c_3_2D.dll" Id="xerces_c_3_2D.dll_64"/>
+                <File Source="$(var.VCPKG_X64D)\Xalan-C_1_11D.dll" Id="Xalan_C_1_11D.dll_64"/>
+                <File Source="$(var.VCPKG_X64D)\XalanMessages_1_11D.dll" Id="XalanMessages_1_11D.dll_64"/>
+                <File Source="$(var.VCPKG_X64D)\xsec_2_0D.dll" Id="xsec_2_0D.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.pdb" Id="digidoc_tool.pdb_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.lib" Id="digidocpp.lib_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.pdb" Id="digidocpp.pdb_64"/>

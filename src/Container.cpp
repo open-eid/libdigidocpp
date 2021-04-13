@@ -43,8 +43,13 @@ DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
 #include <xalanc/XalanTransformer/XalanTransformer.hpp>
 DIGIDOCPP_WARNING_POP
+#ifdef XALAN_USING_XALAN
 XALAN_USING_XALAN(XPathEvaluator)
 XALAN_USING_XALAN(XalanTransformer)
+#else
+using xalanc::XPathEvaluator;
+using xalanc::XalanTransformer;
+#endif
 #endif
 
 #define XSD_CXX11

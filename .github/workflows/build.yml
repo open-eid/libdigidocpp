@@ -19,6 +19,7 @@ jobs:
         submodules: recursive
     - name: Install dependencies
       run: |
+        brew update
         brew install swig doxygen boost xsd || brew link --overwrite xsd
         brew unlink xerces-c
     - name: Cache
@@ -105,63 +106,49 @@ jobs:
         path: libdigidocpp*.*
   windows:
     name: Build on Windows
-    runs-on: windows-latest
+    runs-on: ${{ matrix.image }}
+    strategy:
+      matrix:
+        image: ['windows-2019', 'windows-2016']
+        include:
+        - image: 'windows-2019'
+          toolset: '142'
+          vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
+        - image: 'windows-2016'
+          toolset: '141'
+          vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
     env:
-      VCVARSALL: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
-      CACHE: "${{ github.workspace }}/cache"
-      VER_SUFFIX: ".VS142"
+      VER_SUFFIX: ".VS${{ matrix.toolset }}"
       VERSION: "3.14.6.${{ github.run_number }}"
+      VCPKG_OVERLAY_TRIPLETS: "${{ github.workspace }}/patches/vcpkg-triplets"
+      VCPKG_OVERLAY_PORTS: "${{ github.workspace }}/patches/vcpkg-ports"
     steps:
     - name: Checkout
       uses: actions/checkout@v2
       with:
         submodules: recursive
+    - name: Prepare vcpkg
+      uses: lukka/run-vcpkg@v7
+      id: runvcpkg
+      with:
+        vcpkgArguments: >-
+          "xml-security-c:x86-windows-v${{ matrix.toolset }}"
+          "xml-security-c:x64-windows-v${{ matrix.toolset }}"
+          "zlib:x86-windows-v${{ matrix.toolset }}"
+          "zlib:x64-windows-v${{ matrix.toolset }}"
+          "boost-test:x86-windows-v${{ matrix.toolset }}"
+          "boost-test:x64-windows-v${{ matrix.toolset }}"
+        vcpkgGitCommitId: 18376a2f2ce989e022db5c1199b468e43f7c1a79
     - name: Install dependencies
       run: choco install doxygen.install swig -y > $null
-    - name: Cache
-      uses: actions/cache@v2
-      id: cache
-      with:
-        path: cache
-        key: ${{ matrix.target }}-${{ hashFiles('prepare_win_build_environment.ps1') }}
-    - name: Build zlib
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -zlib
-    - name: Build xerces-c
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -xerces
-    - name: Build xalan-c
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -xalan
-    - name: Build OpenSSL
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: |
-        choco install activeperl -y > $null
-        .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -openssl
-        Copy-Item \OpenSSL-Win32 cache\OpenSSL-Win32 -recurse
-        Copy-Item \OpenSSL-Win64 cache\OpenSSL-Win64 -recurse
-    - name: Build xml-security-c
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -xmlsec
     - name: Build xsd
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: .\prepare_win_build_environment.ps1 -target "$env:CACHE" -toolset 142 -vcvars "$env:VCVARSALL" -xsd
-    - name: Setup cache
-      run: |
-        mkdir \build
-        Copy-Item cache\zlib \build\zlib -recurse
-        Copy-Item cache\xerces \build\xerces -recurse
-        Copy-Item cache\xalan \build\xalan -recurse
-        Copy-Item cache\xmlsec \build\xmlsec -recurse
-        Copy-Item cache\xsd \build\xsd -recurse
-        Copy-Item cache\OpenSSL-Win32 \OpenSSL-Win32 -recurse
-        Copy-Item cache\OpenSSL-Win64 \OpenSSL-Win64 -recurse
+      run: .\prepare_win_build_environment.ps1 -xsd
     - name: Build
       run: |
         & .\build.ps1 `
           -msiversion $env:VERSION `
-          -toolset $env:TOOLSET `
-          -vcvars "$env:VCVARSALL" `
+          -toolset ${{ matrix.toolset }} `
+          -vcvars "${{ matrix.vcvars }}" `
          -swig C:/ProgramData/chocolatey/bin/swig.exe `
          -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
     - name: Archive artifacts

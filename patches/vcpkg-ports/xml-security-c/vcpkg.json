@@ -1,0 +1,11 @@
+{
+  "name": "xml-security-c",
+  "version-string": "2.0.2",
+  "homepage": "https://santuario.apache.org/cindex.html",
+  "description": "The Apache XML Security for C++ library is an implementation of the XML Digital Signature and Encryption specifications, along with some additional XKMS code.",
+  "dependencies": [
+    "xalan-c",
+    "openssl"
+  ],
+  "supports": "windows & (x86 | x64)"
+}
