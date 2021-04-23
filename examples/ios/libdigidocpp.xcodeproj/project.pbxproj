@@ -370,7 +370,7 @@
 				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				"SDKPATH[sdk=iphoneos*]" = /Library/libdigidocpp.iphoneos;
+				SDKPATH = /Library/libdigidocpp.iphoneos;
 				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
 				TESTING = 0;
 			};
@@ -400,7 +400,7 @@
 				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				"SDKPATH[sdk=iphoneos*]" = /Library/libdigidocpp.iphoneos;
+				SDKPATH = /Library/libdigidocpp.iphoneos;
 				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
 				TESTING = 0;
 			};
