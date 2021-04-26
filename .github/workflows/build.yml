@@ -88,6 +88,7 @@ jobs:
         cd build
         cmake ..
         make
+        make package
   ubuntu:
     name: Build on Ubuntu to ${{ matrix.container }}
     runs-on: ubuntu-latest
