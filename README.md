@@ -18,7 +18,7 @@
         # Ubuntu
         sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev zlib1g-dev
         # Fedora
-        sudo dnf install cmake openssl-devel xerces-c-devel xml-security-c-devel zlib-devel podofo-devel vim-common https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
+        sudo dnf install cmake openssl-devel xerces-c-devel xml-security-c-devel zlib-devel vim-common https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
 
 	* doxygen - Optional, for API documentation
 	* libboost-test-dev - Optional, for unittests
