@@ -60,6 +60,34 @@ jobs:
       with:
         name: pkgs
         path: macOS/libdigidocpp*.*
+  fedora:
+    name: Build on Fedora to ${{ matrix.container }}
+    runs-on: fedora-latest
+    container: ${{ matrix.container }}
+    strategy:
+      matrix:
+        container: ['fedora:33']
+    env:
+      MAKEFLAGS: -j3
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Install Build Deps
+      run: dnf groupinstall "Development Tools" "Development Libraries"
+    - name: Install Deps
+      run: |
+        dnf install \
+          cmake openssl-devel xerces-c-devel \
+          xml-security-c-devel zlib-devel vim-common \
+          https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
+    - name: Build
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make
   ubuntu:
     name: Build on Ubuntu to ${{ matrix.container }}
     runs-on: ubuntu-latest
