@@ -89,6 +89,11 @@ jobs:
         cmake ..
         make
         make package
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: rpms
+        path: libdigidocpp*.rpm
   ubuntu:
     name: Build on Ubuntu to ${{ matrix.container }}
     runs-on: ubuntu-latest
