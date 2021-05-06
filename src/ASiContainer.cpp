@@ -114,8 +114,8 @@ string ASiContainer::mediaType() const
  */
 ASiContainer::~ASiContainer()
 {
-    for_each(d->signatures.cbegin(), d->signatures.cend(), std::default_delete<Signature>());
-    for_each(d->documents.cbegin(), d->documents.cend(), std::default_delete<DataFile>());
+    for_each(d->signatures.cbegin(), d->signatures.cend(), default_delete<Signature>());
+    for_each(d->documents.cbegin(), d->documents.cend(), default_delete<DataFile>());
     delete d;
 }
 
@@ -210,7 +210,7 @@ void ASiContainer::addDataFileChecks(const string &fileName, const string &media
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
     if(fileName == "mimetype")
-        THROW("mimetype is reserved file.", fileName.c_str());
+        THROW("mimetype is reserved file.");
     if(any_of(d->documents.cbegin(), d->documents.cend(), [&](DataFile *file) { return fileName == file->fileName(); }))
         THROW("Document with same file name '%s' already exists.", fileName.c_str());
     if(mediaType.find('/') == string::npos)

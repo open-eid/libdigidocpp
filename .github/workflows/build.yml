@@ -128,7 +128,6 @@ jobs:
         submodules: recursive
     - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v7
-      id: runvcpkg
       with:
         vcpkgArguments: >-
           "xml-security-c:x86-windows-v${{ matrix.toolset }}"
