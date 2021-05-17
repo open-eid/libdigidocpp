@@ -29,6 +29,10 @@
 #define URI_SHA256 "http://www.w3.org/2001/04/xmlenc#sha256"
 #define URI_SHA384 "http://www.w3.org/2001/04/xmldsig-more#sha384"
 #define URI_SHA512 "http://www.w3.org/2001/04/xmlenc#sha512"
+#define URI_SHA3_224 "http://www.w3.org/2007/05/xmldsig-more#sha3-224"
+#define URI_SHA3_256 "http://www.w3.org/2007/05/xmldsig-more#sha3-256"
+#define URI_SHA3_384 "http://www.w3.org/2007/05/xmldsig-more#sha3-384"
+#define URI_SHA3_512 "http://www.w3.org/2007/05/xmldsig-more#sha3-512"
 
 #define URI_RSA_SHA1 "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 #define URI_RSA_SHA224 "http://www.w3.org/2001/04/xmldsig-more#rsa-sha224"
@@ -40,6 +44,11 @@
 #define URI_RSA_PSS_SHA256 "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1"
 #define URI_RSA_PSS_SHA384 "http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1"
 #define URI_RSA_PSS_SHA512 "http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1"
+
+#define URI_RSA_PSS_SHA3_224 "http://www.w3.org/2007/05/xmldsig-more#sha3-224-rsa-MGF1"
+#define URI_RSA_PSS_SHA3_256 "http://www.w3.org/2007/05/xmldsig-more#sha3-256-rsa-MGF1"
+#define URI_RSA_PSS_SHA3_384 "http://www.w3.org/2007/05/xmldsig-more#sha3-384-rsa-MGF1"
+#define URI_RSA_PSS_SHA3_512 "http://www.w3.org/2007/05/xmldsig-more#sha3-512-rsa-MGF1"
 
 #define URI_ECDSA_SHA1 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"
 #define URI_ECDSA_SHA224 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha224"

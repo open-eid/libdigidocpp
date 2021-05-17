@@ -22,8 +22,7 @@
 #include "Conf.h"
 #include "crypto/OpenSSLHelpers.h"
 
-#include <openssl/objects.h>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <openssl/x509.h>
 
 using namespace std;
@@ -33,12 +32,8 @@ namespace digidoc
 class Digest::Private: public vector<unsigned char>
 {
 public:
-    union {
-        SHA_CTX sha1;
-        SHA256_CTX sha256;
-        SHA512_CTX sha512;
-    };
-    int method = 0;
+    EVP_MD_CTX *ctx = nullptr;
+    int method = -1;
 };
 }
 
@@ -61,6 +56,7 @@ Digest::Digest(const string &uri)
  */
 Digest::~Digest()
 {
+    EVP_MD_CTX_free(d->ctx);
     delete d;
 }
 
@@ -90,7 +86,7 @@ vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> 
         return {};
     const ASN1_OCTET_STRING *value = nullptr;
     X509_SIG_get0(sig.get(), nullptr, &value);
-    return vector<unsigned char>(value->data, value->data + value->length);
+    return { value->data, value->data + value->length };
 }
 
 string Digest::digestInfoUri(const std::vector<unsigned char> &digest)
@@ -121,14 +117,23 @@ void Digest::reset(const string &uri)
     if(uri.empty() && Conf::instance()->digestUri() == URI_SHA1)
         THROW("Unsupported digest method");
 
-    int result = 0;
+    if(d->ctx)
+        EVP_MD_CTX_free(d->ctx);
+    d->ctx = EVP_MD_CTX_new();
+    int result = -1;
     switch(d->method = toMethod(uri.empty() ? Conf::instance()->digestUri() : uri))
     {
-    case NID_sha1: result = SHA1_Init(&d->sha1); break;
-    case NID_sha224: result = SHA224_Init(&d->sha256); break;
-    case NID_sha256: result = SHA256_Init(&d->sha256); break;
-    case NID_sha384: result = SHA384_Init(&d->sha512); break;
-    case NID_sha512: result = SHA512_Init(&d->sha512); break;
+    case NID_sha1: result = EVP_DigestInit(d->ctx, EVP_sha1()); break;
+    case NID_sha224: result = EVP_DigestInit(d->ctx, EVP_sha224()); break;
+    case NID_sha256: result = EVP_DigestInit(d->ctx, EVP_sha256()); break;
+    case NID_sha384: result = EVP_DigestInit(d->ctx, EVP_sha384()); break;
+    case NID_sha512: result = EVP_DigestInit(d->ctx, EVP_sha512()); break;
+#if OPENSSL_VERSION_NUMBER > 0x10101000L
+    case NID_sha3_224: result = EVP_DigestInit(d->ctx, EVP_sha3_224()); break;
+    case NID_sha3_256: result = EVP_DigestInit(d->ctx, EVP_sha3_256()); break;
+    case NID_sha3_384: result = EVP_DigestInit(d->ctx, EVP_sha3_384()); break;
+    case NID_sha3_512: result = EVP_DigestInit(d->ctx, EVP_sha3_512()); break;
+#endif
     default: break;
     }
     d->clear();
@@ -138,7 +143,8 @@ void Digest::reset(const string &uri)
 
 bool Digest::isRsaPssUri(const std::string &uri)
 {
-    return uri == URI_RSA_PSS_SHA224 || uri == URI_RSA_PSS_SHA256 || uri == URI_RSA_PSS_SHA384 || uri == URI_RSA_PSS_SHA512;
+    return uri == URI_RSA_PSS_SHA224 || uri == URI_RSA_PSS_SHA256 || uri == URI_RSA_PSS_SHA384 || uri == URI_RSA_PSS_SHA512 ||
+        uri == URI_RSA_PSS_SHA3_224 || uri == URI_RSA_PSS_SHA3_256 || uri == URI_RSA_PSS_SHA3_384 || uri == URI_RSA_PSS_SHA3_512;
 }
 
 /**
@@ -161,6 +167,12 @@ int Digest::toMethod(const string &uri)
     if(uri == URI_SHA256 || uri == URI_RSA_SHA256 || uri == URI_RSA_PSS_SHA256 || uri == URI_ECDSA_SHA256) return NID_sha256;
     if(uri == URI_SHA384 || uri == URI_RSA_SHA384 || uri == URI_RSA_PSS_SHA384 || uri == URI_ECDSA_SHA384) return NID_sha384;
     if(uri == URI_SHA512 || uri == URI_RSA_SHA512 || uri == URI_RSA_PSS_SHA512 || uri == URI_ECDSA_SHA512) return NID_sha512;
+#if OPENSSL_VERSION_NUMBER > 0x10101000L
+    if(uri == URI_SHA3_224 || uri == URI_RSA_PSS_SHA3_224) return NID_sha3_224;
+    if(uri == URI_SHA3_256 || uri == URI_RSA_PSS_SHA3_256) return NID_sha3_256;
+    if(uri == URI_SHA3_384 || uri == URI_RSA_PSS_SHA3_384) return NID_sha3_384;
+    if(uri == URI_SHA3_512 || uri == URI_RSA_PSS_SHA3_512) return NID_sha3_512;
+#endif
     THROW( "Digest method URI '%s' is not supported.", uri.c_str() );
 }
 
@@ -179,7 +191,11 @@ string Digest::toRsaUri(const string &uri)
         uri == URI_RSA_PSS_SHA224 ||
         uri == URI_RSA_PSS_SHA256 ||
         uri == URI_RSA_PSS_SHA384 ||
-        uri == URI_RSA_PSS_SHA512)
+        uri == URI_RSA_PSS_SHA512 ||
+        uri == URI_RSA_PSS_SHA3_224 ||
+        uri == URI_RSA_PSS_SHA3_256 ||
+        uri == URI_RSA_PSS_SHA3_384 ||
+        uri == URI_RSA_PSS_SHA3_512)
         return uri;
     return {};
 }
@@ -190,6 +206,10 @@ string Digest::toRsaPssUri(const string &uri)
     if(uri == URI_SHA256) return URI_RSA_PSS_SHA256;
     if(uri == URI_SHA384) return URI_RSA_PSS_SHA384;
     if(uri == URI_SHA512) return URI_RSA_PSS_SHA512;
+    if(uri == URI_SHA3_224) return URI_RSA_PSS_SHA3_224;
+    if(uri == URI_SHA3_256) return URI_RSA_PSS_SHA3_256;
+    if(uri == URI_SHA3_384) return URI_RSA_PSS_SHA3_384;
+    if(uri == URI_SHA3_512) return URI_RSA_PSS_SHA3_512;
     return {};
 }
 
@@ -218,6 +238,12 @@ std::string Digest::toUri(int nid)
     case NID_sha256: return URI_SHA256;
     case NID_sha384: return URI_SHA384;
     case NID_sha512: return URI_SHA512;
+#if OPENSSL_VERSION_NUMBER > 0x10101000L
+    case NID_sha3_224: return URI_SHA3_224;
+    case NID_sha3_256: return URI_SHA3_256;
+    case NID_sha3_384: return URI_SHA3_384;
+    case NID_sha3_512: return URI_SHA3_512;
+#endif
     default: return {};
     }
 }
@@ -247,21 +273,9 @@ void Digest::update(const unsigned char *data, size_t length)
 {
     if(!data)
         THROW("Can not update digest value from NULL pointer.");
-
     if(!d->empty())
         THROW("Digest is already finalized, can not update it.");
-
-    int result = 1;
-    switch(d->method)
-    {
-    case NID_sha1: result = SHA1_Update(&d->sha1, data, length); break;
-    case NID_sha224: result = SHA224_Update(&d->sha256, data, length); break;
-    case NID_sha256: result = SHA256_Update(&d->sha256, data, length); break;
-    case NID_sha384: result = SHA384_Update(&d->sha512, data, length); break;
-    case NID_sha512: result = SHA512_Update(&d->sha512, data, length); break;
-    default: break;
-    }
-    if(result != 1)
+    if(EVP_DigestUpdate(d->ctx, data, length) != 1)
         THROW_OPENSSLEXCEPTION("Failed to update %s digest value", uri().c_str());
 }
 
@@ -276,34 +290,9 @@ vector<unsigned char> Digest::result() const
 {
     if(!d->empty())
         return *d;
-
-    int result = 0;
-    switch(d->method)
-    {
-    case NID_sha1:
-        d->resize(SHA_DIGEST_LENGTH);
-        result = SHA1_Final(d->data(), &d->sha1);
-        break;
-    case NID_sha224:
-        d->resize(SHA224_DIGEST_LENGTH);
-        result = SHA224_Final(d->data(), &d->sha256);
-        break;
-    case NID_sha256:
-        d->resize(SHA256_DIGEST_LENGTH);
-        result = SHA256_Final(d->data(), &d->sha256);
-        break;
-    case NID_sha384:
-        d->resize(SHA384_DIGEST_LENGTH);
-        result = SHA384_Final(d->data(), &d->sha512);
-        break;
-    case NID_sha512:
-        d->resize(SHA512_DIGEST_LENGTH);
-        result = SHA512_Final(d->data(), &d->sha512);
-        break;
-    default: break;
-    }
-    if(result != 1)
+    unsigned int size = 0;
+    d->resize(EVP_MD_CTX_size(d->ctx));
+    if(EVP_DigestFinal(d->ctx, d->data(), &size) != 1)
         THROW_OPENSSLEXCEPTION("Failed to create %s digest", uri().c_str());
-
     return *d;
 }

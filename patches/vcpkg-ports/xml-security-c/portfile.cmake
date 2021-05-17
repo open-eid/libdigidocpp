@@ -11,6 +11,7 @@ vcpkg_extract_source_archive_ex(
     ARCHIVE ${ARCHIVE}
     PATCHES
       001_xml-security-c-2.0.1-win.patch
+      002_xml-security-c-SHA3.patch
 )
 
 vcpkg_acquire_msys(MSYS_ROOT PACKAGES sed NO_DEFAULT_PACKAGES)
