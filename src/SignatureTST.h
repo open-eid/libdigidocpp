@@ -27,28 +27,28 @@
 namespace digidoc
 {
 
-class SignatureTST: public Signature
+class SignatureTST final: public Signature
 {
 public:
     SignatureTST(std::unique_ptr<std::istream> sigdata, ASiC_S *asicSDoc);
-    virtual ~SignatureTST();
+    ~SignatureTST();
 
-    virtual std::string trustedSigningTime() const override;
+    std::string trustedSigningTime() const final;
 
-    X509Cert TimeStampCertificate() const override;
-    std::string TimeStampTime() const override;
+    X509Cert TimeStampCertificate() const final;
+    std::string TimeStampTime() const final;
 
     // DSig properties
-    std::string id() const override;
-    std::string claimedSigningTime() const override;
-    X509Cert signingCertificate() const override;
-    std::string signatureMethod() const override;
-    void validate() const override;
-    std::vector<unsigned char> dataToSign() const override;
-    void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
+    std::string id() const final;
+    std::string claimedSigningTime() const final;
+    X509Cert signingCertificate() const final;
+    std::string signatureMethod() const final;
+    void validate() const final;
+    std::vector<unsigned char> dataToSign() const final;
+    void setSignatureValue(const std::vector<unsigned char> &signatureValue) final;
 
     // Xades properties
-    std::string profile() const override;
+    std::string profile() const final;
 
 private:
     DISABLE_COPY(SignatureTST);

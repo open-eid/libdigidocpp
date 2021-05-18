@@ -161,6 +161,14 @@ void SignatureXAdES_T::validate(const std::string &policy) const
         time_t validateTime = util::date::ASN1TimeToTime_t(tsa.time());
         if(!signingCertificate().isValid(&validateTime))
             THROW("Signing certificate was not valid on signing time");
+
+        if(tsa.digestMethod() == URI_SHA1 &&
+            !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
+        {
+            Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", tsa.digestMethod().c_str()));
+            e.setCode(Exception::ReferenceDigestWeak);
+            exception.addCause(e);
+        }
     } catch(const Exception &e) {
         exception.addCause(e);
     }

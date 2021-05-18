@@ -86,6 +86,13 @@ void SignatureSiVa::validate(const string &policy) const
     Exception e(EXCEPTION_PARAMS("Signature validation"));
     for(const Exception &exception: _exceptions)
         e.addCause(exception);
+    if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
+        (_signatureMethod == URI_RSA_SHA1 || _signatureMethod == URI_ECDSA_SHA1))
+    {
+        Exception ex(EXCEPTION_PARAMS("Signature digest weak"));
+        ex.setCode(Exception::SignatureDigestWeak);
+        e.addCause(ex);
+    }
     if(_indication == "TOTAL-PASSED")
     {
         if(QES.count(_signatureLevel) || _signatureLevel.empty() || policy == POLv1)
