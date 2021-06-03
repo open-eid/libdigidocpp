@@ -311,11 +311,6 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, const A &defined, con
  * @see digidoc::Conf
  */
 /**
- * @class digidoc::XmlConfV2
- * @brief Version 2 of XML Configuration class
- * @see digidoc::ConfV2
- */
-/**
  * @deprecated See digidoc::XmlConfV2::XmlConfV2
  */
 XmlConf::XmlConf(const string &path, const string &schema)
@@ -324,6 +319,12 @@ XmlConf::XmlConf(const string &path, const string &schema)
 XmlConf::~XmlConf() { delete d; }
 XmlConf* XmlConf::instance() { return dynamic_cast<XmlConf*>(Conf::instance()); }
 
+/**
+ * @class digidoc::XmlConfV2
+ * @brief Version 2 of XML Configuration class
+ * @deprecated See digidoc::XmlConfV3
+ * @see digidoc::ConfV2
+ */
 /**
  * @deprecated See digidoc::XmlConfV3::XmlConfV3
  */
@@ -334,6 +335,12 @@ XmlConfV2::~XmlConfV2() { delete d; }
 XmlConfV2* XmlConfV2::instance() { return dynamic_cast<XmlConfV2*>(Conf::instance()); }
 
 /**
+ * @class digidoc::XmlConfV3
+ * @brief Version 3 of XML Configuration class
+ * @deprecated See digidoc::XmlConfV4
+ * @see digidoc::ConfV3
+ */
+/**
  * @deprecated See digidoc::XmlConfV4::XmlConfV4
  */
 XmlConfV3::XmlConfV3(const string &path, const string &schema)
@@ -342,6 +349,11 @@ XmlConfV3::XmlConfV3(const string &path, const string &schema)
 XmlConfV3::~XmlConfV3() { delete d; }
 XmlConfV3* XmlConfV3::instance() { return dynamic_cast<XmlConfV3*>(Conf::instance()); }
 
+/**
+ * @class digidoc::XmlConfV4
+ * @brief Version 4 of XML Configuration class
+ * @see digidoc::ConfV4
+ */
 /**
  * Initialize xml conf from path
  */

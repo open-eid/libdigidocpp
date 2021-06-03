@@ -230,7 +230,6 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
     OCSP ocsp(cert, issuer, nonce, bdoc->mediaType(), profile.find(ASiC_E::ASIC_TM_PROFILE) != string::npos);
     ocsp.verifyResponse(cert);
 
-    addCertificateValue(id() + "-RESPONDER_CERT", ocsp.responderCert());
     addCertificateValue(id() + "-CA-CERT", issuer);
     addOCSPValue(id().replace(0, 1, "N"), ocsp);
     sigdata_.clear();
@@ -305,7 +304,6 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
         {
             try {
-                vector<unsigned char> data(resp.begin(), resp.end());
                 OCSP ocsp((const unsigned char*)resp.data(), resp.size());
                 ocsp.verifyResponse(signingCertificate());
                 return ocsp;
