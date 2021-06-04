@@ -3,7 +3,7 @@
     <!--Logging settings-->
     <!--<param name="log.level" lock="false">2</param>-->
     <!--<param name="log.file" lock="false">/tmp/digidocpp.log</param>-->
-    <!--<param name="log.file" lock="false">C:\Documents and Settings\All Users\Documents\digidocpp.log</param>-->
+    <!--<param name="log.file" lock="false">C:\Users\All Users\Documents\digidocpp.log</param>-->
 
     <!--Digest algorithm settings-->
     <!--<param name="signer.digestUri" lock="false">http://www.w3.org/2001/04/xmlenc#sha256</param>-->
@@ -38,7 +38,6 @@
     <!--<param name="verify.serivceUri" lock="false">@SIVA_URL@</param>-->
 
     <!--OCSP responder URL-->
-    <!--<ocsp issuer="ESTEID-SK 2011">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="ESTEID-SK 2015">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="KLASS3-SK 2010">http://ocsp.sk.ee</ocsp>-->
     <!--<ocsp issuer="KLASS3-SK 2016">http://ocsp.sk.ee</ocsp>-->

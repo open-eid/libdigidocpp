@@ -1,7 +1,6 @@
 if(NOT MINIZIP_FOUND)
     message(STATUS "MiniZip not found; using bundled copy.")
-    add_library(minizip STATIC minizip/zip.c minizip/unzip.c minizip/ioapi.c)
-    target_sources(minizip PRIVATE $<$<C_COMPILER_ID:MSVC>:minizip/iowin32.c>)
+    add_library(minizip STATIC minizip/zip.c minizip/unzip.c minizip/ioapi.c $<$<C_COMPILER_ID:MSVC>:minizip/iowin32.c>)
     target_compile_options(minizip PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-parameter -Wno-unused-value>)
     set_target_properties(minizip PROPERTIES COMPILE_DEFINITIONS "NOUNCRYPT;NOCRYPT" POSITION_INDEPENDENT_CODE YES)
     target_link_libraries(minizip ZLIB::ZLIB)

@@ -15,7 +15,7 @@
 
 1. Install dependencies
 
-        sudo apt-get install cmake libxml-security-c-dev xsdcxx libssl-dev zlib1g-dev
+        sudo apt install cmake libxml-security-c-dev xsdcxx libssl-dev zlib1g-dev
 
 	* doxygen - Optional, for API documentation
 	* libboost-test-dev - Optional, for unittests
@@ -47,7 +47,7 @@
 
 1. Install dependencies from
 	* [XCode](https://itunes.apple.com/en/app/xcode/id497799835?mt=12)
-	* [http://www.cmake.org](http://www.cmake.org)
+	* [CMake](http://www.cmake.org)
 
 2. Fetch the source
 
@@ -71,15 +71,13 @@
 1. Install dependencies and necessary tools from
 	* [Visual Studio Community 2015/2017/2019](https://www.visualstudio.com/downloads/)
 	* [CMake](http://www.cmake.org)
-	* [7-zip](http://www.7-zip.org) - Optional, for prepare script
-	* [Perl](https://www.perl.org/get.html) - Optional, for OpenSSL prepare script
-	* [Swig](http://swig.org/download.html) - Optional, for C# bindings
+	* [Swig](http://swig.org/download.html) - Optional, for C# and Java bindings
 	* [Wix toolset](http://wixtoolset.org/releases/) - Optional, for creating Windows installation packages
 
    Toolset:
-        * 140 - Visual Studio 2015
-        * 141 - Visual Studio 2017
-        * 142 - Visual Studio 2019
+	* 140 - Visual Studio 2015
+	* 141 - Visual Studio 2017 (Default)
+	* 142 - Visual Studio 2019
 
 2. Fetch the source
 
@@ -88,7 +86,7 @@
 
 3. Prepare
 
-        powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 -toolset 140
+        powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 -toolset 141
 
 4. Configure
 
@@ -109,7 +107,7 @@
 
 6. Alternative to steps 4. and 5. -
 
-        powershell -ExecutionPolicy ByPass -File build.ps1 -toolset 140
+        powershell -ExecutionPolicy ByPass -File build.ps1 -toolset 141
 
     The build script builds executables and installation media for all
     platforms (x86 and x64 / Debug and Release with debug symbols)
