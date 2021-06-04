@@ -108,7 +108,6 @@ string Conf::PKCS11Driver() const { return PKCS11_MODULE; }
 string Conf::ocsp(const string &issuer) const
 {
     static const map<string,string> ocsplist = {
-        {"ESTEID-SK 2011", "http://ocsp.sk.ee"},
         {"ESTEID-SK 2015", "http://ocsp.sk.ee"},
         {"KLASS3-SK 2010", "http://ocsp.sk.ee"},
         {"KLASS3-SK 2016", "http://ocsp.sk.ee"},

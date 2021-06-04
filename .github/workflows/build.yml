@@ -3,12 +3,11 @@ on: [push, pull_request]
 env:
   RUN_TESTS: ALL
   BUILD_NUMBER: ${{ github.run_number }}
+  MAKEFLAGS: -j3
 jobs:
   macos:
     name: Build on macOS for ${{ matrix.target }}
     runs-on: macos-latest
-    env:
-      MAKEFLAGS: -j3
     strategy:
       matrix:
         target: [osx, ios, iossimulator, androidarm, androidarm64, androidx86, androidx86_64]
@@ -69,7 +68,6 @@ jobs:
       matrix:
         container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:20.10', 'ubuntu:21.04']
     env:
-      MAKEFLAGS: -j3
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: 'github-actions'
       DEBEMAIL: 'github-actions@github.com'
@@ -117,8 +115,9 @@ jobs:
           toolset: '141'
           vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
     env:
+      MAKEFLAGS: ""
       VER_SUFFIX: ".VS${{ matrix.toolset }}"
-      VERSION: "3.14.6.${{ github.run_number }}"
+      VERSION: "3.14.7.${{ github.run_number }}"
       VCPKG_OVERLAY_TRIPLETS: "${{ github.workspace }}/patches/vcpkg-triplets"
       VCPKG_OVERLAY_PORTS: "${{ github.workspace }}/patches/vcpkg-ports"
     steps:
@@ -182,7 +181,6 @@ jobs:
     if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'coverity_scan')
     runs-on: ubuntu-20.04
     env:
-      MAKEFLAGS: -j3
       TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
       PROJECTNAME: 'open-eid/libdigidocpp'
     steps:
@@ -216,8 +214,6 @@ jobs:
   codeql:
     name: Run CodeQL tests
     runs-on: ubuntu-20.04
-    env:
-      MAKEFLAGS: -j3
     steps:
     - name: Checkout
       uses: actions/checkout@v2
