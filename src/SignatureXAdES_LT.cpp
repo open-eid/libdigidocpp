@@ -58,7 +58,7 @@ SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool 
                 THROW("Could not find certificate issuer '%s' in certificate store.",
                     cert.issuerName().c_str());
 
-            OCSP ocsp(cert, issuer, vector<unsigned char>(), bdoc->mediaType(), false);
+            OCSP ocsp(cert, issuer, {}, bdoc->mediaType(), false);
             addOCSPValue(id().replace(0, 1, "N"), ocsp);
         }
     } catch(const Exception &) {
@@ -224,7 +224,9 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
     X509Cert cert = signingCertificate();
     X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
     if(!issuer)
-        THROW("Could not find certificate issuer '%s' in certificate store.",
+        issuer = X509CertStore::instance()->issuerFromAIA(cert);
+    if(!issuer)
+        THROW("Could not find certificate issuer '%s' in certificate store or from AIA.",
             cert.issuerName().c_str());
 
     OCSP ocsp(cert, issuer, nonce, bdoc->mediaType(), profile.find(ASiC_E::ASIC_TM_PROFILE) != string::npos);
@@ -305,7 +307,6 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
         {
             try {
-                vector<unsigned char> data(resp.begin(), resp.end());
                 OCSP ocsp((const unsigned char*)resp.data(), resp.size());
                 ocsp.verifyResponse(signingCertificate());
                 return ocsp;
