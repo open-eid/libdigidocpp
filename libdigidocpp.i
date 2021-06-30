@@ -175,6 +175,7 @@ extern "C"
 // ignore X509Cert and implement later cert as ByteVector
 %ignore digidoc::Conf::TSLCerts;
 %ignore digidoc::ConfV2::verifyServiceCert;
+%ignore digidoc::ConfV4::verifyServiceCerts;
 %ignore digidoc::Signer::cert;
 %ignore digidoc::Signature::signingCertificate;
 %ignore digidoc::Signature::OCSPCertificate;
