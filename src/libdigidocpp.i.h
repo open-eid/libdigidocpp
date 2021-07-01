@@ -54,7 +54,8 @@ public:
     std::string TSLCache() const override { return cache.empty() ? digidoc::XmlConfCurrent::TSLCache() : cache; }
     std::vector<X509Cert> TSLCerts() const override { return tslCerts.empty() ? digidoc::XmlConfCurrent::TSLCerts() : tslCerts; };
     std::string TSLUrl() const override { return tslUrl.empty() ? digidoc::XmlConfCurrent::TSLUrl() : tslUrl; }
-    X509Cert verifyServiceCert() const override { return !serviceCert ? digidoc::XmlConfCurrent::verifyServiceCert() : serviceCert; }
+    X509Cert verifyServiceCert() const override { return serviceCerts.empty() ? digidoc::XmlConfCurrent::verifyServiceCert() : serviceCerts.front(); }
+    std::vector<X509Cert> verifyServiceCerts() const override { return serviceCerts.empty() ? digidoc::XmlConfCurrent::verifyServiceCerts() : serviceCerts; }
     std::string verifyServiceUri() const override { return serviceUrl.empty() ? digidoc::XmlConfCurrent::verifyServiceUri() : serviceUrl; }
     std::string xsdPath() const override { return cache.empty() ? digidoc::XmlConfCurrent::xsdPath() : cache; }
 
@@ -68,7 +69,7 @@ public:
     void addTSLCert(const std::vector<unsigned char> &cert)
     {
         if(!cert.empty())
-            tslCerts.push_back(X509Cert(cert, X509Cert::Der));
+            tslCerts.emplace_back(cert, X509Cert::Der);
     }
     void setTSLUrl(std::string url) { tslUrl = std::move(url); }
     void setOCSPUrls(std::map<std::string,std::string> urls) { OCSPUrls = urls; }
@@ -79,7 +80,16 @@ public:
         if(_TMProfiles.empty())
             TMProfiles.clear();
     }
-    void setVerifyServiceCert(const std::vector<unsigned char> &cert) { serviceCert = X509Cert(cert.data(), cert.size(), X509Cert::Der); }
+    void setVerifyServiceCert(const std::vector<unsigned char> &cert)
+    {
+        if(cert.empty()) serviceCerts.clear();
+        else serviceCerts = { X509Cert(cert, X509Cert::Der) };
+    }
+    void addVerifyServiceCert(const std::vector<unsigned char> &cert)
+    {
+        if(!cert.empty())
+            serviceCerts.emplace_back(cert, X509Cert::Der);
+    }
     void setVerifyServiceUri(std::string url) { serviceUrl = std::move(url); }
 
 private:
@@ -88,7 +98,7 @@ private:
     std::vector<X509Cert> tslCerts;
     std::set<std::string> TMProfiles;
     std::map<std::string,std::string> OCSPUrls;
-    X509Cert serviceCert;
+    std::vector<X509Cert> serviceCerts;
 };
 
 static void initializeLib(const std::string &appName, const std::string &path)
