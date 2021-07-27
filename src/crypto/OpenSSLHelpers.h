@@ -112,21 +112,35 @@ std::vector<unsigned char> i2d(T *obj, Func func)
 class OpenSSLException : public Exception
 {
     public:
+        typedef unsigned long Error;
+        typedef std::vector< Error > Errors;
+
         /**
         * @param file filename, where the exception was thrown.
         * @param line line of the file, where the exception was thrown.
         * @see Exception::Exception(const std::string& file, int line, const std::string& msg)
         */
-        OpenSSLException(): Exception(std::string(), 0, message()) {}
-    private:
-        static std::string message()
+        OpenSSLException(): Exception(std::string(), 0, std::string())
         {
+            m_code = OpenSSLError;
             unsigned long errorCode;
             std::stringstream str;
             while((errorCode =  ERR_get_error()) != 0)
-                str << ERR_error_string(errorCode, nullptr) << std::endl;
-            return str.str();
+            {
+                const auto msg = ERR_error_string(errorCode, nullptr);
+                m_errors.emplace_back(errorCode);
+                str << msg << std::endl;
+            }
+            m_msg = str.str();
         }
+
+        Errors errors() const
+        {
+            return m_errors;
+        }
+
+    private:
+        Errors m_errors;
 };
 
 #define THROW_OPENSSLEXCEPTION(...) THROW_CAUSE(OpenSSLException(), __VA_ARGS__)
