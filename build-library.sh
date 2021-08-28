@@ -37,12 +37,13 @@ case "$@" in
     ARCH="armeabi-v7a"
     ;;
   esac
+  : ${ANDROID_NDK_HOME:="${PWD}/android-ndk-r21e"}
   TARGET_PATH=/Library/libdigidocpp.${TARGET}
   CMAKEARGS="
-    -DCMAKE_SYSTEM_NAME=Android \
-    -DCMAKE_SYSTEM_VERSION=21 \
-    -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN=${TARGET_PATH} \
-    -DCMAKE_ANDROID_ARCH_ABI=${ARCH} \
+    -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH};/usr/local \
+    -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
+    -DANDROID_PLATFORM=21 \
+    -DANDROID_ABI=${ARCH} \
     -DBoost_INCLUDE_DIR=NOTFOUND \
     -DDOXYGEN_EXECUTABLE=NOTFOUND \
     -DBUILD_TOOLS=NO \

@@ -6,7 +6,7 @@ XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.1.1k
 LIBXML2_DIR=libxml2-2.9.10
-ANDROID_NDK=android-ndk-r18b
+ANDROID_NDK=android-ndk-r21e
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
 PODOFO_DIR=podofo-0.9.4
@@ -33,38 +33,41 @@ case "$@" in
   *)
     ARCH=arm
     ARCH_ABI="armeabi-v7a"
-    CROSS_COMPILE=arm-linux-androideabi
+    CROSS_COMPILE=armv7a-linux-androideabi
     ;;
   esac
   echo "Building for Android ${ARCH}"
 
+  : ${ANDROID_NDK_HOME:="${PWD}/${ANDROID_NDK}"}
+  if [ ! -d "${ANDROID_NDK_HOME}" ]; then
+    if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
+      curl -O -L https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
+    fi
+    unzip -qq ${ANDROID_NDK}-darwin-x86_64.zip
+  fi
+
   TARGET_PATH=/Library/libdigidocpp.android${ARCH}
-  SYSROOT=${TARGET_PATH}/sysroot
-  export ANDROID_NDK_HOME=${TARGET_PATH}
-  export PATH=${TARGET_PATH}/bin:$PATH
-  export CC=clang
-  export CXX=clang++
-  export CFLAGS=""
+  ABI=21
+  export ANDROID_NDK_HOME
+  export PATH=${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/darwin-x86_64/bin:$PATH
+  export AR=llvm-ar
+  export CC=${CROSS_COMPILE}${ABI}-clang
+  export AS=${CC}
+  export CXX=${CROSS_COMPILE}${ABI}-clang++
+  export RANLIB=llvm-ranlib
+  export STRIP=llvm-strip
+  export CFLAGS="-I${TARGET_PATH}/include"
   export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
-  export LIBS="-liconv"
-  CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --with-sysroot=${SYSROOT} --disable-dependency-tracking --with-pic"
+  export LIBS="-L${TARGET_PATH}/lib -liconv"
+  CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --disable-dependency-tracking --with-pic"
   ARCHS=${ARCH}
 
-  if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
-    curl -O -L https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
-  fi
   if [ ! -d ${TARGET_PATH} ]; then
-    rm -rf ${ANDROID_NDK}
-    unzip -qq ${ANDROID_NDK}-darwin-x86_64.zip
-    cd ${ANDROID_NDK}
-    sudo ./build/tools/make_standalone_toolchain.py \
-      --arch=${ARCH} --api=21 --stl=libc++ --install-dir=${TARGET_PATH}
-    cd -
-
     #iconv for xerces
-    sudo cp patches/android-iconv/iconv.h ${SYSROOT}/usr/include/
-    sudo ${CROSS_COMPILE}-gcc -I${SYSROOT}/usr/include -std=c99 -o ${SYSROOT}/usr/lib/libiconv.o -c patches/android-iconv/iconv.c
-    sudo ${CROSS_COMPILE}-ar rcs ${SYSROOT}/usr/lib/libiconv.a ${SYSROOT}/usr/lib/libiconv.o
+    sudo mkdir -p ${TARGET_PATH}/include ${TARGET_PATH}/lib
+    sudo cp patches/android-iconv/iconv.h ${TARGET_PATH}/include/
+    sudo ${CC} -I${TARGET_PATH}/include -std=c99 -o ${TARGET_PATH}/lib/libiconv.o -c patches/android-iconv/iconv.c
+    sudo ${AR} rcs ${TARGET_PATH}/lib/libiconv.a ${TARGET_PATH}/lib/libiconv.o
   fi
   ;;
 *simulator*)
@@ -135,12 +138,11 @@ function xalan {
     case "${ARGS}" in
     *android*)
       cmake \
-        -DCMAKE_SYSTEM_NAME=Android \
-        -DCMAKE_SYSTEM_VERSION=21 \
-        -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN=${TARGET_PATH} \
-        -DCMAKE_ANDROID_ARCH_ABI=${ARCH_ABI} \
+        -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
+        -DANDROID_PLATFORM=${ABI} \
+        -DANDROID_ABI=${ARCH_ABI} \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DXercesC_ROOT=${TARGET_PATH} \
+        -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE="Release" \
         -DBUILD_SHARED_LIBS=NO \
         src && make -s && sudo make install
@@ -246,7 +248,7 @@ function openssl {
     sed -ie 's!, "test"!!' Configure
     case "${ARGS}" in
     *android*)
-        ./Configure android-${ARCH} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-hw no-engine no-tests no-shared
+        ./Configure android-${ARCH} -D__ANDROID_API__=${ABI} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-hw no-engine no-tests no-shared
         make -s
         sudo make install_sw
         ;;

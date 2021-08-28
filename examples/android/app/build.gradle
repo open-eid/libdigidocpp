@@ -45,27 +45,19 @@ task schemaZip(type:Zip) {
 task copyLibs {
     println "Copy jniLibs"
     copy {
-        from fileTree(libsPath + '.androidarm') {
-            include 'lib/libdigidoc_java.so', 'arm-linux-androideabi/lib/armv7-a/libc++_shared.so'
-        }.files
+        from libsPath + '.androidarm/lib/libdigidoc_java.so'
         into 'src/main/jniLibs/armeabi-v7a'
     }
     copy {
-        from fileTree(libsPath + '.androidarm64') {
-            include 'lib/libdigidoc_java.so', 'aarch64-linux-android/lib/libc++_shared.so'
-        }.files
+        from libsPath + '.androidarm64/lib/libdigidoc_java.so'
         into 'src/main/jniLibs/arm64-v8a'
     }
     copy {
-        from fileTree(libsPath + '.androidx86') {
-            include 'lib/libdigidoc_java.so', 'i686-linux-android/lib/libc++_shared.so'
-        }.files
+        from libsPath + '.androidx86/lib/libdigidoc_java.so'
         into 'src/main/jniLibs/x86'
     }
     copy {
-        from fileTree(libsPath + '.androidx86_64') {
-            include 'lib/libdigidoc_java.so', 'x86_64-linux-android/lib64/libc++_shared.so'
-        }.files
+        from libsPath + '.androidx86_64/lib/libdigidoc_java.so'
         into 'src/main/jniLibs/x86_64'
     }
 }

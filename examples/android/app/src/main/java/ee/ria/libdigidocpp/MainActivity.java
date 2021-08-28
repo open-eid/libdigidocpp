@@ -44,7 +44,6 @@ public class MainActivity extends Activity {
 	static private String cache;
 
 	static {
-		System.loadLibrary("c++_shared");
 		System.loadLibrary("digidoc_java");
 	}
 
