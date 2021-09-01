@@ -54,6 +54,36 @@ using namespace std;
 using namespace xercesc;
 using json = nlohmann::json;
 
+static std::string base64_decode(const XMLCh *in) {
+    static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    static const std::vector<int> T = [] {
+        std::vector<int> T(256, -1);
+        for (size_t i = 0; i < b.size(); ++i)
+            T[b[i]] = i;
+        return T;
+    }();
+
+    std::string out;
+    int val = 0;
+    int valb = -8;
+    for(; in; ++in)
+    {
+        const char c(*in);
+        if(c == '\r' || c == '\n' || c == ' ')
+            continue;
+        if(T[c] == -1)
+            break;
+        val = (val << 6) + T[c];
+        if((valb += 6) < 0)
+            continue;
+        out.push_back(char((val >> valb) & 0xFF));
+        valb -= 8;
+    }
+    return out;
+}
+
+
+
 class SiVaContainer::Private
 {
 public:
@@ -323,11 +353,8 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
 
             if(const XMLCh *b64 = item->getTextContent())
             {
-                XMLSize_t size = 0;
-                XMLByte *data = Base64::decodeToXMLByte(b64, &size);
-                d->dataFiles.push_back(new DataFilePrivate(unique_ptr<istream>(new stringstream(string((const char*)data, size))),
+                d->dataFiles.push_back(new DataFilePrivate(unique_ptr<istream>(new stringstream(base64_decode(b64))),
                     transcode(item->getAttribute(cpXMLCh(u"Filename"))), transcode(item->getAttribute(cpXMLCh(u"MimeType"))), transcode(item->getAttribute(cpXMLCh(u"Id")))));
-                delete data;
             }
 
             if(!useHashCode)
