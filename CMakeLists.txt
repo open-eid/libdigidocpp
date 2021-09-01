@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(libdigidocpp VERSION 3.14.7)
+project(libdigidocpp VERSION 3.14.8)
 if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
 endif()
