@@ -2,6 +2,7 @@
 set -e
 
 XERCES_DIR=xerces-c-3.2.3
+XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.2
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.1.1k
@@ -126,15 +127,20 @@ function xerces {
 }
 
 function xalan {
-    echo Building xalan-c-1.11
-    if [ ! -f xalan_c-1.11-src.tar.gz ]; then
-        curl -O -L https://archive.apache.org/dist/xalan/xalan-c/sources/xalan_c-1.11-src.tar.gz
+    echo Building ${XALAN_DIR}
+    if [ ! -f ${XALAN_DIR}.tar.gz ]; then
+        curl -O -L https://archive.apache.org/dist/xalan/xalan-c/sources/${XALAN_DIR}.tar.gz
     fi
-    rm -rf xalan-c-1.11
-    tar xf xalan_c-1.11-src.tar.gz
-    cd xalan-c-1.11/c
-    cp ../../patches/xalan-CMakeLists.txt src/CMakeLists.txt
-    cp ../../patches/MsgCreator src
+    rm -rf ${XALAN_DIR}
+    tar xf ${XALAN_DIR}.tar.gz
+    cd ${XALAN_DIR}
+    sed -ie 's!add_subdirectory(samples)!!' CMakeLists.txt
+    sed -ie 's!add_subdirectory(Tests)!!' CMakeLists.txt
+    sed -ie 's!add_subdirectory(docs/doxygen)!!' CMakeLists.txt
+    sed -ie 's!add_subdirectory(src/xalanc/TestXSLT)!!' CMakeLists.txt
+    sed -ie 's!add_subdirectory(src/xalanc/TestXPath)!!' CMakeLists.txt
+    sed -n '1102,1500!p' src/xalanc/CMakeLists.txt > tmp
+    mv tmp src/xalanc/CMakeLists.txt
     case "${ARGS}" in
     *android*)
       cmake \
@@ -145,7 +151,9 @@ function xalan {
         -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE="Release" \
         -DBUILD_SHARED_LIBS=NO \
-        src && make -s && sudo make install
+        .
+        make -s MsgCreator || cp ../patches/MsgCreator src/xalanc/Utils/MsgCreator
+        make -s && sudo make install
       ;;
     *ios*|*simulator*)
       cmake \
@@ -154,23 +162,23 @@ function xalan {
         -DCMAKE_OSX_SYSROOT=${SYSROOT} \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DXercesC_ROOT=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE="Release" \
         -DBUILD_SHARED_LIBS=NO \
-        src && make -s && sudo make install
+        . && make -s MsgCreator
+        cp ../patches/MsgCreator src/xalanc/Utils/MsgCreator
+        make -s && sudo make install
       ;;
     *)
       cmake \
         -DCMAKE_MACOSX_RPATH=NO \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DXercesC_ROOT=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE="Release" \
         -DBUILD_SHARED_LIBS=YES \
-        src && make -s && sudo make install
-      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.*.dylib
-      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.111.0.dylib \
-        -change libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalanMsg.111.0.dylib ${TARGET_PATH}/lib/libxalan-c.*.dylib
+        . && make -s && sudo make install
+      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.112.dylib ${TARGET_PATH}/lib/libxalanMsg.*.0.dylib
+      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.112.dylib \
+        -change libxalanMsg.112.dylib ${TARGET_PATH}/lib/libxalanMsg.112.dylib ${TARGET_PATH}/lib/libxalan-c.*.0.dylib
       ;;
     esac
     cd -
@@ -187,6 +195,7 @@ function xml_security {
     patch -Np1 -i ../patches/vcpkg-ports/xml-security-c/002_xml-security-c-SHA3.patch
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
     sed -ie 's!#define XSEC_EXPORT!#define XSEC_EXPORT __attribute__ ((visibility("default")))!' xsec/framework/XSECDefs.hpp
+    sed -ie 's!XALAN_USING_XALAN(\(.*\))!using xalanc::\1;!' xsec/*/*.cpp* xsec/*/*.hpp
     CFLAGS="${CFLAGS} -fvisibility=hidden" \
     CXXFLAGS="${CXXFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" \
     xerces_CFLAGS="-I${TARGET_PATH}/include" xerces_LIBS="-L${TARGET_PATH}/lib -lxalanMsg -lxalan-c -lxerces-c" \
