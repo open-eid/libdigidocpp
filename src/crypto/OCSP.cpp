@@ -76,7 +76,7 @@ static const ASN1_GENERALIZEDTIME *OCSP_resp_get0_produced_at(const OCSP_BASICRE
 /**
  * Initialize OCSP certificate validator.
  */
-OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned char> &nonce, const string &format, bool TMProfile)
+OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned char> &nonce, const string &userAgent)
 {
     if(!cert)
         THROW("Can not check X.509 certificate, certificate is NULL pointer.");
@@ -91,8 +91,6 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
             url = sk_OPENSSL_STRING_value(urls, 0);
         X509_email_free(urls);
     }
-    if(url.empty() || (TMProfile && url.find(".sk.ee") == string::npos))
-        url = "http://ocsp.sk.ee/_proxy";
     DEBUG("OCSP url %s", url.c_str());
     if(url.empty())
     {
@@ -105,8 +103,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     SCOPE(OCSP_REQUEST, req, createRequest(certId, nonce,
         !Conf::instance()->PKCS12Disable() && url.find("ocsp.sk.ee") != string::npos));
 
-    Connect::Result result = Connect(url, "POST", 0, " format: " + format + " profile: " +
-        (TMProfile ? "ASiC_E_BASELINE_LT_TM" : "ASiC_E_BASELINE_LT")).exec({
+    Connect::Result result = Connect(url, "POST", 0, userAgent).exec({
         {"Content-Type", "application/ocsp-request"},
         {"Accept", "application/ocsp-response"},
         {"Connection", "Close"},

@@ -744,9 +744,8 @@ false – OCSP requests are signed.
 
 \subsubsection ocspresponder-settings OCSP responder settings
 
-The default OCSP responder that the library uses for retrieving the OCSP confirmation during signature creation depends on the signer's certificate chain:
-- in case of no issuer is configured and signing time-stamp profile certificate AIA extension is used for OCSP responder settings
-- in case of certificates issued by Finnish, Latvian and Lithuanian CAs and using time-mark signing profile: the SK's proxy OCSP responder http://ocsp.sk.ee/_proxy is used
+The default OCSP responder that the library uses for retrieving the OCSP confirmation during signature creation depends on the signer's certificate chain.
+In case of no issuer is configured AIA extension is used for OCSP responder settings
 
 You change the default behaviour in the configuration file with the following parameter.
 

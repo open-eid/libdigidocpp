@@ -40,7 +40,7 @@ namespace digidoc
 
       public:
           OCSP(const X509Cert &cert, const X509Cert &issuer,
-               const std::vector<unsigned char> &nonce, const std::string &format, bool TMProfile);
+               const std::vector<unsigned char> &nonce, const std::string &userAgent);
           OCSP(const unsigned char *data = nullptr, size_t size = 0);
 
           std::vector<unsigned char> nonce() const;
