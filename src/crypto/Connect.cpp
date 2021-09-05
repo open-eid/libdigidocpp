@@ -26,7 +26,6 @@
 #include <openssl/bio.h>
 #include <openssl/ocsp.h>
 #include <openssl/ssl.h>
-#include <openssl/err.h>
 
 #include <zlib.h>
 
@@ -37,53 +36,12 @@
 using namespace digidoc;
 using namespace std;
 
-class NetworkException : public Exception
-{
-public:
-    NetworkException(const std::string& file, int line, const std::string& msg):
-        Exception(file, line, msg)
-    {
-        setCode(ExceptionCode::NetworkError);
-
-        OpenSSLException cause;
-        addCause(cause);
-
-        setExceptionCode(cause);
-    }
-
-private:
-    void setExceptionCode(const OpenSSLException& cause)
-    {
-        for (const auto& error : cause.errors())
-        {
-            //https://github.com/openssl/openssl/blob/0f71b1eb6c390e58059a4c4225bcbecac9aef2c7/doc/man3/ERR_GET_LIB.pod
-            const auto lib = ERR_GET_LIB(error);
-            const auto reason = ERR_GET_REASON(error);
-            switch (lib)
-            {
-                case ERR_R_BIO_LIB:
-                    switch (reason)
-                    {
-                        case ERR_R_SYS_LIB:
-                            setCode(ExceptionCode::HostNotFound);
-                        break;
-                    }
-                    break;
-                case ERR_LIB_OCSP:
-                    switch (reason)
-                    {
-                        case OCSP_R_ERROR_PARSING_URL:
-                            setCode(ExceptionCode::InvalidUrl);
-                        break;
-                    }
-                    break;
-            }
-        }
-    }
-
-}; // NetworkException
-
-#define THROW_NETWORKEXCEPTION(...) { NetworkException ex(EXCEPTION_PARAMS(__VA_ARGS__)); throw ex; }
+#define THROW_NETWORKEXCEPTION(...) { \
+    OpenSSLException ex(EXCEPTION_PARAMS(__VA_ARGS__)); \
+    if(ex.code() == Exception::General) \
+        ex.setCode(Exception::NetworkError); \
+    throw ex; \
+}
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
@@ -99,7 +57,11 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     char *_host = nullptr, *_port = nullptr, *_path = nullptr;
     int usessl = 0;
     if(!OCSP_parse_url(const_cast<char*>(_url.c_str()), &_host, &_port, &_path, &usessl))
-        THROW_NETWORKEXCEPTION("Incorrect URL provided: '%s'.", _url.c_str())
+    {
+        OpenSSLException e(EXCEPTION_PARAMS("Incorrect URL provided: '%s'.", _url.c_str()));
+        e.setCode(Exception::InvalidUrl);
+        throw e;
+    }
 
     string host = _host ? _host : "";
     string port = _port ? _port : "80";

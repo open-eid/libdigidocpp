@@ -35,7 +35,6 @@ namespace digidoc
           enum ExceptionCode {
               General                  = 0,
               NetworkError             = 20,
-              OpenSSLError             = 100,
               HostNotFound             = 101,
               InvalidUrl               = 102,
               //Verification errors
@@ -86,7 +85,7 @@ namespace digidoc
           static void setWarningIgnoreList(const std::vector<ExceptionCode> &list);
           static bool hasWarningIgnore(ExceptionCode code);
 
-      protected:
+      private:
           std::string m_file;
           std::string m_msg;
           int m_line;

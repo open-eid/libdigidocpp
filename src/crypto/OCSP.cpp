@@ -316,7 +316,7 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     STACK_OF(X509) *stack = sk_X509_new_null();
     for(const X509Cert &i: X509CertStore::instance()->certs(X509CertStore::OCSP))
         sk_X509_push(stack, i.handle());
-    OpenSSLException(); // Clear errors
+    OpenSSLException(EXCEPTION_PARAMS("ignore")); // Clear errors
     //OCSP_TRUSTOTHER - enables OCSP_NOVERIFY
     //OCSP_NOSIGS - does not verify ocsp signatures
     //OCSP_NOVERIFY - ignores signer(responder) cert verification, requires store otherwise crashes

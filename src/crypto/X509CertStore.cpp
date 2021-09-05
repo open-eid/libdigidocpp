@@ -212,7 +212,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
                 SCOPE(EVP_PKEY, pub, X509_get_pubkey(issuer.handle()));
                 if(X509_verify(x509, pub.get()) == 1)
                     return true;
-                OpenSSLException(); //Clear errors
+                OpenSSLException(EXCEPTION_PARAMS("ignore")); //Clear errors
                 return false;
             }))
                 continue;
@@ -336,7 +336,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
     }
 
     int err = X509_STORE_CTX_get_error(csc.get());
-    Exception e(EXCEPTION_PARAMS(X509_verify_cert_error_string(err)), OpenSSLException());
+    OpenSSLException e(EXCEPTION_PARAMS(X509_verify_cert_error_string(err)));
     switch(err)
     {
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
