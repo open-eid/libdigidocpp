@@ -95,7 +95,7 @@ std::vector<unsigned char> i2d(T *obj, Func func)
     std::vector<unsigned char> result;
     if(!obj)
         return result;
-    int size = func(obj, 0);
+    int size = func(obj, nullptr);
     if(size <= 0)
         return result;
     result.resize(size_t(size));
@@ -106,35 +106,33 @@ std::vector<unsigned char> i2d(T *obj, Func func)
 }
 
 /**
-* OpenSSL exception implementation. Thrown if the openssl returns error
-*
-*/
+ * OpenSSL exception implementation. Thrown if the openssl returns error
+ */
 class OpenSSLException : public Exception
 {
     public:
-        /**
-        * @param file filename, where the exception was thrown.
-        * @param line line of the file, where the exception was thrown.
-        * @see Exception::Exception(const std::string& file, int line, const std::string& msg)
-        */
-        OpenSSLException(): Exception(std::string(), 0, message()) {}
-    private:
-        static std::string message()
+        OpenSSLException(const std::string &file, int line, const std::string &msg)
+            : Exception(file, line, msg)
         {
-            unsigned long errorCode;
-            std::stringstream str;
-            while((errorCode =  ERR_get_error()) != 0)
-                str << ERR_error_string(errorCode, nullptr) << std::endl;
-            return str.str();
+            unsigned long error = 0;
+            while((error = ERR_get_error()) != 0)
+            {
+                Exception e(ERR_lib_error_string(error), 0, ERR_error_string(error, nullptr));
+                if(ERR_GET_LIB(error) == ERR_R_BIO_LIB &&
+                    ERR_GET_FUNC(error) == BIO_F_BIO_LOOKUP_EX &&
+                    ERR_GET_REASON(error) == ERR_R_SYS_LIB)
+                    e.setCode(ExceptionCode::HostNotFound);
+                addCause(e);
+            }
         }
 };
 
-#define THROW_OPENSSLEXCEPTION(...) THROW_CAUSE(OpenSSLException(), __VA_ARGS__)
+#define THROW_OPENSSLEXCEPTION(...) throw OpenSSLException(EXCEPTION_PARAMS(__VA_ARGS__))
 
 class OpenSSL
 {
 public:
-    static void parsePKCS12(const std::string &path, const std::string &pass,  EVP_PKEY **key, X509 **cert)
+    static void parsePKCS12(const std::string &path, const std::string &pass, EVP_PKEY **key, X509 **cert)
     {
         SCOPE(BIO, bio, BIO_new_file(path.c_str(), "rb"));
         if(!bio)
@@ -145,7 +143,7 @@ public:
         if(!PKCS12_parse(p12.get(), pass.c_str(), key, cert, nullptr))
             THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate.");
         // Hack: clear PKCS12_parse error ERROR: 185073780 - error:0B080074:x509 certificate routines:X509_check_private_key:key values mismatch
-        OpenSSLException();
+        OpenSSLException(EXCEPTION_PARAMS("ignore"));
     }
 };
 

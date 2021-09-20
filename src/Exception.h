@@ -35,6 +35,8 @@ namespace digidoc
           enum ExceptionCode {
               General                  = 0,
               NetworkError             = 20,
+              HostNotFound             = 101,
+              InvalidUrl               = 102,
               //Verification errors
               CertificateIssuerMissing = 10,
               CertificateRevoked       = 5,

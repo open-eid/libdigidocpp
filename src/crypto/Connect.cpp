@@ -36,7 +36,12 @@
 using namespace digidoc;
 using namespace std;
 
-#define THROW_NETWORKEXCEPTION(...) { Exception ex(EXCEPTION_PARAMS(__VA_ARGS__), OpenSSLException()); ex.setCode(Exception::NetworkError); throw ex; }
+#define THROW_NETWORKEXCEPTION(...) { \
+    OpenSSLException ex(EXCEPTION_PARAMS(__VA_ARGS__)); \
+    if(ex.code() == Exception::General) \
+        ex.setCode(Exception::NetworkError); \
+    throw ex; \
+}
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
@@ -52,7 +57,11 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     char *_host = nullptr, *_port = nullptr, *_path = nullptr;
     int usessl = 0;
     if(!OCSP_parse_url(const_cast<char*>(_url.c_str()), &_host, &_port, &_path, &usessl))
-        THROW_NETWORKEXCEPTION("Incorrect URL provided: '%s'.", _url.c_str())
+    {
+        OpenSSLException e(EXCEPTION_PARAMS("Incorrect URL provided: '%s'.", _url.c_str()));
+        e.setCode(Exception::InvalidUrl);
+        throw e;
+    }
 
     string host = _host ? _host : "";
     string port = _port ? _port : "80";

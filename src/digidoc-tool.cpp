@@ -73,6 +73,8 @@ static ostream &operator<<(ostream &os, const Exception::ExceptionCode code)
     {
     case Exception::General: os << "General"; break;
     case Exception::NetworkError: os << "NetworkError"; break;
+    case Exception::HostNotFound: os << "HostNotFound"; break;
+    case Exception::InvalidUrl: os << "InvalidUrl"; break;
     case Exception::CertificateIssuerMissing: os << "CertificateIssuerMissing"; break;
     case Exception::CertificateRevoked: os << "CertificateRevoked"; break;
     case Exception::CertificateUnknown: os << "CertificateUnknown"; break;
