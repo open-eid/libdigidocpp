@@ -311,7 +311,6 @@ elseif(ANDROID)
     find_package(Iconv)
     target_link_libraries(digidocpp PRIVATE Iconv::Iconv)
     set_property(SOURCE minizip/ioapi.c APPEND PROPERTY COMPILE_DEFINITIONS IOAPI_NO_64)
-    set_property(TARGET minizip digidocpp_priv digidocpp APPEND PROPERTY COMPILE_DEFINITIONS __ANDROID_API__=${CMAKE_SYSTEM_VERSION})
 endif()
 
 source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/798.p12" )
