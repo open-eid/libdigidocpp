@@ -56,7 +56,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     DEBUG("Connecting to URL: %s", _url.c_str());
     char *_host = nullptr, *_port = nullptr, *_path = nullptr;
     int usessl = 0;
-    if(!OCSP_parse_url(const_cast<char*>(_url.c_str()), &_host, &_port, &_path, &usessl))
+    if(!OCSP_parse_url(_url.c_str(), &_host, &_port, &_path, &usessl))
     {
         OpenSSLException e(EXCEPTION_PARAMS("Incorrect URL provided: '%s'.", _url.c_str()));
         e.setCode(Exception::InvalidUrl);
@@ -73,10 +73,11 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
 
     string hostname = host + ":" + port;
     Conf *c = Conf::instance();
-    if(!c->proxyHost().empty() && (usessl == 0 || (CONF(proxyForceSSL)) || (CONF(proxyTunnelSSL))))
+    if(!c->proxyHost().empty() && !c->proxyPort().empty())
     {
         hostname = c->proxyHost() + ":" + c->proxyPort();
-        path = url;
+        if(usessl == 0 || (CONF(proxyForceSSL)))
+            path = url;
     }
 
     DEBUG("Connecting to Host: %s timeout: %i", hostname.c_str(), _timeout);
@@ -105,11 +106,11 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
             BIO_printf(d, "CONNECT %s:%s HTTP/1.0\r\n", host.c_str(), port.c_str());
             addHeader("Host", host + ":" + port);
             sendProxyAuth();
-            _timeout = 1; // Don't wait additional data on read, case proxy tunnel
+            doProxyConnect = true;
             Result r = exec();
             if(!r.isOK() || r.result.find("established") == string::npos)
                 THROW_NETWORKEXCEPTION("Failed to create proxy connection with host: '%s'", hostname.c_str())
-            _timeout = timeout; // Restore
+            doProxyConnect = false;
         }
 
         ssl.reset(SSL_CTX_new(SSLv23_client_method()), SSL_CTX_free);
@@ -171,6 +172,47 @@ void Connect::addHeaders(initializer_list<pair<string,string>> headers)
         addHeader(it.first, it.second);
 }
 
+std::string Connect::decompress(const std::string &encoding, const std::string &data) const
+{
+    if(data.empty())
+        return data;
+
+    z_stream s {};
+    s.next_in = (Bytef*)data.c_str();
+    s.avail_in = uInt(data.size());
+    int result = Z_OK;
+    if(encoding == "gzip")
+        result = inflateInit2(&s, 16 + MAX_WBITS);
+    else if(encoding == "deflate")
+        result = inflateInit2(&s, -MAX_WBITS);
+    else
+    {
+        WARN("Unsuported Content-Encoding: %s", encoding.c_str());
+        return data;
+    }
+    if(result != Z_OK) {
+        WARN("Failed to uncompress content Content-Encoding: %s", encoding.c_str());
+        return data;
+    }
+
+    string out(2048, 0);
+    do {
+        if(s.total_out >= out.size())
+            out.resize(out.size() * 2);
+        s.next_out = (Bytef*)&out[s.total_out];
+        s.avail_out = uInt(uLong(out.size()) - s.total_out);
+        switch(inflate(&s, Z_NO_FLUSH))
+        {
+        case Z_OK:
+        case Z_STREAM_END: break;
+        default: THROW_NETWORKEXCEPTION("Failed to decompress HTTP content")
+        }
+    } while(s.avail_out == 0);
+    out.resize(s.total_out);
+    inflateEnd(&s);
+    return out;
+}
+
 Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
     const vector<unsigned char> &data)
 {
@@ -201,6 +243,10 @@ Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
         rc = BIO_read(d, &r.content[pos], int(r.content.size() - pos));
         if(rc == -1 && BIO_should_read(d) != 1)
             break;
+        if(doProxyConnect && rc > 0) {
+            pos = rc;
+            break;
+        }
         auto end = chrono::high_resolution_clock::now();
         if(_timeout > 0 && _timeout < chrono::duration_cast<chrono::seconds>(end - start).count())
             break;
@@ -230,48 +276,9 @@ Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
     if(pos != string::npos)
         r.content.erase(0, pos + 4);
 
-    if(r.content.empty())
-        return r;
-
     const auto it = r.headers.find("Content-Encoding");
     if(it != r.headers.cend())
-    {
-        z_stream s {};
-        s.next_in = (Bytef*)r.content.c_str();
-        s.avail_in = uInt(r.content.size());
-        int result = Z_OK;
-        if(it->second == "gzip")
-            result = inflateInit2(&s, 16 + MAX_WBITS);
-        else if(it->second == "deflate")
-            result = inflateInit2(&s, -MAX_WBITS);
-        else
-        {
-            WARN("Unsuported Content-Encoding: %s", it->second.c_str());
-            return r;
-        }
-        if(result != Z_OK) {
-            WARN("Failed to uncompress content Content-Encoding: %s", it->second.c_str());
-            return r;
-        }
-
-        string out(2048, 0);
-        do {
-            if(s.total_out >= out.size())
-                out.resize(out.size() * 2);
-            s.next_out = (Bytef*)&out[s.total_out];
-            s.avail_out = uInt(uLong(out.size()) - s.total_out);
-            switch(inflate(&s, Z_NO_FLUSH))
-            {
-            case Z_OK:
-            case Z_STREAM_END: break;
-            default: THROW_NETWORKEXCEPTION("Failed to decompress HTTP content")
-            }
-        } while(s.avail_out == 0);
-        out.resize(s.total_out);
-        inflateEnd(&s);
-        r.content = move(out);
-    }
-
+        r.content = decompress(it->second, r.content);
     return r;
 }
 
