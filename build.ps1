@@ -4,7 +4,7 @@ param(
   [string]$vcpkg = "vcpkg\vcpkg.exe",
   [string]$vcpkg_dir = (split-path -parent $vcpkg),
   [string]$buildver = "0",
-  [string]$msiversion = "3.14.7.$buildver",
+  [string]$msiversion = "3.14.8.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
   [string]$cmake = "cmake.exe",
   [string]$nmake = "nmake.exe",
