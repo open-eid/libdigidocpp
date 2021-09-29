@@ -171,6 +171,7 @@ target_include_directories(digidocpp_priv PUBLIC
 target_link_libraries(digidocpp_priv
     XmlSecurityC::XmlSecurityC
     ZLIB::ZLIB
+    $<$<C_COMPILER_ID:MSVC>:Ws2_32>
 )
 
 add_library(digidocpp

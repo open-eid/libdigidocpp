@@ -74,11 +74,13 @@ private:
 
     void sendProxyAuth();
     std::string decompress(const std::string &encoding, const std::string &data) const;
+    void waitReadWrite(bool read) const;
 
     BIO *d = nullptr;
     std::shared_ptr<SSL_CTX> ssl;
     int _timeout;
     bool doProxyConnect = false;
+    int fd = -1;
 };
 
 }

@@ -33,6 +33,10 @@
 #include <cstring>
 #include <thread>
 
+#ifdef _WIN32
+#include <Winsock2.h>
+#endif
+
 using namespace digidoc;
 using namespace std;
 
@@ -143,6 +147,10 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
             this_thread::sleep_for(chrono::milliseconds(50));
         }
     }
+
+    fd = BIO_get_fd(d, nullptr);
+    if(_timeout > 0)
+        waitReadWrite(false);
 
     BIO_printf(d, "%s %s HTTP/1.0\r\n", method.c_str(), path.c_str());
     if(port == "80")
@@ -296,4 +304,16 @@ void Connect::sendProxyAuth()
     (void)BIO_flush(b64.get());
     BIO_pop(b64.get());
     BIO_printf(d, "\r\n");
+}
+
+void Connect::waitReadWrite(bool read) const
+{
+    if(fd < 0)
+        return;
+    fd_set confds;
+    FD_ZERO(&confds);
+    FD_SET(fd, &confds);
+    struct timeval tv = { _timeout, 0 };
+    if(select(fd + 1, read ? &confds : nullptr, read ? nullptr : &confds, nullptr, &tv) == -1)
+        DEBUG("select failed");
 }
