@@ -60,7 +60,7 @@ public:
     };
 
     Connect(const std::string &url, const std::string &method = "POST",
-        int timeout = 0, const std::string &useragent = std::string(), const std::vector<X509Cert> &certs = {});
+        int timeout = 0, const std::string &useragent = {}, const std::vector<X509Cert> &certs = {});
     ~Connect();
     void addHeader(const std::string &key, const std::string &value);
     void addHeaders(std::initializer_list<std::pair<std::string,std::string>> headers);
@@ -73,10 +73,12 @@ private:
     DISABLE_COPY(Connect);
 
     void sendProxyAuth();
+    std::string decompress(const std::string &encoding, const std::string &data) const;
 
     BIO *d = nullptr;
     std::shared_ptr<SSL_CTX> ssl;
     int _timeout;
+    bool doProxyConnect = false;
 };
 
 }
