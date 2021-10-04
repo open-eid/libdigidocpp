@@ -8,8 +8,9 @@ digidoc-tool COMMAND [OPTIONS] FILE
 Command create:
   Example: digidoc-tool create --file=file1.txt --file=file2.txt demo-container.asice
   Available options:
-    --file=        - The option can occur multiple times. File(s) to be signed
-    --mime=        - can be after --file parameter. Default value is application/octet-stream
+    --file=        - File(s) to be signed. The option can occur multiple times.
+    --mime=        - Specifies the file's mime-type value. When used then must be written right
+                     after the "-file" parameter. Default value is application/octet-stream
     --dontsign     - Don't sign the newly created container.
     for additional options look sign command
 
@@ -21,16 +22,16 @@ Command createBatch:
 Command open:
   Example: digidoc-tool open container-file.asice
   Available options:
-    --warnings=(ignore,warning,error) - warning handling
+    --warnings=(ignore,warning,error) - warning handling (default warning)
     --policy=(POLv1,POLv2) - Signature Validation Policy (default POLv2)
                              http://open-eid.github.io/SiVa/siva/appendix/validation_policy/
-    --extractAll[=path] - extracts documents (to path when provided)
+    --extractAll[=path]    - extracts documents without validating signatures (to path when provided)
+    --validateOnExtract    - validates container before extracting files
 
 Command add:
   Example: digidoc-tool add --file=file1.txt container-file.asice
   Available options:
-    --file=        - The option can occur multiple times. File(s) to be added to the container
-    --mime=        - can be after --file parameter. Default value is application/octet-stream
+    --file and --mime look create command for info
 
 Command remove:
   Example: digidoc-tool remove --document=0 --document=1 --signature=1 container-file.asice
@@ -61,7 +62,7 @@ Command sign:
     --sha(224,256,384,512) - set default digest method (default sha256)
     --sigsha(224,256,384,512) - set default digest method (default sha256)
     --tsurl         - option to change TS URL (default http://demo.sk.ee/tsa)
-    --dontValidate  - Don't validate container
+    --dontValidate  - Don't validate container on signature creation
 
 All commands:
     --nocolor       - Disable terminal colors

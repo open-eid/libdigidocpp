@@ -257,7 +257,7 @@ public:
     static string decodeParameter(const string &param)
     {
         if(param.empty())
-            return string();
+            return {};
 #ifdef _WIN32
         int len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), nullptr, 0);
         wstring out(size_t(len), 0);
@@ -296,8 +296,9 @@ static void printUsage(const char *executable)
     << "  Command create:" << endl
     << "    Example: " << executable << " create --file=file1.txt --file=file2.txt demo-container.asice" << endl
     << "    Available options:" << endl
-    << "      --file=        - The option can occur multiple times. File(s) to be signed" << endl
-    << "      --mime=        - can be after --file parameter. Default value is application/octet-stream" << endl
+    << "      --file=        - File(s) to be signed. The option can occur multiple times." << endl
+    << "      --mime=        - Specifies the file's mime-type value. When used then must be written right " << endl
+    << "                       after the \"-file\" parameter. Default value is application/octet-stream" << endl
     << "      --dontsign     - Don't sign the newly created container." << endl
     << "      for additional options look sign command" << endl << endl
     << "  Command createBatch:" << endl
@@ -307,15 +308,15 @@ static void printUsage(const char *executable)
     << "  Command open:" << endl
     << "    Example: " << executable << " open container-file.asice" << endl
     << "    Available options:" << endl
-    << "      --warnings=(ignore,warning,error) - warning handling" << endl
+    << "      --warnings=(ignore,warning,error) - warning handling (default warning)" << endl
     << "      --policy=(POLv1,POLv2) - Signature Validation Policy (default POLv2)" << endl
     << "                               http://open-eid.github.io/SiVa/siva/appendix/validation_policy/" << endl
-    << "      --extractAll[=path] - extracts documents (to path when provided)" << endl << endl
+    << "      --extractAll[=path]    - extracts documents without validating signatures (to path when provided)" << endl
+    << "      --validateOnExtract    - validates container before extracting files" << endl << endl
     << "  Command add:" << endl
     << "    Example: " << executable << " add --file=file1.txt container-file.asice" << endl
     << "    Available options:" << endl
-    << "      --file=        - The option can occur multiple times. File(s) to be added to the container" << endl
-    << "      --mime=        - can be after --file parameter. Default value is application/octet-stream" << endl << endl
+    << "      --file and --mime look create command for info" << endl << endl
     << "  Command remove:" << endl
     << "    Example: " << executable << " remove --document=0 --document=1 --signature=1 container-file.asice" << endl
     << "    Available options:" << endl
@@ -349,7 +350,7 @@ static void printUsage(const char *executable)
     << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256)" << endl
     << "      --tsurl         - option to change TS URL (default " << (CONF(TSUrl)) << ")" << endl
-    << "      --dontValidate  - Don't validate container" << endl << endl
+    << "      --dontValidate  - Don't validate container on signature creation" << endl << endl
     << "  All commands:" << endl
     << "      --nocolor       - Disable terminal colors" << endl
     << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
@@ -395,8 +396,8 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg.find("--file=") == 0)
         {
             string arg2(i+1 < argc ? decodeParameter(argv[i+1]) : string());
-            files.emplace_back(pair<string,string>(arg.substr(7),
-                arg2.find("--mime=") == 0 ? arg2.substr(7) : "application/octet-stream"));
+            files.emplace_back(arg.substr(7),
+                arg2.find("--mime=") == 0 ? arg2.substr(7) : "application/octet-stream");
         }
 #ifdef _WIN32
         else if(arg == "--cng") cng = true;
@@ -441,7 +442,7 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg.find("--tslcert=") == 0) tslcerts = { X509Cert(arg.substr(10)) };
         else if(arg == "--TSLAllowExpired") expired = true;
         else if(arg == "--dontsign") doSign = false;
-        else if(arg == "--nocolor") RED = GREEN = YELLOW = RESET = string();
+        else if(arg == "--nocolor") RED = GREEN = YELLOW = RESET = {};
         else if(arg.find("--loglevel=") == 0) _logLevel = stoi(arg.substr(11));
         else if(arg.find("--logfile=") == 0) _logFile = arg.substr(10);
         else path = arg;
@@ -553,6 +554,7 @@ static int open(int argc, char* argv[])
 {
     ToolConfig::Warning reportwarnings = ToolConfig::WWarning;
     string path, extractPath, policy;
+    bool validateOnExtract = false;
     int returnCode = EXIT_SUCCESS;
 
     // Parse command line arguments.
@@ -572,7 +574,11 @@ static int open(int argc, char* argv[])
             size_t pos = arg.find('=');
             if(pos != string::npos)
                 extractPath = arg.substr(pos + 1);
+            if(!File::dirExists(extractPath))
+                THROW("Path is not directory");
         }
+        else if(arg == "--validateOnExtract")
+            validateOnExtract = true;
         else if(arg.find("--policy=") == 0)
             policy = arg.substr(9);
         else
@@ -594,24 +600,26 @@ static int open(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    try {
-        if(!extractPath.empty())
+    auto extractFiles = [&doc](const string &path) {
+        cout << "Extracting documents: " << endl;
+        for(const DataFile *file: doc->dataFiles())
         {
-            cout << "Extracting documents: " << endl;
-            for(const DataFile *file: doc->dataFiles())
-            {
-                try {
-                    string dst = extractPath.empty() ? file->fileName() : extractPath + "/" + file->fileName();
-                    file->saveAs(dst);
-                    cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
-                } catch(const Exception &e) {
-                    cout << "  Document " << file->fileName() << " extraction: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
-                    cout << "  Exception:" << endl << e;
-                    return EXIT_FAILURE;
-                }
+            try {
+                string dst = path + "/" + File::fileName(file->fileName());
+                file->saveAs(dst);
+                cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
+            } catch(const Exception &e) {
+                cout << "  Document " << file->fileName() << " extraction: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
+                cout << "  Exception:" << endl << e;
+                return EXIT_FAILURE;
             }
-            return EXIT_SUCCESS;
         }
+        return EXIT_SUCCESS;
+    };
+
+    try {
+        if(!extractPath.empty() && !validateOnExtract)
+            return extractFiles(extractPath);
 
         cout << "Container file: " << path << endl;
         cout << "Container type: " << doc->mediaType() << endl;
@@ -670,6 +678,8 @@ static int open(int argc, char* argv[])
                 << "    TSA: " << s->ArchiveTimeStampCertificate() << endl
                 << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
         }
+        if(returnCode == EXIT_SUCCESS && !extractPath.empty())
+            return extractFiles(extractPath);
     } catch(const Exception &e) {
         cout << "Caught Exception:" << endl << e;
         returnCode = EXIT_FAILURE;
@@ -1024,7 +1034,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
             for(const X509Cert &x: s.certs)
                 cout << "             Cert: " << x << endl;
         }
-    };
+    }
     return returnCode;
 }
 

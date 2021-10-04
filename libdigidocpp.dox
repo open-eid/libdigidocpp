@@ -1324,6 +1324,14 @@ Input:
   - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
 \endcode
 
+\subsection	createBatch Creating and signing multiple documents
+  Takes folder as argument folder/content/to/sign and sign them separate containers.
+  For additional options look sign command.
+
+\subsection	add Add additional files to container
+  Adding additional files to existing unsigned container.
+  Available options are --file and --mime look create command for info.
+
 \subsection	websign Creating and signing a document (external signing, e.g. in browser)
 
 Command "websign" can be used to create a new DigiDoc container, add data files, optionally some meta-info about the signer and sign the document. Documents can be created only in BDOC 2.1 format.
@@ -1393,7 +1401,9 @@ General form of the command is:
 Available options:
 <table>
 <tr><td>\-\-extractAll	</td><td>Optional</td><td>
-If set, then all of the input container’s data files are extracted and written to disk. If an output directory is not specified with the value of this parameter then the extracted files are written to the same directory where the input file is located.</td></tr>
+If set, then all of the input container’s data files are extracted and written to disk without validating signatures. If an output directory is not specified with the value of this parameter then the extracted files are written to the same directory where the input file is located.</td></tr>
+<tr><td>--validateOnExtract	</td><td>Optional</td><td>
+If set, then validates container before extracting files.</td></tr>
 <tr><td>\-\-policy=(POLv1,POLv2)	</td><td>Optional</td><td>
 Signature Validation Policy
 

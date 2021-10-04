@@ -285,6 +285,8 @@ ConfV3* ConfV3::instance() { return dynamic_cast<ConfV3*>(Conf::instance()); }
 
 /**
  * Gets OCSP TM Profile OID-s
+ *
+ * OCSP responder certificate policies that are used to identify if OCSP response is given with TM profile
  */
 set<string> ConfV3::OCSPTMProfiles() const { return { "1.3.6.1.4.1.10015.4.1.2" }; }
 
