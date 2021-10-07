@@ -55,29 +55,33 @@ using namespace xercesc;
 using json = nlohmann::json;
 
 static std::string base64_decode(const XMLCh *in) {
-    static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    static const std::vector<int> T = [] {
-        std::vector<int> T(256, -1);
-        for (size_t i = 0; i < b.size(); ++i)
-            T[b[i]] = i;
-        return T;
-    }();
+    static constexpr std::array<std::uint8_t, 128> T{
+        0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
+        0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
+        0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x3E, 0x64, 0x64, 0x64, 0x3F,
+        0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
+        0x64, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E,
+        0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x64, 0x64, 0x64, 0x64, 0x64,
+        0x64, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+        0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x64, 0x64, 0x64, 0x64, 0x64
+    };
 
     std::string out;
-    int val = 0;
-    int valb = -8;
+    int value = 0;
+    int bits = -8;
     for(; in; ++in)
     {
         const char c(*in);
         if(c == '\r' || c == '\n' || c == ' ')
             continue;
-        if(T[c] == -1)
+        uint8_t check = T[c];
+        if(check == 0x64)
             break;
-        val = (val << 6) + T[c];
-        if((valb += 6) < 0)
+        value = (value << 6) + check;
+        if((bits += 6) < 0)
             continue;
-        out.push_back(char((val >> valb) & 0xFF));
-        valb -= 8;
+        out.push_back(char((value >> bits) & 0xFF));
+        bits -= 8;
     }
     return out;
 }
@@ -88,7 +92,7 @@ class SiVaContainer::Private
 {
 public:
     string path;
-    unique_ptr<istream> data;
+    unique_ptr<istream> ddoc;
     vector<DataFile*> dataFiles;
     vector<Signature*> signatures;
     string mediaType;
@@ -111,7 +115,7 @@ void SignatureSiVa::validate() const
 
 void SignatureSiVa::validate(const string &policy) const
 {
-    static const set<string> QES = { "QESIG", "QES", "QESEAL",
+    static const set<string_view> QES = { "QESIG", "QES", "QESEAL",
         "ADESEAL_QC", "ADESEAL" }; // Special treamtent for E-Seals
     Exception e(EXCEPTION_PARAMS("Signature validation"));
     for(const Exception &exception: _exceptions)
@@ -149,14 +153,14 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     if(ext == "DDOC")
     {
         d->mediaType = "application/x-ddoc";
-        d->data = move(ifs);
-        ifs.reset(parseDDoc(*d->data, useHashCode));
+        d->ddoc = move(ifs);
+        ifs = parseDDoc(useHashCode);
         is = ifs.get();
     }
     else
     {
         d->mediaType = "application/pdf";
-        d->dataFiles.push_back(new DataFilePrivate(move(ifs), File::fileName(path), "application/pdf", File::fileName(path)));
+        d->dataFiles.push_back(new DataFilePrivate(move(ifs), File::fileName(path), "application/pdf"));
     }
 
     array<XMLByte, 48*100> buf{};
@@ -175,6 +179,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
             b64.append((char*)out, size);
         delete out;
     }
+    ifs.release();
 
     string url = CONF(verifyServiceUri);
     string req = json({
@@ -315,7 +320,7 @@ vector<DataFile *> SiVaContainer::dataFiles() const
 
 unique_ptr<Container> SiVaContainer::openInternal(const string &path)
 {
-    static const set<string> supported = {"PDF", "DDOC"};
+    static const set<string_view> supported = {"PDF", "DDOC"};
     string ext = File::fileExtension(path);
     transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
     if(!supported.count(ext))
@@ -329,15 +334,13 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path)
     }
 }
 
-stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
+std::unique_ptr<std::istream> SiVaContainer::parseDDoc(bool useHashCode)
 {
-    auto transcode = [](const XMLCh *chr) {
-        return xsd::cxx::xml::transcode<char>(chr);
-    };
+    namespace xml = xsd::cxx::xml;
+    using cpXMLCh = const XMLCh*;
     try
     {
-        using cpXMLCh = const XMLCh*;
-        unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(is));
+        unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(*d->ddoc));
         DOMNodeList *nodeList = dom->getElementsByTagName(cpXMLCh(u"DataFile"));
         for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
         {
@@ -353,7 +356,9 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
             if(const XMLCh *b64 = item->getTextContent())
             {
                 d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(base64_decode(b64)),
-                    transcode(item->getAttribute(cpXMLCh(u"Filename"))), transcode(item->getAttribute(cpXMLCh(u"MimeType"))), transcode(item->getAttribute(cpXMLCh(u"Id")))));
+                    xml::transcode<char>(item->getAttribute(cpXMLCh(u"Filename"))),
+                    xml::transcode<char>(item->getAttribute(cpXMLCh(u"MimeType"))),
+                    xml::transcode<char>(item->getAttribute(cpXMLCh(u"Id")))));
             }
 
             if(!useHashCode)
@@ -366,7 +371,7 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
             {
                 item->setAttribute(cpXMLCh(u"ContentType"), cpXMLCh(u"HASHCODE"));
                 item->setAttribute(cpXMLCh(u"DigestType"), cpXMLCh(u"sha1"));
-                xsd::cxx::xml::string outXMLCh(reinterpret_cast<const char*>(out));
+                xml::string outXMLCh(reinterpret_cast<const char*>(out));
                 item->setAttribute(cpXMLCh(u"DigestValue"), outXMLCh.c_str());
                 item->setTextContent(nullptr);
                 delete out;
@@ -377,30 +382,30 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
         unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
         unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
         unique_ptr<stringstream> result = make_unique<stringstream>();
-        xsd::cxx::xml::dom::ostream_format_target out(*result);
+        xml::dom::ostream_format_target out(*result);
         pDomLsOutput->setByteStream(&out);
         pSerializer->setNewLine(cpXMLCh(u"\n"));
         pSerializer->write(dom.get(), pDomLsOutput.get());
-        return result.release();
+        return result;
     }
     catch(const XMLException& e)
     {
         try {
-            string result = transcode(e.getMessage());
+            string result = xml::transcode<char>(e.getMessage());
             THROW("Failed to parse DDoc XML: %s", result.c_str());
-        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+        } catch(const xml::invalid_utf16_string & /* ex */) {
             THROW("Failed to parse DDoc XML.");
         }
     }
     catch(const DOMException& e)
     {
         try {
-            string result = transcode(e.getMessage());
+            string result = xml::transcode<char>(e.getMessage());
             THROW("Failed to parse DDoc XML: %s", result.c_str());
-        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+        } catch(const xml::invalid_utf16_string & /* ex */) {
             THROW("Failed to parse DDoc XML.");
         }
-    } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
+    } catch(const xml::invalid_utf16_string & /* ex */) {
         THROW("Failed to parse DDoc XML.");
     }
     catch(const Exception &)
@@ -436,13 +441,11 @@ void SiVaContainer::removeSignature(unsigned int /*index*/)
 void SiVaContainer::save(const string &path)
 {
     string to = path.empty() ? d->path : path;
-    if(d->data)
+    if(d->ddoc)
     {
-        ofstream ofs(File::encodeName(to).c_str(), ofstream::binary);
-        d->data->clear();
-        d->data->seekg(0);
-        ofs << d->data->rdbuf();
-        ofs.close();
+        d->ddoc->clear();
+        d->ddoc->seekg(0);
+        ofstream(File::encodeName(to).c_str(), ofstream::binary) << d->ddoc->rdbuf();
     }
     else
         d->dataFiles[0]->saveAs(to);

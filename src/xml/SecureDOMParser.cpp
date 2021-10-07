@@ -34,6 +34,7 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/dsig/DSIGReference.hpp>
 DIGIDOCPP_WARNING_POP
 
+#include <array>
 #include <sstream>
 
 using namespace digidoc;
@@ -86,7 +87,7 @@ SecureDOMParser::SecureDOMParser(const string &schema_location, bool dont_valida
 }
 
 void SecureDOMParser::calcDigestOnNode(Digest *calc,
-    const string &algorithmType, DOMDocument *doc, DOMNode *node)
+    string_view algorithmType, DOMDocument *doc, DOMNode *node)
 {
     XSECC14n20010315 c14n(doc, node);
     c14n.setCommentsProcessing(false);
@@ -110,13 +111,13 @@ void SecureDOMParser::calcDigestOnNode(Digest *calc,
         c14n.setInclusive11();
         c14n.setCommentsProcessing(true);
     } else {
-        THROW("Unsupported canonicalization method '%s'", algorithmType.c_str());
+        THROW("Unsupported canonicalization method '%s'", algorithmType.data());
     }
 
-    unsigned char buffer[1024];
+    std::array<unsigned char, 10240> buffer{};
     XMLSize_t bytes = 0;
-    while((bytes = c14n.outputBuffer(buffer, 1024)) > 0)
-        calc->update(buffer, bytes);
+    while((bytes = c14n.outputBuffer(buffer.data(), buffer.size())) > 0)
+        calc->update(buffer.data(), bytes);
 }
 
 void SecureDOMParser::doctypeDecl(const DTDElementDecl& root,
