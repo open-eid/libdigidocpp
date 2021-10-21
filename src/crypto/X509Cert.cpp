@@ -235,7 +235,7 @@ X509Cert::X509Cert(const vector<unsigned char> &bytes, Format format)
 X509Cert::X509Cert(const unsigned char *bytes, size_t size, Format format)
 {
     if(!bytes || size == 0)
-        THROW("No bytes given to parse X509.");
+        return;
     if(format == Der)
     {
         const unsigned char *p = bytes;

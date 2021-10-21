@@ -299,15 +299,6 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     if(!resp)
         THROW("Failed to verify OCSP response.");
 
-    // Find issuer before OCSP validation to activate region TSL
-    X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
-    if(!issuer)
-    {
-        Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
-        e.setCode(Exception::CertificateUnknown);
-        throw e;
-    }
-
     time_t t = util::date::ASN1TimeToTime_t(producedAt());
     SCOPE(X509_STORE, store, X509CertStore::createStore(X509CertStore::OCSP, &t));
     STACK_OF(X509) *stack = sk_X509_new_null();
@@ -322,8 +313,28 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     //all checks enabled fails trust bit check, cant use OCSP_NOEXPLICIT instead using OCSP_NOCHECKS
     int result = OCSP_basic_verify(basic.get(), stack, store.get(), OCSP_NOCHECKS);
     sk_X509_free(stack);
-    if(result <= 0)
+    if(result != 1)
+    {
+        unsigned long err = ERR_get_error();
+        if(ERR_GET_LIB(err) == ERR_LIB_OCSP &&
+            (ERR_GET_REASON(err) == OCSP_R_CERTIFICATE_VERIFY_ERROR ||
+             ERR_GET_REASON(err) == OCSP_R_SIGNER_CERTIFICATE_NOT_FOUND))
+        {
+            Exception e(EXCEPTION_PARAMS("Failed to verify OCSP Responder certificate"));
+            e.setCode(Exception::CertificateUnknown);
+            throw e;
+        }
         THROW_OPENSSLEXCEPTION("Failed to verify OCSP response.");
+    }
+
+    // Find issuer before OCSP validation to activate region TSL
+    X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
+    if(!issuer)
+    {
+        Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
+        e.setCode(Exception::CertificateUnknown);
+        throw e;
+    }
 
     int status = V_OCSP_CERTSTATUS_UNKNOWN;
     for(int i = 0, count = OCSP_resp_count(basic.get()); i < count; ++i)
