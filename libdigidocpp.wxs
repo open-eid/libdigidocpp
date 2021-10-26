@@ -54,6 +54,7 @@
               <Component Id="LibrariesDevX86" Guid="{9B16F8D1-11AA-4AF4-B8C2-96B4EC7E79CD}">
                 <File Source="$(var.VCPATH)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\msvcp140d.dll"/>
                 <File Source="$(var.VCPATH)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\vcruntime140d.dll"/>
+                <File Source="$(var.VCPKG_X86D)\zlibd1.dll"/>
                 <File Source="$(var.VCPKG_X86D)\xerces-c_3_2D.dll"/>
                 <File Source="$(var.VCPKG_X86D)\Xalan-C_1_12D.dll"/>
                 <File Source="$(var.VCPKG_X86D)\XalanMessages_1_12D.dll"/>
@@ -112,6 +113,7 @@
               <Component Id="LibrariesDevX64" Guid="{D992688C-0D4A-4C22-BEF4-582D7FA91731}">
                 <File Source="$(var.VCPATH)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\msvcp140d.dll" Id="msvcp140d_64.dll"/>
                 <File Source="$(var.VCPATH)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\vcruntime140d.dll" Id="vcruntime140d_64.dll"/>
+                <File Source="$(var.VCPKG_X64D)\zlibd1.dll" Id="zlibd1_64.dll"/>
                 <File Source="$(var.VCPKG_X64D)\xerces-c_3_2D.dll" Id="xerces_c_3_2D.dll_64"/>
                 <File Source="$(var.VCPKG_X64D)\Xalan-C_1_12D.dll" Id="Xalan_C_1_12D.dll_64"/>
                 <File Source="$(var.VCPKG_X64D)\XalanMessages_1_12D.dll" Id="XalanMessages_1_12D.dll_64"/>
