@@ -249,8 +249,11 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
         result = { tsl.services(), tsl.isExpired() };
         if(result.expired)
             THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
-        if(CONF(TSLOnlineDigest))
-             tsl.validateETag(url, timeout);
+        if((CONF(TSLOnlineDigest)) && (File::modifiedTime(path) < (time(nullptr) - (60 * 60 * 24))))
+        {
+            tsl.validateETag(url, timeout);
+            File::updateModifiedTime(path, time(nullptr));
+        }
         DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
     } catch(const Exception &e) {
         ERR("TSL %s status: %s", territory.c_str(), e.msg().c_str());
