@@ -75,7 +75,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install Build Deps
-      run: dnf groupinstall -y "Development Tools" "Development Libraries" fedora-packager fedora-review
+      run: dnf groupinstall -y "Development Tools" "Development Libraries" fedora-packager
     - name: Install Deps
       run: |
         dnf install -y \
