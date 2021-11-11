@@ -80,7 +80,7 @@ jobs:
       run: |
         dnf install -y \
           cmake openssl-devel xerces-c-devel \
-          xml-security-c-devel zlib-devel \
+          xml-security-c-devel zlib-devel vim-common \
           https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
     - name: Build
       run: |
