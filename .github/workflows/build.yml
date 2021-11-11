@@ -62,7 +62,7 @@ jobs:
         path: macOS/libdigidocpp*.*
   fedora:
     name: Build on Fedora to ${{ matrix.container }}
-    runs-on: fedora-latest
+    runs-on: ubuntu-latest
     container: ${{ matrix.container }}
     strategy:
       matrix:
