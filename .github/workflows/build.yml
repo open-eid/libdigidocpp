@@ -78,7 +78,7 @@ jobs:
       run: dnf groupinstall "Development Tools" "Development Libraries"
     - name: Install Deps
       run: |
-        dnf install \
+        dnf install -y \
           cmake openssl-devel xerces-c-devel \
           xml-security-c-devel zlib-devel \
           https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
