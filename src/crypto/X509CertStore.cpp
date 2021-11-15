@@ -197,6 +197,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
     switch(X509_STORE_CTX_get_error(ctx))
     {
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+    case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
     case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
     case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
