@@ -90,7 +90,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     usp.contentOrder().emplace_back(UnsignedSignaturePropertiesType::ContentOrderType(
         UnsignedSignaturePropertiesType::signatureTimeStampId,
         unsignedSignatureProperties().signatureTimeStamp().size() - 1));
-    sigdata_.clear();
+	sigdata_.reset();
 }
 
 TS SignatureXAdES_T::tsFromBase64() const

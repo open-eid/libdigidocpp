@@ -38,7 +38,7 @@ namespace digidoc
 
       public:
           SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer);
-          SignatureXAdES_B(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
+          SignatureXAdES_B(std::stringstream &&sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
           ~SignatureXAdES_B() override;
 
           std::string id() const override;
@@ -84,7 +84,7 @@ namespace digidoc
           std::unique_ptr<asic::XAdESSignaturesType> asicsignature;
           std::unique_ptr<asic::Document_signatures> odfsignature;
           ASiContainer *bdoc;
-          std::string sigdata_;
+          std::unique_ptr<std::stringstream> sigdata_;
 
       private:
           DISABLE_COPY(SignatureXAdES_B);

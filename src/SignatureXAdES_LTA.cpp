@@ -170,7 +170,7 @@ void SignatureXAdES_LTA::extendSignatureProfile(const std::string &profile)
         UnsignedSignaturePropertiesType::ContentOrderType(
             UnsignedSignaturePropertiesType::archiveTimeStampV141Id,
             unsignedSignatureProperties().archiveTimeStampV141().size() - 1));
-    sigdata_.clear();
+    sigdata_.reset();
 }
 
 TS SignatureXAdES_LTA::tsaFromBase64() const

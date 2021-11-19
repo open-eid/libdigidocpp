@@ -30,7 +30,7 @@ class SignatureXAdES_LT: public SignatureXAdES_T
 {
 public:
     SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer);
-    SignatureXAdES_LT(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
+    SignatureXAdES_LT(std::stringstream &&sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
 
     std::string trustedSigningTime() const override;
 

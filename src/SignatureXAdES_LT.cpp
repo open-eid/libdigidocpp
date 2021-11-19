@@ -45,8 +45,8 @@ SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer
 {
 }
 
-SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
-: SignatureXAdES_T(sigdata, bdoc, relaxSchemaValidation)
+SignatureXAdES_LT::SignatureXAdES_LT(stringstream &&sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
+    : SignatureXAdES_T(move(sigdata), bdoc, relaxSchemaValidation)
 {
     try {
         // ADOC files are default T level, take OCSP response to create temporary LT level
@@ -233,7 +233,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
 
     addCertificateValue(id() + "-CA-CERT", issuer);
     addOCSPValue(id().replace(0, 1, "N"), ocsp);
-    sigdata_.clear();
+    sigdata_.reset();
 }
 
 /**
