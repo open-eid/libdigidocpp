@@ -86,7 +86,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ..
+        cmake -DCMAKE_INSTALL_SYSCONFDIR=/etc ..
         make
         make package
     - name: Archive artifacts
