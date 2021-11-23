@@ -1,9 +1,9 @@
 vcpkg_fail_port_install(MESSAGE "xml-security-c currently only supports Windows X86/X64 platforms" ON_TARGET "OSX" "Linux" ON_ARCH "arm" "arm64")
 
 vcpkg_download_distfile(ARCHIVE
-    URLS "https://archive.apache.org/dist/santuario/c-library/xml-security-c-2.0.2.tar.gz"
-    FILENAME "xml-security-c-2.0.2.tar.gz"
-    SHA512 bebadee2daf27181f5bcc955a909397976e8fd2e67f5e546f5adbede0ca790647cbec9181b0b609da59d525ff3baa9f899af2a3d815bc7a2f3a57bd8b30c011b
+    URLS "https://dlcdn.apache.org/santuario/c-library/xml-security-c-2.0.4.tar.gz"
+    FILENAME "xml-security-c-2.0.4.tar.gz"
+    SHA512 c2a83b0415ec0a83c932bffb709beac5763e20397f3ec4dfb350a3190de878a860b75482c095b9ac1cae3bbfbcc968b2a26ea912816b0dd4456c7ea0e07f3060
 )
 
 vcpkg_extract_source_archive_ex(
@@ -12,13 +12,6 @@ vcpkg_extract_source_archive_ex(
     PATCHES
       001_xml-security-c-2.0.1-win.patch
       002_xml-security-c-SHA3.patch
-)
-
-vcpkg_acquire_msys(MSYS_ROOT PACKAGES sed NO_DEFAULT_PACKAGES)
-vcpkg_execute_required_process(
-    COMMAND ${MSYS_ROOT}/usr/bin/sed.exe -ie "s!XALAN_USING_XALAN(\\(.*\\))!using xalanc::\\1;!" xsec/*/*.cpp* xsec/*/*.hpp
-    WORKING_DIRECTORY ${SOURCE_PATH}
-    LOGNAME build-${TARGET_TRIPLET}-sed
 )
 
 vcpkg_install_msbuild(

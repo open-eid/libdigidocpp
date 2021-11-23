@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       run: |
         brew update
-        brew install swig doxygen boost xsd || brew link --overwrite xsd
+        brew install doxygen boost xsd || brew link --overwrite xsd
         brew unlink xerces-c
     - name: Cache
       uses: actions/cache@v2
@@ -27,8 +27,6 @@ jobs:
       with:
         path: cache
         key: ${{ matrix.target }}-${{ hashFiles('prepare_osx_build_environment.sh') }}
-    - name: For now remove CommandLineTools to fix build with macOS arm64
-      run: sudo rm -rf /Library/Developer/CommandLineTools
     - name: Build xerces-c
       if: steps.cache.outputs.cache-hit != 'true'
       run: ./prepare_osx_build_environment.sh xerces ${{ matrix.target }}
@@ -84,11 +82,9 @@ jobs:
           https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
     - name: Build
       run: |
-        mkdir build
-        cd build
-        cmake -DCMAKE_INSTALL_SYSCONFDIR=/etc ..
-        make
-        make package
+        cmake -DCMAKE_INSTALL_SYSCONFDIR=/etc -B build -S .
+        cmake --build build
+        cmake --build build --target package
     - name: Archive artifacts
       uses: actions/upload-artifact@v2
       with:
@@ -100,7 +96,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:21.04', 'ubuntu:21.10']
+        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:21.10']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: 'github-actions'
@@ -126,7 +122,7 @@ jobs:
         dch --distribution $(lsb_release -cs) -v ${VERSIONEX} "Release ${VERSIONEX}."
     - name: Build packages
       run: |
-        dpkg-buildpackage -rfakeroot -us -uc
+        dpkg-buildpackage -us -uc
         mv ../libdigidocpp*.* .
     - name: Lintian
       run: lintian *.deb;
@@ -151,7 +147,7 @@ jobs:
     env:
       MAKEFLAGS: ""
       VER_SUFFIX: ".VS${{ matrix.toolset }}"
-      VERSION: "3.14.7.${{ github.run_number }}"
+      VERSION: "3.14.8.${{ github.run_number }}"
       VCPKG_OVERLAY_TRIPLETS: "${{ github.workspace }}/patches/vcpkg-triplets"
       VCPKG_OVERLAY_PORTS: "${{ github.workspace }}/patches/vcpkg-ports"
     steps:
@@ -169,7 +165,7 @@ jobs:
           "zlib:x64-windows-v${{ matrix.toolset }}"
           "boost-test:x86-windows-v${{ matrix.toolset }}"
           "boost-test:x64-windows-v${{ matrix.toolset }}"
-        vcpkgGitCommitId: 772d435ba18bf2f342458e0187ab7b48b84fe3f0
+        vcpkgGitCommitId: 30465138ef7facf1d4c1aa8a06dd62ceb71cc2eb
     - name: Install dependencies
       run: choco install doxygen.install swig -y > $null
     - name: Build xsd
@@ -200,10 +196,8 @@ jobs:
       run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen
     - name: Build docs
       run: |
-        mkdir build
-        cd build
-        cmake ..
-        make docs
+        cmake -B build -S .
+        cmake --build build --target docs
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:

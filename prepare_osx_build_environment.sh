@@ -3,7 +3,7 @@ set -e
 
 XERCES_DIR=xerces-c-3.2.3
 XALAN_DIR=xalan_c-1.12
-XMLSEC_DIR=xml-security-c-2.0.2
+XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.1.1l
 LIBXML2_DIR=libxml2-2.9.10
@@ -109,7 +109,7 @@ esac
 function xerces {
     echo Building ${XERCES_DIR}
     if [ ! -f ${XERCES_DIR}.tar.xz ]; then
-        curl -O -L https://archive.apache.org/dist/xerces/c/3/sources/${XERCES_DIR}.tar.xz
+        curl -O -L https://dlcdn.apache.org/xerces/c/3/sources/${XERCES_DIR}.tar.xz
     fi
     rm -rf ${XERCES_DIR}
     tar xf ${XERCES_DIR}.tar.xz
@@ -129,7 +129,7 @@ function xerces {
 function xalan {
     echo Building ${XALAN_DIR}
     if [ ! -f ${XALAN_DIR}.tar.gz ]; then
-        curl -O -L https://archive.apache.org/dist/xalan/xalan-c/sources/${XALAN_DIR}.tar.gz
+        curl -O -L https://dlcdn.apache.org/xalan/xalan-c/sources/${XALAN_DIR}.tar.gz
     fi
     rm -rf ${XALAN_DIR}
     tar xf ${XALAN_DIR}.tar.gz
@@ -187,7 +187,7 @@ function xalan {
 function xml_security {
     echo Building ${XMLSEC_DIR}
     if [ ! -f ${XMLSEC_DIR}.tar.gz ]; then
-        curl -O -L https://archive.apache.org/dist/santuario/c-library/${XMLSEC_DIR}.tar.gz
+        curl -O -L https://dlcdn.apache.org/santuario/c-library/${XMLSEC_DIR}.tar.gz
     fi
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
@@ -195,7 +195,6 @@ function xml_security {
     patch -Np1 -i ../patches/vcpkg-ports/xml-security-c/002_xml-security-c-SHA3.patch
     sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
     sed -ie 's!#define XSEC_EXPORT!#define XSEC_EXPORT __attribute__ ((visibility("default")))!' xsec/framework/XSECDefs.hpp
-    sed -ie 's!XALAN_USING_XALAN(\(.*\))!using xalanc::\1;!' xsec/*/*.cpp* xsec/*/*.hpp
     CFLAGS="${CFLAGS} -fvisibility=hidden" \
     CXXFLAGS="${CXXFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" \
     xerces_CFLAGS="-I${TARGET_PATH}/include" xerces_LIBS="-L${TARGET_PATH}/lib -lxalanMsg -lxalan-c -lxerces-c" \
