@@ -7,7 +7,7 @@ XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.1.1m
 LIBXML2_DIR=libxml2-2.9.10
-ANDROID_NDK=android-ndk-r21e
+ANDROID_NDK=android-ndk-r23b
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
 PODOFO_DIR=podofo-0.9.4
@@ -39,12 +39,12 @@ case "$@" in
   esac
   echo "Building for Android ${ARCH}"
 
-  : ${ANDROID_NDK_HOME:="${PWD}/${ANDROID_NDK}"}
+  : ${ANDROID_NDK_HOME:=$(ls -d /Volumes/${ANDROID_NDK}/AndroidNDK*.app/Contents/NDK)}
   if [ ! -d "${ANDROID_NDK_HOME}" ]; then
-    if [ ! -f ${ANDROID_NDK}-darwin-x86_64.zip ]; then
-      curl -O -L https://dl.google.com/android/repository/${ANDROID_NDK}-darwin-x86_64.zip
+    if [ ! -f ${ANDROID_NDK}-darwin.dmg ]; then
+      curl -O -L https://dl.google.com/android/repository/${ANDROID_NDK}-darwin.dmg
     fi
-    unzip -qq ${ANDROID_NDK}-darwin-x86_64.zip
+    hdiutil attach -mountpoint /Volumes/${ANDROID_NDK} ${ANDROID_NDK}-darwin.dmg
   fi
 
   TARGET_PATH=/Library/libdigidocpp.android${ARCH}
@@ -67,7 +67,7 @@ case "$@" in
     #iconv for xerces
     sudo mkdir -p ${TARGET_PATH}/include ${TARGET_PATH}/lib
     sudo cp patches/android-iconv/iconv.h ${TARGET_PATH}/include/
-    sudo ${CC} -I${TARGET_PATH}/include -std=c99 -o ${TARGET_PATH}/lib/libiconv.o -c patches/android-iconv/iconv.c
+    sudo ${CC} -fPIC -I${TARGET_PATH}/include -std=c99 -o ${TARGET_PATH}/lib/libiconv.o -c patches/android-iconv/iconv.c
     sudo ${AR} rcs ${TARGET_PATH}/lib/libiconv.a ${TARGET_PATH}/lib/libiconv.o
   fi
   ;;
@@ -232,14 +232,15 @@ function libxml2 {
 
 function xsd {
     echo Building ${XSD}
-    if [ ! -f ${XSD}.tar.bz2 ]; then
-        curl -O -L https://www.codesynthesis.com/download/xsd/4.0/macosx/i686/${XSD}.tar.bz2
-    fi
-    rm -rf ${XSD}
-    tar xf ${XSD}.tar.bz2
-    sudo mkdir -p ${TARGET_PATH}/bin ${TARGET_PATH}/include
-    sudo cp ${XSD}/bin/xsd ${TARGET_PATH}/bin/
-    sudo cp -Rf ${XSD}/libxsd/xsd ${TARGET_PATH}/include/
+    #if [ ! -f ${XSD}.tar.bz2 ]; then
+    #    curl -O -L https://www.codesynthesis.com/download/xsd/4.0/macosx/i686/${XSD}.tar.bz2
+    #fi
+    #rm -rf ${XSD}
+    #tar xf ${XSD}.tar.bz2
+    #sudo mkdir -p ${TARGET_PATH}/bin ${TARGET_PATH}/include
+    #sudo cp ${XSD}/bin/xsd ${TARGET_PATH}/bin/
+    #sudo cp -Rf ${XSD}/libxsd/xsd ${TARGET_PATH}/include/
+    echo "Install XSD from homebrew, official binaries are 32bit and do not work anymore"
 }
 
 function openssl {
@@ -424,7 +425,6 @@ case "$@" in
     openssl
     xalan
     xml_security
-    xsd
     ;;
 *)
     echo "Usage:"
