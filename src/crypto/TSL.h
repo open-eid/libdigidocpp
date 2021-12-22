@@ -27,7 +27,7 @@
 namespace digidoc
 {
 class Exception;
-namespace tsl { class TrustStatusListType; class InternationalNamesType; }
+namespace tsl { class TrustStatusListType; class InternationalNamesType; class OtherTSLPointerType; }
 
 class TSL
 {
@@ -56,25 +56,27 @@ public:
     static std::vector<Service> parse(int timeout);
 
 private:
-    struct Result
-    {
-        std::vector<Service> services;
-        bool expired;
-    };
-
-    static void debugException(const Exception &e);
-    static Result parse(const std::string &url, const std::vector<X509Cert> &certs,
-        const std::string &cache, const std::string &territory, int timeout);
-    template<class Info>
-    static bool parseInfo(const Info &info, Service &s, time_t &previousTime);
-    static std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en");
+    std::vector<std::string> pivotURLs() const;
+    std::vector<X509Cert> signingCerts() const;
     void validateETag(const std::string &url, int timeout);
     bool validateRemoteDigest(const std::string &url, int timeout);
+
+    static void debugException(const Exception &e);
+    static std::vector<Service> parse(const std::string &url, const std::vector<X509Cert> &certs,
+        const std::string &cache, const std::string &territory, int timeout);
+    static TSL parseTSL(const std::string &url, const std::vector<X509Cert> &certs,
+        const std::string &cache, const std::string &territory, int timeout, int recursion = 0);
+    template<class Info>
+    static bool parseInfo(const Info &info, Service &s, time_t &previousTime);
+    static std::vector<X509Cert> serviceDigitalIdentities(const tsl::OtherTSLPointerType &other,
+        const std::string &region);
+    static std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en");
 
     static const std::set<std::string> SCHEMES_URI;
     static const std::set<std::string> GENERIC_URI;
     static const std::set<std::string> SERVICESTATUS_START;
     static const std::set<std::string> SERVICESTATUS_END;
+    static const std::set<std::string> SERVICES_SUPPORTED;
 
     std::shared_ptr<tsl::TrustStatusListType> tsl;
     std::string path;
