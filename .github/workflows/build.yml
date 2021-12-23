@@ -165,7 +165,7 @@ jobs:
           "zlib:x64-windows-v${{ matrix.toolset }}"
           "boost-test:x86-windows-v${{ matrix.toolset }}"
           "boost-test:x64-windows-v${{ matrix.toolset }}"
-        vcpkgGitCommitId: 30465138ef7facf1d4c1aa8a06dd62ceb71cc2eb
+        vcpkgGitCommitId: 291b84e651bc21d90088394139097f9a5396cc00
     - name: Install dependencies
       run: choco install doxygen.install swig -y > $null
     - name: Build xsd

@@ -8,11 +8,11 @@ if [ "$#" -eq 0 ]; then
   echo "  target: osx ios iossimulator androidarm androidarm64 androidx86 androidx86_64"
   echo "To control iOS, macOS builds set environment variables:"
   echo " minimum deployment target"
-  echo " - MACOSX_DEPLOYMENT_TARGET=10.11"
-  echo " - IPHONEOS_DEPLOYMENT_TARGET=9.0"
+  echo " - MACOSX_DEPLOYMENT_TARGET=10.14"
+  echo " - IPHONEOS_DEPLOYMENT_TARGET=12.0"
   echo " archs to build on macOS/iOS"
   echo " - ARCHS=\"x86_64 arm64\" (macOS)"
-  echo " - ARCHS=\"armv7 arm64\" (iOS)"
+  echo " - ARCHS=\"arm64\" (iOS)"
   echo " - ARCHS=\"x86_64\" (iPhoneSimulator)"
   exit
 fi
@@ -59,11 +59,11 @@ case "$@" in
   *)
     echo "Building for iOS"
     TARGET=iphoneos
-    : ${ARCHS:="armv7 arm64"}
+    : ${ARCHS:="arm64"}
     ;;
   esac
   TARGET_PATH=/Library/libdigidocpp.${TARGET}
-  : ${IPHONEOS_DEPLOYMENT_TARGET:="9.0"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   CMAKEARGS="
     -DCMAKE_C_COMPILER_WORKS=yes \
@@ -83,7 +83,7 @@ case "$@" in
   TARGET=macOS
   TARGET_PATH=/Library/libdigidocpp
   : ${ARCHS:="x86_64 arm64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="10.13"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="10.14"}
   export MACOSX_DEPLOYMENT_TARGET
 esac
 
