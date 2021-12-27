@@ -24,7 +24,7 @@ BEGIN
 			VALUE "FileDescription", "digidocpp"
 			VALUE "FileVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
 			VALUE "InternalName", "digidocpp"
-			VALUE "LegalCopyright", "(C) 2009-2021 Estonian Information System Authority"
+			VALUE "LegalCopyright", "(C) 2009-2022 Estonian Information System Authority"
 			VALUE "OriginalFilename", "digidocpp.dll"
 			VALUE "ProductName", "digidocpp"
 			VALUE "ProductVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
