@@ -34,8 +34,7 @@ using namespace xsd::cxx::xml::dom;
 #endif
 
 UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType()
-    : UnsignedSignaturePropertiesTypeBase()
-    , ArchiveTimeStampV141_(this)
+    : ArchiveTimeStampV141_(this)
     , TimeStampValidationData_(this)
 {
 }
@@ -49,31 +48,35 @@ UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType(
 }
 
 UnsignedSignaturePropertiesType::UnsignedSignaturePropertiesType(const DOMElement &e, Flags f, Container *c)
-    : UnsignedSignaturePropertiesTypeBase(e, f, c)
+    : UnsignedSignaturePropertiesTypeBase(e, f | Flags::base, c)
     , ArchiveTimeStampV141_(this)
     , TimeStampValidationData_(this)
 {
-    xsd::cxx::xml::dom::parser<char> p(e, true, false, true);
+    parser<char> p(e, true, false, true);
     for (; p.more_content(); p.next_content(false))
     {
-        const DOMElement &i(p.cur_element());
-        const xsd::cxx::xml::qualified_name<char> n(xsd::cxx::xml::dom::name<char>(i));
+        parse(p, f);
+        if(!p.more_content())
+            break;
+        const DOMElement &i = p.cur_element();
+        const xsd::cxx::xml::qualified_name<char> n = name<char>(i);
         if(n.name() == "ArchiveTimeStamp" && n.namespace_() == "http://uri.etsi.org/01903/v1.4.1#")
         {
             ArchiveTimeStampV141_.push_back(xadesv141::ArchiveTimeStampTraits::create(i, f, this));
             content_order_.push_back(ContentOrderType(archiveTimeStampV141Id, ArchiveTimeStampV141_.size () - 1));
+            continue;
         }
-        else if(n.name() == "TimeStampValidationData" && n.namespace_() == "http://uri.etsi.org/01903/v1.4.1#")
+        if(n.name() == "TimeStampValidationData" && n.namespace_() == "http://uri.etsi.org/01903/v1.4.1#")
         {
             TimeStampValidationData_.push_back(xadesv141::TimeStampValidationDataTraits::create(i, f, this));
             content_order_.push_back(ContentOrderType(timeStampValidationDataId, TimeStampValidationData_.size () - 1));
+            continue;
         }
+        break;
     }
 }
 
-UnsignedSignaturePropertiesType::~UnsignedSignaturePropertiesType()
-{
-}
+UnsignedSignaturePropertiesType::~UnsignedSignaturePropertiesType() = default;
 
 UnsignedSignaturePropertiesType* UnsignedSignaturePropertiesType::_clone(Flags f, Container *c) const
 {
@@ -106,56 +109,54 @@ void digidoc::xades::operator<< (DOMElement &e, const UnsignedSignaturePropertie
     const char XADES141_NS[] = "http://uri.etsi.org/01903/v1.4.1#";
     e << static_cast<const Type&>(i);
 
-    for(UnsignedSignaturePropertiesType::ContentOrderConstIterator
-        b(i.contentOrder().begin()), n(i.contentOrder().end());
-        b != n; ++b)
+    for(const UnsignedSignaturePropertiesType::ContentOrderType &b: i.contentOrder())
     {
-        switch (b->id)
+        switch (b.id)
         {
         case UnsignedSignaturePropertiesType::counterSignatureId:
-            create_element("CounterSignature", XADES_NS, e) << i.counterSignature()[b->index];
+            create_element("CounterSignature", XADES_NS, e) << i.counterSignature()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::signatureTimeStampId:
-            create_element("SignatureTimeStamp", XADES_NS, e) << i.signatureTimeStamp()[b->index];
+            create_element("SignatureTimeStamp", XADES_NS, e) << i.signatureTimeStamp()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::completeCertificateRefsId:
-            create_element("CompleteCertificateRefs", XADES_NS, e) << i.completeCertificateRefs()[b->index];
+            create_element("CompleteCertificateRefs", XADES_NS, e) << i.completeCertificateRefs()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::completeRevocationRefsId:
-            create_element("CompleteRevocationRefs", XADES_NS, e) << i.completeRevocationRefs()[b->index];
+            create_element("CompleteRevocationRefs", XADES_NS, e) << i.completeRevocationRefs()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::attributeCertificateRefsId:
-            create_element("AttributeCertificateRefs", XADES_NS, e) << i.attributeCertificateRefs()[b->index];
+            create_element("AttributeCertificateRefs", XADES_NS, e) << i.attributeCertificateRefs()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::attributeRevocationRefsId:
-            create_element("AttributeRevocationRefs", XADES_NS, e) << i.attributeRevocationRefs()[b->index];
+            create_element("AttributeRevocationRefs", XADES_NS, e) << i.attributeRevocationRefs()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::sigAndRefsTimeStampId:
-            create_element("SigAndRefsTimeStamp", XADES_NS, e) << i.sigAndRefsTimeStamp()[b->index];
+            create_element("SigAndRefsTimeStamp", XADES_NS, e) << i.sigAndRefsTimeStamp()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::refsOnlyTimeStampId:
-            create_element("RefsOnlyTimeStamp", XADES_NS, e) << i.refsOnlyTimeStamp()[b->index];
+            create_element("RefsOnlyTimeStamp", XADES_NS, e) << i.refsOnlyTimeStamp()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::certificateValuesId:
-            create_element("CertificateValues", XADES_NS, e) << i.certificateValues()[b->index];
+            create_element("CertificateValues", XADES_NS, e) << i.certificateValues()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::revocationValuesId:
-            create_element("RevocationValues", XADES_NS, e) << i.revocationValues()[b->index];
+            create_element("RevocationValues", XADES_NS, e) << i.revocationValues()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::attrAuthoritiesCertValuesId:
-            create_element("AttrAuthoritiesCertValues", XADES_NS, e) << i.attrAuthoritiesCertValues()[b->index];
+            create_element("AttrAuthoritiesCertValues", XADES_NS, e) << i.attrAuthoritiesCertValues()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::attributeRevocationValuesId:
-            create_element("AttributeRevocationValues", XADES_NS, e) << i.attributeRevocationValues()[b->index];
+            create_element("AttributeRevocationValues", XADES_NS, e) << i.attributeRevocationValues()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::archiveTimeStampId:
-            create_element("ArchiveTimeStamp", XADES_NS, e) << i.archiveTimeStamp()[b->index];
+            create_element("ArchiveTimeStamp", XADES_NS, e) << i.archiveTimeStamp()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::archiveTimeStampV141Id:
-            create_element("ArchiveTimeStamp", XADES141_NS, e) << i.archiveTimeStampV141()[b->index];
+            create_element("ArchiveTimeStamp", XADES141_NS, e) << i.archiveTimeStampV141()[b.index];
             continue;
         case UnsignedSignaturePropertiesType::timeStampValidationDataId:
-            create_element("TimeStampValidationData", XADES141_NS, e) << i.timeStampValidationData()[b->index];
+            create_element("TimeStampValidationData", XADES141_NS, e) << i.timeStampValidationData()[b.index];
             continue;
         default: break;
         }
