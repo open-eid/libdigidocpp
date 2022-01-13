@@ -20,7 +20,7 @@ jobs:
       run: |
         brew update
         brew install doxygen boost xsd || brew link --overwrite xsd
-        brew unlink xerces-c
+        brew unlink xerces-c python\@3.9
     - name: Cache
       uses: actions/cache@v2
       id: cache
@@ -113,7 +113,7 @@ jobs:
         curl https://installer.id.ee/media/install-scripts/C6C83D68.pub | gpg --dearmor | tee /etc/apt/trusted.gpg.d/ria-repository.gpg > /dev/null
         echo "deb https://installer.id.ee/media/ubuntu/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ria-repository.list
     - name: Install dependencies
-      run: apt update -qq && apt install --no-install-recommends -y lsb-release dh-make fakeroot build-essential devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libboost-test-dev lintian
+      run: apt update -qq && apt install --no-install-recommends -y lsb-release dh-make fakeroot build-essential devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-distutils libboost-test-dev lintian
     - name: Setup changelog
       run: |
         export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}")

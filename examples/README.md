@@ -6,4 +6,5 @@ Contents of this folder is provided on as is terms, whithout support.
 * [android](./android/README.md) - example project to use on Android platform
 * [ios](./ios/README.md) - example project to use on iOS platform
 * [java](./java/README.md) - example project to use with java
+* [python](./python/README.md) - example project to use with python
 * [pkcs11sign.cpp](pkcs11sign.cpp) - Simple PKCS11Signer example

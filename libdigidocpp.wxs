@@ -44,6 +44,8 @@
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_java.dll"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\_digidoc_python.pyd"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\digidoc.py"/>
 <?endif?>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.exe"/>
                 <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\798.p12"/>
@@ -70,6 +72,9 @@
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_java.pdb"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_javad.dll"/>
                 <File Source="$(var.libdigidocpp)\x86\bin\digidoc_javad.pdb"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\_digidoc_python.pdb"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\_digidoc_pythond.pyd"/>
+                <File Source="$(var.libdigidocpp)\x86\bin\_digidoc_pythond.pdb"/>
 <?endif?>
               </Component>
               <Directory Id="SchemaFolderX86" Name="schema"
@@ -103,6 +108,8 @@
 <?ifdef var.swig ?>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.dll" Id="digidoc_csharp.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_java.dll" Id="digidoc_java.dll_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\_digidoc_python.pyd" Id="_digidoc_python.pyd_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\digidoc.py" Id="digidoc.py_64"/>
 <?endif?>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.exe" Id="digidoc_tool.exe_64"/>
                 <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\798.p12" Id="_798.p12_64"/>
@@ -129,6 +136,9 @@
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_java.pdb" Id="digidoc_java.pdb_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_javad.dll" Id="digidoc_javad.dll_64"/>
                 <File Source="$(var.libdigidocpp)\x64\bin\digidoc_javad.pdb" Id="digidoc_javad.pdb_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\_digidoc_python.pdb" Id="_digidoc_python.pdb_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\_digidoc_pythond.pyd" Id="_digidoc_pythond.pyd_64"/>
+                <File Source="$(var.libdigidocpp)\x64\bin\_digidoc_pythond.pdb" Id="_digidoc_pythond.pdb_64"/>
 <?endif?>
               </Component>
               <Directory Id="SchemaFolderX64" Name="schema"
