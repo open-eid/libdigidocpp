@@ -19,9 +19,9 @@
 
 #include "ZipSerialize.h"
 
+#include "DateTime.h"
+#include "File.h"
 #include "log.h"
-#include "util/File.h"
-#include "util/DateTime.h"
 
 #include <minizip/unzip.h>
 #include <minizip/zip.h>
@@ -235,9 +235,7 @@ ZipSerialize::Properties ZipSerialize::properties(const string &file) const
              , 0, nullptr
 #endif
     };
-    Properties prop;
-    prop.time = util::date::mkgmtime(time);
-    prop.size = info.uncompressed_size;
+    Properties prop { {}, util::date::mkgmtime(time), info.uncompressed_size };
     if(info.size_file_comment == 0)
         return prop;
 

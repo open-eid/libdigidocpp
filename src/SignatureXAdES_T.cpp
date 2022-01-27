@@ -21,12 +21,12 @@
 
 #include "ASiC_E.h"
 #include "Conf.h"
-#include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
+#include "util/log.h"
 #include "xml/XAdES01903v132-201601.hxx"
 
 DIGIDOCPP_WARNING_PUSH

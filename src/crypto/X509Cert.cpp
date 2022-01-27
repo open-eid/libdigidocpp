@@ -19,9 +19,9 @@
 
 #include "X509Cert.h"
 
-#include "log.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509Crypto.h"
+#include "util/log.h"
 
 #include <openssl/asn1t.h>
 #include <openssl/pem.h>

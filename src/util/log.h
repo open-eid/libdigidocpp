@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "Exception.h"
+#include "../Exception.h"
 
 #include <cstdarg>
 
@@ -45,20 +45,18 @@ namespace digidoc
     };
 }
 
-using namespace digidoc;
-
-#define ERR(...) Log::out(Log::ErrorType, __FILE__, __LINE__, __VA_ARGS__)
-#define WARN(...) Log::out(Log::WarnType, __FILE__, __LINE__, __VA_ARGS__)
-#define INFO(...) Log::out(Log::InfoType, __FILE__, __LINE__, __VA_ARGS__)
-#define DEBUG(...) Log::out(Log::DebugType, __FILE__, __LINE__, __VA_ARGS__)
-#define DEBUGMEM(msg, ptr, size) Log::dbgPrintfMemImpl(msg, ptr, size, __FILE__, __LINE__)
+#define ERR(...) digidoc::Log::out(digidoc::Log::ErrorType, __FILE__, __LINE__, __VA_ARGS__)
+#define WARN(...) digidoc::Log::out(digidoc::Log::WarnType, __FILE__, __LINE__, __VA_ARGS__)
+#define INFO(...) digidoc::Log::out(digidoc::Log::InfoType, __FILE__, __LINE__, __VA_ARGS__)
+#define DEBUG(...) digidoc::Log::out(digidoc::Log::DebugType, __FILE__, __LINE__, __VA_ARGS__)
+#define DEBUGMEM(msg, ptr, size) digidoc::Log::dbgPrintfMemImpl(msg, ptr, size, __FILE__, __LINE__)
 
 #define VER_STR_HELPER(x)	#x
 #define VER_STR(x)		VER_STR_HELPER(x)
 #define FILE_VER_STR	VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
 
-#define EXCEPTION_PARAMS(...) __FILE__, __LINE__, Log::format(__VA_ARGS__)
-#define EXCEPTION_ADD(_main, ...) _main.addCause(Exception(EXCEPTION_PARAMS(__VA_ARGS__)))
-#define THROW(...) throw Exception(EXCEPTION_PARAMS(__VA_ARGS__))
-#define THROW_CAUSE(_cause, ...) throw Exception(EXCEPTION_PARAMS(__VA_ARGS__), _cause)
+#define EXCEPTION_PARAMS(...) __FILE__, __LINE__, digidoc::Log::format(__VA_ARGS__)
+#define EXCEPTION_ADD(_main, ...) _main.addCause(digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__)))
+#define THROW(...) throw digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__))
+#define THROW_CAUSE(_cause, ...) throw digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__), _cause)
 #define THROW_MAIN(_main, ...) { EXCEPTION_ADD(_main, __VA_ARGS__); throw _main; }

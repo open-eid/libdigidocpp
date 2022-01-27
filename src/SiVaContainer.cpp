@@ -26,11 +26,11 @@
 
 #include "Conf.h"
 #include "DataFile_p.h"
-#include "log.h"
 #include "Signature.h"
 #include "crypto/Connect.h"
 #include "crypto/Digest.h"
 #include "util/File.h"
+#include "util/log.h"
 #include "xml/xml.hxx"
 #include "xml/SecureDOMParser.h"
 

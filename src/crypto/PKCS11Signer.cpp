@@ -21,11 +21,11 @@
 
 #include "pkcs11.h"
 
-#include "log.h"
 #include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/X509Cert.h"
 #include "util/File.h"
+#include "util/log.h"
 
 #include <openssl/evp.h>
 

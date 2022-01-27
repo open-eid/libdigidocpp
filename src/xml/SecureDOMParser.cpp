@@ -20,7 +20,7 @@
 #include "SecureDOMParser.h"
 
 #include "crypto/Digest.h"
-#include "log.h"
+#include "util/log.h"
 
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")

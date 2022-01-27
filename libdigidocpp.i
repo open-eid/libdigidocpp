@@ -25,13 +25,13 @@
 #include "libdigidocpp.i.h"
 #include "DataFile.h"
 #include "Exception.h"
-#include "log.h"
 #include "Signature.h"
 #include "crypto/PKCS11Signer.h"
 #include "crypto/PKCS12Signer.h"
 #ifdef _WIN32
 #include "crypto/WinSigner.h"
 #endif
+#include "util/log.h"
 DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
 
 static std::string parseException(const digidoc::Exception &e) {
@@ -277,7 +277,7 @@ namespace std {
     }
 }
 %extend digidoc::Container {
-    Signature* prepareWebSignature(const std::vector<unsigned char> &cert, const std::string &profile = {},
+    digidoc::Signature* prepareWebSignature(const std::vector<unsigned char> &cert, const std::string &profile = {},
                                    const std::vector<std::string> &roles = {},
                                    const std::string &city = {}, const std::string &state = {},
                                    const std::string &postalCode = {}, const std::string &country = {})
@@ -292,7 +292,7 @@ namespace std {
             }
             digidoc::X509Cert _cert;
         } signer;
-        signer._cert = X509Cert(cert, X509Cert::Der);
+        signer._cert = digidoc::X509Cert(cert, digidoc::X509Cert::Der);
         signer.setProfile(profile);
         signer.setSignatureProductionPlace(city, state, postalCode, country);
         signer.setSignerRoles(roles);

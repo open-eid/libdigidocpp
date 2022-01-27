@@ -19,8 +19,8 @@
 
 #include "Exception.h"
 
-#include "log.h"
 #include "util/File.h"
+#include "util/log.h"
 
 #include <algorithm>
 

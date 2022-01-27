@@ -22,7 +22,7 @@
 #include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509Cert.h"
-#include "log.h"
+#include "util/log.h"
 
 #include <algorithm>
 

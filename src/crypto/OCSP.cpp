@@ -24,8 +24,8 @@
 #include "crypto/Connect.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509CertStore.h"
-#include "log.h"
 #include "util/DateTime.h"
+#include "util/log.h"
 
 #include <algorithm>
 

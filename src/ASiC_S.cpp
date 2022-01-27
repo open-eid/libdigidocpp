@@ -20,9 +20,9 @@
 #include "ASiC_S.h"
 
 #include "SignatureTST.h"
-#include "log.h"
 #include "crypto/Digest.h"
 #include "util/File.h"
+#include "util/log.h"
 #include "util/ZipSerialize.h"
 
 #include <algorithm>

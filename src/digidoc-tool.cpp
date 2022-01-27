@@ -17,7 +17,6 @@
  *
  */
 
-#include "log.h"
 #include "Conf.h"
 #include "Container.h"
 #include "DataFile.h"
@@ -30,6 +29,7 @@
 #include "crypto/WinSigner.h"
 #include "crypto/X509Cert.h"
 #include "util/File.h"
+#include "util/log.h"
 
 #include <algorithm>
 #include <cstdio>

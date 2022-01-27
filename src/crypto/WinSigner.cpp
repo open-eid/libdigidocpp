@@ -20,10 +20,10 @@
 #include "WinSigner.h"
 
 #include "Conf.h"
-#include "log.h"
 #include "crypto/X509Cert.h"
 #include "crypto/Digest.h"
 #include "util/File.h"
+#include "util/log.h"
 
 #include <algorithm>
 #include <sstream>
@@ -334,7 +334,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     case ERROR_CANCELLED:
     case SCARD_W_CANCELLED_BY_USER:
     {
-        Exception e(__FILE__, __LINE__, "PIN acquisition canceled.");
+        Exception e(EXCEPTION_PARAMS("PIN acquisition canceled."));
         e.setCode(Exception::PINCanceled);
         throw e;
     }
@@ -342,7 +342,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     default:
         ostringstream s;
         s << "Failed to login to token: " << err;
-        Exception e(__FILE__, __LINE__, s.str());
+        Exception e(EXCEPTION_PARAMS(s.str().c_str()));
         e.setCode(Exception::PINFailed);
         throw e;
     }

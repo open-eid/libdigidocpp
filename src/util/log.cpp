@@ -19,9 +19,8 @@
 
 #include "log.h"
 
-#include "Conf.h"
-#include "util/DateTime.h"
-#include "util/File.h"
+#include "../Conf.h"
+#include "File.h"
 
 #include <fstream>
 #include <iomanip>
@@ -65,7 +64,7 @@ string Log::formatArgList(const char* fmt, va_list args)
     int size = vsnprintf(&result[0], result.size() + 1, fmt, args);
     if(size == -1)
         return {};
-    result.resize(size);
+    result.resize(size_t(size));
     return result;
 }
 
@@ -82,7 +81,16 @@ void Log::out(LogType type, const char *file, unsigned int line, const char *for
         f.open(File::encodeName(conf->logFile()).c_str(), fstream::out|fstream::app);
         o = &f;
     }
-    *o << date::xsd2string(date::makeDateTime(date::gmtime(time(nullptr)))) << " ";
+    char outtime[] = "0000-00-00T00:00:00Z";
+    time_t t = time(nullptr);
+    struct tm tm {};
+#ifdef _WIN32
+    if(gmtime_s(&tm, &t) == 0)
+#else
+    if(gmtime_r(&t, &tm) != nullptr)
+#endif
+        strftime(outtime, sizeof(outtime), "%Y-%m-%dT%TZ", &tm);
+    *o << outtime << " ";
     switch(type)
     {
     case ErrorType: *o << "E"; break;
