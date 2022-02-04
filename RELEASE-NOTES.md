@@ -4,7 +4,7 @@ Libdigidocpp library [3.14.8](https://github.com/open-eid/libdigidocpp/releases/
 - Optimize signing process (#404, #417, #430)
 - Improve SiVa validation (#419, #426, #429)
 - Remove SK OCSP proxy URL (#427)
-- Improve signature validation (#383, #420, #432)
+- Improve signature validation (#383, #420, #432, #444)
 - Updates for libraries and examples (#423, #424, #381, #425)
 
 [Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.7...v3.14.8)
