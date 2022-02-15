@@ -37,7 +37,7 @@ case "$@" in
     ARCH="armeabi-v7a"
     ;;
   esac
-  : ${ANDROID_NDK_HOME:="${PWD}/android-ndk-r21e"}
+  : ${ANDROID_NDK_HOME:=$(ls -d /Volumes/android-ndk-r*/AndroidNDK*.app/Contents/NDK)}
   TARGET_PATH=/Library/libdigidocpp.${TARGET}
   CMAKEARGS="
     -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH};/usr/local \
