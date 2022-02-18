@@ -7,10 +7,10 @@ param(
   [string]$msiversion = "3.14.8.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
   [string]$cmake = "cmake.exe",
-  [string]$nmake = "nmake.exe",
   [string]$generator = "NMake Makefiles",
   [string]$toolset = "141",
   [string]$vcvars = $null,
+  [string]$vcver = $null,
   [string]$heat = "$env:WIX\bin\heat.exe",
   [string]$candle = "$env:WIX\bin\candle.exe",
   [string]$light = "$env:WIX\bin\light.exe",
@@ -25,10 +25,13 @@ param(
 
 if (!$vcvars) {
   switch ($toolset) {
-  '140' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" }
   '141' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" }
   '142' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" }
+  '143' { $vcvars = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" }
   }
+}
+if (!$vcver) {
+  $vcvars = "$vcvars -vcvars_ver=$vcver"
 }
 
 $env:VCPKG_OVERLAY_TRIPLETS = "$libdigidocpp\patches\vcpkg-triplets"
@@ -59,38 +62,18 @@ if($source) {
 foreach($platform in @("x86", "x64")) {
   foreach($type in @("Debug", "RelWithDebInfo")) {
     $buildpath = $platform+$type
-    $triplet = "$platform-windows-v$toolset"
-    switch ($type)
-    { 'Debug' {
-      $from = "$vcpkg_dir/installed/$triplet/debug/bin"
-    } 'RelWithDebInfo' {
-      $from = "$vcpkg_dir/installed/$triplet/bin"
-    }}
     Remove-Item $buildpath -Force -Recurse -ErrorAction Ignore
-    New-Item -ItemType directory -Path $buildpath > $null
-    Push-Location -Path $buildpath
-    if($boost) {
-      New-Item -ItemType directory -Path test > $null
-      Copy-Item "$from/xerces-c_3_2*.dll" test
-      Copy-Item "$from/XalanMessages_1_11*.dll" test
-      Copy-Item "$from/Xalan-C_1_11*.dll" test
-      Copy-Item "$from/xsec_2_0*.dll" test
-      Copy-Item "$from/zlib*1.dll" test
-      Copy-Item "$from/libssl-1_1*.dll" test
-      Copy-Item "$from/libcrypto-1_1*.dll" test
-    }
     & $vcvars $platform "&&" $cmake "-G$generator" `
       "-DCMAKE_BUILD_TYPE=$type" `
-      "-DCMAKE_INSTALL_PREFIX=../$platform" `
+      "-DCMAKE_INSTALL_PREFIX=$platform" `
       "-DCMAKE_INSTALL_LIBDIR=bin" `
       "-DCMAKE_TOOLCHAIN_FILE=$vcpkg_dir/scripts/buildsystems/vcpkg.cmake" `
-      "-DVCPKG_TARGET_TRIPLET=$triplet" `
+      "-DVCPKG_TARGET_TRIPLET=$platform-windows-v$toolset" `
       "-DXSD_INCLUDE_DIR=$xsd/libxsd" `
       "-DXSD_EXECUTABLE=$xsd/bin/xsd.exe" `
       "-DSIGNCERT=$sign" `
       "-DCROSSSIGNCERT=$crosssign" `
-      $cmakeext $libdigidocpp "&&" $nmake /nologo install
-    Pop-Location
+      $cmakeext -B $buildpath -S $libdigidocpp "&&" $cmake --build $buildpath --target install
   }
 }
 
@@ -98,7 +81,7 @@ if($doxygen) {
   & $heat dir x86/share/doc/libdigidocpp -nologo -cg Documentation -gg -scom -sreg -sfrag -srd -dr DocumentationFolder -var var.docLocation -out DocFilesFragment.wxs
 }
 & $heat dir x86/include -nologo -cg Headers -gg -scom -sreg -sfrag -srd -dr HeadersFolder -var var.headersLocation -out HeadersFragment.wxs
-& $vcvars x86 "&&" $candle -nologo "-dICON=$libdigidocpp/cmake/modules/ID.ico" "-dMSI_VERSION=$msiversion" "-dvcpkg=$vcpkg_dir" `
+& $vcvars x86 "&&" $candle -nologo "-dICON=$libdigidocpp/cmake/modules/ID.ico" "-dMSI_VERSION=$msiversion" "-dvcpkg=$vcpkg_dir" "-dvcpkg_suffix=windows-v$toolset" `
   "-dheadersLocation=x86/include" "-dlibdigidocpp=." $candleext $libdigidocpp\libdigidocpp.wxs HeadersFragment.wxs
 & $light -nologo -out $msi_name -ext WixUIExtension `
   "-dWixUIBannerBmp=$libdigidocpp/cmake/modules/banner.bmp" `
