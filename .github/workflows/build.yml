@@ -136,20 +136,26 @@ jobs:
     runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        image: ['windows-2019', 'windows-2016']
+        toolset: [143, 142, 141]
         include:
-        - image: 'windows-2019'
-          toolset: '142'
+        - toolset: 143
+          image: windows-2022
+          vcver: 14.30
+          vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
+        - toolset: 142
+          image: windows-2019
+          vcver: 14.29
           vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
-        - image: 'windows-2016'
-          toolset: '141'
-          vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
+        - toolset: 141
+          image: windows-2019
+          vcver: 14.16
+          vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
     env:
       MAKEFLAGS: ""
-      VER_SUFFIX: ".VS${{ matrix.toolset }}"
-      VERSION: "3.14.8.${{ github.run_number }}"
-      VCPKG_OVERLAY_TRIPLETS: "${{ github.workspace }}/patches/vcpkg-triplets"
-      VCPKG_OVERLAY_PORTS: "${{ github.workspace }}/patches/vcpkg-ports"
+      VER_SUFFIX: .VS${{ matrix.toolset }}
+      VERSION: 3.14.8.${{ github.run_number }}
+      VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/patches/vcpkg-triplets
+      VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/patches/vcpkg-ports
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -165,7 +171,7 @@ jobs:
           "zlib:x64-windows-v${{ matrix.toolset }}"
           "boost-test:x86-windows-v${{ matrix.toolset }}"
           "boost-test:x64-windows-v${{ matrix.toolset }}"
-        vcpkgGitCommitId: 291b84e651bc21d90088394139097f9a5396cc00
+        vcpkgGitCommitId: 6ce8ef3337706a2b7e6cc9581dc8df62fd9ca751
     - name: Install dependencies
       run: choco install doxygen.install swig -y > $null
     - name: Build xsd
@@ -176,8 +182,9 @@ jobs:
           -msiversion $env:VERSION `
           -toolset ${{ matrix.toolset }} `
           -vcvars "${{ matrix.vcvars }}" `
-         -swig C:/ProgramData/chocolatey/bin/swig.exe `
-         -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
+          -vcver "${{ matrix.vcver }}" `
+          -swig C:/ProgramData/chocolatey/bin/swig.exe `
+          -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
     - name: Archive artifacts
       uses: actions/upload-artifact@v2
       with:
