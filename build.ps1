@@ -4,13 +4,13 @@ param(
   [string]$vcpkg = "vcpkg\vcpkg.exe",
   [string]$vcpkg_dir = (split-path -parent $vcpkg),
   [string]$buildver = "0",
-  [string]$msiversion = "3.14.8.$buildver",
+  [string]$msiversion = "3.14.9.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
   [string]$cmake = "cmake.exe",
   [string]$generator = "NMake Makefiles",
   [string]$toolset = "141",
   [string]$vcvars = $null,
-  [string]$vcver = $null,
+  [string]$vcver = "",
   [string]$heat = "$env:WIX\bin\heat.exe",
   [string]$candle = "$env:WIX\bin\candle.exe",
   [string]$light = "$env:WIX\bin\light.exe",
@@ -30,8 +30,8 @@ if (!$vcvars) {
   '143' { $vcvars = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" }
   }
 }
-if (!$vcver) {
-  $vcvars = "$vcvars -vcvars_ver=$vcver"
+if ($vcver) {
+  $vcver = "-vcvars_ver=$vcver"
 }
 
 $env:VCPKG_OVERLAY_TRIPLETS = "$libdigidocpp\patches\vcpkg-triplets"
@@ -63,7 +63,7 @@ foreach($platform in @("x86", "x64")) {
   foreach($type in @("Debug", "RelWithDebInfo")) {
     $buildpath = $platform+$type
     Remove-Item $buildpath -Force -Recurse -ErrorAction Ignore
-    & $vcvars $platform "&&" $cmake "-G$generator" `
+    & $vcvars $platform $vcver "&&" $cmake "-G$generator" `
       "-DCMAKE_BUILD_TYPE=$type" `
       "-DCMAKE_INSTALL_PREFIX=$platform" `
       "-DCMAKE_INSTALL_LIBDIR=bin" `
