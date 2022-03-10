@@ -40,9 +40,9 @@ class XmlConfParam: public unique_ptr<A>
 public:
     XmlConfParam(string _name, A def = {}): name(std::move(_name)), _def(std::move(def)) {}
 
-    void setValue(const A &val, bool lock, bool global)
+    void setValue(const A &val, const Param::LockOptional &lock, bool global)
     {
-        if(global) locked = lock;
+        if(global && lock.present()) locked = lock.get();
         if(global || !locked) operator =(val);
     }
 
@@ -437,17 +437,41 @@ string XmlConfV4::ocsp(const string &issuer) const
 }
 
 /**
- * @fn void digidoc::XmlConf::setTSLOnlineDigest( bool enable )
+ * @fn void digidoc::XmlConf::setTSLOnlineDigest(bool enable)
  * Enables/Disables online digest check
  * @throws Exception exception is thrown if saving a TSL online digest into a user configuration file fails.
+ */
+/**
+ * @fn void digidoc::XmlConfV2::setTSLOnlineDigest(bool enable)
+ * @copydoc digidoc::XmlConf::setTSLOnlineDigest(bool enable)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setTSLOnlineDigest(bool enable)
+ * @copydoc digidoc::XmlConf::setTSLOnlineDigest(bool enable)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setTSLOnlineDigest(bool enable)
+ * @copydoc digidoc::XmlConf::setTSLOnlineDigest(bool enable)
  */
 SET1(bool, setTSLOnlineDigest, TSLOnlineDigest)
 
 /**
- * @fn void digidoc::XmlConf::setTSLTimeOut( int timeOut )
+ * @fn void digidoc::XmlConf::setTSLTimeOut(int timeOut)
  * Sets TSL connection timeout
  * @param timeOut Time out in seconds
  * @throws Exception exception is thrown if saving a TSL timeout into a user configuration file fails.
+ */
+/**
+ * @fn void digidoc::XmlConfV2::setTSLTimeOut(int timeOut)
+ * @copydoc digidoc::XmlConf::setTSLTimeOut(int timeOut)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setTSLTimeOut(int timeOut)
+ * @copydoc digidoc::XmlConf::setTSLTimeOut(int timeOut)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setTSLTimeOut(int timeOut)
+ * @copydoc digidoc::XmlConf::setTSLTimeOut(int timeOut)
  */
 SET1(int, setTSLTimeOut, TSLTimeOut)
 
@@ -458,6 +482,18 @@ SET1(int, setTSLTimeOut, TSLTimeOut)
  * @param host proxy host address.
  * @throws Exception exception is thrown if saving a proxy host address into a user configuration file fails.
  */
+/**
+ * @fn void digidoc::XmlConfV2::setProxyHost(const std::string &host)
+ * @copydoc digidoc::XmlConf::setProxyHost(const std::string &host)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setProxyHost(const std::string &host)
+ * @copydoc digidoc::XmlConf::setProxyHost(const std::string &host)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setProxyHost(const std::string &host)
+ * @copydoc digidoc::XmlConf::setProxyHost(const std::string &host)
+ */
 SET1CONST(string, setProxyHost, proxyHost)
 
 /**
@@ -466,6 +502,18 @@ SET1CONST(string, setProxyHost, proxyHost)
  *
  * @param port proxy port number.
  * @throws Exception exception is thrown if saving a proxy port number into a user configuration file fails.
+ */
+/**
+ * @fn void digidoc::XmlConfV2::setProxyPort(const std::string &port)
+ * @copydoc digidoc::XmlConf::setProxyPort(const std::string &port)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setProxyPort(const std::string &port)
+ * @copydoc digidoc::XmlConf::setProxyPort(const std::string &port)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setProxyPort(const std::string &port)
+ * @copydoc digidoc::XmlConf::setProxyPort(const std::string &port)
  */
 SET1CONST(string, setProxyPort, proxyPort)
 
@@ -476,6 +524,18 @@ SET1CONST(string, setProxyPort, proxyPort)
  * @param user proxy user name.
  * @throws Exception exception is thrown if saving a proxy user name into a user configuration file fails.
  */
+/**
+ * @fn void digidoc::XmlConfV2::setProxyUser(const std::string &user)
+ * @copydoc digidoc::XmlConf::setProxyUser(const std::string &user)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setProxyUser(const std::string &user)
+ * @copydoc digidoc::XmlConf::setProxyUser(const std::string &user)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setProxyUser(const std::string &user)
+ * @copydoc digidoc::XmlConf::setProxyUser(const std::string &user)
+ */
 SET1CONST(string, setProxyUser, proxyUser)
 
 /**
@@ -484,6 +544,18 @@ SET1CONST(string, setProxyUser, proxyUser)
  *
  * @param pass proxy password.
  * @throws Exception exception is thrown if saving a proxy password into a user configuration file fails.
+ */
+/**
+ * @fn void digidoc::XmlConfV2::setProxyPass(const std::string &pass)
+ * @copydoc digidoc::XmlConf::setProxyPass(const std::string &pass)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setProxyPass(const std::string &pass)
+ * @copydoc digidoc::XmlConf::setProxyPass(const std::string &pass)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setProxyPass(const std::string &pass)
+ * @copydoc digidoc::XmlConf::setProxyPass(const std::string &pass)
  */
 SET1CONST(string, setProxyPass, proxyPass)
 
@@ -495,6 +567,18 @@ SET1CONST(string, setProxyPass, proxyPass)
  * @param cert PKCS#12 certificate location path.
  * @throws Exception exception is thrown if saving a PKCS#12 certificate path into a user configuration file fails.
  */
+/**
+ * @fn void digidoc::XmlConfV2::setPKCS12Cert(const std::string &cert)
+ * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setPKCS12Cert(const std::string &cert)
+ * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setPKCS12Cert(const std::string &cert)
+ * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
+ */
 SET1CONST(string, setPKCS12Cert, PKCS12Cert)
 
 /**
@@ -503,6 +587,18 @@ SET1CONST(string, setPKCS12Cert, PKCS12Cert)
  *
  * @param pass PKCS#12 certificate password.
  * @throws Exception exception is thrown if saving a PKCS#12 certificate password into a user configuration file fails.
+ */
+/**
+ * @fn void digidoc::XmlConfV2::setPKCS12Pass(const std::string &pass)
+ * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setPKCS12Pass(const std::string &pass)
+ * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setPKCS12Pass(const std::string &pass)
+ * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
  */
 SET1CONST(string, setPKCS12Pass, PKCS12Pass)
 
@@ -513,14 +609,38 @@ SET1CONST(string, setPKCS12Pass, PKCS12Pass)
  * @param url Target URL to connect TSA service.
  * @throws Exception exception is thrown if saving a TS URL into a user configuration file fails.
  */
+/**
+ * @fn void digidoc::XmlConfV2::setTSUrl(const std::string &url)
+ * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setTSUrl(const std::string &url)
+ * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setTSUrl(const std::string &url)
+ * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
+ */
 SET1CONST(string, setTSUrl, TSUrl)
 
 /**
- * @fn void digidoc::XmlConf::setPKCS12Disable( bool disable )
+ * @fn void digidoc::XmlConf::setPKCS12Disable(bool disable)
  * Sets a PKCS#12 certificate usage. Also adds or replaces PKCS#12 certificate usage in the user configuration file.
  *
  * @param disable PKCS#12 certificate usage.
  * @throws Exception exception is thrown if saving a PKCS#12 certificate usage into a user configuration file fails.
+ */
+/**
+ * @fn void digidoc::XmlConfV2::setPKCS12Disable(bool disable)
+ * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setPKCS12Disable(bool disable)
+ * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setPKCS12Disable(bool disable)
+ * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
  */
 SET1(bool, setPKCS12Disable, PKCS12Disable)
 
@@ -529,6 +649,18 @@ SET1(bool, setPKCS12Disable, PKCS12Disable)
  *
  * Enables SSL proxy connections
  * @throws Exception exception is thrown if saving into a user configuration file fails.
+ */
+/**
+ * @fn void digidoc::XmlConfV2::setProxyTunnelSSL(bool enable)
+ * @copydoc digidoc::XmlConf::setProxyTunnelSSL(bool enable)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setProxyTunnelSSL(bool enable)
+ * @copydoc digidoc::XmlConf::setProxyTunnelSSL(bool enable)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setProxyTunnelSSL(bool enable)
+ * @copydoc digidoc::XmlConf::setProxyTunnelSSL(bool enable)
  */
 SET1(bool, setProxyTunnelSSL, proxyTunnelSSL)
 
