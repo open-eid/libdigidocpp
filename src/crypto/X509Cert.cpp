@@ -34,18 +34,6 @@
 using namespace digidoc;
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static const ASN1_TIME *X509_get0_notBefore(const X509 *x)
-{
-    return x->cert_info->validity->notBefore;
-}
-
-static const ASN1_TIME *X509_get0_notAfter(const X509 *x)
-{
-    return x->cert_info->validity->notAfter;
-}
-#endif
-
 /**
  * SemanticsInformation ::= SEQUENCE {
  *        semanticsIdentifier         OBJECT IDENTIFIER OPTIONAL,
@@ -86,13 +74,7 @@ DECLARE_ASN1_FUNCTIONS(QCStatement)
  * QCStatements ::= SEQUENCE OF QCStatement
  */
 using QCStatements = STACK_OF(QCStatement);
-#if OPENSSL_VERSION_NUMBER < 0x10010000L
-#include <openssl/safestack.h>
-#define sk_QCStatement_num(st) sk_num((_STACK*)st)
-#define sk_QCStatement_value(st, i) (QCStatement*)sk_value((_STACK*)st, i)
-#else
 DEFINE_STACK_OF(QCStatement)
-#endif
 DECLARE_ASN1_FUNCTIONS(QCStatements)
 
 /**
@@ -280,7 +262,7 @@ X509Cert::X509Cert(const X509Cert &other) = default;
 /**
  * Move constructor.
  */
-X509Cert::X509Cert(X509Cert &&other)
+X509Cert::X509Cert(X509Cert &&other) DIGIDOCPP_NOEXCEPT
  : cert(move(other.cert))
 {
 }
@@ -547,7 +529,7 @@ X509Cert& X509Cert::operator =(const X509Cert &other) = default;
 /**
  * Move operator
  */
-X509Cert& X509Cert::operator =(X509Cert &&other)
+X509Cert& X509Cert::operator =(X509Cert &&other) DIGIDOCPP_NOEXCEPT
 {
     if(this != &other)
         cert = move(other.cert);

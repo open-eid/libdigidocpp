@@ -47,13 +47,6 @@ using namespace std;
     throw ex; \
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
-{
-    return ctx->cert;
-}
-#endif
-
 Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent, const std::vector<X509Cert> &certs)
     : _timeout(timeout)
 {
@@ -85,7 +78,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     }
 
     DEBUG("Connecting to Host: %s timeout: %i", hostname.c_str(), _timeout);
-    d = BIO_new_connect(const_cast<char*>(hostname.c_str()));
+    d = BIO_new_connect(hostname.c_str());
     if(!d)
         THROW_NETWORKEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str())
 

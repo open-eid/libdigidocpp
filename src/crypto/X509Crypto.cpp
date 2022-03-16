@@ -37,7 +37,6 @@
 using namespace digidoc;
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 /*-
  * IssuerSerial ::= SEQUENCE {
  *         issuer                   GeneralNames,
@@ -48,15 +47,6 @@ using ESS_ISSUER_SERIAL = struct ESS_issuer_serial {
     GENERAL_NAMES *issuer;
     ASN1_INTEGER *serial;
 };
-
-#if OPENSSL_VERSION_NUMBER < 0x10101000L
-ASN1_SEQUENCE(ESS_ISSUER_SERIAL) = {
-        ASN1_SEQUENCE_OF(ESS_ISSUER_SERIAL, issuer, GENERAL_NAME),
-        ASN1_SIMPLE(ESS_ISSUER_SERIAL, serial, ASN1_INTEGER)
-} static_ASN1_SEQUENCE_END(ESS_ISSUER_SERIAL)
-IMPLEMENT_ASN1_FUNCTIONS_const(ESS_ISSUER_SERIAL)
-#endif
-#endif
 
 /**
  * Initialize RSA crypter.
@@ -179,10 +169,10 @@ int X509Crypto::compareIssuerToString(const string &name) const
             if(OBJ_cmp(obja, X509_NAME_ENTRY_get_object(entb)) != 0)
                 continue;
 
-            char *data = nullptr;
-            int size = ASN1_STRING_to_UTF8((unsigned char**)&data, X509_NAME_ENTRY_get_data(entb));
-            found = value.compare(0, size_t(size), data, value.size()) == 0;
-            OPENSSL_free(data);
+            char *val = nullptr;
+            int size = ASN1_STRING_to_UTF8((unsigned char**)&val, X509_NAME_ENTRY_get_data(entb));
+            found = value.compare(0, size_t(size), val, value.size()) == 0;
+            OPENSSL_free(val);
             if(found)
                 break;
         }
@@ -240,10 +230,6 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
             vector<unsigned char> decrypted = decrypt(RSA_NO_PADDING);
             result = RSA_verify_PKCS1_PSS_mgf1(rsa, digest.data(), EVP_get_digestbynid(nid), nullptr, decrypted.data(), RSA_PSS_SALTLEN_DIGEST);
         } else {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-            result = RSA_verify(Digest::toMethod(method), digest.data(), (unsigned int)digest.size(),
-                const_cast<unsigned char*>(signature.data()), (unsigned int)signature.size(), rsa);
-#else
             vector<unsigned char> out = decrypt(RSA_PKCS1_PADDING);
             const unsigned char *p = out.data();
             SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(out.size())));
@@ -259,7 +245,6 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
                 size_t(value->length) == digest.size() &&
                 memcmp(value->data, digest.data(), digest.size()) == 0)
                 result = 1;
-#endif
         }
         break;
     }
