@@ -294,7 +294,7 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
             catch(const Exception &e)
             {
                 debugException(e);
-                ERR("TSL %s Failed to download list", tsl.territory().c_str());
+                ERR("TSL %s Failed to download list", url.c_str());
             }
         }
     }

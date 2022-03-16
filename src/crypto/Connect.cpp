@@ -136,6 +136,12 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         BIO *sbio = BIO_new_ssl(ssl.get(), 1);
         if(!sbio)
             THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
+        SSL *ssl = nullptr;
+        if(BIO_get_ssl(sbio, &ssl) == 1 && ssl)
+        {
+            SSL_set1_host(ssl, host.c_str());
+            SSL_set_tlsext_host_name(ssl, host.c_str());
+        }
         d = BIO_push(sbio, d);
         while(BIO_do_handshake(d) != 1)
         {
