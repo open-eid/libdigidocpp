@@ -23,23 +23,25 @@
 #include "File.h"
 
 #include "../log.h"
-#include "DateTime.h"
 
 #include <algorithm>
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include <sstream>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #ifdef _WIN32
-    #include <Windows.h>
-    #include <direct.h>
+#include <Windows.h>
+#include <direct.h>
+#include <sys/utime.h>
 #else
-    #include <dirent.h>
-    #include <sys/param.h>
+#include <dirent.h>
+#include <sys/param.h>
 #include <unistd.h>
+#include <utime.h>
 #endif
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
@@ -50,11 +52,15 @@ using namespace digidoc::util;
 using namespace std;
 
 #ifdef _WIN32
-#define f_stat      _wstat64
+#define f_stat _wstat64
+#define f_utime _wutime64
 using f_statbuf = struct _stat64;
+using f_utimbuf = struct __utimbuf64;
 #else
-#define f_stat      stat
+#define f_stat stat
+#define f_utime utime
 using f_statbuf = struct stat;
+using f_utimbuf = struct utimbuf;
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__)
@@ -251,12 +257,24 @@ string File::dllPath(const string &dll)
  * @param path path which modified time will be checked.
  * @return returns given path modified time.
  */
-struct tm File::modifiedTime(const string &path)
+time_t File::modifiedTime(const string &path)
 {
     f_statbuf fileInfo;
-    if(f_stat(encodeName(path).c_str(), &fileInfo) != 0)
-        return date::gmtime(time(nullptr));
-    return date::gmtime(fileInfo.st_mtime);
+    return f_stat(encodeName(path).c_str(), &fileInfo) ? time(nullptr) : fileInfo.st_mtime;
+}
+
+void File::updateModifiedTime(const string &path, time_t time)
+{
+    f_statbuf fileInfo;
+    f_string _path = encodeName(path);
+    if(f_stat(_path.c_str(), &fileInfo))
+        THROW("Failed to update file modified time.");
+
+    f_utimbuf u_time;
+    u_time.actime = fileInfo.st_atime;
+    u_time.modtime = time;
+    if(f_utime(_path.c_str(), &u_time))
+        THROW("Failed to update file modified time.");
 }
 
 string File::fileExtension(const std::string &path)
@@ -275,9 +293,7 @@ string File::fileExtension(const std::string &path)
 unsigned long File::fileSize(const string &path)
 {
     f_statbuf fileInfo;
-    if(f_stat(encodeName(path).c_str(), &fileInfo) != 0)
-        return 0;
-    return fileInfo.st_size;
+    return f_stat(encodeName(path).c_str(), &fileInfo) ? 0 : (unsigned long)fileInfo.st_size;
 }
 
 
@@ -450,10 +466,11 @@ vector<string> File::listFiles(const string& directory)
 
     char fullPath[MAXPATHLEN];
     struct stat info;
-    dirent* entry;
-    while((entry = readdir(pDir)) != nullptr)
+    for(dirent *entry = readdir(pDir); entry; entry = readdir(pDir))
     {
-        if(string(".") == entry->d_name || string("..") == entry->d_name)
+        static const string dot(".");
+        static const string dotdot("..");
+        if(dot == entry->d_name || dotdot == entry->d_name)
             continue;
 
         sprintf(fullPath, "%s/%s", _directory.c_str(), entry->d_name);
@@ -462,8 +479,7 @@ vector<string> File::listFiles(const string& directory)
     }
 
     closedir(pDir);
-#else
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#elif WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
     WIN32_FIND_DATAW findFileData;
     HANDLE hFind = nullptr;
 
@@ -501,7 +517,6 @@ vector<string> File::listFiles(const string& directory)
         ::FindClose(hFind);
         throw;
     }
-#endif
 #endif
     return files;
 }

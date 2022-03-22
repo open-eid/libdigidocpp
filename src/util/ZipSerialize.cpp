@@ -19,8 +19,9 @@
 
 #include "ZipSerialize.h"
 
-#include "../log.h"
-#include "../util/File.h"
+#include "log.h"
+#include "util/File.h"
+#include "util/DateTime.h"
 
 #include <minizip/unzip.h>
 #include <minizip/zip.h>
@@ -179,9 +180,10 @@ void ZipSerialize::addFile(const string& containerPath, istream &is, const Prope
         THROW("Zip file is not open");
 
     DEBUG("ZipSerialize::addFile(%s)", containerPath.c_str());
+    struct tm time = util::date::gmtime(prop.time);
     zip_fileinfo info = {
-        { uInt(prop.time.tm_sec), uInt(prop.time.tm_min), uInt(prop.time.tm_hour),
-          uInt(prop.time.tm_mday), uInt(prop.time.tm_mon), uInt(prop.time.tm_year) },
+        { uInt(time.tm_sec), uInt(time.tm_min), uInt(time.tm_hour),
+          uInt(time.tm_mday), uInt(time.tm_mon), uInt(time.tm_year) },
         0, 0, 0 };
 
     // Create new file inside ZIP container.
@@ -227,13 +229,14 @@ ZipSerialize::Properties ZipSerialize::properties(const string &file) const
     if(unzResult != UNZ_OK)
         THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
-    Properties prop;
-    prop.time = { int(info.tmu_date.tm_sec), int(info.tmu_date.tm_min), int(info.tmu_date.tm_hour),
+    struct tm time = { int(info.tmu_date.tm_sec), int(info.tmu_date.tm_min), int(info.tmu_date.tm_hour),
             int(info.tmu_date.tm_mday), int(info.tmu_date.tm_mon), int(info.tmu_date.tm_year), 0, 0, 0
 #ifndef _WIN32
              , 0, nullptr
 #endif
     };
+    Properties prop;
+    prop.time = util::date::mkgmtime(time);
     prop.size = info.uncompressed_size;
     if(info.size_file_comment == 0)
         return prop;

@@ -285,7 +285,7 @@ ZipSerialize::Properties ASiContainer::zproperty(const string &file) const
     map<string, ZipSerialize::Properties>::const_iterator i = d->properties.find(file);
     if(i != d->properties.cend())
         return i->second;
-    return d->properties[file] = { appInfo(), date::gmtime(time(nullptr)), 0 };
+    return d->properties[file] = { appInfo(), time(nullptr), 0 };
 }
 
 void ASiContainer::zproperty(const string &file, const ZipSerialize::Properties &prop)
