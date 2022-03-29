@@ -62,8 +62,6 @@ public:
     Connect(const std::string &url, const std::string &method = "POST",
         int timeout = 0, const std::string &useragent = {}, const std::vector<X509Cert> &certs = {});
     ~Connect();
-    void addHeader(const std::string &key, const std::string &value);
-    void addHeaders(std::initializer_list<std::pair<std::string,std::string>> headers);
     Result exec(std::initializer_list<std::pair<std::string,std::string>> headers,
         const std::vector<unsigned char> &data);
     Result exec(std::initializer_list<std::pair<std::string,std::string>> headers = {},
@@ -72,6 +70,7 @@ public:
 private:
     DISABLE_COPY(Connect);
 
+    void addHeader(const std::string &key, const std::string &value);
     void sendProxyAuth();
     std::string decompress(const std::string &encoding, const std::string &data) const;
     void waitReadWrite(bool read) const;
