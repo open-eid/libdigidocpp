@@ -45,34 +45,6 @@
 using namespace digidoc;
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static int OCSP_resp_get0_id(const OCSP_BASICRESP *bs, const ASN1_OCTET_STRING **pid, const X509_NAME **pname)
-
-{
-    const OCSP_RESPID *rid = bs->tbsResponseData->responderId;
-    if (rid->type == V_OCSP_RESPID_NAME) {
-        *pname = rid->value.byName;
-        *pid = nullptr;
-    } else if (rid->type == V_OCSP_RESPID_KEY) {
-        *pid = rid->value.byKey;
-        *pname = nullptr;
-    } else {
-        return 0;
-    }
-    return 1;
-}
-
-static const STACK_OF(X509) *OCSP_resp_get0_certs(const OCSP_BASICRESP *bs)
-{
-    return bs->certs;
-}
-
-static const ASN1_GENERALIZEDTIME *OCSP_resp_get0_produced_at(const OCSP_BASICRESP* bs)
-{
-    return bs->tbsResponseData->producedAt;
-}
-#endif
-
 /**
  * Initialize OCSP certificate validator.
  */

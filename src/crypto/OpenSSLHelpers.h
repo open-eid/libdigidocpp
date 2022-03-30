@@ -32,57 +32,6 @@
 #define RSA_PSS_SALTLEN_DIGEST -1
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-#include <openssl/x509.h>
-
-static EVP_PKEY *X509_get0_pubkey(X509 *x)
-{
-    if(!x)
-        return nullptr;
-    EVP_PKEY *key = X509_get_pubkey(x);
-    EVP_PKEY_free(key);
-    return key;
-}
-
-static void X509_SIG_get0(const X509_SIG *sig, const X509_ALGOR **palg, const ASN1_OCTET_STRING **pdigest)
-{
-    if(palg)
-        *palg = sig->algor;
-    if(pdigest)
-        *pdigest = sig->digest;
-}
-
-static RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey)
-{
-    if(pkey->type == EVP_PKEY_RSA || pkey->type != NID_rsassaPss)
-        return pkey->pkey.rsa;
-    return nullptr;
-}
-
-static EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey)
-{
-    if(pkey->type == EVP_PKEY_EC)
-        return pkey->pkey.ec;
-    return nullptr;
-}
-
-static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps)
-{
-    if(pr) *pr = sig->r;
-    if(ps) *ps = sig->s;
-}
-
-static int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
-{
-    if(!r || !s) return 0;
-    BN_clear_free(sig->r);
-    BN_clear_free(sig->s);
-    sig->r = r;
-    sig->s = s;
-    return 1;
-}
-#endif
-
 namespace digidoc
 {
 

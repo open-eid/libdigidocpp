@@ -40,27 +40,6 @@
 using namespace digidoc;
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static void TS_VERIFY_CTX_set_flags(TS_VERIFY_CTX *ctx, int f)
-{
-    ctx->flags = unsigned(f);
-}
-
-static void TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx, unsigned char *hexstr, long len)
-{
-    OPENSSL_free(ctx->imprint);
-    ctx->imprint = hexstr;
-    ctx->imprint_len = unsigned(len);
-}
-
-static void TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s)
-{
-    ctx->store = s;
-}
-
-#define ASN1_STRING_get0_data ASN1_STRING_data
-#endif
-
 TS::TS(const string &url, const Digest &digest, const string &useragent)
 {
     SCOPE(TS_REQ, req, TS_REQ_new());
@@ -88,7 +67,7 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
 
     SCOPE(ASN1_INTEGER, nonce, ASN1_INTEGER_new());
     nonce->length = 20;
-    nonce->data = (unsigned char*)OPENSSL_malloc(nonce->length);
+    nonce->data = (unsigned char*)OPENSSL_malloc(size_t(nonce->length));
     nonce->data[0] = 0;
     while(nonce->data[0] == 0) // Make sure that first byte is not 0x00
         RAND_bytes(nonce->data, nonce->length);

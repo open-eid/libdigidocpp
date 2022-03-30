@@ -81,7 +81,7 @@ namespace digidoc
           explicit X509Cert(const unsigned char *bytes, size_t size, Format format = Der);
           explicit X509Cert(const std::vector<unsigned char> &bytes, Format format = Der);
           explicit X509Cert(const std::string &path, Format format = Pem);
-          X509Cert(X509Cert &&other);
+          X509Cert(X509Cert &&other) DIGIDOCPP_NOEXCEPT;
           X509Cert(const X509Cert &other);
           ~X509Cert();
 
@@ -97,7 +97,7 @@ namespace digidoc
           X509* handle() const;
           operator std::vector<unsigned char>() const;
           X509Cert& operator=(const X509Cert &other);
-          X509Cert& operator=(X509Cert &&other);
+          X509Cert& operator=(X509Cert &&other) DIGIDOCPP_NOEXCEPT;
           bool operator !() const;
           bool operator ==(X509 *other) const;
           bool operator ==(const X509Cert &other) const;

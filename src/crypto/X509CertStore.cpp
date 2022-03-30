@@ -37,28 +37,6 @@
 using namespace digidoc;
 using namespace std;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
-{
-    return ctx->cert;
-}
-
-static X509_VERIFY_PARAM *X509_STORE_get0_param(X509_STORE *ctx)
-{
-    return ctx->param;
-}
-
-static time_t X509_VERIFY_PARAM_get_time(const X509_VERIFY_PARAM *param)
-{
-    return param->check_time;
-}
-
-static const ASN1_TIME *X509_get0_notBefore(const X509 *x)
-{
-    return x->cert_info->validity->notBefore;
-}
-#endif
-
 const set<string> X509CertStore::CA = {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
 };
@@ -94,9 +72,6 @@ X509CertStore::X509CertStore()
 {
     SSL_load_error_strings();
     SSL_library_init();
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    OPENSSL_config(nullptr);
-#endif
     d->update();
 }
 

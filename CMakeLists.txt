@@ -44,7 +44,7 @@ if( APPLE )
 endif()
 
 find_package(Doxygen)
-find_package(OpenSSL 1.0.2 REQUIRED)
+find_package(OpenSSL 1.1.1 REQUIRED)
 find_package(PKCS11)
 find_package(PoDoFo)
 find_package(Threads)
