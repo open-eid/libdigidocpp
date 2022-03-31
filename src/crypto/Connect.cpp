@@ -152,7 +152,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         waitReadWrite(false);
 
     BIO_printf(d, "%s %s HTTP/1.0\r\n", method.c_str(), path.c_str());
-    if(port == "80")
+    if(port == "80" || port == "443")
         addHeader("Host", host);
     else
         addHeader("Host", host + ":" + port);
@@ -171,12 +171,6 @@ Connect::~Connect()
 void Connect::addHeader(const string &key, const string &value)
 {
     BIO_printf(d, "%s: %s\r\n", key.c_str(), value.c_str());
-}
-
-void Connect::addHeaders(initializer_list<pair<string,string>> headers)
-{
-    for(const pair<string,string> &it: headers)
-        addHeader(it.first, it.second);
 }
 
 std::string Connect::decompress(const std::string &encoding, const std::string &data) const
@@ -229,7 +223,9 @@ Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
 Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
     const unsigned char *data, size_t size)
 {
-    addHeaders(headers);
+    for(const pair<string,string> &it: headers)
+        addHeader(it.first, it.second);
+
     if(size != 0)
     {
         addHeader("Content-Length", to_string(size));
