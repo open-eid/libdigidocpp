@@ -139,7 +139,7 @@ jobs:
         include:
         - toolset: 143
           image: windows-2022
-          vcver: 14.30
+          vcver: 14.31
           vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
         - toolset: 142
           image: windows-2019
@@ -245,21 +245,3 @@ jobs:
           --form version=master \
           --form description="Github Actions CI build" \
           https://scan.coverity.com/builds?project=$PROJECTNAME
-  codeql:
-    name: Run CodeQL tests
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
-      with:
-        languages: cpp
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
