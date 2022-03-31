@@ -1,5 +1,3 @@
-vcpkg_fail_port_install(MESSAGE "xml-security-c currently only supports Windows X86/X64 platforms" ON_TARGET "OSX" "Linux" ON_ARCH "arm" "arm64")
-
 vcpkg_download_distfile(ARCHIVE
     URLS "https://dlcdn.apache.org/santuario/c-library/xml-security-c-2.0.4.tar.gz"
     FILENAME "xml-security-c-2.0.4.tar.gz"
