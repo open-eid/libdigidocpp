@@ -48,7 +48,8 @@ using namespace std;
 }
 
 Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent, const std::vector<X509Cert> &certs)
-    : _timeout(timeout)
+    : _method(method)
+    , _timeout(timeout)
 {
     DEBUG("Connecting to URL: %s", _url.c_str());
     char *_host = nullptr, *_port = nullptr, *_path = nullptr;
@@ -67,6 +68,12 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     OPENSSL_free(_host);
     OPENSSL_free(_port);
     OPENSSL_free(_path);
+    size_t pos = url.find("://");
+    if(pos != string::npos) {
+        pos = url.find('/', pos + 3);
+        if(pos != string::npos)
+            baseurl = url.substr(0, pos);
+    }
 
     string hostname = host + ":" + port;
     Conf *c = Conf::instance();
@@ -282,7 +289,13 @@ Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
     const auto it = r.headers.find("Content-Encoding");
     if(it != r.headers.cend())
         r.content = decompress(it->second, r.content);
-    return r;
+
+    if(!r.isRedirect() || recursive > 3)
+        return r;
+    string url = r.headers["Location"].find("://") != string::npos ? r.headers["Location"] : baseurl + r.headers["Location"];
+    Connect c(url, _method, _timeout);
+    c.recursive = recursive + 1;
+    return c.exec(headers);
 }
 
 void Connect::sendProxyAuth()

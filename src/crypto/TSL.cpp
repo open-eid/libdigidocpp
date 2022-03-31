@@ -264,8 +264,6 @@ TSL::Result TSL::parse(const string &url, const vector<X509Cert> &certs,
             {
                 ofstream file(File::encodeName(tmp).c_str(), ofstream::binary);
                 Connect::Result r = Connect(url, "GET", timeout).exec({{"Accept-Encoding", "gzip"}});
-                if(r.isRedirect())
-                    r = Connect(r.headers["Location"], "GET", timeout).exec({{"Accept-Encoding", "gzip"}});
                 if(!r.isOK() || r.content.empty())
                     THROW("HTTP status code is not 200 or content is empty");
                 file << r.content;
@@ -567,8 +565,6 @@ void TSL::validateETag(const string &url, int timeout)
     Connect::Result r;
     try {
         r = Connect(url, "HEAD", timeout).exec({{"Accept-Encoding", "gzip"}});
-        if(r.isRedirect())
-            r = Connect(r.headers["Location"], "HEAD", timeout).exec({{"Accept-Encoding", "gzip"}});
         if(!r.isOK())
             return;
     } catch(const Exception &e) {
@@ -605,8 +601,6 @@ bool TSL::validateRemoteDigest(const std::string &url, int timeout)
     try
     {
         r= Connect(url.substr(0, pos) + ".sha2", "GET", timeout).exec();
-        if(r.isRedirect())
-            r = Connect(r.headers["Location"], "GET", timeout).exec();
         if(!r.isOK())
             return false;
     } catch(const Exception &e) {

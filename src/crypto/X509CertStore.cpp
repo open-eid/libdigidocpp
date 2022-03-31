@@ -141,8 +141,6 @@ X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert) const
     if(url.empty())
         return X509Cert();
     Connect::Result result = Connect(url, "GET").exec();
-    if(result.isRedirect())
-        result = Connect(result.headers["Location"], "GET").exec();
     return X509Cert((const unsigned char*)result.content.c_str(), result.content.size());
 }
 
