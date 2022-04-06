@@ -211,28 +211,33 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
     if(!key)
         THROW("Certificate does not have a public key, can not verify signature.");
 
+    SCOPE(EVP_PKEY_CTX, ctx, EVP_PKEY_CTX_new(key, nullptr));
     int result = 0;
     switch(EVP_PKEY_base_id(key))
     {
     case EVP_PKEY_RSA:
     {
-        SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(key));
-        auto decrypt = [&rsa, &signature](int padding) {
-            vector<unsigned char> decrypted(size_t(RSA_size(rsa.get())));
-            int size = RSA_public_decrypt(int(signature.size()), signature.data(), decrypted.data(), rsa.get(), padding);
-            if(size <= 0)
-                decrypted.clear();
-            return decrypted;
-        };
         int nid = Digest::toMethod(method);
-
         if(Digest::isRsaPssUri(method)) {
-            vector<unsigned char> decrypted = decrypt(RSA_NO_PADDING);
-            result = RSA_verify_PKCS1_PSS_mgf1(rsa.get(), digest.data(), EVP_get_digestbynid(nid), nullptr, decrypted.data(), RSA_PSS_SALTLEN_DIGEST);
+            if(ctx &&
+                EVP_PKEY_verify_init(ctx.get()) == 1 &&
+                EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PSS_PADDING) == 1 &&
+                EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx.get(), RSA_PSS_SALTLEN_DIGEST) == 1 &&
+                EVP_PKEY_CTX_set_signature_md(ctx.get(), EVP_get_digestbynid(nid)) == 1)
+                result = EVP_PKEY_verify(ctx.get(), signature.data(), signature.size(), digest.data(), digest.size());
         } else {
-            vector<unsigned char> out = decrypt(RSA_PKCS1_PADDING);
-            const unsigned char *p = out.data();
-            SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(out.size())));
+            size_t size = 0;
+            if(!ctx ||
+                EVP_PKEY_verify_recover_init(ctx.get()) <= 0 ||
+                EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PADDING) <= 0 ||
+                EVP_PKEY_verify_recover(ctx.get(), nullptr, &size, signature.data(), signature.size()) <= 0)
+                break;
+            vector<unsigned char> decrypted(size);
+            if(EVP_PKEY_verify_recover(ctx.get(), decrypted.data(), &size, signature.data(), signature.size()) <= 0)
+                break;
+            decrypted.resize(size);
+            const unsigned char *p = decrypted.data();
+            SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(decrypted.size())));
             if(!sig)
                 break;
             const X509_ALGOR *algor = nullptr;
@@ -251,12 +256,13 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
 #ifndef OPENSSL_NO_ECDSA
     case EVP_PKEY_EC:
     {
-        SCOPE(EC_KEY, ec, EVP_PKEY_get1_EC_KEY(key));
         SCOPE(ECDSA_SIG, sig, ECDSA_SIG_new());
         ECDSA_SIG_set0(sig.get(),
             BN_bin2bn(signature.data(), int(signature.size()/2), nullptr),
             BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), nullptr));
-        result = ECDSA_do_verify(digest.data(), int(digest.size()), sig.get(), ec.get());
+        vector<unsigned char> asn1 = i2d(sig.get(), i2d_ECDSA_SIG);
+        if(ctx && EVP_PKEY_verify_init(ctx.get()) == 1)
+            result = EVP_PKEY_verify(ctx.get(), asn1.data(), asn1.size(), digest.data(), digest.size());
         break;
     }
 #endif
