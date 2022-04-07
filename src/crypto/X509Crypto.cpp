@@ -216,10 +216,10 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
     {
     case EVP_PKEY_RSA:
     {
-        RSA *rsa = EVP_PKEY_get0_RSA(key);
-        auto decrypt = [rsa, &signature](int padding) {
-            vector<unsigned char> decrypted(size_t(RSA_size(rsa)));
-            int size = RSA_public_decrypt(int(signature.size()), signature.data(), decrypted.data(), rsa, padding);
+        SCOPE(RSA, rsa, EVP_PKEY_get1_RSA(key));
+        auto decrypt = [&rsa, &signature](int padding) {
+            vector<unsigned char> decrypted(size_t(RSA_size(rsa.get())));
+            int size = RSA_public_decrypt(int(signature.size()), signature.data(), decrypted.data(), rsa.get(), padding);
             if(size <= 0)
                 decrypted.clear();
             return decrypted;
@@ -228,7 +228,7 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
 
         if(Digest::isRsaPssUri(method)) {
             vector<unsigned char> decrypted = decrypt(RSA_NO_PADDING);
-            result = RSA_verify_PKCS1_PSS_mgf1(rsa, digest.data(), EVP_get_digestbynid(nid), nullptr, decrypted.data(), RSA_PSS_SALTLEN_DIGEST);
+            result = RSA_verify_PKCS1_PSS_mgf1(rsa.get(), digest.data(), EVP_get_digestbynid(nid), nullptr, decrypted.data(), RSA_PSS_SALTLEN_DIGEST);
         } else {
             vector<unsigned char> out = decrypt(RSA_PKCS1_PADDING);
             const unsigned char *p = out.data();
@@ -251,12 +251,12 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
 #ifndef OPENSSL_NO_ECDSA
     case EVP_PKEY_EC:
     {
-        EC_KEY *ec = EVP_PKEY_get0_EC_KEY(key);
+        SCOPE(EC_KEY, ec, EVP_PKEY_get1_EC_KEY(key));
         SCOPE(ECDSA_SIG, sig, ECDSA_SIG_new());
         ECDSA_SIG_set0(sig.get(),
             BN_bin2bn(signature.data(), int(signature.size()/2), nullptr),
             BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), nullptr));
-        result = ECDSA_do_verify(digest.data(), int(digest.size()), sig.get(), ec);
+        result = ECDSA_do_verify(digest.data(), int(digest.size()), sig.get(), ec.get());
         break;
     }
 #endif
