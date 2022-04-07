@@ -139,7 +139,7 @@ jobs:
         include:
         - toolset: 143
           image: windows-2022
-          vcver: 14.31
+          vcver: 14.32
           vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
         - toolset: 142
           image: windows-2019

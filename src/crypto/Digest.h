@@ -69,6 +69,8 @@ namespace digidoc
           void reset(const std::string &uri = {});
           void update(const std::vector<unsigned char> &data);
           void update(const unsigned char *data, size_t length);
+          std::vector<unsigned char> result(const std::vector<unsigned char> &data);
+          std::vector<unsigned char> result(const unsigned char *data, size_t length);
           std::vector<unsigned char> result() const;
           std::string uri() const;
 

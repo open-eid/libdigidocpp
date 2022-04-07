@@ -155,9 +155,7 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
                 string method = Digest::digestInfoUri(ocsp.nonce());
                 if(method.empty())
                     THROW("Nonce digest method is missing");
-                Digest calc(method);
-                calc.update(getSignatureValue());
-                vector<unsigned char> digest = calc.result();
+                vector<unsigned char> digest = Digest(method).result(getSignatureValue());
                 vector<unsigned char> respDigest = Digest::digestInfoDigest(ocsp.nonce());
                 if(digest != respDigest)
                 {
@@ -216,8 +214,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
 
     // Calculate NONCE value.
     Digest calc;
-    calc.update(getSignatureValue());
-    vector<unsigned char> nonce = Digest::addDigestInfo(calc.result(), calc.uri());
+    vector<unsigned char> nonce = Digest::addDigestInfo(calc.result(getSignatureValue()), calc.uri());
     DEBUGMEM("OID + Calculated signature HASH (nonce):", nonce.data(), nonce.size());
 
     // Get issuer certificate from certificate store.
