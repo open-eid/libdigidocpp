@@ -158,7 +158,8 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     if(_timeout > 0)
         waitReadWrite(false);
 
-    BIO_printf(d, "%s %s HTTP/1.0\r\n", method.c_str(), path.c_str());
+    BIO_printf(d, "%s %s HTTP/1.1\r\n", method.c_str(), path.c_str());
+    addHeader("Connection", "close");
     if(port == "80" || port == "443")
         addHeader("Host", host);
     else
@@ -285,6 +286,21 @@ Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
     pos = r.content.find("\r\n\r\n");
     if(pos != string::npos)
         r.content.erase(0, pos + 4);
+
+    const auto transfer_encoding = r.headers.find("Transfer-Encoding");
+    if(transfer_encoding != r.headers.cend() &&
+        transfer_encoding->second.find("chunked") != string::npos) {
+        pos = 0;
+        for(size_t chunkpos = r.content.find("\r\n", pos);
+            chunkpos != string::npos;
+            chunkpos = r.content.find("\r\n", pos))
+        {
+            string chunk = r.content.substr(pos, chunkpos - pos);
+            r.content.erase(pos, chunk.size() + 2);
+            pos += stoul(chunk, nullptr, 16);
+            r.content.erase(pos, 2);
+        }
+    }
 
     const auto it = r.headers.find("Content-Encoding");
     if(it != r.headers.cend())
