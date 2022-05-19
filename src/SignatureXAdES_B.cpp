@@ -710,10 +710,7 @@ void SignatureXAdES_B::checkKeyInfo() const
     }();
 
     // lets check digest with x509 that was in keyInfo
-    Digest certDigestCalc(certDigest.digestMethod().algorithm());
-    certDigestCalc.update(x509);
-    vector<unsigned char> calcDigest = certDigestCalc.result();
-
+    vector<unsigned char> calcDigest = Digest(certDigest.digestMethod().algorithm()).result(x509);
     if(certDigest.digestValue().size() != calcDigest.size() ||
        memcmp(calcDigest.data(), certDigest.digestValue().data(), certDigest.digestValue().size()) != 0)
     {
@@ -754,7 +751,7 @@ void SignatureXAdES_B::checkSignatureValue() const
     try
     {
         vector<unsigned char> sha = dataToSign();
-        DEBUGMEM("Digest", sha.data(), sha.size());
+        DEBUGMEM("Digest to sign", sha.data(), sha.size());
         if(!X509Crypto(signingCertificate()).verify(signatureMethod(), sha, getSignatureValue()))
             THROW_OPENSSLEXCEPTION("Signature is not valid.");
     }
@@ -832,10 +829,9 @@ void SignatureXAdES_B::setSigningCertificate(const X509Cert& x509)
 {
     // Calculate digest of the X.509 certificate.
     Digest digest;
-    digest.update(x509);
     CertIDListType signingCertificate;
     signingCertificate.cert().push_back(CertIDType(
-        DigestAlgAndValueType(DigestMethodType(digest.uri()), toBase64(digest.result())),
+        DigestAlgAndValueType(DigestMethodType(digest.uri()), toBase64(digest.result(x509))),
         X509IssuerSerialType(x509.issuerName(), x509.serial())));
     getSignedSignatureProperties().signingCertificate(signingCertificate);
 }
@@ -850,10 +846,9 @@ void SignatureXAdES_B::setSigningCertificateV2(const X509Cert& x509)
 {
     // Calculate digest of the X.509 certificate.
     Digest digest;
-    digest.update(x509);
     CertIDListV2Type signingCertificate;
     signingCertificate.cert().push_back(CertIDTypeV2(
-        DigestAlgAndValueType(DigestMethodType(digest.uri()), toBase64(digest.result()))));
+        DigestAlgAndValueType(DigestMethodType(digest.uri()), toBase64(digest.result(x509)))));
     getSignedSignatureProperties().signingCertificateV2(signingCertificate);
 }
 

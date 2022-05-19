@@ -28,8 +28,11 @@
 #include "util/File.h"
 
 #include <openssl/conf.h>
-#include <openssl/x509v3.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/provider.h>
+#endif
 #include <openssl/ssl.h>
+#include <openssl/x509v3.h>
 
 #include <algorithm>
 #include <iomanip>
@@ -70,6 +73,10 @@ public:
 X509CertStore::X509CertStore()
     : d(new Private)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    void(OSSL_PROVIDER_load(nullptr, "legacy"));
+    void(OSSL_PROVIDER_load(nullptr, "default"));
+#endif
     SSL_load_error_strings();
     SSL_library_init();
     d->update();

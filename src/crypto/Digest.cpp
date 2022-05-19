@@ -290,3 +290,14 @@ vector<unsigned char> Digest::result() const
         THROW_OPENSSLEXCEPTION("Failed to create %s digest", uri().c_str());
     return *d;
 }
+
+vector<unsigned char> Digest::result(const vector<unsigned char> &data)
+{
+    return result(data.data(), data.size());
+}
+
+vector<unsigned char> Digest::result(const unsigned char *data, size_t length)
+{
+    update(data, length);
+    return result();
+}
