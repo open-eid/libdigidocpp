@@ -23,12 +23,12 @@
 #include "ASiC_S.h"
 #include "DataFile.h"
 #include "Exception.h"
-#include "log.h"
 #include "PDF.h"
 #include "SiVaContainer.h"
 #include "XmlConf.h"
 #include "crypto/X509CertStore.h"
 #include "util/File.h"
+#include "util/log.h"
 
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")

@@ -20,12 +20,12 @@
 #include "X509CertStore.h"
 
 #include "Conf.h"
-#include "log.h"
 #include "crypto/Connect.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/TSL.h"
 #include "util/DateTime.h"
 #include "util/File.h"
+#include "util/log.h"
 
 #include <openssl/conf.h>
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L

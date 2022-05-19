@@ -94,7 +94,7 @@ foreach(TSL_CERT ${TSL_CERTS})
     endif()
     file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "#include \"${BASE}.h\"\n")
 endforeach()
-file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "static const std::vector<X509Cert> tslcerts {\n")
+file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "using namespace digidoc;\nstatic const std::vector<X509Cert> tslcerts {\n")
 
 set(COUNT 0)
 foreach(TSL_CERT ${TSL_CERTS})
@@ -134,14 +134,17 @@ set( CRYPTO_HEADER
     crypto/X509Cert.h
 )
 
+add_library(digidocpp_util STATIC
+    util/File.cpp
+    util/log.cpp
+)
+
 add_library(digidocpp_priv STATIC
     ${xsd_SRCS}
-    log.cpp
     crypto/Connect.cpp
     crypto/Digest.cpp
     crypto/TSL.cpp
     crypto/X509Crypto.cpp
-    util/File.cpp
     util/DateTime.cpp
     xml/AdditionalInformationType.cpp
     xml/AnyType.cpp
@@ -152,7 +155,7 @@ add_library(digidocpp_priv STATIC
     xml/URIResolver.cpp
 )
 
-set_target_properties(digidocpp_priv PROPERTIES
+set_target_properties(digidocpp_util digidocpp_priv PROPERTIES
     COMPILE_DEFINITIONS digidocpp_EXPORTS
     POSITION_INDEPENDENT_CODE YES
 )
@@ -169,6 +172,7 @@ target_include_directories(digidocpp_priv PUBLIC
 )
 
 target_link_libraries(digidocpp_priv
+    digidocpp_util
     XmlSecurityC::XmlSecurityC
     ZLIB::ZLIB
     $<$<C_COMPILER_ID:MSVC>:Ws2_32>
@@ -225,14 +229,12 @@ set_target_properties(digidocpp PROPERTIES
     MACOSX_RPATH YES
 )
 
-target_link_libraries(digidocpp
-    PRIVATE ${CMAKE_DL_LIBS} minizip
-    PUBLIC digidocpp_priv
-)
+target_include_directories(digidocpp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv)
 
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
-    target_link_libraries(digidoc-tool digidocpp Threads::Threads)
+    target_link_libraries(digidoc-tool digidocpp digidocpp_priv Threads::Threads)
 endif()
 
 if(USE_KEYCHAIN)
@@ -255,8 +257,8 @@ if(SWIG_FOUND)
         set(CMAKE_SWIG_FLAGS -package ee.ria.libdigidocpp)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/java)
         swig_add_library(digidoc_java TYPE SHARED LANGUAGE java SOURCES ../libdigidocpp.i)
-        swig_link_libraries(digidoc_java digidocpp)
         target_include_directories(digidoc_java PRIVATE ${JAVA_INCLUDE_PATH} $<$<BOOL:${JAVA_INCLUDE_PATH2}>:${JAVA_INCLUDE_PATH2}>)
+        swig_link_libraries(digidoc_java digidocpp digidocpp_util)
         install(TARGETS digidoc_java DESTINATION ${CMAKE_INSTALL_LIBDIR})
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ee/ria/libdigidocpp FILES_MATCHING PATTERN "*.java")
         if(WIN32)
@@ -267,7 +269,7 @@ if(SWIG_FOUND)
         set(CMAKE_SWIG_FLAGS -dllimport digidoc_csharp -namespace digidoc)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/csharp)
         swig_add_library(digidoc_csharp TYPE SHARED LANGUAGE csharp SOURCES ../libdigidocpp.i)
-        swig_link_libraries(digidoc_csharp digidocpp)
+        swig_link_libraries(digidoc_csharp digidocpp digidocpp_util)
         install(TARGETS digidoc_csharp DESTINATION ${CMAKE_INSTALL_BINDIR})
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/csharp/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_csharp FILES_MATCHING PATTERN "*.cs")
         install(FILES $<TARGET_PDB_FILE:digidoc_csharp> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)

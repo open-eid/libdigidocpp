@@ -20,7 +20,6 @@
 #pragma once
 
 #include "Container.h"
-#include "log.h"
 #include "util/ZipSerialize.h"
 
 #include <memory>

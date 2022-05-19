@@ -19,10 +19,10 @@
 
 #include "X509Crypto.h"
 
-#include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "util/File.h"
+#include "util/log.h"
 
 #include <openssl/asn1t.h>
 #include <openssl/err.h>

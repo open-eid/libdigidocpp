@@ -11,6 +11,10 @@ import java.util.Scanner;
 import javax.xml.bind.DatatypeConverter;
 
 public class libdigidocpp {
+    static {
+        System.loadLibrary("digidoc_java");
+    }
+
     public static void main(String[] args)
     {
         if (args.length < 1)
@@ -28,13 +32,13 @@ public class libdigidocpp {
             case "verify": verify(args[1]); return;
             case "version": version(); return;
             case "help":
-            default: help(); return;
+            default: help();
         }
     }
 
     static void extract(int index, String file)
     {
-        init();
+        digidoc.initializeLib("libdigidocpp-java", "");
         try
         {
             System.out.println("Opening file: " + file);
@@ -85,7 +89,7 @@ public class libdigidocpp {
     {
         DigiDocConf conf = new DigiDocConf(null);
         Conf.init(conf.transfer());
-        init();
+        digidoc.initializeLib("libdigidocpp-java", "");
         try
         {
             System.out.println("Creating file: " + args[args.length-1]);
@@ -106,7 +110,7 @@ public class libdigidocpp {
 
     static void websign(String[] args)
     {
-        init();
+        digidoc.initializeLib("libdigidocpp-java", "");
         try
         {
             System.out.println("Creating file: " + args[args.length - 1]);
@@ -137,35 +141,29 @@ public class libdigidocpp {
 
     static void verify(String file)
     {
-        init();
+        digidoc.initializeLib("libdigidocpp-java", "");
         try
         {
             System.out.println("Opening file: " + file);
             Container b = Container.open(file);
 
             System.out.println("Files:");
-            DataFiles d = b.dataFiles();
-            for (int i = 0; i < d.size(); ++i)
-                System.out.println(" " + d.get(i).fileName() + " - " + d.get(i).mediaType());
+            for (DataFile dataFile : b.dataFiles()) System.out.println(" " + dataFile.fileName() + " - " + dataFile.mediaType());
             System.out.println();
 
             System.out.println("Signatures:");
-            b.signatures();
-            Signatures s = b.signatures();
-            for (int i = 0; i < s.size(); ++i)
-            {
-                System.out.println(String.format("Address: %s %s %s %s", s.get(i).city(), s.get(i).countryName(), s.get(i).stateOrProvince(), s.get(i).postalCode()));
+            for (Signature signature : b.signatures()) {
+                System.out.printf("Address: %s %s %s %s%n", signature.city(), signature.countryName(), signature.stateOrProvince(), signature.postalCode());
 
                 System.out.print("Role:");
-                StringVector roles = s.get(i).signerRoles();
-                for (int j = 0; j < roles.size(); ++ j)
-                    System.out.print(" " + roles.get(j));
+                StringVector roles = signature.signerRoles();
+                for (String role : roles) System.out.print(" " + role);
                 System.out.println();
 
-                System.out.println("Time: " + s.get(i).trustedSigningTime());
-                System.out.println("Cert: " + toX509(s.get(i).signingCertificateDer()).getSubjectDN().toString());
+                System.out.println("Time: " + signature.trustedSigningTime());
+                System.out.println("Cert: " + toX509(signature.signingCertificateDer()).getSubjectDN().toString());
 
-                s.get(i).validate();
+                signature.validate();
                 System.out.println("Signature is valid");
             }
         }
@@ -181,16 +179,11 @@ public class libdigidocpp {
         System.out.println("DigiDocCSharp 0.2 libdigidocpp " + digidoc.version());
     }
 
-    static void init() {
-        System.loadLibrary("digidoc_java");
-        digidoc.initializeLib("libdigidocpp-java", "");
-    }
-
     static X509Certificate toX509(byte[] der) throws CertificateException {
         CertificateFactory cf = CertificateFactory.getInstance("X509");
         return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(der));
     }
-    
+
     public static String toHex(byte[] array) {
         return DatatypeConverter.printHexBinary(array);
     }

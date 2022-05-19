@@ -21,11 +21,11 @@
 
 #include "ASiC_E.h"
 #include "Conf.h"
-#include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/OCSP.h"
 #include "crypto/X509CertStore.h"
 #include "util/DateTime.h"
+#include "util/log.h"
 
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_MSVC(4005)

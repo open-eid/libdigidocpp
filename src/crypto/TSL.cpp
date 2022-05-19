@@ -20,11 +20,11 @@
 #include "crypto/TSL.h"
 
 #include "Conf.h"
-#include "log.h"
 #include "crypto/Connect.h"
 #include "crypto/Digest.h"
 #include "util/DateTime.h"
 #include "util/File.h"
+#include "util/log.h"
 #include "xml/ts_119612v020201_201601xsd.hxx"
 
 DIGIDOCPP_WARNING_PUSH

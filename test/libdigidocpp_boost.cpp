@@ -464,7 +464,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
         string time = util::date::xsd2string(util::date::makeDateTime(util::date::gmtime(t)));
         BOOST_WARN_EQUAL(s1->claimedSigningTime().substr(0, 16), time.substr(0, 16));
         BOOST_WARN_EQUAL(s1->OCSPProducedAt().substr(0, 16), time.substr(0, 16));
-        BOOST_CHECK_EQUAL(s1->OCSPCertificate().subjectName("CN").find_first_of("TEST of SK OCSP RESPONDER"), 0);
+        BOOST_CHECK_EQUAL(s1->OCSPCertificate().subjectName("CN").find_first_of("TEST of SK OCSP RESPONDER"), 0U);
     }
 
     BOOST_CHECK_NO_THROW(d->save(Doc::EXT + ".tmp")); //Check if reloading and binary files work

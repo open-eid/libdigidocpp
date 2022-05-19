@@ -20,10 +20,10 @@
 #include "ASiContainer.h"
 
 #include "DataFile_p.h"
-#include "log.h"
 #include "Signature.h"
 #include "util/DateTime.h"
 #include "util/File.h"
+#include "util/log.h"
 #include "util/ZipSerialize.h"
 
 #include <algorithm>
@@ -36,7 +36,7 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-#define MAX_MEM_FILE 500*1024*1024
+constexpr unsigned long MAX_MEM_FILE = 500*1024*1024;
 
 class ASiContainer::Private
 {

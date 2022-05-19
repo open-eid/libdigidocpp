@@ -20,10 +20,10 @@
 #include "SignatureTST.h"
 
 #include "DataFile_p.h"
-#include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
+#include "util/log.h"
 
 using namespace digidoc;
 using namespace std;

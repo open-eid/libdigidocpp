@@ -21,9 +21,9 @@
 
 #include "crypto/Digest.h"
 #include "crypto/X509Cert.h"
-#include "log.h"
 #include "tslcerts.h"
 #include "util/File.h"
+#include "util/log.h"
 
 #include <map>
 

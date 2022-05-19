@@ -22,12 +22,10 @@
 
 #include "File.h"
 
-#include "../log.h"
+#include "log.h"
 
 #include <algorithm>
 #include <ctime>
-#include <fstream>
-#include <iostream>
 #include <locale>
 #include <sstream>
 #include <sys/stat.h>

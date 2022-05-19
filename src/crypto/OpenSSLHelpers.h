@@ -20,7 +20,7 @@
 #pragma once
 
 #include "Exception.h"
-#include "log.h"
+#include "util/log.h"
 
 #include <memory>
 #include <sstream>

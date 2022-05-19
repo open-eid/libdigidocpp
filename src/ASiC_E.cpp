@@ -21,11 +21,11 @@
 
 #include "Conf.h"
 #include "DataFile_p.h"
-#include "log.h"
 #include "SignatureXAdES_LTA.h"
 #include "crypto/Digest.h"
 #include "crypto/Signer.h"
 #include "util/File.h"
+#include "util/log.h"
 #include "util/ZipSerialize.h"
 #include "xml/OpenDocument_manifest.hxx"
 #include "xml/SecureDOMParser.h"

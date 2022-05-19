@@ -1,7 +1,9 @@
 # Build instructions for Java
 
-### Eclipse
+## Build
 
-1. Install Eclipse from [https://www.eclipse.org](https://www.eclipse.org)
-2. Prepare: Import existing java project
-3. Build example and run
+    ./gradlew jar
+
+## Run
+
+    java -Djava.library.path=/Library/libdigidocpp/lib -jar build/libs/libdigidoc.jar

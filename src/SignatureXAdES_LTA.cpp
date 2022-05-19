@@ -21,11 +21,11 @@
 
 #include "ASiC_E.h"
 #include "Conf.h"
-#include "log.h"
 #include "crypto/Digest.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
+#include "util/log.h"
 #include "xml/SecureDOMParser.h"
 #include "xml/XAdES01903v141-201601.hxx"
 #include "xml/URIResolver.h"
