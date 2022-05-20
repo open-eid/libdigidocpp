@@ -20,8 +20,18 @@
 // digidocpp.i - SWIG interface for libdigidocpp library
 
 %module digidoc
-%{
 
+%begin %{
+#ifdef _MSC_VER
+#if 1
+#define SWIG_PYTHON_INTERPRETER_NO_DEBUG
+#include <crtdefs.h>
+#else // Python debug symbols are installed
+#define PY_NO_LINK_LIB
+#endif
+#endif
+%}
+%{
 #include "libdigidocpp.i.h"
 #include "DataFile.h"
 #include "Exception.h"
@@ -131,7 +141,6 @@ extern "C"
     jresult = jenv->NewByteArray((&result)->size());
     jenv->SetByteArrayRegion(jresult, 0, (&result)->size(), (const jbyte*)(&result)->data());
 %}
-#endif
 %typemap(jtype) std::vector<unsigned char> "byte[]"
 %typemap(jstype) std::vector<unsigned char> "byte[]"
 %typemap(jni) std::vector<unsigned char> "jbyteArray"
@@ -139,7 +148,7 @@ extern "C"
 %typemap(javaout) std::vector<unsigned char> {
     return $jnicall;
   }
-#ifdef SWIGCSHARP
+#elif defined(SWIGCSHARP)
 %typemap(cstype) std::vector<unsigned char> "byte[]"
 %typemap(csin,
          pre= "	global::System.IntPtr cPtr$csinput = digidocPINVOKE.ByteVector_to($csinput, $csinput.Length);
@@ -151,6 +160,23 @@ extern "C"
   global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(data), result, 0, result.Length);
   return result;
 }
+#elif defined(SWIGPYTHON)
+  %typemap(in) std::vector<unsigned char> %{
+  if (PyBytes_Check($input)) {
+    const char *data = PyBytes_AsString($input);
+    $1 = new std::vector<unsigned char>(data, data + PyBytes_Size($input));
+  } else if (PyString_Check($input)) {
+    const char *data = PyString_AsString($input);
+    $1 = new std::vector<unsigned char>(data, data + PyString_Size($input));
+  } else {
+    PyErr_SetString(PyExc_TypeError, "not a bytes");
+    SWIG_fail;
+  }
+  %}
+%typemap(out) std::vector<unsigned char>
+%{ $result = PyBytes_FromStringAndSize((const char*)(&result)->data(), (&result)->size()); %}
+%typemap(freearg) std::vector<unsigned char>
+%{ delete $1; %}
 #endif
 %apply std::vector<unsigned char> { std::vector<unsigned char> const & };
 
@@ -160,18 +186,23 @@ extern "C"
  } catch (const digidoc::Exception &e) {
 #ifdef SWIGJAVA
    SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, parseException(e).c_str());
+   return $null;
 #elif defined(SWIGCSHARP)
    SWIG_CSharpSetPendingException(SWIG_CSharpApplicationException, parseException(e).c_str());
-#endif
    return $null;
+#else
+   SWIG_exception_fail(SWIG_RuntimeError, parseException(e).c_str());
+#endif
  }
 %}
 
 #ifdef SWIGJAVA
 %ignore digidoc::initialize;
 #endif
+#ifndef SWIGPYTHON
 %ignore digidoc::initialize(const std::string &appInfo, initCallBack callBack);
 %ignore digidoc::initialize(const std::string &appInfo, const std::string &userAgent, initCallBack callBack);
+#endif
 // ignore X509Cert and implement later cert as ByteVector
 %ignore digidoc::Conf::TSLCerts;
 %ignore digidoc::ConfV2::verifyServiceCert;
@@ -211,6 +242,15 @@ extern "C"
     return this;
   }
 %}
+#ifdef SWIGPYTHON
+%extend digidoc::Conf {
+%pythoncode %{
+def transfer(self):
+    self.thisown = 0
+    return self
+%}
+}
+#endif
 
 // Handle standard C++ types
 %include "std_string.i"
@@ -242,6 +282,7 @@ namespace std {
 %include "crypto/PKCS12Signer.h"
 %include "crypto/PKCS11Signer.h"
 #ifdef SWIGCSHARP
+// FIXME: figure out how to expose WinSigner on windows only. SWIG currently does not support this
 %include "crypto/WinSigner.h"
 #endif
 %include "libdigidocpp.i.h"
