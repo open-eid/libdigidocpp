@@ -10,7 +10,6 @@ else()
 endif()
 
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
-configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
 configure_file( ${CMAKE_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf )
 
 set(SCHEMA_DIR ${CMAKE_SOURCE_DIR}/etc/schema)
@@ -235,6 +234,7 @@ target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv)
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
     target_link_libraries(digidoc-tool digidocpp digidocpp_priv Threads::Threads)
+    configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
 endif()
 
 if(USE_KEYCHAIN)
