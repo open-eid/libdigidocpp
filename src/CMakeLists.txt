@@ -177,6 +177,12 @@ target_include_directories(digidocpp_priv PUBLIC
     ${XSD_INCLUDE_DIR}
 )
 
+if(NOT WIN32 AND NOT APPLE AND NOT ANDROID)
+    target_link_libraries(digidocpp_util
+        Iconv::Iconv
+    )
+endif()
+
 target_link_libraries(digidocpp_priv
     digidocpp_util
     XmlSecurityC::XmlSecurityC
