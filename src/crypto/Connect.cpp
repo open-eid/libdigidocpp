@@ -122,7 +122,6 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
             THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
         SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
         SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
-        SSL_CTX_set_options(ssl.get(), SSL_OP_LEGACY_SERVER_CONNECT);
         if(!certs.empty())
         {
             SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
@@ -256,7 +255,7 @@ Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
         if(rc == -1 && BIO_should_read(d) != 1)
             break;
         if(doProxyConnect && rc > 0) {
-            pos = rc;
+            pos = size_t(rc);
             break;
         }
         auto end = chrono::high_resolution_clock::now();
