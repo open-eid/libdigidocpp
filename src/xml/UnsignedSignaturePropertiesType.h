@@ -24,25 +24,25 @@
 
 namespace digidoc {
 namespace xadesv141 {
-    typedef xades::XAdESTimeStampType ArchiveTimeStampType;
-    typedef xsd::cxx::tree::sequence<ArchiveTimeStampType> ArchiveTimeStampSequence;
-    typedef xsd::cxx::tree::traits<ArchiveTimeStampType, char> ArchiveTimeStampTraits;
+    using ArchiveTimeStampType = xades::XAdESTimeStampType;
+    using ArchiveTimeStampSequence = xsd::cxx::tree::sequence<ArchiveTimeStampType>;
+    using ArchiveTimeStampTraits = xsd::cxx::tree::traits<ArchiveTimeStampType, char>;
 
-    typedef xsd::cxx::tree::sequence<ValidationDataType> TimeStampValidationData;
-    typedef xsd::cxx::tree::traits<ValidationDataType, char> TimeStampValidationDataTraits;
+    using TimeStampValidationData = xsd::cxx::tree::sequence<ValidationDataType>;
+    using TimeStampValidationDataTraits = xsd::cxx::tree::traits<ValidationDataType, char>;
 }
 namespace xades {
 
-class UnsignedSignaturePropertiesType: public UnsignedSignaturePropertiesTypeBase
+class UnsignedSignaturePropertiesType final: public UnsignedSignaturePropertiesTypeBase
 {
 public:
 
     UnsignedSignaturePropertiesType();
-    UnsignedSignaturePropertiesType(const xercesc::DOMElement &e, xml_schema::Flags f = 0, xml_schema::Container *c = 0);
-    UnsignedSignaturePropertiesType(const UnsignedSignaturePropertiesType &x, xml_schema::Flags f = 0, xml_schema::Container *c = 0);
-    virtual ~UnsignedSignaturePropertiesType();
+    UnsignedSignaturePropertiesType(const xercesc::DOMElement &e, xml_schema::Flags f = {}, xml_schema::Container *c = nullptr);
+    UnsignedSignaturePropertiesType(const UnsignedSignaturePropertiesType &x, xml_schema::Flags f = {}, xml_schema::Container *c = nullptr);
+    ~UnsignedSignaturePropertiesType() final;
 
-    virtual UnsignedSignaturePropertiesType* _clone(xml_schema::Flags f = 0, xml_schema::Container *c = 0) const;
+    UnsignedSignaturePropertiesType* _clone(xml_schema::Flags f = {}, xml_schema::Container *c = nullptr) const final;
 
     const xadesv141::ArchiveTimeStampSequence& archiveTimeStampV141() const;
     xadesv141::ArchiveTimeStampSequence& archiveTimeStampV141();

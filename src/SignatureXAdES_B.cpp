@@ -127,7 +127,7 @@ namespace digidoc
 
 static Base64Binary toBase64(const vector<unsigned char> &v)
 {
-    return Base64Binary(v.data(), v.size());
+    return {v.data(), v.size()};
 }
 
 }
@@ -339,7 +339,7 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
             if(!usp->archiveTimeStamp().empty())
                 THROW("ArchiveTimeStamp is not supported");
             if(!usp->timeStampValidationData().empty())
-                THROW("TimeStampValidationData is not supported");
+                WARN("TimeStampValidationData is not supported");
         }
     }
 
@@ -600,7 +600,7 @@ void SignatureXAdES_B::validate(const string &policy) const
                 uri.erase(0, 1);
             signatureref.insert({ uri, mimeinfo["#"+ref.id().get()] });
         }
-    };
+    }
     if(!signedInfoFound)
         EXCEPTION_ADD(exception, "SignedProperties not found");
 
@@ -628,7 +628,7 @@ void SignatureXAdES_B::validate(const string &policy) const
             }
             else
                 EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
-        };
+        }
     }
 
     if(bdoc->dataFiles().empty())
@@ -958,14 +958,8 @@ void SignatureXAdES_B::setSigningTime(const struct tm &signingTime)
  */
 void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureValue)
 {
-    // Make copy of current signature value id.
-    string id = signature->signatureValue().id().get();
-
-    // Set new signature value.
-    signature->signatureValue(toBase64(signatureValue));
-
-    // Set signature value id back to its old value.
-    signature->signatureValue().id(id);
+    SignatureValueType buffer = toBase64(signatureValue);
+    signature->signatureValue().swap(buffer);
     sigdata_.clear();
 }
 
@@ -1160,7 +1154,7 @@ vector<string> SignatureXAdES_B::signerRoles() const
         getSignedSignatureProperties().signerRole();
     const SignedSignaturePropertiesType::SignerRoleV2Optional &roleV2Opt =
         getSignedSignatureProperties().signerRoleV2();
-    const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence = [&]() -> ClaimedRolesListType::ClaimedRoleSequence const {
+    const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence = [&]() -> ClaimedRolesListType::ClaimedRoleSequence {
         // return elements from SignerRole element or SignerRoleV2 when available
         if(roleOpt.present() && roleOpt->claimedRoles().present())
             return roleOpt->claimedRoles()->claimedRole();
