@@ -96,7 +96,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:21.10', 'ubuntu:22.04']
+        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:22.04']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: 'github-actions'
@@ -170,7 +170,7 @@ jobs:
           "zlib:x64-windows-v${{ matrix.toolset }}"
           "boost-test:x86-windows-v${{ matrix.toolset }}"
           "boost-test:x64-windows-v${{ matrix.toolset }}"
-        vcpkgGitCommitId: 9b064ff07b987c8f213fdbf4358122fd4fe38ef1
+        vcpkgGitCommitId: 89295c9fe22e97ca9e380a6c771ccf2ff09dca95
     - name: Install dependencies
       run: choco install doxygen.install swig -y > $null
     - name: Build xsd
