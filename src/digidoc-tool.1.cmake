@@ -56,7 +56,7 @@ Command sign:
     --postalCode=  - postalCode of production place
     --country=     - country of production place
     --role=        - option can occur multiple times. Signer role(s)
-    --pkcs11[=]    - default is /Library/OpenSC/lib/opensc-pkcs11.so. Path of PKCS11 driver.
+    --pkcs11[=]    - default is ${PKCS11_MODULE}. Path of PKCS11 driver.
     --pkcs12=      - pkcs12 signer certificate (use --pin for password)
     --pin=         - default asks pin from prompt
     --sha(224,256,384,512) - set default digest method (default sha256)
