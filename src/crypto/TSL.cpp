@@ -284,8 +284,8 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
             THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
         if((CONF(TSLOnlineDigest)) && (File::modifiedTime(path) < (time(nullptr) - (60 * 60 * 24))))
         {
-            tsl.validateETag(url, timeout);
-            File::updateModifiedTime(path, time(nullptr));
+            if(tsl.validateETag(url, timeout))
+                File::updateModifiedTime(path, time(nullptr));
         }
         DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
         return tsl;
@@ -603,25 +603,22 @@ void TSL::validate(const vector<X509Cert> &certs)
  * @param timeout Time to wait for downloading
  * @throws Exception if ETag does not match cached ETag and TSL loading should be triggered
  */
-void TSL::validateETag(const string &url, int timeout)
+bool TSL::validateETag(const string &url, int timeout)
 {
     Connect::Result r;
     try {
         r = Connect(url, "HEAD", timeout).exec({{"Accept-Encoding", "gzip"}});
         if(!r.isOK())
-            return;
+            return false;
     } catch(const Exception &e) {
         debugException(e);
         DEBUG("Failed to get ETag %s", url.c_str());
-        return;
+        return false;
     }
 
     map<string,string>::const_iterator it = r.headers.find("ETag");
     if(it == r.headers.cend())
-    {
-        validateRemoteDigest(url, timeout);
-        return;
-    }
+        return validateRemoteDigest(url, timeout);
 
     DEBUG("Remote ETag: %s", it->second.c_str());
     ifstream is(File::encodeName(path + ".etag"));
@@ -632,6 +629,7 @@ void TSL::validateETag(const string &url, int timeout)
     DEBUG("Cached ETag: %s", etag.c_str());
     if(etag != it->second)
         THROW("Remote ETag does not match");
+    return true;
 }
 
 bool TSL::validateRemoteDigest(const string &url, int timeout)

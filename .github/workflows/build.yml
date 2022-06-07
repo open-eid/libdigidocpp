@@ -64,7 +64,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:33']
+        container: ['fedora:33', 'fedora:34']
     env:
       MAKEFLAGS: -j3
     steps:
@@ -77,8 +77,7 @@ jobs:
     - name: Install Deps
       run: |
         dnf install -y \
-          cmake openssl-devel xerces-c-devel \
-          xml-security-c-devel zlib-devel vim-common \
+          gcc-c++ cmake openssl-devel xerces-c-devel xml-security-c-devel zlib-devel vim-common \
           https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
     - name: Build
       run: |
