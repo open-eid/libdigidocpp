@@ -58,7 +58,7 @@ public:
 private:
     std::vector<std::string> pivotURLs() const;
     std::vector<X509Cert> signingCerts() const;
-    void validateETag(const std::string &url, int timeout);
+	bool validateETag(const std::string &url, int timeout);
     bool validateRemoteDigest(const std::string &url, int timeout);
 
     static void debugException(const Exception &e);
