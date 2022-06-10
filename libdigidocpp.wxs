@@ -31,8 +31,9 @@
               <Component Id="LibrariesX86" Guid="{57A72AF6-5458-4106-BFC8-A611DAF89A59}">
                 <File Source="$(env.VCTOOLSREDISTDIR)\x86\Microsoft.VC$(var.VCVER).CRT\msvcp140.dll"/>
                 <File Source="$(env.VCTOOLSREDISTDIR)\x86\Microsoft.VC$(var.VCVER).CRT\vcruntime140.dll"/>
-                <File Source="$(var.VCPKG_X86)\libcrypto-1_1.dll"/>
-                <File Source="$(var.VCPKG_X86)\libssl-1_1.dll"/>
+                <File Source="$(var.VCPKG_X86)\libcrypto-3.dll"/>
+                <File Source="$(var.VCPKG_X86)\libssl-3.dll"/>
+                <File Source="$(var.VCPKG_X86)\legacy.dll"/>
                 <File Source="$(var.VCPKG_X86)\zlib1.dll"/>
                 <File Source="$(var.VCPKG_X86)\xerces-c_3_2.dll"/>
                 <File Source="$(var.VCPKG_X86)\Xalan-C_1_12.dll"/>
@@ -95,8 +96,9 @@
               <Component Id="LibrariesX64" Guid="{1A068454-C881-49D3-A3C4-58D513C2BFE9}">
                 <File Source="$(env.VCTOOLSREDISTDIR)\x64\Microsoft.VC$(var.VCVER).CRT\msvcp140.dll" Id="msvcp140_64.dll"/>
                 <File Source="$(env.VCTOOLSREDISTDIR)\x64\Microsoft.VC$(var.VCVER).CRT\vcruntime140.dll" Id="vcruntime140_64.dll"/>
-                <File Source="$(var.VCPKG_X64)\libcrypto-1_1-x64.dll"/>
-                <File Source="$(var.VCPKG_X64)\libssl-1_1-x64.dll"/>
+                <File Source="$(var.VCPKG_X64)\libcrypto-3-x64.dll"/>
+                <File Source="$(var.VCPKG_X64)\libssl-3-x64.dll"/>
+                <File Source="$(var.VCPKG_X64)\legacy.dll" Id="legaxy_64.dll"/>
                 <File Source="$(var.VCPKG_X64)\zlib1.dll" Id="zlib1_64.dll"/>
                 <File Source="$(var.VCPKG_X64)\xerces-c_3_2.dll" Id="xerces_c_3_2.dll_64"/>
                 <File Source="$(var.VCPKG_X64)\Xalan-C_1_12.dll" Id="Xalan_C_1_12.dll_64"/>
