@@ -289,11 +289,11 @@ void OCSP::verifyResponse(const X509Cert &cert) const
             (ERR_GET_REASON(err) == OCSP_R_CERTIFICATE_VERIFY_ERROR ||
              ERR_GET_REASON(err) == OCSP_R_SIGNER_CERTIFICATE_NOT_FOUND))
         {
-            Exception e(EXCEPTION_PARAMS("Failed to verify OCSP Responder certificate"));
+            OpenSSLException e(EXCEPTION_PARAMS("Failed to verify OCSP Responder certificate"), err);
             e.setCode(Exception::CertificateUnknown);
             throw e;
         }
-        THROW_OPENSSLEXCEPTION("Failed to verify OCSP response.");
+        throw OpenSSLException(EXCEPTION_PARAMS("Failed to verify OCSP response."), err);
     }
 
     // Find issuer before OCSP validation to activate region TSL

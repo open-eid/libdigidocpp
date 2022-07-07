@@ -275,11 +275,11 @@ void TS::verify(const Digest &digest)
             unsigned long err = ERR_get_error();
             if(ERR_GET_LIB(err) == ERR_LIB_TS && ERR_GET_REASON(err) == TS_R_CERTIFICATE_VERIFY_ERROR)
             {
-                Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
+                OpenSSLException e(EXCEPTION_PARAMS("Certificate status: unknown"), err);
                 e.setCode( Exception::CertificateUnknown );
                 throw e;
             }
-            THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
+            throw OpenSSLException(EXCEPTION_PARAMS("Failed to verify TS response."), err);
         }
     }
 #ifndef OPENSSL_NO_CMS
