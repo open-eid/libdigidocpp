@@ -74,7 +74,13 @@ DECLARE_ASN1_FUNCTIONS(QCStatement)
  * QCStatements ::= SEQUENCE OF QCStatement
  */
 using QCStatements = STACK_OF(QCStatement);
+#ifdef LIBRESSL_VERSION_NUMBER
+#include <openssl/safestack.h>
+#define sk_QCStatement_num(st) sk_num((_STACK*)st)
+#define sk_QCStatement_value(st, i) (QCStatement*)sk_value((_STACK*)st, i)
+#else
 DEFINE_STACK_OF(QCStatement)
+#endif
 DECLARE_ASN1_FUNCTIONS(QCStatements)
 
 /**
