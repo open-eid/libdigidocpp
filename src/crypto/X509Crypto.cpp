@@ -37,6 +37,7 @@
 using namespace digidoc;
 using namespace std;
 
+#ifndef LIBRESSL_VERSION_NUMBER
 /*-
  * IssuerSerial ::= SEQUENCE {
  *         issuer                   GeneralNames,
@@ -47,6 +48,7 @@ using ESS_ISSUER_SERIAL = struct ESS_issuer_serial {
     GENERAL_NAMES *issuer;
     ASN1_INTEGER *serial;
 };
+#endif
 
 /**
  * Initialize RSA crypter.
