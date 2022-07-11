@@ -242,7 +242,7 @@ void TS::verify(const Digest &digest)
         TS_VERIFY_CTX_set_store(ctx.get(), store.release());
         if(TS_RESP_verify_token(ctx.get(), d.get()) != 1)
         {
-            unsigned long err = ERR_get_error();
+            unsigned long err = ERR_peek_error();
             if(ERR_GET_LIB(err) == ERR_LIB_TS && ERR_GET_REASON(err) == TS_R_CERTIFICATE_VERIFY_ERROR)
             {
                 Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
