@@ -435,7 +435,8 @@ case "$@" in
     echo " minimum deployment target"
     echo " - MACOSX_DEPLOYMENT_TARGET=10.14"
     echo " - IPHONEOS_DEPLOYMENT_TARGET=12.0"
-    echo " archs to build on iOS"
+    echo " archs to build"
+    echo " - ARCHS=\"x86_64 arm64\" (macOS)"
     echo " - ARCHS=\"arm64\" (iOS)"
     echo " - ARCHS=\"x86_64\" (iPhoneSimulator)"
     ;;

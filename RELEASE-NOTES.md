@@ -1,3 +1,20 @@
+Libdigidocpp library [3.14.10](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.10) release notes
+--------------------------------------
+- Trust intermediate certificates in trust store (#476)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.9...v3.14.10)
+
+Libdigidocpp library [3.14.9](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.9) release notes
+--------------------------------------
+- TSL parsing improvements (#475, #451, #465, #464, #463, #439, #443)
+- Allow validate signatures with TimeStampValidationData (#455)
+- Build python bindings (#456)
+- OpenSSL 3.0 support and minimum supported 1.1.1 (#468, #461, #453)
+- Update documentation (#434)
+- Fix parameter locking when false is defined (#448)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.8...v3.14.9)
+
 Libdigidocpp library [3.14.8](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.8) release notes
 --------------------------------------
 - Update TSL signer certificates (#438)
