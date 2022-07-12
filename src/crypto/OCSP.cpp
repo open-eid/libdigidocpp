@@ -275,14 +275,10 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     SCOPE(X509_STORE, store, X509CertStore::createStore(X509CertStore::OCSP, &t));
     STACK_OF(X509) *stack = sk_X509_new_null();
     for(const X509Cert &i: X509CertStore::instance()->certs(X509CertStore::OCSP))
-        sk_X509_push(stack, i.handle());
-    OpenSSLException(EXCEPTION_PARAMS("ignore")); // Clear errors
-    //OCSP_TRUSTOTHER - enables OCSP_NOVERIFY
-    //OCSP_NOSIGS - does not verify ocsp signatures
-    //OCSP_NOVERIFY - ignores signer(responder) cert verification, requires store otherwise crashes
-    //OCSP_NOCHECKS - cancel futurer responder issuer checks and trust bits
-    //OCSP_NOEXPLICIT - returns 0 by mistake
-    //all checks enabled fails trust bit check, cant use OCSP_NOEXPLICIT instead using OCSP_NOCHECKS
+    {
+        if(compareResponderCert(i))
+            sk_X509_push(stack, i.handle());
+    }
     int result = OCSP_basic_verify(basic.get(), stack, store.get(), OCSP_NOCHECKS);
     sk_X509_free(stack);
     if(result != 1)
@@ -347,18 +343,17 @@ void OCSP::verifyResponse(const X509Cert &cert) const
  */
 vector<unsigned char> OCSP::nonce() const
 {
-    vector<unsigned char> nonce;
     if(!basic)
-        return nonce;
+        return {};
     int resp_idx = OCSP_BASICRESP_get_ext_by_NID(basic.get(), NID_id_pkix_OCSP_Nonce, -1);
     if(resp_idx < 0)
-        return nonce;
+        return {};
     X509_EXTENSION *ext = OCSP_BASICRESP_get_ext(basic.get(), resp_idx);
     if(!ext)
-        return nonce;
+        return {};
 
     ASN1_OCTET_STRING *value = X509_EXTENSION_get_data(ext);
-    nonce.assign(value->data, value->data + value->length);
+    vector<unsigned char> nonce(value->data, value->data + value->length);
     //OpenSSL OCSP created messages NID_id_pkix_OCSP_Nonce field is DER encoded twice, not a problem with java impl
     //XXX: UglyHackTM check if nonceAsn1 contains ASN1_OCTET_STRING
     //XXX: if first 2 bytes seem to be beginning of DER ASN1_OCTET_STRING then remove them
@@ -370,12 +365,10 @@ vector<unsigned char> OCSP::nonce() const
 
 string OCSP::producedAt() const
 {
-    string result;
     if(!basic)
-        return result;
+        return {};
     const ASN1_GENERALIZEDTIME *time = OCSP_resp_get0_produced_at(basic.get());
     if(!time)
-        return result;
-    result.assign(time->data, time->data+time->length);
-    return result;
+        return {};
+    return { time->data, time->data + time->length };
 }

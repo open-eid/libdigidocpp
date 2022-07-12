@@ -64,7 +64,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:33', 'fedora:34']
+        container: ['fedora:34', 'fedora:35']
     env:
       MAKEFLAGS: -j3
     steps:
@@ -72,12 +72,10 @@ jobs:
       uses: actions/checkout@v1
       with:
         submodules: recursive
-    - name: Install Build Deps
-      run: dnf groupinstall -y "Development Tools" "Development Libraries" fedora-packager
     - name: Install Deps
       run: |
         dnf install -y \
-          gcc-c++ cmake openssl-devel xerces-c-devel xml-security-c-devel zlib-devel vim-common \
+          gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel \
           https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
     - name: Build
       run: |
@@ -95,11 +93,11 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:21.10', 'ubuntu:22.04']
+        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:22.04']
     env:
       DEBIAN_FRONTEND: noninteractive
-      DEBFULLNAME: 'github-actions'
-      DEBEMAIL: 'github-actions@github.com'
+      DEBFULLNAME: github-actions
+      DEBEMAIL: github-actions@github.com
     steps:
     - name: Checkout
       uses: actions/checkout@v1
@@ -169,7 +167,7 @@ jobs:
           "zlib:x64-windows-v${{ matrix.toolset }}"
           "boost-test:x86-windows-v${{ matrix.toolset }}"
           "boost-test:x64-windows-v${{ matrix.toolset }}"
-        vcpkgGitCommitId: 9b064ff07b987c8f213fdbf4358122fd4fe38ef1
+        vcpkgGitCommitId: 89295c9fe22e97ca9e380a6c771ccf2ff09dca95
     - name: Install dependencies
       run: choco install doxygen.install swig -y > $null
     - name: Build xsd
@@ -215,7 +213,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
-      PROJECTNAME: 'open-eid/libdigidocpp'
+      PROJECTNAME: open-eid/libdigidocpp
     steps:
     - name: Checkout
       uses: actions/checkout@v2
