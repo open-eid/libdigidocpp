@@ -13,7 +13,7 @@ jobs:
         target: [osx, ios, iossimulator, androidarm, androidarm64, androidx86, androidx86_64]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Install dependencies
@@ -54,7 +54,7 @@ jobs:
       run: ./build-library.sh ${{ matrix.target }} install/strip
     - name: Archive artifacts
       if: matrix.target == 'osx'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pkgs
         path: macOS/libdigidocpp*.*
@@ -83,7 +83,7 @@ jobs:
         cmake --build build
         cmake --build build --target package
     - name: Archive artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: rpms
         path: build/libdigidocpp*.rpm
@@ -123,7 +123,7 @@ jobs:
     - name: Lintian
       run: lintian *.deb;
     - name: Archive artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: debs
         path: libdigidocpp*.*
@@ -149,12 +149,12 @@ jobs:
     env:
       MAKEFLAGS: ""
       VER_SUFFIX: .VS${{ matrix.toolset }}
-      VERSION: 3.14.9.${{ github.run_number }}
+      VERSION: 3.14.10.${{ github.run_number }}
       VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/patches/vcpkg-triplets
       VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/patches/vcpkg-ports
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Prepare vcpkg
@@ -182,7 +182,7 @@ jobs:
           -swig C:/ProgramData/chocolatey/bin/swig.exe `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
     - name: Archive artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: msi
         path: ./*.msi
@@ -192,7 +192,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Install dependencies
@@ -216,7 +216,7 @@ jobs:
       PROJECTNAME: open-eid/libdigidocpp
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Install dependencies
