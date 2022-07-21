@@ -173,14 +173,14 @@ File::f_string File::encodeName(const string &fileName)
 #if defined(_WIN32)
     int len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), nullptr, 0);
     f_string out(size_t(len), 0);
-    len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), &out[0], len);
+    len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), out.data(), len);
 #elif defined(__APPLE__)
     CFMutableStringRef ref = CFStringCreateMutable(nullptr, 0);
     CFStringAppendCString(ref, fileName.c_str(), kCFStringEncodingUTF8);
     CFStringNormalize(ref, kCFStringNormalizationFormD);
 
     string out(fileName.size() * 2, 0);
-    CFStringGetCString(ref, &out[0], CFIndex(out.size()), kCFStringEncodingUTF8);
+    CFStringGetCString(ref, out.data(), CFIndex(out.size()), kCFStringEncodingUTF8);
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
 #elif defined(__ANDROID__)
@@ -203,14 +203,14 @@ string File::decodeName(const f_string &localFileName)
 #if defined(_WIN32)
     int len = WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), nullptr, 0, nullptr, nullptr);
     string out(size_t(len), 0);
-    WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), &out[0], len, nullptr, nullptr);
+    WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), out.data(), len, nullptr, nullptr);
 #elif defined(__APPLE__)
     CFMutableStringRef ref = CFStringCreateMutable(nullptr, 0);
     CFStringAppendCString(ref, localFileName.c_str(), kCFStringEncodingUTF8);
     CFStringNormalize(ref, kCFStringNormalizationFormC);
 
     string out(localFileName.size() * 2, 0);
-    CFStringGetCString(ref, &out[0], CFIndex(out.size()), kCFStringEncodingUTF8);
+    CFStringGetCString(ref, out.data(), CFIndex(out.size()), kCFStringEncodingUTF8);
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
 #elif defined(__ANDROID__)
@@ -252,7 +252,7 @@ string File::dllPath(const string &dll)
     wstring wdll = File::encodeName(dll);
     HMODULE handle = GetModuleHandleW(wdll.c_str());
     wstring path(MAX_PATH, 0);
-    DWORD size = GetModuleFileNameW(handle, &path[0], DWORD(path.size()));
+    DWORD size = GetModuleFileNameW(handle, path.data(), DWORD(path.size()));
     path.resize(size);
     return File::directory(File::decodeName(path)) + "\\";
 #else
@@ -275,14 +275,8 @@ time_t File::modifiedTime(const string &path)
 
 void File::updateModifiedTime(const string &path, time_t time)
 {
-    f_statbuf fileInfo;
     f_string _path = encodeName(path);
-    if(f_stat(_path.c_str(), &fileInfo))
-        THROW("Failed to update file modified time.");
-
-    f_utimbuf u_time;
-    u_time.actime = fileInfo.st_atime;
-    u_time.modtime = time;
+    f_utimbuf u_time { time, time };
     if(f_utime(_path.c_str(), &u_time))
         THROW("Failed to update file modified time.");
 }
@@ -328,7 +322,7 @@ string File::frameworkResourcesPath(const string &name)
     {
         if(CFURLRef url = CFBundleCopyResourcesDirectoryURL(bundle))
         {
-            CFURLGetFileSystemRepresentation(url, TRUE, (UInt8 *)&result[0], CFIndex(result.size()));
+            CFURLGetFileSystemRepresentation(url, TRUE, (UInt8 *)result.data(), CFIndex(result.size()));
             CFRelease(url);
         }
     }
@@ -387,11 +381,8 @@ string File::tempFileName()
     if ( !fileName )
         THROW("Failed to create a temporary file name.");
 #else
-DIGIDOCPP_WARNING_PUSH
-DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
-    char *fileName = tempnam(nullptr, nullptr);
-DIGIDOCPP_WARNING_POP
-    if ( !fileName )
+    char *fileName = strdup("/tmp/XXXXXX");
+    if (mkstemp(fileName) == -1)
         THROW("Failed to create a temporary file name.");
 #endif
     string path = decodeName(fileName);
@@ -404,7 +395,6 @@ DIGIDOCPP_WARNING_POP
  * Creates directory recursively. Also access rights can be omitted. Defaults are 700 in unix.
  *
  * @param path full path of the directory created.
- * @param mode directory access rights, optional parameter, default value 0700 (owner: rwx, group: ---, others: ---)
  * @throws IOException exception is thrown if the directory creation failed.
  */
 void File::createDirectory(const string& path)
@@ -429,8 +419,7 @@ void File::createDirectory(const string& path)
     else
         DEBUG("Created directory '%s'", path.c_str());
 #else
-    umask(0);
-    int result = mkdir(_path.c_str(), 0700);
+    int result = mkdir(_path.c_str(), S_IRWXU);
     DEBUG("Created directory '%s' with result = %d", path.c_str(), result);
 #endif
     if(result)
