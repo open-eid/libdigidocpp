@@ -8,7 +8,7 @@ if [ "$#" -eq 0 ]; then
   echo "  target: osx ios iossimulator androidarm androidarm64 androidx86 androidx86_64"
   echo "To control iOS, macOS builds set environment variables:"
   echo " minimum deployment target"
-  echo " - MACOSX_DEPLOYMENT_TARGET=10.14"
+  echo " - MACOSX_DEPLOYMENT_TARGET=10.15"
   echo " - IPHONEOS_DEPLOYMENT_TARGET=12.0"
   echo " archs to build on macOS/iOS"
   echo " - ARCHS=\"x86_64 arm64\" (macOS)"
@@ -83,7 +83,7 @@ case "$@" in
   TARGET=macOS
   TARGET_PATH=/Library/libdigidocpp
   : ${ARCHS:="x86_64 arm64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="10.14"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="10.15"}
   export MACOSX_DEPLOYMENT_TARGET
 esac
 

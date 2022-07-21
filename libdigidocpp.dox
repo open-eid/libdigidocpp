@@ -1290,16 +1290,16 @@ Sample: creating new BDOC file, adding multiple data files and signing via PKCS#
 --state=Harjumaa --city=Tallinn --postalCode=12345 --pkcs11 demo-container.bdoc
 
 Input:
-  - file1.txt			- a data file to be added to container
-  - text/plain			- data file mime-type
-  - file2.pdf			- a data file to be added to container	
-  - application/pdf		- data file mime-type
-  - Estonia				- country where the signature is created
-  - Harjumaa			- state where the signature is created
-  - Tallinn				- city where the signature is created
-  - 12345				- postal code of the signature creation location
-  - --pkcs11			- signing is done via PKCS#11 module
-  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
+  --file=file1.txt			- a data file to be added to container
+  --mime=text/plain			- data file 'file1.txt' mime-type
+  --file=file2.pdf			- a data file to be added to container	
+  --mime=application/pdf	- data file 'file2.pdf' mime-type
+  --country=Estonia			- country where the signature is created
+  --state=Harjumaa			- state where the signature is created
+  --city=Tallinn			- city where the signature is created
+  --postalCode=12345		- postal code of the signature creation location
+  --pkcs11					- signing is done via PKCS#11 module
+  demo-container.bdoc		- container to be created (in BDOC 2.1 format)
 \endcode
 
 \code{.txt}
@@ -1307,9 +1307,9 @@ Sample: creating new BDOC file on Windows, adding data file and signing via CNG 
 > digidoc-tool create --file=file1.txt --cng demo-container.bdoc
 
 Input:
-  - file1.txt			- a data file to be added to container
-  - --cng				- CNG API is used for signing
-  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
+  --file=file1.txt			- a data file to be added to container
+  --cng						- CNG API is used for signing
+  demo-container.bdoc		- container to be created (in BDOC 2.1 format)
 \endcode
 
 \code{.txt}
@@ -1317,11 +1317,11 @@ Sample: creating new BDOC file on Windows, adding data file and signing via CNG 
 > digidoc-tool create --file=file1.txt --cng --selectFirst --pin=01497 demo-container.bdoc
 
 Input:
-  - file1.txt			- a data file to be added to container
-  - --cng				- CNG API is used for signing
-  - --selectFirst		- the first signing certificate in store is used for signing
-  - 01497				- PIN code (PIN2 in case of Estonian ID cards)
-  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
+  --file=file1.txt			- a data file to be added to container
+  --cng						- CNG API is used for signing
+  --selectFirst				- the first signing certificate in store is used for signing
+  --pin=01497				- PIN code (PIN2 in case of Estonian ID cards)
+  demo-container.bdoc		- container to be created (in BDOC 2.1 format)
 \endcode
 
 \subsection	createBatch Creating and signing multiple documents
@@ -1368,26 +1368,26 @@ Sample: creating new BDOC-TM file, specifying signers certificate, adding data f
 > digidoc-tool websign --cert=signer.cer --file=file1.txt --profile=time-mark demo-container.bdoc
 
 Input:
-  - signer.cer			- signer's certificate
-  - file1.txt			- a data file to be added to container
-  - time-mark			- profile of the signature
-  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
+  --cert=signer.cer		- signers certificate
+  --file=file1.txt		- a data file to be added to container
+  --profile=time-mark	- profile of the signature
+  demo-container.bdoc	- container to be created (in BDOC 2.1 format)
 \endcode
 
 \code{.txt}
-Sample: creating new BDOC-TS file, specifying signer's certificate, adding data files and other meta-data and calculating the RSA signature value in browser
+Sample: creating new BDOC-TS file, specifying signers certificate, adding data files and other meta-data and calculating the RSA signature value in browser
 > digidoc-tool websign --cert=signer.cer --file=file1.txt --file=file2.pdf --country=Estonia --state=Harjumaa --city=Tallinn --postalCode=12345 --profile=time-stamp demo-container.bdoc
 
 Input:
-  - signer.cer			- signer's certificate
-  - file1.txt			- a data file to be added to container
-  - file2.txt			- a data file to be added to container
-  - time-stamp			- profile of the signature
-  - Estonia				- country where the signature is created
-  - Harjumaa			- state where the signature is created
-  - Tallinn				- city where the signature is created
-  - 12345				- postal code of the signature creation location
-  - demo-container.bdoc	- container to be created (in BDOC 2.1 format)
+  --cert=signer.cer		- signers certificate
+  --file=file1.txt		- a data file to be added to container
+  --file=file2.txt		- a data file to be added to container
+  --profile=time-stamp	- profile of the signature
+  --country=Estonia		- country where the signature is created
+  --state=Harjumaa		- state where the signature is created
+  --city=Tallinn		- city where the signature is created
+  --postalCode=12345	- postal code of the signature creation location
+  demo-container.bdoc	- container to be created (in BDOC 2.1 format)
 \endcode
 
 
@@ -1409,7 +1409,7 @@ Signature Validation Policy
 
 Default POLv2
 
-http://open-eid.github.io/SiVa/siva/appendix/validation_policy/"</td></tr>
+http://open-eid.github.io/SiVa/siva/appendix/validation_policy/</td></tr>
 <tr><td>\-\-warnings=
 
 (ignore, warning, error)	</td><td>Optional</td><td>
@@ -1453,7 +1453,8 @@ Sample: opening BDOC container, listing its contents and validating signatures
 > digidoc-tool open demo-container.bdoc
 
 Input:
-  - demo-container.bdoc - input DigiDoc file which contents are listed and signatures validated
+  demo-container.bdoc	- input DigiDoc file which contents are listed and signatures validated
+
 Output:
   Container type: application/vnd.etsi.asic-e+zip
   Documents (2):
@@ -1482,7 +1483,8 @@ Sample: opening BDOC container, listing its contents and validating signatures (
 > digidoc-tool open weak-sha.bdoc
 
 Input:
-  - weak-sha.bdoc - input BDOC 2.1 file which contents are listed and signatures validated
+  weak-sha.bdoc			- input BDOC 2.1 file which contents are listed and signatures validated
+
 Output:
   Container type: application/vnd.etsi.asic-e+zip
   Documents (1):
@@ -1511,7 +1513,8 @@ Sample: opening container, extracting its data files
 > digidoc-tool open --extractAll demo-container.bdoc
 
 Input:
-  - demo-container.bdoc - input DigiDoc file that is extracted
+  --extractAll=demo		- Extract all files into current folder
+  demo-container.bdoc	- input DigiDoc file that is extracted
 
 Output:
   Extracting documents:
@@ -1524,7 +1527,8 @@ Sample: opening container, extracting its data files to a specific directory
 > digidoc-tool open --extractAll=demo demo-container.bdoc
 
 Input:
-  - demo-container.bdoc - input DigiDoc file that is extracted
+  --extractAll=demo		- Extract all files into folder "demo"
+  demo-container.bdoc	- input DigiDoc file that is extracted
 
 Output:
   Extracting documents:
@@ -1596,8 +1600,8 @@ Sample: adding a signature via PKCS#11 driver
 > digidoc-tool sign --pkcs11 demo-container.bdoc
 
 Input:
-- --pkcs11			- PKCS#11 module is used for signing
-- demo-container.bdoc		- container to be modified
+  --pkcs11				- PKCS#11 module is used for signing
+  demo-container.bdoc	- container to be modified
 \endcode
 
 \code{.txt}
@@ -1605,8 +1609,8 @@ Sample: adding a signature via CNG API
 > digidoc-tool sign --cng demo-container.bdoc
 
 Input:
-- --cng				- CNG API is used for signing
-- demo-container.bdoc		- container to be modified
+  --cng					- CNG API is used for signing
+  demo-container.bdoc	- container to be modified
 \endcode
 
 \code{.txt}
@@ -1614,10 +1618,10 @@ Sample: adding a signature via CNG API, no dialog windows are displayed
 > digidoc-tool sign --cng --selectFirst --pin=12345 demo-container.bdoc
 
 Input:
-- --cng				- CNG API is used for signing
-- --selectFirst		- the first signing certificate is used for signing
-- 12345				- PIN code (PIN2 in case of Estonian ID cards)
-- demo-container.bdoc		- container to be modified
+  --cng					- CNG API is used for signing
+  --selectFirst			- the first signing certificate is used for signing
+  --pin=12345			- PIN code (PIN2 in case of Estonian ID cards)
+  demo-container.bdoc	- container to be modified
 \endcode
 
 
@@ -1641,17 +1645,17 @@ Sample: removing signature from container
 > digidoc-tool remove --signature=1 demo-container.bdoc
 
 Input:
-- 1							- sequence number of the signature that is removed
-- demo-container.bdoc		- container to be modified
+  --signature=1			- sequence number of the signature that is removed
+  demo-container.bdoc	- container to be modified
 \endcode
 \code{.txt}
 Sample: removing data files from container
 > digidoc-tool remove --document=0 --document=1 demo-container.bdoc
 
 Input:
-- 0							- sequence number of the data file that is removed
-- 1							- sequence number of the data file that is removed
-- demo-container.bdoc		- container to be modified
+  --document=0			- sequence number of the data file that is removed
+  --document=1			- sequence number of the data file that is removed
+  demo-container.bdoc	- container to be modified
 \endcode
 
 

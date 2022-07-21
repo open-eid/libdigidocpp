@@ -5,7 +5,7 @@ XERCES_DIR=xerces-c-3.2.3
 XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.1.1o
+OPENSSL_DIR=openssl-1.1.1q
 LIBXML2_DIR=libxml2-2.9.10
 ANDROID_NDK=android-ndk-r23b
 FREETYPE_DIR=freetype-2.10.1
@@ -99,7 +99,7 @@ case "$@" in
   CONFIGURE="--disable-static --enable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="x86_64 arm64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="10.14"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="10.15"}
   export MACOSX_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } "
   export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
@@ -433,9 +433,9 @@ case "$@" in
     echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
     echo "To control iOS, macOS builds set environment variables:"
     echo " minimum deployment target"
-    echo " - MACOSX_DEPLOYMENT_TARGET=10.14"
+    echo " - MACOSX_DEPLOYMENT_TARGET=10.15"
     echo " - IPHONEOS_DEPLOYMENT_TARGET=12.0"
-    echo " archs to build"
+    echo " archs to build on macOS/iOS"
     echo " - ARCHS=\"x86_64 arm64\" (macOS)"
     echo " - ARCHS=\"arm64\" (iOS)"
     echo " - ARCHS=\"x86_64\" (iPhoneSimulator)"
