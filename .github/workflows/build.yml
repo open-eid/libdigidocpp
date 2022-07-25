@@ -64,7 +64,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:34', 'fedora:35']
+        container: ['fedora:35']
     env:
       MAKEFLAGS: -j3
     steps:
@@ -149,7 +149,7 @@ jobs:
     env:
       MAKEFLAGS: ""
       VER_SUFFIX: .VS${{ matrix.toolset }}
-      VERSION: 3.14.10.${{ github.run_number }}
+      VERSION: 3.14.11.${{ github.run_number }}
       VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/patches/vcpkg-triplets
       VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/patches/vcpkg-ports
     steps:
@@ -188,7 +188,7 @@ jobs:
         path: ./*.msi
   pages:
     name: Deploy pages
-    if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'master')
+    if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'master')
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
@@ -209,11 +209,11 @@ jobs:
         force_orphan: true
   coverity:
     name: Run Coverity tests
-    if: contains(github.repository, 'open-eid/libdigidocpp') && contains(github.ref, 'coverity_scan')
+    if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'coverity_scan')
     runs-on: ubuntu-20.04
     env:
       TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
-      PROJECTNAME: open-eid/libdigidocpp
+      PROJECTNAME: ${{ github.repository }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
