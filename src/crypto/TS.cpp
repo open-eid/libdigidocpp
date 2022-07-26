@@ -40,6 +40,38 @@
 using namespace digidoc;
 using namespace std;
 
+#if defined(LIBRESSL_VERSION_NUMBER)
+void *OPENSSL_memdup(const void *data, size_t size)
+{
+	void *copy;
+
+	if (data == NULL || size == 0 || size >= INT_MAX)
+		return NULL;
+
+	if ((copy = malloc(size)) == NULL)
+		return NULL;
+
+	return memcpy(copy, data, size);
+}
+
+static void TS_VERIFY_CTX_set_flags(TS_VERIFY_CTX *ctx, int f)
+{
+    ctx->flags = unsigned(f);
+}
+
+static void TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx, unsigned char *hexstr, long len)
+{
+    OPENSSL_free(ctx->imprint);
+    ctx->imprint = hexstr;
+    ctx->imprint_len = unsigned(len);
+}
+
+static void TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s)
+{
+    ctx->store = s;
+}
+#endif
+
 TS::TS(const string &url, const Digest &digest, const string &useragent)
 {
     SCOPE(TS_REQ, req, TS_REQ_new());

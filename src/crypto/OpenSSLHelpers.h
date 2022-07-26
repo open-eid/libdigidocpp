@@ -67,12 +67,14 @@ class OpenSSLException : public Exception
             while((error = ERR_get_error()) != 0)
             {
                 Exception e(ERR_lib_error_string(error), 0, ERR_error_string(error, nullptr));
+#ifndef LIBRESSL_VERSION_NUMBER
                 if(ERR_GET_LIB(error) == ERR_R_BIO_LIB &&
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
                     ERR_GET_FUNC(error) == BIO_F_BIO_LOOKUP_EX &&
 #endif
                     ERR_GET_REASON(error) == ERR_R_SYS_LIB)
                     e.setCode(ExceptionCode::HostNotFound);
+#endif
                 addCause(e);
             }
         }
