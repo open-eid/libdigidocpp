@@ -17,9 +17,6 @@
  *
  */
 
-// This file has platform-specific implementations.
-// Treat all POSIX systems (Linux, MAC) the same way. Treat non-POSIX as Windows.
-
 #include "File.h"
 
 #include "log.h"
@@ -300,7 +297,6 @@ unsigned long File::fileSize(const string &path)
     return f_stat(encodeName(path).c_str(), &fileInfo) ? 0 : (unsigned long)fileInfo.st_size;
 }
 
-
 /**
  * Parses file path and returns file name from file full path.
  *
@@ -447,87 +443,12 @@ bool File::isRelative(const string &path)
 }
 
 /**
- * Returns list of files (and empty directories, if <code>listEmptyDirectories</code> is set)
- * found in the directory <code>directory</code>.
- *
- * @param directory full path of the directory.
- * @throws IOException throws exception if the directory listing failed.
- */
-vector<string> File::listFiles(const string& directory)
-{
-    vector<string> files;
-
-#ifdef _POSIX_VERSION
-    string _directory = encodeName(directory);
-    DIR* pDir = opendir(_directory.c_str());
-    if(!pDir)
-        THROW("Failed to open directory '%s'", _directory.c_str());
-
-    char fullPath[MAXPATHLEN];
-    struct stat info;
-    for(dirent *entry = readdir(pDir); entry; entry = readdir(pDir))
-    {
-        static const string dot(".");
-        static const string dotdot("..");
-        if(dot == entry->d_name || dotdot == entry->d_name)
-            continue;
-
-        sprintf(fullPath, "%s/%s", _directory.c_str(), entry->d_name);
-        if(entry->d_type == 0x08 || (lstat(fullPath, &info) != 0 && S_ISREG(info.st_mode)))
-            files.push_back(path(directory, decodeName(entry->d_name)));
-    }
-
-    closedir(pDir);
-#elif WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    WIN32_FIND_DATAW findFileData;
-    HANDLE hFind = nullptr;
-
-    try
-    {
-        if ( directory.size() > MAX_PATH )
-        {
-            // MSDN: "Relative paths are limited to MAX_PATH characters." - can this be true?
-            THROW("Directory path '%s' exceeds the limit %d", directory.c_str(), MAX_PATH);
-        }
-
-        wstring findPattern = encodeName(directory + "\\*");
-        hFind = ::FindFirstFileW(findPattern.c_str(), &findFileData);
-        if (hFind == INVALID_HANDLE_VALUE)
-            THROW("Listing contents of directory '%s' failed with error %d", directory.c_str(), ::GetLastError());
-
-        do
-        {
-            wstring fileName(findFileData.cFileName);
-            if ( fileName == L"." || fileName == L".." )
-                continue; // skip those too
-
-            if(!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-                files.push_back(path(directory, decodeName(fileName)));
-        } while ( ::FindNextFileW(hFind, &findFileData) != FALSE );
-
-        // double-check for errors
-        if ( ::GetLastError() != ERROR_NO_MORE_FILES )
-            THROW("Listing contents of directory '%s' failed with error %d", directory.c_str(), ::GetLastError());
-
-        ::FindClose(hFind);
-    }
-    catch (...)
-    {
-        ::FindClose(hFind);
-        throw;
-    }
-#endif
-    return files;
-}
-
-/**
  * Constructs the full file path in the format "file:///fullpath" in URI encoding. 
  *
  * @param fullDirectory full directory path to the relativeFilePath
  * @param relativeFilePath file name to be appended to the full path
  * @return full file path in the format "file:///fullpath" in URI encoding.
  */
-
 string File::fullPathUrl(const string &path)
 {
 #ifdef _WIN32

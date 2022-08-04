@@ -51,6 +51,13 @@
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
+#if __has_include(<filesystem>)
+#include <filesystem>
+namespace fs = std::filesystem;
+#else
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#endif
 
 namespace std
 {
@@ -256,23 +263,18 @@ public:
     unique_ptr<Signer> getSigner(bool getwebsigner = false) const;
     static string decodeParameter(const string &param)
     {
-        if(param.empty())
-            return {};
-#ifdef _WIN32
-        int len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), nullptr, 0);
-        wstring out(size_t(len), 0);
-        len = MultiByteToWideChar(CP_ACP, 0, param.data(), int(param.size()), &out[0], len);
-        return File::decodeName(out);
-#else
-        return File::decodeName(param);
-#endif
+        return File::decodeName(fs::path(param));
     }
 
     // Config
-    int _logLevel;
-    bool expired = false;
-    vector<X509Cert> tslcerts;
-    string _logFile, tsurl, tslurl, uri, siguri;
+    int _logLevel = XmlConfCurrent::logLevel();
+    bool expired = XmlConfCurrent::TSLAllowExpired();
+    vector<X509Cert> tslcerts = XmlConfCurrent::TSLCerts();
+    string _logFile = XmlConfCurrent::logFile();
+    string tsurl = XmlConfCurrent::TSUrl();
+    string tslurl = XmlConfCurrent::TSLUrl();
+    string uri = XmlConfCurrent::digestUri();
+    string siguri = XmlConfCurrent::signatureDigestUri();
 
     // Params
     string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
@@ -281,7 +283,7 @@ public:
     vector<string> roles;
     bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
     static const map<string,string> profiles;
-    static string RED, GREEN, YELLOW, RESET;
+    static string_view RED, GREEN, YELLOW, RESET;
 };
 
 
@@ -369,20 +371,12 @@ const map<string,string> ToolConfig::profiles = {
     {"time-mark-archive", "time-mark-archive"},
     {"time-stamp-archive", "time-stamp-archive"},
 };
-string ToolConfig::RED = "\033[31m";
-string ToolConfig::GREEN = "\033[32m";
-string ToolConfig::YELLOW = "\033[33m";
-string ToolConfig::RESET = "\033[0m";
+string_view ToolConfig::RED = "\033[31m";
+string_view ToolConfig::GREEN = "\033[32m";
+string_view ToolConfig::YELLOW = "\033[33m";
+string_view ToolConfig::RESET = "\033[0m";
 
 ToolConfig::ToolConfig(int argc, char *argv[])
-    : _logLevel(XmlConfCurrent::logLevel())
-    , expired(XmlConfCurrent::TSLAllowExpired())
-    , tslcerts(XmlConfCurrent::TSLCerts())
-    , _logFile(XmlConfCurrent::logFile())
-    , tsurl(XmlConfCurrent::TSUrl())
-    , tslurl(XmlConfCurrent::TSLUrl())
-    , uri(XmlConfCurrent::digestUri())
-    , siguri(XmlConfCurrent::signatureDigestUri())
 {
     for(int i = 2; i < argc; i++)
     {
@@ -617,74 +611,68 @@ static int open(int argc, char* argv[])
         return EXIT_SUCCESS;
     };
 
-    try {
-        if(!extractPath.empty() && !validateOnExtract)
-            return extractFiles(extractPath);
+    if(!extractPath.empty() && !validateOnExtract)
+        return extractFiles(extractPath);
 
-        cout << "Container file: " << path << endl;
-        cout << "Container type: " << doc->mediaType() << endl;
+    cout << "Container file: " << path << endl;
+    cout << "Container type: " << doc->mediaType() << endl;
 
-        // Print container document list.
-        cout << "Documents (" << doc->dataFiles().size() << "):\n" << endl;
-        for(const DataFile *file: doc->dataFiles())
-        {
-            cout << "  Document (" << file->mediaType() << "): " << file->fileName()
-                 << " (" << file->fileSize() << " bytes)" << endl;
-        }
-
-        // Print container signatures list.
-        cout << endl << "Signatures (" << doc->signatures().size() << "):" << endl;
-        unsigned int pos = 0;
-        for(const Signature *s: doc->signatures())
-        {
-            cout << "  Signature " << pos++ << " (" << s->profile().c_str() << "):" << endl;
-            // Validate signature. Checks, whether signature format is correct
-            // and signed documents checksums are correct.
-            if(validateSignature(s, reportwarnings) == EXIT_FAILURE)
-                returnCode = EXIT_FAILURE;
-
-            // Get signature production place info.
-            if(!s->city().empty() || !s->stateOrProvince().empty() || !s->streetAddress().empty() || !s->postalCode().empty() || !s->countryName().empty())
-            {
-                cout << "    Signature production place:" << endl
-                     << "      City:              " << s->city() << endl
-                     << "      State or Province: " << s->stateOrProvince() << endl
-                     << "      Street address:    " << s->streetAddress() << endl
-                     << "      Postal code:       " << s->postalCode() << endl
-                     << "      Country:           " << s->countryName() << endl;
-            }
-
-            // Get signer role info.
-            vector<string> roles = s->signerRoles();
-            if(!roles.empty())
-            {
-                cout << "    Signer role(s):" << endl;
-                for(const string &role : roles)
-                    cout << "      " << role << endl;
-            }
-
-            vector<unsigned char> msgImprint = s->messageImprint();
-            cout << "    EPES policy: " << s->policy() << endl
-                << "    SPUri: " << s->SPUri() << endl
-                << "    Signature method: " << s->signatureMethod() << endl
-                << "    Signing time: " << s->claimedSigningTime() << endl
-                << "    Signing cert: " << s->signingCertificate() << endl
-                << "    Signed by: " << s->signedBy() << endl
-                << "    Produced At: " << s->OCSPProducedAt() << endl
-                << "    OCSP Responder: " << s->OCSPCertificate() << endl
-                << "    Message imprint (" << msgImprint.size() << "): " << msgImprint << endl
-                << "    TS: " << s->TimeStampCertificate() << endl
-                << "    TS time: " << s->TimeStampTime() << endl
-                << "    TSA: " << s->ArchiveTimeStampCertificate() << endl
-                << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
-        }
-        if(returnCode == EXIT_SUCCESS && !extractPath.empty())
-            return extractFiles(extractPath);
-    } catch(const Exception &e) {
-        cout << "Caught Exception:" << endl << e;
-        returnCode = EXIT_FAILURE;
+    // Print container document list.
+    cout << "Documents (" << doc->dataFiles().size() << "):\n" << endl;
+    for(const DataFile *file: doc->dataFiles())
+    {
+        cout << "  Document (" << file->mediaType() << "): " << file->fileName()
+             << " (" << file->fileSize() << " bytes)" << endl;
     }
 
+    // Print container signatures list.
+    cout << endl << "Signatures (" << doc->signatures().size() << "):" << endl;
+    unsigned int pos = 0;
+    for(const Signature *s: doc->signatures())
+    {
+        cout << "  Signature " << pos++ << " (" << s->profile().c_str() << "):" << endl;
+        // Validate signature. Checks, whether signature format is correct
+        // and signed documents checksums are correct.
+        if(validateSignature(s, reportwarnings) == EXIT_FAILURE)
+            returnCode = EXIT_FAILURE;
+
+        // Get signature production place info.
+        if(!s->city().empty() || !s->stateOrProvince().empty() || !s->streetAddress().empty() || !s->postalCode().empty() || !s->countryName().empty())
+        {
+            cout << "    Signature production place:" << endl
+                 << "      City:              " << s->city() << endl
+                 << "      State or Province: " << s->stateOrProvince() << endl
+                 << "      Street address:    " << s->streetAddress() << endl
+                 << "      Postal code:       " << s->postalCode() << endl
+                 << "      Country:           " << s->countryName() << endl;
+        }
+
+        // Get signer role info.
+        vector<string> roles = s->signerRoles();
+        if(!roles.empty())
+        {
+            cout << "    Signer role(s):" << endl;
+            for(const string &role : roles)
+                cout << "      " << role << endl;
+        }
+
+        vector<unsigned char> msgImprint = s->messageImprint();
+        cout << "    EPES policy: " << s->policy() << endl
+            << "    SPUri: " << s->SPUri() << endl
+            << "    Signature method: " << s->signatureMethod() << endl
+            << "    Signing time: " << s->claimedSigningTime() << endl
+            << "    Signing cert: " << s->signingCertificate() << endl
+            << "    Signed by: " << s->signedBy() << endl
+            << "    Produced At: " << s->OCSPProducedAt() << endl
+            << "    OCSP Responder: " << s->OCSPCertificate() << endl
+            << "    Message imprint (" << msgImprint.size() << "): " << msgImprint << endl
+            << "    TS: " << s->TimeStampCertificate() << endl
+            << "    TS time: " << s->TimeStampTime() << endl
+            << "    TSA: " << s->ArchiveTimeStampCertificate() << endl
+            << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
+    }
+    if(returnCode == EXIT_SUCCESS && !extractPath.empty())
+        return extractFiles(extractPath);
     return returnCode;
 }
 
@@ -725,33 +713,22 @@ static int remove(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    try {
-        if(!signatures.empty())
-        {
-            sort(signatures.begin(), signatures.end(), greater<unsigned int>());
-            for(vector<unsigned int>::const_iterator i = signatures.begin(); i != signatures.end(); ++i)
-            {
-                cout << "  Removing signature " << *i << endl;
-                doc->removeSignature(*i);
-            }
-        }
+    sort(signatures.begin(), signatures.end(), greater<unsigned int>());
+    for(unsigned int i : signatures)
+    {
+        cout << "  Removing signature " << i << endl;
+        doc->removeSignature(i);
+    }
 
-        if(!documents.empty())
-        {
-            sort(documents.begin(), documents.end(), greater<unsigned int>());
-            for(vector<unsigned int>::const_iterator i = documents.begin(); i != documents.end(); ++i)
-            {
-                cout << "  Removing document " << *i << endl;
-                doc->removeDataFile(*i);
-            }
-        }
+    sort(documents.begin(), documents.end(), greater<unsigned int>());
+    for(unsigned int i : documents)
+    {
+        cout << "  Removing document " << i << endl;
+        doc->removeDataFile(i);
+    }
 
-        doc->save();
-
-        return EXIT_SUCCESS;
-    } catch(const Exception &e) { cout << "Caught Exception:" << endl << e; }
-
-    return EXIT_FAILURE;
+    doc->save();
+    return EXIT_SUCCESS;
 }
 
 
@@ -762,7 +739,7 @@ static int remove(int argc, char *argv[])
  * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int add(const ToolConfig &p, char *program)
+static int add(const ToolConfig &p, const char *program)
 {
     if(p.path.empty() || p.files.empty())
     {
@@ -779,16 +756,10 @@ static int add(const ToolConfig &p, char *program)
         return EXIT_FAILURE;
     }
 
-    try {
-        for(const pair<string,string> &file: p.files)
-            doc->addDataFile(file.first, file.second);
-
-        doc->save();
-
-        return EXIT_SUCCESS;
-    } catch(const Exception &e) { cout << "Caught Exception:" << endl << e; }
-
-    return EXIT_FAILURE;
+    for(const pair<string,string> &file: p.files)
+        doc->addDataFile(file.first, file.second);
+    doc->save();
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -825,7 +796,7 @@ static int signContainer(Container *doc, const unique_ptr<Signer> &signer, bool 
  * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int create(const ToolConfig &p, char *program)
+static int create(const ToolConfig &p, const char *program)
 {
     if(p.path.empty() || p.files.empty())
     {
@@ -842,19 +813,14 @@ static int create(const ToolConfig &p, char *program)
         return EXIT_FAILURE;
     }
 
-    try {
-        for(const pair<string,string> &file: p.files)
-            doc->addDataFile(file.first, file.second);
+    for(const pair<string,string> &file: p.files)
+        doc->addDataFile(file.first, file.second);
 
-        int returnCode = EXIT_SUCCESS;
-        if(p.doSign)
-            returnCode = signContainer(doc.get(), p.getSigner(), p.dontValidate);
-        doc->save();
-        return returnCode;
-    } catch(const Exception &e) {
-        cout << "Caught Exception:" << endl << e;
-        return EXIT_FAILURE;
-    }
+    int returnCode = EXIT_SUCCESS;
+    if(p.doSign)
+        returnCode = signContainer(doc.get(), p.getSigner(), p.dontValidate);
+    doc->save();
+    return returnCode;
 }
 
 /**
@@ -864,7 +830,7 @@ static int create(const ToolConfig &p, char *program)
  * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int createBatch(const ToolConfig &p, char *program)
+static int createBatch(const ToolConfig &p, const char *program)
 {
     if(p.path.empty())
     {
@@ -880,15 +846,22 @@ static int createBatch(const ToolConfig &p, char *program)
         return EXIT_FAILURE;
     }
 
-    int returnCode = EXIT_SUCCESS;
-    for(const string &file: File::listFiles(p.path))
+    std::error_code ec;
+    fs::directory_iterator it{fs::u8path(p.path), ec};
+    if(ec)
     {
-        if(file.compare(file.size() - 6, 6, ".asice") == 0)
+        cout << "Failed to open directory %s" << p.path << endl;
+        return EXIT_FAILURE;
+    }
+    int returnCode = EXIT_SUCCESS;
+    for(const auto &file: it)
+    {
+        if(!fs::is_regular_file(file.status()) || file.path().extension() == ".asice")
             continue;
-        cout << "Signing file: " << file << endl;
+        cout << "Signing file: " << file.path().u8string() << endl;
         try {
-            unique_ptr<Container> doc = Container::createPtr(file + ".asice");
-            doc->addDataFile(file, "application/octet-stream");
+            unique_ptr<Container> doc = Container::createPtr(file.path().u8string() + ".asice");
+            doc->addDataFile(file.path().u8string(), "application/octet-stream");
             if(signContainer(doc.get(), signer, p.dontValidate) == EXIT_FAILURE)
                 returnCode = EXIT_FAILURE;
             doc->save();
@@ -908,7 +881,7 @@ static int createBatch(const ToolConfig &p, char *program)
  * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int sign(const ToolConfig &p, char *program)
+static int sign(const ToolConfig &p, const char *program)
 {
     if(p.path.empty())
     {
@@ -925,17 +898,12 @@ static int sign(const ToolConfig &p, char *program)
         return EXIT_FAILURE;
     }
 
-    try {
-        int returnCode = signContainer(doc.get(), p.getSigner(), p.dontValidate);
-        doc->save();
-        return returnCode;
-    } catch(const Exception &e) {
-        cout << "Caught Exception:" << endl << e;
-        return EXIT_FAILURE;
-    }
+    int returnCode = signContainer(doc.get(), p.getSigner(), p.dontValidate);
+    doc->save();
+    return returnCode;
 }
 
-static int websign(const ToolConfig &p, char *program)
+static int websign(const ToolConfig &p, const char *program)
 {
     if(p.path.empty())
     {
@@ -1045,68 +1013,55 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
  * @param argv command line arguments.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-int main(int argc, char *argv[])
+int main(int argc, char *argv[]) try
 {
     printf("Version\n");
     printf("  digidoc-tool version: %s\n", FILE_VER_STR);
     printf("  libdigidocpp version: %s\n", version().c_str());
 
     ToolConfig *conf = nullptr;
-    try {
-        Conf::init(conf = new ToolConfig(argc, argv));
-        stringstream info;
-        info << "digidoc-tool/" << FILE_VER_STR << " (";
+    Conf::init(conf = new ToolConfig(argc, argv));
+    stringstream info;
+    info << "digidoc-tool/" << FILE_VER_STR << " (";
 #ifdef _WIN32
-        info << "Windows";
+    info << "Windows";
 #elif __APPLE__
-        info << "OS X";
+    info << "OS X";
 #else
-        info << "Unknown";
+    info << "Unknown";
 #endif
-        info << ")";
-        digidoc::initialize("digidoc-tool", info.str());
-    } catch(const Exception &e) {
-        cout << "Failed to initalize library:" << endl;
-        cout << "Caught Exception:" << endl << e;
-        return EXIT_FAILURE;
-    }
+    info << ")";
+    digidoc::initialize("digidoc-tool", info.str());
+    std::atexit(&digidoc::terminate);
 
     if(argc < 2)
     {
         printUsage(argv[0]);
-        digidoc::terminate();
         return EXIT_SUCCESS;
     }
 
-    int returnCode = EXIT_FAILURE;
-    try {
-        string command(argv[1]);
-        if(command == "open")
-            returnCode = open(argc, argv);
-        else if(command == "create")
-            returnCode = create(*conf, argv[0]);
-        else if(command == "add")
-            returnCode = add(*conf, argv[0]);
-        else if(command == "createBatch")
-            returnCode = createBatch(*conf, argv[0]);
-        else if(command == "remove")
-            returnCode = remove(argc, argv);
-        else if(command == "sign")
-            returnCode = sign(*conf, argv[0]);
-        else if(command == "websign")
-            returnCode = websign(*conf, argv[0]);
-        else if(command == "tsl")
-            returnCode = tslcmd(argc, argv);
-        else if(command == "version")
-            returnCode = EXIT_SUCCESS;
-        else
-            printUsage(argv[0]);
-    } catch(const Exception &e) {
-        cout << "Caught Exception:" << endl << e;
-        returnCode = EXIT_FAILURE;
-    }
-
-    digidoc::terminate();
-
-    return returnCode;
+    string_view command(argv[1]);
+    if(command == "open")
+        return open(argc, argv);
+    if(command == "create")
+        return create(*conf, argv[0]);
+    if(command == "add")
+        return add(*conf, argv[0]);
+    if(command == "createBatch")
+        return createBatch(*conf, argv[0]);
+    if(command == "remove")
+        return remove(argc, argv);
+    if(command == "sign")
+        return sign(*conf, argv[0]);
+    if(command == "websign")
+        return websign(*conf, argv[0]);
+    if(command == "tsl")
+        return tslcmd(argc, argv);
+    if(command == "version")
+        return EXIT_SUCCESS;
+    printUsage(argv[0]);
+    return EXIT_FAILURE;
+} catch(const Exception &e) {
+    cout << "Caught Exception:" << endl << e;
+    return EXIT_FAILURE;
 }
