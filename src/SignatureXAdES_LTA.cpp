@@ -62,9 +62,10 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest) const
         saveToXml(ofs);
         XSECProvider prov;
         auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
-        unique_ptr<DSIGSignature,decltype(deleteSig)> sig(prov.newSignatureFromDOM(SecureDOMParser().parseIStream(ofs).release()), deleteSig);
-        unique_ptr<URIResolver> uriresolver(new URIResolver(bdoc));
-        unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
+        auto doc = SecureDOMParser().parseIStream(ofs);
+        unique_ptr<DSIGSignature,decltype(deleteSig)> sig(prov.newSignatureFromDOM(doc.get()), deleteSig);
+        unique_ptr<URIResolver> uriresolver = make_unique<URIResolver>(bdoc);
+        unique_ptr<XSECKeyInfoResolverDefault> keyresolver = make_unique<XSECKeyInfoResolverDefault>();
         sig->setURIResolver(uriresolver.get());
         sig->setKeyInfoResolver(keyresolver.get());
         sig->registerIdAttributeName((const XMLCh*)u"ID");
@@ -183,7 +184,7 @@ TS SignatureXAdES_LTA::tsaFromBase64() const
             return {};
         const GenericTimeStampType::EncapsulatedTimeStampType &bin =
                 ts.encapsulatedTimeStamp().front();
-        return TS((const unsigned char*)bin.data(), bin.size());
+        return {(const unsigned char*)bin.data(), bin.size()};
     } catch(const Exception &) {}
     return {};
 }

@@ -19,13 +19,14 @@
 
 #pragma once
 
-#include "ASiC_S.h"
 #include "Signature.h"
 
-#include "crypto/TS.h"
+#include <memory>
 
 namespace digidoc
 {
+class ASiC_S;
+class TS;
 
 class SignatureTST final: public Signature
 {
@@ -53,7 +54,7 @@ public:
 private:
     DISABLE_COPY(SignatureTST);
     ASiC_S *asicSDoc = nullptr;
-    TS* timestampToken = nullptr;
+    std::unique_ptr<TS> timestampToken;
 };
 
 }

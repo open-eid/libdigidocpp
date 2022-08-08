@@ -21,6 +21,8 @@
 
 #include "Conf.h"
 
+#include <memory>
+
 namespace digidoc
 {
 
@@ -75,7 +77,7 @@ private:
     DISABLE_COPY(XmlConf);
 
     class Private;
-    Private *d;
+    std::unique_ptr<Private> d;
     friend class XmlConfV2;
     friend class XmlConfV3;
     friend class XmlConfV4;
@@ -132,7 +134,7 @@ public:
 private:
     DISABLE_COPY(XmlConfV2);
 
-    XmlConf::Private *d;
+    std::unique_ptr<XmlConf::Private> d;
 };
 
 class DIGIDOCPP_EXPORT XmlConfV3: public ConfV3
@@ -187,7 +189,7 @@ public:
 private:
     DISABLE_COPY(XmlConfV3);
 
-    XmlConf::Private *d;
+    std::unique_ptr<XmlConf::Private> d;
 };
 
 class DIGIDOCPP_EXPORT XmlConfV4: public ConfV4
@@ -243,7 +245,7 @@ public:
 private:
     DISABLE_COPY(XmlConfV4);
 
-    XmlConf::Private *d;
+    std::unique_ptr<XmlConf::Private> d;
 };
 
 using XmlConfCurrent = XmlConfV4;

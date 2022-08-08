@@ -19,8 +19,10 @@
 
 #include "SignatureTST.h"
 
+#include "ASiC_S.h"
 #include "DataFile_p.h"
 #include "crypto/Digest.h"
+#include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
 #include "util/log.h"
@@ -39,12 +41,10 @@ SignatureTST::SignatureTST(std::unique_ptr<istream> is, ASiC_S *asicSDoc): asicS
     vector<unsigned char> buf(size, 0);
     is->read((char*)buf.data(), streamsize(buf.size()));
 
-    timestampToken = new TS(buf.data(), buf.size());
+    timestampToken = make_unique<TS>(buf.data(), buf.size());
 }
 
-SignatureTST::~SignatureTST() {
-    delete timestampToken;
-}
+SignatureTST::~SignatureTST() = default;
 
 X509Cert SignatureTST::TimeStampCertificate() const
 {
@@ -89,29 +89,27 @@ void SignatureTST::validate() const
     if (timestampToken->time().empty())
     {
         EXCEPTION_ADD(exception, "Failed to parse timestamp token.");
+        throw exception;
     }
-    else
+    try
     {
-        try
-        {
-            const string digestMethod = timestampToken->digestMethod();
-            Digest digest(digestMethod);
-            auto dataFile = static_cast<const DataFilePrivate*>(asicSDoc->dataFiles().front());
-            dataFile->calcDigest(&digest);
-            timestampToken->verify(digest);
+        const string digestMethod = timestampToken->digestMethod();
+        Digest digest(digestMethod);
+        auto dataFile = static_cast<const DataFilePrivate*>(asicSDoc->dataFiles().front());
+        dataFile->calcDigest(&digest);
+        timestampToken->verify(digest);
 
-            if(digestMethod == URI_SHA1 &&
-                !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
-            {
-                Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", digestMethod.c_str()));
-                e.setCode(Exception::ReferenceDigestWeak);
-                exception.addCause(e);
-            }
-        }
-        catch (const Exception& e)
+        if(digestMethod == URI_SHA1 &&
+            !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
         {
+            Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", digestMethod.c_str()));
+            e.setCode(Exception::ReferenceDigestWeak);
             exception.addCause(e);
         }
+    }
+    catch (const Exception& e)
+    {
+        exception.addCause(e);
     }
 
     if(!exception.causes().empty())

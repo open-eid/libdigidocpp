@@ -24,7 +24,6 @@
 namespace digidoc
 {
 
-class TS;
 class SignatureXAdES_LTA final: public SignatureXAdES_LT
 {
 public:

@@ -169,13 +169,14 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
     SCOPE(ASN1_OCTET_STRING, st, ASN1_OCTET_STRING_new());
     if(nonce.empty())
     {
-        st->length = 20;
-        st->data = (unsigned char*)OPENSSL_malloc(size_t(st->length));
+        ASN1_OCTET_STRING_set(st.get(), nullptr, 20);
         RAND_bytes(st->data, st->length);
     }
     else
         ASN1_OCTET_STRING_set(st.get(), nonce.data(), int(nonce.size()));
-    if(!OCSP_REQUEST_add_ext(req.get(), X509_EXTENSION_create_by_NID(nullptr, NID_id_pkix_OCSP_Nonce, 0, st.get()), 0))
+
+    SCOPE(X509_EXTENSION, ex, X509_EXTENSION_create_by_NID(nullptr, NID_id_pkix_OCSP_Nonce, 0, st.get()));
+    if(!OCSP_REQUEST_add_ext(req.get(), ex.get(), 0))
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 
     if(signRequest)

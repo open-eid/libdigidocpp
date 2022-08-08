@@ -63,14 +63,12 @@ using namespace digidoc;
 using namespace std;
 using namespace xercesc;
 
-using plugin = unique_ptr<Container> (*)(const std::string &);
-
 namespace digidoc
 {
 static string m_appName = "libdigidocpp";
 static string m_userAgent = "libdigidocpp";
-static vector<plugin> m_createList = {};
-static vector<plugin> m_openList = {};
+static vector<decltype(&Container::createPtr)> m_createList {};
+static vector<decltype(&Container::openPtr)> m_openList {};
 }
 
 /**
@@ -136,7 +134,8 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
     m_userAgent = userAgent;
 
     try {
-        XMLPlatformUtils::Initialize();
+        if(!XMLPlatformUtils::fgMemoryManager)
+            XMLPlatformUtils::Initialize();
 #ifdef USE_XALAN
         XPathEvaluator::initialize();
         XalanTransformer::initialize();

@@ -81,26 +81,26 @@ public:
     string tostring(const string &val) const { return val; }
 
 
-    XmlConfParam<int> logLevel = {"log.level", 3};
-    XmlConfParam<string> logFile = {"log.file"};
-    XmlConfParam<string> digestUri = {"signer.digestUri"};
-    XmlConfParam<string> signatureDigestUri = {"signer.signatureDigestUri"};
-    XmlConfParam<string> PKCS11Driver = {"pkcs11.driver.path"};
-    XmlConfParam<bool> proxyForceSSL = {"proxy.forceSSL", false};
-    XmlConfParam<bool> proxyTunnelSSL = {"proxy.tunnelSSL", true};
-    XmlConfParam<string> proxyHost = {"proxy.host"};
-    XmlConfParam<string> proxyPort = {"proxy.port"};
-    XmlConfParam<string> proxyUser = {"proxy.user"};
-    XmlConfParam<string> proxyPass = {"proxy.pass"};
-    XmlConfParam<string> PKCS12Cert = {"pkcs12.cert"};
-    XmlConfParam<string> PKCS12Pass = {"pkcs12.pass"};
-    XmlConfParam<bool> PKCS12Disable = {"pkcs12.disable", false};
-    XmlConfParam<string> TSUrl = {"ts.url"};
-    XmlConfParam<bool> TSLAutoUpdate = {"tsl.autoupdate", true};
-    XmlConfParam<string> TSLCache = {"tsl.cache"};
-    XmlConfParam<bool> TSLOnlineDigest = {"tsl.onlineDigest", true};
-    XmlConfParam<int> TSLTimeOut = {"tsl.timeOut", 10};
-    XmlConfParam<string> verifyServiceUri = {"verify.serivceUri"};
+    XmlConfParam<int> logLevel{"log.level", 3};
+    XmlConfParam<string> logFile{"log.file"};
+    XmlConfParam<string> digestUri{"signer.digestUri"};
+    XmlConfParam<string> signatureDigestUri{"signer.signatureDigestUri"};
+    XmlConfParam<string> PKCS11Driver{"pkcs11.driver.path"};
+    XmlConfParam<bool> proxyForceSSL{"proxy.forceSSL", false};
+    XmlConfParam<bool> proxyTunnelSSL{"proxy.tunnelSSL", true};
+    XmlConfParam<string> proxyHost{"proxy.host"};
+    XmlConfParam<string> proxyPort{"proxy.port"};
+    XmlConfParam<string> proxyUser{"proxy.user"};
+    XmlConfParam<string> proxyPass{"proxy.pass"};
+    XmlConfParam<string> PKCS12Cert{"pkcs12.cert"};
+    XmlConfParam<string> PKCS12Pass{"pkcs12.pass"};
+    XmlConfParam<bool> PKCS12Disable{"pkcs12.disable", false};
+    XmlConfParam<string> TSUrl{"ts.url"};
+    XmlConfParam<bool> TSLAutoUpdate{"tsl.autoupdate", true};
+    XmlConfParam<string> TSLCache{"tsl.cache"};
+    XmlConfParam<bool> TSLOnlineDigest{"tsl.onlineDigest", true};
+    XmlConfParam<int> TSLTimeOut{"tsl.timeOut", 10};
+    XmlConfParam<string> verifyServiceUri{"verify.serivceUri"};
     map<string,string> ocsp;
     std::set<std::string> ocspTMProfiles;
 
@@ -115,7 +115,8 @@ XmlConf::Private::Private(const string &path, string schema)
     : SCHEMA_LOC(std::move(schema))
 {
     try {
-        XMLPlatformUtils::Initialize();
+        if(!XMLPlatformUtils::fgMemoryManager)
+            XMLPlatformUtils::Initialize();
     }
     catch (const XMLException &e) {
         try {
@@ -255,7 +256,7 @@ unique_ptr<Configuration> XmlConf::Private::read(const string &path)
         THROW("Failed to parse configuration: %s (%s)",
             path.c_str(), SCHEMA_LOC.c_str());
     }
-    return unique_ptr<Configuration>(new Configuration);
+    return make_unique<Configuration>();
 }
 
 /**
@@ -314,9 +315,9 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, const A &defined, con
  * @deprecated See digidoc::XmlConfV2::XmlConfV2
  */
 XmlConf::XmlConf(const string &path, const string &schema)
-    : d(new XmlConf::Private(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
+    : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
 {}
-XmlConf::~XmlConf() { delete d; }
+XmlConf::~XmlConf() = default;
 XmlConf* XmlConf::instance() { return dynamic_cast<XmlConf*>(Conf::instance()); }
 
 /**
@@ -329,9 +330,9 @@ XmlConf* XmlConf::instance() { return dynamic_cast<XmlConf*>(Conf::instance()); 
  * @deprecated See digidoc::XmlConfV3::XmlConfV3
  */
 XmlConfV2::XmlConfV2(const string &path, const string &schema)
-    : d(new XmlConf::Private(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
+    : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
 {}
-XmlConfV2::~XmlConfV2() { delete d; }
+XmlConfV2::~XmlConfV2() = default;
 XmlConfV2* XmlConfV2::instance() { return dynamic_cast<XmlConfV2*>(Conf::instance()); }
 
 /**
@@ -344,9 +345,9 @@ XmlConfV2* XmlConfV2::instance() { return dynamic_cast<XmlConfV2*>(Conf::instanc
  * @deprecated See digidoc::XmlConfV4::XmlConfV4
  */
 XmlConfV3::XmlConfV3(const string &path, const string &schema)
-    : d(new XmlConf::Private(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
+    : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
 {}
-XmlConfV3::~XmlConfV3() { delete d; }
+XmlConfV3::~XmlConfV3() = default;
 XmlConfV3* XmlConfV3::instance() { return dynamic_cast<XmlConfV3*>(Conf::instance()); }
 
 /**
@@ -358,9 +359,9 @@ XmlConfV3* XmlConfV3::instance() { return dynamic_cast<XmlConfV3*>(Conf::instanc
  * Initialize xml conf from path
  */
 XmlConfV4::XmlConfV4(const string &path, const string &schema)
-    : d(new XmlConf::Private(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
+    : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
 {}
-XmlConfV4::~XmlConfV4() { delete d; }
+XmlConfV4::~XmlConfV4() = default;
 XmlConfV4* XmlConfV4::instance() { return dynamic_cast<XmlConfV4*>(Conf::instance()); }
 
 

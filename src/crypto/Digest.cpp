@@ -32,7 +32,7 @@ namespace digidoc
 class Digest::Private: public vector<unsigned char>
 {
 public:
-    EVP_MD_CTX *ctx = nullptr;
+    EVP_MD_CTX *ctx {};
     int method = -1;
 };
 }
@@ -46,7 +46,7 @@ using namespace digidoc;
  * @throws IOException throws exception if the digest calculator initialization failed.
  */
 Digest::Digest(const string &uri)
-    : d(new Private)
+    : d(make_unique<Private>())
 {
     reset(uri);
 }
@@ -57,7 +57,6 @@ Digest::Digest(const string &uri)
 Digest::~Digest()
 {
     EVP_MD_CTX_free(d->ctx);
-    delete d;
 }
 
 vector<unsigned char> Digest::addDigestInfo(const vector<unsigned char> &digest, const string &uri)

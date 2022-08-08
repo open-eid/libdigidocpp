@@ -20,11 +20,9 @@ jobs:
       run: |
         brew update
         brew install doxygen boost xsd || brew link --overwrite xsd
-        brew unlink xerces-c python\@3.9
-    - name: Setup NDK path
-      run: echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
+        brew unlink xerces-c python@3.10
     - name: Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       id: cache
       with:
         path: cache
@@ -138,7 +136,7 @@ jobs:
         include:
         - toolset: 143
           image: windows-2022
-          vcver: 14.32
+          vcver: 14.33
           vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
         - toolset: 142
           image: windows-2019

@@ -141,10 +141,10 @@ void SignatureSiVa::validate(const string &policy) const
 
 
 SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHashCode)
-    : d(new Private)
+    : d(make_unique<Private>())
 {
     DEBUG("SiVaContainer::SiVaContainer(%s, %s, %d)", path.c_str(), ext.c_str(), useHashCode);
-    unique_ptr<istream> ifs(new ifstream(File::encodeName(d->path = path).c_str(), ifstream::binary));
+    unique_ptr<istream> ifs = make_unique<ifstream>(File::encodeName(d->path = path).c_str(), ifstream::binary);
     istream *is = ifs.get();
     if(ext == "DDOC")
     {
@@ -159,18 +159,18 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
         d->dataFiles.push_back(new DataFilePrivate(move(ifs), File::fileName(path), "application/pdf", File::fileName(path)));
     }
 
-    XMLByte buf[48*100];
+    array<XMLByte, 48*100> buf{};
     string b64;
     is->clear();
     is->seekg(0);
     while(*is)
     {
-        is->read((char*)buf, 48*100);
+        is->read((char*)buf.data(), buf.size());
         if(is->gcount() <= 0)
             break;
 
         XMLSize_t size = 0;
-        XMLByte *out = Base64::encode(buf, XMLSize_t(is->gcount()), &size);
+        XMLByte *out = Base64::encode(buf.data(), XMLSize_t(is->gcount()), &size);
         if(out)
             b64.append((char*)out, size);
         delete out;
@@ -281,7 +281,6 @@ SiVaContainer::~SiVaContainer()
         delete s;
     for(const DataFile *f: d->dataFiles)
         delete f;
-    delete d;
 }
 
 void SiVaContainer::addDataFile(const string & /*path*/, const string & /*mediaType*/)
@@ -353,7 +352,7 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
 
             if(const XMLCh *b64 = item->getTextContent())
             {
-                d->dataFiles.push_back(new DataFilePrivate(unique_ptr<istream>(new stringstream(base64_decode(b64))),
+                d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(base64_decode(b64)),
                     transcode(item->getAttribute(cpXMLCh(u"Filename"))), transcode(item->getAttribute(cpXMLCh(u"MimeType"))), transcode(item->getAttribute(cpXMLCh(u"Id")))));
             }
 
@@ -377,7 +376,7 @@ stringstream* SiVaContainer::parseDDoc(istream &is, bool useHashCode)
         DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(cpXMLCh(u"LS"));
         unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
         unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
-        unique_ptr<stringstream> result(new stringstream);
+        unique_ptr<stringstream> result = make_unique<stringstream>();
         xsd::cxx::xml::dom::ostream_format_target out(*result);
         pDomLsOutput->setByteStream(&out);
         pSerializer->setNewLine(cpXMLCh(u"\n"));

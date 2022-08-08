@@ -65,20 +65,37 @@ public:
         swap(list);
         INFO("Loaded %zu certificates into TSL certificate store.", size());
     }
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    vector<OSSL_PROVIDER*> provs;
+#endif
 };
 
 /**
  * X509CertStore constructor.
  */
 X509CertStore::X509CertStore()
-    : d(new Private)
+    : d(make_unique<Private>())
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-    void(OSSL_PROVIDER_load(nullptr, "legacy"));
-    void(OSSL_PROVIDER_load(nullptr, "default"));
+#ifdef _WIN32
+#ifdef _WIN64
+    string path = util::File::dllPath("libcrypto-1_1-x64.dll");
+#else
+    string path = util::File::dllPath("libcrypto-1_1.dll");
 #endif
-    SSL_load_error_strings();
-    SSL_library_init();
+    if(!path.empty())
+        OSSL_PROVIDER_set_default_search_path(nullptr, path.c_str());
+#endif
+    for(const string &prov: {"legacy", "default"})
+    {
+        if(OSSL_PROVIDER *p = OSSL_PROVIDER_load(nullptr, prov.c_str()))
+            d->provs.push_back(p);
+        else
+            WARN("Failed to load OpenSSL '%s' provider!", prov.c_str());
+    }
+#endif
+    OPENSSL_init_ssl(OPENSSL_INIT_SSL_DEFAULT, nullptr);
     d->update();
 }
 
@@ -87,7 +104,11 @@ X509CertStore::X509CertStore()
  */
 X509CertStore::~X509CertStore()
 {
-    delete d;
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    for(OSSL_PROVIDER *p: d->provs)
+        OSSL_PROVIDER_unload(p);
+#endif
+    OPENSSL_cleanup();
 }
 
 void X509CertStore::activate(const string &territory) const

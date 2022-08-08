@@ -29,17 +29,19 @@
 #include <minizip/iowin32.h>
 #endif
 
+#include <array>
 #include <iostream>
 
 using namespace digidoc;
 using namespace std;
 
-class ZipSerialize::Private: public zlib_filefunc_def
+class ZipSerialize::Private
 {
 public:
+    zlib_filefunc_def def {};
     string path;
-    zipFile create = nullptr;
-    unzFile open = nullptr;
+    zipFile create {};
+    unzFile open {};
 };
 
 
@@ -50,25 +52,25 @@ public:
  * @param path
  */
 ZipSerialize::ZipSerialize(string path, bool create)
-    : d(new Private)
+    : d(make_unique<Private>())
 {
 #ifdef _WIN32
-    fill_win32_filefunc(d);
+    fill_win32_filefunc(&d->def);
 #else
-    fill_fopen_filefunc(d);
+    fill_fopen_filefunc(&d->def);
 #endif
-    d->path = std::move(path);
+    d->path = move(path);
     if(create)
     {
         DEBUG("ZipSerialize::create(%s)", d->path.c_str());
-        d->create = zipOpen2((const char*)util::File::encodeName(d->path).c_str(), APPEND_STATUS_CREATE, nullptr, d);
+        d->create = zipOpen2((const char*)util::File::encodeName(d->path).c_str(), APPEND_STATUS_CREATE, nullptr, &d->def);
         if(!d->create)
             THROW("Failed to create ZIP file '%s'.", d->path.c_str());
     }
     else
     {
         DEBUG("ZipSerialize::open(%s)", d->path.c_str());
-        d->open = unzOpen2((const char*)util::File::encodeName(d->path).c_str(), d);
+        d->open = unzOpen2((const char*)util::File::encodeName(d->path).c_str(), &d->def);
         if(!d->open)
             THROW("Failed to open ZIP file '%s'.", d->path.c_str());
     }
@@ -83,7 +85,6 @@ ZipSerialize::~ZipSerialize()
 {
     if(d->create) zipClose(d->create, nullptr);
     if(d->open) unzClose(d->open);
-    delete d;
 }
 
 /**
@@ -110,11 +111,11 @@ vector<string> ZipSerialize::list() const
             THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
         string fileName(fileInfo.size_filename, 0);
-        unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, &fileName[0], uLong(fileName.size()), nullptr, 0, nullptr, 0);
+        unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, fileName.data(), uLong(fileName.size()), nullptr, 0, nullptr, 0);
         if(unzResult != UNZ_OK)
             THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
-        list.push_back(std::move(fileName));
+        list.push_back(move(fileName));
     }
 
     return list;
@@ -143,10 +144,10 @@ void ZipSerialize::extract(const string &file, ostream &os) const
         THROW("Failed to open file inside ZIP container. ZLib error: %d", unzResult);
 
     int currentStreamSize = 0;
-    char buf[10240];
-    while((unzResult = unzReadCurrentFile(d->open, buf, 10240)) > UNZ_EOF)
+    array<char,10240> buf{};
+    while((unzResult = unzReadCurrentFile(d->open, buf.data(), buf.size())) > UNZ_EOF)
     {
-        os.write(buf, unzResult);
+        os.write(buf.data(), unzResult);
         currentStreamSize += unzResult;
         if(os.fail())
         {
@@ -198,14 +199,14 @@ void ZipSerialize::addFile(const string& containerPath, istream &is, const Prope
 
     is.clear();
     is.seekg(0);
-    char buf[10240];
+    array<char,10240> buf{};
     while( is )
     {
-        is.read(buf, 10240);
+        is.read(buf.data(), buf.size());
         if(is.gcount() <= 0)
             break;
 
-        zipResult = zipWriteInFileInZip(d->create, buf, unsigned(is.gcount()));
+        zipResult = zipWriteInFileInZip(d->create, buf.data(), unsigned(is.gcount()));
         if(zipResult != ZIP_OK)
         {
             zipCloseFileInZip(d->create);
