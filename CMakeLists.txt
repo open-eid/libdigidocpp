@@ -76,7 +76,7 @@ endif()
 if( DOXYGEN_FOUND )
     configure_file( ${CMAKE_SOURCE_DIR}/etc/Doxyfile.in Doxyfile @ONLY )
     add_custom_target( docs ALL
-        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+        Doxygen::doxygen Doxyfile
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen" VERBATIM
     )
