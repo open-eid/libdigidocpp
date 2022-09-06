@@ -28,6 +28,7 @@
 #include "util/log.h"
 #include "util/ZipSerialize.h"
 #include "xml/OpenDocument_manifest.hxx"
+#include "xml/OpenDocument_manifest_v1_2.hxx"
 #include "xml/SecureDOMParser.h"
 
 #include <xercesc/util/OutOfMemoryException.hpp>
@@ -38,7 +39,6 @@
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
-using namespace manifest;
 
 const string ASiC_E::BES_PROFILE = "BES";
 const string ASiC_E::EPES_PROFILE = "EPES";
@@ -149,7 +149,7 @@ void ASiC_E::addAdESSignature(istream &sigdata)
 
     try
     {
-        addSignature(new SignatureXAdES_LTA(sigdata, this));
+        addSignature(make_unique<SignatureXAdES_LTA>(sigdata, this));
     }
     catch(const Exception &e)
     {
@@ -179,14 +179,14 @@ void ASiC_E::createManifest(ostream &os)
 
     try
     {
-        Manifest manifest;
-        manifest.file_entry().push_back({"/", mediaType()});
+        manifest_1_2::Manifest manifest(manifest_1_2::Manifest::VersionType::cxx_1_2);
+        manifest.file_entry().push_back(make_unique<manifest_1_2::File_entry>("/", mediaType()));
         for(const DataFile *file: dataFiles())
-            manifest.file_entry().push_back({file->fileName(), file->mediaType()});
+            manifest.file_entry().push_back(make_unique<manifest_1_2::File_entry>(file->fileName(), file->mediaType()));
 
         xml_schema::NamespaceInfomap map;
         map["manifest"].name = ASiC_E::MANIFEST_NAMESPACE;
-        manifest::manifest(os, manifest, map, {}, xml_schema::Flags::dont_initialize);
+        manifest_1_2::manifest(os, manifest, map, {}, xml_schema::Flags::dont_initialize);
         if(os.fail())
             THROW("Failed to create manifest XML");
     }
@@ -234,11 +234,11 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
         p.schema_location(ASiC_E::MANIFEST_NAMESPACE,
             File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
         unique_ptr<xercesc::DOMDocument> doc = SecureDOMParser(p.schema_location(), true).parseIStream(manifestdata);
-        unique_ptr<Manifest> manifest = manifest::manifest(*doc, {}, p);
+        unique_ptr<manifest::Manifest> manifest = manifest::manifest(*doc, {}, p);
 
         set<string> manifestFiles;
         bool mimeFound = false;
-        for(const File_entry &file: manifest->file_entry())
+        for(const manifest::File_entry &file: manifest->file_entry())
         {
             DEBUG("full_path = '%s', media_type = '%s'", file.full_path().c_str(), file.media_type().c_str());
 
@@ -289,7 +289,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 {
                     stringstream data;
                     z.extract(file, data);
-                    addSignature(new SignatureXAdES_LTA(data, this, true));
+                    addSignature(make_unique<SignatureXAdES_LTA>(data, this, true));
                 }
                 catch(const Exception &e)
                 {
@@ -351,9 +351,7 @@ Signature* ASiC_E::prepareSignature(Signer *signer)
         THROW("No documents in container, can not sign container.");
     if(!signer)
         THROW("Null pointer in ASiC_E::sign");
-    SignatureXAdES_LTA *signature = new SignatureXAdES_LTA(newSignatureId(), this, signer);
-    addSignature(signature);
-    return signature;
+    return addSignature(make_unique<SignatureXAdES_LTA>(newSignatureId(), this, signer));
 }
 
 Signature *ASiC_E::sign(Signer* signer)

@@ -241,11 +241,11 @@ void ASiContainer::removeDataFile(unsigned int id)
     d->documents.erase(it);
 }
 
-void ASiContainer::addSignature(Signature *signature)
+Signature* ASiContainer::addSignature(unique_ptr<Signature> &&signature)
 {
-    d->signatures.push_back(signature);
+    d->signatures.push_back(signature.release());
+    return d->signatures.back();
 }
-
 
 /**
  * Removes signature from container by signature id.

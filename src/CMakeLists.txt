@@ -19,6 +19,9 @@ XSD_SCHEMA( xsd_SRCS IGNORE ${XML_DIR} ${SCHEMA_DIR}/conf.xsd
 XSD_SCHEMA( xsd_SRCS IGNORE ${XML_DIR} ${SCHEMA_DIR}/OpenDocument_manifest.xsd
     --root-element manifest
     --namespace-map urn:oasis:names:tc:opendocument:xmlns:manifest:1.0=digidoc::manifest )
+XSD_SCHEMA( xsd_SRCS IGNORE ${XML_DIR} ${SCHEMA_DIR}/OpenDocument_manifest_v1_2.xsd
+    --root-element manifest
+    --namespace-map urn:oasis:names:tc:opendocument:xmlns:manifest:1.0=digidoc::manifest_1_2 )
 XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/xmldsig-core-schema.xsd
     --root-element-none
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
@@ -106,6 +109,7 @@ file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "};")
 set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd
     ${SCHEMA_DIR}/OpenDocument_manifest.xsd
+    ${SCHEMA_DIR}/OpenDocument_manifest_v1_2.xsd
     ${SCHEMA_DIR}/xmldsig-core-schema.xsd
     ${SCHEMA_DIR}/XAdES01903v132-201601.xsd
     ${SCHEMA_DIR}/XAdES01903v132-201601-relaxed.xsd
