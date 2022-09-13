@@ -233,7 +233,9 @@ target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv)
 
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
-    target_link_libraries(digidoc-tool digidocpp digidocpp_priv Threads::Threads)
+    target_link_libraries(digidoc-tool digidocpp digidocpp_priv Threads::Threads
+        "$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:-lstdc++fs>"
+    )
     configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
 endif()
 
