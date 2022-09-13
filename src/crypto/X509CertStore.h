@@ -19,15 +19,19 @@
 
 #pragma once
 
-#include "X509Cert.h"
+#include "../Exports.h"
 
+#include <memory>
 #include <set>
+#include <string>
+#include <vector>
 
 using X509_STORE = struct x509_store_st;
 using X509_STORE_CTX = struct x509_store_ctx_st;
 
 namespace digidoc
 {
+    class X509Cert;
     /**
      * X.509 certificate store interface.
      */
@@ -52,6 +56,6 @@ namespace digidoc
 
           static int validate(int ok, X509_STORE_CTX *ctx, const std::set<std::string> &type);
           class Private;
-          Private *d;
+          std::unique_ptr<Private> d;
     };
 }

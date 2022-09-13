@@ -108,7 +108,7 @@ private:
     std::stringstream* parseDDoc(std::istream &is, bool useHashCode);
 
     class Private;
-    Private *d;
+    std::unique_ptr<Private> d;
 };
 
 }

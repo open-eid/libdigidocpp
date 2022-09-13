@@ -23,6 +23,7 @@
 #include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/OCSP.h"
+#include "crypto/X509Cert.h"
 #include "crypto/X509CertStore.h"
 #include "util/DateTime.h"
 #include "util/log.h"
@@ -297,10 +298,10 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
     try
     {
         if(unsignedSignatureProperties().revocationValues().empty())
-            return OCSP();
+            return {};
         const RevocationValuesType &t = unsignedSignatureProperties().revocationValues().front();
         if(!t.oCSPValues().present() || t.oCSPValues()->encapsulatedOCSPValue().empty())
-            return OCSP();
+            return {};
         // Return OCSP response that matches with signingCertificate
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
         {
@@ -313,9 +314,9 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
         }
         // Return first OCSP response when chains are not complete and validation fails
         const OCSPValuesType::EncapsulatedOCSPValueType &resp = t.oCSPValues()->encapsulatedOCSPValue().at(0);
-        return OCSP((const unsigned char*)resp.data(), resp.size());
+        return {(const unsigned char*)resp.data(), resp.size()};
     }
     catch(const Exception &)
     {}
-    return OCSP();
+    return {};
 }

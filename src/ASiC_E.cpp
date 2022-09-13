@@ -59,7 +59,7 @@ public:
  */
 ASiC_E::ASiC_E()
     : ASiContainer(MIMETYPE_ASIC_E)
-    , d(new Private)
+    , d(make_unique<Private>())
 {
 }
 
@@ -68,7 +68,7 @@ ASiC_E::ASiC_E()
  */
 ASiC_E::ASiC_E(const string &path)
     : ASiContainer(MIMETYPE_ASIC_E)
-    , d(new Private)
+    , d(make_unique<Private>())
 {
     auto zip = load(path, true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
     parseManifestAndLoadFiles(*zip);
@@ -77,7 +77,6 @@ ASiC_E::ASiC_E(const string &path)
 ASiC_E::~ASiC_E()
 {
     for_each(d->metadata.cbegin(), d->metadata.cend(), std::default_delete<DataFile>());
-    delete d;
 }
 
 vector<DataFile*> ASiC_E::metaFiles() const
@@ -233,8 +232,8 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
         z.extract("META-INF/manifest.xml", manifestdata);
         xml_schema::Properties p;
         p.schema_location(ASiC_E::MANIFEST_NAMESPACE,
-			File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
-		unique_ptr<xercesc::DOMDocument> doc = SecureDOMParser(p.schema_location(), true).parseIStream(manifestdata);
+            File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
+        unique_ptr<xercesc::DOMDocument> doc = SecureDOMParser(p.schema_location(), true).parseIStream(manifestdata);
         unique_ptr<Manifest> manifest = manifest::manifest(*doc, {}, p);
 
         set<string> manifestFiles;

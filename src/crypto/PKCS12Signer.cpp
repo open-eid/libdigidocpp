@@ -32,8 +32,8 @@ using namespace std;
 class PKCS12Signer::Private
 {
 public:
-    X509 *cert = nullptr;
-    EVP_PKEY *key = nullptr;
+    X509 *cert {};
+    EVP_PKEY *key {};
 };
 
 /**
@@ -50,7 +50,7 @@ public:
  * @throws Exception throws exception if the file is not found or wrong password
  */
 PKCS12Signer::PKCS12Signer(const string &path, const string &pass)
- : d(new Private)
+    : d(make_unique<Private>())
 {
     OpenSSL::parsePKCS12(path, pass, &d->key, &d->cert);
 }
@@ -59,7 +59,6 @@ PKCS12Signer::~PKCS12Signer()
 {
     X509_free(d->cert);
     EVP_PKEY_free(d->key);
-    delete d;
 }
 
 X509Cert PKCS12Signer::cert() const

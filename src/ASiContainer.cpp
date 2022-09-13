@@ -27,6 +27,7 @@
 #include "util/ZipSerialize.h"
 
 #include <algorithm>
+#include <array>
 #include <ctime>
 #include <fstream>
 #include <map>
@@ -62,9 +63,9 @@ const string ASiContainer::MIMETYPE_ADOC = "application/vnd.lt.archyvai.adoc-200
  * Initialize BDOC container.
  */
 ASiContainer::ASiContainer(const string &mimetype)
- : d(new Private)
+    : d(make_unique<Private>())
 {
-     d->mimetype = mimetype;
+    d->mimetype = mimetype;
 }
 
 /**
@@ -78,7 +79,7 @@ ASiContainer::ASiContainer(const string &mimetype)
 unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeRequired, const set<string> &supported)
 {
     DEBUG("ASiContainer::ASiContainer(path = '%s')", path.c_str());
-    unique_ptr<ZipSerialize> z( new ZipSerialize(d->path = path, false) );
+    unique_ptr<ZipSerialize> z = make_unique<ZipSerialize>(d->path = path, false);
 
     vector<string> list = z->list();
     if(list.empty())
@@ -116,7 +117,6 @@ ASiContainer::~ASiContainer()
 {
     for_each(d->signatures.cbegin(), d->signatures.cend(), default_delete<Signature>());
     for_each(d->documents.cbegin(), d->documents.cend(), default_delete<DataFile>());
-    delete d;
 }
 
 /**
@@ -154,9 +154,9 @@ unique_ptr<iostream> ASiContainer::dataStream(const string &path, const ZipSeria
 {
     unique_ptr<iostream> data;
     if(d->properties[path].size > MAX_MEM_FILE)
-        data.reset(new fstream(File::encodeName(File::tempFileName()).c_str(), fstream::in|fstream::out|fstream::binary|fstream::trunc));
+        data = make_unique<fstream>(File::encodeName(File::tempFileName()).c_str(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
     else
-        data.reset(new stringstream);
+        data = make_unique<stringstream>();
     z.extract(path, *data);
     return data;
 }
@@ -183,7 +183,7 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
     unique_ptr<istream> is;
     if(prop.size > MAX_MEM_FILE)
     {
-        is.reset(new ifstream(File::encodeName(path).c_str(), ifstream::binary));
+        is = make_unique<ifstream>(File::encodeName(path).c_str(), ifstream::binary);
     }
     else
     {
@@ -303,8 +303,8 @@ void ASiContainer::zproperty(const string &file, const ZipSerialize::Properties 
 string ASiContainer::readMimetype(istream &is)
 {
     DEBUG("ASiContainer::readMimetype()");
-    unsigned char bom[] = { 0, 0, 0 };
-    is.read((char*)bom, sizeof(bom));
+    array<unsigned char,3> bom{};
+    is.read((char*)bom.data(), bom.size());
     // Contains UTF-16 BOM
     if((bom[0] == 0xFF && bom[1] == 0xEF) ||
        (bom[0] == 0xEF && bom[1] == 0xFF))

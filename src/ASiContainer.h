@@ -22,7 +22,6 @@
 #include "Container.h"
 #include "util/ZipSerialize.h"
 
-#include <memory>
 #include <set>
 
 namespace digidoc
@@ -81,6 +80,6 @@ namespace digidoc
           void addDataFileChecks(const std::string &path, const std::string &mediaType);
 
           class Private;
-          Private *d;
+          std::unique_ptr<Private> d;
     };
 }

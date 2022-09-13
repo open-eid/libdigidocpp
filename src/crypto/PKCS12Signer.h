@@ -21,6 +21,8 @@
 
 #include "Signer.h"
 
+#include <memory>
+
 namespace digidoc
 {
     class DIGIDOCPP_EXPORT PKCS12Signer : public Signer
@@ -36,6 +38,6 @@ namespace digidoc
 
           DISABLE_COPY(PKCS12Signer);
           class Private;
-          Private *d;
+          std::unique_ptr<Private> d;
     };
 }

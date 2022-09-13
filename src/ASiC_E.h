@@ -63,6 +63,6 @@ namespace digidoc
           void parseManifestAndLoadFiles(const ZipSerialize &z);
 
           class Private;
-          Private *d;
+          std::unique_ptr<Private> d;
     };
 }

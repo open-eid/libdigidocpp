@@ -21,6 +21,7 @@
 
 #include "../Exports.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -87,7 +88,7 @@ namespace digidoc
       private:
           DISABLE_COPY(Digest);
           class Private;
-          Private *d;
+          std::unique_ptr<Private> d;
     };
 
 }

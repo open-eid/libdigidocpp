@@ -63,7 +63,7 @@ public:
     void unload()
     { if(h) FreeLibrary(h); h = 0; }
 
-    HINSTANCE h = 0;
+    HINSTANCE h {};
 #else
     bool load(const string &driver)
     { return (h = dlopen(driver.c_str(), RTLD_LAZY)); }
@@ -74,7 +74,7 @@ public:
     void unload()
     { if(h) dlclose(h); h = nullptr; }
 
-    void *h = nullptr;
+    void *h {};
 #endif
 
     CK_FUNCTION_LIST *f = nullptr;
@@ -146,7 +146,7 @@ vector<CK_OBJECT_HANDLE> PKCS11Signer::Private::findObject(CK_SESSION_HANDLE ses
  * @throws Exception exception is thrown if the provided PKCS#11 driver loading failed.
  */
 PKCS11Signer::PKCS11Signer(const string &driver)
-    : d(new Private)
+    : d(make_unique<Private>())
 {
     string load = driver;
     if(driver.empty())
@@ -171,14 +171,11 @@ PKCS11Signer::PKCS11Signer(const string &driver)
  */
 PKCS11Signer::~PKCS11Signer()
 {
-    if(d->f)
-    {
-        d->f->C_Finalize(nullptr);
-        d->f = nullptr;
-        d->unload();
-    }
-
-    delete d;
+    if(!d->f)
+        return;
+    d->f->C_Finalize(nullptr);
+    d->f = nullptr;
+    d->unload();
 }
 
 /**
@@ -225,7 +222,7 @@ X509Cert PKCS11Signer::cert() const
             if(!x509.isValid() || find(usage.cbegin(), usage.cend(), X509Cert::NonRepudiation) == usage.cend() || x509.isCA())
                 continue;
             certSlotMapping.push_back({ x509, slot, d->attribute(session, obj, CKA_ID) });
-            certificates.push_back(x509);
+            certificates.push_back(move(x509));
         }
     }
     if(session)

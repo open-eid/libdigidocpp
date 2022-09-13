@@ -21,11 +21,9 @@
 
 #include "Exports.h"
 
+#include <memory>
 #include <string>
 #include <vector>
-#ifdef __ANDROID__
-#include <time.h>
-#endif
 
 namespace digidoc
 {
@@ -49,6 +47,6 @@ namespace digidoc
       private:
           DISABLE_COPY(ZipSerialize);
           class Private;
-          Private *d;
+          std::unique_ptr<Private> d;
     };
 }
