@@ -211,10 +211,10 @@ vector<unsigned char> TS::messageImprint() const
 string TS::serial() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
-    string serial;
     if(!info)
-        return serial;
+        return {};
 
+    string serial;
     SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), nullptr), BN_free);
     if(bn)
     {
@@ -229,13 +229,11 @@ string TS::serial() const
 string TS::time() const
 {
     SCOPE(TS_TST_INFO, info, tstInfo());
-    string result;
     if(!info)
-        return result;
-    const ASN1_GENERALIZEDTIME *time = TS_TST_INFO_get_time(info.get());
-    if(time)
-        result.assign((char*)time->data, size_t(time->length));
-    return result;
+        return {};
+    if(const ASN1_GENERALIZEDTIME *t = TS_TST_INFO_get_time(info.get()))
+        return {(char*)t->data, size_t(t->length)};
+    return {};
 }
 
 TS_TST_INFO* TS::tstInfo() const
@@ -258,7 +256,7 @@ void TS::verify(const Digest &digest)
 
     time_t t = util::date::ASN1TimeToTime_t(time());
     SCOPE(X509_STORE, store, X509CertStore::createStore(X509CertStore::TSA, &t));
-    X509CertStore::instance()->activate(cert().issuerName("C"));
+    X509CertStore::instance()->activate(cert());
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
     if (!csc)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
