@@ -40,18 +40,18 @@
 using namespace digidoc;
 using namespace std;
 
-const set<string> X509CertStore::CA = {
+const X509CertStore::Type X509CertStore::CA {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
 };
 
-const set<string> X509CertStore::TSA = {
+const X509CertStore::Type X509CertStore::TSA {
     "http://uri.etsi.org/TrstSvc/Svctype/TSA",
     "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
     "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC",
     "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES",
 };
 
-const set<string> X509CertStore::OCSP = {
+const X509CertStore::Type X509CertStore::OCSP {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
@@ -111,9 +111,9 @@ X509CertStore::~X509CertStore()
     OPENSSL_cleanup();
 }
 
-void X509CertStore::activate(const string &territory) const
+void X509CertStore::activate(const X509Cert &cert) const
 {
-    if(TSL::activate(territory))
+    if(TSL::activate(cert.issuerName("C")) || TSL::activate(cert.subjectName("C")))
         d->update();
 }
 
@@ -126,20 +126,20 @@ X509CertStore* X509CertStore::instance()
     return &INSTANCE;
 }
 
-vector<X509Cert> X509CertStore::certs(const set<string> &type) const
+vector<X509Cert> X509CertStore::certs(const Type &type) const
 {
     vector<X509Cert> certs;
     for(const TSL::Service &s: *d)
     {
         if(type.find(s.type) != type.cend())
-            certs.insert(certs.end(), s.certs.cbegin(), s.certs.cend());
+            certs.insert(certs.cend(), s.certs.cbegin(), s.certs.cend());
     }
     return certs;
 }
 
-X509Cert X509CertStore::findIssuer(const X509Cert &cert, const set<string> &type) const
+X509Cert X509CertStore::findIssuer(const X509Cert &cert, const Type &type) const
 {
-    activate(cert.issuerName("C"));
+    activate(cert);
     for(const TSL::Service &s: *d)
     {
         if(type.find(s.type) == type.cend())
@@ -172,7 +172,7 @@ X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert) const
     return X509Cert((const unsigned char*)result.content.c_str(), result.content.size());
 }
 
-X509_STORE* X509CertStore::createStore(const set<string> &type, const time_t *t)
+X509_STORE* X509CertStore::createStore(const Type &type, const time_t *t)
 {
     SCOPE(X509_STORE, store, X509_STORE_new());
     if (!store)
@@ -193,7 +193,7 @@ X509_STORE* X509CertStore::createStore(const set<string> &type, const time_t *t)
     return store.release();
 }
 
-int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type)
+int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
 {
     switch(X509_STORE_CTX_get_error(ctx))
     {
@@ -247,7 +247,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const set<string> &type
  */
 bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
 {
-    activate(cert.issuerName("C"));
+    activate(cert);
     const ASN1_TIME *asn1time = X509_get0_notBefore(cert.handle());
     time_t time = util::date::ASN1TimeToTime_t(string((const char*)asn1time->data, size_t(asn1time->length)), asn1time->type == V_ASN1_GENERALIZEDTIME);
     SCOPE(X509_STORE, store, createStore(X509CertStore::CA, &time));

@@ -37,25 +37,26 @@ namespace digidoc
      */
     class X509CertStore
     {
-      public:
-          static const std::set<std::string> CA, TSA, OCSP;
+    public:
+        using Type = std::set<std::string_view>;
+        static const Type CA, TSA, OCSP;
 
-          static X509CertStore* instance();
+        static X509CertStore* instance();
 
-          void activate(const std::string &territory) const;
-          std::vector<X509Cert> certs(const std::set<std::string> &type) const;
-          X509Cert findIssuer(const X509Cert &cert, const std::set<std::string> &type) const;
-          X509Cert issuerFromAIA(const X509Cert &cert) const;
-          static X509_STORE* createStore(const std::set<std::string> &type, const time_t *t = nullptr);
-          bool verify(const X509Cert &cert, bool qscd) const;
+        void activate(const X509Cert &cert) const;
+        std::vector<X509Cert> certs(const Type &type) const;
+        X509Cert findIssuer(const X509Cert &cert, const Type &type) const;
+        X509Cert issuerFromAIA(const X509Cert &cert) const;
+        static X509_STORE* createStore(const Type &type, const time_t *t = nullptr);
+        bool verify(const X509Cert &cert, bool qscd) const;
 
-      private:
-          X509CertStore();
-          ~X509CertStore();
-          DISABLE_COPY(X509CertStore);
+    private:
+        X509CertStore();
+        ~X509CertStore();
+        DISABLE_COPY(X509CertStore);
 
-          static int validate(int ok, X509_STORE_CTX *ctx, const std::set<std::string> &type);
-          class Private;
-          std::unique_ptr<Private> d;
+        static int validate(int ok, X509_STORE_CTX *ctx, const Type &type);
+        class Private;
+        std::unique_ptr<Private> d;
     };
 }
