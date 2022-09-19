@@ -33,6 +33,7 @@
 #include <xercesc/util/OutOfMemoryException.hpp>
 
 #include <fstream>
+#include <future>
 #include <set>
 
 using namespace digidoc;
@@ -149,7 +150,9 @@ void ASiC_E::addAdESSignature(istream &sigdata)
 
     try
     {
-        addSignature(new SignatureXAdES_LTA(sigdata, this));
+        stringstream is;
+        is << sigdata.rdbuf();
+        addSignature(new SignatureXAdES_LTA(move(is), this));
     }
     catch(const Exception &e)
     {
@@ -273,6 +276,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
         if(!mimeFound)
             THROW("Manifest is missing mediatype file entry.");
 
+        std::vector<std::future<SignatureXAdES_LTA*>> signatures;
         for(const string &file: list)
         {
             /**
@@ -289,7 +293,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 {
                     stringstream data;
                     z.extract(file, data);
-                    addSignature(new SignatureXAdES_LTA(data, this, true));
+                    signatures.emplace_back(async(launch::async, [this](stringstream &&data) { return new SignatureXAdES_LTA(move(data), this, true); }, move(data)));
                 }
                 catch(const Exception &e)
                 {
@@ -303,6 +307,8 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             if(manifestFiles.find(file) == manifestFiles.end())
                 THROW("File '%s' found in container is not described in manifest.", file.c_str());
         }
+        for(std::future<SignatureXAdES_LTA*> &signature: signatures)
+            addSignature(signature.get());
     }
     catch(const xercesc::DOMException &e)
     {
