@@ -241,12 +241,15 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
  *                              produced by other systems; default = false
  * @throws SignatureException
  */
-SignatureXAdES_B::SignatureXAdES_B(stringstream &&sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
+SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
     : bdoc(bdoc)
-    , sigdata_(new stringstream(move(sigdata)))
 {
     try
     {
+        stringstream is;
+        is << sigdata.rdbuf();
+        sigdata_ = is.str();
+
         Properties properties;
         const auto xadesShema = relaxSchemaValidation ? "/XAdES01903v132-201601-relaxed.xsd" : "/XAdES01903v132-201601.xsd";
         properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + xadesShema));
@@ -254,7 +257,7 @@ SignatureXAdES_B::SignatureXAdES_B(stringstream &&sigdata, ASiContainer *bdoc, b
         properties.schema_location(URI_ID_DSIG, File::fullPathUrl(Conf::instance()->xsdPath() + "/xmldsig-core-schema.xsd"));
         properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/en_31916201v010101.xsd"));
         properties.schema_location(OPENDOCUMENT_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_dsig.xsd"));
-        unique_ptr<DOMDocument> doc(SecureDOMParser(properties.schema_location()).parseIStream(*sigdata_.get()));
+        unique_ptr<DOMDocument> doc(SecureDOMParser(properties.schema_location()).parseIStream(is));
         /* http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
          * 6.2.2
          * 3) The root element of each "*signatures*.xml" content shall be either:
@@ -294,10 +297,10 @@ SignatureXAdES_B::SignatureXAdES_B(stringstream &&sigdata, ASiContainer *bdoc, b
     }
 
     const QualifyingPropertiesType::SignedPropertiesOptional &sp = qualifyingProperties().signedProperties();
-    if(sp)
+    if(sp.present())
     {
         const SignedPropertiesType::SignedDataObjectPropertiesOptional &sdop = sp->signedDataObjectProperties();
-        if(sdop)
+        if(sdop.present())
         {
             if(!sdop->commitmentTypeIndication().empty())
                 DEBUG("CommitmentTypeIndicationType is not supported");
@@ -308,12 +311,12 @@ SignatureXAdES_B::SignatureXAdES_B(stringstream &&sigdata, ASiContainer *bdoc, b
         }
     }
     const QualifyingPropertiesType::UnsignedPropertiesOptional &up = qualifyingProperties().unsignedProperties();
-    if(up)
+    if(up.present())
     {
-        if(up->unsignedDataObjectProperties())
+        if(up->unsignedDataObjectProperties().present())
             THROW("UnsignedDataObjectProperties are not supported");
         const UnsignedPropertiesType::UnsignedSignaturePropertiesOptional &usp = up->unsignedSignatureProperties();
-        if(usp)
+        if(usp.present())
         {
             if(!usp->counterSignature().empty())
                 THROW("CounterSignature is not supported");
@@ -357,15 +360,15 @@ string SignatureXAdES_B::policy() const
 {
     const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
             getSignedSignatureProperties().signaturePolicyIdentifier();
-    if(!identifier)
+    if(!identifier.present())
         return {};
 
     const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
-    if(!id)
+    if(!id.present())
         return {};
 
     const ObjectIdentifierType::IdentifierType &objid = id->sigPolicyId().identifier();
-    if(!objid.qualifier() || objid.qualifier().get() != QualifierType::OIDAsURN)
+    if(!objid.qualifier().present() || objid.qualifier().get() != QualifierType::OIDAsURN)
         return {};
 
     return objid;
@@ -379,10 +382,10 @@ string SignatureXAdES_B::profile() const
     string base = policy().empty() ? ASiC_E::BES_PROFILE : ASiC_E::EPES_PROFILE;
     try {
         const QualifyingPropertiesType::UnsignedPropertiesOptional &up = qualifyingProperties().unsignedProperties();
-        if(!up)
+        if(!up.present())
             return base;
         const UnsignedPropertiesType::UnsignedSignaturePropertiesOptional &usp = up->unsignedSignatureProperties();
-        if(!usp)
+        if(!usp.present())
             return base;
 
         if(!usp->signatureTimeStamp().empty())
@@ -411,19 +414,19 @@ string SignatureXAdES_B::SPUri() const
 {
     const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
             getSignedSignatureProperties().signaturePolicyIdentifier();
-    if(!identifier)
+    if(!identifier.present())
         return {};
 
     const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
-    if(!id)
+    if(!id.present())
         return {};
 
     const SignaturePolicyIdType::SigPolicyQualifiersOptional &qual = id->sigPolicyQualifiers();
-    if(!qual)
+    if(!qual.present())
         return {};
 
     for(const SigPolicyQualifiersListType::SigPolicyQualifierType &i: qual->sigPolicyQualifier())
-        if(i.sPURI())
+        if(i.sPURI().present())
             return i.sPURI().get();
 
     return {};
@@ -467,10 +470,10 @@ void SignatureXAdES_B::validate(const string &policy) const
         {
             const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
                     getSignedSignatureProperties().signaturePolicyIdentifier();
-            if(identifier)
+            if(identifier.present())
             {
                 const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
-                if(id)
+                if(id.present())
                 {
 #if 0 //Disabled IB-3684
                     const DigestAlgAndValueType &hash = id->sigPolicyHash();
@@ -549,11 +552,11 @@ void SignatureXAdES_B::validate(const string &policy) const
 
     const SignedPropertiesType &sp = qualifyingProperties().signedProperties().get();
     map<string,string> mimeinfo;
-    if(sp.signedDataObjectProperties())
+    if(sp.signedDataObjectProperties().present())
     {
         for(const DataObjectFormatType &data: sp.signedDataObjectProperties()->dataObjectFormat())
         {
-            if(data.mimeType())
+            if(data.mimeType().present())
                 mimeinfo.insert(pair<string,string>(data.objectReference(), data.mimeType().get()));
         }
     }
@@ -565,11 +568,11 @@ void SignatureXAdES_B::validate(const string &policy) const
     }
 
     map<string,string> signatureref;
-    string signedPropertiesId = sp.id() ? "#" + sp.id().get() : string();
+    string signedPropertiesId = sp.id().present() ? "#" + sp.id().get() : string();
     bool signedInfoFound = false;
     for(const ReferenceType &ref: signature->signedInfo().reference())
     {
-        if(!ref.uRI() || ref.uRI()->empty())
+        if(!ref.uRI().present() || ref.uRI()->empty())
         {
             EXCEPTION_ADD(exception, "Reference URI missing");
             continue;
@@ -586,9 +589,9 @@ void SignatureXAdES_B::validate(const string &policy) const
 
         if(ref.uRI().get() == signedPropertiesId)
             signedInfoFound = true;
-        else if(!sp.signedDataObjectProperties())
+        else if(!sp.signedDataObjectProperties().present())
             continue; // DataObjectProperties is missing, no need to match later MediaTypes
-        else if(!ref.id())
+        else if(!ref.id().present())
             EXCEPTION_ADD(exception, "Reference '%s' ID  missing", ref.uRI().get().c_str());
         else
         {
@@ -668,7 +671,7 @@ void SignatureXAdES_B::checkKeyInfo() const
     const SignedSignaturePropertiesType::SigningCertificateV2Optional &sigCertV2Opt =
             getSignedSignatureProperties().signingCertificateV2();
     const DigestAlgAndValueType &certDigest = [&]{
-        if(sigCertOpt)
+        if(sigCertOpt.present())
         {
             const CertIDListType::CertSequence &certs = sigCertOpt->cert();
             if(certs.size() != 1)
@@ -687,14 +690,14 @@ void SignatureXAdES_B::checkKeyInfo() const
 
             return certs[0].certDigest();
         }
-        if(sigCertV2Opt)
+        if(sigCertV2Opt.present())
         {
             const CertIDListV2Type::CertSequence &certs = sigCertV2Opt->cert();
             if(certs.size() != 1)
                 THROW("Number of SigningCertificatesV2 is %lu, must be 1", (unsigned long)certs.size());
 
             // Verify IssuerSerialV2, optional parameter
-            if(certs[0].issuerSerialV2())
+            if(certs[0].issuerSerialV2().present())
             {
                 if(!X509Crypto(x509).compareIssuerToDer(
                             vector<unsigned char>(certs[0].issuerSerialV2()->begin(), certs[0].issuerSerialV2()->end())))
@@ -761,10 +764,10 @@ void SignatureXAdES_B::checkSignatureValue() const
 void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime)
 {
     QualifyingPropertiesType::SignedPropertiesOptional& spOpt = qualifyingProperties().signedProperties();
-    if(!spOpt)
+    if(!spOpt.present())
         THROW("QualifyingProperties block 'SignedProperties' is missing.");
 
-    if(!spOpt->signedDataObjectProperties())
+    if(!spOpt->signedDataObjectProperties().present())
          spOpt->signedDataObjectProperties(SignedDataObjectPropertiesType());
 
     DataObjectFormatType dataObject(uri);
@@ -957,7 +960,7 @@ void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureV
 {
     SignatureValueType buffer = toBase64(signatureValue);
     signature->signatureValue().swap(buffer);
-    sigdata_.reset();
+    sigdata_.clear();
 }
 
 /**
@@ -1055,10 +1058,9 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
  */
 void SignatureXAdES_B::saveToXml(ostream &os) const
 {
-    if(sigdata_)
+    if(!sigdata_.empty())
     {
-        sigdata_->seekg(0);
-        os << sigdata_->rdbuf();
+        os << sigdata_;
         return;
     }
 
@@ -1085,11 +1087,11 @@ string SignatureXAdES_B::city() const
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
         getSignedSignatureProperties().signatureProductionPlace();
-    if(sigProdPlaceOptional && sigProdPlaceOptional->city())
+    if(sigProdPlaceOptional.present() && sigProdPlaceOptional->city().present())
         return sigProdPlaceOptional->city().get();
     const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
             getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->city())
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->city().present())
         return sigProdPlaceV2Optional->city().get();
     return {};
 }
@@ -1099,11 +1101,11 @@ string SignatureXAdES_B::stateOrProvince() const
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
         getSignedSignatureProperties().signatureProductionPlace();
-    if(sigProdPlaceOptional && sigProdPlaceOptional->stateOrProvince())
+    if(sigProdPlaceOptional.present() && sigProdPlaceOptional->stateOrProvince().present())
         return sigProdPlaceOptional->stateOrProvince().get();
     const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
             getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->stateOrProvince())
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->stateOrProvince().present())
         return sigProdPlaceV2Optional->stateOrProvince().get();
     return {};
 }
@@ -1112,7 +1114,7 @@ string SignatureXAdES_B::streetAddress() const
 {
     const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
             getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->streetAddress())
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->streetAddress().present())
         return sigProdPlaceV2Optional->streetAddress().get();
     return {};
 }
@@ -1122,11 +1124,11 @@ string SignatureXAdES_B::postalCode() const
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
         getSignedSignatureProperties().signatureProductionPlace();
-    if(sigProdPlaceOptional && sigProdPlaceOptional->postalCode())
+    if(sigProdPlaceOptional.present() && sigProdPlaceOptional->postalCode().present())
         return sigProdPlaceOptional->postalCode().get();
     const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
             getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->postalCode())
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->postalCode().present())
         return sigProdPlaceV2Optional->postalCode().get();
     return {};
 }
@@ -1136,11 +1138,11 @@ string SignatureXAdES_B::countryName() const
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
     const SignedSignaturePropertiesType::SignatureProductionPlaceOptional &sigProdPlaceOptional =
         getSignedSignatureProperties().signatureProductionPlace();
-    if(sigProdPlaceOptional && sigProdPlaceOptional->countryName())
+    if(sigProdPlaceOptional.present() && sigProdPlaceOptional->countryName().present())
         return sigProdPlaceOptional->countryName().get();
     const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
             getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->countryName())
+    if(sigProdPlaceV2Optional.present() && sigProdPlaceV2Optional->countryName().present())
         return sigProdPlaceV2Optional->countryName().get();
     return {};
 }
@@ -1154,9 +1156,9 @@ vector<string> SignatureXAdES_B::signerRoles() const
         getSignedSignatureProperties().signerRoleV2();
     const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence = [&]() -> ClaimedRolesListType::ClaimedRoleSequence {
         // return elements from SignerRole element or SignerRoleV2 when available
-        if(roleOpt && roleOpt->claimedRoles())
+        if(roleOpt.present() && roleOpt->claimedRoles().present())
             return roleOpt->claimedRoles()->claimedRole();
-        if(roleV2Opt && roleV2Opt->claimedRoles())
+        if(roleV2Opt.present() && roleV2Opt->claimedRoles().present())
             return roleV2Opt->claimedRoles()->claimedRole();
         return ClaimedRolesListType::ClaimedRoleSequence();
     }();
@@ -1170,7 +1172,7 @@ string SignatureXAdES_B::claimedSigningTime() const
 {
     const SignedSignaturePropertiesType::SigningTimeOptional& sigTimeOpt =
         getSignedSignatureProperties().signingTime();
-    if(!sigTimeOpt)
+    if ( !sigTimeOpt.present() )
         return {};
     return date::xsd2string(sigTimeOpt.get());
 }
@@ -1178,7 +1180,7 @@ string SignatureXAdES_B::claimedSigningTime() const
 X509Cert SignatureXAdES_B::signingCertificate() const
 {
     const SignatureType::KeyInfoOptional &keyInfoOptional = signature->keyInfo();
-    if(!keyInfoOptional)
+    if(!keyInfoOptional.present())
         THROW("Signature does not contain signer certificate");
 
     for(const KeyInfoType::X509DataType &x509Data: keyInfoOptional->x509Data())
@@ -1201,7 +1203,7 @@ X509Cert SignatureXAdES_B::signingCertificate() const
 
 string SignatureXAdES_B::id() const
 {
-    return signature->id() ? signature->id().get() : string();
+    return signature->id().present() ? signature->id().get() : string();
 }
 
 string SignatureXAdES_B::signatureMethod() const
@@ -1236,9 +1238,9 @@ QualifyingPropertiesType& SignatureXAdES_B::qualifyingProperties() const
 SignedSignaturePropertiesType& SignatureXAdES_B::getSignedSignatureProperties() const
 {
     QualifyingPropertiesType::SignedPropertiesOptional& spOpt = qualifyingProperties().signedProperties();
-    if(!spOpt)
+    if(!spOpt.present())
         THROW("QualifyingProperties block 'SignedProperties' is missing.");
-    if(!spOpt->signedSignatureProperties())
+    if(!spOpt->signedSignatureProperties().present())
         THROW("SignedProperties block 'SignedSignatureProperties' is missing.");
     return spOpt->signedSignatureProperties().get();
 }
