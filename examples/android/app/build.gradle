@@ -27,6 +27,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
     }
     sourceSets.main.java.srcDirs += [libsPath + '.androidarm/include']
+    namespace 'ee.ria.libdigidocpp'
 }
 
 dependencies {
