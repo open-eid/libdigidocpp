@@ -113,7 +113,7 @@ X509CertStore::~X509CertStore()
 
 void X509CertStore::activate(const X509Cert &cert) const
 {
-    if(TSL::activate(cert.issuerName("C")) || TSL::activate(cert.subjectName("C")))
+    if(std::max(TSL::activate(cert.issuerName("C")), TSL::activate(cert.subjectName("C"))))
         d->update();
 }
 
