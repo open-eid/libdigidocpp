@@ -211,10 +211,15 @@ add_library(digidocpp
     util/ZipSerialize.cpp
 )
 
-set(DIGIDOCPP_CONFIG_DIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}/digidocpp")
-set_property(SOURCE util/File.cpp APPEND PROPERTY COMPILE_DEFINITIONS "DIGIDOCPP_CONFIG_DIR=\"${DIGIDOCPP_CONFIG_DIR}\"")
+set(DIGIDOCPP_CONFIG_DIR ${CMAKE_INSTALL_FULL_SYSCONFDIR}/digidocpp)
+set_property(SOURCE util/File.cpp APPEND PROPERTY COMPILE_DEFINITIONS
+    DIGIDOCPP_CONFIG_DIR="${DIGIDOCPP_CONFIG_DIR}"
+)
 set_property(SOURCE Conf.cpp APPEND PROPERTY COMPILE_DEFINITIONS
-    "PKCS11_MODULE=\"${PKCS11_MODULE}\";TSA_URL=\"${TSA_URL}\";TSL_URL=\"${TSL_URL}\";SIVA_URL=\"${SIVA_URL}\""
+    PKCS11_MODULE="${PKCS11_MODULE}"
+    TSA_URL="${TSA_URL}"
+    TSL_URL="${TSL_URL}"
+    SIVA_URL="${SIVA_URL}"
 )
 
 set_target_properties(digidocpp PROPERTIES
@@ -261,7 +266,11 @@ if(SWIG_FOUND)
         swig_add_library(digidoc_java TYPE SHARED LANGUAGE java SOURCES ../libdigidocpp.i)
         target_include_directories(digidoc_java PRIVATE ${JAVA_INCLUDE_PATH} $<$<BOOL:${JAVA_INCLUDE_PATH2}>:${JAVA_INCLUDE_PATH2}>)
         swig_link_libraries(digidoc_java digidocpp digidocpp_util)
-        install(TARGETS digidoc_java DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        if(APPLE)
+            install(TARGETS digidoc_java DESTINATION /Library/Java/Extensions)
+        else()
+            install(TARGETS digidoc_java DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        endif()
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ee/ria/libdigidocpp FILES_MATCHING PATTERN "*.java")
         if(WIN32)
             install(FILES $<TARGET_PDB_FILE:digidoc_java> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
@@ -408,7 +417,7 @@ if( FRAMEWORK )
     )
 else()
     if(NOT ${BUILD_SHARED_LIBS})
-        install( TARGETS minizip digidocpp_priv DESTINATION ${CMAKE_INSTALL_LIBDIR} )
+        install( TARGETS minizip digidocpp_priv digidocpp_util DESTINATION ${CMAKE_INSTALL_LIBDIR} )
     endif()
     if( BUILD_TOOLS )
         install( TARGETS digidoc-tool DESTINATION ${CMAKE_INSTALL_BINDIR} )

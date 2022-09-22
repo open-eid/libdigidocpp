@@ -6,8 +6,8 @@ XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-1.1.1q
-LIBXML2_DIR=libxml2-2.9.10
-ANDROID_NDK=android-ndk-r23b
+LIBXML2_DIR=libxml2-2.9.14
+ANDROID_NDK=android-ndk-r25
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
 PODOFO_DIR=podofo-0.9.4
@@ -45,6 +45,7 @@ case "$@" in
       curl -O -L https://dl.google.com/android/repository/${ANDROID_NDK}-darwin.dmg
     fi
     hdiutil attach -mountpoint /Volumes/${ANDROID_NDK} ${ANDROID_NDK}-darwin.dmg
+    ANDROID_NDK_HOME=$(ls -d /Volumes/${ANDROID_NDK}/AndroidNDK*.app/Contents/NDK)
   fi
 
   TARGET_PATH=/Library/libdigidocpp.android${ARCH}

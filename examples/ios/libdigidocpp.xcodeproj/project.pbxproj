@@ -15,6 +15,7 @@
 		4E7663AA1B5A37AC00672ACF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663A81B5A37AC00672ACF /* Main.storyboard */; };
 		4E7663AC1B5A37AC00672ACF /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663AB1B5A37AC00672ACF /* Images.xcassets */; };
 		4E7663AF1B5A37AC00672ACF /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663AD1B5A37AC00672ACF /* LaunchScreen.xib */; };
+		4E85E5F7285364BF00A65763 /* libdigidocpp_util.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E85E5F6285364BF00A65763 /* libdigidocpp_util.a */; };
 		4ECD5FAA2010A15A00BCC616 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FA92010A15A00BCC616 /* libcrypto.a */; };
 		4ECD5FB02010A1B700BCC616 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FAB2010A1B700BCC616 /* libssl.a */; };
 		4ECD5FB12010A1B700BCC616 /* libxalan-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FAC2010A1B700BCC616 /* libxalan-c.a */; };
@@ -40,6 +41,7 @@
 		4E7663A91B5A37AC00672ACF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		4E7663AB1B5A37AC00672ACF /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		4E7663AE1B5A37AC00672ACF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
+		4E85E5F6285364BF00A65763 /* libdigidocpp_util.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp_util.a; path = "$(SDKPATH)/lib/libdigidocpp_util.a"; sourceTree = "<absolute>"; };
 		4ECD5FA92010A15A00BCC616 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = "$(SDKPATH)/lib/libcrypto.a"; sourceTree = "<absolute>"; };
 		4ECD5FAB2010A1B700BCC616 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = "$(SDKPATH)/lib/libssl.a"; sourceTree = "<absolute>"; };
 		4ECD5FAC2010A1B700BCC616 /* libxalan-c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libxalan-c.a"; path = "$(SDKPATH)/lib/libxalan-c.a"; sourceTree = "<absolute>"; };
@@ -68,6 +70,7 @@
 				4ECD5FAA2010A15A00BCC616 /* libcrypto.a in Frameworks */,
 				4ECD5FB12010A1B700BCC616 /* libxalan-c.a in Frameworks */,
 				4ECD5FB32010A1B700BCC616 /* libxalanMsg.a in Frameworks */,
+				4E85E5F7285364BF00A65763 /* libdigidocpp_util.a in Frameworks */,
 				4ECD5FB22010A1B700BCC616 /* libxerces-c.a in Frameworks */,
 				4ECD5FB72010A33800BCC616 /* libz.tbd in Frameworks */,
 			);
@@ -126,6 +129,7 @@
 				4ECD5FA92010A15A00BCC616 /* libcrypto.a */,
 				4ECD5FB92010A38900BCC616 /* libdigidocpp.a */,
 				4ECD5FBA2010A38900BCC616 /* libdigidocpp_priv.a */,
+				4E85E5F6285364BF00A65763 /* libdigidocpp_util.a */,
 				4ECD5FB82010A38900BCC616 /* libminizip.a */,
 				4ECD5FAB2010A1B700BCC616 /* libssl.a */,
 				4ECD5FAC2010A1B700BCC616 /* libxalan-c.a */,
@@ -163,7 +167,7 @@
 		4E7663901B5A37AC00672ACF /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1230;
+				LastUpgradeCheck = 1340;
 				ORGANIZATIONNAME = RIA;
 				TargetAttributes = {
 					4E7663971B5A37AC00672ACF = {
@@ -289,7 +293,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -339,7 +343,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
@@ -366,7 +370,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "$(SDKPATH)/lib";
+				LIBRARY_SEARCH_PATHS = (
+					"$(SDKPATH)/lib",
+					"$(PROJECT_DIR)",
+				);
 				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -396,7 +403,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "$(SDKPATH)/lib";
+				LIBRARY_SEARCH_PATHS = (
+					"$(SDKPATH)/lib",
+					"$(PROJECT_DIR)",
+				);
 				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
