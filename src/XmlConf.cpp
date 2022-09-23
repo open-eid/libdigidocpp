@@ -318,6 +318,10 @@ XmlConf::XmlConf(const string &path, const string &schema)
     : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
 {}
 XmlConf::~XmlConf() = default;
+
+/**
+ * @copydoc digidoc::Conf::instance()
+ */
 XmlConf* XmlConf::instance() { return dynamic_cast<XmlConf*>(Conf::instance()); }
 
 /**
@@ -333,6 +337,10 @@ XmlConfV2::XmlConfV2(const string &path, const string &schema)
     : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
 {}
 XmlConfV2::~XmlConfV2() = default;
+
+/**
+ * @copydoc digidoc::Conf::instance()
+ */
 XmlConfV2* XmlConfV2::instance() { return dynamic_cast<XmlConfV2*>(Conf::instance()); }
 
 /**
@@ -348,6 +356,10 @@ XmlConfV3::XmlConfV3(const string &path, const string &schema)
     : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
 {}
 XmlConfV3::~XmlConfV3() = default;
+
+/**
+ * @copydoc digidoc::Conf::instance()
+ */
 XmlConfV3* XmlConfV3::instance() { return dynamic_cast<XmlConfV3*>(Conf::instance()); }
 
 /**
@@ -362,7 +374,29 @@ XmlConfV4::XmlConfV4(const string &path, const string &schema)
     : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
 {}
 XmlConfV4::~XmlConfV4() = default;
+
+/**
+ * @copydoc digidoc::Conf::instance()
+ */
 XmlConfV4* XmlConfV4::instance() { return dynamic_cast<XmlConfV4*>(Conf::instance()); }
+
+/**
+ * @class digidoc::XmlConfV5
+ * @brief Version 5 of XML Configuration class
+ * @see digidoc::ConfV5
+ */
+/**
+ * Initialize xml conf from path
+ */
+XmlConfV5::XmlConfV5(const string &path, const string &schema)
+    : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
+{}
+XmlConfV5::~XmlConfV5() = default;
+
+/**
+ * @copydoc digidoc::Conf::instance()
+ */
+XmlConfV5* XmlConfV5::instance() { return dynamic_cast<XmlConfV5*>(Conf::instance()); }
 
 
 
@@ -370,27 +404,32 @@ XmlConfV4* XmlConfV4::instance() { return dynamic_cast<XmlConfV4*>(Conf::instanc
 TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); } \
 TYPE XmlConfV2::PROP() const { return d->PROP.value(Conf::PROP()); } \
 TYPE XmlConfV3::PROP() const { return d->PROP.value(Conf::PROP()); } \
-TYPE XmlConfV4::PROP() const { return d->PROP.value(Conf::PROP()); }
+TYPE XmlConfV4::PROP() const { return d->PROP.value(Conf::PROP()); } \
+TYPE XmlConfV5::PROP() const { return d->PROP.value(Conf::PROP()); }
 
 #define SET1(TYPE, SET, PROP) \
 void XmlConf::SET(TYPE PROP) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
 void XmlConfV2::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+{ d->setUserConf<TYPE>(d->PROP, ConfV2::PROP(), PROP); } \
 void XmlConfV3::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+{ d->setUserConf<TYPE>(d->PROP, ConfV3::PROP(), PROP); } \
 void XmlConfV4::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
+{ d->setUserConf<TYPE>(d->PROP, ConfV4::PROP(), PROP); } \
+void XmlConfV5::SET(TYPE PROP) \
+{ d->setUserConf<TYPE>(d->PROP, ConfV5::PROP(), PROP); }
 
 #define SET1CONST(TYPE, SET, PROP) \
 void XmlConf::SET(const TYPE &(PROP)) \
 { d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
 void XmlConfV2::SET(const TYPE &(PROP)) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+{ d->setUserConf<TYPE>(d->PROP, ConfV2::PROP(), PROP); } \
 void XmlConfV3::SET(const TYPE &(PROP)) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
+{ d->setUserConf<TYPE>(d->PROP, ConfV3::PROP(), PROP); } \
 void XmlConfV4::SET(const TYPE &(PROP)) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); }
+{ d->setUserConf<TYPE>(d->PROP, ConfV4::PROP(), PROP); } \
+void XmlConfV5::SET(const TYPE &(PROP)) \
+{ d->setUserConf<TYPE>(d->PROP, ConfV5::PROP(), PROP); }
 
 GET1(int, logLevel)
 GET1(string, logFile)
@@ -437,6 +476,12 @@ string XmlConfV4::ocsp(const string &issuer) const
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
 }
 
+string XmlConfV5::ocsp(const string &issuer) const
+{
+    auto i = d->ocsp.find(issuer);
+    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
+}
+
 /**
  * @fn void digidoc::XmlConf::setTSLOnlineDigest(bool enable)
  * Enables/Disables online digest check
@@ -452,6 +497,10 @@ string XmlConfV4::ocsp(const string &issuer) const
  */
 /**
  * @fn void digidoc::XmlConfV4::setTSLOnlineDigest(bool enable)
+ * @copydoc digidoc::XmlConf::setTSLOnlineDigest(bool enable)
+ */
+/**
+ * @fn void digidoc::XmlConfV5::setTSLOnlineDigest(bool enable)
  * @copydoc digidoc::XmlConf::setTSLOnlineDigest(bool enable)
  */
 SET1(bool, setTSLOnlineDigest, TSLOnlineDigest)
@@ -472,6 +521,10 @@ SET1(bool, setTSLOnlineDigest, TSLOnlineDigest)
  */
 /**
  * @fn void digidoc::XmlConfV4::setTSLTimeOut(int timeOut)
+ * @copydoc digidoc::XmlConf::setTSLTimeOut(int timeOut)
+ */
+/**
+ * @fn void digidoc::XmlConfV5::setTSLTimeOut(int timeOut)
  * @copydoc digidoc::XmlConf::setTSLTimeOut(int timeOut)
  */
 SET1(int, setTSLTimeOut, TSLTimeOut)
@@ -495,6 +548,10 @@ SET1(int, setTSLTimeOut, TSLTimeOut)
  * @fn void digidoc::XmlConfV4::setProxyHost(const std::string &host)
  * @copydoc digidoc::XmlConf::setProxyHost(const std::string &host)
  */
+/**
+ * @fn void digidoc::XmlConfV5::setProxyHost(const std::string &host)
+ * @copydoc digidoc::XmlConf::setProxyHost(const std::string &host)
+ */
 SET1CONST(string, setProxyHost, proxyHost)
 
 /**
@@ -514,6 +571,10 @@ SET1CONST(string, setProxyHost, proxyHost)
  */
 /**
  * @fn void digidoc::XmlConfV4::setProxyPort(const std::string &port)
+ * @copydoc digidoc::XmlConf::setProxyPort(const std::string &port)
+ */
+/**
+ * @fn void digidoc::XmlConfV5::setProxyPort(const std::string &port)
  * @copydoc digidoc::XmlConf::setProxyPort(const std::string &port)
  */
 SET1CONST(string, setProxyPort, proxyPort)
@@ -537,6 +598,10 @@ SET1CONST(string, setProxyPort, proxyPort)
  * @fn void digidoc::XmlConfV4::setProxyUser(const std::string &user)
  * @copydoc digidoc::XmlConf::setProxyUser(const std::string &user)
  */
+/**
+ * @fn void digidoc::XmlConfV5::setProxyUser(const std::string &user)
+ * @copydoc digidoc::XmlConf::setProxyUser(const std::string &user)
+ */
 SET1CONST(string, setProxyUser, proxyUser)
 
 /**
@@ -556,6 +621,10 @@ SET1CONST(string, setProxyUser, proxyUser)
  */
 /**
  * @fn void digidoc::XmlConfV4::setProxyPass(const std::string &pass)
+ * @copydoc digidoc::XmlConf::setProxyPass(const std::string &pass)
+ */
+/**
+ * @fn void digidoc::XmlConfV5::setProxyPass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setProxyPass(const std::string &pass)
  */
 SET1CONST(string, setProxyPass, proxyPass)
@@ -580,6 +649,10 @@ SET1CONST(string, setProxyPass, proxyPass)
  * @fn void digidoc::XmlConfV4::setPKCS12Cert(const std::string &cert)
  * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
  */
+/**
+ * @fn void digidoc::XmlConfV5::setPKCS12Cert(const std::string &cert)
+ * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
+ */
 SET1CONST(string, setPKCS12Cert, PKCS12Cert)
 
 /**
@@ -599,6 +672,10 @@ SET1CONST(string, setPKCS12Cert, PKCS12Cert)
  */
 /**
  * @fn void digidoc::XmlConfV4::setPKCS12Pass(const std::string &pass)
+ * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
+ */
+/**
+ * @fn void digidoc::XmlConfV5::setPKCS12Pass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
  */
 SET1CONST(string, setPKCS12Pass, PKCS12Pass)
@@ -622,6 +699,10 @@ SET1CONST(string, setPKCS12Pass, PKCS12Pass)
  * @fn void digidoc::XmlConfV4::setTSUrl(const std::string &url)
  * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
  */
+/**
+ * @fn void digidoc::XmlConfV5::setTSUrl(const std::string &url)
+ * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
+ */
 SET1CONST(string, setTSUrl, TSUrl)
 
 /**
@@ -630,6 +711,22 @@ SET1CONST(string, setTSUrl, TSUrl)
  *
  * @param url Target URL to connect Verify service.
  * @throws Exception exception is thrown if saving a Verify service URL into a user configuration file fails.
+ */
+/**
+ * @fn void digidoc::XmlConfV2::setVerifyServiceUri(const std::string &url)
+ * @copydoc digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
+ */
+/**
+ * @fn void digidoc::XmlConfV3::setVerifyServiceUri(const std::string &url)
+ * @copydoc digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
+ */
+/**
+ * @fn void digidoc::XmlConfV4::setVerifyServiceUri(const std::string &url)
+ * @copydoc digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
+ */
+/**
+ * @fn void digidoc::XmlConfV5::setVerifyServiceUri(const std::string &url)
+ * @copydoc digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
  */
 SET1CONST(string, setVerifyServiceUri, verifyServiceUri)
 
@@ -652,6 +749,10 @@ SET1CONST(string, setVerifyServiceUri, verifyServiceUri)
  * @fn void digidoc::XmlConfV4::setPKCS12Disable(bool disable)
  * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
  */
+/**
+ * @fn void digidoc::XmlConfV5::setPKCS12Disable(bool disable)
+ * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
+ */
 SET1(bool, setPKCS12Disable, PKCS12Disable)
 
 /**
@@ -672,6 +773,10 @@ SET1(bool, setPKCS12Disable, PKCS12Disable)
  * @fn void digidoc::XmlConfV4::setProxyTunnelSSL(bool enable)
  * @copydoc digidoc::XmlConf::setProxyTunnelSSL(bool enable)
  */
+/**
+ * @fn void digidoc::XmlConfV5::setProxyTunnelSSL(bool enable)
+ * @copydoc digidoc::XmlConf::setProxyTunnelSSL(bool enable)
+ */
 SET1(bool, setProxyTunnelSSL, proxyTunnelSSL)
 
 
@@ -690,6 +795,11 @@ X509Cert XmlConfV4::verifyServiceCert() const
     return ConfV4::verifyServiceCert();
 }
 
+X509Cert XmlConfV5::verifyServiceCert() const
+{
+    return ConfV5::verifyServiceCert();
+}
+
 set<string> XmlConfV3::OCSPTMProfiles() const
 {
     return d->ocspTMProfiles.empty() ? ConfV3::OCSPTMProfiles() : d->ocspTMProfiles;
@@ -700,7 +810,22 @@ set<string> XmlConfV4::OCSPTMProfiles() const
     return d->ocspTMProfiles.empty() ? ConfV3::OCSPTMProfiles() : d->ocspTMProfiles;
 }
 
+set<string> XmlConfV5::OCSPTMProfiles() const
+{
+    return d->ocspTMProfiles.empty() ? ConfV3::OCSPTMProfiles() : d->ocspTMProfiles;
+}
+
 vector<X509Cert> XmlConfV4::verifyServiceCerts() const
 {
     return ConfV4::verifyServiceCerts();
+}
+
+vector<X509Cert> XmlConfV5::verifyServiceCerts() const
+{
+    return ConfV5::verifyServiceCerts();
+}
+
+vector<X509Cert> XmlConfV5::TSCerts() const
+{
+    return ConfV5::TSCerts();
 }

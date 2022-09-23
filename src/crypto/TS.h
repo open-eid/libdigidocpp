@@ -20,11 +20,9 @@
 #pragma once
 
 #include "Digest.h"
-#include <memory>
 
 using PKCS7 = struct pkcs7_st;
 using CMS_ContentInfo = struct CMS_ContentInfo_st;
-using TS_TST_INFO = struct TS_tst_info_st;
 namespace digidoc {
 
 class X509Cert;
@@ -32,7 +30,7 @@ class X509Cert;
 class TS
 {
 public:
-    TS(const std::string &url, const Digest &digest, const std::string &useragent = {});
+	TS(const std::string &url, const Digest &digest, const std::string &useragent = {});
     TS(const unsigned char *data = nullptr, size_t size = 0);
 
     X509Cert cert() const;
@@ -46,7 +44,7 @@ public:
     operator std::vector<unsigned char>() const;
 
 private:
-    TS_TST_INFO* tstInfo() const;
+    auto tstInfo() const;
     std::shared_ptr<PKCS7> d;
     std::shared_ptr<CMS_ContentInfo> cms;
 };

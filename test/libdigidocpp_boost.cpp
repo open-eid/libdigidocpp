@@ -128,6 +128,7 @@ BOOST_AUTO_TEST_CASE(parameters)
     X509Cert c = signer1->cert();
     BOOST_CHECK_EQUAL(c, signer1->cert());
     BOOST_CHECK_EQUAL(!c, false);
+    BOOST_CHECK_EQUAL(c, true);
 
     BOOST_CHECK_EQUAL(c.serial(), "2");
     BOOST_CHECK_EQUAL(c.subjectName("CN"), "signer1");
