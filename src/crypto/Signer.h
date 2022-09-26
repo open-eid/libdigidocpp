@@ -32,7 +32,7 @@ namespace digidoc
 
           virtual X509Cert cert() const = 0;
           virtual std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const = 0;
-          std::string method() const;
+          virtual std::string method() const;
           std::string profile() const;
           bool usingENProfile() const;
 

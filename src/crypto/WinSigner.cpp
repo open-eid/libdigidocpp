@@ -21,6 +21,7 @@
 
 #include "Conf.h"
 #include "crypto/X509Cert.h"
+#include "crypto/X509Crypto.h"
 #include "crypto/Digest.h"
 #include "util/File.h"
 #include "util/log.h"
@@ -167,7 +168,7 @@ X509Cert WinSigner::cert() const
     PCCERT_CONTEXT cert_context = nullptr;
     if(!d->thumbprint.empty())
     {
-        CRYPT_HASH_BLOB hashBlob = { DWORD(d->thumbprint.size()), PBYTE(d->thumbprint.data()) };
+        CRYPT_HASH_BLOB hashBlob { DWORD(d->thumbprint.size()), PBYTE(d->thumbprint.data()) };
         cert_context = CertFindCertificateInStore(store, X509_ASN_ENCODING|PKCS_7_ASN_ENCODING, 0, CERT_FIND_HASH, PVOID(&hashBlob), nullptr);
     }
     else if(d->selectFirst)
@@ -184,8 +185,7 @@ X509Cert WinSigner::cert() const
     }
     else
     {
-        CRYPTUI_SELECTCERTIFICATE_STRUCT pcsc = {};
-        pcsc.dwSize = sizeof(pcsc);
+        CRYPTUI_SELECTCERTIFICATE_STRUCT pcsc { sizeof(pcsc) };
         pcsc.pFilterCallback = Private::CertFilter;
         pcsc.pvCallbackData = d;
         pcsc.cDisplayStores = 1;
@@ -201,6 +201,19 @@ X509Cert WinSigner::cert() const
     CertFreeCertificateContext(cert_context);
 
     return d->cert;
+}
+
+string WinSigner::method() const
+{
+    if(!d->cert || !X509Crypto(d->cert).isRSAKey())
+        return Signer::method();
+    BCRYPT_PSS_PADDING_INFO rsaPSS { NCRYPT_SHA256_ALGORITHM, 32 };
+    DWORD size = 0;
+    Digest dgst;
+    vector<unsigned char> digest = dgst.result({ 0 });
+    SECURITY_STATUS err = NCryptSignHash(d->key, &rsaPSS, PBYTE(digest.data()), DWORD(digest.size()),
+        nullptr, 0, &size, BCRYPT_PAD_PSS);
+    return FAILED(err) ? Signer::method() : Digest::toRsaPssUri(Signer::method());
 }
 
 /**
@@ -234,8 +247,8 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
 {
     DEBUG("sign(method = %s, digest = length=%d)", method.c_str(), digest.size());
 
-    BCRYPT_PKCS1_PADDING_INFO rsaPKCS1 = { nullptr };
-    BCRYPT_PSS_PADDING_INFO rsaPSS = { nullptr, 0 };
+    BCRYPT_PKCS1_PADDING_INFO rsaPKCS1 { nullptr };
+    BCRYPT_PSS_PADDING_INFO rsaPSS { nullptr, 0 };
     ALG_ID alg = 0;
     if(method == URI_RSA_SHA1) { rsaPKCS1.pszAlgId = NCRYPT_SHA1_ALGORITHM; alg = CALG_SHA1;}
     else if(method == URI_RSA_SHA224) { rsaPKCS1.pszAlgId = L"SHA224";}

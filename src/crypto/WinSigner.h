@@ -35,6 +35,7 @@ namespace digidoc
 
       private:
           X509Cert cert() const final;
+          std::string method() const final;
           std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const final;
 
           DISABLE_COPY(WinSigner);
