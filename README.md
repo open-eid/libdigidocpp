@@ -67,7 +67,7 @@
 
 5. Execute
 
-        /Library/libdigidocpp/bin/digidoc-tool
+        /Library/Frameworks/digidocpp.framework/Resources/digidoc-tool
 
 ### Windows
 
@@ -75,12 +75,13 @@
 	* [Visual Studio Community 2015/2017/2019](https://www.visualstudio.com/downloads/)
 	* [CMake](http://www.cmake.org)
 	* [Swig](http://swig.org/download.html) - Optional, for C# and Java bindings
+	* [Doxygen](https://www.doxygen.nl/download.html) - Optional, for generationg documentation
 	* [Wix toolset](http://wixtoolset.org/releases/) - Optional, for creating Windows installation packages
 
    Toolset:
-	* 140 - Visual Studio 2015
-	* 141 - Visual Studio 2017 (Default)
-	* 142 - Visual Studio 2019
+	* 141 - Visual Studio 2017
+	* 142 - Visual Studio 2019 (Default)
+	* 143 - Visual Studio 2022
 
 2. Fetch the source
 
@@ -89,24 +90,26 @@
 
 3. Prepare
 
-        powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 -toolset 141
+        powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 -toolset 142
 
 4. Configure
 
-        mkdir build
-        cd build
-        cmake ..
+        cmake -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake" `
+              -DVCPKG_TARGET_TRIPLET=x64-windows-v142 `
+              -DXSD_INCLUDE_DIR=xsd/libxsd `
+              -DXSD_EXECUTABLE=xsd/bin/xsd.exe `
+              -B build -S .
 
    Optional CMake parameters:
 
-       -DSWIG_EXECUTABLE=C:/swigwin-4.0.1/swig.exe
+       -DSWIG_EXECUTABLE=C:/swigwin-4.0.2/swig.exe
 
    After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
    [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
 
 5. Build
 
-        nmake
+        cmake --build build
 
 6. Alternative to steps 4. and 5. -
 
@@ -117,7 +120,7 @@
 
 7. Execute
 
-        src/digidoc-tool.exe
+        build/src/digidoc-tool.exe
 
 ### Examples
 [examples/README.md](examples/README.md)

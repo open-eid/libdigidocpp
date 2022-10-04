@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -178,7 +178,7 @@
 				};
 			};
 			buildConfigurationList = 4E7663931B5A37AC00672ACF /* Build configuration list for PBXProject "libdigidocpp" */;
-			compatibilityVersion = "Xcode 11.0";
+			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -248,8 +248,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -278,7 +277,7 @@
 				ENABLE_BITCODE = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -305,8 +304,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -335,7 +333,7 @@
 				ENABLE_BITCODE = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -356,16 +354,22 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_NUMBER = 0;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/libdigidocpp",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "TESTING=$(TESTING)";
+				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SDKPATH)/include",
 					"$(MINIZIP)",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = NO;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.xib;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -374,6 +378,7 @@
 					"$(SDKPATH)/lib",
 					"$(PROJECT_DIR)",
 				);
+				MARKETING_VERSION = 1.0;
 				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -389,16 +394,22 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_NUMBER = 0;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/libdigidocpp",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = "TESTING=$(TESTING)";
+				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SDKPATH)/include",
 					"$(MINIZIP)",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = NO;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.xib;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -407,6 +418,7 @@
 					"$(SDKPATH)/lib",
 					"$(PROJECT_DIR)",
 				);
+				MARKETING_VERSION = 1.0;
 				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
