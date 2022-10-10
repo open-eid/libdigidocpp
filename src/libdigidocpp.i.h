@@ -25,6 +25,7 @@
 #include "util/File.h"
 
 #include <map>
+#include <optional>
 
 namespace digidoc {
 
@@ -32,73 +33,82 @@ class SWIGEXPORT DigiDocConf: public digidoc::XmlConfCurrent
 {
 public:
     DigiDocConf(std::string _cache)
-        : digidoc::XmlConfCurrent(std::string(), _cache.empty() ? std::string() : util::File::path(_cache, "conf.xsd"))
+        : digidoc::XmlConfCurrent({}, _cache.empty() ? std::string() : util::File::path(_cache, "conf.xsd"))
         , cache(std::move(_cache))
-        , _logFile(cache.empty() ? "" : cache + "/digidocpp.log") {}
+        , _logFile(cache.empty() ? std::string() : cache + "/digidocpp.log") {}
 
     static DigiDocConf* instance() { return dynamic_cast<DigiDocConf*>(Conf::instance()); };
 
-    int logLevel() const override { return _logLevel; }
-    std::string logFile() const override { return _logFile.empty() ? digidoc::XmlConfCurrent::logFile() : _logFile; }
-    std::string ocsp(const std::string &issuer) const override
+    int logLevel() const final { return _logLevel.value_or(digidoc::XmlConfCurrent::logLevel()); }
+    std::string logFile() const final { return _logFile.value_or(digidoc::XmlConfCurrent::logFile()); }
+    std::string ocsp(const std::string &issuer) const final
     {
-        auto pos = OCSPUrls.find(issuer);
-        return pos == OCSPUrls.end() ? std::string() : pos->second;
+        if(!OCSPUrls)
+            return digidoc::XmlConfCurrent::ocsp(issuer);
+        auto pos = OCSPUrls.value().find(issuer);
+        return pos == OCSPUrls.value().cend() ? std::string() : pos->second;
     }
-    std::string PKCS12Cert() const override
+    std::string PKCS12Cert() const final
     {
         return cache.empty() ? digidoc::XmlConfCurrent::PKCS12Cert() :
             cache + "/" + digidoc::util::File::fileName(digidoc::XmlConfCurrent::PKCS12Cert());
     }
-    std::set<std::string> OCSPTMProfiles() const override { return TMProfiles.empty() ? digidoc::XmlConfCurrent::OCSPTMProfiles() : TMProfiles; }
-    std::string TSLCache() const override { return cache.empty() ? digidoc::XmlConfCurrent::TSLCache() : cache; }
-    std::vector<X509Cert> TSLCerts() const override { return tslCerts.empty() ? digidoc::XmlConfCurrent::TSLCerts() : tslCerts; };
-    std::string TSLUrl() const override { return tslUrl.empty() ? digidoc::XmlConfCurrent::TSLUrl() : tslUrl; }
-    X509Cert verifyServiceCert() const override { return serviceCerts.empty() ? digidoc::XmlConfCurrent::verifyServiceCert() : serviceCerts.front(); }
-    std::vector<X509Cert> verifyServiceCerts() const override { return serviceCerts.empty() ? digidoc::XmlConfCurrent::verifyServiceCerts() : serviceCerts; }
-    std::string verifyServiceUri() const override { return serviceUrl.empty() ? digidoc::XmlConfCurrent::verifyServiceUri() : serviceUrl; }
-    std::string xsdPath() const override { return cache.empty() ? digidoc::XmlConfCurrent::xsdPath() : cache; }
+    std::set<std::string> OCSPTMProfiles() const final { return TMProfiles.value_or(digidoc::XmlConfCurrent::OCSPTMProfiles()); }
+    std::string TSLCache() const final { return cache.empty() ? digidoc::XmlConfCurrent::TSLCache() : cache; }
+    std::vector<X509Cert> TSLCerts() const final { return tslCerts.value_or(digidoc::XmlConfCurrent::TSLCerts()); }
+    std::string TSLUrl() const final { return tslUrl.value_or(digidoc::XmlConfCurrent::TSLUrl()); }
+    X509Cert verifyServiceCert() const final {
+        if(!serviceCerts)
+            return digidoc::XmlConfCurrent::verifyServiceCert();
+        return serviceCerts->empty() ? X509Cert() : serviceCerts->front();
+    }
+    std::vector<X509Cert> verifyServiceCerts() const final { return serviceCerts.value_or(digidoc::XmlConfCurrent::verifyServiceCerts()); }
+    std::string verifyServiceUri() const final { return serviceUrl.value_or(digidoc::XmlConfCurrent::verifyServiceUri()); }
+    std::string xsdPath() const final { return cache.empty() ? digidoc::XmlConfCurrent::xsdPath() : cache; }
 
     void setLogLevel(int level) { _logLevel = level; }
-    void setLogFile(const std::string &file) { _logFile = file; }
+    void setLogFile(std::string file) { _logFile = std::move(file); }
     void setTSLCert(const std::vector<unsigned char> &cert)
     {
-        if(cert.empty()) tslCerts.clear();
+        if(cert.empty()) tslCerts.emplace();
         else tslCerts = { X509Cert(cert, X509Cert::Der) };
     }
     void addTSLCert(const std::vector<unsigned char> &cert)
     {
-        if(!cert.empty())
-            tslCerts.emplace_back(cert, X509Cert::Der);
+        if(!tslCerts)
+            setTSLCert(cert);
+        else if(!cert.empty())
+            tslCerts->emplace_back(cert, X509Cert::Der);
     }
     void setTSLUrl(std::string url) { tslUrl = std::move(url); }
-    void setOCSPUrls(std::map<std::string,std::string> urls) { OCSPUrls = urls; }
+    void setOCSPUrls(std::map<std::string,std::string> urls) { OCSPUrls = std::move(urls); }
     void setOCSPTMProfiles(const std::vector<std::string> &_TMProfiles)
     {
-        for(const std::string &profile: _TMProfiles)
-            TMProfiles.emplace(profile);
-        if(_TMProfiles.empty())
-            TMProfiles.clear();
+        TMProfiles = {_TMProfiles.cbegin(), _TMProfiles.cend()};
     }
     void setVerifyServiceCert(const std::vector<unsigned char> &cert)
     {
-        if(cert.empty()) serviceCerts.clear();
+        if(cert.empty()) serviceCerts.emplace();
         else serviceCerts = { X509Cert(cert, X509Cert::Der) };
     }
     void addVerifyServiceCert(const std::vector<unsigned char> &cert)
     {
-        if(!cert.empty())
-            serviceCerts.emplace_back(cert, X509Cert::Der);
+        if(!serviceCerts)
+            setVerifyServiceCert(cert);
+        else if(!cert.empty())
+            serviceCerts->emplace_back(cert, X509Cert::Der);
     }
     void setVerifyServiceUri(std::string url) { serviceUrl = std::move(url); }
 
 private:
-    int _logLevel = 4;
-    std::string cache, tslUrl, serviceUrl, _logFile;
-    std::vector<X509Cert> tslCerts;
-    std::set<std::string> TMProfiles;
-    std::map<std::string,std::string> OCSPUrls;
-    std::vector<X509Cert> serviceCerts;
+    DISABLE_COPY(DigiDocConf);
+
+    std::string cache;
+    std::optional<int> _logLevel;
+    std::optional<std::string> _logFile, serviceUrl, tslUrl;
+    std::optional<std::vector<X509Cert>> tslCerts, serviceCerts;
+    std::optional<std::set<std::string>> TMProfiles;
+    std::optional<std::map<std::string,std::string>> OCSPUrls;
 };
 
 static void initializeLib(const std::string &appName, const std::string &path)

@@ -34,10 +34,10 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
-#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <sstream>
 
 #ifdef _WIN32
@@ -78,31 +78,31 @@ static ostream &operator<<(ostream &os, const Exception::ExceptionCode code)
 {
     switch(code)
     {
-    case Exception::General: os << "General"; break;
-    case Exception::NetworkError: os << "NetworkError"; break;
-    case Exception::HostNotFound: os << "HostNotFound"; break;
-    case Exception::InvalidUrl: os << "InvalidUrl"; break;
-    case Exception::CertificateIssuerMissing: os << "CertificateIssuerMissing"; break;
-    case Exception::CertificateRevoked: os << "CertificateRevoked"; break;
-    case Exception::CertificateUnknown: os << "CertificateUnknown"; break;
-    case Exception::OCSPBeforeTimeStamp: os << "OCSPBeforeTimeStamp"; break;
-    case Exception::OCSPResponderMissing: os << "OCSPResponderMissing"; break;
-    case Exception::OCSPCertMissing: os << "OCSPCertMissing"; break;
-    case Exception::OCSPTimeSlot: os << "OCSPTimeSlot"; break;
-    case Exception::OCSPRequestUnauthorized: os << "OCSPRequestUnauthorized"; break;
-    case Exception::TSForbidden: os << "TSForbidden"; break;
-    case Exception::TSTooManyRequests: os << "TSTooManyRequests"; break;
-    case Exception::PINCanceled: os << "PINCanceled"; break;
-    case Exception::PINFailed: os << "PINFailed"; break;
-    case Exception::PINIncorrect: os << "PINIncorrect"; break;
-    case Exception::PINLocked: os << "PINLocked"; break;
-    case Exception::ReferenceDigestWeak: os << "ReferenceDigestWeak"; break;
-    case Exception::SignatureDigestWeak: os << "SignatureDigestWeak"; break;
-    case Exception::DataFileNameSpaceWarning: os << "DataFileNameSpaceWarning"; break;
-    case Exception::IssuerNameSpaceWarning: os << "IssuerNameSpaceWarning"; break;
-    case Exception::ProducedATLateWarning: os << "ProducedATLateWarning"; break;
-    case Exception::MimeTypeWarning: os << "MimeTypeWarning"; break;
-    case Exception::DDocError: os << "DDocError"; break;
+    case Exception::General: return os << "General";
+    case Exception::NetworkError: return os << "NetworkError";
+    case Exception::HostNotFound: return os << "HostNotFound";
+    case Exception::InvalidUrl: return os << "InvalidUrl";
+    case Exception::CertificateIssuerMissing: return os << "CertificateIssuerMissing";
+    case Exception::CertificateRevoked: return os << "CertificateRevoked";
+    case Exception::CertificateUnknown: return os << "CertificateUnknown";
+    case Exception::OCSPBeforeTimeStamp: return os << "OCSPBeforeTimeStamp";
+    case Exception::OCSPResponderMissing: return os << "OCSPResponderMissing";
+    case Exception::OCSPCertMissing: return os << "OCSPCertMissing";
+    case Exception::OCSPTimeSlot: return os << "OCSPTimeSlot";
+    case Exception::OCSPRequestUnauthorized: return os << "OCSPRequestUnauthorized";
+    case Exception::TSForbidden: return os << "TSForbidden";
+    case Exception::TSTooManyRequests: return os << "TSTooManyRequests";
+    case Exception::PINCanceled: return os << "PINCanceled";
+    case Exception::PINFailed: return os << "PINFailed";
+    case Exception::PINIncorrect: return os << "PINIncorrect";
+    case Exception::PINLocked: return os << "PINLocked";
+    case Exception::ReferenceDigestWeak: return os << "ReferenceDigestWeak";
+    case Exception::SignatureDigestWeak: return os << "SignatureDigestWeak";
+    case Exception::DataFileNameSpaceWarning: return os << "DataFileNameSpaceWarning";
+    case Exception::IssuerNameSpaceWarning: return os << "IssuerNameSpaceWarning";
+    case Exception::ProducedATLateWarning: return os << "ProducedATLateWarning";
+    case Exception::MimeTypeWarning: return os << "MimeTypeWarning";
+    case Exception::DDocError: return os << "DDocError";
     }
     return os;
 }
@@ -114,13 +114,27 @@ static ostream &operator<<(ostream &os, const Exception &e)
         os << ex;
     return os;
 }
+
+static ostream &operator<<(ostream &os, Signature::Validator::Status status)
+{
+    switch(status)
+    {
+    case Signature::Validator::Valid: return os;
+    case Signature::Validator::Warning: return os << "(Warning)";
+    case Signature::Validator::NonQSCD: return os << "(NonQSCD)";
+    case Signature::Validator::Test:
+    case Signature::Validator::Unknown: return os << "(Unknown)";
+    case Signature::Validator::Invalid: return os << "(Invalid)";
+    }
+    return os;
+}
 }
 
 /**
  * For demonstration purpose overwrites certificate selection to print out all
  * the certificates available on ID-Card.
  */
-class ConsolePinSigner : public PKCS11Signer
+class ConsolePinSigner final : public PKCS11Signer
 {
 public:
     ConsolePinSigner(const string &driver, const string &pin): PKCS11Signer(driver)
@@ -129,8 +143,8 @@ public:
     }
 
 private:
-    string pin(const X509Cert &certificate) const override;
-    X509Cert selectSigningCertificate(const vector<X509Cert> &certificates) const override
+    string pin(const X509Cert &certificate) const final;
+    X509Cert selectSigningCertificate(const vector<X509Cert> &certificates) const final
     {
         cout << "Available certificates:" << endl;
         for(const X509Cert &cert: certificates)
@@ -241,7 +255,7 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
     return result;
 }
 
-class ToolConfig: public XmlConfCurrent
+class ToolConfig final: public XmlConfCurrent
 {
 public:
     enum Warning {
@@ -251,30 +265,30 @@ public:
     };
 
     ToolConfig(int argc, char *argv[]);
-    int logLevel() const override { return _logLevel; }
-    string logFile() const override { return _logFile; }
-    string digestUri() const override { return uri; }
-    string signatureDigestUri() const override { return siguri; }
-    bool TSLAllowExpired() const override { return expired; }
-    vector<X509Cert> TSLCerts() const override { return tslcerts; }
-    string TSUrl() const override { return tsurl; }
-    string TSLUrl() const override { return tslurl; }
+    int logLevel() const final { return _logLevel.value_or(XmlConfCurrent::logLevel()); }
+    string logFile() const final { return _logFile.value_or(XmlConfCurrent::logFile()); }
+    string digestUri() const final { return uri.value_or(XmlConfCurrent::digestUri()); }
+    string signatureDigestUri() const final { return siguri.value_or(XmlConfCurrent::signatureDigestUri()); }
+    bool TSLAllowExpired() const final { return expired.value_or(XmlConfCurrent::TSLAllowExpired()); }
+    vector<X509Cert> TSLCerts() const final { return tslcerts.value_or(XmlConfCurrent::TSLCerts()); }
+    string TSUrl() const final { return tsurl.value_or(XmlConfCurrent::TSUrl()); }
+    string TSLUrl() const final { return tslurl.value_or(XmlConfCurrent::TSLUrl()); }
 
     unique_ptr<Signer> getSigner(bool getwebsigner = false) const;
-    static string decodeParameter(const string &param)
+    static string toUTF8(std::string_view param)
     {
-        return File::decodeName(fs::path(param));
+        return fs::path(param).u8string();
     }
 
     // Config
-    int _logLevel = XmlConfCurrent::logLevel();
-    bool expired = XmlConfCurrent::TSLAllowExpired();
-    vector<X509Cert> tslcerts = XmlConfCurrent::TSLCerts();
-    string _logFile = XmlConfCurrent::logFile();
-    string tsurl = XmlConfCurrent::TSUrl();
-    string tslurl = XmlConfCurrent::TSLUrl();
-    string uri = XmlConfCurrent::digestUri();
-    string siguri = XmlConfCurrent::signatureDigestUri();
+    optional<int> _logLevel;
+    optional<bool> expired;
+    optional<vector<X509Cert>> tslcerts;
+    optional<string> _logFile;
+    optional<string> tsurl;
+    optional<string> tslurl;
+    optional<string> uri;
+    optional<string> siguri;
 
     // Params
     string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
@@ -282,7 +296,7 @@ public:
     vector<pair<string,string> > files;
     vector<string> roles;
     bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
-    static const map<string,string> profiles;
+    static const map<string_view,string> profiles;
     static string_view RED, GREEN, YELLOW, RESET;
 };
 
@@ -291,7 +305,7 @@ public:
 /**
  * Prints application usage.
  */
-static void printUsage(const char *executable)
+static int printUsage(const char *executable)
 {
     cout
     << "Usage: " << executable << " COMMAND [OPTIONS] FILE" << endl << endl
@@ -357,9 +371,10 @@ static void printUsage(const char *executable)
     << "      --nocolor       - Disable terminal colors" << endl
     << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
     << "      --logfile=      - File to log, empty to console" << endl;
+    return EXIT_FAILURE;
 }
 
-const map<string,string> ToolConfig::profiles = {
+const map<string_view,string> ToolConfig::profiles = {
     {"BES", "BES"},
     {"EPES", "EPES"},
     {"TM", "time-mark"},
@@ -380,7 +395,7 @@ ToolConfig::ToolConfig(int argc, char *argv[])
 {
     for(int i = 2; i < argc; i++)
     {
-        string arg(decodeParameter(argv[i]));
+        string arg(toUTF8(argv[i]));
         if(arg.find("--profile=") == 0)
         {
             profile = arg.substr(10);
@@ -389,7 +404,7 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         }
         else if(arg.find("--file=") == 0)
         {
-            string arg2(i+1 < argc ? decodeParameter(argv[i+1]) : string());
+            string arg2(i+1 < argc ? toUTF8(argv[i+1]) : string());
             files.emplace_back(arg.substr(7),
                 arg2.find("--mime=") == 0 ? arg2.substr(7) : "application/octet-stream");
         }
@@ -454,32 +469,32 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
     unique_ptr<Signer> signer;
     if(getwebsigner)
     {
-        class WebSigner: public Signer
+        class WebSigner final: public Signer
         {
         public:
             WebSigner(X509Cert cert): _cert(move(cert)) {}
-            X509Cert cert() const override { return _cert; }
-            vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const override
+            X509Cert cert() const final { return _cert; }
+            vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const final
             {
                 THROW("Not implemented");
             }
             X509Cert _cert;
         };
-        signer.reset(new WebSigner(X509Cert(cert, X509Cert::Pem)));
+        signer = make_unique<WebSigner>(X509Cert(cert, X509Cert::Pem));
     }
 #ifdef _WIN32
     else if(cng)
     {
-        WinSigner *win = new WinSigner(pin, selectFirst);
+        unique_ptr<WinSigner> win = make_unique<WinSigner>(pin, selectFirst);
         win->setThumbprint(thumbprint);
-        signer.reset(win);
+        signer = unique_ptr<Signer>(win.release());
     }
     else
 #endif
     if(!pkcs12.empty())
-        signer.reset(new PKCS12Signer(pkcs12, pin));
+        signer = make_unique<PKCS12Signer>(pkcs12, pin);
     else
-        signer.reset(new ConsolePinSigner(pkcs11, pin));
+        signer = make_unique<ConsolePinSigner>(pkcs11, pin);
     signer->setENProfile(XAdESEN);
     signer->setSignatureProductionPlaceV2(city, street, state, postalCode, country);
     signer->setSignerRoles(roles);
@@ -497,30 +512,17 @@ static int validateSignature(const Signature *s, ToolConfig::Warning warning = T
         cout << ToolConfig::GREEN << "OK";
         break;
     case Signature::Validator::Warning:
-        if(warning == ToolConfig::WError)
-        {
-            cout << ToolConfig::RED << "FAILED (Warning)";
-            returnCode = EXIT_FAILURE;
-        }
-        else
-            cout << ToolConfig::YELLOW << "OK (Warning)";
-        break;
     case Signature::Validator::NonQSCD:
-        if(warning == ToolConfig::WError)
+        if(warning != ToolConfig::WError)
         {
-            cout << ToolConfig::RED << "FAILED (NonQSCD)";
-            returnCode = EXIT_FAILURE;
+            cout << ToolConfig::YELLOW << "OK " << v.status();
+            break;
         }
-        else
-            cout << ToolConfig::YELLOW << "OK (NonQSCD)";
-        break;
+        [[fallthrough]];
     case Signature::Validator::Test:
     case Signature::Validator::Unknown:
-        cout << ToolConfig::RED << "FAILED (Unknown)";
-        returnCode = EXIT_FAILURE;
-        break;
     case Signature::Validator::Invalid:
-        cout << ToolConfig::RED << "FAILED (Invalid)";
+        cout << ToolConfig::RED << "FAILED " << v.status();
         returnCode = EXIT_FAILURE;
         break;
     }
@@ -554,7 +556,7 @@ static int open(int argc, char* argv[])
     // Parse command line arguments.
     for(int i = 2; i < argc; i++)
     {
-        string arg(ToolConfig::decodeParameter(argv[i]));
+        string arg(ToolConfig::toUTF8(argv[i]));
         if(arg == "--list")
             continue;
         if(arg.find("--warnings=") == 0)
@@ -580,10 +582,7 @@ static int open(int argc, char* argv[])
     }
 
     if(path.empty())
-    {
-        printUsage(argv[0]);
-        return EXIT_FAILURE;
-    }
+        return printUsage(argv[0]);
 
     unique_ptr<Container> doc;
     try {
@@ -689,7 +688,7 @@ static int remove(int argc, char *argv[])
     string path;
     for(int i = 2; i < argc; i++)
     {
-        string arg(ToolConfig::decodeParameter(argv[i]));
+        string arg(ToolConfig::toUTF8(argv[i]));
         if(arg.find("--document=") == 0)
             documents.push_back(atoi(arg.substr(11).c_str()));
         else if(arg.find("--signature=") == 0)
@@ -699,10 +698,7 @@ static int remove(int argc, char *argv[])
     }
 
     if(path.empty())
-    {
-        printUsage(argv[0]);
-        return EXIT_FAILURE;
-    }
+        return printUsage(argv[0]);
 
     unique_ptr<Container> doc;
     try {
@@ -742,10 +738,7 @@ static int remove(int argc, char *argv[])
 static int add(const ToolConfig &p, const char *program)
 {
     if(p.path.empty() || p.files.empty())
-    {
-        printUsage(program);
-        return EXIT_FAILURE;
-    }
+        return printUsage(program);
 
     unique_ptr<Container> doc;
     try {
@@ -799,10 +792,7 @@ static int signContainer(Container *doc, const unique_ptr<Signer> &signer, bool 
 static int create(const ToolConfig &p, const char *program)
 {
     if(p.path.empty() || p.files.empty())
-    {
-        printUsage(program);
-        return EXIT_FAILURE;
-    }
+        return printUsage(program);
 
     unique_ptr<Container> doc;
     try {
@@ -833,24 +823,15 @@ static int create(const ToolConfig &p, const char *program)
 static int createBatch(const ToolConfig &p, const char *program)
 {
     if(p.path.empty())
-    {
-        printUsage(program);
-        return EXIT_FAILURE;
-    }
+        return printUsage(program);
 
-    unique_ptr<Signer> signer;
-    try {
-        signer = p.getSigner();
-    } catch(const Exception &e) {
-        cout << "Caught Exception:" << endl << e;
-        return EXIT_FAILURE;
-    }
-
+    unique_ptr<Signer> signer = p.getSigner();
     std::error_code ec;
     fs::directory_iterator it{fs::u8path(p.path), ec};
     if(ec)
     {
-        cout << "Failed to open directory %s" << p.path << endl;
+        cout << "Failed to open directory " << p.path << endl;
+        cout << "  Exception: " << ec.message() << endl;
         return EXIT_FAILURE;
     }
     int returnCode = EXIT_SUCCESS;
@@ -870,7 +851,6 @@ static int createBatch(const ToolConfig &p, const char *program)
             returnCode = EXIT_FAILURE;
         }
     }
-
     return returnCode;
 }
 
@@ -884,10 +864,7 @@ static int createBatch(const ToolConfig &p, const char *program)
 static int sign(const ToolConfig &p, const char *program)
 {
     if(p.path.empty())
-    {
-        printUsage(program);
-        return EXIT_FAILURE;
-    }
+        return printUsage(program);
 
     unique_ptr<Container> doc;
     try {
@@ -906,10 +883,7 @@ static int sign(const ToolConfig &p, const char *program)
 static int websign(const ToolConfig &p, const char *program)
 {
     if(p.path.empty())
-    {
-        printUsage(program);
-        return EXIT_FAILURE;
-    }
+        return printUsage(program);
 
     unique_ptr<Container> doc;
     try {
@@ -920,30 +894,24 @@ static int websign(const ToolConfig &p, const char *program)
         return EXIT_FAILURE;
     }
 
+    for(const pair<string,string> &file: p.files)
+        doc->addDataFile(file.first, file.second);
+
     int returnCode = EXIT_SUCCESS;
-    try {
-        for(const pair<string,string> &file: p.files)
-            doc->addDataFile(file.first, file.second);
-
-        if(Signature *signature = doc->prepareSignature(p.getSigner(true).get()))
-        {
-            cout << "Signature method: " << signature->signatureMethod() << endl
-                 << "Digest to sign:   " << signature->dataToSign() << endl
-                 << "Please enter signed digest in hex: " << endl;
-            string signedData;
-            cin >> signedData;
-            signature->setSignatureValue(File::hexToBin(signedData));
-            cout << "Test" << File::hexToBin(signedData);
-            signature->extendSignatureProfile(p.profile);
-            if(validateSignature(signature) == EXIT_FAILURE)
-                returnCode = EXIT_FAILURE;
-        }
-        doc->save();
-    } catch(const Exception &e) {
-        cout << "Caught Exception:" << endl << e;
-        returnCode = EXIT_FAILURE;
+    if(Signature *signature = doc->prepareSignature(p.getSigner(true).get()))
+    {
+        cout << "Signature method: " << signature->signatureMethod() << endl
+             << "Digest to sign:   " << signature->dataToSign() << endl
+             << "Please enter signed digest in hex: " << endl;
+        string signedData;
+        cin >> signedData;
+        signature->setSignatureValue(File::hexToBin(signedData));
+        cout << "Test" << File::hexToBin(signedData);
+        signature->extendSignatureProfile(p.profile);
+        if(validateSignature(signature) == EXIT_FAILURE)
+            returnCode = EXIT_FAILURE;
     }
-
+    doc->save();
     return returnCode;
 }
 
@@ -1059,8 +1027,7 @@ int main(int argc, char *argv[]) try
         return tslcmd(argc, argv);
     if(command == "version")
         return EXIT_SUCCESS;
-    printUsage(argv[0]);
-    return EXIT_FAILURE;
+    return printUsage(argv[0]);
 } catch(const Exception &e) {
     cout << "Caught Exception:" << endl << e;
     return EXIT_FAILURE;
