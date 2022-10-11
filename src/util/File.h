@@ -41,7 +41,6 @@ namespace digidoc
 #endif
               static std::string confPath();
               static std::string env(const std::string &varname);
-              static bool dirExists(const std::string& path);
               static bool fileExists(const std::string& path);
               static f_string encodeName(const std::string &fileName);
               static std::string decodeName(const f_string &localFileName);

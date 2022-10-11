@@ -128,6 +128,11 @@ static ostream &operator<<(ostream &os, Signature::Validator::Status status)
     }
     return os;
 }
+
+static string& operator+(string_view lhs, string rhs)
+{
+    return rhs.insert(0, lhs);
+}
 }
 
 /**
@@ -137,7 +142,8 @@ static ostream &operator<<(ostream &os, Signature::Validator::Status status)
 class ConsolePinSigner final : public PKCS11Signer
 {
 public:
-    ConsolePinSigner(const string &driver, const string &pin): PKCS11Signer(driver)
+    ConsolePinSigner(const string &driver, const string &pin)
+        : PKCS11Signer(driver)
     {
         setPin(pin);
     }
@@ -359,13 +365,13 @@ static int printUsage(const char *executable)
     << "      --selectFirst  - Select first certificate in store." << endl
     << "      --thumbprint=  - Select certificate in store with specified thumbprint (HEX)." << endl
 #endif
-    << "      --pkcs11[=]    - default is " << (CONF(PKCS11Driver)) << ". Path of PKCS11 driver." << endl
+    << "      --pkcs11[=]    - default is " << CONF(PKCS11Driver) << ". Path of PKCS11 driver." << endl
     << "      --pkcs12=      - pkcs12 signer certificate (use --pin for password)" << endl
     << "      --pin=         - default asks pin from prompt" << endl
     << "      --sha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256)" << endl
-    << "      --tsurl         - option to change TS URL (default " << (CONF(TSUrl)) << ")" << endl
+    << "      --tsurl         - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
     << "      --dontValidate  - Don't validate container on signature creation" << endl << endl
     << "  All commands:" << endl
     << "      --nocolor       - Disable terminal colors" << endl
@@ -549,7 +555,8 @@ static int validateSignature(const Signature *s, ToolConfig::Warning warning = T
 static int open(int argc, char* argv[])
 {
     ToolConfig::Warning reportwarnings = ToolConfig::WWarning;
-    string path, extractPath, policy;
+    string path, policy;
+    string_view extractPath;
     bool validateOnExtract = false;
     int returnCode = EXIT_SUCCESS;
 
@@ -570,7 +577,7 @@ static int open(int argc, char* argv[])
             size_t pos = arg.find('=');
             if(pos != string::npos)
                 extractPath = arg.substr(pos + 1);
-            if(!File::dirExists(extractPath))
+            if(!fs::is_directory(fs::u8path(extractPath)))
                 THROW("Path is not directory");
         }
         else if(arg == "--validateOnExtract")
@@ -593,12 +600,12 @@ static int open(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    auto extractFiles = [&doc](const string &path) {
+    auto extractFiles = [&doc,extractPath]() {
         cout << "Extracting documents: " << endl;
         for(const DataFile *file: doc->dataFiles())
         {
             try {
-                string dst = path + "/" + File::fileName(file->fileName());
+                string dst = extractPath + "/" + File::fileName(file->fileName());
                 file->saveAs(dst);
                 cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
             } catch(const Exception &e) {
@@ -611,7 +618,7 @@ static int open(int argc, char* argv[])
     };
 
     if(!extractPath.empty() && !validateOnExtract)
-        return extractFiles(extractPath);
+        return extractFiles();
 
     cout << "Container file: " << path << endl;
     cout << "Container type: " << doc->mediaType() << endl;
@@ -671,7 +678,7 @@ static int open(int argc, char* argv[])
             << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
     }
     if(returnCode == EXIT_SUCCESS && !extractPath.empty())
-        return extractFiles(extractPath);
+        return extractFiles();
     return returnCode;
 }
 
@@ -919,7 +926,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
 {
     int returnCode = EXIT_SUCCESS;
     string cache = CONF(TSLCache);
-    TSL t({});
+    TSL t(cache + "/" + File::fileName(CONF(TSLUrl)));
     cout << "TSL: " << t.url() << endl
         << "         Type: " << t.type() << endl
         << "    Territory: " << t.territory() << endl

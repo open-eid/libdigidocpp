@@ -219,18 +219,6 @@ string File::decodeName(const f_string &localFileName)
 }
 
 /**
- * Checks whether directory exists and is type of directory.
- *
- * @param path path to the directory, which existence is checked.
- * @return returns true if the path is a directory and it exists.
- */
-bool File::dirExists(const string &path)
-{
-    f_statbuf fileInfo;
-    return f_stat(encodeName(path).c_str(), &fileInfo) == 0 && (fileInfo.st_mode & S_IFMT) == S_IFDIR;
-}
-
-/**
  * Checks whether file exists and is type of file.
  *
  * @param path path to the file, which existence is checked.
