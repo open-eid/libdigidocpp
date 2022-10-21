@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-XERCES_DIR=xerces-c-3.2.3
+XERCES_DIR=xerces-c-3.2.4
 XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
@@ -115,13 +115,8 @@ function xerces {
     rm -rf ${XERCES_DIR}
     tar xf ${XERCES_DIR}.tar.xz
     cd ${XERCES_DIR}
-    sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
     sed -ie 's!SUBDIRS = doc src tests samples!SUBDIRS = src!' Makefile.in 
-    case "${ARGS}" in
-    *ios*|*simulator*) XERCESCONFIGURE="${CONFIGURE} --enable-transcoder-iconv" ;;
-    *) XERCESCONFIGURE=${CONFIGURE} ;;
-    esac
-    ./configure --prefix=${TARGET_PATH} ${XERCESCONFIGURE}
+    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --enable-transcoder-iconv
     make -s
     sudo make install
     cd -
