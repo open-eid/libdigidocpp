@@ -481,10 +481,9 @@ BOOST_AUTO_TEST_SUITE(ConfSuite)
 BOOST_AUTO_TEST_CASE(XmlConfCase) {
     XmlConfCurrent c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "/conf.xsd"));
     BOOST_CHECK_EQUAL(c.logLevel(), 2);
-    BOOST_CHECK_EQUAL(c.logFile(), "digidocpp.log");
-    BOOST_CHECK_EQUAL(c.digestUri(), URI_SHA256);
+    BOOST_CHECK_EQUAL(c.logFile(), "digidocpp-test.log");
+    BOOST_CHECK_EQUAL(c.digestUri(), URI_SHA512);
     //BOOST_CHECK_EQUAL(c.PKCS11Driver(), PKCS11_MODULE);
-    BOOST_CHECK_EQUAL(c.xsdPath().substr(c.xsdPath().size() - 6, 6), "schema");
     BOOST_CHECK_EQUAL(c.proxyHost(), "host");
     BOOST_CHECK_EQUAL(c.proxyPort(), "port");
     BOOST_CHECK_EQUAL(c.proxyUser(), "user");

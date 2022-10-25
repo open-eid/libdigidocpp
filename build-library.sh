@@ -79,7 +79,6 @@ case "$@" in
     -DCMAKE_C_COMPILER_WORKS=yes \
     -DCMAKE_CXX_COMPILER_WORKS=yes \
     -DCMAKE_OSX_SYSROOT=${SYSROOT} \
-    -DIOS=YES \
     -DFRAMEWORK=off \
     -DUSE_KEYCHAIN=off \
     -DSWIG_EXECUTABLE=NOTFOUND \
@@ -97,17 +96,20 @@ case "$@" in
   export MACOSX_DEPLOYMENT_TARGET
 esac
 
-rm -rf ${TARGET}
-mkdir -p ${TARGET}
-cd ${TARGET}
-cmake \
+cmake --fresh -B ${TARGET} -S . \
     -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
     -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
     -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
     -DXercesC_ROOT=${TARGET_PATH} \
-    ${CMAKEARGS} \
-    ..
-make
-sudo make ${@:2}
-cd ..
+    ${CMAKEARGS}
+cmake --build ${TARGET}
+
+while test $# -gt 0; do
+    case "$1" in
+        android*|*ios*|*mac*|*osx*) ;;
+        install*) sudo cmake --build ${TARGET} --target $1 ;;
+        *) cmake --build ${TARGET} --target $1 ;;
+    esac
+    shift
+done

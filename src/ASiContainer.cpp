@@ -37,7 +37,7 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-constexpr unsigned long MAX_MEM_FILE = 500*1024*1024;
+constexpr unsigned long MAX_MEM_FILE = 500UL*1024UL*1024UL;
 
 class ASiContainer::Private
 {
@@ -48,11 +48,11 @@ public:
     map<string, ZipSerialize::Properties> properties;
 };
 
-const string ASiContainer::ASICE_EXTENSION = "asice";
-const string ASiContainer::ASICE_EXTENSION_ABBR = "sce";
-const string ASiContainer::ASICS_EXTENSION = "asics";
-const string ASiContainer::ASICS_EXTENSION_ABBR = "scs";
-const string ASiContainer::BDOC_EXTENSION = "bdoc";
+const string_view ASiContainer::ASICE_EXTENSION = "asice";
+const string_view ASiContainer::ASICE_EXTENSION_ABBR = "sce";
+const string_view ASiContainer::ASICS_EXTENSION = "asics";
+const string_view ASiContainer::ASICS_EXTENSION_ABBR = "scs";
+const string_view ASiContainer::BDOC_EXTENSION = "bdoc";
 
 const string ASiContainer::MIMETYPE_ASIC_E = "application/vnd.etsi.asic-e+zip";
 const string ASiContainer::MIMETYPE_ASIC_S = "application/vnd.etsi.asic-s+zip";
@@ -91,8 +91,8 @@ unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeReq
     if(mimetypeRequired && list[0] != "mimetype")
         THROW("required mimetype not found");
 
-    // ETSI TS 102 918: mimetype has to be the first in the archive;
-    if(list[0] == "mimetype")
+    // ETSI TS 102 918: mimetype has to be the first in the archive
+    if(list.front() == "mimetype")
     {
         stringstream data;
         z->extract(list.front(), data);
@@ -178,20 +178,19 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
     if(!File::fileExists(path))
         THROW("Document file '%s' does not exist.", path.c_str());
 
-    ZipSerialize::Properties prop = { appInfo(), File::modifiedTime(path), File::fileSize(path) };
-    zproperty(File::fileName(path), prop);
+    ZipSerialize::Properties prop { appInfo(), File::modifiedTime(path), File::fileSize(path) };
+    bool useTempFile = prop.size > MAX_MEM_FILE;
+    zproperty(File::fileName(path), move(prop));
     unique_ptr<istream> is;
-    if(prop.size > MAX_MEM_FILE)
+    if(useTempFile)
     {
         is = make_unique<ifstream>(File::encodeName(path).c_str(), ifstream::binary);
     }
     else
     {
-        ifstream file(File::encodeName(path).c_str(), ifstream::binary);
         stringstream *data = new stringstream;
-        if(file)
+        if(ifstream file(File::encodeName(path).c_str(), ifstream::binary); file)
             *data << file.rdbuf();
-        file.close();
         is.reset(data);
     }
     addDataFilePrivate(move(is), fileName, mediaType);
@@ -235,7 +234,7 @@ void ASiContainer::removeDataFile(unsigned int id)
     if(!d->signatures.empty())
         THROW("Can not remove document from container which has signatures, remove all signatures before removing document.");
     if(id >= d->documents.size())
-        THROW("Incorrect document id %u, there are only %lu documents in container.", id, (unsigned long)dataFiles().size());
+        THROW("Incorrect document id %u, there are only %zu documents in container.", id, dataFiles().size());
     vector<DataFile*>::const_iterator it = (d->documents.cbegin() + id);
     delete *it;
     d->documents.erase(it);
@@ -256,7 +255,7 @@ Signature* ASiContainer::addSignature(unique_ptr<Signature> &&signature)
 void ASiContainer::removeSignature(unsigned int id)
 {
     if(id >= d->signatures.size())
-        THROW("Incorrect signature id %u, there are only %lu signatures in container.", id, (unsigned long)d->signatures.size());
+        THROW("Incorrect signature id %u, there are only %zu signatures in container.", id, d->signatures.size());
     vector<Signature*>::const_iterator it = (d->signatures.cbegin() + id);
     delete *it;
     d->signatures.erase(it);
@@ -264,8 +263,7 @@ void ASiContainer::removeSignature(unsigned int id)
 
 void ASiContainer::deleteSignature(Signature* s)
 {
-    vector<Signature*>::const_iterator i = find(d->signatures.cbegin(), d->signatures.cend(), s);
-    if(i != d->signatures.cend())
+    if(auto i = find(d->signatures.cbegin(), d->signatures.cend(), s); i != d->signatures.cend())
         d->signatures.erase(i);
     delete s;
 }
@@ -288,9 +286,9 @@ ZipSerialize::Properties ASiContainer::zproperty(const string &file) const
     return d->properties[file] = { appInfo(), time(nullptr), 0 };
 }
 
-void ASiContainer::zproperty(const string &file, const ZipSerialize::Properties &prop)
+void ASiContainer::zproperty(const string &file, ZipSerialize::Properties &&prop)
 {
-    d->properties[file] = prop;
+    d->properties[file] = move(prop);
 }
 
 /**
@@ -310,7 +308,7 @@ string ASiContainer::readMimetype(istream &is)
        (bom[0] == 0xEF && bom[1] == 0xFF))
         THROW("Mimetype file must be UTF-8 format.");
     // does not contain UTF-8 BOM reset pos
-    if(!(bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF))
+    if(bom[0] != 0xEF || bom[1] != 0xBB || bom[2] != 0xBF)
         is.seekg(0, ios::beg);
 
     string text;

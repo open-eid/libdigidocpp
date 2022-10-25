@@ -42,10 +42,10 @@ namespace digidoc
               using f_string_view = std::string_view;
 #endif
               static std::string confPath();
-              static std::string env(std::string_view varname);
               static bool fileExists(const std::string& path);
               static f_string encodeName(std::string_view fileName);
               static std::string decodeName(const f_string_view &localFileName);
+              static std::string digidocppPath();
               static bool isRelative(const std::string &path);
               static time_t modifiedTime(const std::string &path);
               static void updateModifiedTime(const std::string &path, time_t time);
@@ -72,6 +72,7 @@ namespace digidoc
 
         private:
               static std::stack<std::string> tempFiles;
+              static std::string env(std::string_view varname);
         };
 
     }

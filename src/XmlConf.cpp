@@ -127,16 +127,7 @@ XmlConf::Private::Private(const string &path, string schema)
         }
     }
 
-#ifdef _WIN32
-    USER_CONF_LOC = File::env("APPDATA");
-    if (!USER_CONF_LOC.empty())
-        USER_CONF_LOC += "\\digidocpp\\digidocpp.conf";
-#else
-    USER_CONF_LOC = File::env("HOME");
-    if (!USER_CONF_LOC.empty())
-        USER_CONF_LOC += "/.digidocpp/digidocpp.conf";
-#endif
-
+    USER_CONF_LOC = File::path(File::digidocppPath(), "digidocpp.conf");
     if(path.empty())
     {
         init(File::confPath() + "/digidocpp.conf", true);
