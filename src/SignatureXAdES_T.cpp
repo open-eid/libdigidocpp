@@ -22,6 +22,7 @@
 #include "ASiC_E.h"
 #include "Conf.h"
 #include "crypto/Digest.h"
+#include "crypto/OCSP.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
@@ -176,6 +177,33 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             {
                 const auto &base64 = certValue.encapsulatedX509Certificate().at(i);
                 checkCertID(certRefs.cert().at(i), X509Cert((const unsigned char*)base64.data(), base64.size()));
+            }
+        }
+
+        const auto &completeRevRefs = unsignedSignatureProperties().completeRevocationRefs();
+        if(completeRevRefs.size() > 1)
+            THROW("UnsignedSignatureProperties may contain only one CompleteRevocationRefs element");
+        if(completeRevRefs.size() == 1)
+        {
+            if(completeRevRefs.front().cRLRefs())
+                THROW("CompleteRevocationRefs may contain only one OCSPRefs element");
+            const auto &ocspRefs = completeRevRefs.front().oCSPRefs();
+            if(!ocspRefs)
+                THROW("CompleteRevocationRefs is missing OCSPRefs element");
+            const auto &revValues = unsignedSignatureProperties().revocationValues();
+            if(revValues.size() != 1)
+                THROW("UnsignedSignatureProperties may contain only one RevocationValues element");
+            const auto &ocspValues = revValues.front().oCSPValues();
+            if(!ocspValues)
+                THROW("RevocationValues is missing OCSPValues element");
+            if(ocspRefs->oCSPRef().size() != ocspValues->encapsulatedOCSPValue().size())
+                THROW("CertificateValues::EncapsulatedX509Certificate count does not equal with CompleteCertificateRefs::Cert");
+            for(size_t i = 0; i < ocspRefs->oCSPRef().size(); ++i)
+            {
+                const auto &base64 = ocspValues->encapsulatedOCSPValue().at(i);
+                const auto &ocspRef = ocspRefs->oCSPRef().at(i);
+                OCSP ocsp((const unsigned char*)base64.data(), base64.size());
+                checkDigest(ocspRef.digestAlgAndValue().get(), ocsp.toDer());
             }
         }
     } catch(const Exception &e) {
