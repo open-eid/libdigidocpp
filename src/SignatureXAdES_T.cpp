@@ -159,6 +159,25 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             e.setCode(Exception::ReferenceDigestWeak);
             exception.addCause(e);
         }
+
+        const auto &completeCertRefs = unsignedSignatureProperties().completeCertificateRefs();
+        if(completeCertRefs.size() > 1)
+            THROW("UnsignedSignatureProperties may contain only one CompleteCertificateRefs element");
+        if(completeCertRefs.size() == 1)
+        {
+            const auto &certValues = unsignedSignatureProperties().certificateValues();
+            if(certValues.size() != 1)
+                THROW("UnsignedSignatureProperties may contain only one CertificateValues element");
+            const auto &certValue = certValues.front();
+            const auto &certRefs = completeCertRefs.front().certRefs();
+            if(certRefs.cert().size() != certValue.encapsulatedX509Certificate().size())
+                THROW("CertificateValues::EncapsulatedX509Certificate count does not equal with CompleteCertificateRefs::Cert");
+            for(size_t i = 0; i < certRefs.cert().size(); ++i)
+            {
+                const auto &base64 = certValue.encapsulatedX509Certificate().at(i);
+                checkCertID(certRefs.cert().at(i), X509Cert((const unsigned char*)base64.data(), base64.size()));
+            }
+        }
     } catch(const Exception &e) {
         exception.addCause(e);
     }
