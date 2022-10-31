@@ -1,7 +1,7 @@
 name: CI
 on: [push, pull_request]
 permissions:
-  contents: write
+  contents: read
 env:
   RUN_TESTS: ALL
   BUILD_NUMBER: ${{ github.run_number }}
@@ -207,7 +207,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen
     - name: Build docs
       run: |
         cmake -B build -S .
@@ -231,7 +231,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
     - name: Download Coverity Build Tool
       run: |
         curl --silent --data "token=$TOKEN&project=$PROJECTNAME" -o cov-analysis-linux64.tar.gz https://scan.coverity.com/download/cxx/linux64
