@@ -54,18 +54,18 @@ using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
 
-const set<string> TSL::SCHEMES_URI = {
+const set<string_view> TSL::SCHEMES_URI = {
     "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/schemes",
     "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists",
 };
 
-const set<string> TSL::GENERIC_URI = {
+const set<string_view> TSL::GENERIC_URI = {
     "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/generic",
     "http://uri.etsi.org/TrstSvc/TSLtype/generic/eSigDir-1999-93-EC-TrustedList",
     "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric",
 };
 
-const set<string> TSL::SERVICESTATUS_START = {
+const set<string_view> TSL::SERVICESTATUS_START = {
     "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/Svcstatus/undersupervision",
     //ts_119612v010201
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision",
@@ -77,7 +77,7 @@ const set<string> TSL::SERVICESTATUS_START = {
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/recognisedatnationallevel",
 };
 
-const set<string> TSL::SERVICESTATUS_END = {
+const set<string_view> TSL::SERVICESTATUS_END = {
     //ts_119612v010201
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionceased",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionrevoked",
@@ -88,7 +88,7 @@ const set<string> TSL::SERVICESTATUS_END = {
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/deprecatedatnationallevel",
 };
 
-const set<string> TSL::SERVICES_SUPPORTED = {
+const set<string_view> TSL::SERVICES_SUPPORTED = {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
     //"http://uri.etsi.org/TrstSvc/Svctype/CA/PKC", //???
     //"http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC", //???
@@ -102,19 +102,12 @@ const set<string> TSL::SERVICES_SUPPORTED = {
 
 
 
-
-TSL::TSL(const string &file)
-    : path(file)
+TSL::TSL(string file)
+    : path(move(file))
 {
-    if(file.empty())
-    {
-        path = CONF(TSLCache);
-        path += "/" + File::fileName(CONF(TSLUrl));
-    }
-    if(!File::fileExists(path))
-        return;
-
     try {
+        if(!File::fileExists(path))
+            return;
         Properties properties;
         properties.schema_location("http://uri.etsi.org/02231/v2#",
             Conf::instance()->xsdPath() + "/ts_119612v020201_201601xsd.xsd");
@@ -125,28 +118,28 @@ TSL::TSL(const string &file)
     {
         stringstream s;
         s << e;
-        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), s.str().c_str());
+        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), path.c_str(), s.str().c_str());
     }
     catch(const xsd::cxx::exception &e)
     {
-        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), e.what());
+        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), path.c_str(), e.what());
     }
     catch(const XMLException &e)
     {
         try {
             string result = xsd::cxx::xml::transcode<char>(e.getMessage());
-            WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), result.c_str());
+            WARN("Failed to parse TSL %s %s: %s", territory().c_str(), path.c_str(), result.c_str());
         } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-             WARN("Failed to parse TSL %s %s", territory().c_str(), file.c_str());
+             WARN("Failed to parse TSL %s %s", territory().c_str(), path.c_str());
         }
     }
     catch(const Exception &e)
     {
-        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), file.c_str(), e.msg().c_str());
+        WARN("Failed to parse TSL %s %s: %s", territory().c_str(), path.c_str(), e.msg().c_str());
     }
     catch(...)
     {
-        WARN("Failed to parse TSL %s %s", territory().c_str(), file.c_str());
+        WARN("Failed to parse TSL %s %s", territory().c_str(), path.c_str());
     }
 }
 
@@ -158,19 +151,17 @@ bool TSL::activate(const string &territory)
     string path = cache + "/" + territory + ".xml";
     if(File::fileExists(path))
         return false;
-    ofstream file(File::encodeName(path).c_str(), ofstream::binary);
-    file << " ";
-    file.close();
+    ofstream(File::encodeName(path).c_str(), ofstream::binary) << " ";
     return true;
 }
 
 vector<TSL::Service> TSL::services() const
 {
-    vector<Service> services;
     if(GENERIC_URI.find(type()) == GENERIC_URI.cend() ||
         !tsl->trustServiceProviderList())
-        return services;
+        return {};
 
+    vector<Service> services;
     for(const TSPType &pointer: tsl->trustServiceProviderList()->trustServiceProvider())
     {
         for(const TSPServiceType &service: pointer.tSPServices().tSPService())
@@ -207,6 +198,23 @@ void TSL::debugException(const digidoc::Exception &e)
         debugException(ex);
 }
 
+string TSL::fetch(const string &url, const string &path)
+{
+    try
+    {
+        Connect::Result r = Connect(url, "GET", CONF(TSLTimeOut)).exec({{"Accept-Encoding", "gzip"}});
+        if(!r.isOK() || r.content.empty())
+            THROW("HTTP status code is not 200 or content is empty");
+        ofstream(File::encodeName(path).c_str(), fstream::binary|fstream::trunc) << r.content;
+        return r.headers["ETag"];
+    }
+    catch(const Exception &)
+    {
+        ERR("TSL %s Failed to download list", url.c_str());
+        throw;
+    }
+}
+
 bool TSL::isExpired() const
 {
     return !tsl || !tsl->schemeInformation().nextUpdate().dateTime() ||
@@ -229,20 +237,20 @@ string TSL::operatorName() const
     return !tsl ? string() : toString(tsl->schemeInformation().schemeOperatorName());
 }
 
-vector<TSL::Service> TSL::parse(int timeout)
+vector<TSL::Service> TSL::parse()
 {
     string url = CONF(TSLUrl);
     string cache = CONF(TSLCache);
     vector<X509Cert> cert = CONF(TSLCerts);
     File::createDirectory(cache);
-    return parse(url, cert, cache, File::fileName(url), timeout);
+    return parse(url, cert, cache, File::fileName(url));
 }
 
 vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs,
-    const string &cache, const string &territory, int timeout)
+    const string &cache, const string &territory)
 {
     try {
-        TSL tsl = parseTSL(url, certs, cache, territory, timeout);
+        TSL tsl = parseTSL(url, certs, cache, territory);
         if(tsl.pointers().empty())
             return tsl.services();
 
@@ -251,8 +259,8 @@ vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs
         {
             if(!File::fileExists(cache + "/" + p.territory + ".xml"))
                 continue;
-            futures.push_back(async(launch::async, [p, cache, timeout]{
-                return parse(p.location, p.certs, cache, p.territory + ".xml", timeout);
+            futures.push_back(async(launch::async, [p, cache]{
+                return parse(p.location, p.certs, cache, p.territory + ".xml");
             }));
         }
         vector<Service> list;
@@ -272,66 +280,59 @@ vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs
 }
 
 TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
-    const string &cache, const string &territory, int timeout, int recursion)
+    const string &cache, const string &territory)
 {
-    if(recursion > 3)
-        THROW("PIVOT TSL recursion parsing limit");
-    string path = cache + "/" + territory;
+    string path = File::path(cache, territory);
+    TSL valid;
     try {
         TSL tsl(path);
         tsl.validate(certs);
-        if(tsl.isExpired() && !(CONF(TSLAllowExpired)))
-            THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
-        if((CONF(TSLOnlineDigest)) && (File::modifiedTime(path) < (time(nullptr) - (60 * 60 * 24))))
+        valid = tsl;
+        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
+
+        if(valid.isExpired())
         {
-            if(tsl.validateETag(url, timeout))
+            if(!CONF(TSLAutoUpdate) && CONF(TSLAllowExpired))
+                return valid;
+            THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
+        }
+
+        if(CONF(TSLOnlineDigest) && (File::modifiedTime(path) < (time(nullptr) - (60 * 60 * 24))))
+        {
+            if(valid.validateETag(url))
                 File::updateModifiedTime(path, time(nullptr));
         }
-        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
-        return tsl;
+
+        return valid;
     } catch(const Exception &) {
         ERR("TSL %s signature is invalid", territory.c_str());
-        if(!(CONF(TSLAutoUpdate)))
+        if(!CONF(TSLAutoUpdate))
             throw;
     }
 
-    string tmp = path + ".tmp";
-    string etag;
-    try
-    {
-        Connect::Result r = Connect(url, "GET", timeout).exec({{"Accept-Encoding", "gzip"}});
-        if(!r.isOK() || r.content.empty())
-            THROW("HTTP status code is not 200 or content is empty");
-        ofstream(File::encodeName(tmp).c_str(), fstream::binary|fstream::trunc) << r.content;
-        etag = r.headers["ETag"];
-    }
-    catch(const Exception &)
-    {
-        ERR("TSL %s Failed to download list", url.c_str());
-        throw;
-    }
-
-    TSL tsl = TSL(tmp);
     try {
+        string tmp = path + ".tmp";
+        string etag = fetch(url, tmp);
+        TSL tsl = TSL(tmp);
         tsl.validate(certs);
+        valid = tsl;
+
+        ofstream(File::encodeName(path).c_str(), ofstream::binary|fstream::trunc)
+            << ifstream(File::encodeName(tmp).c_str(), fstream::binary).rdbuf();
+        File::removeFile(tmp);
+
+        ofstream(File::encodeName(path + ".etag").c_str(), ofstream::trunc) << etag;
+        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
     } catch(const Exception &) {
         ERR("TSL %s signature is invalid", territory.c_str());
-        vector<string> pivotURLs = tsl.pivotURLs();
-        if(pivotURLs.empty())
+        if(!valid.tsl)
             throw;
-        // https://ec.europa.eu/tools/lotl/pivot-lotl-explanation.html
-        TSL pivot = parseTSL(pivotURLs[0], certs, cache, File::fileName(pivotURLs[0]), timeout, recursion + 1);
-        tsl.validate(pivot.signingCerts());
     }
 
-    ofstream(File::encodeName(path).c_str(), ofstream::binary|fstream::trunc)
-        << ifstream(File::encodeName(tmp).c_str(), fstream::binary).rdbuf();
-    File::removeFile(tmp);
+    if(valid.isExpired() && !CONF(TSLAllowExpired))
+        THROW("TSL %s (%llu) is expired", territory.c_str(), valid.sequenceNumber());
 
-    ofstream(File::encodeName(path + ".etag").c_str(), ofstream::trunc) << etag;
-
-    DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
-    return tsl;
+    return valid;
 }
 
 template<class Info>
@@ -428,7 +429,7 @@ vector<string> TSL::pivotURLs() const
 {
     if(!tsl)
         return {};
-    string current = File::fileName(path);
+    string current(File::fileName(path));
     size_t pos = current.find_first_of('.');
     if(current.find("pivot") != string::npos && pos != string::npos)
         current.resize(pos);
@@ -443,10 +444,10 @@ vector<string> TSL::pivotURLs() const
 
 vector<TSL::Pointer> TSL::pointers() const
 {
-    vector<Pointer> pointer;
     if(SCHEMES_URI.find(type()) == SCHEMES_URI.cend() ||
         !tsl->schemeInformation().pointersToOtherTSL())
-        return pointer;
+        return {};
+    vector<Pointer> pointer;
     for(const OtherTSLPointersType::OtherTSLPointerType &other:
         tsl->schemeInformation().pointersToOtherTSL()->otherTSLPointer())
     {
@@ -468,11 +469,11 @@ unsigned long long  TSL::sequenceNumber() const
     return !tsl ? 0 : tsl->schemeInformation().tSLSequenceNumber();
 }
 
-vector<X509Cert> TSL::serviceDigitalIdentities(const tsl::OtherTSLPointerType &other, const string &region)
+vector<X509Cert> TSL::serviceDigitalIdentities(const tsl::OtherTSLPointerType &other, string_view region)
 {
-    vector<X509Cert> result;
     if(!other.serviceDigitalIdentities())
-        return result;
+        return {};
+    vector<X509Cert> result;
     for(const auto &service: other.serviceDigitalIdentities()->serviceDigitalIdentity())
     {
         for(const auto &digitalID: service.digitalId())
@@ -484,23 +485,35 @@ vector<X509Cert> TSL::serviceDigitalIdentities(const tsl::OtherTSLPointerType &o
                 result.emplace_back((const unsigned char*)base64.data(), base64.size());
                 continue;
             } catch(const Exception &e) {
-                DEBUG("Failed to parse %s certificate, Testing also parse as PEM: %s", region.c_str(), e.msg().c_str());
+                DEBUG("Failed to parse %s certificate, Testing also parse as PEM: %s", region.data(), e.msg().c_str());
             }
             try {
                 result.emplace_back((const unsigned char*)base64.data(), base64.size(), X509Cert::Pem);
             } catch(const Exception &e) {
-                DEBUG("Failed to parse %s certificate as PEM: %s", region.c_str(), e.msg().c_str());
+                DEBUG("Failed to parse %s certificate as PEM: %s", region.data(), e.msg().c_str());
             }
         }
     }
     return result;
 }
 
+X509Cert TSL::signingCert() const
+{
+    if(!tsl ||
+        !tsl->signature() ||
+        !tsl->signature()->keyInfo() ||
+        tsl->signature()->keyInfo()->x509Data().empty() ||
+        tsl->signature()->keyInfo()->x509Data().front().x509Certificate().empty())
+        return X509Cert();
+    const Base64Binary &base64 = tsl->signature()->keyInfo()->x509Data().front().x509Certificate().front();
+    return X509Cert((const unsigned char*)base64.data(), base64.size());
+}
+
 vector<X509Cert> TSL::signingCerts() const
 {
+    if(!tsl || !tsl->schemeInformation().pointersToOtherTSL())
+        return {};
     vector<X509Cert> result;
-    if(!tsl->schemeInformation().pointersToOtherTSL())
-        return result;
     for(const auto &other: tsl->schemeInformation().pointersToOtherTSL()->otherTSLPointer())
     {
         vector<X509Cert> certs = serviceDigitalIdentities(other, "pivot");
@@ -515,7 +528,7 @@ string TSL::territory() const
         string() : tsl->schemeInformation().schemeTerritory().get();
 }
 
-string TSL::toString(const InternationalNamesType &obj, const string &lang)
+string TSL::toString(const InternationalNamesType &obj, string_view lang)
 {
     for(const InternationalNamesType::NameType &name: obj.name())
         if(name.lang() == lang)
@@ -538,30 +551,19 @@ string TSL::url() const
     return info.distributionPoints().get().uRI().front();
 }
 
-void TSL::validate(const vector<X509Cert> &certs)
+void TSL::validate(const X509Cert &cert) const
 {
     if(!tsl)
         THROW("Failed to parse XML");
-
-    X509Cert signingCert;
-    if(tsl->signature() &&
-        tsl->signature()->keyInfo() &&
-        !tsl->signature()->keyInfo()->x509Data().empty() &&
-        !tsl->signature()->keyInfo()->x509Data().front().x509Certificate().empty())
-    {
-        const Base64Binary &base64 = tsl->signature()->keyInfo()->x509Data().front().x509Certificate().front();
-        signingCert = X509Cert((const unsigned char*)base64.data(), base64.size());
-    }
-
-    if(find(certs.cbegin(), certs.cend(), signingCert) == certs.cend())
-        THROW("TSL %s Signature is signed with untrusted certificate", territory().c_str());
+    if(!cert)
+        THROW("TSL empty signing certificate");
 
     try {
         XSECProvider prov;
         auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
         unique_ptr<DSIGSignature, decltype(deleteSig)> sig(prov.newSignatureFromDOM(tsl->_node()->getOwnerDocument()), deleteSig);
         //sig->setKeyInfoResolver(new XSECKeyInfoResolverDefault);
-        sig->setSigningKey(OpenSSLCryptoX509(signingCert.handle()).clonePublicKey());
+        sig->setSigningKey(OpenSSLCryptoX509(cert.handle()).clonePublicKey());
         sig->registerIdAttributeName((const XMLCh*)u"ID");
         sig->setIdByAttributeName(true);
         sig->load();
@@ -585,7 +587,7 @@ void TSL::validate(const vector<X509Cert> &certs)
         }
     }
     catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-        THROW("Failed to parse DDoc XML.");
+        THROW("Failed to parse XML.");
     }
     catch(const Exception &)
     {
@@ -597,17 +599,47 @@ void TSL::validate(const vector<X509Cert> &certs)
     }
 }
 
+void TSL::validate(const vector<X509Cert> &certs, int recursion) const
+{
+    if(recursion > 3)
+        THROW("PIVOT TSL recursion parsing limit");
+    if(certs.empty())
+        THROW("TSL trusted signing certificates empty");
+    X509Cert cert = signingCert();
+    if(find(certs.cbegin(), certs.cend(), cert) != certs.cend())
+    {
+        validate(cert);
+        return;
+    }
+
+    vector<string> urls = pivotURLs();
+    if(urls.empty())
+        THROW("TSL %s Signature is signed with untrusted certificate", territory().c_str());
+
+    // https://ec.europa.eu/tools/lotl/pivot-lotl-explanation.html
+    string path = File::path(CONF(TSLCache), File::fileName(urls[0]));
+    TSL pivot(path);
+    if(!pivot.tsl)
+    {
+        string etag = fetch(urls[0], path);
+        ofstream(File::encodeName(path + ".etag").c_str(), ofstream::trunc) << etag;
+        pivot = TSL(path);
+    }
+    pivot.validate(certs, recursion + 1);
+    validate(pivot.signingCerts(), recursion);
+}
+
 /**
  * Check if HTTP ETag header is the same as ETag of the cached TSL
  * @param url Url of the TSL
  * @param timeout Time to wait for downloading
  * @throws Exception if ETag does not match cached ETag and TSL loading should be triggered
  */
-bool TSL::validateETag(const string &url, int timeout)
+bool TSL::validateETag(const string &url)
 {
     Connect::Result r;
     try {
-        r = Connect(url, "HEAD", timeout).exec({{"Accept-Encoding", "gzip"}});
+        r = Connect(url, "HEAD", CONF(TSLTimeOut)).exec({{"Accept-Encoding", "gzip"}});
         if(!r.isOK())
             return false;
     } catch(const Exception &e) {
@@ -618,21 +650,21 @@ bool TSL::validateETag(const string &url, int timeout)
 
     map<string,string>::const_iterator it = r.headers.find("ETag");
     if(it == r.headers.cend())
-        return validateRemoteDigest(url, timeout);
+        return validateRemoteDigest(url);
 
     DEBUG("Remote ETag: %s", it->second.c_str());
     ifstream is(File::encodeName(path + ".etag"));
     if(!is.is_open())
         THROW("Cached ETag does not exist");
     string etag(it->second.size(), 0);
-    is.read(&etag[0], streamsize(etag.size()));
+    is.read(etag.data(), streamsize(etag.size()));
     DEBUG("Cached ETag: %s", etag.c_str());
     if(etag != it->second)
         THROW("Remote ETag does not match");
     return true;
 }
 
-bool TSL::validateRemoteDigest(const string &url, int timeout)
+bool TSL::validateRemoteDigest(const string &url)
 {
     size_t pos = url.find_last_of("/.");
     if(pos == string::npos)
@@ -641,7 +673,7 @@ bool TSL::validateRemoteDigest(const string &url, int timeout)
     Connect::Result r;
     try
     {
-        r= Connect(url.substr(0, pos) + ".sha2", "GET", timeout).exec();
+        r= Connect(url.substr(0, pos) + ".sha2", "GET", CONF(TSLTimeOut)).exec();
         if(!r.isOK())
             return false;
     } catch(const Exception &e) {

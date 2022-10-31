@@ -114,5 +114,5 @@ private:
 };
 
 using ConfCurrent = ConfV4;
-#define CONF(method) ConfCurrent::instance() ? ConfCurrent::instance()->method() : ConfCurrent().method()
+#define CONF(method) (ConfCurrent::instance() ? ConfCurrent::instance()->method() : ConfCurrent().method())
 }

@@ -37,9 +37,10 @@ public:
     struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; std::string type, additional, name; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
 
-    TSL(const std::string &file);
+    TSL(std::string file = {});
     bool isExpired() const;
-    void validate(const std::vector<X509Cert> &certs);
+    void validate(const X509Cert &cert) const;
+    void validate(const std::vector<X509Cert> &certs, int recursion = 0) const;
 
     std::string type() const;
     std::string operatorName() const;
@@ -53,30 +54,32 @@ public:
     std::vector<Service> services() const;
 
     static bool activate(const std::string &territory);
-    static std::vector<Service> parse(int timeout);
+    static std::vector<Service> parse();
 
 private:
     std::vector<std::string> pivotURLs() const;
+    X509Cert signingCert() const;
     std::vector<X509Cert> signingCerts() const;
-	bool validateETag(const std::string &url, int timeout);
-    bool validateRemoteDigest(const std::string &url, int timeout);
+    bool validateETag(const std::string &url);
+    bool validateRemoteDigest(const std::string &url);
 
+    static std::string fetch(const std::string &url, const std::string &path);
     static void debugException(const Exception &e);
     static std::vector<Service> parse(const std::string &url, const std::vector<X509Cert> &certs,
-        const std::string &cache, const std::string &territory, int timeout);
+        const std::string &cache, const std::string &territory);
     static TSL parseTSL(const std::string &url, const std::vector<X509Cert> &certs,
-        const std::string &cache, const std::string &territory, int timeout, int recursion = 0);
+        const std::string &cache, const std::string &territory);
     template<class Info>
     static bool parseInfo(const Info &info, Service &s, time_t &previousTime);
     static std::vector<X509Cert> serviceDigitalIdentities(const tsl::OtherTSLPointerType &other,
-        const std::string &region);
-    static std::string toString(const tsl::InternationalNamesType &obj, const std::string &lang = "en");
+        std::string_view region);
+    static std::string toString(const tsl::InternationalNamesType &obj, std::string_view lang = "en");
 
-    static const std::set<std::string> SCHEMES_URI;
-    static const std::set<std::string> GENERIC_URI;
-    static const std::set<std::string> SERVICESTATUS_START;
-    static const std::set<std::string> SERVICESTATUS_END;
-    static const std::set<std::string> SERVICES_SUPPORTED;
+    static const std::set<std::string_view> SCHEMES_URI;
+    static const std::set<std::string_view> GENERIC_URI;
+    static const std::set<std::string_view> SERVICESTATUS_START;
+    static const std::set<std::string_view> SERVICESTATUS_END;
+    static const std::set<std::string_view> SERVICES_SUPPORTED;
 
     std::shared_ptr<tsl::TrustStatusListType> tsl;
     std::string path;

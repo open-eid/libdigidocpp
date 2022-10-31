@@ -61,7 +61,7 @@ class X509CertStore::Private: public vector<TSL::Service> {
 public:
     void update()
     {
-        vector<TSL::Service> list = TSL::parse(CONF(TSLTimeOut));
+        vector<TSL::Service> list = TSL::parse();
         swap(list);
         INFO("Loaded %zu certificates into TSL certificate store.", size());
     }
