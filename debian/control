@@ -67,12 +67,45 @@ Architecture: any
 Section: libdevel
 Depends:
  libdigidocpp1 (= ${binary:Version}),
- python3,
  ${misc:Depends},
  ${shlibs:Depends}
 Description: DigiDoc digital signature library development files
  This package contains files necessary for developing applications with the
  DigiDoc digital signature library.
+
+Package: libdigidocpp-csharp
+Architecture: any
+Section: libdevel
+Depends:
+ libdigidocpp1 (= ${binary:Version}),
+ ${misc:Depends},
+ ${shlibs:Depends}
+Description: DigiDoc digital signature C# bindings
+ This package contains files necessary for developing applications with the
+ DigiDoc digital signature library using C# bindings.
+
+Package: libdigidocpp-java
+Architecture: any
+Section: libdevel
+Depends:
+ libdigidocpp1 (= ${binary:Version}),
+ ${misc:Depends},
+ ${shlibs:Depends}
+Description: DigiDoc digital signature java bindings
+ This package contains files necessary for developing applications with the
+ DigiDoc digital signature library using java bindings.
+
+Package: libdigidocpp-python
+Architecture: any
+Section: libdevel
+Depends:
+ libdigidocpp1 (= ${binary:Version}),
+ python3,
+ ${misc:Depends},
+ ${shlibs:Depends}
+Description: DigiDoc digital signature python bindings
+ This package contains files necessary for developing applications with the
+ DigiDoc digital signature library using python bindings.
 
 Package: libdigidocpp-doc
 Architecture: all

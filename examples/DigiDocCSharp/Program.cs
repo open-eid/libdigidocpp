@@ -4,36 +4,37 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using digidoc;
 
 namespace DigiDocCSharp
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             if (args.Length < 1)
             {
                 Console.WriteLine("Missing document parameter");
-                help();
+                Help();
                 return;
             }
 
             switch (args[0])
             {
-                case "add": add(args); return;
-                case "extract": extract(Convert.ToInt32(args[1]), args[2]); return;
-                case "sign": sign(args); return;
-                case "websign": websign(args); return;
-                case "verify": verify(args[1]); return;
-                case "version": version(); return;
+                case "add": Add(args); return;
+                case "extract": Extract(Convert.ToInt32(args[1]), args[2]); return;
+                case "sign": Sign(args); return;
+                case "websign": Websign(args); return;
+                case "verify": Verify(args[1]); return;
+                case "version": Version(); return;
                 case "help":
-                default: help(); return;
+                default: Help(); return;
             }
         }
 
-        static void add(string[] args)
+        private static void Add(string[] args)
         {
             digidoc.digidoc.initialize();
             try
@@ -41,7 +42,9 @@ namespace DigiDocCSharp
                 Console.WriteLine("Creating file: " + args[args.Length - 1]);
                 Container b = Container.create(args[args.Length - 1]);
                 for (int i = 1; i < args.Length - 1; ++i)
+                {
                     b.addDataFile(args[i], "application/octet-stream");
+                }
                 b.save();
             }
             catch (Exception e)
@@ -51,7 +54,7 @@ namespace DigiDocCSharp
             digidoc.digidoc.terminate();
         }
 
-        static void extract(int index, string file)
+        private static void Extract(int index, string file)
         {
             digidoc.digidoc.initialize();
             try
@@ -78,7 +81,7 @@ namespace DigiDocCSharp
             digidoc.digidoc.terminate();
         }
 
-        static void help()
+        private static void Help()
         {
             Console.WriteLine("DigiDocCSharp command [params]");
             Console.WriteLine("Command:");
@@ -91,6 +94,9 @@ namespace DigiDocCSharp
             Console.WriteLine("    datafile1 datafile2 ...");
             Console.WriteLine("    file");
             Console.WriteLine(" sign\t\tSigns file");
+#if !_WINDOWS
+            Console.WriteLine("    12345");
+#endif
             Console.WriteLine("    datafile1 datafile2 ...");
             Console.WriteLine("    file");
             Console.WriteLine(" websign\t\tSigns file");
@@ -99,20 +105,34 @@ namespace DigiDocCSharp
             Console.WriteLine("    file");
             Console.WriteLine(" verify\t\tVerifies document signature and shows info");
             Console.WriteLine("    file");
-            version();
+            Version();
         }
 
-        static void sign(string[] args)
+        private static void Sign(string[] args)
         {
             digidoc.digidoc.initialize();
             try
             {
-                Console.WriteLine("Creating file: " + args[args.Length-1]);
+                Console.WriteLine("Creating file: " + args[args.Length - 1]);
                 Container b = Container.create(args[args.Length - 1]);
+#if _WINDOWS
                 for (int i = 1; i < args.Length - 1; ++i)
+#else
+                for (int i = 2; i < args.Length - 1; ++i)
+#endif
+                {
                     b.addDataFile(args[i], "application/octet-stream");
+                }
+#if _WINDOWS
                 using (WinSigner signer = new WinSigner())
+                {
+#else
+                using (PKCS11Signer signer = new PKCS11Signer())
+                {
+                    signer.setPin(args[1]);
+#endif
                     b.sign(signer);
+                }
                 b.save();
             }
             catch (Exception e)
@@ -122,7 +142,7 @@ namespace DigiDocCSharp
             digidoc.digidoc.terminate();
         }
 
-        static void websign(string[] args)
+        private static void Websign(string[] args)
         {
             digidoc.digidoc.initialize();
             try
@@ -130,7 +150,9 @@ namespace DigiDocCSharp
                 Console.WriteLine("Creating file: " + args[args.Length - 1]);
                 Container b = Container.create(args[args.Length - 1]);
                 for (int i = 1; i < args.Length - 2; ++i)
+                {
                     b.addDataFile(args[i], "application/octet-stream");
+                }
 
                 X509Certificate cert = new X509Certificate();
                 cert.Import(args[args.Length - 2]);
@@ -142,7 +164,7 @@ namespace DigiDocCSharp
                 byte[] inputBuffer = new byte[1024];
                 Stream inputStream = Console.OpenStandardInput(inputBuffer.Length);
                 Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, inputBuffer.Length));
-                String hex = Console.ReadLine();
+                string hex = Console.ReadLine();
 
                 byte[] signature = Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
                 c.setSignatureValue(signature);
@@ -156,7 +178,7 @@ namespace DigiDocCSharp
             digidoc.digidoc.terminate();
         }
 
-        static void verify(string file)
+        private static void Verify(string file)
         {
             digidoc.digidoc.initialize();
             try
@@ -166,7 +188,9 @@ namespace DigiDocCSharp
 
                 Console.WriteLine("Files:");
                 foreach (DataFile d in b.dataFiles())
+                {
                     Console.WriteLine(" {0} - {1}", d.fileName(), d.mediaType());
+                }
                 Console.WriteLine();
 
                 Console.WriteLine("Signatures:");
@@ -175,8 +199,10 @@ namespace DigiDocCSharp
                     Console.WriteLine("Address: {0} {1} {2} {3}", s.city(), s.countryName(), s.stateOrProvince(), s.postalCode());
 
                     Console.Write("Role:");
-                    foreach (String role in s.signerRoles())
+                    foreach (string role in s.signerRoles())
+                    {
                         Console.Write(" " + role);
+                    }
                     Console.WriteLine();
 
                     Console.WriteLine("Time: " + s.trustedSigningTime());
@@ -194,9 +220,10 @@ namespace DigiDocCSharp
             digidoc.digidoc.terminate();
         }
 
-        static void version()
+        private static void Version()
         {
-            Console.WriteLine("DigiDocCSharp 0.3 libdigidocpp " + digidoc.digidoc.version());
+            Console.WriteLine("DigiDocCSharp " + Assembly.GetExecutingAssembly().GetName().Version +
+                " libdigidocpp " + digidoc.digidoc.version());
         }
     }
 }

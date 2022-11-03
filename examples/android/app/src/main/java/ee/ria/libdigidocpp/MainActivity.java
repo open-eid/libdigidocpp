@@ -6,9 +6,6 @@ import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.widget.EditText;
@@ -88,6 +85,7 @@ public class MainActivity extends Activity {
 
 		Container doc = Container.open(cache + "/test.bdoc");
 		content.append("DataFiles:\n");
+		assert doc != null;
 		for(DataFile file : doc.dataFiles()) {
 			content.append(file.fileName() + "\n");
 		}
@@ -105,8 +103,8 @@ public class MainActivity extends Activity {
 		}
 
 		// For testing
-		if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_READWRITE_STORAGE);
+		if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+			requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_READWRITE_STORAGE);
 		} else {
 			runTest(Environment.getExternalStorageDirectory());
 		}
@@ -142,7 +140,7 @@ public class MainActivity extends Activity {
 	}
 
 	@Override
-	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 		if (requestCode == REQUEST_READWRITE_STORAGE && grantResults.length > 0 &&
 				grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 			runTest(Environment.getExternalStorageDirectory());
@@ -182,6 +180,7 @@ public class MainActivity extends Activity {
 			try {
 				Log.i("VALIDATE", "Opening file " + file.getAbsolutePath());
 				Container doc = Container.open(file.getAbsolutePath());
+				assert doc != null;
 				for(DataFile dataFile : doc.dataFiles()) {
 					JSONObject f = new JSONObject();
 					f.put("f", dataFile.fileName());

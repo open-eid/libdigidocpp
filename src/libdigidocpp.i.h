@@ -32,7 +32,7 @@ namespace digidoc {
 class SWIGEXPORT DigiDocConf: public digidoc::XmlConfCurrent
 {
 public:
-    DigiDocConf(std::string _cache)
+    DigiDocConf(std::string _cache = {})
         : digidoc::XmlConfCurrent({}, _cache.empty() ? std::string() : util::File::path(_cache, "conf.xsd"))
         , cache(std::move(_cache))
         , _logFile(cache.empty() ? std::string() : cache + "/digidocpp.log") {}
@@ -54,6 +54,7 @@ public:
             cache + "/" + digidoc::util::File::fileName(digidoc::XmlConfCurrent::PKCS12Cert());
     }
     std::set<std::string> OCSPTMProfiles() const final { return TMProfiles.value_or(digidoc::XmlConfCurrent::OCSPTMProfiles()); }
+    std::vector<X509Cert> TSCerts() const final { return tsCerts.value_or(digidoc::XmlConfCurrent::TSCerts()); }
     std::string TSLCache() const final { return cache.empty() ? digidoc::XmlConfCurrent::TSLCache() : cache; }
     std::vector<X509Cert> TSLCerts() const final { return tslCerts.value_or(digidoc::XmlConfCurrent::TSLCerts()); }
     std::string TSLUrl() const final { return tslUrl.value_or(digidoc::XmlConfCurrent::TSLUrl()); }
@@ -68,44 +69,39 @@ public:
 
     void setLogLevel(int level) { _logLevel = level; }
     void setLogFile(std::string file) { _logFile = std::move(file); }
-    void setTSLCert(const std::vector<unsigned char> &cert)
-    {
-        if(cert.empty()) tslCerts.emplace();
-        else tslCerts = std::vector<X509Cert>{ X509Cert(cert, X509Cert::Der) };
-    }
-    void addTSLCert(const std::vector<unsigned char> &cert)
-    {
-        if(!tslCerts)
-            setTSLCert(cert);
-        else if(!cert.empty())
-            tslCerts->emplace_back(cert, X509Cert::Der);
-    }
+    void setTSCert(const std::vector<unsigned char> &cert) { setCert(tsCerts, cert); }
+    void addTSCert(const std::vector<unsigned char> &cert) { addCert(tsCerts, cert); }
+    void setTSLCert(const std::vector<unsigned char> &cert) { setCert(tslCerts, cert); }
+    void addTSLCert(const std::vector<unsigned char> &cert) { addCert(tslCerts, cert); }
     void setTSLUrl(std::string url) { tslUrl = std::move(url); }
     void setOCSPUrls(std::map<std::string,std::string> urls) { OCSPUrls = std::move(urls); }
     void setOCSPTMProfiles(const std::vector<std::string> &_TMProfiles)
     {
         TMProfiles = {_TMProfiles.cbegin(), _TMProfiles.cend()};
     }
-    void setVerifyServiceCert(const std::vector<unsigned char> &cert)
-    {
-        if(cert.empty()) serviceCerts.emplace();
-        else serviceCerts = std::vector<X509Cert>{ X509Cert(cert, X509Cert::Der) };
-    }
-    void addVerifyServiceCert(const std::vector<unsigned char> &cert)
-    {
-        if(!serviceCerts)
-            setVerifyServiceCert(cert);
-        else if(!cert.empty())
-            serviceCerts->emplace_back(cert, X509Cert::Der);
-    }
+    void setVerifyServiceCert(const std::vector<unsigned char> &cert) { setCert(serviceCerts, cert); }
+    void addVerifyServiceCert(const std::vector<unsigned char> &cert) { addCert(serviceCerts, cert); }
 
 private:
     DISABLE_COPY(DigiDocConf);
 
+    static void setCert(std::optional<std::vector<X509Cert>> &certs, const std::vector<unsigned char> &cert)
+    {
+        if(cert.empty()) certs.emplace();
+        else certs = std::vector<X509Cert>{ X509Cert(cert, X509Cert::Der) };
+    }
+    static void addCert(std::optional<std::vector<X509Cert>> &certs, const std::vector<unsigned char> &cert)
+    {
+        if(!certs)
+            setCert(certs, cert);
+        else if(!cert.empty())
+            certs->emplace_back(cert, X509Cert::Der);
+    }
+
     std::string cache;
     std::optional<int> _logLevel;
     std::optional<std::string> _logFile, serviceUrl, tslUrl;
-    std::optional<std::vector<X509Cert>> tslCerts, serviceCerts;
+    std::optional<std::vector<X509Cert>> tslCerts, serviceCerts, tsCerts;
     std::optional<std::set<std::string>> TMProfiles;
     std::optional<std::map<std::string,std::string>> OCSPUrls;
 };
