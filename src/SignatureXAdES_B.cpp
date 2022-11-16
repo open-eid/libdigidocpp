@@ -229,7 +229,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     }
 
     Digest calc(digestMethod);
-    calcDigestOnNode(&calc, XADES_NAMESPACE, "SignedProperties");
+    calcDigestOnNode(&calc, XADES_NAMESPACE, u"SignedProperties");
     addReference("#" + nr +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties");
 }
 
@@ -327,7 +327,7 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
             if(!usp->attributeRevocationRefs().empty())
                 THROW("AttributeRevocationRefs are not supported");
             if(!usp->sigAndRefsTimeStamp().empty())
-                THROW("SigAndRefsTimeStamp is not supported");
+                WARN("SigAndRefsTimeStamp is not supported");
             if(!usp->refsOnlyTimeStamp().empty())
                 THROW("RefsOnlyTimeStamp is not supported");
             if(!usp->attrAuthoritiesCertValues().empty())
@@ -647,7 +647,7 @@ vector<unsigned char> SignatureXAdES_B::dataToSign() const
 {
     // Calculate SHA digest of the Signature->SignedInfo node.
     Digest calc(signatureMethod());
-    calcDigestOnNode(&calc, URI_ID_DSIG, "SignedInfo");
+    calcDigestOnNode(&calc, URI_ID_DSIG, u"SignedInfo");
     return calc.result();
 }
 
@@ -970,7 +970,7 @@ vector<unsigned char> SignatureXAdES_B::getSignatureValue() const
  * @param tagName signature tag name.
  */
 void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
-        const string& tagName, const string &id, const string &canonicalizationMethod) const
+    u16string_view tagName, string_view canonicalizationMethod) const
 {
     try
     {
@@ -991,21 +991,18 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
 
         DOMNode *node = nullptr;
         // Select node, on which the digest is calculated.
-        if(id.empty())
-        {
-            DOMNodeList* nodeList = doc->getElementsByTagNameNS(xml::string(ns).c_str(), xml::string(tagName).c_str());
-            if(nodeList->getLength() == 1)
-                node = nodeList->item(0);
-        }
-        else
-            node = doc->getElementById(xml::string(id).c_str());
+        DOMNodeList* nodeList = doc->getElementsByTagNameNS(xml::string(ns).c_str(), tagName.data());
+        if(nodeList->getLength() == 1)
+            node = nodeList->item(0);
 
         // Make sure that exactly one node was found.
         if(!node)
-            THROW("Could not find '%s' node which is in '%s' namespace in signature XML.", tagName.c_str(), ns.c_str());
+            THROW("Could not find '%s' node which is in '%s' namespace in signature XML.",
+                  xml::transcode<char>(tagName.data()).data(), ns.c_str());
 
-        string algorithmType = canonicalizationMethod.empty() ? signature->signedInfo().canonicalizationMethod().algorithm() : canonicalizationMethod;
-        SecureDOMParser::calcDigestOnNode(calc, algorithmType, doc.get(), node);
+        if(canonicalizationMethod.empty())
+            canonicalizationMethod = signature->signedInfo().canonicalizationMethod().algorithm();
+        SecureDOMParser::calcDigestOnNode(calc, canonicalizationMethod, doc.get(), node);
     }
     catch(const Exception& e)
     {

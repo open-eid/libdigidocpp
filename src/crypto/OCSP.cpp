@@ -259,7 +259,7 @@ X509Cert OCSP::responderCert() const
     return X509Cert();
 }
 
-vector<unsigned char> OCSP::toDer() const
+OCSP::operator std::vector<unsigned char>() const
 {
     return i2d(resp.get(), i2d_OCSP_RESPONSE);
 }

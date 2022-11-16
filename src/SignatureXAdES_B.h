@@ -73,7 +73,7 @@ namespace digidoc
           xades::QualifyingPropertiesType& qualifyingProperties() const;
           xades::SignedSignaturePropertiesType& getSignedSignatureProperties() const;
           void calcDigestOnNode(Digest* calc, const std::string& ns,
-              const std::string& tagName, const std::string &id = {}, const std::string &canonicalizationMethod = {}) const;
+              std::u16string_view tagName, std::string_view canonicalizationMethod = {}) const;
           void checkCertID(const xades::CertIDType &certID, const X509Cert &cert) const;
           void checkDigest(const xades::DigestAlgAndValueType &digest, const std::vector<unsigned char> &data) const;
 

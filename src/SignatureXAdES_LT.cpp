@@ -260,7 +260,7 @@ void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert
     }
 
     vector<unsigned char> der = x509;
-    CertificateValuesType::EncapsulatedX509CertificateType certData(Base64Binary(der.data(), der.size()));
+    CertificateValuesType::EncapsulatedX509CertificateType certData(Base64Binary(der.data(), der.size(), der.size(), false));
     certData.id(certId);
     values[0].encapsulatedX509Certificate().push_back(certData);
 }
@@ -271,8 +271,8 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
 
     createUnsignedSignatureProperties();
 
-    vector<unsigned char> der = ocsp.toDer();
-    OCSPValuesType::EncapsulatedOCSPValueType ocspValueData(Base64Binary(der.data(), der.size()));
+    vector<unsigned char> der = ocsp;
+    OCSPValuesType::EncapsulatedOCSPValueType ocspValueData(Base64Binary(der.data(), der.size(), der.size(), false));
     ocspValueData.id(id);
 
     OCSPValuesType ocspValue;
