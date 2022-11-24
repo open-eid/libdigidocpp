@@ -107,10 +107,8 @@ string Conf::PKCS11Driver() const { return PKCS11_MODULE; }
  */
 string Conf::ocsp(const string &issuer) const
 {
-    static const map<string,string> ocsplist = {
+    static const map<string_view,string> ocsplist = {
         {"ESTEID-SK 2015", "http://ocsp.sk.ee"},
-        {"KLASS3-SK 2010", "http://ocsp.sk.ee"},
-        {"KLASS3-SK 2016", "http://ocsp.sk.ee"},
     };
     auto pos = ocsplist.find(issuer);
     return pos == ocsplist.end() ? string() : pos->second;

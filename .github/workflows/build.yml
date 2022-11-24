@@ -201,6 +201,8 @@ jobs:
     name: Deploy pages
     if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'master')
     runs-on: ubuntu-20.04
+    permissions:
+      contents: write
     steps:
     - name: Checkout
       uses: actions/checkout@v3

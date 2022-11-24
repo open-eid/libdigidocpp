@@ -36,14 +36,16 @@ namespace digidoc
           public:
 #ifdef _WIN32
               using f_string = std::wstring;
+              using f_string_view = std::wstring_view;
 #else
               using f_string = std::string;
+              using f_string_view = std::string_view;
 #endif
               static std::string confPath();
-              static std::string env(const std::string &varname);
+              static std::string env(std::string_view varname);
               static bool fileExists(const std::string& path);
-              static f_string encodeName(const std::string &fileName);
-              static std::string decodeName(const f_string &localFileName);
+              static f_string encodeName(std::string_view fileName);
+              static std::string decodeName(const f_string_view &localFileName);
               static bool isRelative(const std::string &path);
               static time_t modifiedTime(const std::string &path);
               static void updateModifiedTime(const std::string &path, time_t time);
@@ -70,7 +72,7 @@ namespace digidoc
 
         private:
 #if !defined(_WIN32) && !defined(__APPLE__)
-              static std::string convertUTF8(const std::string &str_in, bool to_UTF);
+              static std::string convertUTF8(std::string_view str_in, bool to_UTF);
 #endif
               static std::stack<std::string> tempFiles;
         };

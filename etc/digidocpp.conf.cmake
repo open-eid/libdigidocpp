@@ -37,8 +37,9 @@
     <!--Verify service settings-->
     <!--<param name="verify.serivceUri" lock="false">@SIVA_URL@</param>-->
 
+    <!--OCSP BDoc-TM validation settings-->
+    <!--<param name="ocsp.tm.profile" lock="false">1.3.6.1.4.1.10015.4.1.2</param>-->
+
     <!--OCSP responder URL-->
     <!--<ocsp issuer="ESTEID-SK 2015">http://ocsp.sk.ee</ocsp>-->
-    <!--<ocsp issuer="KLASS3-SK 2010">http://ocsp.sk.ee</ocsp>-->
-    <!--<ocsp issuer="KLASS3-SK 2016">http://ocsp.sk.ee</ocsp>-->
 </configuration>
