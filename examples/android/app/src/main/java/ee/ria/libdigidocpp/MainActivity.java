@@ -31,6 +31,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -239,7 +240,7 @@ public class MainActivity extends Activity {
 
 	private static void deleteRecursive(File fileOrDirectory) {
 		if (fileOrDirectory.isDirectory())
-			for (File child : fileOrDirectory.listFiles())
+			for (File child : Objects.requireNonNull(fileOrDirectory.listFiles()))
 				deleteRecursive(child);
 		fileOrDirectory.delete();
 	}
