@@ -904,16 +904,16 @@ void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const s
     getSignedSignatureProperties().signatureProductionPlaceV2(signatureProductionPlace);
 }
 
-template<typename T>
-T SignatureXAdES_B::signerRoles(const vector<string> &roles)
+template<class T>
+auto SignatureXAdES_B::signerRoles(const vector<string> &roles)
 {
-    ClaimedRolesListType claimedRoles;
-    claimedRoles.claimedRole().reserve(roles.size());
+    auto claimedRoles = make_unique<ClaimedRolesListType>();
+    claimedRoles->claimedRole().reserve(roles.size());
     for(const string &role: roles)
-        claimedRoles.claimedRole().push_back(role);
+        claimedRoles->claimedRole().push_back(role);
 
-    T signerRole;
-    signerRole.claimedRoles(claimedRoles);
+    auto signerRole = make_unique<T>();
+    signerRole->claimedRoles(move(claimedRoles));
     return signerRole;
 }
 

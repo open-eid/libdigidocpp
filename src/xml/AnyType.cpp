@@ -34,21 +34,19 @@ using namespace xsd::cxx::xml::dom;
 #endif
 
 AnyType::AnyType()
-    : AnyTypeBase()
-    , SPURI_(this)
+    : SPURI_(this)
 #ifdef SPUSERNOTICE
     , SPUserNotice_(this)
 #endif
 {
 }
 
-AnyType::AnyType(const std::string &text)
-    : AnyTypeBase()
-    , SPURI_(this)
+AnyType::AnyType(std::string text)
+    : SPURI_(this)
 #ifdef SPUSERNOTICE
     , SPUserNotice_(this)
 #endif
-    , text_(text)
+    , text_(std::move(text))
 {
 }
 
@@ -91,7 +89,7 @@ AnyType::AnyType(const DOMElement &e, Flags f, Container *c)
         {
             std::unique_ptr<SPUserNoticeType> r(SPUserNoticeTraits::create(i, f, this));
             if(!this->SPUserNotice_.present())
-                this->SPUserNotice_.set(std::move(r);
+                this->SPUserNotice_.set(std::move(r));
             continue;
         }
 #endif
@@ -109,13 +107,9 @@ AnyType::AnyType(const DOMElement &e, Flags f, Container *c)
     }
 }
 
-AnyType::~AnyType()
-{
-}
-
 AnyType* AnyType::_clone(Flags f, Container *c) const
 {
-    return new class AnyType(*this, f, c);
+    return new AnyType(*this, f, c);
 }
 
 const AnyType::SPURIOptional& AnyType::sPURI() const

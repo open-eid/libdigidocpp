@@ -27,27 +27,28 @@ namespace xades {
 class AnyType: public AnyTypeBase
 {
 public:
-    typedef ::xml_schema::Uri SPURIType;
-    typedef ::xsd::cxx::tree::optional<SPURIType> SPURIOptional;
-    typedef ::xsd::cxx::tree::traits<SPURIType, char> SPURITraits;
+    using SPURIType = ::xml_schema::Uri;
+    using SPURIOptional = ::xsd::cxx::tree::optional<SPURIType>;
+    using SPURITraits = ::xsd::cxx::tree::traits<SPURIType, char>;
+
     const SPURIOptional& sPURI() const;
     void sPURI(const SPURIType &x);
 
 #ifdef SPUSERNOTICE
-    typedef ::digidoc::xades::SPUserNoticeType SPUserNoticeType;
-    typedef ::xsd::cxx::tree::optional<SPUserNoticeType> SPUserNoticeOptional;
-    typedef ::xsd::cxx::tree::traits<SPUserNoticeType, char> SPUserNoticeTraits;
+    using SPUserNoticeType = ::digidoc::xades::SPUserNoticeType;
+    using SPUserNoticeOptional = ::xsd::cxx::tree::optional<SPUserNoticeType>;
+    using SPUserNoticeTraits = ::xsd::cxx::tree::traits<SPUserNoticeType, char>;
+
     const SPUserNoticeOptional& sPUserNotice () const;
     void sPUserNotice(const SPUserNoticeType &x);
 #endif
 
     AnyType();
-    AnyType(const std::string &text);
-    AnyType(const xercesc::DOMElement& e, xml_schema::Flags f = 0, xml_schema::Container* c = 0);
-    AnyType(const AnyType& x, xml_schema::Flags f = 0, xml_schema::Container* c = 0);
-    virtual ~AnyType();
+    AnyType(std::string text);
+    AnyType(const xercesc::DOMElement& e, xml_schema::Flags f = {}, xml_schema::Container *c = {});
+    AnyType(const AnyType& x, xml_schema::Flags f = {}, xml_schema::Container *c = {});
 
-    virtual AnyType* _clone(xml_schema::Flags f = 0, xml_schema::Container* c = 0) const;
+    AnyType* _clone(xml_schema::Flags f = {}, xml_schema::Container *c = {}) const override;
 
     std::string text() const;
 

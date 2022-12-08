@@ -103,8 +103,8 @@ namespace digidoc
               const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
           void setSignatureProductionPlaceV2(const std::string &city, const std::string &streetAddress,
               const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
-          template<typename T>
-          inline T signerRoles(const std::vector<std::string>& signerRoles);
+          template<class T>
+          inline auto signerRoles(const std::vector<std::string> &signerRoles);
           void setSignerRoles(const std::vector<std::string>& signerRoles);
           void setSignerRolesV2(const std::vector<std::string>& signerRoles);
           void setSigningTime(const struct tm &signingTime);
