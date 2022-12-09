@@ -362,15 +362,19 @@ string File::tempFileName()
 #ifdef _WIN32
     // requires TMP environment variable to be set
     wchar_t *fileName = _wtempnam(nullptr, nullptr); // TODO: static buffer, not thread-safe
-    if ( !fileName )
+    if(!fileName)
         THROW("Failed to create a temporary file name.");
-#else
-    char *fileName = strdup("/tmp/XXXXXX");
-    if (mkstemp(fileName) == -1)
-        THROW("Failed to create a temporary file name.");
-#endif
     string path = decodeName(fileName);
     free(fileName);
+#else
+#ifdef __APPLE__
+    string path = env("TMPDIR") + "/XXXXXX";
+#else
+    string path = "/tmp/XXXXXX";
+#endif
+    if(mkstemp(path.data()) == -1)
+        THROW("Failed to create a temporary file name.");
+#endif
     tempFiles.push(path);
     return path;
 }
