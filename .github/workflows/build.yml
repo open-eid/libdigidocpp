@@ -1,5 +1,7 @@
 name: CI
 on: [push, pull_request]
+permissions:
+  contents: write
 env:
   RUN_TESTS: ALL
   BUILD_NUMBER: ${{ github.run_number }}
@@ -64,19 +66,19 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:35', 'fedora:36']
+        container: ['fedora:35', 'fedora:36', 'fedora:37']
     env:
       MAKEFLAGS: -j3
     steps:
-    - name: Checkout
-      uses: actions/checkout@v1
-      with:
-        submodules: recursive
     - name: Install Deps
       run: |
         dnf install -y \
-          gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel \
+          git gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel \
           https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - name: Build
       run: |
         cmake -DCMAKE_INSTALL_SYSCONFDIR=/etc -B build -S .
@@ -93,7 +95,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:22.04']
+        container: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:22.10']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions
@@ -110,7 +112,7 @@ jobs:
         curl https://installer.id.ee/media/install-scripts/C6C83D68.pub | gpg --dearmor | tee /etc/apt/trusted.gpg.d/ria-repository.gpg > /dev/null
         echo "deb https://installer.id.ee/media/ubuntu/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ria-repository.list
     - name: Install dependencies
-      run: apt update -qq && apt install --no-install-recommends -y lsb-release dh-make fakeroot build-essential devscripts cdbs cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-distutils libboost-test-dev lintian
+      run: apt update -qq && apt install --no-install-recommends -y lsb-release fakeroot build-essential devscripts cdbs cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-distutils libboost-test-dev lintian
     - name: Setup changelog
       run: |
         export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}")
@@ -136,7 +138,7 @@ jobs:
         include:
         - toolset: 143
           image: windows-2022
-          vcver: 14.33
+          vcver: 14.34
           vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
         - toolset: 142
           image: windows-2019

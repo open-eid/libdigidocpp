@@ -7,7 +7,7 @@ Build-Depends:
  cmake,
  libxml-security-c-dev,
  xsdcxx (>= 4.0) | xsd (>= 4.0),
- vim-common,
+ xxd,
  doxygen,
  swig,
  libpython3-dev,

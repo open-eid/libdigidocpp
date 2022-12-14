@@ -16,7 +16,7 @@
 1. Install dependencies
 
         # Ubuntu
-        sudo apt install cmake libxml-security-c-dev xsdcxx libssl-dev zlib1g-dev
+        sudo apt install cmake xxd libxml-security-c-dev xsdcxx libssl-dev zlib1g-dev
         # Fedora
         sudo dnf install cmake openssl-devel xerces-c-devel xml-security-c-devel zlib-devel vim-common https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
 
@@ -30,17 +30,15 @@
 
 3. Configure
 
-        mkdir build
-        cd build
-        cmake ..
+        cmake -B build -S .
 
 4. Build
 
-        make
+        cmake --build build
 
 5. Install
 
-        sudo make install
+        sudo cmake --build build --target install
 
 6. Execute
 
@@ -51,6 +49,7 @@
 1. Install dependencies from
 	* [XCode](https://itunes.apple.com/en/app/xcode/id497799835?mt=12)
 	* [CMake](http://www.cmake.org)
+	* [Homebrew](https://brew.sh)
 
 2. Fetch the source
 
@@ -61,18 +60,23 @@
 
         sh prepare_osx_build_environment.sh osx all
 
-4. Configure, build and install (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86)
+4. Install dependencies
+
+        brew install xsd
+        brew unlink xerces-c
+
+5. Configure, build and install (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86)
 
         ./build-library.sh osx install
 
-5. Execute
+6. Execute
 
         /Library/Frameworks/digidocpp.framework/Resources/digidoc-tool
 
 ### Windows
 
 1. Install dependencies and necessary tools from
-	* [Visual Studio Community 2015/2017/2019](https://www.visualstudio.com/downloads/)
+	* [Visual Studio Community 2017/2019/2022](https://www.visualstudio.com/downloads/)
 	* [CMake](http://www.cmake.org)
 	* [Swig](http://swig.org/download.html) - Optional, for C# and Java bindings
 	* [Doxygen](https://www.doxygen.nl/download.html) - Optional, for generationg documentation
