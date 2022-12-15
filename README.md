@@ -117,7 +117,7 @@
 
 6. Alternative to steps 4. and 5. -
 
-        powershell -ExecutionPolicy ByPass -File build.ps1 -toolset 141
+        powershell -ExecutionPolicy ByPass -File build.ps1 -toolset 142
 
     The build script builds executables and installation media for all
     platforms (x86 and x64 / Debug and Release with debug symbols)
