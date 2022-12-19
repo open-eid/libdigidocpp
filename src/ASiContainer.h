@@ -62,7 +62,7 @@ namespace digidoc
           ASiContainer(const std::string &mimetype);
 
           void addDataFilePrivate(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType);
-          void addSignature(Signature *signature);
+          Signature* addSignature(std::unique_ptr<Signature> &&signature);
           std::unique_ptr<std::iostream> dataStream(const std::string &path, const ZipSerialize &z) const;
           std::unique_ptr<ZipSerialize> load(const std::string &path, bool requireMimetype, const std::set<std::string> &supported);
           void deleteSignature(Signature* s);

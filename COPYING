@@ -25,6 +25,15 @@ etc/schema/OpenDocument_manifest.rng
 	© 1999-2005 Sun Microsystems, Inc.
 
 _______________________________________________________________________________
+etc/schema/OpenDocument_manifest_v1_2.rng
+
+  Open Document Format for Office Applications (OpenDocument) Version 1.2
+  OASIS Standard, 29 September 2011
+  Manifest Relax-NG Schema
+  Source: http://docs.oasis-open.org/office/v1.2/os/
+  Copyright (c) OASIS Open 2002-2011. All Rights Reserved.
+
+_______________________________________________________________________________
 src/minizip
 
 http://www.winimage.com/zLibDll/minizip.html
