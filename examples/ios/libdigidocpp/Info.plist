@@ -9,6 +9,8 @@
 			<array/>
 			<key>CFBundleTypeName</key>
 			<string>DigiDoc signed document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Owner</string>
 			<key>LSItemContentTypes</key>

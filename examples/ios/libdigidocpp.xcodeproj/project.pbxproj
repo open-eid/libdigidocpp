@@ -42,6 +42,7 @@
 		4E7663AB1B5A37AC00672ACF /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		4E7663AE1B5A37AC00672ACF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		4E85E5F6285364BF00A65763 /* libdigidocpp_util.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp_util.a; path = "$(SDKPATH)/lib/libdigidocpp_util.a"; sourceTree = "<absolute>"; };
+		4EAC9AA729125D5200A39880 /* libdigidocpp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = libdigidocpp.entitlements; sourceTree = "<group>"; };
 		4ECD5FA92010A15A00BCC616 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = "$(SDKPATH)/lib/libcrypto.a"; sourceTree = "<absolute>"; };
 		4ECD5FAB2010A1B700BCC616 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = "$(SDKPATH)/lib/libssl.a"; sourceTree = "<absolute>"; };
 		4ECD5FAC2010A1B700BCC616 /* libxalan-c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libxalan-c.a"; path = "$(SDKPATH)/lib/libxalan-c.a"; sourceTree = "<absolute>"; };
@@ -100,6 +101,7 @@
 		4E76639A1B5A37AC00672ACF /* libdigidocpp */ = {
 			isa = PBXGroup;
 			children = (
+				4EAC9AA729125D5200A39880 /* libdigidocpp.entitlements */,
 				4E76639F1B5A37AC00672ACF /* AppDelegate.h */,
 				4E7663A01B5A37AC00672ACF /* AppDelegate.mm */,
 				4E7663A31B5A37AC00672ACF /* MasterViewController.mm */,
@@ -353,20 +355,23 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_NUMBER = 0;
+				CODE_SIGN_ENTITLEMENTS = libdigidocpp/libdigidocpp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/libdigidocpp",
 				);
-				GCC_PREPROCESSOR_DEFINITIONS = "TESTING=$(TESTING)";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"TESTING=$(TESTING)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SDKPATH)/include",
 					"$(MINIZIP)",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
-				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = NO;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.xib;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -384,6 +389,11 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKPATH = /Library/libdigidocpp.iphoneos;
 				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
+				"SDKPATH[sdk=macosx*]" = /Library/libdigidocpp.iphonecatalyst;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TESTING = 0;
 			};
 			name = Debug;
@@ -393,20 +403,23 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_NUMBER = 0;
+				CODE_SIGN_ENTITLEMENTS = libdigidocpp/libdigidocpp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/libdigidocpp",
 				);
-				GCC_PREPROCESSOR_DEFINITIONS = "TESTING=$(TESTING)";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"TESTING=$(TESTING)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SDKPATH)/include",
 					"$(MINIZIP)",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
-				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = NO;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.xib;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -424,6 +437,11 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKPATH = /Library/libdigidocpp.iphoneos;
 				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
+				"SDKPATH[sdk=macosx*]" = /Library/libdigidocpp.iphonecatalyst;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TESTING = 0;
 			};
 			name = Release;

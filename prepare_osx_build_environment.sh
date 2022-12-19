@@ -83,6 +83,17 @@ case "$@" in
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
+*ioscatalyst*)
+  echo "Building for iOS macOS Catalyst"
+  TARGET_PATH=/Library/libdigidocpp.iphonecatalyst
+  CONFIGURE="--host=x86_64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking --disable-netaccessor-curl"
+  SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
+  : ${ARCHS:="x86_64"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
+  export IPHONEOS_DEPLOYMENT_TARGET
+  export CFLAGS="-arch ${ARCHS// / -arch } -target x86_64-apple-ios-macabi -isysroot ${SYSROOT}"
+  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
+  ;;
 *ios*)
   echo "Building for iOS"
   TARGET_PATH=/Library/libdigidocpp.iphoneos
@@ -264,6 +275,7 @@ function openssl {
             *x86_64*)
                 case "${ARGS}" in
                 *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine ;;
+                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128 ;;
                 *) CC="" CFLAGS="" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;

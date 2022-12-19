@@ -53,20 +53,29 @@ jobs:
       run: ./build-library.sh all pkcs11sign zipdebug embedlibs pkgbuild
     - name: Build ${{ matrix.target }}
       if: matrix.target != 'osx'
-      run: ./build-library.sh ${{ matrix.target }} install/strip
+      run: |
+        ./build-library.sh ${{ matrix.target }} install/strip
+        cd /Library
+        zip -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
     - name: Archive artifacts
       if: matrix.target == 'osx'
       uses: actions/upload-artifact@v3
       with:
         name: pkgs
         path: macOS/libdigidocpp*.*
+    - name: Archive artifacts
+      if: matrix.target != 'osx'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.target }}
+        path: libdigidocpp*.zip
   fedora:
     name: Build on Fedora to ${{ matrix.container }}
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:35', 'fedora:36', 'fedora:37']
+        container: ['fedora:36', 'fedora:37']
     env:
       MAKEFLAGS: -j3
     steps:
