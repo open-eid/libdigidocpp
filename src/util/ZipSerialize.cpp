@@ -183,8 +183,8 @@ void ZipSerialize::addFile(const string& containerPath, istream &is, const Prope
     DEBUG("ZipSerialize::addFile(%s)", containerPath.c_str());
     struct tm time = util::date::gmtime(prop.time);
     zip_fileinfo info = {
-        { uInt(time.tm_sec), uInt(time.tm_min), uInt(time.tm_hour),
-          uInt(time.tm_mday), uInt(time.tm_mon), uInt(time.tm_year) },
+        { time.tm_sec, time.tm_min, time.tm_hour,
+          time.tm_mday, time.tm_mon, time.tm_year },
         0, 0, 0 };
 
     // Create new file inside ZIP container.
