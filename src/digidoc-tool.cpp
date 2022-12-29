@@ -32,11 +32,8 @@
 #include "util/log.h"
 
 #include <algorithm>
-#include <cstdio>
-#include <cstdlib>
-#include <iomanip>
+#include <filesystem>
 #include <iostream>
-#include <map>
 #include <optional>
 #include <sstream>
 
@@ -51,13 +48,7 @@
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
-#if __has_include(<filesystem>)
-#include <filesystem>
-namespace fs = std::filesystem;
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
+namespace fs = filesystem;
 
 namespace std
 {
@@ -490,9 +481,8 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
         win->setThumbprint(thumbprint);
         signer = unique_ptr<Signer>(win.release());
     }
-    else
 #endif
-    if(!pkcs12.empty())
+    else if(!pkcs12.empty())
         signer = make_unique<PKCS12Signer>(pkcs12, pin);
     else
         signer = make_unique<ConsolePinSigner>(pkcs11, pin);

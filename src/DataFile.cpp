@@ -23,6 +23,7 @@
 #include "util/File.h"
 #include "util/log.h"
 
+#include <array>
 #include <fstream>
 
 using namespace digidoc;
@@ -86,13 +87,11 @@ DataFile::DataFile() = default;
 DataFile::~DataFile() = default;
 
 
-DataFilePrivate::DataFilePrivate(unique_ptr<istream> is, string filename, string mediatype,
-                   string id, vector<unsigned char> digestValue)
+DataFilePrivate::DataFilePrivate(unique_ptr<istream> &&is, string filename, string mediatype, string id)
     : m_is(move(is))
     , m_id(move(id))
     , m_filename(move(filename))
     , m_mediatype(move(mediatype))
-    , m_digestValue(move(digestValue))
 {
     m_is->seekg(0, istream::end);
     istream::pos_type pos = m_is->tellg();
@@ -101,8 +100,6 @@ DataFilePrivate::DataFilePrivate(unique_ptr<istream> is, string filename, string
 
 vector<unsigned char> DataFilePrivate::calcDigest(const string &method) const
 {
-    if(!m_digestValue.empty())
-        return m_digestValue;
     Digest calc(method);
     calcDigest(&calc);
     return calc.result();
@@ -110,7 +107,7 @@ vector<unsigned char> DataFilePrivate::calcDigest(const string &method) const
 
 void DataFilePrivate::calcDigest(Digest *digest) const
 {
-    vector<unsigned char> buf(10240, 0);
+    array<unsigned char, 10240> buf{};
     m_is->clear();
     m_is->seekg(0);
     while(*m_is)
@@ -125,7 +122,6 @@ void DataFilePrivate::saveAs(const string& path) const
 {
     ofstream ofs(File::encodeName(path).c_str(), ofstream::binary);
     saveAs(ofs);
-    ofs.close();
 }
 
 void DataFilePrivate::saveAs(ostream &os) const

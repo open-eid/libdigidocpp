@@ -28,25 +28,23 @@ namespace digidoc
 {
 
 class Digest;
-class DataFilePrivate: public DataFile
+class DataFilePrivate final: public DataFile
 {
 public:
-	DataFilePrivate(std::unique_ptr<std::istream> is, std::string filename, std::string mediatype, std::string id = {},
-        		std::vector<unsigned char> digestValue = {});
+	DataFilePrivate(std::unique_ptr<std::istream> &&is, std::string filename, std::string mediatype, std::string id = {});
 
-	std::string id() const override { return m_id.empty() ? m_filename : m_id; }
-	std::string fileName() const override { return m_filename; }
-	unsigned long fileSize() const override { return m_size; }
-	std::string mediaType() const override { return m_mediatype; }
+	std::string id() const final { return m_id.empty() ? m_filename : m_id; }
+	std::string fileName() const final { return m_filename; }
+	unsigned long fileSize() const final { return m_size; }
+	std::string mediaType() const final { return m_mediatype; }
 
-	std::vector<unsigned char> calcDigest(const std::string &method) const override;
+	std::vector<unsigned char> calcDigest(const std::string &method) const final;
 	void calcDigest(Digest *method) const;
-	void saveAs(std::ostream &os) const override;
-	void saveAs(const std::string& path) const override;
+	void saveAs(std::ostream &os) const final;
+	void saveAs(const std::string& path) const final;
 
 	std::unique_ptr<std::istream> m_is;
 	std::string m_id, m_filename, m_mediatype;
-	std::vector<unsigned char> m_digestValue;
 	unsigned long m_size;
 };
 }

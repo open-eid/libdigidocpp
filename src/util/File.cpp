@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <ctime>
+#include <filesystem>
 #include <locale>
 #include <sstream>
 #include <sys/stat.h>
@@ -45,6 +46,7 @@
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
+namespace fs = filesystem;
 
 #ifdef _WIN32
 #define f_stat _wstat64
@@ -56,77 +58,6 @@ using f_utimbuf = struct __utimbuf64;
 #define f_utime utime
 using f_statbuf = struct stat;
 using f_utimbuf = struct utimbuf;
-#endif
-
-#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__)
-#include <cerrno>
-#include <iconv.h>
-#include <cstdlib>
-#include <cstring>
-#include <langinfo.h>
-
-/**
- * Helper method for converting from non-UTF-8 encoded strings to UTF-8.
- * Supported LANG values for Linux: see /usr/share/i18n/SUPPORTED.
- * Supported encodings for libiconv: see iconv --list .
- *
- * Note! If non-ASCII characters are used we assume a proper LANG value!!!
- *
- * @param str_in The string to be converted.
- * @return Returns the input string in UTF-8.
- */
-string File::convertUTF8(string_view str_in, bool to_UTF)
-{
-    string charset = nl_langinfo(CODESET);
-    // no conversion needed for UTF-8
-    if(charset == "UTF-8" || charset == "utf-8")
-        return string(str_in);
-
-    iconv_t ic_descr = iconv_t(-1);
-    try
-    {
-        ic_descr = to_UTF ? iconv_open("UTF-8", charset.c_str()) : iconv_open(charset.c_str(), "UTF-8");
-    }
-    catch(exception &) {}
-
-    if(ic_descr == iconv_t(-1))
-        return string(str_in);
-
-    char* inptr = (char*)str_in.data();
-    size_t inleft = str_in.size();
-
-    string out;
-    char outbuf[64];
-    char* outptr;
-    size_t outleft;
-
-    while(inleft > 0)
-    {
-        outbuf[0] = '\0';
-        outptr = (char *)outbuf;
-        outleft = sizeof(outbuf) - sizeof(outbuf[0]);
-
-        size_t result = iconv(ic_descr, &inptr, &inleft, &outptr, &outleft);
-        if(result == size_t(-1))
-        {
-            switch(errno)
-            {
-            case E2BIG: break;
-            case EILSEQ:
-            case EINVAL:
-            default:
-                iconv_close(ic_descr);
-                return string(str_in);
-                break;
-            }
-        }
-        *outptr = '\0';
-        out += outbuf;
-    }
-    iconv_close(ic_descr);
-
-    return out;
-}
 #endif
 
 stack<string> File::tempFiles;
@@ -167,23 +98,15 @@ File::f_string File::encodeName(string_view fileName)
 {
     if(fileName.empty())
         return {};
-#if defined(_WIN32)
-    int len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), nullptr, 0);
-    f_string out(size_t(len), 0);
-    len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), out.data(), len);
-#elif defined(__APPLE__)
-    CFMutableStringRef ref = CFStringCreateMutable(nullptr, 0);
-    CFStringAppendCString(ref, fileName.data(), kCFStringEncodingUTF8);
-    CFStringNormalize(ref, kCFStringNormalizationFormD);
-
+#ifdef __APPLE__
+    CFStringRef ref = CFStringCreateWithBytesNoCopy({}, (UInt8 *)fileName.data(),
+        CFIndex(fileName.size()), kCFStringEncodingUTF8, FALSE, kCFAllocatorNull);
     string out(fileName.size() * 2, 0);
-    CFStringGetCString(ref, out.data(), CFIndex(out.size()), kCFStringEncodingUTF8);
+    CFStringGetFileSystemRepresentation(ref, out.data(), CFIndex(out.size()));
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
-#elif defined(__ANDROID__)
-    f_string out = string(fileName);
 #else
-    f_string out = convertUTF8(fileName,false);
+    f_string out = fs::u8path(fileName);
 #endif
     return out;
 }
@@ -197,11 +120,7 @@ string File::decodeName(const f_string_view &localFileName)
 {
     if(localFileName.empty())
         return {};
-#if defined(_WIN32)
-    int len = WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), nullptr, 0, nullptr, nullptr);
-    string out(size_t(len), 0);
-    WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), out.data(), len, nullptr, nullptr);
-#elif defined(__APPLE__)
+#ifdef __APPLE__
     CFMutableStringRef ref = CFStringCreateMutable(nullptr, 0);
     CFStringAppendCString(ref, localFileName.data(), kCFStringEncodingUTF8);
     CFStringNormalize(ref, kCFStringNormalizationFormC);
@@ -210,10 +129,8 @@ string File::decodeName(const f_string_view &localFileName)
     CFStringGetCString(ref, out.data(), CFIndex(out.size()), kCFStringEncodingUTF8);
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
-#elif defined(__ANDROID__)
-    string out = string(localFileName);
 #else
-    string out = convertUTF8(localFileName,true);
+    string out = fs::path(localFileName).u8string();
 #endif
     return out;
 }
