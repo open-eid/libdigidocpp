@@ -1,3 +1,19 @@
+Libdigidocpp library [3.14.12](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.12) release notes
+--------------------------------------
+- Fix digidoc-tool file extraction
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.11...v3.14.12)
+
+Libdigidocpp library [3.14.11](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.11) release notes
+--------------------------------------
+- Update libraries (#472, #495, #490, #500)
+- TSL parsing improvementsa (#492, #495, #499)
+- Fix memory leaks (#488)
+- Prefer PSS padding with RSA key (#437)
+- Code fixes and improvements (#478, #487, #513)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.10...v3.14.11)
+
 Libdigidocpp library [3.14.10](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.10) release notes
 --------------------------------------
 - Trust intermediate certificates in trust store (#476)
