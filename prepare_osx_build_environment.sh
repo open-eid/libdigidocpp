@@ -259,12 +259,9 @@ function openssl {
     tar xf ${OPENSSL_DIR}.tar.gz
     cd ${OPENSSL_DIR}
 
-    sed -ie 's!, "apps"!!' Configure
-    sed -ie 's!, "fuzz"!!' Configure
-    sed -ie 's!, "test"!!' Configure
     case "${ARGS}" in
     *android*)
-        ./Configure android-${ARCH} -D__ANDROID_API__=${ABI} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-hw no-engine no-tests no-shared
+        ./Configure android-${ARCH} -D__ANDROID_API__=${ABI} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio
         make -s
         sudo make install_sw
         ;;
@@ -274,14 +271,14 @@ function openssl {
             case "${ARCH}" in
             *x86_64*)
                 case "${ARGS}" in
-                *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine ;;
-                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128 ;;
+                *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio;;
+                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio enable-ec_nistp_64_gcc_128 ;;
                 *) CC="" CFLAGS="" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;
             *arm64*)
                 case "${ARGS}" in
-                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine ;;
+                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio;;
                 *) CC="" CFLAGS="" MACHINE=arm64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;
