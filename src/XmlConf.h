@@ -72,6 +72,7 @@ public:
     virtual void setTSLTimeOut( int timeOut );
 
     virtual void setTSUrl(const std::string &url);
+    virtual void setVerifyServiceUri(const std::string &url);
 
 private:
     DISABLE_COPY(XmlConf);
@@ -130,6 +131,7 @@ public:
     virtual void setTSLTimeOut( int timeOut );
 
     virtual void setTSUrl(const std::string &url);
+    virtual void setVerifyServiceUri(const std::string &url);
 
 private:
     DISABLE_COPY(XmlConfV2);
@@ -185,6 +187,7 @@ public:
     virtual void setTSLTimeOut( int timeOut );
 
     virtual void setTSUrl(const std::string &url);
+    virtual void setVerifyServiceUri(const std::string &url);
 
 private:
     DISABLE_COPY(XmlConfV3);
@@ -241,6 +244,7 @@ public:
     virtual void setTSLTimeOut( int timeOut );
 
     virtual void setTSUrl(const std::string &url);
+    virtual void setVerifyServiceUri(const std::string &url);
 
 private:
     DISABLE_COPY(XmlConfV4);

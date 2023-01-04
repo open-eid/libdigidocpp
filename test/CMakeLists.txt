@@ -7,6 +7,7 @@ if( Boost_INCLUDE_DIR )
     add_definitions(
         -DDIGIDOCPPCONF="${CMAKE_SOURCE_DIR}/etc/schema"
         -DPKCS11_MODULE="${PKCS11_MODULE}"
+        -DSIVA_URL="${SIVA_URL}"
     )
     add_executable(unittests libdigidocpp_boost.cpp)
     add_executable(TSLTests TSLTests.cpp)
