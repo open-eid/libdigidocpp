@@ -54,11 +54,21 @@ case "$@" in
   *simulator*)
     echo "Building for iOS Simulator"
     TARGET=iphonesimulator
+    SYSROOT=iphonesimulator
+    : ${ARCHS:="x86_64"}
+    ;;
+  *catalyst*)
+    echo "Building for iOS macOS Catalyst"
+    TARGET=iphonecatalyst
+    SYSROOT=macosx
+    export CFLAGS="-target x86_64-apple-ios-macabi"
+    export CXXFLAGS="-target x86_64-apple-ios-macabi"
     : ${ARCHS:="x86_64"}
     ;;
   *)
     echo "Building for iOS"
     TARGET=iphoneos
+    SYSROOT=iphoneos
     : ${ARCHS:="arm64"}
     ;;
   esac
@@ -68,7 +78,7 @@ case "$@" in
   CMAKEARGS="
     -DCMAKE_C_COMPILER_WORKS=yes \
     -DCMAKE_CXX_COMPILER_WORKS=yes \
-    -DCMAKE_OSX_SYSROOT=${TARGET} \
+    -DCMAKE_OSX_SYSROOT=${SYSROOT} \
     -DIOS=YES \
     -DFRAMEWORK=off \
     -DUSE_KEYCHAIN=off \

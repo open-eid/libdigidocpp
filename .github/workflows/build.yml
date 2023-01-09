@@ -1,7 +1,7 @@
 name: CI
 on: [push, pull_request]
 permissions:
-  contents: write
+  contents: read
 env:
   RUN_TESTS: ALL
   BUILD_NUMBER: ${{ github.run_number }}
@@ -53,20 +53,29 @@ jobs:
       run: ./build-library.sh all pkcs11sign zipdebug embedlibs pkgbuild
     - name: Build ${{ matrix.target }}
       if: matrix.target != 'osx'
-      run: ./build-library.sh ${{ matrix.target }} install/strip
+      run: |
+        ./build-library.sh ${{ matrix.target }} install/strip
+        cd /Library
+        zip -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
     - name: Archive artifacts
       if: matrix.target == 'osx'
       uses: actions/upload-artifact@v3
       with:
         name: pkgs
         path: macOS/libdigidocpp*.*
+    - name: Archive artifacts
+      if: matrix.target != 'osx'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.target }}
+        path: libdigidocpp*.zip
   fedora:
     name: Build on Fedora to ${{ matrix.container }}
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:35', 'fedora:36', 'fedora:37']
+        container: ['fedora:36', 'fedora:37']
     env:
       MAKEFLAGS: -j3
     steps:
@@ -192,13 +201,15 @@ jobs:
     name: Deploy pages
     if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'master')
     runs-on: ubuntu-20.04
+    permissions:
+      contents: write
     steps:
     - name: Checkout
       uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev doxygen
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen
     - name: Build docs
       run: |
         cmake -B build -S .
@@ -222,7 +233,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
     - name: Download Coverity Build Tool
       run: |
         curl --silent --data "token=$TOKEN&project=$PROJECTNAME" -o cov-analysis-linux64.tar.gz https://scan.coverity.com/download/cxx/linux64

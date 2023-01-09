@@ -596,6 +596,20 @@ If left unspecified then the logging output is written to standard output stream
 \note For testing purposes, the SK's test time-stamping service can be used. The service is available at http://demo.sk.ee/tsa/ additional information can be found at https://www.id.ee/en/rubriik/timestamping-service/.
 
 
+\subsubsection VerifyService-settings Signature Verify Service settings
+<table>
+<tr>
+  <th>Parameter name</th>
+  <th>Comments</th>
+</tr>
+<tr>
+  <td>verify.serivceUri</td>
+  <td>Specifies the URL of the signature-verify service that is used during signature validation. By default, the RIA's signature-verify service is used by the library (https://siva.eesti.ee/V3/validate)
+</td>
+</tr>
+</table>
+
+
 \subsubsection pkcs11-settings PKCS#11 settings
 <table>
 <tr>

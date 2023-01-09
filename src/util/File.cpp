@@ -75,12 +75,12 @@ using f_utimbuf = struct utimbuf;
  * @param str_in The string to be converted.
  * @return Returns the input string in UTF-8.
  */
-string File::convertUTF8(const string &str_in, bool to_UTF)
+string File::convertUTF8(string_view str_in, bool to_UTF)
 {
     string charset = nl_langinfo(CODESET);
     // no conversion needed for UTF-8
     if(charset == "UTF-8" || charset == "utf-8")
-        return str_in;
+        return string(str_in);
 
     iconv_t ic_descr = iconv_t(-1);
     try
@@ -90,9 +90,9 @@ string File::convertUTF8(const string &str_in, bool to_UTF)
     catch(exception &) {}
 
     if(ic_descr == iconv_t(-1))
-        return str_in;
+        return string(str_in);
 
-    char* inptr = (char*)str_in.c_str();
+    char* inptr = (char*)str_in.data();
     size_t inleft = str_in.size();
 
     string out;
@@ -116,7 +116,7 @@ string File::convertUTF8(const string &str_in, bool to_UTF)
             case EINVAL:
             default:
                 iconv_close(ic_descr);
-                return str_in;
+                return string(str_in);
                 break;
             }
         }
@@ -144,7 +144,7 @@ string File::confPath()
 #endif
 }
 
-string File::env(const string &varname)
+string File::env(string_view varname)
 {
 #ifdef _WIN32
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
@@ -152,7 +152,7 @@ string File::env(const string &varname)
 #endif
     if(wchar_t *var = _wgetenv(encodeName(varname).c_str()))
 #else
-    if(char *var = getenv(encodeName(varname).c_str()))
+    if(char *var = getenv(varname.data()))
 #endif
         return decodeName(var);
     return {};
@@ -163,7 +163,7 @@ string File::env(const string &varname)
  * @param fileName path
  * @return encoded path
  */
-File::f_string File::encodeName(const string &fileName)
+File::f_string File::encodeName(string_view fileName)
 {
     if(fileName.empty())
         return {};
@@ -173,7 +173,7 @@ File::f_string File::encodeName(const string &fileName)
     len = MultiByteToWideChar(CP_UTF8, 0, fileName.data(), int(fileName.size()), out.data(), len);
 #elif defined(__APPLE__)
     CFMutableStringRef ref = CFStringCreateMutable(nullptr, 0);
-    CFStringAppendCString(ref, fileName.c_str(), kCFStringEncodingUTF8);
+    CFStringAppendCString(ref, fileName.data(), kCFStringEncodingUTF8);
     CFStringNormalize(ref, kCFStringNormalizationFormD);
 
     string out(fileName.size() * 2, 0);
@@ -181,7 +181,7 @@ File::f_string File::encodeName(const string &fileName)
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
 #elif defined(__ANDROID__)
-    f_string out = fileName;
+    f_string out = string(fileName);
 #else
     f_string out = convertUTF8(fileName,false);
 #endif
@@ -193,7 +193,7 @@ File::f_string File::encodeName(const string &fileName)
  * @param localFileName path
  * @return decoded path
  */
-string File::decodeName(const f_string &localFileName)
+string File::decodeName(const f_string_view &localFileName)
 {
     if(localFileName.empty())
         return {};
@@ -203,7 +203,7 @@ string File::decodeName(const f_string &localFileName)
     WideCharToMultiByte(CP_UTF8, 0, localFileName.data(), int(localFileName.size()), out.data(), len, nullptr, nullptr);
 #elif defined(__APPLE__)
     CFMutableStringRef ref = CFStringCreateMutable(nullptr, 0);
-    CFStringAppendCString(ref, localFileName.c_str(), kCFStringEncodingUTF8);
+    CFStringAppendCString(ref, localFileName.data(), kCFStringEncodingUTF8);
     CFStringNormalize(ref, kCFStringNormalizationFormC);
 
     string out(localFileName.size() * 2, 0);
@@ -211,7 +211,7 @@ string File::decodeName(const f_string &localFileName)
     CFRelease(ref);
     out.resize(strlen(out.c_str()));
 #elif defined(__ANDROID__)
-    string out = localFileName;
+    string out = string(localFileName);
 #else
     string out = convertUTF8(localFileName,true);
 #endif
@@ -343,7 +343,7 @@ string File::path(const string& directory, const string& relativePath)
 {
     string dir(directory);
     if(!dir.empty() && (dir[dir.size() - 1] == '/' || dir[dir.size() - 1] == '\\'))
-        dir = dir.substr(0, dir.size() - 1);
+        dir.pop_back();
 
     string path = dir + "/" + relativePath;
 #ifdef _WIN32
@@ -392,7 +392,7 @@ void File::createDirectory(const string& path)
 
     string dirPath = path;
     if(dirPath[dirPath.size() - 1] == '/' || dirPath[dirPath.size() - 1] == '\\')
-        dirPath = dirPath.substr(0, dirPath.size() - 1);
+        dirPath.pop_back();
 
     f_string _path = encodeName(dirPath);
     f_statbuf fileInfo;

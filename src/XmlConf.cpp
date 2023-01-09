@@ -605,10 +605,10 @@ SET1CONST(string, setPKCS12Pass, PKCS12Pass)
 
 /**
  * @fn void digidoc::XmlConf::setTSUrl(const std::string &url)
- * Sets a PKCS#12 certificate password. Also adds or replaces PKCS#12 certificate password in the user configuration file.
+ * Sets a TSA service URL. Also adds or replaces TSA service URL in the user configuration file.
  *
  * @param url Target URL to connect TSA service.
- * @throws Exception exception is thrown if saving a TS URL into a user configuration file fails.
+ * @throws Exception exception is thrown if saving a TS service URL into a user configuration file fails.
  */
 /**
  * @fn void digidoc::XmlConfV2::setTSUrl(const std::string &url)
@@ -623,6 +623,15 @@ SET1CONST(string, setPKCS12Pass, PKCS12Pass)
  * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
  */
 SET1CONST(string, setTSUrl, TSUrl)
+
+/**
+ * @fn void digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
+ * Sets a Verify service URL. Also adds or replaces Verify service URL in the user configuration file.
+ *
+ * @param url Target URL to connect Verify service.
+ * @throws Exception exception is thrown if saving a Verify service URL into a user configuration file fails.
+ */
+SET1CONST(string, setVerifyServiceUri, verifyServiceUri)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Disable(bool disable)

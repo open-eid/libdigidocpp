@@ -98,7 +98,6 @@ public:
         else if(!cert.empty())
             serviceCerts->emplace_back(cert, X509Cert::Der);
     }
-    void setVerifyServiceUri(std::string url) { serviceUrl = std::move(url); }
 
 private:
     DISABLE_COPY(DigiDocConf);

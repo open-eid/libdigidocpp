@@ -90,7 +90,7 @@ unique_ptr<Container> ASiC_S::openInternal(const string &path)
 
 void ASiC_S::extractTimestamp(const ZipSerialize &z)
 {
-    addSignature(new SignatureTST(dataStream("META-INF/timestamp.tst", z), this));
+    addSignature(make_unique<SignatureTST>(dataStream("META-INF/timestamp.tst", z), this));
 }
 
 /**

@@ -60,11 +60,10 @@ std::vector<unsigned char> i2d(T *obj, Func func)
 class OpenSSLException : public Exception
 {
     public:
-        OpenSSLException(const std::string &file, int line, const std::string &msg)
+        OpenSSLException(const std::string &file, int line, const std::string &msg, unsigned long error = ERR_get_error())
             : Exception(file, line, msg)
         {
-            unsigned long error = 0;
-            while((error = ERR_get_error()) != 0)
+            for(; error != 0; error = ERR_get_error())
             {
                 Exception e(ERR_lib_error_string(error), 0, ERR_error_string(error, nullptr));
 #ifndef LIBRESSL_VERSION_NUMBER

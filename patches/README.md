@@ -7,6 +7,7 @@
 * xalan-CMakeLists.txt - Xalan-C cmake project for static build
 
 # Windows patches
+* vcpkg-ports/xalan-c - https://github.com/microsoft/vcpkg/commit/299b1e17df207b4ea4b07c85af15cc7027f8cc25
 * vcpkg-ports/xml-security-c - vcpkg port file for windows
 * vcpkg-triplet - vcpkg triplet files for windows
 

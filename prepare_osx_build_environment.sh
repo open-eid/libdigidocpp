@@ -5,8 +5,8 @@ XERCES_DIR=xerces-c-3.2.4
 XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.1.1q
-LIBXML2_DIR=libxml2-2.9.14
+OPENSSL_DIR=openssl-1.1.1s
+LIBXML2_DIR=libxml2-2.10.3
 ANDROID_NDK=android-ndk-r25
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
@@ -81,6 +81,17 @@ case "$@" in
   : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
+  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
+  ;;
+*ioscatalyst*)
+  echo "Building for iOS macOS Catalyst"
+  TARGET_PATH=/Library/libdigidocpp.iphonecatalyst
+  CONFIGURE="--host=x86_64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking --disable-netaccessor-curl"
+  SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
+  : ${ARCHS:="x86_64"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
+  export IPHONEOS_DEPLOYMENT_TARGET
+  export CFLAGS="-arch ${ARCHS// / -arch } -target x86_64-apple-ios-macabi -isysroot ${SYSROOT}"
   export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
 *ios*)
@@ -264,6 +275,7 @@ function openssl {
             *x86_64*)
                 case "${ARGS}" in
                 *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine ;;
+                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128 ;;
                 *) CC="" CFLAGS="" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;

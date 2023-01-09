@@ -257,7 +257,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
     if(X509_verify_cert(csc.get()) <= 0)
     {
         int err = X509_STORE_CTX_get_error(csc.get());
-        OpenSSLException e(EXCEPTION_PARAMS(X509_verify_cert_error_string(err)));
+        OpenSSLException e(EXCEPTION_PARAMS("%s", X509_verify_cert_error_string(err)));
         switch(err)
         {
         case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:

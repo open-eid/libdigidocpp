@@ -33,7 +33,7 @@ public:
     SecureDOMParser(const std::string &schema_location = {});
     SecureDOMParser(const std::string &schema_location, bool dont_validate);
 
-    static void calcDigestOnNode(Digest *calc, const std::string &algorithmType,
+    static void calcDigestOnNode(Digest *calc, std::string_view algorithmType,
         xercesc::DOMDocument *doc, xercesc::DOMNode *node);
 
     void doctypeDecl(const xercesc::DTDElementDecl& root,

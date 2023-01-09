@@ -53,23 +53,6 @@ void *OPENSSL_memdup(const void *data, size_t size)
 
 	return memcpy(copy, data, size);
 }
-
-static void TS_VERIFY_CTX_set_flags(TS_VERIFY_CTX *ctx, int f)
-{
-    ctx->flags = unsigned(f);
-}
-
-static void TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx, unsigned char *hexstr, long len)
-{
-    OPENSSL_free(ctx->imprint);
-    ctx->imprint = hexstr;
-    ctx->imprint_len = unsigned(len);
-}
-
-static void TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s)
-{
-    ctx->store = s;
-}
 #endif
 
 TS::TS(const string &url, const Digest &digest, const string &useragent)
@@ -275,11 +258,11 @@ void TS::verify(const Digest &digest)
             unsigned long err = ERR_get_error();
             if(ERR_GET_LIB(err) == ERR_LIB_TS && ERR_GET_REASON(err) == TS_R_CERTIFICATE_VERIFY_ERROR)
             {
-                Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
+                OpenSSLException e(EXCEPTION_PARAMS("Certificate status: unknown"), err);
                 e.setCode( Exception::CertificateUnknown );
                 throw e;
             }
-            THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
+            throw OpenSSLException(EXCEPTION_PARAMS("Failed to verify TS response."), err);
         }
     }
 #ifndef OPENSSL_NO_CMS

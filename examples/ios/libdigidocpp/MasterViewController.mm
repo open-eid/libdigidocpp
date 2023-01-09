@@ -20,7 +20,7 @@
 
 @implementation NSString (Digidoc)
 + (NSString*)stdstring:(const std::string&)str {
-    return str.empty() ? [NSString string] : [NSString stringWithUTF8String:str.c_str()];
+    return str.empty() ? [NSString string] : @(str.c_str());
 }
 
 + (NSString*)exception:(const digidoc::Exception&)e {
@@ -238,13 +238,14 @@
                     cell.textLabel.text = [NSString stdstring:signature->signedBy()];
                     break;
                 case 1:
-                    switch (digidoc::Signature::Validator(signature).status()) {
-                    case digidoc::Signature::Validator::Valid: cell.textLabel.text = @"Valid"; break;
-                    case digidoc::Signature::Validator::Warning: cell.textLabel.text = @"Warning"; break;
-                    case digidoc::Signature::Validator::NonQSCD: cell.textLabel.text = @"NonQSCD"; break;
-                    case digidoc::Signature::Validator::Test: cell.textLabel.text = @"Test"; break;
-                    case digidoc::Signature::Validator::Unknown: cell.textLabel.text = @"Unknown"; break;
-                    case digidoc::Signature::Validator::Invalid: cell.textLabel.text = @"Invalid"; break;
+                    using Validator = digidoc::Signature::Validator;
+                    switch (Validator(signature).status()) {
+                    case Validator::Valid: cell.textLabel.text = @"Valid"; break;
+                    case Validator::Warning: cell.textLabel.text = @"Warning"; break;
+                    case Validator::NonQSCD: cell.textLabel.text = @"NonQSCD"; break;
+                    case Validator::Test: cell.textLabel.text = @"Test"; break;
+                    case Validator::Unknown: cell.textLabel.text = @"Unknown"; break;
+                    case Validator::Invalid: cell.textLabel.text = @"Invalid"; break;
                     }
                     break;
                 case 2:
