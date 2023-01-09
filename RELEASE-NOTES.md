@@ -1,3 +1,9 @@
+Libdigidocpp library [3.14.12](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.12) release notes
+--------------------------------------
+- Fix digidoc-tool file extraction
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.11...v3.14.12)
+
 Libdigidocpp library [3.14.11](https://github.com/open-eid/libdigidocpp/releases/tag/v3.14.11) release notes
 --------------------------------------
 - Update libraries (#472, #495, #490, #500)

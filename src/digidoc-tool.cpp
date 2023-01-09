@@ -128,11 +128,6 @@ static ostream &operator<<(ostream &os, Signature::Validator::Status status)
     }
     return os;
 }
-
-static string& operator+(string_view lhs, string rhs)
-{
-    return rhs.insert(0, lhs);
-}
 }
 
 /**
@@ -556,7 +551,7 @@ static int open(int argc, char* argv[])
 {
     ToolConfig::Warning reportwarnings = ToolConfig::WWarning;
     string path, policy;
-    string_view extractPath;
+    fs::path extractPath;
     bool validateOnExtract = false;
     int returnCode = EXIT_SUCCESS;
 
@@ -573,11 +568,13 @@ static int open(int argc, char* argv[])
         }
         else if(arg.find("--extractAll") == 0)
         {
-            extractPath = ".";
-            size_t pos = arg.find('=');
-            if(pos != string::npos)
-                extractPath = arg.substr(pos + 1);
-            if(!fs::is_directory(fs::u8path(extractPath)))
+            extractPath = fs::current_path();
+            if(auto pos = arg.find('='); pos != string::npos)
+            {
+                fs::path newPath = fs::u8path(arg.substr(pos + 1));
+                extractPath = newPath.is_relative() ? extractPath / newPath : newPath;
+            }
+            if(!fs::is_directory(extractPath))
                 THROW("Path is not directory");
         }
         else if(arg == "--validateOnExtract")
@@ -605,7 +602,7 @@ static int open(int argc, char* argv[])
         for(const DataFile *file: doc->dataFiles())
         {
             try {
-                string dst = extractPath + "/" + File::fileName(file->fileName());
+                string dst = (extractPath / fs::u8path(file->fileName()).filename()).u8string();
                 file->saveAs(dst);
                 cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
             } catch(const Exception &e) {

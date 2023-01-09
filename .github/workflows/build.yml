@@ -160,7 +160,7 @@ jobs:
     env:
       MAKEFLAGS: ""
       VER_SUFFIX: .VS${{ matrix.toolset }}
-      VERSION: 3.14.11.${{ github.run_number }}
+      VERSION: 3.14.12.${{ github.run_number }}
       VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/patches/vcpkg-triplets
       VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/patches/vcpkg-ports
     steps:
