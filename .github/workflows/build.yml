@@ -19,6 +19,8 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
+      env:
+        HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: YES
       run: |
         brew update
         brew install doxygen boost xsd || brew link --overwrite xsd
@@ -160,7 +162,7 @@ jobs:
     env:
       MAKEFLAGS: ""
       VER_SUFFIX: .VS${{ matrix.toolset }}
-      VERSION: 3.14.12.${{ github.run_number }}
+      VERSION: 3.15.0.${{ github.run_number }}
       VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/patches/vcpkg-triplets
       VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/patches/vcpkg-ports
     steps:

@@ -4,7 +4,7 @@ plugins {
 
 group 'ee.ria'
 sourceCompatibility = 8
-sourceSets.main.java.srcDirs += ['/Library/libdigidocpp/include']
+sourceSets.main.java.srcDirs += ['/Library/libdigidocpp/include', '/usr/include']
 
 repositories {
     mavenCentral()
@@ -17,6 +17,6 @@ dependencies {
 jar {
     archivesBaseName = 'libdigidocpp'
     manifest {
-        attributes 'Main-Class': 'ee.ria.libdigidocpp'
+        attributes 'Main-Class': 'ee.ria.libdigidocpp.libdigidocpp'
     }
 }
