@@ -71,9 +71,6 @@ namespace digidoc
 #endif
 
         private:
-#if !defined(_WIN32) && !defined(__APPLE__)
-              static std::string convertUTF8(std::string_view str_in, bool to_UTF);
-#endif
               static std::stack<std::string> tempFiles;
         };
 
