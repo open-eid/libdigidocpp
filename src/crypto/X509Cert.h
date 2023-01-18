@@ -98,6 +98,7 @@ namespace digidoc
           operator std::vector<unsigned char>() const;
           X509Cert& operator=(const X509Cert &other);
           X509Cert& operator=(X509Cert &&other) DIGIDOCPP_NOEXCEPT;
+          operator bool() const;
           bool operator !() const;
           bool operator ==(X509 *other) const;
           bool operator ==(const X509Cert &other) const;

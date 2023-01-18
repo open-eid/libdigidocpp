@@ -287,28 +287,29 @@ X509Cert::operator std::vector<unsigned char>() const
 }
 
 /**
+ * Returns true if handle is valid
+ */
+X509Cert::operator bool() const
+{
+    return bool(cert);
+}
+
+/**
  * Returns X.509 certificate serial number.
  *
  * @throws Exception exception is thrown if the serial is incorrect.
  */
 string X509Cert::serial() const
 {
-    string serial;
     if(!cert)
-        return serial;
-    SCOPE2(BIGNUM, bn, ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), nullptr), BN_free);
-    if(!!bn)
+        return {};
+    if(auto bn = SCOPE_PTR_FREE(BIGNUM, ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), nullptr), BN_free))
     {
-        char *str = BN_bn2dec(bn.get());
-        if(str)
-            serial = str;
-        OPENSSL_free(str);
+        auto openssl_free = [](char *data) { OPENSSL_free(data); };
+        if(auto str = unique_ptr<char,decltype(openssl_free)>(BN_bn2dec(bn.get()), openssl_free))
+            return str.get();
     }
-
-    if(serial.empty())
-        THROW_OPENSSLEXCEPTION("Failed to read certificate serial number from X.509 certificate");
-
-    return serial;
+    return {};
 }
 
 /**
@@ -430,7 +431,7 @@ string X509Cert::subjectName(const string &obj) const
 string X509Cert::toOID(ASN1_OBJECT *obj) const
 {
     string oid(80, 0);
-    oid.resize(size_t(OBJ_obj2txt(&oid[0], int(oid.size()), obj, 1)));
+    oid.resize(size_t(OBJ_obj2txt(oid.data(), int(oid.size()), obj, 1)));
     return oid;
 };
 

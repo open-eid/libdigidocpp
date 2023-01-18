@@ -191,7 +191,7 @@ X509Cert PKCS11Signer::cert() const
     DEBUG("PKCS11Signer::getCert()");
 
     // If certificate is already selected return it.
-    if(!!d->sign.certificate)
+    if(d->sign.certificate)
         return d->sign.certificate;
 
     // Load all slots.

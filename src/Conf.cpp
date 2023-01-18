@@ -47,7 +47,7 @@ Conf::Conf() = default;
 Conf::~Conf() = default;
 
 /**
- * Return global instance object
+ * Return global config instance object
  */
 Conf* Conf::instance() { return INSTANCE; }
 
@@ -248,7 +248,7 @@ ConfV2::ConfV2() = default;
 ConfV2::~ConfV2() = default;
 
 /**
- * Return global instance object
+ * @copydoc digidoc::Conf::instance()
  */
 ConfV2* ConfV2::instance() { return dynamic_cast<ConfV2*>(Conf::instance()); }
 
@@ -277,7 +277,7 @@ ConfV3::ConfV3() = default;
 ConfV3::~ConfV3() = default;
 
 /**
- * Return global instance object
+ * @copydoc digidoc::Conf::instance()
  */
 ConfV3* ConfV3::instance() { return dynamic_cast<ConfV3*>(Conf::instance()); }
 
@@ -308,7 +308,7 @@ ConfV4::ConfV4() = default;
 ConfV4::~ConfV4() = default;
 
 /**
- * Return global instance object
+ * @copydoc digidoc::Conf::instance()
  */
 ConfV4* ConfV4::instance() { return dynamic_cast<ConfV4*>(Conf::instance()); }
 
@@ -317,8 +317,37 @@ ConfV4* ConfV4::instance() { return dynamic_cast<ConfV4*>(Conf::instance()); }
  */
 vector<X509Cert> ConfV4::verifyServiceCerts() const
 {
-    X509Cert cert = verifyServiceCert();
-    if(!cert)
-        return {};
-    return { cert };
+    if(X509Cert cert = verifyServiceCert())
+        return { cert };
+    return {};
+}
+
+/**
+ * @class digidoc::ConfV5
+ * @brief Verison 5 of configuration class to add additonial parameters.
+ *
+ * Conf contains virtual members and is not leaf class we need create
+ * subclasses to keep binary compatibility
+ * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
+ * @see digidoc::ConfV4
+ * @see @ref parameters
+ */
+/**
+ * Version 4 config with new parameters
+ */
+ConfV5::ConfV5() = default;
+
+ConfV5::~ConfV5() = default;
+
+/**
+ * @copydoc digidoc::Conf::instance()
+ */
+ConfV5* ConfV5::instance() { return dynamic_cast<ConfV5*>(Conf::instance()); }
+
+/**
+ * Gets verify service Certs
+ */
+vector<X509Cert> ConfV5::TSCerts() const
+{
+    return {};
 }

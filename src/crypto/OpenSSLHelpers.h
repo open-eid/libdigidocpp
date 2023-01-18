@@ -35,8 +35,9 @@
 namespace digidoc
 {
 
-#define SCOPE2(TYPE, VAR, DATA, FREE) std::unique_ptr<TYPE,decltype(&FREE)> VAR(static_cast<TYPE*>(DATA), FREE)
-#define SCOPE(TYPE, VAR, DATA) SCOPE2(TYPE, VAR, DATA, TYPE##_free)
+#define SCOPE_PTR_FREE(TYPE, DATA, FREE) std::unique_ptr<TYPE,decltype(&FREE)>(static_cast<TYPE*>(DATA), FREE)
+#define SCOPE_PTR(TYPE, DATA) SCOPE_PTR_FREE(TYPE, DATA, TYPE##_free)
+#define SCOPE(TYPE, VAR, DATA) auto VAR = SCOPE_PTR_FREE(TYPE, DATA, TYPE##_free)
 
 template<class T, typename Func>
 std::vector<unsigned char> i2d(T *obj, Func func)
