@@ -195,7 +195,7 @@ jobs:
   pages:
     name: Deploy pages
     if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'master')
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
@@ -218,7 +218,7 @@ jobs:
   coverity:
     name: Run Coverity tests
     if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'coverity_scan')
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
       PROJECTNAME: ${{ github.repository }}

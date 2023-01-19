@@ -46,7 +46,6 @@
 
 #include <algorithm>
 #include <fstream>
-#include <set>
 
 using namespace digidoc;
 using namespace digidoc::util;
@@ -91,11 +90,10 @@ static std::string base64_decode(const XMLCh *in) {
 class SiVaContainer::Private
 {
 public:
-    string path;
+    string path, mediaType;
     unique_ptr<istream> ddoc;
     vector<DataFile*> dataFiles;
     vector<Signature*> signatures;
-    string mediaType;
 };
 
 vector<unsigned char> SignatureSiVa::dataToSign() const
@@ -148,9 +146,10 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     : d(make_unique<Private>())
 {
     DEBUG("SiVaContainer::SiVaContainer(%s, %s, %d)", path.c_str(), ext.c_str(), useHashCode);
-    unique_ptr<istream> ifs = make_unique<ifstream>(File::encodeName(d->path = path).c_str(), ifstream::binary);
+    unique_ptr<istream> ifs = make_unique<ifstream>(File::encodeName(d->path = path), ifstream::binary);
+    auto fileName = File::fileName(path);
     istream *is = ifs.get();
-    if(ext == "DDOC")
+    if(ext == "ddoc")
     {
         d->mediaType = "application/x-ddoc";
         d->ddoc = move(ifs);
@@ -160,7 +159,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     else
     {
         d->mediaType = "application/pdf";
-        d->dataFiles.push_back(new DataFilePrivate(move(ifs), File::fileName(path), "application/pdf"));
+        d->dataFiles.push_back(new DataFilePrivate(move(ifs), fileName, "application/pdf"));
     }
 
     array<XMLByte, 48*100> buf{};
@@ -179,15 +178,14 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
             b64.append((char*)out, size);
         delete out;
     }
-    ifs.release();
+    ifs.reset();
 
-    string url = CONF(verifyServiceUri);
     string req = json({
-        {"filename", File::fileName(path)},
+        {"filename", fileName},
         {"document", move(b64)},
         {"signaturePolicy", "POLv4"}
     }).dump();
-    Connect::Result r = Connect(url, "POST", 0, {}, CONF(verifyServiceCerts)).exec({
+    Connect::Result r = Connect(CONF(verifyServiceUri), "POST", 0, {}, CONF(verifyServiceCerts)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
     }, (const unsigned char*)req.c_str(), req.size());
 
@@ -202,13 +200,13 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     {
         Exception e(EXCEPTION_PARAMS("Signature validation"));
         for(const json &error: result["requestErrors"])
-            EXCEPTION_ADD(e, "%s", error.value<string>("message", {}).c_str());
+            EXCEPTION_ADD(e, "%s", error.value<string>("message", {}).data());
         throw e;
     }
 
     for(const json &signature: result["validationReport"]["validationConclusion"]["signatures"])
     {
-        SignatureSiVa *s = new SignatureSiVa;
+        auto s = unique_ptr<SignatureSiVa>(new SignatureSiVa);
         s->_id = signature["id"];
         s->_signingTime = signature["claimedSigningTime"];
         s->_profile = signature["signatureFormat"];
@@ -217,8 +215,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
         s->_signedBy = signature["signedBy"];
         s->_signatureMethod = signature.value<string>("signatureMethod", {});
         s->_signatureLevel = signature.value<string>("signatureLevel", {});
-        json info = signature.value<json>("info", {});
-        if(!info.is_null())
+        if(json info = signature.value<json>("info", {}); !info.is_null())
         {
             s->_bestTime = info.value<string>("bestSignatureTime", {});
             s->_tsTime = info.value<string>("timestampCreationTime", {});
@@ -233,8 +230,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
             }
             for(const json &signerRole: info.value<json>("signerRole", {}))
                 s->_signerRoles.push_back(signerRole["claimedRole"]);
-            json signatureProductionPlace = info.value<json>("signatureProductionPlace", {});
-            if(!signatureProductionPlace.is_null())
+            if(json signatureProductionPlace = info.value<json>("signatureProductionPlace", {}); !signatureProductionPlace.is_null())
             {
                 s->_city = signatureProductionPlace.value<string>("city", {});
                 s->_stateOrProvince = signatureProductionPlace.value<string>("stateOrProvince", {});
@@ -245,7 +241,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
         for(const json &certificate: signature.value<json>("certificates", {}))
         {
             XMLSize_t size = 0;
-            XMLByte *der = Base64::decode((const XMLByte*)certificate.value<string>("content", {}).c_str(), &size);
+            XMLByte *der = Base64::decode((const XMLByte*)certificate.value<string_view>("content", {}).data(), &size);
             if(certificate["type"] == "SIGNING")
                 s->_signingCertificate = X509Cert(der, size, X509Cert::Der);
             if(certificate["type"] == "REVOCATION")
@@ -276,16 +272,14 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
                 continue;
             WARN("%s", message.c_str());
         }
-        d->signatures.push_back(s);
+        d->signatures.push_back(s.release());
     }
 }
 
 SiVaContainer::~SiVaContainer()
 {
-    for(const Signature *s: d->signatures)
-        delete s;
-    for(const DataFile *f: d->dataFiles)
-        delete f;
+    for_each(d->signatures.cbegin(), d->signatures.cend(), default_delete<Signature>());
+    for_each(d->dataFiles.cbegin(), d->dataFiles.cend(), default_delete<DataFile>());
 }
 
 void SiVaContainer::addDataFile(const string & /*path*/, const string & /*mediaType*/)
@@ -320,10 +314,9 @@ vector<DataFile *> SiVaContainer::dataFiles() const
 
 unique_ptr<Container> SiVaContainer::openInternal(const string &path)
 {
-    static const set<string_view> supported = {"PDF", "DDOC"};
+    static const array supported {"pdf", "ddoc"};
     string ext = File::fileExtension(path);
-    transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
-    if(!supported.count(ext))
+    if(find(supported.cbegin(), supported.cend(), ext) == supported.cend())
         return {};
     try {
         return unique_ptr<Container>(new SiVaContainer(path, ext, true));
@@ -381,7 +374,7 @@ std::unique_ptr<std::istream> SiVaContainer::parseDDoc(bool useHashCode)
         DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(cpXMLCh(u"LS"));
         unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
         unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
-        unique_ptr<stringstream> result = make_unique<stringstream>();
+        auto result = make_unique<stringstream>();
         xml::dom::ostream_format_target out(*result);
         pDomLsOutput->setByteStream(&out);
         pSerializer->setNewLine(cpXMLCh(u"\n"));
@@ -445,7 +438,8 @@ void SiVaContainer::save(const string &path)
     {
         d->ddoc->clear();
         d->ddoc->seekg(0);
-        ofstream(File::encodeName(to).c_str(), ofstream::binary) << d->ddoc->rdbuf();
+        if(ofstream out{File::encodeName(to), ofstream::binary})
+            out << d->ddoc->rdbuf();
     }
     else
         d->dataFiles[0]->saveAs(to);
