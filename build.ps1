@@ -73,7 +73,7 @@ foreach($platform in @("x86", "x64")) {
       "-DXSD_EXECUTABLE=$xsd/bin/xsd.exe" `
       "-DSIGNCERT=$sign" `
       "-DCROSSSIGNCERT=$crosssign" `
-      $cmakeext -B $buildpath -S $libdigidocpp "&&" $cmake --build $buildpath --target install
+      $cmakeext -B $buildpath -S $libdigidocpp "&&" $cmake --build $buildpath --target check install
   }
 }
 

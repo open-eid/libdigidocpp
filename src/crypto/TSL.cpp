@@ -193,7 +193,7 @@ vector<TSL::Service> TSL::services() const
 
 void TSL::debugException(const digidoc::Exception &e)
 {
-    Log::out(Log::DebugType, e.file().c_str(), e.line(), e.msg().c_str());
+    Log::out(Log::DebugType, e.file().c_str(), e.line(), "%s", e.msg().c_str());
     for(const Exception &ex: e.causes())
         debugException(ex);
 }
@@ -562,7 +562,6 @@ void TSL::validate(const X509Cert &cert) const
         XSECProvider prov;
         auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
         unique_ptr<DSIGSignature, decltype(deleteSig)> sig(prov.newSignatureFromDOM(tsl->_node()->getOwnerDocument()), deleteSig);
-        //sig->setKeyInfoResolver(new XSECKeyInfoResolverDefault);
         sig->setSigningKey(OpenSSLCryptoX509(cert.handle()).clonePublicKey());
         sig->registerIdAttributeName((const XMLCh*)u"ID");
         sig->setIdByAttributeName(true);

@@ -38,11 +38,11 @@ namespace digidoc
     class ASiContainer: public Container
     {
       public:
-          static const std::string ASICE_EXTENSION;
-          static const std::string ASICE_EXTENSION_ABBR;
-          static const std::string ASICS_EXTENSION;
-          static const std::string ASICS_EXTENSION_ABBR;
-          static const std::string BDOC_EXTENSION;
+          static const std::string_view ASICE_EXTENSION;
+          static const std::string_view ASICE_EXTENSION_ABBR;
+          static const std::string_view ASICS_EXTENSION;
+          static const std::string_view ASICS_EXTENSION_ABBR;
+          static const std::string_view BDOC_EXTENSION;
 
           static const std::string MIMETYPE_ASIC_E;
           static const std::string MIMETYPE_ASIC_S;
@@ -70,7 +70,7 @@ namespace digidoc
           void zpath(const std::string &file);
           std::string zpath() const;
           ZipSerialize::Properties zproperty(const std::string &file) const;
-          void zproperty(const std::string &file, const ZipSerialize::Properties &prop);
+          void zproperty(const std::string &file, ZipSerialize::Properties &&prop);
 
           static std::string readMimetype(std::istream &path);
         

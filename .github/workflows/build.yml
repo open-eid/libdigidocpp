@@ -3,7 +3,6 @@ on: [push, pull_request]
 permissions:
   contents: read
 env:
-  RUN_TESTS: ALL
   BUILD_NUMBER: ${{ github.run_number }}
   MAKEFLAGS: -j3
 jobs:
@@ -24,7 +23,7 @@ jobs:
       run: |
         brew update
         brew install doxygen boost xsd || brew link --overwrite xsd
-        brew unlink xerces-c python@3.10
+        brew unlink xerces-c python@3.10 python@3.11
     - name: Cache
       uses: actions/cache@v3
       id: cache
@@ -52,7 +51,7 @@ jobs:
       run: sudo ln -s $PWD/cache/* /Library/
     - name: Build macOS
       if: matrix.target == 'osx'
-      run: ./build-library.sh all pkcs11sign zipdebug embedlibs pkgbuild
+      run: ./build-library.sh test pkcs11sign zipdebug embedlibs pkgbuild
     - name: Build ${{ matrix.target }}
       if: matrix.target != 'osx'
       run: |
@@ -251,3 +250,48 @@ jobs:
           --form version=master \
           --form description="Github Actions CI build" \
           https://scan.coverity.com/builds?project=$PROJECTNAME
+  codeql:
+    name: Run CodeQL tests
+    if: github.repository == 'open-eid/libdigidocpp'
+    runs-on: ubuntu-20.04
+    permissions:
+      security-events: write
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: cpp
+        queries: +security-and-quality
+    - name: Build
+      run: |
+        cmake -B build -S . \
+          -DSWIG_EXECUTABLE=NOTFOUND \
+          -DBoost_INCLUDE_DIR=NOTFOUND \
+          -DDOXYGEN_EXECUTABLE=NOTFOUND \
+          -DBUILD_TOOLS=NO
+        cmake --build build
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        upload: False
+        output: sarif-results
+    - name: Filter results
+      uses: advanced-security/filter-sarif@develop
+      with:
+        patterns: |
+          -src/json.hpp
+          -src/minizip/*
+          -build/src/xml/*
+          -**:cpp/poorly-documented-function
+        input: sarif-results/cpp.sarif
+        output: sarif-results/cpp.sarif
+    - name: Upload results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: sarif-results/cpp.sarif

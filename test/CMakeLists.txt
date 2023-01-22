@@ -83,5 +83,5 @@ if( Boost_INCLUDE_DIR )
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-no_QCSD.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
     )
-    add_custom_target(check ${RUN_TESTS} COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS unittests TSLTests)
+    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS unittests TSLTests)
 endif()

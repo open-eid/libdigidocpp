@@ -203,13 +203,16 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
     case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
     case X509_V_ERR_CERT_UNTRUSTED:
+        break;
+    default: return ok;
+    }
+
+    X509 *x509 = X509_STORE_CTX_get0_cert(ctx);
+    for(const TSL::Service &s: *instance()->d)
     {
-        X509 *x509 = X509_STORE_CTX_get0_cert(ctx);
-        for(const TSL::Service &s: *instance()->d)
-        {
-            if(type.find(s.type) == type.cend())
-                continue;
-            if(none_of(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
+        if(type.find(s.type) == type.cend())
+            continue;
+        if(none_of(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
                 if(issuer == x509)
                     return true;
                 if(X509_check_issued(issuer.handle(), x509) != X509_V_OK)
@@ -220,25 +223,22 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
                 OpenSSLException(EXCEPTION_PARAMS("ignore")); //Clear errors
                 return false;
             }))
-                continue;
-            X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&s.validity[0]));
-            X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
-            if(!(X509_VERIFY_PARAM_get_flags(param) & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
-                return 1;
-            for(const TSL::Validity &v: s.validity)
+            continue;
+        X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&s.validity[0]));
+        X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
+        if(!(X509_VERIFY_PARAM_get_flags(param) & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
+            return 1;
+        for(const TSL::Validity &v: s.validity)
+        {
+            if(X509_VERIFY_PARAM_get_time(param) >= v.start &&
+                (v.end == 0 || X509_VERIFY_PARAM_get_time(param) <= v.end))
             {
-                if(X509_VERIFY_PARAM_get_time(param) >= v.start &&
-                    (v.end == 0 || X509_VERIFY_PARAM_get_time(param) <= v.end))
-                {
-                    X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&v));
-                    return 1;
-                }
+                X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&v));
+                return 1;
             }
         }
-        return ok;
     }
-    default: return ok;
-    }
+    return ok;
 }
 
 /**
@@ -258,13 +258,9 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
     {
         int err = X509_STORE_CTX_get_error(csc.get());
         OpenSSLException e(EXCEPTION_PARAMS("%s", X509_verify_cert_error_string(err)));
-        switch(err)
-        {
-        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+        if(err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY)
             e.setCode(Exception::CertificateIssuerMissing);
-            throw e;
-        default: throw e;
-        }
+        throw e;
     }
 
     if(noqscd)

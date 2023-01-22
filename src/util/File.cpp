@@ -31,11 +31,13 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#include <ShlObj_core.h>
 #include <direct.h>
 #include <sys/utime.h>
 #else
 #include <dirent.h>
 #include <sys/param.h>
+#include <pwd.h>
 #include <unistd.h>
 #include <utime.h>
 #endif
@@ -81,7 +83,7 @@ string File::env(string_view varname)
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
     return {};
 #endif
-    if(wchar_t *var = _wgetenv(encodeName(varname).c_str()))
+    if(wchar_t *var = _wgetenv(fs::u8path(varname).c_str()))
 #else
     if(char *var = getenv(varname.data()))
 #endif
@@ -151,12 +153,11 @@ bool File::fileExists(const string& path)
 string File::dllPath(const string &dll)
 {
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    wstring wdll = File::encodeName(dll);
-    HMODULE handle = GetModuleHandleW(wdll.c_str());
+    HMODULE handle = GetModuleHandleW(fs::u8path(dll).c_str());
     wstring path(MAX_PATH, 0);
     DWORD size = GetModuleFileNameW(handle, path.data(), DWORD(path.size()));
     path.resize(size);
-    return File::directory(File::decodeName(path)) + "\\";
+    return fs::path(path).parent_path().u8string() + "\\";
 #else
     return "./";
 #endif
@@ -183,7 +184,7 @@ void File::updateModifiedTime(const string &path, time_t time)
         THROW("Failed to update file modified time.");
 }
 
-string File::fileExtension(const std::string &path)
+string File::fileExtension(const string &path)
 {
     size_t pos = path.find_last_of('.');
     if(pos == string::npos)
@@ -259,7 +260,7 @@ string File::directory(const string& path)
 string File::path(const string& directory, const string& relativePath)
 {
     string dir(directory);
-    if(!dir.empty() && (dir[dir.size() - 1] == '/' || dir[dir.size() - 1] == '\\'))
+    if(!dir.empty() && (dir.back() == '/' || dir.back() == '\\'))
         dir.pop_back();
 
     string path = dir + "/" + relativePath;
@@ -281,7 +282,7 @@ string File::tempFileName()
     wchar_t *fileName = _wtempnam(nullptr, nullptr); // TODO: static buffer, not thread-safe
     if(!fileName)
         THROW("Failed to create a temporary file name.");
-    string path = decodeName(fileName);
+    string path = fs::path(fileName).u8string();
     free(fileName);
 #else
 #ifdef __APPLE__
@@ -308,7 +309,7 @@ void File::createDirectory(const string& path)
         THROW("Can not create directory with no name.");
 
     string dirPath = path;
-    if(dirPath[dirPath.size() - 1] == '/' || dirPath[dirPath.size() - 1] == '\\')
+    if(dirPath.back() == '/' || dirPath.back() == '\\')
         dirPath.pop_back();
 
     f_string _path = encodeName(dirPath);
@@ -329,6 +330,25 @@ void File::createDirectory(const string& path)
 #endif
     if(result)
         THROW("Failed to create directory '%s'", path.c_str());
+}
+
+string File::digidocppPath()
+{
+#ifdef _WIN32
+    PWSTR knownFolder {};
+    if(SHGetKnownFolderPath(FOLDERID_RoamingAppData, KF_FLAG_CREATE, nullptr, &knownFolder) != S_OK)
+        THROW("Failed to get home directory");
+    string appData = (fs::path(knownFolder) / "digidocpp").u8string();
+    CoTaskMemFree(knownFolder);
+    return appData;
+#else
+    string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
+    struct passwd pwbuf {};
+    struct passwd *pw {};
+    if(getpwuid_r(geteuid(), &pwbuf, buf.data(), buf.size(), &pw) != 0 || !pw)
+        THROW("Failed to get home directory");
+    return path(pw->pw_dir, "/.digidocpp");
+#endif
 }
 
 /**
@@ -387,7 +407,7 @@ void File::deleteTempFiles()
 bool File::removeFile(const string &path)
 {
 #ifdef _WIN32
-    return _wremove(encodeName(path).c_str()) == 0;
+    return _wremove(fs::u8path(path).c_str()) == 0;
 #else
     return remove(encodeName(path).c_str()) == 0;
 #endif
@@ -437,7 +457,7 @@ string File::toUri(const string &path)
 string File::toUriPath(const string &path)
 {
     static const string unreserved = "-._~/";
-    //static string sub-delims = "!$&'()*+,;=";
+    //static string sub-delims = "!$&'()*+,;="
     static const locale locC("C");
     ostringstream dst;
     for(const char &i: path)

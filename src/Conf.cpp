@@ -174,11 +174,7 @@ bool Conf::TSLAutoUpdate() const { return true; }
  */
 string Conf::TSLCache() const
 {
-#ifdef _WIN32
-    return File::env("APPDATA") + "\\digidocpp\\tsl\\";
-#else
-    return File::env("HOME") + "/.digidocpp/tsl/";
-#endif
+    return File::path(File::digidocppPath(), "tsl");
 }
 
 /**

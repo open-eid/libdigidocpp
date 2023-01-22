@@ -202,7 +202,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     {
         Exception e(EXCEPTION_PARAMS("Signature validation"));
         for(const json &error: result["requestErrors"])
-            EXCEPTION_ADD(e, error.value<string>("message", {}).c_str());
+            EXCEPTION_ADD(e, "%s", error.value<string>("message", {}).c_str());
         throw e;
     }
 
@@ -260,13 +260,13 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
         {
             string message = error["content"];
             if(message.find("Bad digest for DataFile") == 0 && useHashCode)
-                THROW(message.c_str());
-            s->_exceptions.emplace_back(EXCEPTION_PARAMS(message.c_str()));
+                THROW("%s", message.c_str());
+            s->_exceptions.emplace_back(EXCEPTION_PARAMS("%s", message.c_str()));
         }
         for(const json &warning: signature.value<json>("warnings", {}))
         {
             string message = warning["content"];
-            Exception ex(EXCEPTION_PARAMS(message.c_str()));
+            Exception ex(EXCEPTION_PARAMS("%s", message.c_str()));
             if(message == "X509IssuerName has none or invalid namespace: null" ||
                 message == "X509SerialNumber has none or invalid namespace: null")
                 ex.setCode(Exception::IssuerNameSpaceWarning);
