@@ -24,119 +24,48 @@
 #include <cstdlib>
 #include <iomanip>
 #include <sstream>
-#if !defined(_WIN32) && !defined(__APPLE__)
 #include <ctime>
-#endif
 
 using namespace digidoc::util;
 using namespace std;
 
-tm date::ASN1TimeToTM(const std::string &date, bool generalizedtime)
-{
-    const char* t = date.c_str();
-    struct tm time{};
-    size_t i = 0;
-
-    if(date.size() < size_t(generalizedtime ? 12 : 10))
-        THROW("Date time field value shorter than 12 characters: '%s'", t);
-
-    // Accept only GMT time.
-    // XXX: What to do, when the time is not in GMT? The time data does not contain
-    // DST value and therefore it is not possible to convert it to GMT time.
-    if(t[date.size() - 1] != 'Z')
-        THROW("Time value is not in GMT format: '%s'", t);
-
-    for(size_t i = 0; i< date.size() - 1; ++i)
-    {
-        if ((t[i] > '9' || t[i] < '0') && t[i] != '.')
-            THROW("Date time value in incorrect format: '%s'", t);
-    }
-
-    // Extract year.
-    if(generalizedtime)
-    {
-        time.tm_year = (t[i++]-'0')*1000;
-        time.tm_year += (t[i++]-'0')*100;
-        time.tm_year += (t[i++]-'0')*10;
-        time.tm_year += (t[i++]-'0');
-        time.tm_year -= 1900;
-    }
-    else
-    {
-        time.tm_year = (t[i++] - '0') * 10;
-        time.tm_year += (t[i++] - '0');
-        if(time.tm_year < 70)
-            time.tm_year += 100;
-    }
-
-    // Extract month.
-    time.tm_mon = (t[i++]-'0')*10;
-    time.tm_mon += (t[i++]-'0');
-    time.tm_mon -= 1;
-    if(time.tm_mon > 11 || time.tm_mon < 0)
-        THROW("Month value incorrect: %d", time.tm_mon + 1);
-
-    // Extract day.
-    time.tm_mday = (t[i++]-'0')*10;
-    time.tm_mday += (t[i++]-'0');
-    if(time.tm_mday > 31 || time.tm_mday < 1)
-        THROW("Day value incorrect: %d", time.tm_mday);
-
-    // Extract hour.
-    time.tm_hour = (t[i++]-'0')*10;
-    time.tm_hour += (t[i++]-'0');
-    if(time.tm_hour > 23 || time.tm_hour < 0)
-        THROW("Hour value incorrect: %d", time.tm_hour);
-
-    // Extract minutes.
-    time.tm_min = (t[i++]-'0')*10;
-    time.tm_min += (t[i++]-'0');
-    if(time.tm_min > 59 || time.tm_min < 0)
-        THROW("Minutes value incorrect: %d", time.tm_min);
-
-    // Extract seconds.
-    if(date.size() >= size_t(generalizedtime ? 14 : 12))
-    {
-        time.tm_sec = (t[i++]-'0')*10;
-        time.tm_sec += (t[i++]-'0');
-        if(time.tm_sec > 59 || time.tm_sec < 0)
-            THROW("Seconds value incorrect: %d", time.tm_sec);
-    }
-
-    return time;
-}
-
-time_t date::ASN1TimeToTime_t(const string &date, bool generalizedtime)
-{
-    tm t = ASN1TimeToTM(date, generalizedtime);
-    return mkgmtime(t);
-}
-
-string date::ASN1TimeToXSD(const string &date, bool generalizedtime)
-{
-    if(date.empty())
-        return date;
-    tm datetime = ASN1TimeToTM(date, generalizedtime);
-    return xsd2string(makeDateTime(datetime));
-}
-
 struct tm date::gmtime(time_t t)
 {
-    struct tm tm;
+    tm tm {};
 #ifdef _WIN32
     if(gmtime_s(&tm, &t) != 0)
 #else
-    if(gmtime_r(&t, &tm) == nullptr)
+    if(!gmtime_r(&t, &tm))
 #endif
         THROW("Failed to convert time_t to tm");
     return tm;
+}
+
+time_t date::mkgmtime(struct tm &t)
+{
+#ifdef _WIN32
+    return _mkgmtime(&t);
+#else
+    return timegm(&t);
+#endif
+}
+
+string date::to_string(const tm &date)
+{
+    static const tm zero{};
+    if(memcmp(&zero, &date, sizeof(zero)) == 0)
+        return {};
+    string result(20, 0);
+    if(strftime(result.data(), result.size() + 1, "%Y-%m-%dT%H:%M:%SZ", &date) == 0)
+        return {};
+    return result;
 }
 
 /// Dedicated helper for converting xml-schema-style DateTyme into a Zulu-string.
 ///
 /// @param time GMT time as code-synth xml-schema type.
 /// @return a string format of date-time e.g. "2007-12-25T14:06:01Z".
-string date::xsd2string(const xml_schema::DateTime& time)
+string date::to_string(const xml_schema::DateTime& time)
 {
     stringstream stream;
     stream << setfill('0') << dec
@@ -149,18 +78,9 @@ string date::xsd2string(const xml_schema::DateTime& time)
     return stream.str();
 }
 
-time_t date::string2time_t(const string &time)
-{
-    class xsdparse: public xml_schema::DateTime
-    {
-    public: xsdparse(const string &time) { parse(time); }
-    };
-    return xsd2time_t(xsdparse(time));
-}
-
 time_t date::xsd2time_t(const xml_schema::DateTime &xml)
 {
-    struct tm t = {
+    tm t {
         int(xml.seconds()),
         xml.minutes(),
         xml.hours(),
@@ -169,33 +89,26 @@ time_t date::xsd2time_t(const xml_schema::DateTime &xml)
         xml.year() - 1900,
         0,
         0,
-        0
+        0,
 #ifndef _WIN32
-        ,0
-        ,nullptr
+        0,
+        nullptr,
 #endif
     };
     return mkgmtime(t);
 }
 
-time_t date::mkgmtime(struct tm &t)
+xml_schema::DateTime date::makeDateTime(time_t time)
 {
-#ifdef _WIN32
-    return _mkgmtime(&t);
-#else
-    return timegm(&t);
-#endif
-}
-
-xml_schema::DateTime date::makeDateTime(const struct tm& lt)
-{
-    return xml_schema::DateTime(
+    tm lt = gmtime(time);
+    return {
         lt.tm_year + 1900,
         static_cast<unsigned short>( lt.tm_mon + 1 ),
         static_cast<unsigned short>( lt.tm_mday ),
         static_cast<unsigned short>( lt.tm_hour ),
         static_cast<unsigned short>( lt.tm_min ),
-        lt.tm_sec,
+        double(lt.tm_sec),
         0, //zone +0h
-        0 ); //zone +0min
+        0, //zone +0min
+    };
 }

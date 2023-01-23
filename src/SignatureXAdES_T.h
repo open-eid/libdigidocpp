@@ -45,15 +45,13 @@ public:
 protected:
     void createUnsignedSignatureProperties();
     xades::UnsignedSignaturePropertiesType& unsignedSignatureProperties() const;
+    TS TimeStamp() const;
 
     TS verifyTS(const xades::XAdESTimeStampType &timestamp, Exception &exception,
         std::function<void (Digest *, std::string_view)> &&calcDigest) const;
 
 private:
     DISABLE_COPY(SignatureXAdES_T);
-
-    TS tsFromBase64() const;
-
 };
 
 }

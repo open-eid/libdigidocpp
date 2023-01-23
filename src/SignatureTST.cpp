@@ -53,7 +53,7 @@ X509Cert SignatureTST::TimeStampCertificate() const
 
 string SignatureTST::TimeStampTime() const
 {
-    return util::date::ASN1TimeToXSD(timestampToken->time());
+    return util::date::to_string(timestampToken->time());
 }
 
 string SignatureTST::trustedSigningTime() const
@@ -86,7 +86,7 @@ void SignatureTST::validate() const
 {
     Exception exception(EXCEPTION_PARAMS("Timestamp validation."));
 
-    if (timestampToken->time().empty())
+    if(!timestampToken)
     {
         EXCEPTION_ADD(exception, "Failed to parse timestamp token.");
         throw exception;

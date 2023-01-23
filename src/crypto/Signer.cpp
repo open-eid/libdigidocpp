@@ -52,16 +52,13 @@ public:
  * Constructor
  */
 Signer::Signer()
-    : d(new Private)
+    : d(make_unique<Private>())
 {}
 
 /**
  * Destructor
  */
-Signer::~Signer()
-{
-    delete d;
-}
+Signer::~Signer() = default;
 
 /**
  * Sets signature production place according XAdES standard. Note that setting the signature production place is optional.
@@ -214,24 +211,20 @@ void Signer::setENProfile(bool enable)
  */
 string Signer::method() const
 {
-    X509Cert c = cert();
-    EVP_PKEY *key = X509_get0_pubkey(c.handle());
-    if(!key)
-        return d->method;
-
-    switch(EVP_PKEY_base_id(key))
-    {
 #ifndef OPENSSL_NO_ECDSA
-    case EVP_PKEY_EC:
+    X509Cert c = cert();
+    if(EVP_PKEY *key = X509_get0_pubkey(c.handle());
+        key && EVP_PKEY_base_id(key) == EVP_PKEY_EC)
+    {
         switch(EVP_PKEY_bits(key)) {
         case 224: return URI_SHA224;
         case 256: return URI_SHA256;
         case 384: return URI_SHA384;
         default: return URI_SHA512;
         }
-#endif
-    default: return d->method;
     }
+#endif
+    return d->method;
 }
 
 /**

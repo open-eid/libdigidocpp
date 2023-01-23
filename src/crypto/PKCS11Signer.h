@@ -21,8 +21,6 @@
 
 #include "Signer.h"
 
-#include <memory>
-
 namespace digidoc
 {
     class DIGIDOCPP_EXPORT PKCS11Signer : public Signer
@@ -32,6 +30,9 @@ namespace digidoc
           PKCS11Signer(const std::string& driver = "");
           ~PKCS11Signer() override;
 
+          X509Cert cert() const override;
+          std::string method() const override;
+          std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const override;
           void setPin(const std::string &pin);
 
       protected:
@@ -39,10 +40,6 @@ namespace digidoc
           virtual X509Cert selectSigningCertificate(const std::vector<X509Cert> &certificates) const;
 
       private:
-          X509Cert cert() const override;
-          std::string method() const override;
-          std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const override;
-
           DISABLE_COPY(PKCS11Signer);
           class Private;
           std::unique_ptr<Private> d;

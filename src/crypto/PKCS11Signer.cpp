@@ -56,7 +56,7 @@ public:
 #endif
     }
 
-    void* resolve(const char *symbol)
+    void* resolve(const char *symbol) const
     { return h ? (void*)GetProcAddress(h, symbol) : nullptr; }
 
     void unload()
@@ -67,7 +67,7 @@ public:
     bool load(const string &driver)
     { return (h = dlopen(driver.c_str(), RTLD_LAZY)); }
 
-    void* resolve(const char *symbol)
+    void* resolve(const char *symbol) const
     { return h ? dlsym(h, symbol) : nullptr; }
 
     void unload()
@@ -76,7 +76,7 @@ public:
     void *h {};
 #endif
 
-    CK_FUNCTION_LIST *f = nullptr;
+    CK_FUNCTION_LIST *f {};
     struct SignSlot
     {
         X509Cert certificate;
@@ -156,8 +156,8 @@ PKCS11Signer::PKCS11Signer(const string &driver)
     if(!d->load(load))
         THROW("Failed to load driver for PKCS #11 engine: %s.", load.c_str());
 
-    CK_C_GetFunctionList l = CK_C_GetFunctionList(d->resolve("C_GetFunctionList"));
-    if(!l ||
+    if(auto l = CK_C_GetFunctionList(d->resolve("C_GetFunctionList"));
+        !l ||
         l(&d->f) != CKR_OK ||
         d->f->C_Initialize(nullptr) != CKR_OK)
         THROW("Failed to load driver for PKCS #11 engine: %s.", load.c_str());
@@ -312,20 +312,21 @@ void PKCS11Signer::setPin(const string &pin)
  * Signs the digest provided using the selected certificate. If the certificate needs PIN,
  * the PIN is acquired by calling the callback function <code>pin</code>.
  *
- * @param digest digest, which is being signed.
- * @return signature memory for the signature that is created.
+ * @param method digest method to be used
+ * @param digest digest to sign
+ * @return signature signed result
  * @throws Exception throws exception if the signing operation failed.
  */
 vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsigned char> &digest) const
 {
-    DEBUG("sign(mehthod = %s, digest = length=%lu)", method.c_str(), (unsigned long)digest.size());
+    DEBUG("sign(mehthod = %s, digest = length=%zu)", method.c_str(), digest.size());
 
     // Check that sign slot and certificate are selected.
     if(!d->sign.certificate)
         THROW("Signing slot or certificate are not selected.");
 
     // Login if required.
-    CK_TOKEN_INFO token;
+    CK_TOKEN_INFO token{};
     CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
     if(d->f->C_GetTokenInfo(d->sign.slot, &token) != CKR_OK ||
        d->f->C_OpenSession(d->sign.slot, CKF_SERIAL_SESSION, nullptr, nullptr, &session) != CKR_OK)
@@ -384,31 +385,25 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
     CK_MECHANISM mech { keyType == CKK_ECDSA ? CKM_ECDSA : CKM_RSA_PKCS, nullptr, 0 };
     vector<CK_BYTE> data = digest;
     if(Digest::isRsaPssUri(method)) {
-        mech.mechanism = CKM_RSA_PKCS_PSS;
-        mech.pParameter = &pssParams;
-        mech.ulParameterLen = sizeof(CK_RSA_PKCS_PSS_PARAMS);
         int nid = Digest::toMethod(method);
         switch(nid)
         {
         case NID_sha224:
-            pssParams.hashAlg = CKM_SHA224;
-            pssParams.mgf = CKG_MGF1_SHA224;
+            pssParams = { CKM_SHA224, CKG_MGF1_SHA224, 0 };
             break;
         case NID_sha256:
-            pssParams.hashAlg = CKM_SHA256;
-            pssParams.mgf = CKG_MGF1_SHA256;
+            pssParams = { CKM_SHA256, CKG_MGF1_SHA256, 0 };
             break;
         case NID_sha384:
-            pssParams.hashAlg = CKM_SHA384;
-            pssParams.mgf = CKG_MGF1_SHA384;
+            pssParams = { CKM_SHA384, CKG_MGF1_SHA384, 0 };
             break;
         case NID_sha512:
-            pssParams.hashAlg = CKM_SHA512;
-            pssParams.mgf = CKG_MGF1_SHA512;
+            pssParams = { CKM_SHA512, CKG_MGF1_SHA512, 0 };
             break;
         default: break;
         }
         pssParams.sLen = CK_ULONG(EVP_MD_size(EVP_get_digestbynid(nid)));
+        mech = { CKM_RSA_PKCS_PSS, &pssParams, sizeof(CK_RSA_PKCS_PSS_PARAMS) };
     }
     else if(keyType == CKK_RSA)
         data = Digest::addDigestInfo(digest, method);

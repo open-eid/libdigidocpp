@@ -42,7 +42,7 @@ using namespace std;
  */
 using SemanticsInformation = struct SemanticsInformation_st {
     ASN1_OBJECT *semanticsIdentifier;
-    //NameRegistrationAuthorities nameRegistrationAuthorities;
+    //NameRegistrationAuthorities nameRegistrationAuthorities
 };
 DECLARE_ASN1_FUNCTIONS(SemanticsInformation)
 
@@ -562,7 +562,7 @@ bool X509Cert::operator ==(const X509Cert &other) const
         return false;
     // Workaround OpenSSL 1.1.1f issues
     return vector<unsigned char>(*this) == vector<unsigned char>(other);
-    //return X509_cmp(cert.get(), other.cert.get()) == 0;
+    //return X509_cmp(cert.get(), other.cert.get()) == 0
 }
 
 /**

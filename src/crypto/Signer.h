@@ -21,6 +21,8 @@
 
 #include "../Exception.h"
 
+#include <memory>
+
 namespace digidoc
 {
     class X509Cert;
@@ -57,7 +59,6 @@ namespace digidoc
       private:
           DISABLE_COPY(Signer);
           class Private;
-          Private *d;
-
+          std::unique_ptr<Private> d;
     };
 }

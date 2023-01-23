@@ -23,6 +23,7 @@
 #include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/OCSP.h"
+#include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "crypto/X509CertStore.h"
 #include "util/DateTime.h"
@@ -86,7 +87,7 @@ X509Cert SignatureXAdES_LT::OCSPCertificate() const
  */
 string SignatureXAdES_LT::OCSPProducedAt() const
 {
-    return util::date::ASN1TimeToXSD(getOCSPResponseValue().producedAt());
+    return util::date::to_string(getOCSPResponseValue().producedAt());
 }
 
 string SignatureXAdES_LT::trustedSigningTime() const
@@ -167,10 +168,12 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
             }
             else
             {
-                struct tm producedAt = util::date::ASN1TimeToTM(ocsp.producedAt());
+                tm producedAt = ocsp.producedAt();
+                string producedAt_s = util::date::to_string(producedAt);
                 time_t producedAt_t = util::date::mkgmtime(producedAt);
-                time_t timeT = util::date::string2time_t(TimeStampTime());
-                if(timeT > producedAt_t)
+                tm timeStampTime = TimeStamp().time();
+                time_t timeStampTime_t = util::date::mkgmtime(timeStampTime);
+                if(timeStampTime_t > producedAt_t)
                 {
                     /*
                      * ETSI TS 103 171 V2.1.1 (2012-03)
@@ -178,13 +181,13 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
                      * This clause defines those requirements that XAdES signatures conformant to T-Level, have to fulfil to also be
                      * conformant to LT-Level.
                      */
-                    Exception e(EXCEPTION_PARAMS("TimeStamp time is greater than OCSP producedAt TS: %s OCSP: %s", TimeStampTime().c_str(), ocsp.producedAt().c_str()));
+                    Exception e(EXCEPTION_PARAMS("TimeStamp time is greater than OCSP producedAt TS: %s OCSP: %s", TimeStampTime().c_str(), producedAt_s.c_str()));
                     e.setCode(Exception::OCSPBeforeTimeStamp);
                     exception.addCause(e);
                 }
-                if((producedAt_t - timeT > 15 * 60) && !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
+                if((producedAt_t - timeStampTime_t > 15 * 60) && !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
                 {
-                    Exception e(EXCEPTION_PARAMS("TimeStamp time and OCSP producedAt are over 15m off TS: %s OCSP: %s", TimeStampTime().c_str(), ocsp.producedAt().c_str()));
+                    Exception e(EXCEPTION_PARAMS("TimeStamp time and OCSP producedAt are over 15m off TS: %s OCSP: %s", TimeStampTime().c_str(), producedAt_s.c_str()));
                     e.setCode(Exception::ProducedATLateWarning);
                     exception.addCause(e);
                 }
@@ -267,7 +270,7 @@ void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert
 
 void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
 {
-    DEBUG("SignatureXAdES_LT::addOCSPValue(%s, %s)", id.c_str(), ocsp.producedAt().c_str());
+    DEBUG("SignatureXAdES_LT::addOCSPValue(%s, %s)", id.c_str(), util::date::to_string(ocsp.producedAt()).c_str());
 
     createUnsignedSignatureProperties();
 

@@ -248,8 +248,9 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
 bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
 {
     activate(cert);
-    const ASN1_TIME *asn1time = X509_get0_notBefore(cert.handle());
-    time_t time = util::date::ASN1TimeToTime_t(string((const char*)asn1time->data, size_t(asn1time->length)), asn1time->type == V_ASN1_GENERALIZEDTIME);
+    tm tm{};
+    ASN1_TIME_to_tm(X509_get0_notBefore(cert.handle()), &tm);
+    time_t time = util::date::mkgmtime(tm);
     SCOPE(X509_STORE, store, createStore(X509CertStore::CA, &time));
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
     if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))

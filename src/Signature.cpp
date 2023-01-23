@@ -232,9 +232,8 @@ Signature::Validator::Validator(const Signature *s)
     {
         parseException(e);
     }
-    switch(d->result)
+    if(d->result == Unknown)
     {
-    case Unknown:
         try
         {
             s->validate(POLv1);
@@ -244,9 +243,6 @@ Signature::Validator::Validator(const Signature *s)
         {
             parseException(e);
         }
-        break;
-    default:
-        break;
     }
 }
 

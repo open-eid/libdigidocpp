@@ -41,12 +41,6 @@ DIGIDOCPP_WARNING_POP
 #include <fstream>
 #include <future>
 
-#if XSEC_VERSION_MAJOR < 2
-#define XSEC_CONST
-#else
-#define XSEC_CONST const
-#endif
-
 using namespace digidoc;
 using namespace digidoc::tsl;
 using namespace digidoc::util;
@@ -223,13 +217,13 @@ bool TSL::isExpired() const
 
 string TSL::issueDate() const
 {
-    return !tsl ? string() : date::xsd2string(tsl->schemeInformation().listIssueDateTime());
+    return !tsl ? string() : date::to_string(tsl->schemeInformation().listIssueDateTime());
 }
 
 string TSL::nextUpdate() const
 {
     return !tsl || !tsl->schemeInformation().nextUpdate().dateTime() ?
-        string() : date::xsd2string(tsl->schemeInformation().nextUpdate().dateTime().get());
+        string() : date::to_string(tsl->schemeInformation().nextUpdate().dateTime().get());
 }
 
 string TSL::operatorName() const
@@ -576,7 +570,7 @@ void TSL::validate(const X509Cert &cert) const
             }
         }
     }
-    catch(XSEC_CONST XSECException &e)
+    catch(const XSECException &e)
     {
         try {
             string result = xsd::cxx::xml::transcode<char>(e.getMsg());

@@ -54,12 +54,6 @@ DIGIDOCPP_WARNING_POP
 #define HAVE_WORKING_REGEX
 #endif
 
-#if XSEC_VERSION_MAJOR < 2
-#define XSEC_CONST
-#else
-#define XSEC_CONST const
-#endif
-
 using namespace digidoc;
 using namespace digidoc::asic;
 using namespace digidoc::dsig;
@@ -219,7 +213,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     }
     signature->signedInfo().signatureMethod(make_unique<SignatureMethodType>(X509Crypto(c).isRSAKey() ?
         Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()) ));
-    setSigningTime(date::gmtime(time(nullptr)));
+    setSigningTime(time(nullptr));
 
     string digestMethod = Conf::instance()->digestUri();
     for(const DataFile *f: bdoc->dataFiles())
@@ -529,7 +523,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         s << e;
         EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.str().c_str());
     }
-    catch(XSEC_CONST XSECException &e)
+    catch(const XSECException &e)
     {
         string s = xml::transcode<char>(e.getMsg());
         EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
@@ -934,7 +928,7 @@ void SignatureXAdES_B::setSignerRolesV2(const vector<string> &roles)
  *
  * @param signingTime signing time.
  */
-void SignatureXAdES_B::setSigningTime(const struct tm &signingTime)
+void SignatureXAdES_B::setSigningTime(time_t signingTime)
 {
     getSignedSignatureProperties().signingTime(date::makeDateTime(signingTime));
 }
@@ -1156,7 +1150,7 @@ vector<string> SignatureXAdES_B::signerRoles() const
 string SignatureXAdES_B::claimedSigningTime() const
 {
     if(const auto &signingTime = getSignedSignatureProperties().signingTime())
-        return date::xsd2string(signingTime.get());
+        return date::to_string(signingTime.get());
     return {};
 }
 

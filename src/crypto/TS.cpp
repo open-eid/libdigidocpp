@@ -120,7 +120,7 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
     d.reset(PKCS7_dup(TS_RESP_get_token(resp.get())), PKCS7_free);
-    DEBUG("TSA time %s", time().c_str());
+    DEBUG("TSA time %s", util::date::to_string(time()).c_str());
 }
 
 TS::TS(const unsigned char *data, size_t size)
@@ -220,21 +220,22 @@ string TS::serial() const
     return {};
 }
 
-string TS::time() const
+tm TS::time() const
 {
     auto info = tstInfo();
     if(!info)
         return {};
-    if(const ASN1_GENERALIZEDTIME *t = TS_TST_INFO_get_time(info.get()))
-        return {(char*)t->data, size_t(t->length)};
-    return {};
+    tm tm {};
+    ASN1_TIME_to_tm(TS_TST_INFO_get_time(info.get()), &tm);
+    return tm;
 }
 
 void TS::verify(const Digest &digest)
 {
     vector<unsigned char> data = digest.result();
 
-    time_t t = util::date::ASN1TimeToTime_t(time());
+    tm tm = time();
+    time_t t = util::date::mkgmtime(tm);
     auto store = SCOPE_PTR(X509_STORE, X509CertStore::createStore(X509CertStore::TSA, &t));
     X509CertStore::instance()->activate(cert());
     auto csc = SCOPE_PTR(X509_STORE_CTX, X509_STORE_CTX_new());

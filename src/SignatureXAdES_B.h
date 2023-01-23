@@ -109,7 +109,7 @@ namespace digidoc
           inline auto signerRoles(const std::vector<std::string> &signerRoles);
           void setSignerRoles(const std::vector<std::string>& signerRoles);
           void setSignerRolesV2(const std::vector<std::string>& signerRoles);
-          void setSigningTime(const struct tm &signingTime);
+          void setSigningTime(time_t signingTime);
 
           // offline checks
           void checkSignatureValue() const;
