@@ -49,28 +49,16 @@ case "$@" in
   fi
 
   TARGET_PATH=/Library/libdigidocpp.android${ARCH}
-  ABI=21
+  API=28
   export ANDROID_NDK_HOME
   export PATH=${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/darwin-x86_64/bin:$PATH
   export AR=llvm-ar
-  export CC=${CROSS_COMPILE}${ABI}-clang
+  export CC=${CROSS_COMPILE}${API}-clang
   export AS=${CC}
-  export CXX=${CROSS_COMPILE}${ABI}-clang++
+  export CXX=${CROSS_COMPILE}${API}-clang++
   export RANLIB=llvm-ranlib
   export STRIP=llvm-strip
-  export CFLAGS="-I${TARGET_PATH}/include"
-  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
-  export LIBS="-L${TARGET_PATH}/lib -liconv"
   CONFIGURE="--host=${CROSS_COMPILE} --enable-static --disable-shared --disable-dependency-tracking --with-pic"
-  ARCHS=${ARCH}
-
-  if [ ! -d ${TARGET_PATH} ]; then
-    #iconv for xerces
-    sudo mkdir -p ${TARGET_PATH}/include ${TARGET_PATH}/lib
-    sudo cp patches/android-iconv/iconv.h ${TARGET_PATH}/include/
-    sudo ${CC} -fPIC -I${TARGET_PATH}/include -std=c99 -o ${TARGET_PATH}/lib/libiconv.o -c patches/android-iconv/iconv.c
-    sudo ${AR} rcs ${TARGET_PATH}/lib/libiconv.a ${TARGET_PATH}/lib/libiconv.o
-  fi
   ;;
 *simulator*)
   echo "Building for iOS Simulator"
@@ -81,18 +69,16 @@ case "$@" in
   : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
-  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
 *ioscatalyst*)
   echo "Building for iOS macOS Catalyst"
   TARGET_PATH=/Library/libdigidocpp.iphonecatalyst
   CONFIGURE="--host=x86_64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking --disable-netaccessor-curl"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
-  : ${ARCHS:="x86_64"}
+  : ${ARCHS:="x86_64 arm64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -target x86_64-apple-ios-macabi -isysroot ${SYSROOT}"
-  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
 *ios*)
   echo "Building for iOS"
@@ -103,7 +89,6 @@ case "$@" in
   : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
-  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
 *)
   echo "Building for OSX"
@@ -114,9 +99,9 @@ case "$@" in
   : ${MACOSX_DEPLOYMENT_TARGET:="10.15"}
   export MACOSX_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } "
-  export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
   ;;
 esac
+export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
 
 function xerces {
     echo Building ${XERCES_DIR}
@@ -152,24 +137,22 @@ function xalan {
     *android*)
       cmake \
         -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
-        -DANDROID_PLATFORM=${ABI} \
+        -DANDROID_PLATFORM=${API} \
         -DANDROID_ABI=${ARCH_ABI} \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
         -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH} \
-        -DCMAKE_BUILD_TYPE="Release" \
+        -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=NO \
-        .
-        make -s MsgCreator || cp ../patches/MsgCreator src/xalanc/Utils/MsgCreator
+        . && make -s MsgCreator
+        cp ../patches/MsgCreator src/xalanc/Utils/MsgCreator
         make -s && sudo make install
       ;;
     *ios*|*simulator*)
       cmake \
-        -DCMAKE_C_COMPILER_WORKS=yes \
-        -DCMAKE_CXX_COMPILER_WORKS=yes \
         -DCMAKE_OSX_SYSROOT=${SYSROOT} \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DCMAKE_BUILD_TYPE="Release" \
+        -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=NO \
         . && make -s MsgCreator
         cp ../patches/MsgCreator src/xalanc/Utils/MsgCreator
@@ -180,12 +163,14 @@ function xalan {
         -DCMAKE_MACOSX_RPATH=NO \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DCMAKE_BUILD_TYPE="Release" \
+        -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=YES \
         . && make -s && sudo make install
-      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.112.dylib ${TARGET_PATH}/lib/libxalanMsg.*.0.dylib
+      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.112.dylib \
+        ${TARGET_PATH}/lib/libxalanMsg.*.0.dylib
       sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.112.dylib \
-        -change libxalanMsg.112.dylib ${TARGET_PATH}/lib/libxalanMsg.112.dylib ${TARGET_PATH}/lib/libxalan-c.*.0.dylib
+        -change libxalanMsg.112.dylib ${TARGET_PATH}/lib/libxalanMsg.112.dylib \
+        ${TARGET_PATH}/lib/libxalan-c.*.0.dylib
       ;;
     esac
     cd -
@@ -261,7 +246,7 @@ function openssl {
 
     case "${ARGS}" in
     *android*)
-        ./Configure android-${ARCH} -D__ANDROID_API__=${ABI} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio
+        ./Configure android-${ARCH} -D__ANDROID_API__=${API} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio
         make -s
         sudo make install_sw
         ;;
@@ -271,14 +256,15 @@ function openssl {
             case "${ARCH}" in
             *x86_64*)
                 case "${ARGS}" in
-                *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio;;
+                *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio enable-ec_nistp_64_gcc_128;;
                 *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio enable-ec_nistp_64_gcc_128 ;;
                 *) CC="" CFLAGS="" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;
             *arm64*)
                 case "${ARGS}" in
-                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio;;
+                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" MACHINE=arm64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio enable-ec_nistp_64_gcc_128 ;;
+                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio enable-ec_nistp_64_gcc_128;;
                 *) CC="" CFLAGS="" MACHINE=arm64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;

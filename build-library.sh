@@ -42,7 +42,7 @@ case "$@" in
   CMAKEARGS="
     -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH};/usr/local \
     -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
-    -DANDROID_PLATFORM=21 \
+    -DANDROID_PLATFORM=28 \
     -DANDROID_ABI=${ARCH} \
     -DBoost_INCLUDE_DIR=NOTFOUND \
     -DDOXYGEN_EXECUTABLE=NOTFOUND \
@@ -63,7 +63,7 @@ case "$@" in
     SYSROOT=macosx
     export CFLAGS="-target x86_64-apple-ios-macabi"
     export CXXFLAGS="-target x86_64-apple-ios-macabi"
-    : ${ARCHS:="x86_64"}
+    : ${ARCHS:="x86_64 arm64"}
     ;;
   *)
     echo "Building for iOS"
@@ -76,8 +76,6 @@ case "$@" in
   : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   CMAKEARGS="
-    -DCMAKE_C_COMPILER_WORKS=yes \
-    -DCMAKE_CXX_COMPILER_WORKS=yes \
     -DCMAKE_OSX_SYSROOT=${SYSROOT} \
     -DFRAMEWORK=off \
     -DUSE_KEYCHAIN=off \
@@ -97,7 +95,7 @@ case "$@" in
 esac
 
 cmake --fresh -B ${TARGET} -S . \
-    -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
     -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \

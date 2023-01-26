@@ -372,6 +372,8 @@
 					"$(MINIZIP)",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Libdigidocpp;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.xib;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -420,6 +422,8 @@
 					"$(MINIZIP)",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Libdigidocpp;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.xib;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
