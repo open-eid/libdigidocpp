@@ -1,5 +1,4 @@
 # Android patches
-* android-iconv - arm64
 * MsgCreator - macOS prebuild binary for Xalan-C cross compiling
 
 # iOS patches
