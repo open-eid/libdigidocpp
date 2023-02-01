@@ -140,6 +140,9 @@ set( CRYPTO_HEADER
     crypto/X509Cert.h
 )
 
+add_library(digidocpp_ver INTERFACE)
+target_sources(digidocpp_ver INTERFACE libdigidocpp.rc)
+
 add_library(digidocpp_util STATIC
     util/File.cpp
     util/log.cpp
@@ -192,7 +195,6 @@ add_library(digidocpp
     ${PUBLIC_HEADER}
     ${CRYPTO_HEADER}
     ${XML_HEADER}
-    libdigidocpp.rc
     Container.cpp
     ASiContainer.cpp
     ASiC_E.cpp
@@ -238,10 +240,11 @@ set_target_properties(digidocpp PROPERTIES
     FRAMEWORK "${FRAMEWORK}"
     MACOSX_FRAMEWORK_IDENTIFIER "ee.ria.digidocpp"
     MACOSX_RPATH YES
+    COMPILE_DEFINITIONS TARGET_NAME="$<TARGET_NAME:digidocpp>"
 )
 
 target_include_directories(digidocpp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv)
+target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv digidocpp_ver)
 
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
@@ -270,7 +273,8 @@ if(SWIG_FOUND)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/java)
         swig_add_library(digidoc_java TYPE SHARED LANGUAGE java SOURCES ../libdigidocpp.i)
         target_include_directories(digidoc_java PRIVATE ${JAVA_INCLUDE_PATH} $<$<BOOL:${JAVA_INCLUDE_PATH2}>:${JAVA_INCLUDE_PATH2}>)
-        target_link_libraries(digidoc_java digidocpp digidocpp_util)
+        target_compile_definitions(digidoc_java PRIVATE TARGET_NAME="$<TARGET_NAME:digidoc_java>")
+        target_link_libraries(digidoc_java digidocpp digidocpp_util digidocpp_ver)
         if(APPLE)
             set_target_properties(digidoc_java PROPERTIES MACOSX_RPATH YES INSTALL_RPATH /Library/Frameworks)
             install(TARGETS digidoc_java DESTINATION /Library/Java/Extensions)
@@ -286,7 +290,8 @@ if(SWIG_FOUND)
         set(CMAKE_SWIG_FLAGS -py3)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
         swig_add_library(digidoc_python TYPE SHARED LANGUAGE python SOURCES ../libdigidocpp.i)
-        target_link_libraries(digidoc_python digidocpp digidocpp_util Python3::Module)
+        target_compile_definitions(digidoc_python PRIVATE TARGET_NAME="$<TARGET_NAME:digidoc_python>")
+        target_link_libraries(digidoc_python digidocpp digidocpp_util digidocpp_ver Python3::Module)
         #configure_file(setup.py.cmake setup.py)
         #install(CODE "execute_process(COMMAND python3 ${CMAKE_CURRENT_BINARY_DIR}/setup.py install)")
         if(NOT Python3_SITELIB)
@@ -307,7 +312,8 @@ if(SWIG_FOUND)
         set(CMAKE_SWIG_FLAGS -dllimport digidoc_csharp -namespace digidoc)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/csharp)
         swig_add_library(digidoc_csharp TYPE SHARED LANGUAGE csharp SOURCES ../libdigidocpp.i)
-        target_link_libraries(digidoc_csharp digidocpp digidocpp_util)
+        target_compile_definitions(digidoc_csharp PRIVATE TARGET_NAME="$<TARGET_NAME:digidoc_csharp>")
+        target_link_libraries(digidoc_csharp digidocpp digidocpp_util digidocpp_ver)
         install(TARGETS digidoc_csharp DESTINATION ${CMAKE_INSTALL_BINDIR})
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/csharp/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_csharp FILES_MATCHING PATTERN "*.cs")
         install(FILES $<TARGET_PDB_FILE:digidoc_csharp> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
