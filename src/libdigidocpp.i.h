@@ -71,7 +71,7 @@ public:
     void setTSLCert(const std::vector<unsigned char> &cert)
     {
         if(cert.empty()) tslCerts.emplace();
-        else tslCerts = { X509Cert(cert, X509Cert::Der) };
+        else tslCerts = std::vector<X509Cert>{ X509Cert(cert, X509Cert::Der) };
     }
     void addTSLCert(const std::vector<unsigned char> &cert)
     {
@@ -89,7 +89,7 @@ public:
     void setVerifyServiceCert(const std::vector<unsigned char> &cert)
     {
         if(cert.empty()) serviceCerts.emplace();
-        else serviceCerts = { X509Cert(cert, X509Cert::Der) };
+        else serviceCerts = std::vector<X509Cert>{ X509Cert(cert, X509Cert::Der) };
     }
     void addVerifyServiceCert(const std::vector<unsigned char> &cert)
     {

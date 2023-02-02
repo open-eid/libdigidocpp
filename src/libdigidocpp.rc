@@ -21,12 +21,12 @@ BEGIN
 		BLOCK "040904B0"
 		BEGIN
 			VALUE "CompanyName", "RIA"
-			VALUE "FileDescription", "digidocpp"
+			VALUE "FileDescription", TARGET_NAME
 			VALUE "FileVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
-			VALUE "InternalName", "digidocpp"
+			VALUE "InternalName", TARGET_NAME
 			VALUE "LegalCopyright", "(C) 2009-2023 Estonian Information System Authority"
-			VALUE "OriginalFilename", "digidocpp.dll"
-			VALUE "ProductName", "digidocpp"
+			VALUE "OriginalFilename", TARGET_NAME ".dll"
+			VALUE "ProductName", TARGET_NAME
 			VALUE "ProductVersion", VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
 		END
 	END

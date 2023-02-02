@@ -440,7 +440,7 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg == "--sigpsssha512") siguri = URI_RSA_PSS_SHA512;
         else if(arg.find("--tsurl") == 0) tsurl = arg.substr(8);
         else if(arg.find("--tslurl=") == 0) tslurl = arg.substr(9);
-        else if(arg.find("--tslcert=") == 0) tslcerts = { X509Cert(arg.substr(10)) };
+        else if(arg.find("--tslcert=") == 0) tslcerts = vector<X509Cert>{ X509Cert(arg.substr(10)) };
         else if(arg == "--TSLAllowExpired") expired = true;
         else if(arg == "--dontsign") doSign = false;
         else if(arg == "--nocolor") RED = GREEN = YELLOW = RESET = {};
