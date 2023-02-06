@@ -30,7 +30,7 @@ namespace digidoc
     class Digest;
     class Signer;
     namespace dsig { class SignatureType; }
-    namespace xades { class QualifyingPropertiesType; class SignedSignaturePropertiesType; }
+    namespace xades { class CertIDType; class DigestAlgAndValueType; class QualifyingPropertiesType; class SignedSignaturePropertiesType; }
     namespace asic { class XAdESSignaturesType; class Document_signatures; }
 
     class SignatureXAdES_B : public Signature
@@ -74,6 +74,8 @@ namespace digidoc
           xades::SignedSignaturePropertiesType& getSignedSignatureProperties() const;
           void calcDigestOnNode(Digest* calc, const std::string& ns,
               const std::string& tagName, const std::string &id = {}, const std::string &canonicalizationMethod = {}) const;
+          void checkCertID(const xades::CertIDType &certID, const X509Cert &cert) const;
+          void checkCertDigest(const xades::DigestAlgAndValueType &digest, const X509Cert &cert) const;
 
           static const std::string ASIC_NAMESPACE;
           static const std::string XADES_NAMESPACE;
@@ -91,7 +93,7 @@ namespace digidoc
 
           struct Policy
           {
-              const std::string DESCRIPTION, URI;
+              const std::string_view DESCRIPTION, URI;
               const std::vector<unsigned char> SHA1, SHA224, SHA256, SHA384, SHA512;
           };
           static const std::map<std::string,Policy> policylist;
