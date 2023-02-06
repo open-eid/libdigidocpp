@@ -21,10 +21,12 @@
 
 #include "SignatureXAdES_B.h"
 
+#include <functional>
+
 namespace digidoc
 {
 
-namespace xades { class UnsignedSignaturePropertiesType; }
+namespace xades { class UnsignedSignaturePropertiesType; class XAdESTimeStampType; }
 class TS;
 
 class SignatureXAdES_T: public SignatureXAdES_B
@@ -43,6 +45,9 @@ public:
 protected:
     void createUnsignedSignatureProperties();
     xades::UnsignedSignaturePropertiesType& unsignedSignatureProperties() const;
+
+    TS verifyTS(const xades::XAdESTimeStampType &timestamp, Exception &exception,
+        std::function<void (Digest *, std::string_view)> &&calcDigest) const;
 
 private:
     DISABLE_COPY(SignatureXAdES_T);

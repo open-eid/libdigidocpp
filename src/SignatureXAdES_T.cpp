@@ -77,7 +77,8 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     createUnsignedSignatureProperties();
 
     Digest calc;
-    calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue");
+    calcDigestOnNode(&calc, URI_ID_DSIG, u"SignatureValue",
+        signature->signedInfo().canonicalizationMethod().algorithm());
 
     TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
     vector<unsigned char> der = tsa;
@@ -90,7 +91,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     usp.signatureTimeStamp().push_back(move(ts));
     usp.contentOrder().emplace_back(UnsignedSignaturePropertiesType::ContentOrderType(
         UnsignedSignaturePropertiesType::signatureTimeStampId,
-        unsignedSignatureProperties().signatureTimeStamp().size() - 1));
+        usp.signatureTimeStamp().size() - 1));
     sigdata_.clear();
 }
 
@@ -125,48 +126,33 @@ void SignatureXAdES_T::validate(const std::string &policy) const
     }
 
     try {
+        const auto &usp = unsignedSignatureProperties();
         const UnsignedSignaturePropertiesType::SignatureTimeStampSequence &tseq =
-            unsignedSignatureProperties().signatureTimeStamp();
+            usp.signatureTimeStamp();
         if(tseq.empty())
             THROW("Missing SignatureTimeStamp");
         if(tseq.size() > 1)
             THROW("More than one SignatureTimeStamp is not supported");
         const UnsignedSignaturePropertiesType::SignatureTimeStampType &ts = tseq.front();
 
-        const GenericTimeStampType::EncapsulatedTimeStampSequence &etseq =
-            ts.encapsulatedTimeStamp();
-        if(etseq.empty())
+        if(ts.encapsulatedTimeStamp().empty())
             THROW("Missing EncapsulatedTimeStamp");
-        if(etseq.size() > 1)
+        if(ts.encapsulatedTimeStamp().size() > 1)
             THROW("More than one EncapsulatedTimeStamp is not supported");
-
-        string canonicalizationMethod;
-        if(ts.canonicalizationMethod())
-            canonicalizationMethod = ts.canonicalizationMethod()->algorithm();
-        const GenericTimeStampType::EncapsulatedTimeStampType &bin = etseq.front();
-        TS tsa((const unsigned char*)bin.data(), bin.size());
-        Digest calc(tsa.digestMethod());
-        calcDigestOnNode(&calc, URI_ID_DSIG, "SignatureValue", {}, canonicalizationMethod);
-        tsa.verify(calc);
+        TS tsa = verifyTS(ts, exception, [this](Digest *digest, std::string_view canonicalizationMethod) {
+            calcDigestOnNode(digest, URI_ID_DSIG, u"SignatureValue", canonicalizationMethod);
+        });
 
         time_t validateTime = util::date::ASN1TimeToTime_t(tsa.time());
         if(!signingCertificate().isValid(&validateTime))
             THROW("Signing certificate was not valid on signing time");
 
-        if(tsa.digestMethod() == URI_SHA1 &&
-            !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
-        {
-            Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", tsa.digestMethod().c_str()));
-            e.setCode(Exception::ReferenceDigestWeak);
-            exception.addCause(e);
-        }
-
-        const auto &completeCertRefs = unsignedSignatureProperties().completeCertificateRefs();
+        const auto &completeCertRefs = usp.completeCertificateRefs();
         if(completeCertRefs.size() > 1)
             THROW("UnsignedSignatureProperties may contain only one CompleteCertificateRefs element");
         if(completeCertRefs.size() == 1)
         {
-            const auto &certValues = unsignedSignatureProperties().certificateValues();
+            const auto &certValues = usp.certificateValues();
             if(certValues.size() != 1)
                 THROW("UnsignedSignatureProperties may contain only one CertificateValues element");
             const auto &certValue = certValues.front();
@@ -180,7 +166,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             }
         }
 
-        const auto &completeRevRefs = unsignedSignatureProperties().completeRevocationRefs();
+        const auto &completeRevRefs = usp.completeRevocationRefs();
         if(completeRevRefs.size() > 1)
             THROW("UnsignedSignatureProperties may contain only one CompleteRevocationRefs element");
         if(completeRevRefs.size() == 1)
@@ -190,7 +176,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             const auto &ocspRefs = completeRevRefs.front().oCSPRefs();
             if(!ocspRefs)
                 THROW("CompleteRevocationRefs is missing OCSPRefs element");
-            const auto &revValues = unsignedSignatureProperties().revocationValues();
+            const auto &revValues = usp.revocationValues();
             if(revValues.size() != 1)
                 THROW("UnsignedSignatureProperties may contain only one RevocationValues element");
             const auto &ocspValues = revValues.front().oCSPValues();
@@ -203,8 +189,28 @@ void SignatureXAdES_T::validate(const std::string &policy) const
                 const auto &base64 = ocspValues->encapsulatedOCSPValue().at(i);
                 const auto &ocspRef = ocspRefs->oCSPRef().at(i);
                 OCSP ocsp((const unsigned char*)base64.data(), base64.size());
-                checkDigest(ocspRef.digestAlgAndValue().get(), ocsp.toDer());
+                checkDigest(ocspRef.digestAlgAndValue().get(), ocsp);
             }
+        }
+
+        for(const auto &sigAndRefsTS: usp.sigAndRefsTimeStamp())
+        {
+            verifyTS(sigAndRefsTS, exception, [this](Digest *digest, std::string_view canonicalizationMethod) {
+                calcDigestOnNode(digest, URI_ID_DSIG, u"SignatureValue", canonicalizationMethod);
+                for(auto name: {
+                       u"SignatureTimeStamp",
+                       u"CompleteCertificateRefs",
+                       u"CompleteRevocationRefs",
+                       u"AttributeCertificateRefs",
+                       u"AttributeRevocationRefs" })
+                {
+                    try {
+                        calcDigestOnNode(digest, XADES_NAMESPACE, name, canonicalizationMethod);
+                    } catch(const Exception &) {
+                        DEBUG("Element %s not found", xsd::cxx::xml::transcode<char>(name).data());
+                    }
+                }
+            });
         }
     } catch(const Exception &e) {
         exception.addCause(e);
@@ -220,4 +226,24 @@ UnsignedSignaturePropertiesType &SignatureXAdES_T::unsignedSignatureProperties()
     if(!qualifyingProperties().unsignedProperties()->unsignedSignatureProperties())
         THROW("UnsignedProperties block 'UnsignedSignatureProperties' is missing.");
     return qualifyingProperties().unsignedProperties()->unsignedSignatureProperties().get();
+}
+
+TS SignatureXAdES_T::verifyTS(const xades::XAdESTimeStampType &timestamp, digidoc::Exception &exception,
+    std::function<void (Digest *, std::string_view)> &&calcDigest) const
+{
+    const GenericTimeStampType::EncapsulatedTimeStampType &bin = timestamp.encapsulatedTimeStamp().front();
+    TS tsa((const unsigned char*)bin.data(), bin.size());
+    Digest calc(tsa.digestMethod());
+    calcDigest(&calc, timestamp.canonicalizationMethod() ?
+        string_view(timestamp.canonicalizationMethod()->algorithm()) : string_view());
+    tsa.verify(calc);
+
+    if(tsa.digestMethod() == URI_SHA1 &&
+        !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
+    {
+        Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", tsa.digestMethod().c_str()));
+        e.setCode(Exception::ReferenceDigestWeak);
+        exception.addCause(e);
+    }
+    return tsa;
 }

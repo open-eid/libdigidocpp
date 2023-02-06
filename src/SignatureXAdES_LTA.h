@@ -37,7 +37,8 @@ public:
 private:
     DISABLE_COPY(SignatureXAdES_LTA);
 
-    void calcArchiveDigest(Digest *digest) const;
+    void calcArchiveDigest(Digest *digest,
+        std::string_view canonicalizationMethod) const;
     TS tsaFromBase64() const;
 };
 

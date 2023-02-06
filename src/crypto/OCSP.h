@@ -46,8 +46,9 @@ namespace digidoc
           std::vector<unsigned char> nonce() const;
           std::string producedAt() const;
           X509Cert responderCert() const;
-          std::vector<unsigned char> toDer() const;
           void verifyResponse(const X509Cert &cert) const;
+
+          operator std::vector<unsigned char>() const;
 
       private:
           bool compareResponderCert(const X509Cert &cert) const;
