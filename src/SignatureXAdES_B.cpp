@@ -141,32 +141,34 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     string nr = "S" + to_string(id);
 
     // Signature->SignedInfo
-    SignedInfoType signedInfo(Uri(/*URI_ID_EXC_C14N_NOC*/URI_ID_C14N11_NOC), Uri(URI_ID_RSA_SHA256));
+    auto signedInfo = make_unique<SignedInfoType>(
+        make_unique<CanonicalizationMethodType>(/*URI_ID_EXC_C14N_NOC*/URI_ID_C14N11_NOC),
+        make_unique<SignatureMethodType>(URI_ID_RSA_SHA256));
 
     // Signature->SignatureValue
-    SignatureValueType signatureValue;
-    signatureValue.id(nr + "-SIG");
+    auto signatureValue = make_unique<SignatureValueType>();
+    signatureValue->id(nr + "-SIG");
 
     // Signature (root)
-    asicsignature.reset(new XAdESSignaturesType());
-    asicsignature->signature().push_back(SignatureType(signedInfo, signatureValue));
-    signature = &asicsignature->signature()[0];
+    asicsignature = make_unique<XAdESSignaturesType>();
+    asicsignature->signature().push_back(make_unique<SignatureType>(move(signedInfo), move(signatureValue)));
+    signature = &asicsignature->signature().front();
     signature->id(nr);
 
     // Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties
-    SignedPropertiesType signedProperties;
-    signedProperties.signedSignatureProperties(SignedSignaturePropertiesType());
-    signedProperties.id(nr + "-SignedProperties");
+    auto signedProperties = make_unique<SignedPropertiesType>();
+    signedProperties->signedSignatureProperties(make_unique<SignedSignaturePropertiesType>());
+    signedProperties->id(nr + "-SignedProperties");
     // Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties->SignaturePolicyIdentifierType
     if(signer->profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos ||
        signer->profile().find(ASiC_E::EPES_PROFILE) != string::npos)
     {
         map<string,Policy>::const_iterator p = policylist.find(POLICY_BDOC_2_1_OID);
-        IdentifierType identifierid(p->first);
-        identifierid.qualifier(QualifierType::OIDAsURN);
+        auto identifierid = make_unique<IdentifierType>(p->first);
+        identifierid->qualifier(QualifierType::OIDAsURN);
 
-        ObjectIdentifierType identifier(identifierid);
-        identifier.description(p->second.DESCRIPTION.data());
+        auto identifier = make_unique<ObjectIdentifierType>(move(identifierid));
+        identifier->description(p->second.DESCRIPTION.data());
 
         string digestUri = Conf::instance()->digestUri();
         const vector<unsigned char> *data = &p->second.SHA256;
@@ -174,31 +176,31 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
         else if(Conf::instance()->digestUri() == URI_SHA256) data = &p->second.SHA256;
         else if(Conf::instance()->digestUri() == URI_SHA384) data = &p->second.SHA384;
         else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;
-        DigestAlgAndValueType policyDigest(DigestMethodType(digestUri), toBase64(*data));
+        auto policyDigest = make_unique<DigestAlgAndValueType>(make_unique<DigestMethodType>(digestUri), toBase64(*data));
 
-        SignaturePolicyIdType policyId(identifier, policyDigest);
+        auto policyId = make_unique<SignaturePolicyIdType>(move(identifier), move(policyDigest));
 
-        SigPolicyQualifiersListType::SigPolicyQualifierType uri;
-        uri.sPURI(p->second.URI.data());
+        auto uri = make_unique<SigPolicyQualifiersListType::SigPolicyQualifierType>();
+        uri->sPURI(p->second.URI.data());
 
-        SigPolicyQualifiersListType qualifiers;
-        qualifiers.sigPolicyQualifier().push_back(uri);
-        policyId.sigPolicyQualifiers(qualifiers);
+        auto qualifiers = make_unique<SigPolicyQualifiersListType>();
+        qualifiers->sigPolicyQualifier().push_back(move(uri));
+        policyId->sigPolicyQualifiers(move(qualifiers));
 
-        SignaturePolicyIdentifierType policyidentifier;
-        policyidentifier.signaturePolicyId(policyId);
-        signedProperties.signedSignatureProperties()->signaturePolicyIdentifier(policyidentifier);
+        auto policyidentifier = make_unique<SignaturePolicyIdentifierType>();
+        policyidentifier->signaturePolicyId(move(policyId));
+        signedProperties->signedSignatureProperties()->signaturePolicyIdentifier(move(policyidentifier));
     }
 
     // Signature->Object->QualifyingProperties
-    QualifyingPropertiesType qualifyingProperties("#" + nr);
-    qualifyingProperties.signedProperties(signedProperties);
+    auto qualifyingProperties = make_unique<QualifyingPropertiesType>("#" + nr);
+    qualifyingProperties->signedProperties(move(signedProperties));
 
     // Signature->Object
-    ObjectType object;
-    object.qualifyingProperties().push_back(qualifyingProperties);
+    auto object = make_unique<ObjectType>();
+    object->qualifyingProperties().push_back(move(qualifyingProperties));
 
-    signature->object().push_back(object);
+    signature->object().push_back(move(object));
 
     //Fill XML-DSIG/XAdES properties
     X509Cert c = signer->cert();
@@ -215,7 +217,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
         setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
         setSignerRoles(signer->signerRoles());
     }
-    signature->signedInfo().signatureMethod(Uri( X509Crypto(c).isRSAKey() ?
+    signature->signedInfo().signatureMethod(make_unique<SignatureMethodType>(X509Crypto(c).isRSAKey() ?
         Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()) ));
     setSigningTime(date::gmtime(time(nullptr)));
 
@@ -319,7 +321,7 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
             if(!usp->completeCertificateRefs().empty())
                 WARN("CompleteCertificateRefs are not supported");
             if(!usp->completeRevocationRefs().empty())
-                THROW("CompleteRevocationRefs are not supported");
+                WARN("CompleteRevocationRefs are not supported");
             if(!usp->attributeCertificateRefs().empty())
                 THROW("AttributeCertificateRefs are not supported");
             if(!usp->attributeRevocationRefs().empty())
@@ -654,16 +656,16 @@ void SignatureXAdES_B::checkCertID(const CertIDType &certID, const X509Cert &cer
     const X509IssuerSerialType::X509IssuerNameType &certIssuerName = certID.issuerSerial().x509IssuerName();
     const X509IssuerSerialType::X509SerialNumberType &certSerialNumber = certID.issuerSerial().x509SerialNumber();
     if(X509Crypto(cert).compareIssuerToString(certIssuerName) == 0 && cert.serial() == certSerialNumber)
-        return checkCertDigest(certID.certDigest(), cert);
+        return checkDigest(certID.certDigest(), cert);
     DEBUG("certIssuerName: \"%s\"", certIssuerName.c_str());
     DEBUG("x509.getCertIssuerName() \"%s\"", cert.issuerName().c_str());
     DEBUG("sertCerials = %s %s", cert.serial().c_str(), certSerialNumber.c_str());
     THROW("Signing certificate issuer information does not match");
 }
 
-void SignatureXAdES_B::checkCertDigest(const DigestAlgAndValueType &digest, const X509Cert &cert) const
+void SignatureXAdES_B::checkDigest(const DigestAlgAndValueType &digest, const vector<unsigned char> &data) const
 {
-    vector<unsigned char> calcDigest = Digest(digest.digestMethod().algorithm()).result(cert);
+    vector<unsigned char> calcDigest = Digest(digest.digestMethod().algorithm()).result(data);
     if(digest.digestValue().size() == calcDigest.size() &&
         memcmp(calcDigest.data(), digest.digestValue().data(), digest.digestValue().size()) == 0)
         return;
@@ -701,7 +703,7 @@ void SignatureXAdES_B::checkKeyInfo() const
                 THROW("Signing certificate issuer information does not match");
         }
 
-        return checkCertDigest(cert.certDigest(), x509);
+        return checkDigest(cert.certDigest(), x509);
     }
     THROW("SigningCertificate/SigningCertificateV2 not found");
 }
@@ -754,11 +756,11 @@ void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime
         THROW("QualifyingProperties block 'SignedProperties' is missing.");
 
     if(!spOpt->signedDataObjectProperties())
-         spOpt->signedDataObjectProperties(SignedDataObjectPropertiesType());
+        spOpt->signedDataObjectProperties(make_unique<SignedDataObjectPropertiesType>());
 
-    DataObjectFormatType dataObject(uri);
-    dataObject.mimeType(mime);
-    spOpt->signedDataObjectProperties()->dataObjectFormat().push_back(dataObject);
+    auto dataObject = make_unique<DataObjectFormatType>(uri);
+    dataObject->mimeType(mime);
+    spOpt->signedDataObjectProperties()->dataObjectFormat().push_back(move(dataObject));
 }
 
 /**
@@ -776,16 +778,16 @@ void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime
 string SignatureXAdES_B::addReference(const string& uri, const string& digestUri,
         const vector<unsigned char> &digestValue, const string& type)
 {
-    ReferenceType reference(DigestMethodType(digestUri), toBase64(digestValue));
-    reference.uRI(uri);
+    auto reference = make_unique<ReferenceType>(make_unique<DigestMethodType>(digestUri), toBase64(digestValue));
+    reference->uRI(uri);
     if(!type.empty())
-        reference.type(type);
+        reference->type(type);
 
     SignedInfoType::ReferenceSequence &seq = signature->signedInfo().reference();
-    reference.id(id() + Log::format("-RefId%lu", (unsigned long)seq.size()));
-    seq.push_back(reference);
+    reference->id(id() + Log::format("-RefId%lu", (unsigned long)seq.size()));
+    seq.push_back(move(reference));
 
-    return reference.id().get();
+    return seq.back().id().get();
 }
 
 /**
@@ -797,12 +799,12 @@ string SignatureXAdES_B::addReference(const string& uri, const string& digestUri
 void SignatureXAdES_B::setKeyInfo(const X509Cert& x509)
 {
     // BASE64 encoding of a DER-encoded X.509 certificate = PEM encoded.
-    X509DataType x509Data;
-    x509Data.x509Certificate().push_back(toBase64(x509));
+    auto x509Data = make_unique<X509DataType>();
+    x509Data->x509Certificate().push_back(toBase64(x509));
 
-    KeyInfoType keyInfo;
-    keyInfo.x509Data().push_back(x509Data);
-    signature->keyInfo(keyInfo);
+    auto keyInfo = make_unique<KeyInfoType>();
+    keyInfo->x509Data().push_back(move(x509Data));
+    signature->keyInfo(move(keyInfo));
 }
 
 /**
@@ -815,11 +817,11 @@ void SignatureXAdES_B::setSigningCertificate(const X509Cert& x509)
 {
     // Calculate digest of the X.509 certificate.
     Digest digest;
-    CertIDListType signingCertificate;
-    signingCertificate.cert().push_back(CertIDType(
-        DigestAlgAndValueType(DigestMethodType(digest.uri()), toBase64(digest.result(x509))),
+    auto signingCertificate = make_unique<CertIDListType>();
+    signingCertificate->cert().push_back(make_unique<CertIDType>(
+        DigestAlgAndValueType(make_unique<DigestMethodType>(digest.uri()), toBase64(digest.result(x509))),
         X509IssuerSerialType(x509.issuerName(), x509.serial())));
-    getSignedSignatureProperties().signingCertificate(signingCertificate);
+    getSignedSignatureProperties().signingCertificate(move(signingCertificate));
 }
 
 /**
@@ -832,10 +834,10 @@ void SignatureXAdES_B::setSigningCertificateV2(const X509Cert& x509)
 {
     // Calculate digest of the X.509 certificate.
     Digest digest;
-    CertIDListV2Type signingCertificate;
-    signingCertificate.cert().push_back(CertIDTypeV2(
-        DigestAlgAndValueType(DigestMethodType(digest.uri()), toBase64(digest.result(x509)))));
-    getSignedSignatureProperties().signingCertificateV2(signingCertificate);
+    auto signingCertificate = make_unique<CertIDListV2Type>();
+    signingCertificate->cert().push_back(make_unique<CertIDTypeV2>(
+        make_unique<DigestAlgAndValueType>(make_unique<DigestMethodType>(digest.uri()), toBase64(digest.result(x509)))));
+    getSignedSignatureProperties().signingCertificateV2(move(signingCertificate));
 }
 
 /**
@@ -850,17 +852,17 @@ void SignatureXAdES_B::setSignatureProductionPlace(const string &city,
         postalCode.empty() && countryName.empty())
         return;
 
-    SignatureProductionPlaceType signatureProductionPlace;
+    auto signatureProductionPlace = make_unique<SignatureProductionPlaceType>();
     if(!city.empty())
-        signatureProductionPlace.city(city);
+        signatureProductionPlace->city(city);
     if(!stateOrProvince.empty())
-        signatureProductionPlace.stateOrProvince(stateOrProvince);
+        signatureProductionPlace->stateOrProvince(stateOrProvince);
     if(!postalCode.empty())
-        signatureProductionPlace.postalCode(postalCode);
+        signatureProductionPlace->postalCode(postalCode);
     if(!countryName.empty())
-        signatureProductionPlace.countryName(countryName);
+        signatureProductionPlace->countryName(countryName);
 
-    getSignedSignatureProperties().signatureProductionPlace(signatureProductionPlace);
+    getSignedSignatureProperties().signatureProductionPlace(move(signatureProductionPlace));
 }
 
 /**
@@ -875,19 +877,19 @@ void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const s
         postalCode.empty() && countryName.empty())
         return;
 
-    SignatureProductionPlaceV2Type signatureProductionPlace;
+    auto signatureProductionPlace = make_unique<SignatureProductionPlaceV2Type>();
     if(!city.empty())
-        signatureProductionPlace.city(city);
+        signatureProductionPlace->city(city);
     if(!streetAddress.empty())
-        signatureProductionPlace.streetAddress(streetAddress);
+        signatureProductionPlace->streetAddress(streetAddress);
     if(!stateOrProvince.empty())
-        signatureProductionPlace.stateOrProvince(stateOrProvince);
+        signatureProductionPlace->stateOrProvince(stateOrProvince);
     if(!postalCode.empty())
-        signatureProductionPlace.postalCode(postalCode);
+        signatureProductionPlace->postalCode(postalCode);
     if(!countryName.empty())
-        signatureProductionPlace.countryName(countryName);
+        signatureProductionPlace->countryName(countryName);
 
-    getSignedSignatureProperties().signatureProductionPlaceV2(signatureProductionPlace);
+    getSignedSignatureProperties().signatureProductionPlaceV2(move(signatureProductionPlace));
 }
 
 template<class T>
@@ -1140,13 +1142,13 @@ vector<string> SignatureXAdES_B::signerRoles() const
         getSignedSignatureProperties().signerRole();
     const SignedSignaturePropertiesType::SignerRoleV2Optional &roleV2Opt =
         getSignedSignatureProperties().signerRoleV2();
-    const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence = [&]() -> ClaimedRolesListType::ClaimedRoleSequence {
+    const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence = [&] {
         // return elements from SignerRole element or SignerRoleV2 when available
         if(roleOpt && roleOpt->claimedRoles())
             return roleOpt->claimedRoles()->claimedRole();
         if(roleV2Opt && roleV2Opt->claimedRoles())
             return roleV2Opt->claimedRoles()->claimedRole();
-        return ClaimedRolesListType::ClaimedRoleSequence();
+        return ClaimedRolesListType::ClaimedRoleSequence{};
     }();
     roles.reserve(claimedRoleSequence.size());
     for(const ClaimedRolesListType::ClaimedRoleType &type: claimedRoleSequence)
@@ -1156,11 +1158,9 @@ vector<string> SignatureXAdES_B::signerRoles() const
 
 string SignatureXAdES_B::claimedSigningTime() const
 {
-    const SignedSignaturePropertiesType::SigningTimeOptional& sigTimeOpt =
-        getSignedSignatureProperties().signingTime();
-    if(!sigTimeOpt)
-        return {};
-    return date::xsd2string(sigTimeOpt.get());
+    if(const auto &signingTime = getSignedSignatureProperties().signingTime())
+        return date::xsd2string(signingTime.get());
+    return {};
 }
 
 X509Cert SignatureXAdES_B::signingCertificate() const
@@ -1169,20 +1169,17 @@ X509Cert SignatureXAdES_B::signingCertificate() const
     if(!keyInfoOptional)
         THROW("Signature does not contain signer certificate");
 
-    for(const KeyInfoType::X509DataType &x509Data: keyInfoOptional->x509Data())
+    try
     {
-        const X509DataType::X509CertificateSequence &x509CertSeq = x509Data.x509Certificate();
-        if(x509CertSeq.empty())
-            continue;
-        try
+        for(const KeyInfoType::X509DataType &x509Data: keyInfoOptional->x509Data())
         {
-            const X509DataType::X509CertificateType &data = x509CertSeq.front();
-            return X509Cert((const unsigned char*)data.data(), data.size());
+            for(const X509DataType::X509CertificateType &data: x509Data.x509Certificate())
+                return X509Cert((const unsigned char*)data.data(), data.size());
         }
-        catch(const Exception &e)
-        {
-            THROW_CAUSE(e, "Failed to read X509 certificate");
-        }
+    }
+    catch(const Exception &e)
+    {
+        THROW_CAUSE(e, "Failed to read X509 certificate");
     }
     THROW("Signature does not contain signer certificate");
 }
