@@ -8,18 +8,15 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Scanner;
 
-import javax.xml.bind.DatatypeConverter;
-
 public class libdigidocpp {
     static {
         System.loadLibrary("digidoc_java");
     }
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         if (args.length < 1)
         {
-        	System.out.println("Missing document parameter");
+            System.out.println("Missing document parameter");
             help();
             return;
         }
@@ -36,35 +33,27 @@ public class libdigidocpp {
         }
     }
 
-    static void extract(int index, String file)
-    {
+    static void extract(int index, String file) {
         digidoc.initializeLib("libdigidocpp-java", "");
         try
         {
             System.out.println("Opening file: " + file);
             Container b = Container.open(file);
+            assert b != null;
             DataFiles d = b.dataFiles();
             String dest = FileSystems.getDefault().getPath(d.get(index).fileName()).toAbsolutePath().toString();
             System.out.println("Extracting file " + d.get(index).fileName() + " to " + dest);
-            try
-            {
-                d.get(index).saveAs(dest);
-            }
-            catch (Exception e)
-            {
-                System.out.println("Failed to copy file");
-                System.out.println(e.getMessage());
-            }
+            d.get(index).saveAs(dest);
         }
         catch (Exception e)
         {
+            System.out.println("Failed to copy file");
             System.out.println(e.getMessage());
         }
         digidoc.terminate();
     }
 
-    static void help()
-    {
+    static void help() {
         System.out.println("libdigidocpp-java command [params]");
         System.out.println("Command:");
         System.out.println(" extract\tExtracts files from document");
@@ -85,15 +74,15 @@ public class libdigidocpp {
         version();
     }
 
-    static void sign(String[] args)
-    {
-        DigiDocConf conf = new DigiDocConf(null);
+    static void sign(String[] args) {
+        DigiDocConf conf = new DigiDocConf();
         Conf.init(conf.transfer());
         digidoc.initializeLib("libdigidocpp-java", "");
         try
         {
             System.out.println("Creating file: " + args[args.length-1]);
             Container b = Container.create(args[args.length - 1]);
+            assert b != null;
             for (int i = 3; i < args.length - 1; ++i)
                 b.addDataFile(args[i], "application/octet-stream");
             PKCS11Signer signer = new PKCS11Signer(args[1]);
@@ -108,13 +97,13 @@ public class libdigidocpp {
         digidoc.terminate();
     }
 
-    static void websign(String[] args)
-    {
+    static void websign(String[] args) {
         digidoc.initializeLib("libdigidocpp-java", "");
         try
         {
             System.out.println("Creating file: " + args[args.length - 1]);
             Container b = Container.create(args[args.length - 1]);
+            assert b != null;
             for (int i = 1; i < args.length - 2; ++i)
                 b.addDataFile(args[i], "application/octet-stream");
 
@@ -139,13 +128,13 @@ public class libdigidocpp {
         digidoc.terminate();
     }
 
-    static void verify(String file)
-    {
+    static void verify(String file) {
         digidoc.initializeLib("libdigidocpp-java", "");
         try
         {
             System.out.println("Opening file: " + file);
             Container b = Container.open(file);
+            assert b != null;
 
             System.out.println("Files:");
             for (DataFile dataFile : b.dataFiles()) System.out.println(" " + dataFile.fileName() + " - " + dataFile.mediaType());
@@ -163,20 +152,27 @@ public class libdigidocpp {
                 System.out.println("Time: " + signature.trustedSigningTime());
                 System.out.println("Cert: " + toX509(signature.signingCertificateDer()).getSubjectDN().toString());
 
-                signature.validate();
-                System.out.println("Signature is valid");
+                try
+                {
+                    signature.validate();
+                    System.out.println("Signature is valid");
+                }
+                catch (Exception e)
+                {
+                    System.out.println("Signature is invalid");
+                    System.out.println(e.getMessage());
+                }
             }
         }
         catch (Exception e)
         {
-            System.out.println("Signature is invalid");
             System.out.println(e.getMessage());
         }
         digidoc.terminate();
     }
 
     static void version() {
-        System.out.println("DigiDocCSharp 0.2 libdigidocpp " + digidoc.version());
+        System.out.println("DigiDocCSharp 0.3 libdigidocpp " + digidoc.version());
     }
 
     static X509Certificate toX509(byte[] der) throws CertificateException {
@@ -184,11 +180,24 @@ public class libdigidocpp {
         return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(der));
     }
 
-    public static String toHex(byte[] array) {
-        return DatatypeConverter.printHexBinary(array);
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    static String toHex(byte[] bytes) {
+        char[] hex = new char[bytes.length * 2];
+        int i = 0;
+        for (byte b : bytes) {
+            hex[i++] = HEX_ARRAY[(b & 0xF0) >>> 4];
+            hex[i++] = HEX_ARRAY[b & 0x0F];
+        }
+        return new String(hex);
     }
 
-    public static byte[] fromHex(String s) {
-        return DatatypeConverter.parseHexBinary(s);
+    static byte[] fromHex(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 }

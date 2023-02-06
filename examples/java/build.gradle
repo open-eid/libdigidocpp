@@ -6,14 +6,6 @@ group 'ee.ria'
 sourceCompatibility = 8
 sourceSets.main.java.srcDirs += ['/Library/libdigidocpp/include', '/usr/include']
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation 'javax.xml.bind:jaxb-api:2.3.1'
-}
-
 jar {
     archivesBaseName = 'libdigidocpp'
     manifest {

@@ -21,6 +21,9 @@
 
 	* doxygen - Optional, for API documentation
 	* libboost-test-dev - Optional, for unittests
+	* swig - Optional, for C#, Java and python bindings
+	* libpython3-dev, python3-distutils - Optional, for python bindings
+	* openjdk-8-jdk-headless - Optional, for Java bindings
 
 2. Fetch the source
 
@@ -64,6 +67,11 @@
         brew install xsd
         brew unlink xerces-c
 
+	* doxygen - Optional, for API documentation
+	* boost - Optional, for unittests
+	* swig - Optional, for C# and Java bindings
+	* openjdk - Optional, for Java bindings
+
 5. Configure, build and install (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86)
 
         ./build-library.sh osx install
@@ -80,6 +88,8 @@
 	* [Swig](http://swig.org/download.html) - Optional, for C# and Java bindings
 	* [Doxygen](https://www.doxygen.nl/download.html) - Optional, for generationg documentation
 	* [Wix toolset](http://wixtoolset.org/releases/) - Optional, for creating Windows installation packages
+	* [Python](https://www.python.org/downloads/) - Optional, for Python bindings
+	* [Java](https://www.oracle.com/java/technologies/downloads/) - Optional, for Java bindings
 
    Toolset:
 	* 141 - Visual Studio 2017

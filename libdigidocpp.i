@@ -207,6 +207,7 @@ extern "C"
 %ignore digidoc::Conf::TSLCerts;
 %ignore digidoc::ConfV2::verifyServiceCert;
 %ignore digidoc::ConfV4::verifyServiceCerts;
+%ignore digidoc::ConfV5::TSCerts;
 %ignore digidoc::Signer::cert;
 %ignore digidoc::Signature::signingCertificate;
 %ignore digidoc::Signature::OCSPCertificate;
@@ -223,7 +224,7 @@ extern "C"
 %ignore digidoc::ConfV3::OCSPTMProfiles;
 %ignore digidoc::Signature::Validator::warnings;
 %ignore digidoc::Signature::OCSPNonce;
-// unique_ptr: There is no special smart pointer handling available for std::weak_ptr and std::unique_ptr yet.
+// std::unique_ptr is since swig 4.1
 %ignore digidoc::Container::createPtr;
 %ignore digidoc::Container::openPtr;
 
@@ -281,8 +282,7 @@ namespace std {
 %include "crypto/Signer.h"
 %include "crypto/PKCS12Signer.h"
 %include "crypto/PKCS11Signer.h"
-#ifdef SWIGCSHARP
-// FIXME: figure out how to expose WinSigner on windows only. SWIG currently does not support this
+#ifdef SWIGWIN
 %include "crypto/WinSigner.h"
 #endif
 %include "libdigidocpp.i.h"
