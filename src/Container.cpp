@@ -229,7 +229,7 @@ Container::~Container() = default;
  * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer).
  *
  * Takes ownership std::istream *is object.
- * @deprecated digidoc::Container::addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType)
+ * @deprecated Use digidoc::Container::addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType)
  * @param is input stream from where data is read
  * @param fileName data file name in the container
  * @param mediaType MIME type of the data file, for example “text/plain” or “application/msword”
@@ -282,7 +282,7 @@ void Container::addAdESSignature(const std::vector<unsigned char> &signature)
 /**
  * Create a new container object and specify the DigiDoc container type
  *
- * @deprecated use Container::createPtr
+ * @deprecated Use Container::createPtr
  * This method gives ownership of object to caller
  */
 Container* Container::create(const std::string &path)
@@ -332,7 +332,7 @@ unsigned int Container::newSignatureId() const
  *
  * This method gives ownership of object to caller
  *
- * @deprecated use Container::openPtr
+ * @deprecated Use Container::openPtr
  * @param path
  * @throws Exception
  */

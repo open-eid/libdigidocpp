@@ -90,7 +90,7 @@ std::vector<Exception::ExceptionCode> Exception::ignores {};
  *
  * @var digidoc::Exception::DDocError
  * DDoc libdigidoc error codes bit masked
- * @deprecated unused
+ * @deprecated Unused
  */
 
 /**
