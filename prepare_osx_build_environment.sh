@@ -5,7 +5,7 @@ XERCES_DIR=xerces-c-3.2.4
 XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.1.1s
+OPENSSL_DIR=openssl-1.1.1t
 LIBXML2_DIR=libxml2-2.10.3
 ANDROID_NDK=android-ndk-r25
 FREETYPE_DIR=freetype-2.10.1
@@ -73,7 +73,7 @@ case "$@" in
 *ioscatalyst*)
   echo "Building for iOS macOS Catalyst"
   TARGET_PATH=/Library/libdigidocpp.iphonecatalyst
-  CONFIGURE="--host=x86_64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking --disable-netaccessor-curl"
+  CONFIGURE="--host=x86_64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="x86_64 arm64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
@@ -112,7 +112,7 @@ function xerces {
     tar xf ${XERCES_DIR}.tar.xz
     cd ${XERCES_DIR}
     sed -ie 's!SUBDIRS = doc src tests samples!SUBDIRS = src!' Makefile.in 
-    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --enable-transcoder-iconv
+    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --enable-transcoder-iconv --disable-netaccessor-curl
     make -s
     sudo make install
     cd -
@@ -420,7 +420,7 @@ case "$@" in
 *)
     echo "Usage:"
     echo "  $0 [target] [task]"
-    echo "  target: osx ios iossimulator androidarm androidarm64 androidx86 androidx86_64"
+    echo "  target: osx ios iossimulator ioscatalyst androidarm androidarm64 androidx86 androidx86_64"
     echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
     echo "To control iOS, macOS builds set environment variables:"
     echo " minimum deployment target"
