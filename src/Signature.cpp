@@ -190,7 +190,7 @@ X509Cert Signature::OCSPCertificate() const { return X509Cert(); }
 
 /**
  * Returns signed signature message imprint in OCSP response nonce.
- * @deprecated use messageImprint
+ * @deprecated Use messageImprint()
  */
 vector<unsigned char> Signature::OCSPNonce() const { return messageImprint(); }
 

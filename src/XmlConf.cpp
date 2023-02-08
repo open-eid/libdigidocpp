@@ -40,10 +40,18 @@ class XmlConfParam: public unique_ptr<A>
 public:
     XmlConfParam(string _name, A def = {}): name(std::move(_name)), _def(std::move(def)) {}
 
-    void setValue(const A &val, const Param::LockOptional &lock, bool global)
+    void setValue(const string &val, const Param::LockOptional &lock, bool global)
     {
         if(global && lock.present()) locked = lock.get();
-        if(global || !locked) operator =(val);
+        if(global || !locked)
+        {
+            if constexpr(is_same<A,bool>::value)
+                operator =(val == "true");
+            else if constexpr(is_integral<A>::value)
+                operator =(stoi(val));
+            else
+                operator =(val);
+        }
     }
 
     XmlConfParam &operator=(const A &other)
@@ -73,12 +81,11 @@ public:
     Private(const string &path = {}, string schema = {});
 
     void init(const string &path, bool global);
-    unique_ptr<Configuration> read(const string &path);
+    unique_ptr<Configuration> read(const string &path) const;
     template <class A>
     void setUserConf(XmlConfParam<A> &param, const A &defined, const A &value);
-    string tostring(bool val) const { return val ? "true" : "false"; }
-    string tostring(int val) const { return to_string(val); }
-    string tostring(const string &val) const { return val; }
+    static string to_string(bool val) { return val ? "true" : "false"; }
+    static string to_string(const string &val) { return val; }
 
 
     XmlConfParam<int> logLevel{"log.level", 3};
@@ -150,7 +157,7 @@ void XmlConf::Private::init(const string& path, bool global)
         for(const Configuration::ParamType &p: conf->param())
         {
             if(p.name() == logLevel.name)
-                logLevel.setValue(atoi(string(p).c_str()), p.lock(), global);
+                logLevel.setValue(p, p.lock(), global);
             else if(p.name() == logFile.name)
                 logFile.setValue(p, p.lock(), global);
             else if(p.name() == digestUri.name)
@@ -160,9 +167,9 @@ void XmlConf::Private::init(const string& path, bool global)
             else if(p.name() == PKCS11Driver.name)
                 PKCS11Driver.setValue(p, p.lock(), global);
             else if(p.name() == proxyForceSSL.name)
-                proxyForceSSL.setValue(p == "true", p.lock(), global);
+                proxyForceSSL.setValue(p, p.lock(), global);
             else if(p.name() == proxyTunnelSSL.name)
-                proxyTunnelSSL.setValue(p == "true", p.lock(), global);
+                proxyTunnelSSL.setValue(p, p.lock(), global);
             else if(p.name() == proxyHost.name)
                 proxyHost.setValue(p, p.lock(), global);
             else if(p.name() == proxyPort.name)
@@ -179,17 +186,17 @@ void XmlConf::Private::init(const string& path, bool global)
             else if(p.name() == PKCS12Pass.name)
                 PKCS12Pass.setValue(p, p.lock(), global);
             else if(p.name() == PKCS12Disable.name)
-                PKCS12Disable.setValue(p == "true", p.lock(), global);
+                PKCS12Disable.setValue(p, p.lock(), global);
             else if(p.name() == TSUrl.name)
                 TSUrl.setValue(p, p.lock(), global);
             else if(p.name() == TSLAutoUpdate.name)
-                TSLAutoUpdate.setValue(p == "true", p.lock(), global);
+                TSLAutoUpdate.setValue(p, p.lock(), global);
             else if(p.name() == TSLCache.name)
                 TSLCache.setValue(p, p.lock(), global);
             else if(p.name() == TSLOnlineDigest.name)
-                TSLOnlineDigest.setValue(p == "true", p.lock(), global);
+                TSLOnlineDigest.setValue(p, p.lock(), global);
             else if(p.name() == TSLTimeOut.name)
-                TSLTimeOut.setValue(stoi(p), p.lock(), global);
+                TSLTimeOut.setValue(p, p.lock(), global);
             else if(p.name() == verifyServiceUri.name)
                 verifyServiceUri.setValue(p, p.lock(), global);
             else if(p.name() == "ocsp.tm.profile" && global)
@@ -216,7 +223,7 @@ void XmlConf::Private::init(const string& path, bool global)
  * @param path to parse xml config
  * @return returns parsed xml configuration
  */
-unique_ptr<Configuration> XmlConf::Private::read(const string &path)
+unique_ptr<Configuration> XmlConf::Private::read(const string &path) const
 {
     try
     {
@@ -277,7 +284,7 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, const A &defined, con
             }
         }
         if(defined != value) //if it's a new parameter
-            paramSeq.push_back(Param(tostring(value), param.name));
+            paramSeq.push_back({to_string(value), param.name});
     }
     catch (const xml_schema::Exception& e)
     {
@@ -285,25 +292,26 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, const A &defined, con
     }
 
     File::createDirectory(File::directory(USER_CONF_LOC));
-    ofstream ofs(File::encodeName(USER_CONF_LOC).c_str());
+    ofstream ofs(File::encodeName(USER_CONF_LOC));
     if (ofs.fail())
         THROW("Failed to open configuration: %s", USER_CONF_LOC.c_str());
     NamespaceInfomap map;
-    map[string()].name = string();
-    map[string()].schema = SCHEMA_LOC;
+    map[{}].name = {};
+    map[{}].schema = SCHEMA_LOC;
     configuration(ofs, *conf, map, "UTF-8", Flags::dont_initialize);
 }
 
 
+/**
+ * @typedef digidoc::XmlConfCurrent
+ * @see digidoc::XmlConfV5
+ */
 
 /**
  * @class digidoc::XmlConf
  * @brief XML Configuration class
- * @deprecated See digidoc::XmlConfV2
+ * @deprecated Use digidoc::XmlConfV5
  * @see digidoc::Conf
- */
-/**
- * @deprecated See digidoc::XmlConfV2::XmlConfV2
  */
 XmlConf::XmlConf(const string &path, const string &schema)
     : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
@@ -318,11 +326,8 @@ XmlConf* XmlConf::instance() { return dynamic_cast<XmlConf*>(Conf::instance()); 
 /**
  * @class digidoc::XmlConfV2
  * @brief Version 2 of XML Configuration class
- * @deprecated See digidoc::XmlConfV3
+ * @deprecated Use digidoc::XmlConfV5
  * @see digidoc::ConfV2
- */
-/**
- * @deprecated See digidoc::XmlConfV3::XmlConfV3
  */
 XmlConfV2::XmlConfV2(const string &path, const string &schema)
     : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
@@ -337,11 +342,8 @@ XmlConfV2* XmlConfV2::instance() { return dynamic_cast<XmlConfV2*>(Conf::instanc
 /**
  * @class digidoc::XmlConfV3
  * @brief Version 3 of XML Configuration class
- * @deprecated See digidoc::XmlConfV4
+ * @deprecated Use digidoc::XmlConfV5
  * @see digidoc::ConfV3
- */
-/**
- * @deprecated See digidoc::XmlConfV4::XmlConfV4
  */
 XmlConfV3::XmlConfV3(const string &path, const string &schema)
     : d(make_unique<XmlConf::Private>(path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
@@ -356,6 +358,7 @@ XmlConfV3* XmlConfV3::instance() { return dynamic_cast<XmlConfV3*>(Conf::instanc
 /**
  * @class digidoc::XmlConfV4
  * @brief Version 4 of XML Configuration class
+ * @deprecated Use digidoc::XmlConfV5
  * @see digidoc::ConfV4
  */
 /**

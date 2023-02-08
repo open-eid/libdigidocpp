@@ -34,9 +34,15 @@ using namespace std;
 Conf* Conf::INSTANCE = nullptr;
 
 /**
+ * @typedef digidoc::ConfCurrent
+ * @see digidoc::ConfV5
+ */
+
+/**
  * @class digidoc::Conf
  * @brief Configuration class which can reimplemented and virtual methods overloaded.
  *
+ * @deprecated Use digidoc::ConfV5
  * @see @ref parameters
  */
 /**
@@ -62,7 +68,7 @@ void Conf::init(Conf *conf)
 
 /**
  * Returns libdigidoc library configuration file's (digidoc.ini) file location
- * @deprecated unused
+ * @deprecated Unused
  */
 string Conf::libdigidocConf() const { return {}; }
 
@@ -116,7 +122,7 @@ string Conf::ocsp(const string &issuer) const
 
 /**
  * Gets Certificate store location.
- * @deprecated unused
+ * @deprecated Unused
  */
 string Conf::certsPath() const { return {}; }
 
@@ -234,6 +240,7 @@ string Conf::verifyServiceUri() const { return SIVA_URL; }
  * subclasses to keep binary compatibility
  * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
  * @see digidoc::Conf
+ * @deprecated Use digidoc::ConfV5
  * @see @ref parameters
  */
 /**
@@ -263,6 +270,7 @@ X509Cert ConfV2::verifyServiceCert() const { return X509Cert(); }
  * subclasses to keep binary compatibility
  * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
  * @see digidoc::ConfV2
+ * @deprecated Use digidoc::ConfV5
  * @see @ref parameters
  */
 /**
@@ -294,6 +302,7 @@ set<string> ConfV3::OCSPTMProfiles() const { return { "1.3.6.1.4.1.10015.4.1.2" 
  * subclasses to keep binary compatibility
  * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
  * @see digidoc::ConfV3
+ * @deprecated Use digidoc::ConfV5
  * @see @ref parameters
  */
 /**
