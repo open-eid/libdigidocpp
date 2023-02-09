@@ -78,8 +78,7 @@ BOOST_AUTO_TEST_CASE(signerParameters)
 
     signer->setSignatureProductionPlace("Tartu", "Tartumaa", "12345", "Estonia");
 
-    vector<string> roles;
-    roles.emplace_back("Role1");
+    vector<string> roles{"Role1"};
     signer->setSignerRoles( roles );
 
     BOOST_CHECK_EQUAL(signer->signerRoles(), roles);
@@ -124,7 +123,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(X509CertSuite)
 BOOST_AUTO_TEST_CASE(parameters)
 {
-    unique_ptr<Signer> signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
+    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
     X509Cert c = signer1->cert();
     BOOST_CHECK_EQUAL(c, signer1->cert());
     BOOST_CHECK_EQUAL(!c, false);
@@ -135,9 +134,10 @@ BOOST_AUTO_TEST_CASE(parameters)
     BOOST_CHECK_EQUAL(c.subjectName("C"), "EE");
     BOOST_CHECK_EQUAL(c.issuerName("CN"), "libdigidocpp Inter");
     BOOST_CHECK_EQUAL(c.issuerName("C"), "EE");
-    vector<X509Cert::KeyUsage> usage;
-    usage.push_back(X509Cert::DigitalSignature);
-    usage.push_back(X509Cert::NonRepudiation);
+    vector<X509Cert::KeyUsage> usage{
+        X509Cert::DigitalSignature,
+        X509Cert::NonRepudiation
+    };
     BOOST_CHECK_EQUAL(c.keyUsage(), usage);
     BOOST_CHECK_EQUAL(c.isValid(), true);
 }
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(parameters)
     digidoc::X509Crypto test(X509Cert("test.crt", X509Cert::Pem));
     BOOST_CHECK_EQUAL(test.compareIssuerToString("CN=\\\"test\\\""), 0);
 
-    unique_ptr<Signer> signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
+    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
     const vector<unsigned char> data{'H','e','l','l','o',' ','w','o','r','l','d'};
     vector<unsigned char> digest = Digest(URI_SHA256).result(data);
     vector<unsigned char> signature = signer1->sign(URI_SHA256, digest);
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_SUITE(DocSuite)
 using DocTypes = boost::mpl::list<ASiCE>;
 BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
 {
-    unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
+    auto d = Container::createPtr("test." + Doc::EXT);
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 0U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 0U);
     BOOST_CHECK_EQUAL(d->mediaType(), Doc::TYPE);
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
 {
-    unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
+    auto d = Container::createPtr("test." + Doc::EXT);
 
     BOOST_CHECK_THROW(d->removeDataFile(0U), Exception);
 
@@ -287,11 +287,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 {
-    unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
+    auto d = Container::createPtr("test." + Doc::EXT);
 
     BOOST_CHECK_THROW(d->removeSignature(0U), Exception);
 
-    unique_ptr<Signer> signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
+    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
     signer1->setProfile("time-mark");
     BOOST_CHECK_THROW(d->sign(signer1.get()), Exception);
 
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_THROW(d->removeDataFile(0U), Exception);
 
     // Add second Signature
-    unique_ptr<Signer> signer2 = make_unique<PKCS12Signer>("signer2.p12", "signer2");
+    auto signer2 = make_unique<PKCS12Signer>("signer2.p12", "signer2");
     BOOST_CHECK_NO_THROW(d->sign(signer2.get()));
     BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
     if(d->signatures().size() == 2)
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 
     if(d->mediaType() == ASiCE::TYPE)
     {
-        unique_ptr<Signer> signer3 = make_unique<PKCS12Signer>("signerEC.p12", "signerEC");
+        auto signer3 = make_unique<PKCS12Signer>("signerEC.p12", "signerEC");
         Signature *s3 = nullptr;
         BOOST_CHECK_NO_THROW(s3 = d->sign(signer3.get()));
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         s = d->signatures().back();
         BOOST_CHECK_NO_THROW(s->validate());
         BOOST_CHECK_EQUAL(s->signatureMethod(), signer1->method());
-        unique_ptr<Signer> signer4 = make_unique<PKCS12Signer>("signerEC384.p12", "signerEC");
+        auto signer4 = make_unique<PKCS12Signer>("signerEC384.p12", "signerEC");
         signer4->setProfile("BES");
         d = Container::createPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
@@ -418,10 +418,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 {
-    unique_ptr<Signer> signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
+    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
     for(const string &data : {"0123456789~#%&()=`@{[]}'", "öäüõ"})
     {
-        unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
+        auto d = Container::createPtr("test." + Doc::EXT);
         const Signature *s1 = nullptr;
         BOOST_CHECK_NO_THROW(d->addDataFile(data + ".txt", "text/plain"));
         BOOST_CHECK_NO_THROW(s1 = d->sign(signer1.get()));
@@ -437,13 +437,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
 {
-    unique_ptr<Container> d = Container::createPtr("test." + Doc::EXT);
-    unique_ptr<Signer> signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
+    auto d = Container::createPtr("test." + Doc::EXT);
+    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
 
     signer1->setSignatureProductionPlace("Tartu", "Tartumaa", "12345", "Estonia");
 
-    vector<string> roles;
-    roles.emplace_back("Role1");
+    vector<string> roles{"Role1"};
     signer1->setSignerRoles( roles );
 
     const Signature *s1 = nullptr;
@@ -461,10 +460,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
         BOOST_CHECK_EQUAL(s1->stateOrProvince(), "Tartumaa");
         BOOST_CHECK_EQUAL(s1->postalCode(), "12345");
         BOOST_CHECK_EQUAL(s1->countryName(), "Estonia");
-        time_t t = time(nullptr);
-        string time = util::date::xsd2string(util::date::makeDateTime(util::date::gmtime(t)));
-        BOOST_WARN_EQUAL(s1->claimedSigningTime().substr(0, 16), time.substr(0, 16));
-        BOOST_WARN_EQUAL(s1->OCSPProducedAt().substr(0, 16), time.substr(0, 16));
+        string time_s = util::date::to_string(util::date::gmtime(time(nullptr))).substr(0, 16);
+        BOOST_WARN_EQUAL(s1->claimedSigningTime().substr(0, 16), time_s);
+        BOOST_WARN_EQUAL(s1->OCSPProducedAt().substr(0, 16), time_s);
         BOOST_CHECK_EQUAL(s1->OCSPCertificate().subjectName("CN").find_first_of("TEST of SK OCSP RESPONDER"), 0U);
     }
 
@@ -473,7 +471,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
     if(d->signatures().size() == 1U)
         BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
 
-    unique_ptr<Signer> signer3 = make_unique<PKCS12Signer>("signer3.p12", "signer3");
+    auto signer3 = make_unique<PKCS12Signer>("signer3.p12", "signer3");
     BOOST_CHECK_THROW(d->sign(signer3.get()), Exception); // OCSP UNKNOWN
 }
 BOOST_AUTO_TEST_SUITE_END()
@@ -503,8 +501,8 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(FileUtilSuite)
 BOOST_AUTO_TEST_CASE(FromUriPathConvertsAsciiEncodingToCharacters)
 {
-    const std::string asciiEncodedStr = "%3dtest%20%40";
-    const std::string expectedDecodedStr = "=test @";
+    const string asciiEncodedStr = "%3dtest%20%40";
+    const string expectedDecodedStr = "=test @";
 
     string result = util::File::fromUriPath(asciiEncodedStr);
 
@@ -513,8 +511,8 @@ BOOST_AUTO_TEST_CASE(FromUriPathConvertsAsciiEncodingToCharacters)
 
 BOOST_AUTO_TEST_CASE(FromUriPathDoesNotConvertIncompleteAsciiCode)
 {
-    const std::string asciiEncodedStr = "%3dtest%20%4";
-    const std::string expectedDecodedStr = "=test %4";
+    const string asciiEncodedStr = "%3dtest%20%4";
+    const string expectedDecodedStr = "=test %4";
 
     string result = util::File::fromUriPath(asciiEncodedStr);
 
@@ -523,8 +521,8 @@ BOOST_AUTO_TEST_CASE(FromUriPathDoesNotConvertIncompleteAsciiCode)
 
 BOOST_AUTO_TEST_CASE(FromUriPathPreservesTrailingPercentageSign)
 {
-    const std::string asciiEncodedStr = "%3dtest%20%";
-    const std::string expectedDecodedStr = "=test %";
+    const string asciiEncodedStr = "%3dtest%20%";
+    const string expectedDecodedStr = "=test %";
 
     string result = util::File::fromUriPath(asciiEncodedStr);
 
@@ -535,7 +533,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(ASiCSTestSuite)
 BOOST_AUTO_TEST_CASE(OpenValidASiCSContainer)
 {
-    unique_ptr<Container> d = Container::openPtr("test.asics");
+    auto d = Container::openPtr("test.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
@@ -548,14 +546,14 @@ BOOST_AUTO_TEST_CASE(OpenValidASiCSContainer)
     if(ts)
     {
         BOOST_CHECK_EQUAL("8766262679921277358", ts->id()); // Serial number: 0x79A805763478B9AE
-        BOOST_WARN_EQUAL("2016-11-02T11:07:45Z", ts->TimeStampTime().substr(0, 16));
+        BOOST_CHECK_EQUAL("2016-11-02T11:07:45Z", ts->TimeStampTime());
         BOOST_CHECK_EQUAL("DEMO of SK TSA 2014", ts->TimeStampCertificate().subjectName("CN"));
     }
 }
 
 BOOST_AUTO_TEST_CASE(OpenValidASiCSContainerWithOtherMeta)
 {
-    unique_ptr<Container> d = Container::openPtr("test-meta.asics");
+    auto d = Container::openPtr("test-meta.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
@@ -569,7 +567,7 @@ BOOST_AUTO_TEST_CASE(OpenValidASiCSContainerWithOtherMeta)
 
 BOOST_AUTO_TEST_CASE(OpenInvalidTsASiCSContainer)
 {
-    unique_ptr<Container> d = Container::openPtr("test-invalidts.asics");
+    auto d = Container::openPtr("test-invalidts.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
@@ -583,7 +581,7 @@ BOOST_AUTO_TEST_CASE(OpenInvalidTsASiCSContainer)
 
 BOOST_AUTO_TEST_CASE(TeRaASiCSContainer)
 {
-    unique_ptr<Container> d = Container::openPtr("test-tera.asics");
+    auto d = Container::openPtr("test-tera.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
@@ -595,13 +593,13 @@ BOOST_AUTO_TEST_CASE(TeRaASiCSContainer)
     const auto ts = d->signatures().front();
     BOOST_CHECK_NO_THROW(ts->validate());
 
-    BOOST_WARN_EQUAL("2017-04-10T06:27:28Z", ts->TimeStampTime().substr(0, 19));
+    BOOST_CHECK_EQUAL("2017-04-10T06:27:28Z", ts->TimeStampTime());
     BOOST_CHECK_EQUAL("DEMO of SK TSA 2014", ts->TimeStampCertificate().subjectName("CN"));
 }
 
 BOOST_AUTO_TEST_CASE(TeRaEmptyASiCSContainer)
 {
-    unique_ptr<Container> d = Container::openPtr("test-tera-empty.asics");
+    auto d = Container::openPtr("test-tera-empty.asics");
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);

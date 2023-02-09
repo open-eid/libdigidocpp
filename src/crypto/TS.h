@@ -30,7 +30,7 @@ class X509Cert;
 class TS
 {
 public:
-	TS(const std::string &url, const Digest &digest, const std::string &useragent = {});
+    TS(const std::string &url, const Digest &digest, const std::string &useragent = {});
     TS(const unsigned char *data = nullptr, size_t size = 0);
 
     X509Cert cert() const;
@@ -38,7 +38,7 @@ public:
     std::vector<unsigned char> digestValue() const;
     std::vector<unsigned char> messageImprint() const;
     std::string serial() const;
-    std::string time() const;
+    tm time() const;
     void verify(const Digest &digest);
 
     operator std::vector<unsigned char>() const;

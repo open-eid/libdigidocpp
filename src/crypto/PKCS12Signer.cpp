@@ -68,7 +68,7 @@ X509Cert PKCS12Signer::cert() const
 
 vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsigned char> &digest) const
 {
-    DEBUG("PKCS12Signer::sign(method = %s, digest = %lu)", method.c_str(), (unsigned long)digest.size());
+    DEBUG("PKCS12Signer::sign(method = %s, digest = %zu)", method.c_str(), digest.size());
 
     int result = 0;
     vector<unsigned char> signature;
@@ -106,9 +106,9 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
         SCOPE(ECDSA_SIG, sig, d2i_ECDSA_SIG(nullptr, &p, long(asn1.size())));
         const BIGNUM *r = nullptr, *s = nullptr;
         ECDSA_SIG_get0(sig.get(), &r, &s);
-        size_t r_len = size_t(BN_num_bytes(r));
-        size_t s_len = size_t(BN_num_bytes(s));
-        size_t keyLen = max(r_len, s_len);
+        auto r_len = size_t(BN_num_bytes(r));
+        auto s_len = size_t(BN_num_bytes(s));
+        auto keyLen = max(r_len, s_len);
         signature.resize(keyLen * 2);
         if(BN_bn2bin(r, &signature[keyLen - r_len]) <= 0)
             THROW("Error copying signature 'r' value to buffer");

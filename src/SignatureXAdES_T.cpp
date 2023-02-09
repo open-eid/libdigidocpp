@@ -50,17 +50,17 @@ void SignatureXAdES_T::createUnsignedSignatureProperties()
 
 vector<unsigned char> SignatureXAdES_T::messageImprint() const
 {
-    return tsFromBase64().messageImprint();
+    return TimeStamp().messageImprint();
 }
 
 X509Cert SignatureXAdES_T::TimeStampCertificate() const
 {
-    return tsFromBase64().cert();
+    return TimeStamp().cert();
 }
 
 string SignatureXAdES_T::TimeStampTime() const
 {
-    return util::date::ASN1TimeToXSD(tsFromBase64().time());
+    return util::date::to_string(TimeStamp().time());
 }
 
 string SignatureXAdES_T::trustedSigningTime() const
@@ -95,7 +95,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     sigdata_.clear();
 }
 
-TS SignatureXAdES_T::tsFromBase64() const
+TS SignatureXAdES_T::TimeStamp() const
 {
     try {
         if(unsignedSignatureProperties().signatureTimeStamp().empty())
@@ -143,7 +143,8 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             calcDigestOnNode(digest, URI_ID_DSIG, u"SignatureValue", canonicalizationMethod);
         });
 
-        time_t validateTime = util::date::ASN1TimeToTime_t(tsa.time());
+        tm tm = tsa.time();
+        time_t validateTime = util::date::mkgmtime(tm);
         if(!signingCertificate().isValid(&validateTime))
             THROW("Signing certificate was not valid on signing time");
 

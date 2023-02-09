@@ -100,7 +100,7 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
  */
 int X509Crypto::compareIssuerToString(const string &name) const
 {
-    static const array<string, 18> list = {
+    static const array list {
         "CN", "commonName",
         "L", "localityName",
         "ST", "stateOrProvinceName",
@@ -212,47 +212,10 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
         THROW("Certificate does not have a public key, can not verify signature.");
 
     SCOPE(EVP_PKEY_CTX, ctx, EVP_PKEY_CTX_new(key, nullptr));
-    int result = 0;
     switch(EVP_PKEY_base_id(key))
     {
     case EVP_PKEY_RSA:
-    {
-        int nid = Digest::toMethod(method);
-        if(Digest::isRsaPssUri(method)) {
-            if(ctx &&
-                EVP_PKEY_verify_init(ctx.get()) == 1 &&
-                EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PSS_PADDING) == 1 &&
-                EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx.get(), RSA_PSS_SALTLEN_DIGEST) == 1 &&
-                EVP_PKEY_CTX_set_signature_md(ctx.get(), EVP_get_digestbynid(nid)) == 1)
-                result = EVP_PKEY_verify(ctx.get(), signature.data(), signature.size(), digest.data(), digest.size());
-        } else {
-            size_t size = 0;
-            if(!ctx ||
-                EVP_PKEY_verify_recover_init(ctx.get()) <= 0 ||
-                EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PADDING) <= 0 ||
-                EVP_PKEY_verify_recover(ctx.get(), nullptr, &size, signature.data(), signature.size()) <= 0)
-                break;
-            vector<unsigned char> decrypted(size);
-            if(EVP_PKEY_verify_recover(ctx.get(), decrypted.data(), &size, signature.data(), signature.size()) <= 0)
-                break;
-            decrypted.resize(size);
-            const unsigned char *p = decrypted.data();
-            SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(decrypted.size())));
-            if(!sig)
-                break;
-            const X509_ALGOR *algor = nullptr;
-            const ASN1_OCTET_STRING *value = nullptr;
-            X509_SIG_get0(sig.get(), &algor, &value);
-
-            if(algor->parameter && ASN1_TYPE_get(algor->parameter) != V_ASN1_NULL)
-                break;
-            if(nid == OBJ_obj2nid(algor->algorithm) &&
-                size_t(value->length) == digest.size() &&
-                memcmp(value->data, digest.data(), digest.size()) == 0)
-                result = 1;
-        }
         break;
-    }
 #ifndef OPENSSL_NO_ECDSA
     case EVP_PKEY_EC:
     {
@@ -261,12 +224,47 @@ bool X509Crypto::verify(const string &method, const vector<unsigned char> &diges
             BN_bin2bn(signature.data(), int(signature.size()/2), nullptr),
             BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), nullptr));
         vector<unsigned char> asn1 = i2d(sig.get(), i2d_ECDSA_SIG);
-        if(ctx && EVP_PKEY_verify_init(ctx.get()) == 1)
-            result = EVP_PKEY_verify(ctx.get(), asn1.data(), asn1.size(), digest.data(), digest.size());
-        break;
+        return ctx &&
+            EVP_PKEY_verify_init(ctx.get()) == 1 &&
+            EVP_PKEY_verify(ctx.get(), asn1.data(), asn1.size(), digest.data(), digest.size()) == 1;
     }
 #endif
     default: THROW("Unsupported public key");
     }
-    return result == 1;
+    int nid = Digest::toMethod(method);
+    if(Digest::isRsaPssUri(method))
+    {
+        return ctx &&
+            EVP_PKEY_verify_init(ctx.get()) == 1 &&
+            EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PSS_PADDING) == 1 &&
+            EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx.get(), RSA_PSS_SALTLEN_DIGEST) == 1 &&
+            EVP_PKEY_CTX_set_signature_md(ctx.get(), EVP_get_digestbynid(nid)) == 1 &&
+            EVP_PKEY_verify(ctx.get(), signature.data(), signature.size(), digest.data(), digest.size()) == 1;
+    }
+    else
+    {
+        size_t size = 0;
+        if(!ctx ||
+            EVP_PKEY_verify_recover_init(ctx.get()) <= 0 ||
+            EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PADDING) <= 0 ||
+            EVP_PKEY_verify_recover(ctx.get(), nullptr, &size, signature.data(), signature.size()) <= 0)
+            return false;
+        vector<unsigned char> decrypted(size);
+        if(EVP_PKEY_verify_recover(ctx.get(), decrypted.data(), &size, signature.data(), signature.size()) <= 0)
+            return false;
+        decrypted.resize(size);
+        const unsigned char *p = decrypted.data();
+        SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(decrypted.size())));
+        if(!sig)
+            return false;
+        const X509_ALGOR *algor = nullptr;
+        const ASN1_OCTET_STRING *value = nullptr;
+        X509_SIG_get0(sig.get(), &algor, &value);
+
+        if(algor->parameter && ASN1_TYPE_get(algor->parameter) != V_ASN1_NULL)
+            return false;
+        return nid == OBJ_obj2nid(algor->algorithm) &&
+            size_t(value->length) == digest.size() &&
+            memcmp(value->data, digest.data(), digest.size()) == 0;
+    }
 }

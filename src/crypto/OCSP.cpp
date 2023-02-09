@@ -113,7 +113,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     if(OCSP_resp_find_status(basic.get(), certId, nullptr, nullptr, nullptr, &thisUpdate, &nextUpdate) != 1)
         THROW("Failed to find CERT_ID from OCSP response.");
 
-    DEBUG("OCSP producedAt: %s", producedAt().c_str());
+    DEBUG("OCSP producedAt: %s", util::date::to_string(producedAt()).c_str());
     if(!OCSP_check_validity(thisUpdate, nextUpdate, 15*60, 2*60))
     {
         Exception e(EXCEPTION_PARAMS("OCSP response not in valid time slot."));
@@ -272,7 +272,8 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     if(!resp)
         THROW("Failed to verify OCSP response.");
 
-    time_t t = util::date::ASN1TimeToTime_t(producedAt());
+    tm tm = producedAt();
+    time_t t = util::date::mkgmtime(tm);
     SCOPE(X509_STORE, store, X509CertStore::createStore(X509CertStore::OCSP, &t));
     STACK_OF(X509) *stack = sk_X509_new_null();
     for(const X509Cert &i: X509CertStore::instance()->certs(X509CertStore::OCSP))
@@ -364,12 +365,11 @@ vector<unsigned char> OCSP::nonce() const
     return nonce;
 }
 
-string OCSP::producedAt() const
+tm OCSP::producedAt() const
 {
     if(!basic)
         return {};
-    const ASN1_GENERALIZEDTIME *time = OCSP_resp_get0_produced_at(basic.get());
-    if(!time)
-        return {};
-    return { time->data, time->data + time->length };
+    tm tm {};
+    ASN1_TIME_to_tm(OCSP_resp_get0_produced_at(basic.get()), &tm);
+    return tm;
 }
