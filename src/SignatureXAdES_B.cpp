@@ -1064,83 +1064,72 @@ void SignatureXAdES_B::saveToXml(ostream &os) const
 string SignatureXAdES_B::city() const
 {
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
-    const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
-        getSignedSignatureProperties().signatureProductionPlace();
-    if(sigProdPlaceOptional && sigProdPlaceOptional->city())
-        return sigProdPlaceOptional->city().get();
-    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
-            getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->city())
-        return sigProdPlaceV2Optional->city().get();
+    if(const auto &sigProdPlace = getSignedSignatureProperties().signatureProductionPlace();
+        sigProdPlace && sigProdPlace->city())
+        return sigProdPlace->city().get();
+    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
+        sigProdPlaceV2 && sigProdPlaceV2->city())
+        return sigProdPlaceV2->city().get();
     return {};
 }
 
 string SignatureXAdES_B::stateOrProvince() const
 {
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
-    const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
-        getSignedSignatureProperties().signatureProductionPlace();
-    if(sigProdPlaceOptional && sigProdPlaceOptional->stateOrProvince())
-        return sigProdPlaceOptional->stateOrProvince().get();
-    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
-            getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->stateOrProvince())
-        return sigProdPlaceV2Optional->stateOrProvince().get();
+    if(const auto &sigProdPlace = getSignedSignatureProperties().signatureProductionPlace();
+        sigProdPlace && sigProdPlace->stateOrProvince())
+        return sigProdPlace->stateOrProvince().get();
+    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
+        sigProdPlaceV2 && sigProdPlaceV2->stateOrProvince())
+        return sigProdPlaceV2->stateOrProvince().get();
     return {};
 }
 
 string SignatureXAdES_B::streetAddress() const
 {
-    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
-            getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->streetAddress())
-        return sigProdPlaceV2Optional->streetAddress().get();
+    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
+        sigProdPlaceV2 && sigProdPlaceV2->streetAddress())
+        return sigProdPlaceV2->streetAddress().get();
     return {};
 }
 
 string SignatureXAdES_B::postalCode() const
 {
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
-    const SignedSignaturePropertiesType::SignatureProductionPlaceOptional& sigProdPlaceOptional =
-        getSignedSignatureProperties().signatureProductionPlace();
-    if(sigProdPlaceOptional && sigProdPlaceOptional->postalCode())
-        return sigProdPlaceOptional->postalCode().get();
-    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
-            getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->postalCode())
-        return sigProdPlaceV2Optional->postalCode().get();
+    if(const auto &sigProdPlace = getSignedSignatureProperties().signatureProductionPlace();
+        sigProdPlace && sigProdPlace->postalCode())
+        return sigProdPlace->postalCode().get();
+    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
+        sigProdPlaceV2 && sigProdPlaceV2->postalCode())
+        return sigProdPlaceV2->postalCode().get();
     return {};
 }
 
 string SignatureXAdES_B::countryName() const
 {
     // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
-    const SignedSignaturePropertiesType::SignatureProductionPlaceOptional &sigProdPlaceOptional =
-        getSignedSignatureProperties().signatureProductionPlace();
-    if(sigProdPlaceOptional && sigProdPlaceOptional->countryName())
-        return sigProdPlaceOptional->countryName().get();
-    const SignedSignaturePropertiesType::SignatureProductionPlaceV2Optional &sigProdPlaceV2Optional =
-            getSignedSignatureProperties().signatureProductionPlaceV2();
-    if(sigProdPlaceV2Optional && sigProdPlaceV2Optional->countryName())
-        return sigProdPlaceV2Optional->countryName().get();
+    if(const auto &sigProdPlace = getSignedSignatureProperties().signatureProductionPlace();
+        sigProdPlace && sigProdPlace->countryName())
+        return sigProdPlace->countryName().get();
+    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
+        sigProdPlaceV2 && sigProdPlaceV2->countryName())
+        return sigProdPlaceV2->countryName().get();
     return {};
 }
 
 vector<string> SignatureXAdES_B::signerRoles() const
 {
-    vector<string> roles;
-    const SignedSignaturePropertiesType::SignerRoleOptional &roleOpt =
-        getSignedSignatureProperties().signerRole();
-    const SignedSignaturePropertiesType::SignerRoleV2Optional &roleV2Opt =
-        getSignedSignatureProperties().signerRoleV2();
     const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence = [&] {
         // return elements from SignerRole element or SignerRoleV2 when available
-        if(roleOpt && roleOpt->claimedRoles())
-            return roleOpt->claimedRoles()->claimedRole();
-        if(roleV2Opt && roleV2Opt->claimedRoles())
-            return roleV2Opt->claimedRoles()->claimedRole();
+        if(const auto &role = getSignedSignatureProperties().signerRole();
+            role && role->claimedRoles())
+            return role->claimedRoles()->claimedRole();
+        if(const auto &roleV2 = getSignedSignatureProperties().signerRoleV2();
+            roleV2 && roleV2->claimedRoles())
+            return roleV2->claimedRoles()->claimedRole();
         return ClaimedRolesListType::ClaimedRoleSequence{};
     }();
+    vector<string> roles;
     roles.reserve(claimedRoleSequence.size());
     for(const ClaimedRolesListType::ClaimedRoleType &type: claimedRoleSequence)
         roles.emplace_back(type.text());
@@ -1164,8 +1153,10 @@ X509Cert SignatureXAdES_B::signingCertificate() const
     {
         for(const KeyInfoType::X509DataType &x509Data: keyInfoOptional->x509Data())
         {
-            for(const X509DataType::X509CertificateType &data: x509Data.x509Certificate())
-                return X509Cert((const unsigned char*)data.data(), data.size());
+            if(x509Data.x509Certificate().empty())
+                continue;
+            const X509DataType::X509CertificateType &data = x509Data.x509Certificate().front();
+            return X509Cert((const unsigned char*)data.data(), data.size());
         }
     }
     catch(const Exception &e)
