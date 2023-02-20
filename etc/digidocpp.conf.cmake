@@ -41,5 +41,5 @@
     <!--<param name="ocsp.tm.profile" lock="false">1.3.6.1.4.1.10015.4.1.2</param>-->
 
     <!--OCSP responder URL-->
-    <!--<ocsp issuer="ESTEID-SK 2015">http://ocsp.sk.ee</ocsp>-->
+    <!--<ocsp issuer="ISSUER NAME">http://ocsp.issuer.com</ocsp>-->
 </configuration>

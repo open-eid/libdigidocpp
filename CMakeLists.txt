@@ -35,7 +35,6 @@ set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
 include(CPack)
 if( APPLE )
     set( FRAMEWORK YES CACHE BOOL "Build library as Mac OS X Framework" )
-    set( USE_KEYCHAIN YES CACHE BOOL "Use keychain to store PKCS12 access certificate" )
 endif()
 
 find_package(Doxygen)

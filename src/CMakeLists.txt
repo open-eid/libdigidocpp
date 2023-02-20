@@ -148,6 +148,8 @@ add_library(digidocpp_util STATIC
     util/log.cpp
 )
 
+target_link_libraries(digidocpp_util PRIVATE $<$<PLATFORM_ID:Darwin>:-framework\ CoreFoundation>)
+
 add_library(digidocpp_priv STATIC
     ${xsd_SRCS}
     crypto/Connect.cpp
@@ -190,7 +192,6 @@ target_link_libraries(digidocpp_priv
 add_library(digidocpp
     ${digidocpp_SRCS}
     ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf
-    ${CMAKE_SOURCE_DIR}/etc/798.p12
     ${SCHEMA_FILES}
     ${PUBLIC_HEADER}
     ${CRYPTO_HEADER}
@@ -235,7 +236,7 @@ set_target_properties(digidocpp PROPERTIES
     VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
     SOVERSION 1
     PUBLIC_HEADER "${PUBLIC_HEADER}"
-    RESOURCE "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/798.p12"
+    RESOURCE ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf
     FRAMEWORK_VERSION 1
     FRAMEWORK "${FRAMEWORK}"
     MACOSX_FRAMEWORK_IDENTIFIER "ee.ria.digidocpp"
@@ -250,11 +251,6 @@ if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
     target_link_libraries(digidoc-tool digidocpp digidocpp_priv Threads::Threads)
     configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
-endif()
-
-if(USE_KEYCHAIN)
-    set_property(SOURCE crypto/OCSP.cpp APPEND PROPERTY COMPILE_DEFINITIONS USE_KEYCHAIN)
-    target_link_libraries(digidocpp PRIVATE "-framework Security")
 endif()
 
 if(PODOFO_FOUND)
@@ -357,12 +353,10 @@ if(WIN32)
             )
         endforeach()
     endif()
-elseif(APPLE)
-    target_link_libraries(digidocpp PUBLIC "-framework CoreFoundation")
 endif()
 
-source_group( "Resources" FILES "${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf;${CMAKE_SOURCE_DIR}/etc/798.p12" )
-source_group( "Resources\\schemas" FILES ${SCHEMA_FILES} )
+source_group(Resources FILES ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf)
+source_group(Resources/schemas FILES ${SCHEMA_FILES})
 
 if( FRAMEWORK )
     add_custom_command( TARGET digidoc-tool POST_BUILD

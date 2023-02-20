@@ -145,16 +145,15 @@ bool File::fileExists(const string& path)
 }
 
 #ifdef _WIN32
-string File::dllPath(const string &dll)
+string File::dllPath(string_view dll)
 {
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
     HMODULE handle = GetModuleHandleW(fs::u8path(dll).c_str());
     wstring path(MAX_PATH, 0);
-    DWORD size = GetModuleFileNameW(handle, path.data(), DWORD(path.size()));
-    path.resize(size);
-    return fs::path(path).parent_path().u8string() + "\\";
+    path.resize(GetModuleFileNameW(handle, path.data(), DWORD(path.size())));
+    return fs::path(path).parent_path().u8string();
 #else
-    return "./";
+    return {};
 #endif
 }
 #endif
@@ -211,10 +210,10 @@ string File::fileName(const string& path)
 }
 
 #ifdef __APPLE__
-string File::frameworkResourcesPath(const string &name)
+string File::frameworkResourcesPath(string_view name)
 {
     string result(PATH_MAX, 0);
-    CFStringRef identifier = CFStringCreateWithCString(nullptr, name.c_str(), kCFStringEncodingUTF8);
+    CFStringRef identifier = CFStringCreateWithCString(nullptr, name.data(), kCFStringEncodingUTF8);
     if(CFBundleRef bundle = CFBundleGetBundleWithIdentifier(identifier))
     {
         if(CFURLRef url = CFBundleCopyResourcesDirectoryURL(bundle))
@@ -225,7 +224,6 @@ string File::frameworkResourcesPath(const string &name)
     }
     CFRelease(identifier);
     result.resize(strlen(result.c_str()));
-    if(!result.empty()) result += "/";
     return result;
 }
 #endif
@@ -254,16 +252,15 @@ string File::directory(const string& path)
  */
 string File::path(string dir, string_view relativePath)
 {
-    if(!dir.empty() && (dir.back() == '/' || dir.back() == '\\'))
-        dir.pop_back();
-
-    string path = (dir + "/").append(relativePath);
+    if(!dir.empty() && dir.back() != '/' && dir.back() != '\\')
+        dir += '/';
+    dir.append(relativePath);
 #ifdef _WIN32
-    replace(path.begin(), path.end(), '/', '\\');
+    replace(dir.begin(), dir.end(), '/', '\\');
 #else
-    replace(path.begin(), path.end(), '\\', '/');
+    replace(dir.begin(), dir.end(), '\\', '/');
 #endif
-    return path;
+    return dir;
 }
 
 /**
@@ -297,20 +294,19 @@ string File::tempFileName()
  * @param path full path of the directory created.
  * @throws IOException exception is thrown if the directory creation failed.
  */
-void File::createDirectory(const string& path)
+void File::createDirectory(string path)
 {
     if(path.empty())
         THROW("Can not create directory with no name.");
 
-    string dirPath = path;
-    if(dirPath.back() == '/' || dirPath.back() == '\\')
-        dirPath.pop_back();
+    if(path.back() == '/' || path.back() == '\\')
+        path.pop_back();
 
-    f_string _path = encodeName(dirPath);
+    f_string _path = encodeName(path);
     f_statbuf fileInfo;
     if(f_stat(_path.c_str(), &fileInfo) == 0 && (fileInfo.st_mode & S_IFMT) == S_IFDIR)
         return;
-    createDirectory(directory(dirPath));
+    createDirectory(directory(path));
 
 #ifdef _WIN32
     int result = _wmkdir(_path.c_str());
@@ -339,8 +335,8 @@ string File::digidocppPath()
     return path(env("HOME"), ".digidocpp");
 #else
     string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
-    struct passwd pwbuf {};
-    struct passwd *pw {};
+    passwd pwbuf {};
+    passwd *pw {};
     if(getpwuid_r(geteuid(), &pwbuf, buf.data(), buf.size(), &pw) != 0 || !pw)
         THROW("Failed to get home directory");
     return path(pw->pw_dir, ".digidocpp");

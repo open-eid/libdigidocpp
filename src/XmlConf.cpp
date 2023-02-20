@@ -40,18 +40,21 @@ class XmlConfParam: public unique_ptr<A>
 public:
     XmlConfParam(string _name, A def = {}): name(std::move(_name)), _def(std::move(def)) {}
 
-    void setValue(const string &val, const Param::LockOptional &lock, bool global)
+    bool setValue(const Configuration::ParamType &p, bool global)
     {
-        if(global && lock.present()) locked = lock.get();
+        if(p.name() != name)
+            return false;
+        if(global && p.lock().present()) locked = p.lock().get();
         if(global || !locked)
         {
             if constexpr(is_same<A,bool>::value)
-                operator =(val == "true");
+                operator =(p == "true");
             else if constexpr(is_integral<A>::value)
-                operator =(stoi(val));
+                operator =(stoi(p));
             else
-                operator =(val);
+                operator =(p);
         }
+        return true;
     }
 
     XmlConfParam &operator=(const A &other)
@@ -137,7 +140,7 @@ XmlConf::Private::Private(const string &path, string schema)
     USER_CONF_LOC = File::path(File::digidocppPath(), "digidocpp.conf");
     if(path.empty())
     {
-        init(File::confPath() + "/digidocpp.conf", true);
+        init(File::path(File::confPath(), "digidocpp.conf"), true);
         init(USER_CONF_LOC, false);
     }
     else
@@ -156,50 +159,28 @@ void XmlConf::Private::init(const string& path, bool global)
         unique_ptr<Configuration> conf = read(path);
         for(const Configuration::ParamType &p: conf->param())
         {
-            if(p.name() == logLevel.name)
-                logLevel.setValue(p, p.lock(), global);
-            else if(p.name() == logFile.name)
-                logFile.setValue(p, p.lock(), global);
-            else if(p.name() == digestUri.name)
-                digestUri.setValue(p, p.lock(), global);
-            else if(p.name() == signatureDigestUri.name)
-                signatureDigestUri.setValue(p, p.lock(), global);
-            else if(p.name() == PKCS11Driver.name)
-                PKCS11Driver.setValue(p, p.lock(), global);
-            else if(p.name() == proxyForceSSL.name)
-                proxyForceSSL.setValue(p, p.lock(), global);
-            else if(p.name() == proxyTunnelSSL.name)
-                proxyTunnelSSL.setValue(p, p.lock(), global);
-            else if(p.name() == proxyHost.name)
-                proxyHost.setValue(p, p.lock(), global);
-            else if(p.name() == proxyPort.name)
-                proxyPort.setValue(p, p.lock(), global);
-            else if(p.name() == proxyUser.name)
-                proxyUser.setValue(p, p.lock(), global);
-            else if(p.name() == proxyPass.name)
-                proxyPass.setValue(p, p.lock(), global);
-            else if(p.name() == PKCS12Cert.name)
-            {
-                string file = File::isRelative(p) ? File::confPath() + p : string(p);
-                PKCS12Cert.setValue(file, p.lock(), global);
-            }
-            else if(p.name() == PKCS12Pass.name)
-                PKCS12Pass.setValue(p, p.lock(), global);
-            else if(p.name() == PKCS12Disable.name)
-                PKCS12Disable.setValue(p, p.lock(), global);
-            else if(p.name() == TSUrl.name)
-                TSUrl.setValue(p, p.lock(), global);
-            else if(p.name() == TSLAutoUpdate.name)
-                TSLAutoUpdate.setValue(p, p.lock(), global);
-            else if(p.name() == TSLCache.name)
-                TSLCache.setValue(p, p.lock(), global);
-            else if(p.name() == TSLOnlineDigest.name)
-                TSLOnlineDigest.setValue(p, p.lock(), global);
-            else if(p.name() == TSLTimeOut.name)
-                TSLTimeOut.setValue(p, p.lock(), global);
-            else if(p.name() == verifyServiceUri.name)
-                verifyServiceUri.setValue(p, p.lock(), global);
-            else if(p.name() == "ocsp.tm.profile" && global)
+            if(logLevel.setValue(p, global) ||
+                logFile.setValue(p, global) ||
+                digestUri.setValue(p, global) ||
+                signatureDigestUri.setValue(p, global) ||
+                PKCS11Driver.setValue(p, global) ||
+                proxyForceSSL.setValue(p, global) ||
+                proxyTunnelSSL.setValue(p, global) ||
+                proxyHost.setValue(p, global) ||
+                proxyPort.setValue(p, global) ||
+                proxyUser.setValue(p, global) ||
+                proxyPass.setValue(p, global) ||
+                PKCS12Cert.setValue(p, global) ||
+                PKCS12Pass.setValue(p, global) ||
+                PKCS12Disable.setValue(p, global) ||
+                TSUrl.setValue(p, global) ||
+                TSLAutoUpdate.setValue(p, global) ||
+                TSLCache.setValue(p, global) ||
+                TSLOnlineDigest.setValue(p, global) ||
+                TSLTimeOut.setValue(p, global) ||
+                verifyServiceUri.setValue(p, global))
+                continue;
+            if(p.name() == "ocsp.tm.profile" && global)
                 ocspTMProfiles.emplace(p);
             else
                 WARN("Unknown configuration parameter %s", p.name().c_str());
@@ -284,7 +265,7 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, const A &defined, con
             }
         }
         if(defined != value) //if it's a new parameter
-            paramSeq.push_back({to_string(value), param.name});
+            paramSeq.push_back(make_unique<Param>(to_string(value), param.name));
     }
     catch (const xml_schema::Exception& e)
     {
