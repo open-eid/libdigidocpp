@@ -44,15 +44,15 @@ using namespace xml_schema;
 
 SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer)
 : SignatureXAdES_T(id, bdoc, signer)
-{
-}
+{}
 
 SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
 : SignatureXAdES_T(sigdata, bdoc, relaxSchemaValidation)
 {
     try {
         // ADOC files are default T level, take OCSP response to create temporary LT level
-        if(bdoc->mediaType() == ASiContainer::MIMETYPE_ADOC && unsignedSignatureProperties().revocationValues().empty())
+        if(bdoc->mediaType() == ASiContainer::MIMETYPE_ADOC &&
+            unsignedSignatureProperties().revocationValues().empty())
         {
             X509Cert cert = signingCertificate();
             X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::OCSP);
@@ -60,8 +60,7 @@ SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool 
                 THROW("Could not find certificate issuer '%s' in certificate store.",
                     cert.issuerName().c_str());
 
-            OCSP ocsp(cert, issuer);
-            addOCSPValue(id().replace(0, 1, "N"), ocsp);
+            addOCSPValue(id().replace(0, 1, "N"), OCSP(cert, issuer));
         }
     } catch(const Exception &) {
     }
@@ -134,7 +133,7 @@ void SignatureXAdES_LT::validate(const string &policy) const
         vector<Exception> ocspExceptions;
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: revSeq.front().oCSPValues()->encapsulatedOCSPValue())
         {
-            OCSP ocsp((const unsigned char*)resp.data(), resp.size());
+            OCSP ocsp(resp);
             try {
                 ocsp.verifyResponse(signingCertificate());
                 foundSignerOCSP = true;
@@ -256,7 +255,7 @@ void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert
     }
 
     vector<unsigned char> der = x509;
-    CertificateValuesType::EncapsulatedX509CertificateType certData(Base64Binary(der.data(), der.size(), der.size(), false));
+    CertificateValuesType::EncapsulatedX509CertificateType certData({der.data(), der.size(), der.size(), false});
     certData.id(certId);
     values[0].encapsulatedX509Certificate().push_back(certData);
 }
@@ -268,7 +267,7 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
     createUnsignedSignatureProperties();
 
     vector<unsigned char> der = ocsp;
-    OCSPValuesType::EncapsulatedOCSPValueType ocspValueData(Base64Binary(der.data(), der.size(), der.size(), false));
+    OCSPValuesType::EncapsulatedOCSPValueType ocspValueData({der.data(), der.size(), der.size(), false});
     ocspValueData.id(id);
 
     OCSPValuesType ocspValue;
@@ -302,15 +301,14 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
         for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
         {
             try {
-                OCSP ocsp((const unsigned char*)resp.data(), resp.size());
+                OCSP ocsp(resp);
                 ocsp.verifyResponse(signingCertificate());
                 return ocsp;
             } catch(const Exception &) {
             }
         }
         // Return first OCSP response when chains are not complete and validation fails
-        const OCSPValuesType::EncapsulatedOCSPValueType &resp = t.oCSPValues()->encapsulatedOCSPValue().at(0);
-        return {(const unsigned char*)resp.data(), resp.size()};
+        return {t.oCSPValues()->encapsulatedOCSPValue().front()};
     }
     catch(const Exception &)
     {}
