@@ -20,13 +20,10 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <vector>
 
 using OCSP_RESPONSE = struct ocsp_response_st;
 using OCSP_BASICRESP = struct ocsp_basic_response_st;
-using OCSP_CERTID = struct ocsp_cert_id_st;
-using OCSP_REQUEST = struct ocsp_request_st;
 
 namespace digidoc
 {
@@ -39,8 +36,7 @@ namespace digidoc
     {
 
       public:
-          OCSP(const X509Cert &cert, const X509Cert &issuer,
-               const std::vector<unsigned char> &nonce, const std::string &userAgent);
+          OCSP(const X509Cert &cert, const X509Cert &issuer);
           OCSP(const unsigned char *data = nullptr, size_t size = 0);
 
           std::vector<unsigned char> nonce() const;
@@ -52,7 +48,6 @@ namespace digidoc
 
       private:
           bool compareResponderCert(const X509Cert &cert) const;
-          OCSP_REQUEST* createRequest(OCSP_CERTID *certId, const std::vector<unsigned char> &nonce, bool signRequest);
 
           std::shared_ptr<OCSP_RESPONSE> resp;
           std::shared_ptr<OCSP_BASICRESP> basic;

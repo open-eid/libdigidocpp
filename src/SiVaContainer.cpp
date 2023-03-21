@@ -53,8 +53,8 @@ using namespace std;
 using namespace xercesc;
 using json = nlohmann::json;
 
-static std::string base64_decode(const XMLCh *in) {
-    static constexpr std::array<std::uint8_t, 128> T{
+static string base64_decode(const XMLCh *in) {
+    static constexpr array<uint8_t, 128> T{
         0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
         0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
         0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x3E, 0x64, 0x64, 0x64, 0x3F,
@@ -65,7 +65,7 @@ static std::string base64_decode(const XMLCh *in) {
         0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x64, 0x64, 0x64, 0x64, 0x64
     };
 
-    std::string out;
+    string out;
     int value = 0;
     int bits = -8;
     for(; in; ++in)
@@ -185,7 +185,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
         {"document", move(b64)},
         {"signaturePolicy", "POLv4"}
     }).dump();
-    Connect::Result r = Connect(CONF(verifyServiceUri), "POST", 0, {}, CONF(verifyServiceCerts)).exec({
+    Connect::Result r = Connect(CONF(verifyServiceUri), "POST", 0, CONF(verifyServiceCerts)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
     }, (const unsigned char*)req.c_str(), req.size());
 
@@ -327,7 +327,7 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path)
     }
 }
 
-std::unique_ptr<std::istream> SiVaContainer::parseDDoc(bool useHashCode)
+unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
 {
     namespace xml = xsd::cxx::xml;
     using cpXMLCh = const XMLCh*;

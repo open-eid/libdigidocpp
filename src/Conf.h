@@ -56,9 +56,9 @@ public:
     virtual std::string TSUrl() const;
     virtual std::string verifyServiceUri() const;
 
-    virtual std::string PKCS12Cert() const;
-    virtual std::string PKCS12Pass() const;
-    virtual bool PKCS12Disable() const;
+    DIGIDOCPP_DEPRECATED virtual std::string PKCS12Cert() const;
+    DIGIDOCPP_DEPRECATED virtual std::string PKCS12Pass() const;
+    DIGIDOCPP_DEPRECATED virtual bool PKCS12Disable() const;
 
     virtual bool TSLAllowExpired() const;
     virtual bool TSLAutoUpdate() const;

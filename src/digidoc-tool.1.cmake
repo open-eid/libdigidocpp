@@ -40,7 +40,7 @@ Command remove:
     --signature=   - signatures to remove
 
 Command websign:
-  Example: digidoc-tool sign --cert=signer.crt demo-container.asice
+  Example: digidoc-tool websign --cert=signer.crt demo-container.asice
   Available options:
     --cert=        - signer token certificate
     for additional options look sign command
@@ -48,10 +48,10 @@ Command websign:
 Command sign:
   Example: digidoc-tool sign demo-container.asice
   Available options:
-    --profile=     - signature profile, TM, time-mark, TS, time-stamp
+    --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive
     --XAdESEN      - use XAdES EN profile
     --city=        - city of production place
-    --street=      - streetAddress of production place in XAdES profile
+    --street=      - streetAddress of production place in XAdES EN profile
     --state=       - state of production place
     --postalCode=  - postalCode of production place
     --country=     - country of production place
@@ -61,7 +61,8 @@ Command sign:
     --pin=         - default asks pin from prompt
     --sha(224,256,384,512) - set default digest method (default sha256)
     --sigsha(224,256,384,512) - set default digest method (default sha256)
-    --tsurl         - option to change TS URL (default http://demo.sk.ee/tsa)
+    --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256)
+    --tsurl         - option to change TS URL (default http://dd-at.ria.ee/tsa)
     --dontValidate  - Don't validate container on signature creation
 
 All commands:

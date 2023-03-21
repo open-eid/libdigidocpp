@@ -102,9 +102,6 @@ public:
     XmlConfParam<string> proxyPort{"proxy.port"};
     XmlConfParam<string> proxyUser{"proxy.user"};
     XmlConfParam<string> proxyPass{"proxy.pass"};
-    XmlConfParam<string> PKCS12Cert{"pkcs12.cert"};
-    XmlConfParam<string> PKCS12Pass{"pkcs12.pass"};
-    XmlConfParam<bool> PKCS12Disable{"pkcs12.disable", false};
     XmlConfParam<string> TSUrl{"ts.url"};
     XmlConfParam<bool> TSLAutoUpdate{"tsl.autoupdate", true};
     XmlConfParam<string> TSLCache{"tsl.cache"};
@@ -170,9 +167,6 @@ void XmlConf::Private::init(const string& path, bool global)
                 proxyPort.setValue(p, global) ||
                 proxyUser.setValue(p, global) ||
                 proxyPass.setValue(p, global) ||
-                PKCS12Cert.setValue(p, global) ||
-                PKCS12Pass.setValue(p, global) ||
-                PKCS12Disable.setValue(p, global) ||
                 TSUrl.setValue(p, global) ||
                 TSLAutoUpdate.setValue(p, global) ||
                 TSLCache.setValue(p, global) ||
@@ -375,36 +369,35 @@ XmlConfV5* XmlConfV5::instance() { return dynamic_cast<XmlConfV5*>(Conf::instanc
 
 
 
+#define GET1EX(TYPE, PROP, VALUE) \
+TYPE XmlConf::PROP() const { return VALUE; } \
+TYPE XmlConfV2::PROP() const { return VALUE; } \
+TYPE XmlConfV3::PROP() const { return VALUE; } \
+TYPE XmlConfV4::PROP() const { return VALUE; } \
+TYPE XmlConfV5::PROP() const { return VALUE; }
+
 #define GET1(TYPE, PROP) \
-TYPE XmlConf::PROP() const { return d->PROP.value(Conf::PROP()); } \
-TYPE XmlConfV2::PROP() const { return d->PROP.value(Conf::PROP()); } \
-TYPE XmlConfV3::PROP() const { return d->PROP.value(Conf::PROP()); } \
-TYPE XmlConfV4::PROP() const { return d->PROP.value(Conf::PROP()); } \
-TYPE XmlConfV5::PROP() const { return d->PROP.value(Conf::PROP()); }
+GET1EX(TYPE, PROP, d->PROP.value(Conf::PROP()))
+
+#define SET1EX(TYPE, SET, VALUE) \
+void XmlConf::SET(TYPE value) { VALUE; } \
+void XmlConfV2::SET(TYPE value) { VALUE; } \
+void XmlConfV3::SET(TYPE value) { VALUE; } \
+void XmlConfV4::SET(TYPE value) { VALUE; } \
+void XmlConfV5::SET(TYPE value) { VALUE; }
 
 #define SET1(TYPE, SET, PROP) \
-void XmlConf::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
-void XmlConfV2::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV2::PROP(), PROP); } \
-void XmlConfV3::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV3::PROP(), PROP); } \
-void XmlConfV4::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV4::PROP(), PROP); } \
-void XmlConfV5::SET(TYPE PROP) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV5::PROP(), PROP); }
+SET1EX(TYPE, SET, d->setUserConf(d->PROP, Conf::PROP(), value))
+
+#define SET1CONSTEX(TYPE, SET, VALUE) \
+void XmlConf::SET(const TYPE &value) { VALUE; } \
+void XmlConfV2::SET(const TYPE &value) { VALUE; } \
+void XmlConfV3::SET(const TYPE &value) { VALUE; } \
+void XmlConfV4::SET(const TYPE &value) { VALUE; } \
+void XmlConfV5::SET(const TYPE &value) { VALUE; }
 
 #define SET1CONST(TYPE, SET, PROP) \
-void XmlConf::SET(const TYPE &(PROP)) \
-{ d->setUserConf<TYPE>(d->PROP, Conf::PROP(), PROP); } \
-void XmlConfV2::SET(const TYPE &(PROP)) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV2::PROP(), PROP); } \
-void XmlConfV3::SET(const TYPE &(PROP)) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV3::PROP(), PROP); } \
-void XmlConfV4::SET(const TYPE &(PROP)) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV4::PROP(), PROP); } \
-void XmlConfV5::SET(const TYPE &(PROP)) \
-{ d->setUserConf<TYPE>(d->PROP, ConfV5::PROP(), PROP); }
+SET1CONSTEX(TYPE, SET, d->setUserConf(d->PROP, Conf::PROP(), value))
 
 GET1(int, logLevel)
 GET1(string, logFile)
@@ -415,9 +408,9 @@ GET1(string, proxyUser)
 GET1(string, proxyPass)
 GET1(bool, proxyForceSSL)
 GET1(bool, proxyTunnelSSL)
-GET1(string, PKCS12Cert)
-GET1(string, PKCS12Pass)
-GET1(bool, PKCS12Disable)
+GET1EX(string, PKCS12Cert, Conf::PKCS12Cert())
+GET1EX(string, PKCS12Pass, Conf::PKCS12Cert())
+GET1EX(bool, PKCS12Disable, Conf::PKCS12Disable())
 GET1(string, TSUrl)
 GET1(bool, TSLAutoUpdate)
 GET1(string, TSLCache)
@@ -628,7 +621,7 @@ SET1CONST(string, setProxyPass, proxyPass)
  * @fn void digidoc::XmlConfV5::setPKCS12Cert(const std::string &cert)
  * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
  */
-SET1CONST(string, setPKCS12Cert, PKCS12Cert)
+SET1CONSTEX(string, setPKCS12Cert, {})
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
@@ -653,7 +646,7 @@ SET1CONST(string, setPKCS12Cert, PKCS12Cert)
  * @fn void digidoc::XmlConfV5::setPKCS12Pass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
  */
-SET1CONST(string, setPKCS12Pass, PKCS12Pass)
+SET1CONSTEX(string, setPKCS12Pass, {})
 
 /**
  * @fn void digidoc::XmlConf::setTSUrl(const std::string &url)
@@ -728,7 +721,7 @@ SET1CONST(string, setVerifyServiceUri, verifyServiceUri)
  * @fn void digidoc::XmlConfV5::setPKCS12Disable(bool disable)
  * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
  */
-SET1(bool, setPKCS12Disable, PKCS12Disable)
+SET1EX(bool, setPKCS12Disable, {})
 
 /**
  * @fn void digidoc::XmlConf::setProxyTunnelSSL(bool enable)

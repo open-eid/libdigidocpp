@@ -40,12 +40,10 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-const string ASiC_E::BES_PROFILE = "BES";
-const string ASiC_E::EPES_PROFILE = "EPES";
-const string ASiC_E::ASIC_TM_PROFILE = "time-mark";
-const string ASiC_E::ASIC_TS_PROFILE = "time-stamp";
-const string ASiC_E::ASIC_TSA_PROFILE = ASIC_TS_PROFILE + "-archive";
-const string ASiC_E::ASIC_TMA_PROFILE = ASIC_TM_PROFILE + "-archive";
+const string_view ASiC_E::ASIC_TM_PROFILE = "time-mark";
+const string_view ASiC_E::ASIC_TS_PROFILE = "time-stamp";
+const string_view ASiC_E::ASIC_TSA_PROFILE = "time-stamp-archive";
+const string_view ASiC_E::ASIC_TMA_PROFILE = "time-mark-archive";
 const string ASiC_E::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 
 class ASiC_E::Private
@@ -76,7 +74,7 @@ ASiC_E::ASiC_E(const string &path)
 
 ASiC_E::~ASiC_E()
 {
-    for_each(d->metadata.cbegin(), d->metadata.cend(), std::default_delete<DataFile>());
+    for_each(d->metadata.cbegin(), d->metadata.cend(), default_delete<DataFile>());
 }
 
 vector<DataFile*> ASiC_E::metaFiles() const
@@ -360,7 +358,7 @@ Signature *ASiC_E::sign(Signer* signer)
     try
     {
         s->setSignatureValue(signer->sign(s->signatureMethod(), s->dataToSign()));
-        s->extendSignatureProfile(signer->profile().empty() ? ASiC_E::ASIC_TS_PROFILE : signer->profile());
+        s->extendSignatureProfile(signer->profile());
     }
     catch(const Exception& e)
     {

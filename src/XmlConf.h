@@ -50,9 +50,9 @@ public:
     std::string TSUrl() const override;
     std::string verifyServiceUri() const override;
 
-    std::string PKCS12Cert() const override;
-    std::string PKCS12Pass() const override;
-    bool PKCS12Disable() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Cert() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Pass() const override;
+    DIGIDOCPP_DEPRECATED bool PKCS12Disable() const override;
 
     bool TSLAutoUpdate() const override;
     std::string TSLCache() const override;
@@ -64,9 +64,9 @@ public:
     virtual void setProxyUser( const std::string &user );
     virtual void setProxyPass( const std::string &pass );
     virtual void setProxyTunnelSSL( bool enable );
-    virtual void setPKCS12Cert( const std::string &cert );
-    virtual void setPKCS12Pass( const std::string &pass );
-    virtual void setPKCS12Disable( bool disable );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Cert( const std::string &cert );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Pass( const std::string &pass );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Disable( bool disable );
 
     virtual void setTSLOnlineDigest( bool enable );
     virtual void setTSLTimeOut( int timeOut );
@@ -110,9 +110,9 @@ public:
     X509Cert verifyServiceCert() const override;
     std::string verifyServiceUri() const override;
 
-    std::string PKCS12Cert() const override;
-    std::string PKCS12Pass() const override;
-    bool PKCS12Disable() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Cert() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Pass() const override;
+    DIGIDOCPP_DEPRECATED bool PKCS12Disable() const override;
 
     bool TSLAutoUpdate() const override;
     std::string TSLCache() const override;
@@ -124,9 +124,9 @@ public:
     virtual void setProxyUser( const std::string &user );
     virtual void setProxyPass( const std::string &pass );
     virtual void setProxyTunnelSSL( bool enable );
-    virtual void setPKCS12Cert( const std::string &cert );
-    virtual void setPKCS12Pass( const std::string &pass );
-    virtual void setPKCS12Disable( bool disable );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Cert( const std::string &cert );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Pass( const std::string &pass );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Disable( bool disable );
 
     virtual void setTSLOnlineDigest( bool enable );
     virtual void setTSLTimeOut( int timeOut );
@@ -166,9 +166,9 @@ public:
     X509Cert verifyServiceCert() const override;
     std::string verifyServiceUri() const override;
 
-    std::string PKCS12Cert() const override;
-    std::string PKCS12Pass() const override;
-    bool PKCS12Disable() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Cert() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Pass() const override;
+    DIGIDOCPP_DEPRECATED bool PKCS12Disable() const override;
 
     bool TSLAutoUpdate() const override;
     std::string TSLCache() const override;
@@ -180,9 +180,9 @@ public:
     virtual void setProxyUser( const std::string &user );
     virtual void setProxyPass( const std::string &pass );
     virtual void setProxyTunnelSSL( bool enable );
-    virtual void setPKCS12Cert( const std::string &cert );
-    virtual void setPKCS12Pass( const std::string &pass );
-    virtual void setPKCS12Disable( bool disable );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Cert( const std::string &cert );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Pass( const std::string &pass );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Disable( bool disable );
 
     virtual void setTSLOnlineDigest( bool enable );
     virtual void setTSLTimeOut( int timeOut );
@@ -223,9 +223,9 @@ public:
     std::vector<X509Cert> verifyServiceCerts() const override;
     std::string verifyServiceUri() const override;
 
-    std::string PKCS12Cert() const override;
-    std::string PKCS12Pass() const override;
-    bool PKCS12Disable() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Cert() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Pass() const override;
+    DIGIDOCPP_DEPRECATED bool PKCS12Disable() const override;
 
     bool TSLAutoUpdate() const override;
     std::string TSLCache() const override;
@@ -237,9 +237,9 @@ public:
     virtual void setProxyUser( const std::string &user );
     virtual void setProxyPass( const std::string &pass );
     virtual void setProxyTunnelSSL( bool enable );
-    virtual void setPKCS12Cert( const std::string &cert );
-    virtual void setPKCS12Pass( const std::string &pass );
-    virtual void setPKCS12Disable( bool disable );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Cert( const std::string &cert );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Pass( const std::string &pass );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Disable( bool disable );
 
     virtual void setTSLOnlineDigest( bool enable );
     virtual void setTSLTimeOut( int timeOut );
@@ -281,9 +281,9 @@ public:
     std::vector<X509Cert> verifyServiceCerts() const override;
     std::string verifyServiceUri() const override;
 
-    std::string PKCS12Cert() const override;
-    std::string PKCS12Pass() const override;
-    bool PKCS12Disable() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Cert() const override;
+    DIGIDOCPP_DEPRECATED std::string PKCS12Pass() const override;
+    DIGIDOCPP_DEPRECATED bool PKCS12Disable() const override;
 
     bool TSLAutoUpdate() const override;
     std::string TSLCache() const override;
@@ -295,9 +295,9 @@ public:
     virtual void setProxyUser( const std::string &user );
     virtual void setProxyPass( const std::string &pass );
     virtual void setProxyTunnelSSL( bool enable );
-    virtual void setPKCS12Cert( const std::string &cert );
-    virtual void setPKCS12Pass( const std::string &pass );
-    virtual void setPKCS12Disable( bool disable );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Cert( const std::string &cert );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Pass( const std::string &pass );
+    DIGIDOCPP_DEPRECATED virtual void setPKCS12Disable( bool disable );
 
     virtual void setTSLOnlineDigest( bool enable );
     virtual void setTSLTimeOut( int timeOut );

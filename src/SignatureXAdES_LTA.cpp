@@ -41,6 +41,8 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/utils/XSECBinTXFMInputStream.hpp>
 DIGIDOCPP_WARNING_POP
 
+#include <array>
+
 using namespace digidoc;
 using namespace digidoc::dsig;
 using namespace digidoc::util;
@@ -50,7 +52,7 @@ using namespace xml_schema;
 using namespace std;
 
 void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
-    std::string_view canonicalizationMethod) const
+    string_view canonicalizationMethod) const
 {
     try {
         stringstream ofs;
@@ -70,14 +72,14 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
         safeBuffer m_errStr;
         m_errStr.sbXMLChIn((const XMLCh*)u"");
 
-        XMLByte buf[1024];
+        std::array<XMLByte, 1024> buf{};
         DSIGReferenceList *list = sig->getReferenceList();
         for(size_t i = 0; i < list->getSize(); ++i)
         {
             XSECBinTXFMInputStream *stream = list->item(i)->makeBinInputStream();
-            for(XMLSize_t size = stream->readBytes(buf, 1024); size > 0;
-                 size = stream->readBytes(buf, 1024))
-                digest->update(buf, size);
+            for(XMLSize_t size = stream->readBytes(buf.data(), buf.size()); size > 0;
+                 size = stream->readBytes(buf.data(), buf.size()))
+                digest->update(buf.data(), size);
             delete stream;
         }
     }
@@ -113,7 +115,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
         THROW("Failed to calculate digest");
     }
 
-    for(auto name: {u"SignedInfo", u"SignatureValue", u"KeyInfo"})
+    for(const auto *name: {u"SignedInfo", u"SignatureValue", u"KeyInfo"})
     {
         try {
             calcDigestOnNode(digest, URI_ID_DSIG, name, canonicalizationMethod);
@@ -122,7 +124,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
         }
     }
 
-    for(auto name: {
+    for(const auto *name: {
              u"SignatureTimeStamp",
              u"CounterSignature",
              u"CompleteCertificateRefs",
@@ -149,15 +151,15 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
     //ds:Object
 }
 
-void SignatureXAdES_LTA::extendSignatureProfile(const std::string &profile)
+void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
 {
     SignatureXAdES_LT::extendSignatureProfile(profile);
-    if(profile != ASiC_E::ASIC_TSA_PROFILE && profile != ASiC_E::ASIC_TMA_PROFILE)
+    if(profile != ASiC_E::ASIC_TSA_PROFILE)
         return;
 
     Digest calc;
     calcArchiveDigest(&calc, signature->signedInfo().canonicalizationMethod().algorithm());
-    TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
+    TS tsa(CONF(TSUrl), calc);
     vector<unsigned char> der = tsa;
     auto &usp = unsignedSignatureProperties();
     auto ts = make_unique<xadesv141::ArchiveTimeStampType>();
@@ -165,10 +167,9 @@ void SignatureXAdES_LTA::extendSignatureProfile(const std::string &profile)
     ts->canonicalizationMethod(signature->signedInfo().canonicalizationMethod());
     ts->encapsulatedTimeStamp().push_back(make_unique<EncapsulatedPKIDataType>(
         Base64Binary(der.data(), der.size(), der.size(), false)));
-    usp.archiveTimeStampV141().push_back(move(ts));
-    usp.contentOrder().push_back(UnsignedSignaturePropertiesType::ContentOrderType(
-        UnsignedSignaturePropertiesType::archiveTimeStampV141Id,
-        usp.archiveTimeStampV141().size() - 1));
+    usp.archiveTimeStampV141().push_back(std::move(ts));
+    usp.contentOrder().emplace_back(UnsignedSignaturePropertiesType::archiveTimeStampV141Id,
+        usp.archiveTimeStampV141().size() - 1);
     sigdata_.clear();
 }
 
@@ -222,7 +223,7 @@ void SignatureXAdES_LTA::validate(const string &policy) const
         if(ts.encapsulatedTimeStamp().empty())
             THROW("Missing EncapsulatedTimeStamp");
 
-        verifyTS(ts, exception, [this](Digest *digest, std::string_view canonicalizationMethod) {
+        verifyTS(ts, exception, [this](Digest *digest, string_view canonicalizationMethod) {
             calcArchiveDigest(digest, canonicalizationMethod);
         });
     } catch(const Exception &e) {

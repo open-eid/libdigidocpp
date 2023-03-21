@@ -38,21 +38,21 @@ class UnsignedSignaturePropertiesType final: public UnsignedSignaturePropertiesT
 public:
 
     UnsignedSignaturePropertiesType();
-    UnsignedSignaturePropertiesType(const xercesc::DOMElement &e, xml_schema::Flags f = {}, xml_schema::Container *c = nullptr);
-    UnsignedSignaturePropertiesType(const UnsignedSignaturePropertiesType &x, xml_schema::Flags f = {}, xml_schema::Container *c = nullptr);
+    UnsignedSignaturePropertiesType(const xercesc::DOMElement &e, xml_schema::Flags f = {}, xml_schema::Container *c = {});
+    UnsignedSignaturePropertiesType(const UnsignedSignaturePropertiesType &x, xml_schema::Flags f = {}, xml_schema::Container *c = {});
     ~UnsignedSignaturePropertiesType() final;
 
-    UnsignedSignaturePropertiesType* _clone(xml_schema::Flags f = {}, xml_schema::Container *c = nullptr) const final;
+    UnsignedSignaturePropertiesType* _clone(xml_schema::Flags f = {}, xml_schema::Container *c = {}) const final;
 
     const xadesv141::ArchiveTimeStampSequence& archiveTimeStampV141() const;
     xadesv141::ArchiveTimeStampSequence& archiveTimeStampV141();
 
-    static const ::std::size_t archiveTimeStampV141Id = 14UL;
+    static constexpr ::std::size_t archiveTimeStampV141Id = 14UL;
 
     const xadesv141::TimeStampValidationData& timeStampValidationData() const;
     xadesv141::TimeStampValidationData& timeStampValidationData();
 
-    static const ::std::size_t timeStampValidationDataId = 15UL;
+    static constexpr ::std::size_t timeStampValidationDataId = 15UL;
 
 private:
     xadesv141::ArchiveTimeStampSequence ArchiveTimeStampV141_;

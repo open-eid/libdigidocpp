@@ -60,7 +60,7 @@ SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool 
                 THROW("Could not find certificate issuer '%s' in certificate store.",
                     cert.issuerName().c_str());
 
-            OCSP ocsp(cert, issuer, {}, " format: " + bdoc->mediaType());
+            OCSP ocsp(cert, issuer);
             addOCSPValue(id().replace(0, 1, "N"), ocsp);
         }
     } catch(const Exception &) {
@@ -106,7 +106,7 @@ string SignatureXAdES_LT::trustedSigningTime() const
  *
  * @throws SignatureException if signature is not valid
  */
-void SignatureXAdES_LT::validate(const std::string &policy) const
+void SignatureXAdES_LT::validate(const string &policy) const
 {
     Exception exception(EXCEPTION_PARAMS("Signature validation"));
     try {
@@ -147,7 +147,7 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
             {
                 vector<string> policies = ocsp.responderCert().certificatePolicies();
                 const set<string> trusted = CONF(OCSPTMProfiles);
-                if(!std::any_of(policies.cbegin(), policies.cend(), [&](const string &policy) { return trusted.find(policy) != trusted.cend(); }))
+                if(!any_of(policies.cbegin(), policies.cend(), [&](const string &policy) { return trusted.find(policy) != trusted.cend(); }))
                 {
                     EXCEPTION_ADD(exception, "OCSP Responder does not meet TM requirements");
                     break;
@@ -210,16 +210,11 @@ void SignatureXAdES_LT::validate(const std::string &policy) const
  *
  * @throws SignatureException
  */
-void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
+void SignatureXAdES_LT::extendSignatureProfile(const string &profile)
 {
     SignatureXAdES_T::extendSignatureProfile(profile);
-    if(profile == ASiC_E::BES_PROFILE || profile == ASiC_E::EPES_PROFILE)
+    if(profile.find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
         return;
-
-    // Calculate NONCE value.
-    Digest calc;
-    vector<unsigned char> nonce = Digest::addDigestInfo(calc.result(getSignatureValue()), calc.uri());
-    DEBUGMEM("OID + Calculated signature HASH (nonce):", nonce.data(), nonce.size());
 
     // Get issuer certificate from certificate store.
     X509Cert cert = signingCertificate();
@@ -230,9 +225,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const std::string &profile)
         THROW("Could not find certificate issuer '%s' in certificate store or from AIA.",
             cert.issuerName().c_str());
 
-    string userAgent = " format: " + bdoc->mediaType() + " profile: " +
-        (profile.find(ASiC_E::ASIC_TM_PROFILE) != string::npos ? "ASiC_E_BASELINE_LT_TM" : "ASiC_E_BASELINE_LT");
-    OCSP ocsp(cert, issuer, nonce, userAgent);
+    OCSP ocsp(cert, issuer);
     ocsp.verifyResponse(cert);
 
     addCertificateValue(id() + "-CA-CERT", issuer);

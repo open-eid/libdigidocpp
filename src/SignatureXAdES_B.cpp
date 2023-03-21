@@ -61,11 +61,8 @@ const string SignatureXAdES_B::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3
 const string SignatureXAdES_B::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
 const string SignatureXAdES_B::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.1#";
 const string SignatureXAdES_B::OPENDOCUMENT_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0";
-const string SignatureXAdES_B::POLICY_BDOC_2_1_OID = "urn:oid:1.3.6.1.4.1.10015.1000.3.2.1";
 const map<string,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist = {
-    {SignatureXAdES_B::POLICY_BDOC_2_1_OID,{
-        "BDOC – FORMAT FOR DIGITAL SIGNATURES",
-        "https://www.sk.ee/repository/bdoc-spec21.pdf",
+    {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.1",{ // https://www.sk.ee/repository/bdoc-spec21.pdf
         // SHA-1
         {   0x80,0x81,0xe2,0x69,0xeb,0x44,0x13,0xde,0x20,0x6e,0x40,0x91,0xca,0x04,0x3d,0x5a,
             0xca,0x71,0x51,0xdc},
@@ -85,9 +82,7 @@ const map<string,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist = {
             0xa6,0x7b,0x18,0x86,0x04,0xd8,0x20,0x9b,0xf8,0x54,0x4e,0xb0,0x5f,0xb3,0x67,0x58,
             0x39,0xb9,0xef,0xfe,0xf7,0x75,0x7d,0x34,0x5e,0x39,0xa8,0xa5,0xbf,0x4a,0xa1,0xd7}
     }},
-    {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.3",{
-        "BDOC – FORMAT FOR DIGITAL SIGNATURES",
-        "http://id.ee/public/bdoc-spec212-eng.pdf",
+    {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.3",{ // http://id.ee/public/bdoc-spec212-eng.pdf
         // SHA-1
         {   0x0b,0x2d,0x60,0x6b,0x17,0x9b,0x3b,0x92,0x9c,0x3f,0x79,0xf5,0x92,0x5c,0x84,0xc8,
             0xeb,0xef,0x31,0xc6},
@@ -125,12 +120,14 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer)
     : bdoc(bdoc)
 {
+    X509Cert c = signer->cert();
     string nr = "S" + to_string(id);
 
     // Signature->SignedInfo
     auto signedInfo = make_unique<SignedInfoType>(
         make_unique<CanonicalizationMethodType>(/*URI_ID_EXC_C14N_NOC*/URI_ID_C14N11_NOC),
-        make_unique<SignatureMethodType>(URI_ID_RSA_SHA256));
+        make_unique<SignatureMethodType>(X509Crypto(c).isRSAKey() ?
+            Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method())));
 
     // Signature->SignatureValue
     auto signatureValue = make_unique<SignatureValueType>();
@@ -146,38 +143,6 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     auto signedProperties = make_unique<SignedPropertiesType>();
     signedProperties->signedSignatureProperties(make_unique<SignedSignaturePropertiesType>());
     signedProperties->id(nr + "-SignedProperties");
-    // Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties->SignaturePolicyIdentifierType
-    if(signer->profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos ||
-       signer->profile().find(ASiC_E::EPES_PROFILE) != string::npos)
-    {
-        auto p = policylist.cbegin();
-        auto identifierid = make_unique<IdentifierType>(p->first);
-        identifierid->qualifier(QualifierType::OIDAsURN);
-
-        auto identifier = make_unique<ObjectIdentifierType>(std::move(identifierid));
-        identifier->description(p->second.DESCRIPTION.data());
-
-        string digestUri = Conf::instance()->digestUri();
-        const vector<unsigned char> *data = &p->second.SHA256;
-        if(Conf::instance()->digestUri() == URI_SHA224) data = &p->second.SHA224;
-        else if(Conf::instance()->digestUri() == URI_SHA256) data = &p->second.SHA256;
-        else if(Conf::instance()->digestUri() == URI_SHA384) data = &p->second.SHA384;
-        else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;
-        auto policyDigest = make_unique<DigestAlgAndValueType>(make_unique<DigestMethodType>(digestUri), toBase64(*data));
-
-        auto policyId = make_unique<SignaturePolicyIdType>(std::move(identifier), std::move(policyDigest));
-
-        auto uri = make_unique<SigPolicyQualifiersListType::SigPolicyQualifierType>();
-        uri->sPURI(p->second.URI.data());
-
-        auto qualifiers = make_unique<SigPolicyQualifiersListType>();
-        qualifiers->sigPolicyQualifier().push_back(std::move(uri));
-        policyId->sigPolicyQualifiers(std::move(qualifiers));
-
-        auto policyidentifier = make_unique<SignaturePolicyIdentifierType>();
-        policyidentifier->signaturePolicyId(std::move(policyId));
-        signedProperties->signedSignatureProperties()->signaturePolicyIdentifier(std::move(policyidentifier));
-    }
 
     // Signature->Object->QualifyingProperties
     auto qualifyingProperties = make_unique<QualifyingPropertiesType>("#" + nr);
@@ -190,7 +155,6 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     signature->object().push_back(std::move(object));
 
     //Fill XML-DSIG/XAdES properties
-    X509Cert c = signer->cert();
     setKeyInfo(c);
     if(signer->usingENProfile())
     {
@@ -204,8 +168,6 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
         setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
         setSignerRoles(signer->signerRoles());
     }
-    signature->signedInfo().signatureMethod(make_unique<SignatureMethodType>(X509Crypto(c).isRSAKey() ?
-        Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()) ));
     setSigningTime(time(nullptr));
 
     string digestMethod = Conf::instance()->digestUri();
@@ -364,26 +326,26 @@ string SignatureXAdES_B::policy() const
  */
 string SignatureXAdES_B::profile() const
 {
-    string base = policy().empty() ? ASiC_E::BES_PROFILE : ASiC_E::EPES_PROFILE;
+    string base = policy().empty() ? "BES" : "EPES";
     try {
-        const QualifyingPropertiesType::UnsignedPropertiesOptional &up = qualifyingProperties().unsignedProperties();
+        auto up = qualifyingProperties().unsignedProperties();
         if(!up)
             return base;
-        const UnsignedPropertiesType::UnsignedSignaturePropertiesOptional &usp = up->unsignedSignatureProperties();
+        auto usp = up->unsignedSignatureProperties();
         if(!usp)
             return base;
 
         if(!usp->signatureTimeStamp().empty())
         {
             if(!usp->archiveTimeStampV141().empty())
-                return base + "/" + ASiC_E::ASIC_TSA_PROFILE;
-            return base + "/" + ASiC_E::ASIC_TS_PROFILE;
+                return (base + '/').append(ASiC_E::ASIC_TSA_PROFILE);
+            return (base + '/').append(ASiC_E::ASIC_TS_PROFILE);
         }
         if(!usp->revocationValues().empty())
         {
             if(!usp->archiveTimeStampV141().empty())
-                return base + "/" + ASiC_E::ASIC_TMA_PROFILE;
-            return base + "/" + ASiC_E::ASIC_TM_PROFILE;
+                return (base + '/').append(ASiC_E::ASIC_TMA_PROFILE);
+            return (base + '/').append(ASiC_E::ASIC_TM_PROFILE);
         }
     }
     catch(const Exception &) {}

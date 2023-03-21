@@ -80,7 +80,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     calcDigestOnNode(&calc, URI_ID_DSIG, u"SignatureValue",
         signature->signedInfo().canonicalizationMethod().algorithm());
 
-    TS tsa(CONF(TSUrl), calc, " Profile: " + profile);
+    TS tsa(CONF(TSUrl), calc);
     vector<unsigned char> der = tsa;
     auto &usp = unsignedSignatureProperties();
     auto ts = make_unique<UnsignedSignaturePropertiesType::SignatureTimeStampType>();
@@ -88,7 +88,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     ts->canonicalizationMethod(signature->signedInfo().canonicalizationMethod());
     ts->encapsulatedTimeStamp().push_back(make_unique<EncapsulatedPKIDataType>(
         Base64Binary(der.data(), der.size(), der.size(), false)));
-    usp.signatureTimeStamp().push_back(move(ts));
+    usp.signatureTimeStamp().push_back(std::move(ts));
     usp.contentOrder().emplace_back(UnsignedSignaturePropertiesType::ContentOrderType(
         UnsignedSignaturePropertiesType::signatureTimeStampId,
         usp.signatureTimeStamp().size() - 1));
@@ -198,7 +198,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
         {
             verifyTS(sigAndRefsTS, exception, [this](Digest *digest, std::string_view canonicalizationMethod) {
                 calcDigestOnNode(digest, URI_ID_DSIG, u"SignatureValue", canonicalizationMethod);
-                for(auto name: {
+                for(const auto *name: {
                        u"SignatureTimeStamp",
                        u"CompleteCertificateRefs",
                        u"CompleteRevocationRefs",
@@ -230,7 +230,7 @@ UnsignedSignaturePropertiesType &SignatureXAdES_T::unsignedSignatureProperties()
 }
 
 TS SignatureXAdES_T::verifyTS(const xades::XAdESTimeStampType &timestamp, digidoc::Exception &exception,
-    std::function<void (Digest *, std::string_view)> &&calcDigest) const
+    std::function<void (Digest *, std::string_view)> &&calcDigest)
 {
     const GenericTimeStampType::EncapsulatedTimeStampType &bin = timestamp.encapsulatedTimeStamp().front();
     TS tsa((const unsigned char*)bin.data(), bin.size());

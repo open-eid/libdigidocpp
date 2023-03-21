@@ -24,6 +24,8 @@
 #include "crypto/X509Cert.h"
 #include "util/log.h"
 
+#include <openssl/pkcs12.h>
+
 #include <algorithm>
 
 using namespace digidoc;
@@ -52,7 +54,14 @@ public:
 PKCS12Signer::PKCS12Signer(const string &path, const string &pass)
     : d(make_unique<Private>())
 {
-    OpenSSL::parsePKCS12(path, pass, &d->key, &d->cert);
+    auto bio = SCOPE_PTR(BIO, BIO_new_file(path.c_str(), "rb"));
+    if(!bio)
+        THROW_OPENSSLEXCEPTION("Failed to open PKCS12 certificate: %s.", path.c_str());
+    auto p12 = SCOPE_PTR(PKCS12, d2i_PKCS12_bio(bio.get(), nullptr));
+    if(!p12)
+        THROW_OPENSSLEXCEPTION("Failed to read PKCS12 certificate: %s.", path.c_str());
+    if(!PKCS12_parse(p12.get(), pass.c_str(), &d->key, &d->cert, nullptr))
+        THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate.");
 }
 
 PKCS12Signer::~PKCS12Signer()
