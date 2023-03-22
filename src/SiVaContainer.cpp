@@ -24,6 +24,7 @@
 
 #include "SiVaContainer.h"
 
+#include "ASiContainer.h"
 #include "Conf.h"
 #include "DataFile_p.h"
 #include "Signature.h"
@@ -31,6 +32,7 @@
 #include "crypto/Digest.h"
 #include "util/File.h"
 #include "util/log.h"
+#include "util/ZipSerialize.h"
 #include "xml/xml.hxx"
 #include "xml/SecureDOMParser.h"
 
@@ -142,13 +144,15 @@ void SignatureSiVa::validate(const string &policy) const
 }
 
 
-SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHashCode)
+SiVaContainer::SiVaContainer(const string &path, bool useHashCode)
     : d(make_unique<Private>())
 {
+    string ext = File::fileExtension(path);
     DEBUG("SiVaContainer::SiVaContainer(%s, %s, %d)", path.c_str(), ext.c_str(), useHashCode);
     unique_ptr<istream> ifs = make_unique<ifstream>(File::encodeName(d->path = path), ifstream::binary);
     auto fileName = File::fileName(path);
     istream *is = ifs.get();
+    static const array asic {"asice", "sce", "asics", "scs"};
     if(ext == "ddoc")
     {
         d->mediaType = "application/x-ddoc";
@@ -156,13 +160,41 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
         ifs = parseDDoc(useHashCode);
         is = ifs.get();
     }
-    else
+    else if(ext == "pdf")
     {
         d->mediaType = "application/pdf";
         d->dataFiles.push_back(new DataFilePrivate(std::move(ifs), fileName, "application/pdf"));
     }
+    else if(find(asic.cbegin(), asic.cend(), ext) != asic.cend())
+    {
+        ZipSerialize z(path, false);
+        vector<string> list = z.list();
+        if(list.empty() || list.front() != "mimetype")
+            THROW("Missing mimetype");
+        if(d->mediaType = ASiContainer::readMimetype(z);
+            d->mediaType != ASiContainer::MIMETYPE_ASIC_E && d->mediaType != ASiContainer::MIMETYPE_ASIC_S)
+            THROW("Unknown file");
+        if(none_of(list.cbegin(), list.cend(), [](const string &file) { return file.find("p7s") != string::npos; }))
+            THROW("Unknown file");
 
-    array<XMLByte, 48*100> buf{};
+        static const string metaInf = "META-INF/";
+        for(const string &file: list)
+        {
+            if(file == "mimetype" || file.substr(0, metaInf.size()) == metaInf)
+                continue;
+            const auto directory = File::directory(file);
+            if(directory.empty() || directory == "/" || directory == "./")
+            {
+                auto data = make_unique<stringstream>();
+                z.extract(file, *data);
+                d->dataFiles.push_back(new DataFilePrivate(std::move(data), file, "application/octet-stream"));
+            }
+        }
+    }
+    else
+        THROW("Unknown file");
+
+    array<XMLByte, 4800> buf{};
     string b64;
     is->clear();
     is->seekg(0);
@@ -314,15 +346,13 @@ vector<DataFile *> SiVaContainer::dataFiles() const
 
 unique_ptr<Container> SiVaContainer::openInternal(const string &path)
 {
-    static const array supported {"pdf", "ddoc"};
-    string ext = File::fileExtension(path);
-    if(find(supported.cbegin(), supported.cend(), ext) == supported.cend())
-        return {};
     try {
-        return unique_ptr<Container>(new SiVaContainer(path, ext, true));
+        return unique_ptr<Container>(new SiVaContainer(path, true));
     } catch(const Exception &e) {
         if(e.msg().find("Bad digest for DataFile") == 0)
-            return unique_ptr<Container>(new SiVaContainer(path, ext, false));
+            return unique_ptr<Container>(new SiVaContainer(path, false));
+        if(e.msg() == "Unknown file")
+           return {};
         throw;
     }
 }
@@ -337,7 +367,7 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
         DOMNodeList *nodeList = dom->getElementsByTagName(cpXMLCh(u"DataFile"));
         for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
         {
-            DOMElement *item = static_cast<DOMElement*>(nodeList->item(i));
+            auto *item = static_cast<DOMElement*>(nodeList->item(i));
             if(!item)
                 continue;
 

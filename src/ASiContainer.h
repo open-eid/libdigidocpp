@@ -58,6 +58,8 @@ namespace digidoc
           void removeSignature(unsigned int id) override;
           std::vector<Signature*> signatures() const override;
 
+          static std::string readMimetype(const ZipSerialize &z);
+
       protected:
           ASiContainer(const std::string &mimetype);
 
@@ -71,8 +73,6 @@ namespace digidoc
           std::string zpath() const;
           ZipSerialize::Properties zproperty(const std::string &file) const;
           void zproperty(const std::string &file, ZipSerialize::Properties &&prop);
-
-          static std::string readMimetype(const ZipSerialize &z);
 
       private:
           DISABLE_COPY(ASiContainer);

@@ -300,21 +300,15 @@ string ASiContainer::readMimetype(const ZipSerialize &z)
     DEBUG("ASiContainer::readMimetype()");
     stringstream is;
     z.extract("mimetype", is);
-
-    array<unsigned char,3> bom{};
-    is.read((char*)bom.data(), bom.size());
-    // Contains UTF-16 BOM
-    if((bom[0] == 0xFF && bom[1] == 0xEF) ||
-       (bom[0] == 0xEF && bom[1] == 0xFF))
-        THROW("Mimetype file must be UTF-8 format.");
-    // does not contain UTF-8 BOM reset pos
-    if(bom[0] != 0xEF || bom[1] != 0xBB || bom[2] != 0xBF)
-        is.seekg(0, ios::beg);
-
     string text;
     is >> text;
-    if(is.fail())
+    if(!is)
         THROW("Failed to read mimetype.");
-
+    // Contains UTF-16 BOM
+    if(text.find("\xFF\xEF") == 0 || text.find("\xEF\xFF") == 0)
+        THROW("Mimetype file must be UTF-8 format.");
+    // contains UTF-8 BOM, remove
+    if(text.find("\xEF\xBB\xBF") == 0)
+        text.erase(text.cbegin(), text.cbegin() + 3);
     return text;
 }
