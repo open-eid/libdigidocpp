@@ -50,10 +50,6 @@ task copyLibs {
         into 'src/main/jniLibs/arm64-v8a'
     }
     copy {
-        from libsPath + '.androidx86/lib/libdigidoc_java.so'
-        into 'src/main/jniLibs/x86'
-    }
-    copy {
         from libsPath + '.androidx86_64/lib/libdigidoc_java.so'
         into 'src/main/jniLibs/x86_64'
     }

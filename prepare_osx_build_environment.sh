@@ -246,7 +246,7 @@ function openssl {
 
     case "${ARGS}" in
     *android*)
-        ./Configure android-${ARCH} -D__ANDROID_API__=${API} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio
+        ./Configure android-${ARCH} -D__ANDROID_API__=${API} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-shared no-dso no-hw no-engine no-tests no-ui-console
         make -s
         sudo make install_sw
         ;;
@@ -256,15 +256,15 @@ function openssl {
             case "${ARCH}" in
             *x86_64*)
                 case "${ARGS}" in
-                *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio enable-ec_nistp_64_gcc_128;;
-                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio enable-ec_nistp_64_gcc_128 ;;
-                *) CC="" CFLAGS="" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
+                *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128;;
+                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+                *) CC="" CFLAGS="" MACHINE=x86_64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;
             *arm64*)
                 case "${ARGS}" in
-                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" MACHINE=arm64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio enable-ec_nistp_64_gcc_128 ;;
-                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console no-stdio enable-ec_nistp_64_gcc_128;;
+                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" MACHINE=arm64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128;;
                 *) CC="" CFLAGS="" MACHINE=arm64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;
