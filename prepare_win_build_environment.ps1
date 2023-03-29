@@ -3,7 +3,7 @@ param(
 	[string]$vcpkg = "vcpkg\vcpkg.exe",
 	[string]$git = "git.exe",
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
-	[string]$toolset = "141",
+	[string]$toolset = "142",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
 	[switch]$openssl = $false,
 	[switch]$xerces = $false,
