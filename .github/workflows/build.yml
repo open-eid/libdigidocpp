@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        target: [osx, ios, iossimulator, androidarm, androidarm64, androidx86, androidx86_64]
+        target: [osx, ios, iossimulator, androidarm, androidarm64, androidx86_64]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -138,24 +138,18 @@ jobs:
     runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        toolset: [143, 142, 141]
+        toolset: [143, 142]
         include:
         - toolset: 143
           image: windows-2022
-          vcver: 14.34
           vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
         - toolset: 142
           image: windows-2019
-          vcver: 14.29
-          vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
-        - toolset: 141
-          image: windows-2019
-          vcver: 14.16
           vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
     env:
       MAKEFLAGS: ""
       VER_SUFFIX: .VS${{ matrix.toolset }}
-      VERSION: 3.15.0.${{ github.run_number }}
+      VERSION: 3.16.0.${{ github.run_number }}
       VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/patches/vcpkg-triplets
       VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/patches/vcpkg-ports
     steps:
@@ -184,7 +178,6 @@ jobs:
           -msiversion $env:VERSION `
           -toolset ${{ matrix.toolset }} `
           -vcvars "${{ matrix.vcvars }}" `
-          -vcver "${{ matrix.vcver }}" `
           -swig C:/ProgramData/chocolatey/bin/swig.exe `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
     - name: Archive artifacts

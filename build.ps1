@@ -4,7 +4,7 @@ param(
   [string]$vcpkg = "vcpkg\vcpkg.exe",
   [string]$vcpkg_dir = (split-path -parent $vcpkg),
   [string]$buildver = "0",
-  [string]$msiversion = "3.15.0.$buildver",
+  [string]$msiversion = "3.16.0.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
   [string]$cmake = "cmake.exe",
   [string]$generator = "NMake Makefiles",
@@ -25,7 +25,6 @@ param(
 
 if (!$vcvars) {
   switch ($toolset) {
-  '141' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" }
   '142' { $vcvars = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" }
   '143' { $vcvars = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" }
   }

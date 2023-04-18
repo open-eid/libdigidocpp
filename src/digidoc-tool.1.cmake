@@ -69,4 +69,4 @@ All commands:
     --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug
     --logfile=      - File to log, empty to console
 .SH SEE ALSO
-cdigidoc(1), qdigidoc4(1)
+qdigidoc4(1)

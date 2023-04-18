@@ -3,8 +3,6 @@
 <?define VCVER = "143" ?>
 <?elseif $(env.VisualStudioVersion) = "16.0" ?>
 <?define VCVER = "142" ?>
-<?elseif $(env.VisualStudioVersion) = "15.0" ?>
-<?define VCVER = "141" ?>
 <?endif?>
 <?define VCPKG_X86 = "$(var.vcpkg)\installed\x86-$(var.vcpkg_suffix)\bin" ?>
 <?define VCPKG_X64 = "$(var.vcpkg)\installed\x64-$(var.vcpkg_suffix)\bin" ?>

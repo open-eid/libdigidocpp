@@ -58,7 +58,7 @@
         git clone --recursive https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Prepare dependencies (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86)
+3. Prepare dependencies (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86_64)
 
         sh prepare_osx_build_environment.sh osx all
 
@@ -72,7 +72,7 @@
 	* swig - Optional, for C# and Java bindings
 	* openjdk - Optional, for Java bindings
 
-5. Configure, build and install (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86)
+5. Configure, build and install (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86_64)
 
         ./build-library.sh osx install
 
@@ -92,7 +92,6 @@
 	* [Java](https://www.oracle.com/java/technologies/downloads/) - Optional, for Java bindings
 
    Toolset:
-	* 141 - Visual Studio 2017
 	* 142 - Visual Studio 2019 (Default)
 	* 143 - Visual Studio 2022
 
@@ -115,7 +114,7 @@
 
    Optional CMake parameters:
 
-       -DSWIG_EXECUTABLE=C:/swigwin-4.0.2/swig.exe
+       -DSWIG_EXECUTABLE=C:/swigwin-4.1.1/swig.exe
 
    After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
    [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
