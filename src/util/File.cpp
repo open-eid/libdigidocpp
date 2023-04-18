@@ -73,23 +73,18 @@ string File::confPath()
 #elif defined(_WIN32)
     return dllPath("digidocpp.dll");
 #else
-    return env("SNAP") + DIGIDOCPP_CONFIG_DIR "/";
+    return path(env("SNAP"), DIGIDOCPP_CONFIG_DIR "/");
 #endif
 }
 
+#ifndef _WIN32
 string File::env(string_view varname)
 {
-#ifdef _WIN32
-#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    return {};
-#endif
-    if(wchar_t *var = _wgetenv(fs::u8path(varname).c_str()))
-#else
     if(char *var = getenv(varname.data()))
-#endif
         return decodeName(var);
     return {};
 }
+#endif
 
 /**
  * Encodes path to compatible std lib
@@ -257,13 +252,12 @@ string File::directory(const string& path)
  *        Default value is <code>false</code>.
  * @return returns full path.
  */
-string File::path(const string& directory, const string& relativePath)
+string File::path(string dir, string_view relativePath)
 {
-    string dir(directory);
     if(!dir.empty() && (dir.back() == '/' || dir.back() == '\\'))
         dir.pop_back();
 
-    string path = dir + "/" + relativePath;
+    string path = (dir + "/").append(relativePath);
 #ifdef _WIN32
     replace(path.begin(), path.end(), '/', '\\');
 #else
@@ -286,7 +280,7 @@ string File::tempFileName()
     free(fileName);
 #else
 #ifdef __APPLE__
-    string path = env("TMPDIR") + "/XXXXXX";
+    string path = File::path(env("TMPDIR"), "XXXXXX");
 #else
     string path = "/tmp/XXXXXX";
 #endif
@@ -341,13 +335,15 @@ string File::digidocppPath()
     string appData = (fs::path(knownFolder) / "digidocpp").u8string();
     CoTaskMemFree(knownFolder);
     return appData;
+#elif defined(ANDROID)
+    return path(env("HOME"), ".digidocpp");
 #else
     string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
     struct passwd pwbuf {};
     struct passwd *pw {};
     if(getpwuid_r(geteuid(), &pwbuf, buf.data(), buf.size(), &pw) != 0 || !pw)
         THROW("Failed to get home directory");
-    return path(pw->pw_dir, "/.digidocpp");
+    return path(pw->pw_dir, ".digidocpp");
 #endif
 }
 

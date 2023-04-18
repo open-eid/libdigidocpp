@@ -40,7 +40,7 @@ case "$@" in
   : ${ANDROID_NDK_HOME:=$(ls -d /Volumes/android-ndk-r*/AndroidNDK*.app/Contents/NDK)}
   TARGET_PATH=/Library/libdigidocpp.${TARGET}
   CMAKEARGS="
-    -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH};/usr/local \
+    -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH};/usr/local;/opt/homebrew \
     -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
     -DANDROID_PLATFORM=28 \
     -DANDROID_ABI=${ARCH} \

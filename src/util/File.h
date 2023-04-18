@@ -53,7 +53,7 @@ namespace digidoc
               static unsigned long fileSize(const std::string &path);
               static std::string fileName(const std::string& path);
               static std::string directory(const std::string& path);
-              static std::string path(const std::string& directory, const std::string& relativePath);
+              static std::string path(std::string dir, std::string_view relativePath);
               static std::string fullPathUrl(const std::string &path);
               static std::string tempFileName();
               static void createDirectory(const std::string& path);
@@ -72,7 +72,9 @@ namespace digidoc
 
         private:
               static std::stack<std::string> tempFiles;
+#ifndef _WIN32
               static std::string env(std::string_view varname);
+#endif
         };
 
     }

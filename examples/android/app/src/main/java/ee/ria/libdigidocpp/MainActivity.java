@@ -46,13 +46,13 @@ public class MainActivity extends Activity {
 	}
 
 	static private void saveToFile(InputStream in, String path) throws IOException {
-		FileOutputStream out = new FileOutputStream(path);
-		byte[] buffer = new byte[10240];
-		int count;
-		while ((count = in.read(buffer)) != -1) {
-			out.write(buffer, 0, count);
+		try (FileOutputStream out = new FileOutputStream(path)) {
+			byte[] buffer = new byte[10240];
+			int count;
+			while ((count = in.read(buffer)) != -1) {
+				out.write(buffer, 0, count);
+			}
 		}
-		out.close();
 	}
 
 	@Override
@@ -64,20 +64,18 @@ public class MainActivity extends Activity {
 		content.setMovementMethod(new ScrollingMovementMethod());
 
 		try {
-			ZipInputStream zis = new ZipInputStream(getResources().openRawResource(R.raw.schema));
-			ZipEntry ze;
-			while ((ze = zis.getNextEntry()) != null) {
-				saveToFile(zis, cache + "/" + ze.getName());
+			try (ZipInputStream zis = new ZipInputStream(getResources().openRawResource(R.raw.schema))) {
+				ZipEntry ze;
+				while ((ze = zis.getNextEntry()) != null) {
+					saveToFile(zis, cache + "/" + ze.getName());
+				}
 			}
-			zis.close();
-
-			InputStream in = getResources().openRawResource(R.raw.test);
-			saveToFile(in, cache + "/test.bdoc");
-			in.close();
-
-			ByteArrayInputStream bin = new ByteArrayInputStream(new byte[] {});
-			saveToFile(bin, cache + "/EE_T.xml");
-			bin.close();
+			try (InputStream in = getResources().openRawResource(R.raw.test)) {
+				saveToFile(in, cache + "/test.bdoc");
+			}
+			try (ByteArrayInputStream bin = new ByteArrayInputStream(new byte[] {})) {
+				saveToFile(bin, cache + "/EE_T.xml");
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
