@@ -100,7 +100,7 @@ string Conf::digestUri() const { return URI_SHA256; }
 /**
  * Gets XSD schema files path
  */
-string Conf::xsdPath() const { return File::confPath() + "schema"; }
+string Conf::xsdPath() const { return File::path(File::confPath(), "schema"); }
 
 /**
  * Returns PKCS11 driver file path
@@ -111,13 +111,9 @@ string Conf::PKCS11Driver() const { return PKCS11_MODULE; }
  * Return OCSP request URL
  * @param issuer OCSP issuer.
  */
-string Conf::ocsp(const string &issuer) const
+string Conf::ocsp(const string &/*issuer*/) const
 {
-    static const map<string_view,string> ocsplist = {
-        {"ESTEID-SK 2015", "http://ocsp.sk.ee"},
-    };
-    auto pos = ocsplist.find(issuer);
-    return pos == ocsplist.end() ? string() : pos->second;
+    return {};
 }
 
 /**
@@ -151,13 +147,13 @@ string Conf::proxyPass() const { return {}; }
  *
  * Used for signing OCSP request
  */
-string Conf::PKCS12Cert() const { return File::confPath() + "798.p12"; }
+string Conf::PKCS12Cert() const { return {}; }
 
 /**
  * Gets PKCS12 password.
  * @see digidoc::Conf::PKCS12Cert
  */
-string Conf::PKCS12Pass() const { return "\x61\x50\x51\x31\x31\x74\x69\x34"; }
+string Conf::PKCS12Pass() const { return {}; }
 
 /**
  * Gets PKCS12 usage.

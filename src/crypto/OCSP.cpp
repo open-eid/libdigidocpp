@@ -38,10 +38,6 @@
 #include <openssl/rand.h>
 #include <openssl/sha.h>
 
-#ifdef __APPLE__
-#include <Security/Security.h>
-#endif
-
 using namespace digidoc;
 using namespace std;
 
@@ -109,7 +105,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     if(OCSP_check_nonce(req.get(), basic.get()) <= 0)
         THROW("Incorrect NONCE field value.");
 
-    ASN1_GENERALIZEDTIME *thisUpdate = nullptr, *nextUpdate = nullptr;
+    ASN1_GENERALIZEDTIME *thisUpdate {}, *nextUpdate {};
     if(OCSP_resp_find_status(basic.get(), certId, nullptr, nullptr, nullptr, &thisUpdate, &nextUpdate) != 1)
         THROW("Failed to find CERT_ID from OCSP response.");
 
@@ -135,8 +131,8 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
 {
     if(!basic || !cert)
         return false;
-    const ASN1_OCTET_STRING *hash = nullptr;
-    const X509_NAME *name = nullptr;
+    const ASN1_OCTET_STRING *hash {};
+    const X509_NAME *name {};
     OCSP_resp_get0_id(basic.get(), &hash, &name);
     if(name)
         return X509_NAME_cmp(X509_get_subject_name(cert.handle()), name) == 0;
@@ -181,52 +177,10 @@ OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned cha
 
     if(signRequest)
     {
-        X509* signCert;
-        EVP_PKEY* signKey;
-#ifdef USE_KEYCHAIN
-        if(SecIdentityRef identity = SecIdentityCopyPreferred(CFSTR("ocsp.sk.ee"), nullptr, nullptr))
-        {
-            SecCertificateRef certref = nullptr;
-            SecKeyRef keyref = nullptr;
-            SecIdentityCopyCertificate(identity, &certref);
-            SecIdentityCopyPrivateKey(identity, &keyref);
-            CFRelease(identity);
-            if(!certref || !keyref)
-                THROW("Failed to read PKCS12 data");
-
-            CFDataRef certdata = SecCertificateCopyData(certref);
-            CFRelease(certref);
-            if(!certdata)
-                THROW("Failed to read PKCS12 certificate");
-            const unsigned char *p = CFDataGetBytePtr(certdata);
-            signCert = d2i_X509(nullptr, &p, CFDataGetLength(certdata));
-            CFRelease(certdata);
-
-            CFDataRef keydata = nullptr;
-            SecItemImportExportKeyParameters params{};
-            params.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
-            params.passphrase = CFSTR("pass");
-            SecItemExport(keyref, kSecFormatWrappedPKCS8, 0, &params, &keydata);
-            CFRelease(keyref);
-            if(!keydata)
-                THROW("Failed to read PKCS12 key");
-            SCOPE(BIO, bio, BIO_new_mem_buf((void*)CFDataGetBytePtr(keydata), int(CFDataGetLength(keydata))));
-            signKey = d2i_PKCS8PrivateKey_bio(bio.get(), nullptr, [](char *buf, int bufsiz, int, void *) -> int {
-                static const char password[] = "pass";
-                int res = strlen(password);
-                if (res > bufsiz)
-                        res = bufsiz;
-                memcpy(buf, password, size_t(res));
-                return res;
-            }, nullptr);
-            CFRelease(keydata);
-        } else {
-#endif
+        X509 *signCert {};
+        EVP_PKEY *signKey {};
         Conf *c = Conf::instance();
         OpenSSL::parsePKCS12(c->PKCS12Cert(), c->PKCS12Pass(), &signKey, &signCert);
-#ifdef USE_KEYCHAIN
-        }
-#endif
         if(!signCert)
             THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate");
         if(!signKey)
@@ -309,9 +263,9 @@ void OCSP::verifyResponse(const X509Cert &cert) const
     int status = V_OCSP_CERTSTATUS_UNKNOWN;
     for(int i = 0, count = OCSP_resp_count(basic.get()); i < count; ++i)
     {
-        const EVP_MD *evp_md = nullptr;
+        const EVP_MD *evp_md {};
         const OCSP_CERTID *certID = OCSP_SINGLERESP_get0_id(OCSP_resp_get0(basic.get(), i));
-        ASN1_OBJECT *md = nullptr;
+        ASN1_OBJECT *md {};
         if(OCSP_id_get0_info(nullptr, &md, nullptr, nullptr, const_cast<OCSP_CERTID*>(certID)) == 1)
             evp_md = EVP_get_digestbyobj(md);
         SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(evp_md, cert.handle(), issuer.handle()));

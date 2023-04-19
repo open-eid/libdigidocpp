@@ -478,7 +478,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(ConfSuite)
 BOOST_AUTO_TEST_CASE(XmlConfCase) {
-    XmlConfCurrent c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "/conf.xsd"));
+    XmlConfCurrent c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "conf.xsd"));
     BOOST_CHECK_EQUAL(c.logLevel(), 2);
     BOOST_CHECK_EQUAL(c.logFile(), "digidocpp-test.log");
     BOOST_CHECK_EQUAL(c.digestUri(), URI_SHA512);
@@ -487,10 +487,10 @@ BOOST_AUTO_TEST_CASE(XmlConfCase) {
     BOOST_CHECK_EQUAL(c.proxyPort(), "port");
     BOOST_CHECK_EQUAL(c.proxyUser(), "user");
     BOOST_CHECK_EQUAL(c.proxyPass(), "pass");
-    BOOST_CHECK_EQUAL(util::File::fileName(c.PKCS12Cert()), "cert");
+    BOOST_CHECK_EQUAL(c.PKCS12Cert(), "cert");
     BOOST_CHECK_EQUAL(c.PKCS12Pass(), "pass");
     BOOST_CHECK_EQUAL(c.PKCS12Disable(), true);
-    BOOST_CHECK_EQUAL(c.ocsp("ESTEID-SK 2007"), "http://ocsp.sk.ee");
+    BOOST_CHECK_EQUAL(c.ocsp("ISSUER NAME"), "http://ocsp.issuer.com");
     BOOST_CHECK_EQUAL(c.verifyServiceUri(), SIVA_URL);
     const string testurl = "https://test.url";
     c.setVerifyServiceUri(testurl);

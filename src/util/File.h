@@ -42,13 +42,13 @@ namespace digidoc
               using f_string_view = std::string_view;
 #endif
               static std::string confPath();
-              static bool fileExists(const std::string& path);
+              static std::string digidocppPath();
               static f_string encodeName(std::string_view fileName);
               static std::string decodeName(const f_string_view &localFileName);
-              static std::string digidocppPath();
               static bool isRelative(const std::string &path);
               static time_t modifiedTime(const std::string &path);
               static void updateModifiedTime(const std::string &path, time_t time);
+              static bool fileExists(const std::string& path);
               static std::string fileExtension(const std::string &path);
               static unsigned long fileSize(const std::string &path);
               static std::string fileName(const std::string& path);
@@ -56,21 +56,21 @@ namespace digidoc
               static std::string path(std::string dir, std::string_view relativePath);
               static std::string fullPathUrl(const std::string &path);
               static std::string tempFileName();
-              static void createDirectory(const std::string& path);
+              static void createDirectory(std::string path);
               static void deleteTempFiles();
               static bool removeFile(const std::string &path);
               static std::string toUri(const std::string &path);
               static std::string toUriPath(const std::string &path);
               static std::string fromUriPath(const std::string &path);
               static std::vector<unsigned char> hexToBin(const std::string &in);
-#ifdef __APPLE__
-              static std::string frameworkResourcesPath(const std::string &name);
-#endif
 #ifdef _WIN32
-              static std::string dllPath(const std::string &dll);
+              static std::string dllPath(std::string_view dll);
 #endif
 
         private:
+#ifdef __APPLE__
+              static std::string frameworkResourcesPath(std::string_view name);
+#endif
               static std::stack<std::string> tempFiles;
 #ifndef _WIN32
               static std::string env(std::string_view varname);
