@@ -72,9 +72,6 @@ namespace digidoc
               static std::string frameworkResourcesPath(std::string_view name);
 #endif
               static std::stack<std::string> tempFiles;
-#ifndef _WIN32
-              static std::string env(std::string_view varname);
-#endif
         };
 
     }

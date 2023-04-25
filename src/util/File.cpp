@@ -73,18 +73,13 @@ string File::confPath()
 #elif defined(_WIN32)
     return dllPath("digidocpp.dll");
 #else
-    return path(env("SNAP"), DIGIDOCPP_CONFIG_DIR "/");
+    if(char *snap = getenv("SNAP"))
+        return path(snap, DIGIDOCPP_CONFIG_DIR);
+    if(char *appdir = getenv("APPDIR"))
+        return path(appdir, DIGIDOCPP_CONFIG_DIR);
+    return DIGIDOCPP_CONFIG_DIR;
 #endif
 }
-
-#ifndef _WIN32
-string File::env(string_view varname)
-{
-    if(char *var = getenv(varname.data()))
-        return decodeName(var);
-    return {};
-}
-#endif
 
 /**
  * Encodes path to compatible std lib
@@ -277,7 +272,7 @@ string File::tempFileName()
     free(fileName);
 #else
 #ifdef __APPLE__
-    string path = File::path(env("TMPDIR"), "XXXXXX");
+    string path = File::path(getenv("TMPDIR"), "XXXXXX");
 #else
     string path = "/tmp/XXXXXX";
 #endif
@@ -332,7 +327,7 @@ string File::digidocppPath()
     CoTaskMemFree(knownFolder);
     return appData;
 #elif defined(ANDROID)
-    return path(env("HOME"), ".digidocpp");
+    return path(getenv("HOME"), ".digidocpp");
 #else
     string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
     passwd pwbuf {};
