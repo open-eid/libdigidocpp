@@ -1,8 +1,199 @@
-diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj xml-security-c-2.0.1/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj
---- xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj	2018-06-18 17:48:30.000000000 +0300
-+++ xml-security-c-2.0.1/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj	2019-01-08 14:34:07.000000000 +0200
-@@ -166,287 +166,191 @@
+diff -U3 -r xml-security-c-2.0.4.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj xml-security-c-2.0.4/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj
+--- xml-security-c-2.0.4.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj	2018-06-18 17:48:30
++++ xml-security-c-2.0.4/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcxproj	2023-04-26 11:16:34
+@@ -1,6 +1,10 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug Minimal|ARM64">
++      <Configuration>Debug Minimal</Configuration>
++      <Platform>ARM64</Platform>
++    </ProjectConfiguration>
+     <ProjectConfiguration Include="Debug Minimal|Win32">
+       <Configuration>Debug Minimal</Configuration>
+       <Platform>Win32</Platform>
+@@ -9,6 +13,10 @@
+       <Configuration>Debug Minimal</Configuration>
+       <Platform>x64</Platform>
+     </ProjectConfiguration>
++    <ProjectConfiguration Include="Debug|ARM64">
++      <Configuration>Debug</Configuration>
++      <Platform>ARM64</Platform>
++    </ProjectConfiguration>
+     <ProjectConfiguration Include="Debug|Win32">
+       <Configuration>Debug</Configuration>
+       <Platform>Win32</Platform>
+@@ -17,6 +25,10 @@
+       <Configuration>Debug</Configuration>
+       <Platform>x64</Platform>
+     </ProjectConfiguration>
++    <ProjectConfiguration Include="Release Minimal|ARM64">
++      <Configuration>Release Minimal</Configuration>
++      <Platform>ARM64</Platform>
++    </ProjectConfiguration>
+     <ProjectConfiguration Include="Release Minimal|Win32">
+       <Configuration>Release Minimal</Configuration>
+       <Platform>Win32</Platform>
+@@ -25,6 +37,10 @@
+       <Configuration>Release Minimal</Configuration>
+       <Platform>x64</Platform>
+     </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|ARM64">
++      <Configuration>Release</Configuration>
++      <Platform>ARM64</Platform>
++    </ProjectConfiguration>
+     <ProjectConfiguration Include="Release|Win32">
+       <Configuration>Release</Configuration>
+       <Platform>Win32</Platform>
+@@ -68,24 +84,48 @@
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+     <PlatformToolset>v141</PlatformToolset>
+   </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'" Label="Configuration">
++    <ConfigurationType>DynamicLibrary</ConfigurationType>
++    <CharacterSet>MultiByte</CharacterSet>
++    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <PlatformToolset>v141</PlatformToolset>
++  </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+     <CharacterSet>MultiByte</CharacterSet>
+     <PlatformToolset>v141</PlatformToolset>
+   </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'" Label="Configuration">
++    <ConfigurationType>DynamicLibrary</ConfigurationType>
++    <UseOfMfc>false</UseOfMfc>
++    <CharacterSet>MultiByte</CharacterSet>
++    <PlatformToolset>v141</PlatformToolset>
++  </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <CharacterSet>MultiByte</CharacterSet>
+     <WholeProgramOptimization>true</WholeProgramOptimization>
+     <PlatformToolset>v141</PlatformToolset>
+   </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
++    <ConfigurationType>DynamicLibrary</ConfigurationType>
++    <CharacterSet>MultiByte</CharacterSet>
++    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <PlatformToolset>v141</PlatformToolset>
++  </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseOfMfc>false</UseOfMfc>
+     <CharacterSet>MultiByte</CharacterSet>
+     <PlatformToolset>v141</PlatformToolset>
+   </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
++    <ConfigurationType>DynamicLibrary</ConfigurationType>
++    <UseOfMfc>false</UseOfMfc>
++    <CharacterSet>MultiByte</CharacterSet>
++    <PlatformToolset>v141</PlatformToolset>
++  </PropertyGroup>
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+   <ImportGroup Label="ExtensionSettings">
+   </ImportGroup>
+@@ -104,15 +144,27 @@
+   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'" Label="PropertySheets">
+     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+   </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
+   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'" Label="PropertySheets">
+     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+   </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
+   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+   </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
+   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+   </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
+   <PropertyGroup Label="UserMacros" />
+   <PropertyGroup>
+     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+@@ -120,335 +172,351 @@
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
++    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
++    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
++    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">true</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
++    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
++    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
++    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">false</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">true</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
++    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
++    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">true</LinkIncremental>
++    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'">true</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">false</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
++    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'">../../../../Build/$(Platform)/VC15/$(Configuration)/</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
++    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'">../../../../Build/$(Platform)/VC15/$(Configuration)/$(ProjectName)/obj/</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">false</LinkIncremental>
++    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'">false</LinkIncremental>
+     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'" />
+     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'" />
+     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
++    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'">AllRules.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'" />
++    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'" />
+     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'" />
++    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'" />
+     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
++    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">AllRules.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
++    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" />
+     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
++    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" />
+     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'" />
+     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'" />
+     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
++    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'">AllRules.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'" />
++    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'" />
+     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'" />
++    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'" />
+     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
++    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">AllRules.ruleset</CodeAnalysisRuleSet>
+     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
++    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" />
      <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
++    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" />
    </PropertyGroup>
    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
 -    <PreBuildEvent>
@@ -85,6 +276,29 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
 +      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win64\VC10\Debug;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win64\VC15\Debug;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
      </Link>
    </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
++    <Midl />
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win64/VC15/Debug/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;DLL_EXPORT;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <MinimalRebuild>false</MinimalRebuild>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <BrowseInformation>false</BrowseInformation>
++      <ConformanceMode>true</ConformanceMode>
++    </ClCompile>
++    <Link>
++      <AdditionalDependencies>Xalan-C_1D.lib;xerces-c_3D.lib;crypt32.lib;wsock32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
++      <GenerateDebugInformation>true</GenerateDebugInformation>
++      <SubSystem>Windows</SubSystem>
++      <ImportLibrary>$(OutDir)xsec_2D.lib</ImportLibrary>
++      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win64\VC10\Debug;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win64\VC15\Debug;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++    </Link>
++  </ItemDefinitionGroup>
    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
 -    <PreBuildEvent>
 -      <Message>
@@ -162,6 +376,27 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
 +      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win64\VC10\Release;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win64\VC15\Release;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
      </Link>
    </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
++    <Midl />
++    <ClCompile>
++      <AdditionalIncludeDirectories>$(XALANCROOT)/Build/Win64/VC15/Release/Nls/Include;$(XALANCROOT)/include;$(XALANCROOT)/src;$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;DLL_EXPORT;XSEC_BUILDING_LIBRARY;XSEC_HAVE_XALAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <WholeProgramOptimization>true</WholeProgramOptimization>
++      <ConformanceMode>true</ConformanceMode>
++    </ClCompile>
++    <Link>
++      <AdditionalDependencies>Xalan-C_1.lib;xerces-c_3.lib;crypt32.lib;wsock32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
++      <SubSystem>Windows</SubSystem>
++      <OptimizeReferences>true</OptimizeReferences>
++      <EnableCOMDATFolding>true</EnableCOMDATFolding>
++      <ImportLibrary>$(OutDir)xsec_2.lib</ImportLibrary>
++      <GenerateDebugInformation>true</GenerateDebugInformation>
++      <AdditionalLibraryDirectories>$(XALANCROOT)\Build\Win64\VC10\Release;$(XALANCROOT)\lib;$(XERCESCROOT)\Build\Win64\VC15\Release;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++    </Link>
++  </ItemDefinitionGroup>
    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">
 -    <PreBuildEvent>
 -      <Message>
@@ -241,6 +476,29 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
 +      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win64\VC15\Debug;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
      </Link>
    </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'">
++    <Midl />
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;_XSEC_DO_MEMDEBUG;WIN32;_DEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <MinimalRebuild>false</MinimalRebuild>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <BrowseInformation>false</BrowseInformation>
++      <ConformanceMode>true</ConformanceMode>
++    </ClCompile>
++    <Link>
++      <AdditionalDependencies>xerces-c_3D.lib;crypt32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <OutputFile>$(OutDir)xsec_2_0D.dll</OutputFile>
++      <GenerateDebugInformation>true</GenerateDebugInformation>
++      <SubSystem>Windows</SubSystem>
++      <ImportLibrary>$(OutDir)xsec_2D.lib</ImportLibrary>
++      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win64\VC15\Debug;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++    </Link>
++  </ItemDefinitionGroup>
    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">
 -    <PreBuildEvent>
 -      <Message>
@@ -316,8 +574,49 @@ diff -U3 -r xml-security-c-2.0.1.orig/Projects/VC15.0/xsec/xsec_lib/xsec_lib.vcx
 +      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win64\VC15\Release;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
      </Link>
    </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'">
++    <Midl />
++    <ClCompile>
++      <AdditionalIncludeDirectories>$(XERCESCROOT)/include;$(XERCESCROOT)/src;$(OPENSSLROOT)/include;../../../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>XSEC_HAVE_OPENSSL;_CRT_SECURE_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;_USRDLL;XSEC_BUILDING_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <WholeProgramOptimization>true</WholeProgramOptimization>
++      <WarningLevel>Level3</WarningLevel>
++      <ConformanceMode>true</ConformanceMode>
++    </ClCompile>
++    <Link>
++      <AdditionalDependencies>xerces-c_3.lib;crypt32.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <OutputFile>$(OutDir)xsec_2_0.dll</OutputFile>
++      <SubSystem>Windows</SubSystem>
++      <OptimizeReferences>true</OptimizeReferences>
++      <EnableCOMDATFolding>true</EnableCOMDATFolding>
++      <ImportLibrary>$(OutDir)xsec_2.lib</ImportLibrary>
++      <GenerateDebugInformation>true</GenerateDebugInformation>
++      <AdditionalLibraryDirectories>$(XERCESCROOT)\Build\Win64\VC15\Release;$(XERCESCROOT)\lib;$(OPENSSLROOT)\lib\VC;$(OPENSSLROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
++    </Link>
++  </ItemDefinitionGroup>
    <ItemGroup>
-@@ -822,4 +726,4 @@
+     <ClCompile Include="..\..\..\..\xsec\canon\XSECC14n20010315.cpp" />
+     <ClCompile Include="..\..\..\..\xsec\canon\XSECCanon.cpp" />
+@@ -686,13 +754,17 @@
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">true</ExcludedFromBuild>
++      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">true</ExcludedFromBuild>
++      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'">true</ExcludedFromBuild>
+     </ClInclude>
+     <ClInclude Include="..\..\..\..\xsec\utils\XSECSOAPRequestorSimple.hpp">
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Minimal|Win32'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|Win32'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Minimal|x64'">true</ExcludedFromBuild>
++      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Minimal|ARM64'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|x64'">true</ExcludedFromBuild>
++      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Minimal|ARM64'">true</ExcludedFromBuild>
+     </ClInclude>
+     <ClInclude Include="..\..\..\..\xsec\utils\XSECTXFMInputSource.hpp" />
+     <ClInclude Include="..\..\..\..\xsec\utils\XSECXPathNodeList.hpp" />
+@@ -822,4 +894,4 @@
    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
    <ImportGroup Label="ExtensionTargets">
    </ImportGroup>
