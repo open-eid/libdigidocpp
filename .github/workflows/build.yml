@@ -76,7 +76,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:36', 'fedora:37', 'fedora:38']
+        container: ['fedora:37', 'fedora:38']
     env:
       MAKEFLAGS: -j3
     steps:
@@ -105,7 +105,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:22.10', 'ubuntu:23.04']
+        container: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:23.04']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions

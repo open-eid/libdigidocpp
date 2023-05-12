@@ -75,7 +75,7 @@ namespace digidoc
           void calcDigestOnNode(Digest* calc, const std::string& ns,
               std::u16string_view tagName, std::string_view canonicalizationMethod = {}) const;
           void checkCertID(const xades::CertIDType &certID, const X509Cert &cert) const;
-          void checkDigest(const xades::DigestAlgAndValueType &digest, const std::vector<unsigned char> &data) const;
+          static void checkDigest(const xades::DigestAlgAndValueType &digest, const std::vector<unsigned char> &data) ;
 
           static const std::string ASIC_NAMESPACE;
           static const std::string XADES_NAMESPACE;
