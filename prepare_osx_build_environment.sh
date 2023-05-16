@@ -5,7 +5,7 @@ XERCES_DIR=xerces-c-3.2.4
 XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-1.1.1t
+OPENSSL_DIR=openssl-3.0.8
 LIBXML2_DIR=libxml2-2.10.3
 ANDROID_NDK=android-ndk-r25
 FREETYPE_DIR=freetype-2.10.1
@@ -51,6 +51,7 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp.android${ARCH}
   API=28
   export ANDROID_NDK_HOME
+  export ANDROID_NDK_ROOT=${ANDROID_NDK_HOME}
   export PATH=${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/darwin-x86_64/bin:$PATH
   export AR=llvm-ar
   export CC=${CROSS_COMPILE}${API}-clang
@@ -242,12 +243,11 @@ function openssl {
     fi
     rm -rf ${OPENSSL_DIR}
     tar xf ${OPENSSL_DIR}.tar.gz
-    cd ${OPENSSL_DIR}
-
+    pushd ${OPENSSL_DIR}
     case "${ARGS}" in
     *android*)
-        ./Configure android-${ARCH} -D__ANDROID_API__=${API} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-shared no-dso no-hw no-engine no-tests no-ui-console
-        make -s
+        ./Configure android-${ARCH} -D__ANDROID_API__=${API} --prefix=${TARGET_PATH} --openssldir=${TARGET_PATH}/ssl no-shared no-dso no-module no-engine no-tests no-ui-console
+        make -s > /dev/null
         sudo make install_sw
         ;;
     *)
@@ -256,19 +256,18 @@ function openssl {
             case "${ARCH}" in
             *x86_64*)
                 case "${ARGS}" in
-                *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128;;
-                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-                *) CC="" CFLAGS="" MACHINE=x86_64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
+                *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" ./Configure darwin64-x86_64 --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+                *) CC="" CFLAGS="" ./Configure darwin64-x86_64 --prefix=${TARGET_PATH} shared no-module no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;
             *arm64*)
                 case "${ARGS}" in
-                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" MACHINE=arm64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128;;
-                *) CC="" CFLAGS="" MACHINE=arm64 KERNEL_BITS=64 ./config --prefix=${TARGET_PATH} shared no-hw no-engine no-tests enable-ec_nistp_64_gcc_128
+                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" ./Configure darwin64-arm64 --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+                *) CC="" CFLAGS="" ./Configure darwin64-arm64 --prefix=${TARGET_PATH} shared no-module no-engine no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;
-            *) CC="" CFLAGS="" ./Configure ios-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-hw no-asm no-engine
             esac
             make -s > /dev/null
             if [[ ${ARCHS} == ${ARCH}* ]]; then
@@ -276,18 +275,18 @@ function openssl {
             else
                 make install_sw DESTDIR=${PWD}/${ARCH} > /dev/null
                 mkdir -p universal/${TARGET_PATH}/lib
-                cd ${ARCH}
+                pushd ${ARCH}
                 for i in $(find ./${TARGET_PATH}/lib -type f -depth 1); do
                     lipo -create /$i $i -output ../universal/$i
                 done
-                cd -
+                popd
                 sudo mv universal/${TARGET_PATH}/lib/* ${TARGET_PATH}/lib/
             fi
             make distclean
         done
         ;;
     esac
-    cd -
+    popd
 }
 
 function freetype {

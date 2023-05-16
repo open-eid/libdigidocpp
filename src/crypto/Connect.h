@@ -72,7 +72,7 @@ private:
 
     void addHeader(const std::string &key, const std::string &value);
     void sendProxyAuth();
-    std::string decompress(const std::string &encoding, const std::string &data) const;
+    static std::string decompress(const std::string &encoding, const std::string &data) ;
     void waitReadWrite(bool read) const;
 
     std::string baseurl, _method;

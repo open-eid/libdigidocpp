@@ -121,13 +121,19 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
         if(!ssl)
             THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
         SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
+#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
+        /* Make OpenSSL 3.0.0 behave like 1.1.1 */
+        auto options = SSL_CTX_get_options(ssl.get());
+        options |= SSL_OP_IGNORE_UNEXPECTED_EOF;
+        SSL_CTX_set_options(ssl.get(), options);
+#endif
         SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
         if(!certs.empty())
         {
             SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
             SSL_CTX_set_cert_verify_callback(ssl.get(), [](X509_STORE_CTX *store, void *data) -> int {
                 X509 *x509 = X509_STORE_CTX_get0_cert(store);
-                vector<X509Cert> *certs = (vector<X509Cert>*)data;
+                auto *certs = (vector<X509Cert>*)data;
                 return any_of(certs->cbegin(), certs->cend(), [x509](const X509Cert &cert) {
                     return cert == x509;
                 }) ? 1 : 0;
@@ -181,7 +187,7 @@ void Connect::addHeader(const string &key, const string &value)
     BIO_printf(d, "%s: %s\r\n", key.c_str(), value.c_str());
 }
 
-std::string Connect::decompress(const std::string &encoding, const std::string &data) const
+std::string Connect::decompress(const std::string &encoding, const std::string &data)
 {
     if(data.empty())
         return data;

@@ -80,9 +80,9 @@ X509CertStore::X509CertStore()
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #ifdef _WIN32
 #ifdef _WIN64
-    string path = util::File::dllPath("libcrypto-1_1-x64.dll");
+    string path = util::File::dllPath("libcrypto-3-x64.dll");
 #else
-    string path = util::File::dllPath("libcrypto-1_1.dll");
+    string path = util::File::dllPath("libcrypto-3.dll");
 #endif
     if(!path.empty())
         OSSL_PROVIDER_set_default_search_path(nullptr, path.c_str());
