@@ -27,7 +27,6 @@
 namespace digidoc
 {
 
-class Digest;
 class DataFilePrivate final: public DataFile
 {
 public:
@@ -39,7 +38,6 @@ public:
 	std::string mediaType() const final { return m_mediatype; }
 
 	std::vector<unsigned char> calcDigest(const std::string &method) const final;
-	void calcDigest(Digest *method) const;
 	void saveAs(std::ostream &os) const final;
 	void saveAs(const std::string& path) const final;
 

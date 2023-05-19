@@ -88,10 +88,10 @@ DataFile::~DataFile() = default;
 
 
 DataFilePrivate::DataFilePrivate(unique_ptr<istream> &&is, string filename, string mediatype, string id)
-    : m_is(move(is))
-    , m_id(move(id))
-    , m_filename(move(filename))
-    , m_mediatype(move(mediatype))
+    : m_is(std::move(is))
+    , m_id(std::move(id))
+    , m_filename(std::move(filename))
+    , m_mediatype(std::move(mediatype))
 {
     m_is->seekg(0, istream::end);
     istream::pos_type pos = m_is->tellg();
@@ -100,13 +100,7 @@ DataFilePrivate::DataFilePrivate(unique_ptr<istream> &&is, string filename, stri
 
 vector<unsigned char> DataFilePrivate::calcDigest(const string &method) const
 {
-    Digest calc(method);
-    calcDigest(&calc);
-    return calc.result();
-}
-
-void DataFilePrivate::calcDigest(Digest *digest) const
-{
+    Digest digest(method);
     array<unsigned char, 10240> buf{};
     m_is->clear();
     m_is->seekg(0);
@@ -114,8 +108,9 @@ void DataFilePrivate::calcDigest(Digest *digest) const
     {
         m_is->read((char*)buf.data(), streamsize(buf.size()));
         if(m_is->gcount() > 0)
-            digest->update(buf.data(), size_t(m_is->gcount()));
+            digest.update(buf.data(), size_t(m_is->gcount()));
     }
+    return digest.result();
 }
 
 void DataFilePrivate::saveAs(const string& path) const
