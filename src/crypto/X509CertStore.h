@@ -46,7 +46,7 @@ namespace digidoc
         void activate(const X509Cert &cert) const;
         std::vector<X509Cert> certs(const Type &type) const;
         X509Cert findIssuer(const X509Cert &cert, const Type &type) const;
-        X509Cert issuerFromAIA(const X509Cert &cert) const;
+        static X509Cert issuerFromAIA(const X509Cert &cert);
         static X509_STORE* createStore(const Type &type, const time_t *t = nullptr);
         bool verify(const X509Cert &cert, bool qscd) const;
 

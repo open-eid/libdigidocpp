@@ -87,15 +87,14 @@ X509CertStore::X509CertStore()
     if(!path.empty())
         OSSL_PROVIDER_set_default_search_path(nullptr, path.c_str());
 #endif
-    for(const string &prov: {"legacy", "default"})
+    for(const auto *prov: {"legacy", "default"})
     {
-        if(OSSL_PROVIDER *p = OSSL_PROVIDER_load(nullptr, prov.c_str()))
+        if(OSSL_PROVIDER *p = OSSL_PROVIDER_load(nullptr, prov))
             d->provs.push_back(p);
         else
-            WARN("Failed to load OpenSSL '%s' provider!", prov.c_str());
+            WARN("Failed to load OpenSSL '%s' provider!", prov);
     }
 #endif
-    OPENSSL_init_ssl(OPENSSL_INIT_SSL_DEFAULT, nullptr);
     d->update();
 }
 
@@ -108,7 +107,6 @@ X509CertStore::~X509CertStore()
     for(OSSL_PROVIDER *p: d->provs)
         OSSL_PROVIDER_unload(p);
 #endif
-    OPENSSL_cleanup();
 }
 
 void X509CertStore::activate(const X509Cert &cert) const
@@ -153,7 +151,7 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert, const Type &type) const
     return X509Cert();
 }
 
-X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert) const
+X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert)
 {
     SCOPE(AUTHORITY_INFO_ACCESS, aia, X509_get_ext_d2i(cert.handle(), NID_info_access, nullptr, nullptr));
     if(!aia)
@@ -161,8 +159,8 @@ X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert) const
     string url;
     for(int i = 0; i < sk_ACCESS_DESCRIPTION_num(aia.get()); ++i)
     {
-        ACCESS_DESCRIPTION *ad = sk_ACCESS_DESCRIPTION_value(aia.get(), i);
-        if(ad->location->type == GEN_URI &&
+        if(ACCESS_DESCRIPTION *ad = sk_ACCESS_DESCRIPTION_value(aia.get(), i);
+            ad->location->type == GEN_URI &&
             OBJ_obj2nid(ad->method) == NID_ad_ca_issuers)
             url.assign((const char*)ad->location->d.uniformResourceIdentifier->data, ad->location->d.uniformResourceIdentifier->length);
     }
@@ -224,7 +222,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
                 return false;
             }))
             continue;
-        X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&s.validity[0]));
+        X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&s.validity.front()));
         X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
         if(!(X509_VERIFY_PARAM_get_flags(param) & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
             return 1;
