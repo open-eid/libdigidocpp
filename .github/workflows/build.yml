@@ -76,7 +76,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:36', 'fedora:37']
+        container: ['fedora:36', 'fedora:37', 'fedora:38']
     env:
       MAKEFLAGS: -j3
     steps:
@@ -105,14 +105,14 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:22.10']
+        container: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:22.10', 'ubuntu:23.04']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions
       DEBEMAIL: github-actions@github.com
     steps:
     - name: Install dependencies
-      run: apt update -qq && apt install --no-install-recommends -y git lsb-release fakeroot build-essential devscripts cdbs cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-distutils libboost-test-dev lintian
+      run: apt update -qq && apt install --no-install-recommends -y git lsb-release fakeroot build-essential devscripts cdbs debhelper cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-distutils libboost-test-dev lintian
     - name: Checkout
       uses: actions/checkout@v3
       with:
