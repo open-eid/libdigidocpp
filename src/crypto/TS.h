@@ -39,7 +39,7 @@ public:
     std::vector<unsigned char> messageImprint() const;
     std::string serial() const;
     tm time() const;
-    void verify(const Digest &digest);
+    void verify(const std::vector<unsigned char> &digest);
 
     operator std::vector<unsigned char>() const;
 

@@ -21,7 +21,6 @@
 
 #include "ASiC_S.h"
 #include "DataFile_p.h"
-#include "crypto/Digest.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
@@ -94,10 +93,8 @@ void SignatureTST::validate() const
     try
     {
         const string digestMethod = timestampToken->digestMethod();
-        Digest digest(digestMethod);
-        auto dataFile = static_cast<const DataFilePrivate*>(asicSDoc->dataFiles().front());
-        dataFile->calcDigest(&digest);
-        timestampToken->verify(digest);
+        const auto *dataFile = static_cast<const DataFilePrivate*>(asicSDoc->dataFiles().front());
+        timestampToken->verify(dataFile->calcDigest(digestMethod));
 
         if(digestMethod == URI_SHA1 &&
             !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))

@@ -131,6 +131,7 @@ TS::TS(const unsigned char *data, size_t size)
 #ifndef OPENSSL_NO_CMS
     if(d)
         return;
+    OpenSSLException(EXCEPTION_PARAMS("ignore")); //Clear errors
     /**
      * Handle CMS based TimeStamp tokens
      * https://rt.openssl.org/Ticket/Display.html?id=4519
@@ -142,6 +143,8 @@ TS::TS(const unsigned char *data, size_t size)
     cms.reset(d2i_CMS_bio(bio.get(), nullptr), CMS_ContentInfo_free);
     if(!cms || OBJ_obj2nid(CMS_get0_eContentType(cms.get())) != NID_id_smime_ct_TSTInfo)
         cms.reset();
+
+    OpenSSLException(EXCEPTION_PARAMS("ignore")); //Clear errors
 #endif
 }
 
@@ -191,18 +194,16 @@ string TS::digestMethod() const
 
 vector<unsigned char> TS::digestValue() const
 {
-    auto info = tstInfo();
-    if(!info)
-        return {};
-    return i2d(TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get())), i2d_ASN1_OCTET_STRING);
+    if(auto info = tstInfo())
+        return i2d(TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get())), i2d_ASN1_OCTET_STRING);
+    return {};
 }
 
 vector<unsigned char> TS::messageImprint() const
 {
-    auto info = tstInfo();
-    if(!info)
-        return {};
-    return i2d(TS_TST_INFO_get_msg_imprint(info.get()), i2d_TS_MSG_IMPRINT);
+    if(auto info = tstInfo())
+        return i2d(TS_TST_INFO_get_msg_imprint(info.get()), i2d_TS_MSG_IMPRINT);
+    return {};
 }
 
 string TS::serial() const
@@ -222,18 +223,14 @@ string TS::serial() const
 
 tm TS::time() const
 {
-    auto info = tstInfo();
-    if(!info)
-        return {};
     tm tm {};
-    ASN1_TIME_to_tm(TS_TST_INFO_get_time(info.get()), &tm);
+    if(auto info = tstInfo())
+        ASN1_TIME_to_tm(TS_TST_INFO_get_time(info.get()), &tm);
     return tm;
 }
 
-void TS::verify(const Digest &digest)
+void TS::verify(const vector<unsigned char> &digest)
 {
-    vector<unsigned char> data = digest.result();
-
     tm tm = time();
     time_t t = util::date::mkgmtime(tm);
     auto store = SCOPE_PTR(X509_STORE, X509CertStore::createStore(X509CertStore::TSA, &t));
@@ -249,7 +246,7 @@ void TS::verify(const Digest &digest)
         auto ctx = SCOPE_PTR(TS_VERIFY_CTX, TS_VERIFY_CTX_new());
         TS_VERIFY_CTX_set_flags(ctx.get(), TS_VFY_IMPRINT|TS_VFY_VERSION|TS_VFY_SIGNATURE);
         TS_VERIFY_CTX_set_imprint(ctx.get(),
-            (unsigned char*)OPENSSL_memdup(data.data(), data.size()), long(data.size()));
+            (unsigned char*)OPENSSL_memdup(digest.data(), digest.size()), long(digest.size()));
         TS_VERIFY_CTX_set_store(ctx.get(), store.release());
         if(TS_RESP_verify_token(ctx.get(), d.get()) != 1)
         {
@@ -279,8 +276,8 @@ void TS::verify(const Digest &digest)
 
         auto info = SCOPE_PTR(TS_TST_INFO, d2i_TS_TST_INFO_bio(out.get(), nullptr));
         ASN1_OCTET_STRING *msg = TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get()));
-        if(data.size() != size_t(ASN1_STRING_length(msg)) ||
-            memcmp(data.data(), ASN1_STRING_get0_data(msg), data.size()) != 0)
+        if(digest.size() != size_t(ASN1_STRING_length(msg)) ||
+            memcmp(digest.data(), ASN1_STRING_get0_data(msg), digest.size()) != 0)
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
     }
 #endif

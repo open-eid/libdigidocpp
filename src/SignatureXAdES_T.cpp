@@ -237,7 +237,7 @@ TS SignatureXAdES_T::verifyTS(const xades::XAdESTimeStampType &timestamp, digido
     Digest calc(tsa.digestMethod());
     calcDigest(&calc, timestamp.canonicalizationMethod() ?
         string_view(timestamp.canonicalizationMethod()->algorithm()) : string_view());
-    tsa.verify(calc);
+    tsa.verify(calc.result());
 
     if(tsa.digestMethod() == URI_SHA1 &&
         !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
