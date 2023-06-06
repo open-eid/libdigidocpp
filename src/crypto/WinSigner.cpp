@@ -40,7 +40,7 @@ using namespace std;
 
 extern "C" {
 
-typedef BOOL (WINAPI * PFNCCERTDISPLAYPROC)(
+using PFNCCERTDISPLAYPROC = BOOL (WINAPI *)(
   __in  PCCERT_CONTEXT pCertContext,
   __in  HWND hWndSelCertDlg,
   __in  void *pvCallbackData
@@ -71,32 +71,27 @@ PCCERT_CONTEXT WINAPI CryptUIDlgSelectCertificateW(
 
 }  // extern "C"
 
-namespace digidoc
-{
-
 class WinSigner::Private
 {
 public:
     static BOOL WINAPI CertFilter(PCCERT_CONTEXT cert_context,
-        BOOL *is_initial_selected_cert, void *callback_data);
+        PBOOL is_initial_selected_cert, PVOID callback_data);
 
     X509Cert cert;
-    HCRYPTPROV_OR_NCRYPT_KEY_HANDLE key = 0;
-    DWORD spec = 0;
-    BOOL freeKey = FALSE;
+    HCRYPTPROV_OR_NCRYPT_KEY_HANDLE key {};
+    DWORD spec {};
+    BOOL freeKey {};
     string pin;
     vector<unsigned char> thumbprint;
-    bool selectFirst = false;
+    bool selectFirst {};
 };
-
-}
 
 BOOL WinSigner::Private::CertFilter(PCCERT_CONTEXT cert_context, BOOL * /* is_initial_selected_cert */, void * /* callback_data */)
 {
     DWORD flags = CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG|CRYPT_ACQUIRE_COMPARE_KEY_FLAG|CRYPT_ACQUIRE_SILENT_FLAG;
-    HCRYPTPROV_OR_NCRYPT_KEY_HANDLE key = 0;
-    DWORD spec = 0;
-    BOOL freeKey = FALSE;
+    HCRYPTPROV_OR_NCRYPT_KEY_HANDLE key {};
+    DWORD spec {};
+    BOOL freeKey {};
     CryptAcquireCertificatePrivateKey(cert_context, flags, nullptr, &key, &spec, &freeKey);
     if(!key)
         return FALSE;
@@ -158,14 +153,14 @@ WinSigner::~WinSigner()
 
 X509Cert WinSigner::cert() const
 {
-    if(!!d->cert)
+    if(d->cert)
         return d->cert;
 
     HCERTSTORE store = CertOpenSystemStore(0, L"MY");
     if(!store)
         return d->cert;
 
-    PCCERT_CONTEXT cert_context = nullptr;
+    PCCERT_CONTEXT cert_context {};
     if(!d->thumbprint.empty())
     {
         CRYPT_HASH_BLOB hashBlob { DWORD(d->thumbprint.size()), PBYTE(d->thumbprint.data()) };
@@ -173,7 +168,7 @@ X509Cert WinSigner::cert() const
     }
     else if(d->selectFirst)
     {
-        PCCERT_CONTEXT find = nullptr;
+        PCCERT_CONTEXT find {};
         while((find = CertFindCertificateInStore(store, X509_ASN_ENCODING|PKCS_7_ASN_ENCODING, 0, CERT_FIND_ANY, nullptr, find)))
         {
             if(d->CertFilter(find, nullptr, nullptr))
@@ -205,15 +200,17 @@ X509Cert WinSigner::cert() const
 
 string WinSigner::method() const
 {
-    if(!d->cert || !X509Crypto(d->cert).isRSAKey())
-        return Signer::method();
+    string parent = Signer::method();
+    if(!d->cert || !X509Crypto(d->cert).isRSAKey() ||
+        parent != CONF(signatureDigestUri))
+        return parent;
     BCRYPT_PSS_PADDING_INFO rsaPSS { NCRYPT_SHA256_ALGORITHM, 32 };
-    DWORD size = 0;
+    DWORD size {};
     Digest dgst;
     vector<unsigned char> digest = dgst.result({ 0 });
     SECURITY_STATUS err = NCryptSignHash(d->key, &rsaPSS, PBYTE(digest.data()), DWORD(digest.size()),
         nullptr, 0, &size, BCRYPT_PAD_PSS);
-    return FAILED(err) ? Signer::method() : Digest::toRsaPssUri(Signer::method());
+    return FAILED(err) ? parent : Digest::toRsaPssUri(std::move(parent));
 }
 
 /**
@@ -245,11 +242,11 @@ void WinSigner::setThumbprint(const vector<unsigned char> &thumbprint)
 
 vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigned char> &digest) const
 {
-    DEBUG("sign(method = %s, digest = length=%d)", method.c_str(), digest.size());
+    DEBUG("sign(method = %s, digest = length=%zu)", method.c_str(), digest.size());
 
-    BCRYPT_PKCS1_PADDING_INFO rsaPKCS1 { nullptr };
-    BCRYPT_PSS_PADDING_INFO rsaPSS { nullptr, 0 };
-    ALG_ID alg = 0;
+    BCRYPT_PKCS1_PADDING_INFO rsaPKCS1 {};
+    BCRYPT_PSS_PADDING_INFO rsaPSS {};
+    ALG_ID alg {};
     if(method == URI_RSA_SHA1) { rsaPKCS1.pszAlgId = NCRYPT_SHA1_ALGORITHM; alg = CALG_SHA1;}
     else if(method == URI_RSA_SHA224) { rsaPKCS1.pszAlgId = L"SHA224";}
     else if(method == URI_RSA_SHA256) { rsaPKCS1.pszAlgId = NCRYPT_SHA256_ALGORITHM; alg = CALG_SHA_256;}
@@ -265,7 +262,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     else if(method == URI_ECDSA_SHA512) {}
     else THROW("Unsupported signature method");
 
-    SECURITY_STATUS err = 0;
+    SECURITY_STATUS err {};
     vector<unsigned char> signature;
     switch(d->spec)
     {
@@ -279,8 +276,8 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
                 break;
         }
 
-        DWORD padding = 0;
-        VOID *paddingInfo = nullptr;
+        DWORD padding {};
+        PVOID paddingInfo {};
         if(rsaPSS.pszAlgId)
         {
             padding = BCRYPT_PAD_PSS;
@@ -291,7 +288,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
             padding = BCRYPT_PAD_PKCS1;
             paddingInfo = &rsaPKCS1;
         }
-        DWORD size = 0;
+        DWORD size {};
         err = NCryptSignHash(d->key, paddingInfo, PBYTE(digest.data()), DWORD(digest.size()),
             nullptr, 0, &size, padding);
         if(FAILED(err))
@@ -314,7 +311,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
             break;
         }
 
-        HCRYPTHASH hash = 0;
+        HCRYPTHASH hash {};
         if(!CryptCreateHash(d->key, alg, 0, 0, &hash))
             THROW("Failed to sign");
 
@@ -323,7 +320,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
             CryptDestroyHash(hash);
             THROW("Failed to sign");
         }
-        DWORD size = 0;
+        DWORD size {};
         if(!CryptSignHashW(hash, d->spec, nullptr, 0, nullptr, &size)) {
             err = LONG(GetLastError());
             CryptDestroyHash(hash);
@@ -355,7 +352,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
     default:
         ostringstream s;
         s << "Failed to login to token: " << err;
-        Exception e(EXCEPTION_PARAMS(s.str().c_str()));
+        Exception e(EXCEPTION_PARAMS("%s", s.str().c_str()));
         e.setCode(Exception::PINFailed);
         throw e;
     }

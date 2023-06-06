@@ -22,13 +22,14 @@
 #include "ASiC_E.h"
 #include "Conf.h"
 #include "crypto/Digest.h"
-#include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509Cert.h"
+#include "util/log.h"
 
 #include <openssl/x509.h>
 
 #include <algorithm>
 #include <map>
+#include <optional>
 
 using namespace digidoc;
 using namespace std;
@@ -36,7 +37,7 @@ using namespace std;
 class Signer::Private
 {
 public:
-    string method = CONF(signatureDigestUri);
+    optional<string> method;
     string profile = "time-stamp";
     bool ENProfile = false;
     string city, streetAddress, stateOrProvince, postalCode, countryName;
@@ -210,7 +211,10 @@ vector<string> Signer::signerRoles() const
  */
 void Signer::setMethod(const string &method)
 {
-    d->method = method;
+    if(method.empty())
+        d->method.reset();
+    else
+        d->method = method;
 }
 
 /**
@@ -226,10 +230,9 @@ void Signer::setENProfile(bool enable)
  */
 string Signer::method() const
 {
-#ifndef OPENSSL_NO_ECDSA
     X509Cert c = cert();
     if(EVP_PKEY *key = X509_get0_pubkey(c.handle());
-        key && EVP_PKEY_base_id(key) == EVP_PKEY_EC)
+        key && EVP_PKEY_base_id(key) == EVP_PKEY_EC && !d->method)
     {
         switch(EVP_PKEY_bits(key)) {
         case 224: return URI_SHA224;
@@ -238,8 +241,7 @@ string Signer::method() const
         default: return URI_SHA512;
         }
     }
-#endif
-    return d->method;
+    return d->method.value_or(CONF(signatureDigestUri));
 }
 
 /**

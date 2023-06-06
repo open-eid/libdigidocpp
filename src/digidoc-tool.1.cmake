@@ -61,9 +61,11 @@ Command sign:
     --pin=         - default asks pin from prompt
     --sha(224,256,384,512) - set default digest method (default sha256)
     --sigsha(224,256,384,512) - set default digest method (default sha256)
-    --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256)
-    --tsurl         - option to change TS URL (default http://dd-at.ria.ee/tsa)
-    --dontValidate  - Don't validate container on signature creation
+    --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256, same as --sigsha* with --rsapss)
+    --rsapkcs15    - Use RSA PKCS1.5 padding
+    --rsapss       - Use RSA PSS padding
+    --tsurl        - option to change TS URL (default http://demo.sk.ee/tsa)
+    --dontValidate - Don't validate container on signature creation
 
 All commands:
     --nocolor       - Disable terminal colors

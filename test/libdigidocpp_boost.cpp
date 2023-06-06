@@ -379,15 +379,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_NO_THROW(d->save());
         BOOST_CHECK_NO_THROW(s->validate());
 
+        // RSA PSS tests
         d = Container::createPtr(Doc::EXT + ".tmp");
-        signer1->setMethod(URI_RSA_PSS_SHA256);
         BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
-        BOOST_CHECK_NO_THROW(d->sign(signer1.get()));
-        s = d->signatures().back();
+        signer1->setMethod(URI_RSA_PSS_SHA256);
+        BOOST_CHECK_NO_THROW(s = d->sign(signer1.get()));
         BOOST_CHECK_NO_THROW(s->validate());
         BOOST_CHECK_EQUAL(s->signatureMethod(), signer1->method());
         auto signer4 = make_unique<PKCS12Signer>("signerEC384.p12", "signerEC");
-        signer4->setProfile("BES");
+        signer4->setProfile("BES"); // Not signed with same Issuer
         d = Container::createPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
         Signature *s4 = nullptr;
