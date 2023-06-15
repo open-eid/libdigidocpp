@@ -68,10 +68,8 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     OPENSSL_free(_host);
     OPENSSL_free(_port);
     OPENSSL_free(_path);
-    size_t pos = url.find("://");
-    if(pos != string::npos) {
-        pos = url.find('/', pos + 3);
-        if(pos != string::npos)
+    if(size_t pos = url.find("://"); pos != string::npos) {
+        if(pos = url.find('/', pos + 3); pos != string::npos)
             baseurl = url.substr(0, pos);
     }
 
@@ -135,15 +133,14 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
                 X509 *x509 = X509_STORE_CTX_get0_cert(store);
                 auto *certs = (vector<X509Cert>*)data;
                 return any_of(certs->cbegin(), certs->cend(), [x509](const X509Cert &cert) {
-                    return cert == x509;
+                    return cert && cert == x509;
                 }) ? 1 : 0;
             }, const_cast<vector<X509Cert>*>(&certs));
         }
         BIO *sbio = BIO_new_ssl(ssl.get(), 1);
         if(!sbio)
             THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
-        SSL *ssl = nullptr;
-        if(BIO_get_ssl(sbio, &ssl) == 1 && ssl)
+        if(SSL *ssl {}; BIO_get_ssl(sbio, &ssl) == 1 && ssl)
         {
             SSL_set1_host(ssl, host.c_str());
             SSL_set_tlsext_host_name(ssl, host.c_str());
@@ -343,7 +340,7 @@ void Connect::waitReadWrite(bool read) const
     fd_set confds;
     FD_ZERO(&confds);
     FD_SET(fd, &confds);
-    struct timeval tv = { _timeout, 0 };
+    timeval tv { _timeout, 0 };
     if(select(fd + 1, read ? &confds : nullptr, read ? nullptr : &confds, nullptr, &tv) == -1)
         DEBUG("select failed");
 }
