@@ -46,13 +46,6 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 DIGIDOCPP_WARNING_POP
 
 #include <regex>
-#if _MSC_VER >= 1900 || (__cplusplus >= 201103L &&                \
-    (!defined(__GLIBCXX__) || (__cplusplus >= 201402L) || \
-        (defined(_GLIBCXX_REGEX_DFS_QUANTIFIERS_LIMIT) || \
-         defined(_GLIBCXX_REGEX_STATE_LIMIT)           || \
-         (defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE > 4))))
-#define HAVE_WORKING_REGEX
-#endif
 
 using namespace digidoc;
 using namespace digidoc::asic;
@@ -145,7 +138,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
 
     // Signature (root)
     asicsignature = make_unique<XAdESSignaturesType>();
-    asicsignature->signature().push_back(make_unique<SignatureType>(move(signedInfo), move(signatureValue)));
+    asicsignature->signature().push_back(make_unique<SignatureType>(std::move(signedInfo), std::move(signatureValue)));
     signature = &asicsignature->signature().front();
     signature->id(nr);
 
@@ -157,11 +150,11 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     if(signer->profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos ||
        signer->profile().find(ASiC_E::EPES_PROFILE) != string::npos)
     {
-        map<string,Policy>::const_iterator p = policylist.find(POLICY_BDOC_2_1_OID);
+        auto p = policylist.cbegin();
         auto identifierid = make_unique<IdentifierType>(p->first);
         identifierid->qualifier(QualifierType::OIDAsURN);
 
-        auto identifier = make_unique<ObjectIdentifierType>(move(identifierid));
+        auto identifier = make_unique<ObjectIdentifierType>(std::move(identifierid));
         identifier->description(p->second.DESCRIPTION.data());
 
         string digestUri = Conf::instance()->digestUri();
@@ -172,29 +165,29 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
         else if(Conf::instance()->digestUri() == URI_SHA512) data = &p->second.SHA512;
         auto policyDigest = make_unique<DigestAlgAndValueType>(make_unique<DigestMethodType>(digestUri), toBase64(*data));
 
-        auto policyId = make_unique<SignaturePolicyIdType>(move(identifier), move(policyDigest));
+        auto policyId = make_unique<SignaturePolicyIdType>(std::move(identifier), std::move(policyDigest));
 
         auto uri = make_unique<SigPolicyQualifiersListType::SigPolicyQualifierType>();
         uri->sPURI(p->second.URI.data());
 
         auto qualifiers = make_unique<SigPolicyQualifiersListType>();
-        qualifiers->sigPolicyQualifier().push_back(move(uri));
-        policyId->sigPolicyQualifiers(move(qualifiers));
+        qualifiers->sigPolicyQualifier().push_back(std::move(uri));
+        policyId->sigPolicyQualifiers(std::move(qualifiers));
 
         auto policyidentifier = make_unique<SignaturePolicyIdentifierType>();
-        policyidentifier->signaturePolicyId(move(policyId));
-        signedProperties->signedSignatureProperties()->signaturePolicyIdentifier(move(policyidentifier));
+        policyidentifier->signaturePolicyId(std::move(policyId));
+        signedProperties->signedSignatureProperties()->signaturePolicyIdentifier(std::move(policyidentifier));
     }
 
     // Signature->Object->QualifyingProperties
     auto qualifyingProperties = make_unique<QualifyingPropertiesType>("#" + nr);
-    qualifyingProperties->signedProperties(move(signedProperties));
+    qualifyingProperties->signedProperties(std::move(signedProperties));
 
     // Signature->Object
     auto object = make_unique<ObjectType>();
-    object->qualifyingProperties().push_back(move(qualifyingProperties));
+    object->qualifyingProperties().push_back(std::move(qualifyingProperties));
 
-    signature->object().push_back(move(object));
+    signature->object().push_back(std::move(object));
 
     //Fill XML-DSIG/XAdES properties
     X509Cert c = signer->cert();
@@ -247,7 +240,7 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
         sigdata_ = is.str();
 
         Properties properties;
-        const auto xadesShema = relaxSchemaValidation ? "/XAdES01903v132-201601-relaxed.xsd" : "/XAdES01903v132-201601.xsd";
+        const auto *xadesShema = relaxSchemaValidation ? "/XAdES01903v132-201601-relaxed.xsd" : "/XAdES01903v132-201601.xsd";
         properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + xadesShema));
         properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v141-201601.xsd"));
         properties.schema_location(URI_ID_DSIG, File::fullPathUrl(Conf::instance()->xsdPath() + "/xmldsig-core-schema.xsd"));
@@ -602,15 +595,13 @@ void SignatureXAdES_B::validate(const string &policy) const
                 if(i->second != file->mediaType())
                     EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
                         file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
-#ifdef HAVE_WORKING_REGEX
-                static regex reg(R"(([\w])*/([\w\-\+\.])*)");
+                static const regex reg(R"(([\w])*/([\w\-\+\.])*)");
                 if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
                 {
                     Exception w(EXCEPTION_PARAMS("'%s' is not conformant mime-type string!", file->mediaType().c_str()));
                     w.setCode(Exception::MimeTypeWarning);
                     exception.addCause(w);
                 }
-#endif
                 signatureref.erase(i);
             }
             else
@@ -657,7 +648,7 @@ void SignatureXAdES_B::checkCertID(const CertIDType &certID, const X509Cert &cer
     THROW("Signing certificate issuer information does not match");
 }
 
-void SignatureXAdES_B::checkDigest(const DigestAlgAndValueType &digest, const vector<unsigned char> &data) const
+void SignatureXAdES_B::checkDigest(const DigestAlgAndValueType &digest, const vector<unsigned char> &data)
 {
     vector<unsigned char> calcDigest = Digest(digest.digestMethod().algorithm()).result(data);
     if(digest.digestValue().size() == calcDigest.size() &&
@@ -754,7 +745,7 @@ void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime
 
     auto dataObject = make_unique<DataObjectFormatType>(uri);
     dataObject->mimeType(mime);
-    spOpt->signedDataObjectProperties()->dataObjectFormat().push_back(move(dataObject));
+    spOpt->signedDataObjectProperties()->dataObjectFormat().push_back(std::move(dataObject));
 }
 
 /**
@@ -779,7 +770,7 @@ string SignatureXAdES_B::addReference(const string& uri, const string& digestUri
 
     SignedInfoType::ReferenceSequence &seq = signature->signedInfo().reference();
     reference->id(id() + Log::format("-RefId%lu", (unsigned long)seq.size()));
-    seq.push_back(move(reference));
+    seq.push_back(std::move(reference));
 
     return seq.back().id().get();
 }
@@ -797,8 +788,8 @@ void SignatureXAdES_B::setKeyInfo(const X509Cert& x509)
     x509Data->x509Certificate().push_back(toBase64(x509));
 
     auto keyInfo = make_unique<KeyInfoType>();
-    keyInfo->x509Data().push_back(move(x509Data));
-    signature->keyInfo(move(keyInfo));
+    keyInfo->x509Data().push_back(std::move(x509Data));
+    signature->keyInfo(std::move(keyInfo));
 }
 
 /**
@@ -815,7 +806,7 @@ void SignatureXAdES_B::setSigningCertificate(const X509Cert& x509)
     signingCertificate->cert().push_back(make_unique<CertIDType>(
         DigestAlgAndValueType(make_unique<DigestMethodType>(digest.uri()), toBase64(digest.result(x509))),
         X509IssuerSerialType(x509.issuerName(), x509.serial())));
-    getSignedSignatureProperties().signingCertificate(move(signingCertificate));
+    getSignedSignatureProperties().signingCertificate(std::move(signingCertificate));
 }
 
 /**
@@ -831,7 +822,7 @@ void SignatureXAdES_B::setSigningCertificateV2(const X509Cert& x509)
     auto signingCertificate = make_unique<CertIDListV2Type>();
     signingCertificate->cert().push_back(make_unique<CertIDTypeV2>(
         make_unique<DigestAlgAndValueType>(make_unique<DigestMethodType>(digest.uri()), toBase64(digest.result(x509)))));
-    getSignedSignatureProperties().signingCertificateV2(move(signingCertificate));
+    getSignedSignatureProperties().signingCertificateV2(std::move(signingCertificate));
 }
 
 /**
@@ -856,7 +847,7 @@ void SignatureXAdES_B::setSignatureProductionPlace(const string &city,
     if(!countryName.empty())
         signatureProductionPlace->countryName(countryName);
 
-    getSignedSignatureProperties().signatureProductionPlace(move(signatureProductionPlace));
+    getSignedSignatureProperties().signatureProductionPlace(std::move(signatureProductionPlace));
 }
 
 /**
@@ -883,7 +874,7 @@ void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const s
     if(!countryName.empty())
         signatureProductionPlace->countryName(countryName);
 
-    getSignedSignatureProperties().signatureProductionPlaceV2(move(signatureProductionPlace));
+    getSignedSignatureProperties().signatureProductionPlaceV2(std::move(signatureProductionPlace));
 }
 
 template<class T>
@@ -895,7 +886,7 @@ auto SignatureXAdES_B::signerRoles(const vector<string> &roles)
         claimedRoles->claimedRole().push_back(role);
 
     auto signerRole = make_unique<T>();
-    signerRole->claimedRoles(move(claimedRoles));
+    signerRole->claimedRoles(std::move(claimedRoles));
     return signerRole;
 }
 

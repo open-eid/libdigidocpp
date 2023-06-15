@@ -298,28 +298,23 @@ void File::createDirectory(string path)
 {
     if(path.empty())
         THROW("Can not create directory with no name.");
-
     if(path.back() == '/' || path.back() == '\\')
         path.pop_back();
-
     f_string _path = encodeName(path);
-    f_statbuf fileInfo;
-    if(f_stat(_path.c_str(), &fileInfo) == 0 && (fileInfo.st_mode & S_IFMT) == S_IFDIR)
-        return;
-    createDirectory(directory(path));
-
 #ifdef _WIN32
     int result = _wmkdir(_path.c_str());
-    if ( result )
-        DEBUG("Creating directory '%s' failed with errno = %d", path.c_str(), errno);
-    else
-        DEBUG("Created directory '%s'", path.c_str());
 #else
     int result = mkdir(_path.c_str(), S_IRWXU);
-    DEBUG("Created directory '%s' with result = %d", path.c_str(), result);
 #endif
-    if(result)
-        THROW("Failed to create directory '%s'", path.c_str());
+    if(result == 0 || errno == EEXIST)
+    {
+        DEBUG("Created directory or direcotry exists '%s'", path.c_str());
+        return;
+    }
+    if(errno != ENOENT)
+        THROW("Failed to create directory '%s', errno = %d", path.c_str(), errno);
+    createDirectory(directory(path));
+    createDirectory(std::move(path));
 }
 
 string File::digidocppPath()
