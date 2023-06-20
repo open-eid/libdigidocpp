@@ -19,12 +19,16 @@
 
 #include "Signer.h"
 
+#include "ASiC_E.h"
 #include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509Cert.h"
 
 #include <openssl/x509.h>
+
+#include <algorithm>
+#include <map>
 
 using namespace digidoc;
 using namespace std;
@@ -153,14 +157,25 @@ string Signer::countryName() const
 /**
  * Set signing profile
  *
- * - time-mark
  * - time-stamp
- * - time-mark-archive
  * - time-stamp-archive
  */
 void Signer::setProfile(const string &profile)
 {
-    d->profile = profile;
+    static const map<string_view,string_view> profiles {
+        {{}, ASiC_E::ASIC_TS_PROFILE},
+        {"BES", "BES"},
+        {"EPES", "EPES"},
+        {"TS", ASiC_E::ASIC_TS_PROFILE},
+        {"TSA", ASiC_E::ASIC_TSA_PROFILE},
+        {ASiC_E::ASIC_TS_PROFILE, ASiC_E::ASIC_TS_PROFILE},
+        {ASiC_E::ASIC_TSA_PROFILE, ASiC_E::ASIC_TSA_PROFILE},
+    };
+    if(auto it = std::find_if(profiles.cbegin(), profiles.cend(), [&profile](const auto &elem) { return elem.first == profile; });
+        it != profiles.cend())
+        d->profile = it->second;
+    else
+        THROW("Unsupported profile: %s", profile.c_str());
 }
 
 /**

@@ -48,11 +48,6 @@ public:
         auto pos = OCSPUrls.value().find(issuer);
         return pos == OCSPUrls.value().cend() ? std::string() : pos->second;
     }
-    std::string PKCS12Cert() const final
-    {
-        return cache.empty() ? digidoc::XmlConfCurrent::PKCS12Cert() :
-            cache + "/" + digidoc::util::File::fileName(digidoc::XmlConfCurrent::PKCS12Cert());
-    }
     std::set<std::string> OCSPTMProfiles() const final { return TMProfiles.value_or(digidoc::XmlConfCurrent::OCSPTMProfiles()); }
     std::vector<X509Cert> TSCerts() const final { return tsCerts.value_or(digidoc::XmlConfCurrent::TSCerts()); }
     std::string TSLCache() const final { return cache.empty() ? digidoc::XmlConfCurrent::TSLCache() : cache; }

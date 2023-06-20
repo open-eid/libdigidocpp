@@ -36,12 +36,10 @@ namespace digidoc
     class ASiC_E final : public ASiContainer
     {
       public:
-          static const std::string BES_PROFILE;
-          static const std::string EPES_PROFILE;
-          static const std::string ASIC_TM_PROFILE;
-          static const std::string ASIC_TS_PROFILE;
-          static const std::string ASIC_TMA_PROFILE;
-          static const std::string ASIC_TSA_PROFILE;
+          static const std::string_view ASIC_TM_PROFILE;
+          static const std::string_view ASIC_TS_PROFILE;
+          static const std::string_view ASIC_TMA_PROFILE;
+          static const std::string_view ASIC_TSA_PROFILE;
           static const std::string MANIFEST_NAMESPACE;
 
           ~ASiC_E() final;

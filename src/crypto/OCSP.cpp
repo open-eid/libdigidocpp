@@ -44,7 +44,7 @@ using namespace std;
 /**
  * Initialize OCSP certificate validator.
  */
-OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned char> &nonce, const string &userAgent)
+OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer)
 {
     if(!cert)
         THROW("Can not check X.509 certificate, certificate is NULL pointer.");
@@ -68,10 +68,22 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const vector<unsigned c
     }
 
     OCSP_CERTID *certId = OCSP_cert_to_id(nullptr, cert.handle(), issuer.handle());
-    SCOPE(OCSP_REQUEST, req, createRequest(certId, nonce,
-        !Conf::instance()->PKCS12Disable() && url.find("ocsp.sk.ee") != string::npos));
+    SCOPE(OCSP_REQUEST, req, OCSP_REQUEST_new());
+    if(!req)
+        THROW_OPENSSLEXCEPTION("Failed to create new OCSP request, out of memory?");
 
-    Connect::Result result = Connect(url, "POST", 0, userAgent).exec({
+    if(!OCSP_request_add0_id(req.get(), certId))
+        THROW_OPENSSLEXCEPTION("Failed to add certificate ID to OCSP request.");
+
+    SCOPE(ASN1_OCTET_STRING, st, ASN1_OCTET_STRING_new());
+    ASN1_OCTET_STRING_set(st.get(), nullptr, 20);
+    RAND_bytes(st->data, st->length);
+
+    SCOPE(X509_EXTENSION, ex, X509_EXTENSION_create_by_NID(nullptr, NID_id_pkix_OCSP_Nonce, 0, st.get()));
+    if(!OCSP_REQUEST_add_ext(req.get(), ex.get(), 0))
+        THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
+
+    Connect::Result result = Connect(url, "POST").exec({
         {"Content-Type", "application/ocsp-request"},
         {"Accept", "application/ocsp-response"},
         {"Connection", "Close"},
@@ -146,54 +158,6 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
     return false;
 }
 
-/**
- * Creates OCSP request to check the certificate <code>cert</code> validity.
- *
- * @param certId OCSP_CERTID which validity will be checked.
- * @param nonce NONCE field value in OCSP request.
- * @return returns created OCSP request.
- */
-OCSP_REQUEST* OCSP::createRequest(OCSP_CERTID *certId, const vector<unsigned char> &nonce, bool signRequest)
-{
-    SCOPE(OCSP_REQUEST, req, OCSP_REQUEST_new());
-    if(!req)
-        THROW_OPENSSLEXCEPTION("Failed to create new OCSP request, out of memory?");
-
-    if(!OCSP_request_add0_id(req.get(), certId))
-        THROW_OPENSSLEXCEPTION("Failed to add certificate ID to OCSP request.");
-
-    SCOPE(ASN1_OCTET_STRING, st, ASN1_OCTET_STRING_new());
-    if(nonce.empty())
-    {
-        ASN1_OCTET_STRING_set(st.get(), nullptr, 20);
-        RAND_bytes(st->data, st->length);
-    }
-    else
-        ASN1_OCTET_STRING_set(st.get(), nonce.data(), int(nonce.size()));
-
-    SCOPE(X509_EXTENSION, ex, X509_EXTENSION_create_by_NID(nullptr, NID_id_pkix_OCSP_Nonce, 0, st.get()));
-    if(!OCSP_REQUEST_add_ext(req.get(), ex.get(), 0))
-        THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
-
-    if(signRequest)
-    {
-        X509 *signCert {};
-        EVP_PKEY *signKey {};
-        Conf *c = Conf::instance();
-        OpenSSL::parsePKCS12(c->PKCS12Cert(), c->PKCS12Pass(), &signKey, &signCert);
-        if(!signCert)
-            THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate");
-        if(!signKey)
-            THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 key");
-        if(!OCSP_request_sign(req.get(), signCert, signKey, EVP_sha256(), nullptr, 0))
-            THROW_OPENSSLEXCEPTION("Failed to sign OCSP request.");
-        X509_free(signCert);
-        EVP_PKEY_free(signKey);
-    }
-
-    return req.release();
-}
-
 X509Cert OCSP::responderCert() const
 {
     if(!basic)
@@ -213,7 +177,7 @@ X509Cert OCSP::responderCert() const
     return X509Cert();
 }
 
-OCSP::operator std::vector<unsigned char>() const
+OCSP::operator vector<unsigned char>() const
 {
     return i2d(resp.get(), i2d_OCSP_RESPONSE);
 }

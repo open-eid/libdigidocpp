@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_THROW(d->removeSignature(0U), Exception);
 
     auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
-    signer1->setProfile("time-mark");
+    signer1->setProfile("time-stamp");
     BOOST_CHECK_THROW(d->sign(signer1.get()), Exception);
 
     // Add first Signature
@@ -333,9 +333,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         Signature *s3 = nullptr;
         BOOST_CHECK_NO_THROW(s3 = d->sign(signer3.get()));
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
-        BOOST_CHECK_EQUAL(s3->signatureMethod(), URI_ECDSA_SHA256);
         if(s3)
         {
+            BOOST_CHECK_EQUAL(s3->signatureMethod(), URI_ECDSA_SHA256);
             BOOST_CHECK_EQUAL(s3->signingCertificate(), signer3->cert());
             BOOST_CHECK_NO_THROW(s3->validate());
         }
@@ -354,15 +354,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_NO_THROW(d->removeSignature(1U));
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
 
-        // TS signature
-        signer2->setProfile("time-stamp");
-        BOOST_CHECK_NO_THROW(s3 = d->sign(signer2.get()));
-        //BOOST_CHECK_EQUAL(s3->TSCertificate(), signer2->cert());
-        //BOOST_CHECK_NO_THROW(s3->validate());
-        BOOST_CHECK_NO_THROW(d->save(Doc::EXT + "-TS.tmp"));
-        BOOST_CHECK_NO_THROW(d->removeSignature(1U));
-        BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
-
         // TSA signature
         signer2->setProfile("time-stamp-archive");
         BOOST_CHECK_NO_THROW(s3 = d->sign(signer2.get()));
@@ -372,15 +363,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_NO_THROW(d->removeSignature(1U));
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
 
-        // TSA signature
-        signer2->setProfile("time-stamp-archive");
-        BOOST_CHECK_NO_THROW(d->sign(signer2.get()));
-        BOOST_CHECK_NO_THROW(d->save(Doc::EXT + "-TMA.tmp"));
-        BOOST_CHECK_NO_THROW(d->removeSignature(1U));
-        BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
-
-        // Save with no SignatureValue and later add signautre value, time-mark
-        signer2->setProfile("time-mark");
+        // Save with no SignatureValue and later add signautre value
+        signer2->setProfile("time-stamp");
         d = Container::createPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
         Signature *s = nullptr;
@@ -487,9 +471,6 @@ BOOST_AUTO_TEST_CASE(XmlConfCase) {
     BOOST_CHECK_EQUAL(c.proxyPort(), "port");
     BOOST_CHECK_EQUAL(c.proxyUser(), "user");
     BOOST_CHECK_EQUAL(c.proxyPass(), "pass");
-    BOOST_CHECK_EQUAL(c.PKCS12Cert(), "cert");
-    BOOST_CHECK_EQUAL(c.PKCS12Pass(), "pass");
-    BOOST_CHECK_EQUAL(c.PKCS12Disable(), true);
     BOOST_CHECK_EQUAL(c.ocsp("ISSUER NAME"), "http://ocsp.issuer.com");
     BOOST_CHECK_EQUAL(c.verifyServiceUri(), SIVA_URL);
     const string testurl = "https://test.url";
@@ -541,10 +522,9 @@ BOOST_AUTO_TEST_CASE(OpenValidASiCSContainer)
     const DataFile *doc = d->dataFiles().front();
     BOOST_CHECK_EQUAL(doc->fileName(), "test1.txt");
 
-    const auto ts = d->signatures().front();
-    BOOST_CHECK_NO_THROW(ts->validate());
-    if(ts)
+    if(const auto *ts = d->signatures().front())
     {
+        BOOST_CHECK_NO_THROW(ts->validate());
         BOOST_CHECK_EQUAL("8766262679921277358", ts->id()); // Serial number: 0x79A805763478B9AE
         BOOST_CHECK_EQUAL("2016-11-02T11:07:45Z", ts->TimeStampTime());
         BOOST_CHECK_EQUAL("DEMO of SK TSA 2014", ts->TimeStampCertificate().subjectName("CN"));

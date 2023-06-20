@@ -55,7 +55,7 @@ void *OPENSSL_memdup(const void *data, size_t size)
 }
 #endif
 
-TS::TS(const string &url, const Digest &digest, const string &useragent)
+TS::TS(const string &url, const Digest &digest)
 {
     auto req = SCOPE_PTR(TS_REQ, TS_REQ_new());
     TS_REQ_set_version(req.get(), 1);
@@ -87,7 +87,7 @@ TS::TS(const string &url, const Digest &digest, const string &useragent)
         RAND_bytes(nonce->data, nonce->length);
     TS_REQ_set_nonce(req.get(), nonce.get());
 
-    Connect::Result result = Connect(url, "POST", 0, useragent, CONF(TSCerts)).exec({
+    Connect::Result result = Connect(url, "POST", 0, CONF(TSCerts)).exec({
         {"Content-Type", "application/timestamp-query"},
         {"Accept", "application/timestamp-reply"},
         {"Connection", "Close"},

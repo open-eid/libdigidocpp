@@ -119,6 +119,12 @@ static ostream &operator<<(ostream &os, Signature::Validator::Status status)
     }
     return os;
 }
+
+static ostream &endl(ostream &os)
+{
+    os.put('\n');
+    return os;
+}
 }
 
 /**
@@ -267,7 +273,7 @@ public:
     string TSLUrl() const final { return tslurl.value_or(XmlConfCurrent::TSLUrl()); }
 
     unique_ptr<Signer> getSigner(bool getwebsigner = false) const;
-    static string toUTF8(std::string_view param)
+    static string toUTF8(string_view param)
     {
         return fs::path(param).u8string();
     }
@@ -288,7 +294,6 @@ public:
     vector<pair<string,string> > files;
     vector<string> roles;
     bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
-    static const map<string_view,string> profiles;
     static string_view RED, GREEN, YELLOW, RESET;
 };
 
@@ -338,7 +343,7 @@ static int printUsage(const char *executable)
     << "  Command sign:" << endl
     << "    Example: " << executable << " sign demo-container.asice" << endl
     << "    Available options:" << endl
-    << "      --profile=     - signature profile, TM, time-mark, TS, time-stamp" << endl
+    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive" << endl
     << "      --XAdESEN      - use XAdES EN profile" << endl
     << "      --city=        - city of production place" << endl
     << "      --street=      - streetAddress of production place in XAdES EN profile" << endl
@@ -366,18 +371,6 @@ static int printUsage(const char *executable)
     return EXIT_FAILURE;
 }
 
-const map<string_view,string> ToolConfig::profiles = {
-    {"BES", "BES"},
-    {"EPES", "EPES"},
-    {"TM", "time-mark"},
-    {"TS", "time-stamp"},
-    {"TMA", "time-mark-archive"},
-    {"TSA", "time-stamp-archive"},
-    {"time-mark", "time-mark"},
-    {"time-stamp", "time-stamp"},
-    {"time-mark-archive", "time-mark-archive"},
-    {"time-stamp-archive", "time-stamp-archive"},
-};
 string_view ToolConfig::RED = "\033[31m";
 string_view ToolConfig::GREEN = "\033[32m";
 string_view ToolConfig::YELLOW = "\033[33m";
@@ -389,11 +382,7 @@ ToolConfig::ToolConfig(int argc, char *argv[])
     {
         string arg(toUTF8(argv[i]));
         if(arg.find("--profile=") == 0)
-        {
             profile = arg.substr(10);
-            size_t pos = profile.find('.');
-            profile = profiles.at(profile.substr(0, pos)) + (pos == string::npos ? string() : profile.substr(pos));
-        }
         else if(arg.find("--file=") == 0)
         {
             string arg2(i+1 < argc ? toUTF8(argv[i+1]) : string());
@@ -464,7 +453,7 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
         class WebSigner final: public Signer
         {
         public:
-            WebSigner(X509Cert cert): _cert(move(cert)) {}
+            WebSigner(X509Cert cert): _cert(std::move(cert)) {}
             X509Cert cert() const final { return _cert; }
             vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const final
             {
@@ -684,9 +673,9 @@ static int remove(int argc, char *argv[])
     {
         string arg(ToolConfig::toUTF8(argv[i]));
         if(arg.find("--document=") == 0)
-            documents.push_back(atoi(arg.substr(11).c_str()));
+            documents.push_back(stoi(arg.substr(11)));
         else if(arg.find("--signature=") == 0)
-            signatures.push_back(atoi(arg.substr(12).c_str()));
+            signatures.push_back(stoi(arg.substr(12)));
         else
             path = arg;
     }
@@ -820,16 +809,9 @@ static int createBatch(const ToolConfig &p, const char *program)
         return printUsage(program);
 
     unique_ptr<Signer> signer = p.getSigner();
-    std::error_code ec;
-    fs::directory_iterator it{fs::u8path(p.path), ec};
-    if(ec)
-    {
-        cout << "Failed to open directory " << p.path << endl;
-        cout << "  Exception: " << ec.message() << endl;
-        return EXIT_FAILURE;
-    }
+    error_code ec;
     int returnCode = EXIT_SUCCESS;
-    for(const auto &file: it)
+    for(const auto &file: fs::directory_iterator(fs::u8path(p.path), ec))
     {
         if(!fs::is_regular_file(file.status()) || file.path().extension() == ".asice")
             continue;
@@ -844,6 +826,12 @@ static int createBatch(const ToolConfig &p, const char *program)
             cout << "  Exception:" << endl << e;
             returnCode = EXIT_FAILURE;
         }
+    }
+    if(ec)
+    {
+        cout << "Failed to open directory " << p.path << endl;
+        cout << "  Exception: " << ec.message() << endl;
+        return EXIT_FAILURE;
     }
     return returnCode;
 }
@@ -994,7 +982,7 @@ int main(int argc, char *argv[]) try
 #endif
     info << ")";
     digidoc::initialize("digidoc-tool", info.str());
-    std::atexit(&digidoc::terminate);
+    atexit(&digidoc::terminate);
 
     if(argc < 2)
     {

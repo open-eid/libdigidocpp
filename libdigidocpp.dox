@@ -724,38 +724,6 @@ The check is based on the TSL list's HTTP HEAD request ETag field or SHA-256 dig
 
 
 
-\subsubsection ocspsigning-settings Settings for signing OCSP requests
-Whether you need to sign the OCSP requests sent to your OCSP responder or not depends on your responder. Some OCSP servers require that the OCSP request is signed. To sign the OCSP request, you need to obtain and specify the PKCS#12 token, which will be used for signing.
-
-For example, accessing the SK's OCSP Responder service by private persons requires the requests to signed (access certificates can be obtained through registering for the service, see also https://www.skidsolutions.eu/en/services/validity-confirmation-services/) whereas in case of companies/services, signing the request is not required if having a contract with SK and accessing the service from specific IP address(es). It is not necessary to sign OCSP requests in case of using OCSP test-responder (see the next sub-section for more information).
-
-By default, the parameter "pkcs12.disable" value is set to "true" – i.e. the OCSP requests will not be signed. If setting this to "false", you will also need to provide your access certificate file's location and password that have been issued to you for this purpose.
-
-<table>
-<tr>
-  <th>Parameter name</th>
-  <th>Comments</th>
-</tr>
-<tr>
-  <td>pkcs12.disable</td>
-  <td>Specifies if the OCSP requests are signed or not. Possible values are:
-true – OCSP requests are not signed;
-false – OCSP requests are signed.
-</td>
-</tr>
-<tr>
-  <td>pkcs12.cert</td>
-  <td>Specifies your access certificate's PKCS#12 container's filename, e.g. ./home/132936.p12d</td>
-</tr>
-<tr>
-  <td>pkcs12.pass</td>
-  <td>Specifies your access certificate's PKCS#12 container's  password, e.g. m15eTGpA</td>
-</tr>
-</table>
-
-
-
-
 \subsubsection ocspresponder-settings OCSP responder settings
 
 The default OCSP responder that the library uses for retrieving the OCSP confirmation during signature creation depends on the signer's certificate chain.
@@ -875,7 +843,6 @@ If you would like to add PIN insertion dialog window for the signer to enter the
 \paragraph API-sign-profile Optionally specify the signature profile
 The supported signature profiles are (see also \ref Supported, under "Signature profiles"):
 - "time-stamp" (TS) - signature profile in case of which the certificate validity information is added to the signature with an OCSP confirmation (retrieved from OCSP server); the signing time information is added with a time-stamp token (retrieved from a time-stamping service). Signature creation time is the issuance time of the time-stamp token (value of the getTime field in the token). The profile is supported only in case of BDOC 2.1 document format, since v3.9 of the library.
-- "time-mark" (TM) - certificate validity and signing time information is added to the signature with a time-mark (an OCSP confirmation with a specific "nonce" value). Signature creation time is the time-mark's issuance time (i.e. the OCSP confirmation's producedAt field's value).
 
 \warning When adding signature to an existing BDOC 2.1 container then the profile of the existing signature should be used for all of the new signatures in the same container. Signature's profile can be determined with method digidoc::Signature.profile().
 
@@ -883,7 +850,7 @@ If the signature profile value is not specified then then a "time-stamp" profile
 
 Set the profile value as follows:
 \code{.cpp}
-std::string profile = "<signature-profile>"; // "time-mark" or "time-stamp"
+std::string profile = "time-stamp"; // or "time-stamp-archive"
 signer->setProfile(profile);
 \endcode
 
@@ -1375,18 +1342,7 @@ Specifies the data file's mime-type value. When used then must be written right 
 
 Additional options for the "websign" command are the same as for "sign" command (see \ref Adding).
 
-Sample commands for creating and external signing of BDOC files:
-
-\code{.txt}
-Sample: creating new BDOC-TM file, specifying signers certificate, adding data file and calculating the RSA signature value in browser
-> digidoc-tool websign --cert=signer.cer --file=file1.txt --profile=time-mark demo-container.bdoc
-
-Input:
-  --cert=signer.cer		- signers certificate
-  --file=file1.txt		- a data file to be added to container
-  --profile=time-mark	- profile of the signature
-  demo-container.bdoc	- container to be created (in BDOC 2.1 format)
-\endcode
+Sample command for creating and external signing of BDOC files:
 
 \code{.txt}
 Sample: creating new BDOC-TS file, specifying signers certificate, adding data files and other meta-data and calculating the RSA signature value in browser
@@ -1564,8 +1520,8 @@ Command "sign" enables adding signatures to existing DigiDoc containers. The sup
 If PIN is not provided with this parameter value and (the default) PKCS#11 module is used for signing then the utility program asks for the user to insert PIN code to command line during the program’s execution time.</td></tr>
 <tr><td>\-\-profile=	</td><td>Optional</td><td>
 Profile of the signature. Possible values are:
-- TM - a time-mark will be added to the signature as validation data;
 - TS - a time-stamp and OCSP confirmation will be added to the signature as validation data.
+- TSA - a time-stamp and OCSP confirmation will be added to the signature as validation data. Additional time-stamp is added for notarize all certificate and revocation info.
 
 \warning When adding signature to an existing BDOC 2.1 container then the profile of the existing signature should be used for all of the new signatures in the same container.</td></tr>
 <tr><td>\-\-XAdESEN	</td><td>Optional</td><td>

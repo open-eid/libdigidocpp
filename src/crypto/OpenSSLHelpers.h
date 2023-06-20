@@ -26,7 +26,6 @@
 #include <sstream>
 
 #include <openssl/err.h>
-#include <openssl/pkcs12.h>
 
 #ifndef RSA_PSS_SALTLEN_DIGEST
 #define RSA_PSS_SALTLEN_DIGEST -1
@@ -42,16 +41,14 @@ namespace digidoc
 template<class T, typename Func>
 std::vector<unsigned char> i2d(T *obj, Func func)
 {
-    std::vector<unsigned char> result;
     if(!obj)
-        return result;
+        return {};
     int size = func(obj, nullptr);
     if(size <= 0)
-        return result;
-    result.resize(size_t(size));
-    unsigned char *p = result.data();
-    if(func(obj, &p) <= 0)
-        result.clear();
+        return {};
+    std::vector<unsigned char> result(size_t(size), 0);
+    if(unsigned char *p = result.data(); func(obj, &p) <= 0)
+        return {};
     return result;
 }
 
@@ -81,23 +78,5 @@ class OpenSSLException : public Exception
 };
 
 #define THROW_OPENSSLEXCEPTION(...) throw OpenSSLException(EXCEPTION_PARAMS(__VA_ARGS__))
-
-class OpenSSL
-{
-public:
-    static void parsePKCS12(const std::string &path, const std::string &pass, EVP_PKEY **key, X509 **cert)
-    {
-        SCOPE(BIO, bio, BIO_new_file(path.c_str(), "rb"));
-        if(!bio)
-            THROW_OPENSSLEXCEPTION("Failed to open PKCS12 certificate: %s.", path.c_str());
-        SCOPE(PKCS12, p12, d2i_PKCS12_bio(bio.get(), nullptr));
-        if(!p12)
-            THROW_OPENSSLEXCEPTION("Failed to read PKCS12 certificate: %s.", path.c_str());
-        if(!PKCS12_parse(p12.get(), pass.c_str(), key, cert, nullptr))
-            THROW_OPENSSLEXCEPTION("Failed to parse PKCS12 certificate.");
-        // Hack: clear PKCS12_parse error ERROR: 185073780 - error:0B080074:x509 certificate routines:X509_check_private_key:key values mismatch
-        OpenSSLException(EXCEPTION_PARAMS("ignore"));
-    }
-};
 
 }

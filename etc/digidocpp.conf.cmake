@@ -20,11 +20,6 @@
     <!--<param name="proxy.user" lock="false"></param>-->
     <!--<param name="proxy.pass" lock="false"></param>-->
 
-    <!--OCSP request signing options-->
-    <!--<param name="pkcs12.cert" lock="false"></param>-->
-    <!--<param name="pkcs12.pass" lock="false"></param>-->
-    <!--<param name="pkcs12.disable" lock="false">false</param>-->
-
     <!--Time-stamping service settings-->
     <!--<param name="ts.url" lock="false">@TSA_URL@</param>-->
 

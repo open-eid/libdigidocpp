@@ -60,7 +60,7 @@ public:
     };
 
     Connect(const std::string &url, const std::string &method = "POST",
-        int timeout = 0, const std::string &useragent = {}, const std::vector<X509Cert> &certs = {});
+        int timeout = 0, const std::vector<X509Cert> &certs = {});
     ~Connect();
     Result exec(std::initializer_list<std::pair<std::string,std::string>> headers,
         const std::vector<unsigned char> &data);

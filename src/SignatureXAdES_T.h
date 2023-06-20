@@ -47,8 +47,8 @@ protected:
     xades::UnsignedSignaturePropertiesType& unsignedSignatureProperties() const;
     TS TimeStamp() const;
 
-    TS verifyTS(const xades::XAdESTimeStampType &timestamp, Exception &exception,
-        std::function<void (Digest *, std::string_view)> &&calcDigest) const;
+    static TS verifyTS(const xades::XAdESTimeStampType &timestamp, Exception &exception,
+        std::function<void (Digest *, std::string_view)> &&calcDigest);
 
 private:
     DISABLE_COPY(SignatureXAdES_T);

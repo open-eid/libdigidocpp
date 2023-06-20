@@ -28,9 +28,6 @@
 #include "util/log.h"
 
 #include <openssl/conf.h>
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-#include <openssl/provider.h>
-#endif
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
@@ -65,10 +62,6 @@ public:
         swap(list);
         INFO("Loaded %zu certificates into TSL certificate store.", size());
     }
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-    vector<OSSL_PROVIDER*> provs;
-#endif
 };
 
 /**
@@ -77,37 +70,13 @@ public:
 X509CertStore::X509CertStore()
     : d(make_unique<Private>())
 {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-#ifdef _WIN32
-#ifdef _WIN64
-    string path = util::File::dllPath("libcrypto-3-x64.dll");
-#else
-    string path = util::File::dllPath("libcrypto-3.dll");
-#endif
-    if(!path.empty())
-        OSSL_PROVIDER_set_default_search_path(nullptr, path.c_str());
-#endif
-    for(const auto *prov: {"legacy", "default"})
-    {
-        if(OSSL_PROVIDER *p = OSSL_PROVIDER_load(nullptr, prov))
-            d->provs.push_back(p);
-        else
-            WARN("Failed to load OpenSSL '%s' provider!", prov);
-    }
-#endif
     d->update();
 }
 
 /**
  * Release all certificates.
  */
-X509CertStore::~X509CertStore()
-{
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-    for(OSSL_PROVIDER *p: d->provs)
-        OSSL_PROVIDER_unload(p);
-#endif
-}
+X509CertStore::~X509CertStore() = default;
 
 void X509CertStore::activate(const X509Cert &cert) const
 {

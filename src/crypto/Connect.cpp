@@ -47,7 +47,7 @@ using namespace std;
     throw ex; \
 }
 
-Connect::Connect(const string &_url, const string &method, int timeout, const string &useragent, const std::vector<X509Cert> &certs)
+Connect::Connect(const string &_url, const string &method, int timeout, const vector<X509Cert> &certs)
     : _method(method)
     , _timeout(timeout)
 {
@@ -168,7 +168,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const st
     else
         addHeader("Host", host + ":" + port);
     if(!userAgent().empty())
-        addHeader("User-Agent", "LIB libdigidocpp/" + string(FILE_VER_STR) + " APP " + userAgent() + useragent);
+        addHeader("User-Agent", "LIB libdigidocpp/" + string(FILE_VER_STR) + " APP " + userAgent());
     if(usessl == 0)
         sendProxyAuth();
 }
@@ -184,7 +184,7 @@ void Connect::addHeader(const string &key, const string &value)
     BIO_printf(d, "%s: %s\r\n", key.c_str(), value.c_str());
 }
 
-std::string Connect::decompress(const std::string &encoding, const std::string &data)
+string Connect::decompress(const string &encoding, const string &data)
 {
     if(data.empty())
         return data;
