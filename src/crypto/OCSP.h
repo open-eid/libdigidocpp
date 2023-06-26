@@ -37,6 +37,8 @@ namespace digidoc
 
       public:
           OCSP(const X509Cert &cert, const X509Cert &issuer);
+          template <class Container>
+          inline OCSP(const Container &data): OCSP((const unsigned char*)data.data(), data.size()) {}
           OCSP(const unsigned char *data = nullptr, size_t size = 0);
 
           std::vector<unsigned char> nonce() const;
