@@ -1538,10 +1538,16 @@ Postal code of the place where the signature is created.</td></tr>
 Country of origin. ISO 3166-type 2-character country codes are used (e.g. EE)</td></tr>
 <tr><td>\-\-role=	</td><td>Optional</td><td>
 Signer’s role(s). The option can occur multiple times.</td></tr>
-<tr><td>\-\-sha(1,224,256,384,512)	</td><td>Optional</td><td>
-Used for testing purposes. Specifies the hash function that is used when calculating digest values, supported only in case of BDOC documents. If not specified then SHA-256 is used by default.</td></tr>
-<tr><td>\-\-sigsha(1,224,256,384,512)	</td><td>Optional</td><td>
-Used for testing purposes. Specifies the hash function that is used for calculating the hash that is being signed, supported only in case of BDOC format. If not specified then SHA-256 is used by default.</td></tr>
+<tr><td>\-\-sha(224,256,384,512)	</td><td>Optional</td><td>
+Used for testing purposes. Specifies the hash function that is used when calculating digest values. If not specified then SHA-256 is used by default.</td></tr>
+<tr><td>\-\-sigsha(224,256,384,512)	</td><td>Optional</td><td>
+Used for testing purposes. Specifies the hash function that is used for calculating the hash that is being signed. If not specified then SHA-256 is used by default.</td></tr>
+<tr><td>\-\-sigpsssha(224,256,384,512)	</td><td>Optional</td><td>
+Used for testing purposes. With RSA keys RSA-PSS padding is used. Specifies the hash function that is used for calculating the hash that is being signed. If not specified then SHA-256 is used by default. Same as \-\-sigsha* with \-\-rsapss</td></tr>
+<tr><td>\-\-rsapkcs15	</td><td>Optional</td><td>
+Option to change RSA Signature padding (RSA PKCS1.5).</td></tr>
+<tr><td>\-\-rsapss	</td><td>Optional</td><td>
+Option to change RSA Signature padding (RSA PSS).</td></tr>
 <tr><td>\-\-tsurl	</td><td>Optional</td><td>
 Option to change TS URL.</td></tr>
 <tr><td>\-\-dontValidate	</td><td>Optional</td><td>

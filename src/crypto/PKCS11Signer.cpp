@@ -60,7 +60,7 @@ public:
     { return h ? (void*)GetProcAddress(h, symbol) : nullptr; }
 
     void unload()
-    { if(h) FreeLibrary(h); h = 0; }
+    { if(h) FreeLibrary(h); h = {}; }
 
     HINSTANCE h {};
 #else
@@ -71,7 +71,7 @@ public:
     { return h ? dlsym(h, symbol) : nullptr; }
 
     void unload()
-    { if(h) dlclose(h); h = nullptr; }
+    { if(h) dlclose(h); h = {}; }
 
     void *h {};
 #endif
@@ -222,7 +222,7 @@ X509Cert PKCS11Signer::cert() const
             if(d->findObject(session, CKO_PUBLIC_KEY, id).empty())
                 continue;
             certSlotMapping.push_back({x509, slot, id});
-            certificates.push_back(move(x509));
+            certificates.push_back(std::move(x509));
         }
     }
     if(session)
@@ -251,17 +251,19 @@ X509Cert PKCS11Signer::cert() const
 
 string PKCS11Signer::method() const
 {
-    if(!d->sign.certificate || !X509Crypto(d->sign.certificate).isRSAKey())
-        return Signer::method();
+    string parent = Signer::method();
+    if(!d->sign.certificate || !X509Crypto(d->sign.certificate).isRSAKey() ||
+        parent != CONF(signatureDigestUri))
+        return parent;
     CK_ULONG count = 0;
     CK_RV rv = d->f->C_GetMechanismList(d->sign.slot, nullptr, &count);
     if(rv != CKR_OK)
-        return Signer::method();
+        return parent;
     vector<CK_MECHANISM_TYPE> mech(count);
     rv = d->f->C_GetMechanismList(d->sign.slot, mech.data(), &count);
     if(find(mech.cbegin(), mech.cend(), CKM_RSA_PKCS_PSS) != mech.cend())
-        return Digest::toRsaPssUri(Signer::method());
-    return Signer::method();
+        return Digest::toRsaPssUri(std::move(parent));
+    return parent;
 }
 
 /**
@@ -379,7 +381,7 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
     // Sign the digest.
     CK_KEY_TYPE keyType = CKK_RSA;
     CK_ATTRIBUTE attribute { CKA_KEY_TYPE, &keyType, sizeof(keyType) };
-    d->f->C_GetAttributeValue(session, key[0], &attribute, 1);
+    d->f->C_GetAttributeValue(session, key.front(), &attribute, 1);
 
     CK_RSA_PKCS_PSS_PARAMS pssParams { CKM_SHA_1, CKG_MGF1_SHA1, 0 };
     CK_MECHANISM mech { keyType == CKK_ECDSA ? CKM_ECDSA : CKM_RSA_PKCS, nullptr, 0 };
@@ -406,8 +408,8 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
         mech = { CKM_RSA_PKCS_PSS, &pssParams, sizeof(CK_RSA_PKCS_PSS_PARAMS) };
     }
     else if(keyType == CKK_RSA)
-        data = Digest::addDigestInfo(digest, method);
-    if(d->f->C_SignInit(session, &mech, key[0]) != CKR_OK)
+        data = Digest::addDigestInfo(std::move(data), method);
+    if(d->f->C_SignInit(session, &mech, key.front()) != CKR_OK)
         THROW("Failed to sign digest");
 
     CK_ULONG size = 0;

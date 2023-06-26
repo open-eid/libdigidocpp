@@ -289,6 +289,7 @@ public:
     optional<string> siguri;
 
     // Params
+    optional<bool> rsaPss;
     string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
     vector<unsigned char> thumbprint;
     vector<pair<string,string> > files;
@@ -361,13 +362,15 @@ static int printUsage(const char *executable)
     << "      --pin=         - default asks pin from prompt" << endl
     << "      --sha(224,256,384,512) - set default digest method (default sha256)" << endl
     << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl
-    << "      --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256)" << endl
-    << "      --tsurl         - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
-    << "      --dontValidate  - Don't validate container on signature creation" << endl << endl
+    << "      --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256, same as --sigsha* with --rsapss)" << endl
+    << "      --rsapkcs15    - Use RSA PKCS1.5 padding" << endl
+    << "      --rsapss       - Use RSA PSS padding" << endl
+    << "      --tsurl        - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
+    << "      --dontValidate - Don't validate container on signature creation" << endl << endl
     << "  All commands:" << endl
-    << "      --nocolor       - Disable terminal colors" << endl
+    << "      --nocolor      - Disable terminal colors" << endl
     << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
-    << "      --logfile=      - File to log, empty to console" << endl;
+    << "      --logfile=     - File to log, empty to console" << endl;
     return EXIT_FAILURE;
 }
 
@@ -423,10 +426,12 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg == "--sigsha256") siguri = URI_SHA256;
         else if(arg == "--sigsha384") siguri = URI_SHA384;
         else if(arg == "--sigsha512") siguri = URI_SHA512;
-        else if(arg == "--sigpsssha224") siguri = URI_RSA_PSS_SHA224;
-        else if(arg == "--sigpsssha256") siguri = URI_RSA_PSS_SHA256;
-        else if(arg == "--sigpsssha384") siguri = URI_RSA_PSS_SHA384;
-        else if(arg == "--sigpsssha512") siguri = URI_RSA_PSS_SHA512;
+        else if(arg == "--sigpsssha224") { siguri = URI_SHA224; rsaPss = true; }
+        else if(arg == "--sigpsssha256") { siguri = URI_SHA256; rsaPss = true; }
+        else if(arg == "--sigpsssha384") { siguri = URI_SHA384; rsaPss = true; }
+        else if(arg == "--sigpsssha512") { siguri = URI_SHA512; rsaPss = true; }
+        else if(arg == "--rsapkcs15") rsaPss = false;
+        else if(arg == "--rsapss") rsaPss = true;
         else if(arg.find("--tsurl") == 0) tsurl = arg.substr(8);
         else if(arg.find("--tslurl=") == 0) tslurl = arg.substr(9);
         else if(arg.find("--tslcert=") == 0) tslcerts = vector<X509Cert>{ X509Cert(arg.substr(10)) };
@@ -468,7 +473,7 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
     {
         unique_ptr<WinSigner> win = make_unique<WinSigner>(pin, selectFirst);
         win->setThumbprint(thumbprint);
-        signer = unique_ptr<Signer>(win.release());
+        signer = std::move(win);
     }
 #endif
     else if(!pkcs12.empty())
@@ -479,6 +484,8 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
     signer->setSignatureProductionPlaceV2(city, street, state, postalCode, country);
     signer->setSignerRoles(roles);
     signer->setProfile(profile);
+    if(rsaPss.has_value())
+        signer->setMethod(rsaPss.value() ? Digest::toRsaPssUri(signatureDigestUri()) : Digest::toRsaUri(signatureDigestUri()));
     return signer;
 }
 

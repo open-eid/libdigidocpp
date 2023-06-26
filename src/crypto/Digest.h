@@ -45,7 +45,6 @@
 #define URI_RSA_PSS_SHA256 "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1"
 #define URI_RSA_PSS_SHA384 "http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1"
 #define URI_RSA_PSS_SHA512 "http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1"
-
 #define URI_RSA_PSS_SHA3_224 "http://www.w3.org/2007/05/xmldsig-more#sha3-224-rsa-MGF1"
 #define URI_RSA_PSS_SHA3_256 "http://www.w3.org/2007/05/xmldsig-more#sha3-256-rsa-MGF1"
 #define URI_RSA_PSS_SHA3_384 "http://www.w3.org/2007/05/xmldsig-more#sha3-384-rsa-MGF1"
@@ -57,6 +56,8 @@
 #define URI_ECDSA_SHA384 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384"
 #define URI_ECDSA_SHA512 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512"
 
+using EVP_MD_CTX = struct evp_md_ctx_st;
+
 namespace digidoc
 {
     /**
@@ -67,28 +68,24 @@ namespace digidoc
       public:
           Digest(const std::string &uri = {});
           ~Digest();
-          void reset(const std::string &uri = {});
-          void update(const std::vector<unsigned char> &data);
           void update(const unsigned char *data, size_t length);
           std::vector<unsigned char> result(const std::vector<unsigned char> &data);
-          std::vector<unsigned char> result(const unsigned char *data, size_t length);
           std::vector<unsigned char> result() const;
           std::string uri() const;
 
-          static bool isRsaPssUri(const std::string &uri);
+          static bool isRsaPssUri(std::string_view uri);
           static std::string toRsaUri(const std::string &uri);
-          static std::string toRsaPssUri(const std::string &uri);
+          static std::string toRsaPssUri(std::string uri);
           static std::string toEcUri(const std::string &uri);
-          static int toMethod(const std::string &uri);
+          static int toMethod(std::string_view uri);
           static std::string toUri(int nid);
-          static std::vector<unsigned char> addDigestInfo(const std::vector<unsigned char> &digest, const std::string &uri);
+          static std::vector<unsigned char> addDigestInfo(std::vector<unsigned char> digest, std::string_view uri);
           static std::vector<unsigned char> digestInfoDigest(const std::vector<unsigned char> &digest);
           static std::string digestInfoUri(const std::vector<unsigned char> &digest);
 
       private:
           DISABLE_COPY(Digest);
-          class Private;
-          std::unique_ptr<Private> d;
+          std::unique_ptr<EVP_MD_CTX, void (*)(EVP_MD_CTX*)> d;
     };
 
 }
