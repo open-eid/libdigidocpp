@@ -76,12 +76,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer)
     if(!OCSP_request_add0_id(req.get(), certId))
         THROW_OPENSSLEXCEPTION("Failed to add certificate ID to OCSP request.");
 
-    SCOPE(ASN1_OCTET_STRING, st, ASN1_OCTET_STRING_new());
-    ASN1_OCTET_STRING_set(st.get(), nullptr, 20);
-    RAND_bytes(st->data, st->length);
-
-    SCOPE(X509_EXTENSION, ex, X509_EXTENSION_create_by_NID(nullptr, NID_id_pkix_OCSP_Nonce, 0, st.get()));
-    if(!OCSP_REQUEST_add_ext(req.get(), ex.get(), 0))
+    if(!OCSP_request_add1_nonce(req.get(), nullptr, 32)) // rfc8954: SIZE(1..32)
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 
     Connect::Result result = Connect(url, "POST").exec({

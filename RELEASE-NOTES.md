@@ -1,10 +1,18 @@
+Libdigidocpp library [3.16.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.16.0) release notes
+--------------------------------------
+- Update libraries and platform support (#530, #477, #534, #535)
+- Improve signature and container compatibility (#528)
+- Other fixes and optimizations (#529, #533, #532, #536)
+- Removed time-mark signature creation support (#527, #539)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.15.0...v3.16.0)
+
 Libdigidocpp library [3.15.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.15.0) release notes
 --------------------------------------
-- Update libraries and platform support (#525, #522, #515, #503, #511, #514, #516, #517, #523, #505, #530, #477)
+- Update libraries and platform support (#525, #522, #515, #503, #511, #514, #516, #517, #523, #505)
 - Improve code quality and documentation (#526, #521, #524, #520, #501)
-- Improve signature and container compatibility (#506, #504, #502, #491, #528)
-- Other fixes and optimizations (#435, #481, #508, #433, #519, #497, #535, #533, #532)
-- Removed time-mark signature creation support (#527, #539)
+- Improve signature and container compatibility (#506, #504, #502, #491)
+- Other fixes and optimizations (#435, #481, #508, #433, #519, #497)
 
 [Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.14.11...v3.15.0)
 
