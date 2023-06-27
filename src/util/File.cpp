@@ -321,7 +321,7 @@ string File::digidocppPath()
 {
 #ifdef _WIN32
     PWSTR knownFolder {};
-    if(SHGetKnownFolderPath(FOLDERID_RoamingAppData, KF_FLAG_CREATE, nullptr, &knownFolder) != S_OK)
+    if(SHGetKnownFolderPath(FOLDERID_RoamingAppData, KF_FLAG_DONT_VERIFY, nullptr, &knownFolder) != S_OK)
         THROW("Failed to get home directory");
     string appData = (fs::path(knownFolder) / "digidocpp").u8string();
     CoTaskMemFree(knownFolder);
@@ -336,26 +336,6 @@ string File::digidocppPath()
         THROW("Failed to get home directory");
     return path(pw->pw_dir, ".digidocpp");
 #endif
-}
-
-/**
- * Returns true if the path is relative
- *
- * @return returns true if the path is relative
- */
-bool File::isRelative(const string &path)
-{
-    f_string _path = encodeName(path);
-    if(_path.empty()) return true;
-    if(_path[0] == '/') return false;
-#ifdef _WIN32
-    // drive, e.g. "a:", or UNC root, e.q. "//"
-    if( _path.length() >= 2 &&
-        ((iswalpha(_path[0]) && _path[1] == ':') ||
-         (_path[0] == '/' && _path[1] == '/')) )
-        return false;
-#endif
-    return true;
 }
 
 /**
