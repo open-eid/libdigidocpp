@@ -89,13 +89,13 @@ foreach(TSL_CERT ${TSL_CERTS})
         add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${BASE}.h
             COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT} ${BASE}_crt ${BASE}.h
             COMMENT "Generating ${BASE}.h from ${TSL_CERT}"
-            )
+        )
     else()
         add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${BASE}.h
-            COMMAND ln -sf ${TSL_CERT} ${BASE}.crt
-            COMMAND xxd -i ${BASE}.crt ${BASE}.h
+            COMMAND xxd -i ${TSL_CERT} ${BASE}.h
+            COMMAND sed -ie 's!unsigned char .*[][]!unsigned char ${BASE}_crt[]!' ${BASE}.h
             COMMENT "Generating ${BASE}.h from ${TSL_CERT}"
-            )
+        )
     endif()
     file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "#include \"${BASE}.h\"\n")
 endforeach()
@@ -105,7 +105,7 @@ set(COUNT 0)
 foreach(TSL_CERT ${TSL_CERTS})
     math(EXPR COUNT "${COUNT}+1")
     set(BASE "tslcert${COUNT}")
-    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "digidoc::X509Cert(${BASE}_crt, ${BASE}_crt_len, X509Cert::Pem),\n")
+    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "digidoc::X509Cert(${BASE}_crt, std::size(${BASE}_crt), X509Cert::Pem),\n")
 endforeach()
 file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "};")
 
