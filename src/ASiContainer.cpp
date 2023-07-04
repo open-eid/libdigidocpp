@@ -79,28 +79,26 @@ ASiContainer::ASiContainer(const string &mimetype)
 unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeRequired, const set<string> &supported)
 {
     DEBUG("ASiContainer::ASiContainer(path = '%s')", path.c_str());
-    unique_ptr<ZipSerialize> z = make_unique<ZipSerialize>(d->path = path, false);
+    auto z = make_unique<ZipSerialize>(d->path = path, false);
 
     vector<string> list = z->list();
     if(list.empty())
         THROW("Failed to parse container");
 
-    for(const string &file: list)
-        d->properties[file] = z->properties(file);
-
-    if(mimetypeRequired && list[0] != "mimetype")
+    if(mimetypeRequired && list.front() != "mimetype")
         THROW("required mimetype not found");
 
     // ETSI TS 102 918: mimetype has to be the first in the archive
     if(list.front() == "mimetype")
     {
-        stringstream data;
-        z->extract(list.front(), data);
-        d->mimetype = readMimetype(data);
+        d->mimetype = readMimetype(*z);
         DEBUG("mimetype = '%s'", d->mimetype.c_str());
         if(supported.find(d->mimetype) == supported.cend())
             THROW("Incorrect mimetype '%s'", d->mimetype.c_str());
     }
+
+    for(const string &file: list)
+        d->properties[file] = z->properties(file);
 
     return z;
 }
@@ -154,7 +152,7 @@ unique_ptr<iostream> ASiContainer::dataStream(const string &path, const ZipSeria
 {
     unique_ptr<iostream> data;
     if(d->properties[path].size > MAX_MEM_FILE)
-        data = make_unique<fstream>(File::encodeName(File::tempFileName()).c_str(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
+        data = make_unique<fstream>(File::encodeName(File::tempFileName()), fstream::in|fstream::out|fstream::binary|fstream::trunc);
     else
         data = make_unique<stringstream>();
     z.extract(path, *data);
@@ -180,20 +178,20 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
 
     ZipSerialize::Properties prop { appInfo(), File::modifiedTime(path), File::fileSize(path) };
     bool useTempFile = prop.size > MAX_MEM_FILE;
-    zproperty(File::fileName(path), move(prop));
+    zproperty(File::fileName(path), std::move(prop));
     unique_ptr<istream> is;
     if(useTempFile)
     {
-        is = make_unique<ifstream>(File::encodeName(path).c_str(), ifstream::binary);
+        is = make_unique<ifstream>(File::encodeName(path), ifstream::binary);
     }
     else
     {
-        stringstream *data = new stringstream;
-        if(ifstream file(File::encodeName(path).c_str(), ifstream::binary); file)
+        auto data = make_unique<stringstream>();
+        if(ifstream file{File::encodeName(path), ifstream::binary})
             *data << file.rdbuf();
-        is.reset(data);
+        is = std::move(data);
     }
-    addDataFilePrivate(move(is), fileName, mediaType);
+    addDataFilePrivate(std::move(is), fileName, mediaType);
 }
 
 void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
@@ -201,7 +199,7 @@ void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, c
     addDataFileChecks(fileName, mediaType);
     if(fileName.find_last_of("/\\") != string::npos)
         THROW("Document file '%s' cannot contain directory path.", fileName.c_str());
-    addDataFilePrivate(move(is), fileName, mediaType);
+    addDataFilePrivate(std::move(is), fileName, mediaType);
 }
 
 void ASiContainer::addDataFileChecks(const string &fileName, const string &mediaType)
@@ -218,7 +216,7 @@ void ASiContainer::addDataFileChecks(const string &fileName, const string &media
 
 void ASiContainer::addDataFilePrivate(unique_ptr<istream> is, const string &fileName, const string &mediaType)
 {
-    d->documents.push_back(new DataFilePrivate(move(is), fileName, mediaType));
+    d->documents.push_back(new DataFilePrivate(std::move(is), fileName, mediaType));
 }
 
 /**
@@ -235,7 +233,7 @@ void ASiContainer::removeDataFile(unsigned int id)
         THROW("Can not remove document from container which has signatures, remove all signatures before removing document.");
     if(id >= d->documents.size())
         THROW("Incorrect document id %u, there are only %zu documents in container.", id, dataFiles().size());
-    vector<DataFile*>::const_iterator it = (d->documents.cbegin() + id);
+    auto it = d->documents.cbegin() + id;
     delete *it;
     d->documents.erase(it);
 }
@@ -256,7 +254,7 @@ void ASiContainer::removeSignature(unsigned int id)
 {
     if(id >= d->signatures.size())
         THROW("Incorrect signature id %u, there are only %zu signatures in container.", id, d->signatures.size());
-    vector<Signature*>::const_iterator it = (d->signatures.cbegin() + id);
+    auto it = d->signatures.cbegin() + id;
     delete *it;
     d->signatures.erase(it);
 }
@@ -280,15 +278,14 @@ string ASiContainer::zpath() const
 
 ZipSerialize::Properties ASiContainer::zproperty(const string &file) const
 {
-    map<string, ZipSerialize::Properties>::const_iterator i = d->properties.find(file);
-    if(i != d->properties.cend())
+    if(auto i = d->properties.find(file); i != d->properties.cend())
         return i->second;
     return d->properties[file] = { appInfo(), time(nullptr), 0 };
 }
 
 void ASiContainer::zproperty(const string &file, ZipSerialize::Properties &&prop)
 {
-    d->properties[file] = move(prop);
+    d->properties[file] = std::move(prop);
 }
 
 /**
@@ -298,9 +295,12 @@ void ASiContainer::zproperty(const string &file, ZipSerialize::Properties &&prop
  * @throws IOException exception is thrown if there was error reading mimetype file from disk.
  * @throws ContainerException exception is thrown if the parsed mimetype is incorrect.
  */
-string ASiContainer::readMimetype(istream &is)
+string ASiContainer::readMimetype(const ZipSerialize &z)
 {
     DEBUG("ASiContainer::readMimetype()");
+    stringstream is;
+    z.extract("mimetype", is);
+
     array<unsigned char,3> bom{};
     is.read((char*)bom.data(), bom.size());
     // Contains UTF-16 BOM

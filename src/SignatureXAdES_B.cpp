@@ -539,7 +539,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         else
         {
             string uri = File::fromUriPath(ref.uRI().get());
-            if(uri[0] == '/')
+            if(uri.front() == '/')
                 uri.erase(0);
             signatureref.insert({ uri, mimeinfo["#"+ref.id().get()] });
         }
@@ -554,7 +554,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         {
             if(auto i = signatureref.find(file->fileName()); i != signatureref.end())
             {
-                if(i->second != file->mediaType())
+                if(bdoc->mediaType() != ASiContainer::MIMETYPE_ASIC_S && i->second != file->mediaType())
                     EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
                         file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
                 static const regex reg(R"(([\w])*/([\w\-\+\.])*)");

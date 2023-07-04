@@ -36,9 +36,6 @@ namespace digidoc
     public:
         void save(const std::string &path = {}) override;
 
-        void addDataFile(const std::string &path, const std::string &mediaType) override;
-        void addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType) override;
-
         void addAdESSignature(std::istream &sigdata) override;
         Signature* prepareSignature(Signer *signer) override;
         Signature* sign(Signer* signer) override;
@@ -50,11 +47,7 @@ namespace digidoc
         ASiC_S();
         ASiC_S(const std::string &path);
         DISABLE_COPY(ASiC_S);
-        
-        void extractTimestamp(const ZipSerialize &z);
-        void loadContainer(const ZipSerialize &z);
-        
+
         static bool isContainerSimpleFormat(const std::string &path);
-        static bool isTimestampedASiC_S(const std::vector<std::string> &list);
     };
 }
