@@ -22,6 +22,8 @@
 #include "crypto/Digest.h"
 #include "util/log.h"
 
+#define XSD_CXX11
+
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
 DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
