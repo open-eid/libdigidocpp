@@ -150,24 +150,38 @@ jobs:
       MAKEFLAGS: ""
       VER_SUFFIX: .VS${{ matrix.toolset }}
       VERSION: 3.16.0.${{ github.run_number }}
-      VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/patches/vcpkg-triplets
-      VCPKG_OVERLAY_PORTS: ${{ github.workspace }}/patches/vcpkg-ports
     steps:
     - name: Checkout
       uses: actions/checkout@v3
       with:
         submodules: recursive
-    - name: Prepare vcpkg
-      uses: lukka/run-vcpkg@v7
+    - uses: mad9000/actions-find-and-replace-string@3
+      id: path
       with:
-        vcpkgArguments: >-
-          "xml-security-c:x86-windows-v${{ matrix.toolset }}"
-          "xml-security-c:x64-windows-v${{ matrix.toolset }}"
-          "zlib:x86-windows-v${{ matrix.toolset }}"
-          "zlib:x64-windows-v${{ matrix.toolset }}"
-          "boost-test:x86-windows-v${{ matrix.toolset }}"
-          "boost-test:x64-windows-v${{ matrix.toolset }}"
-        vcpkgGitCommitId: 9b9c2758ece1d8ac0de90589730bb5ccf45c0874
+        source: ${{ github.workspace }}
+        find: '\'
+        replace: '/'
+        replaceAll: true
+    - name: Prepare vcpkg X64
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 5787cfa699a75805ef41938ec66bc7492714d290
+        vcpkgJsonGlob: ${{ steps.path.outputs.value }}/vcpkg.json
+        runVcpkgInstall: true
+        runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
+      env:
+        VCPKG_DEFAULT_TRIPLET: x64-windows-v${{ matrix.toolset }}
+        VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
+    - name: Prepare vcpkg X86
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 5787cfa699a75805ef41938ec66bc7492714d290
+        vcpkgJsonGlob: ${{ steps.path.outputs.value }}/vcpkg.json
+        runVcpkgInstall: true
+        runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
+      env:
+        VCPKG_DEFAULT_TRIPLET: x86-windows-v${{ matrix.toolset }}
+        VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
     - name: Install dependencies
       run: choco install doxygen.install swig -y > $null
     - name: Build xsd
@@ -179,7 +193,8 @@ jobs:
           -toolset ${{ matrix.toolset }} `
           -vcvars "${{ matrix.vcvars }}" `
           -swig C:/ProgramData/chocolatey/bin/swig.exe `
-          -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
+          -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
+          -boost
     - name: Archive artifacts
       uses: actions/upload-artifact@v3
       with:

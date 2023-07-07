@@ -4,10 +4,10 @@
 <?elseif $(env.VisualStudioVersion) = "16.0" ?>
 <?define VCVER = "142" ?>
 <?endif?>
-<?define VCPKG_X86 = "$(var.vcpkg)\installed\x86-$(var.vcpkg_suffix)\bin" ?>
-<?define VCPKG_X64 = "$(var.vcpkg)\installed\x64-$(var.vcpkg_suffix)\bin" ?>
-<?define VCPKG_X86D = "$(var.vcpkg)\installed\x86-$(var.vcpkg_suffix)\debug\bin" ?>
-<?define VCPKG_X64D = "$(var.vcpkg)\installed\x64-$(var.vcpkg_suffix)\debug\bin" ?>
+<?define VCPKG_X86 = "$(var.vcpkg_x86)\bin" ?>
+<?define VCPKG_X64 = "$(var.vcpkg_x64)\bin" ?>
+<?define VCPKG_X86D = "$(var.vcpkg_x86)\debug\bin" ?>
+<?define VCPKG_X64D = "$(var.vcpkg_x64)\debug\bin" ?>
 
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Name="Libdigidocpp" UpgradeCode="{93985BBA-6B59-443B-80C8-BA987407F8B8}"

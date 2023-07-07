@@ -85,6 +85,7 @@
 1. Install dependencies and necessary tools from
 	* [Visual Studio Community 2017/2019/2022](https://www.visualstudio.com/downloads/)
 	* [CMake](http://www.cmake.org)
+	* [vcpkg](https://vcpkg.io/)
 	* [Swig](http://swig.org/download.html) - Optional, for C# and Java bindings
 	* [Doxygen](https://www.doxygen.nl/download.html) - Optional, for generationg documentation
 	* [Wix toolset](http://wixtoolset.org/releases/) - Optional, for creating Windows installation packages
@@ -106,8 +107,9 @@
 
 4. Configure
 
-        cmake -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake" `
+        cmake -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake `
               -DVCPKG_TARGET_TRIPLET=x64-windows-v142 `
+              -DVCPKG_MANIFEST_FEATURES=tests `
               -DXSD_INCLUDE_DIR=xsd/libxsd `
               -DXSD_EXECUTABLE=xsd/bin/xsd.exe `
               -B build -S .

@@ -1,0 +1,27 @@
+{
+    "name": "libdigidocpp",
+    "version": "3.16.0",
+    "dependencies": [
+      "xml-security-c",
+      "zlib"
+    ],
+    "features": {
+      "tests": { "description": "Build tests", "dependencies": ["boost-test"] }
+    },
+    "builtin-baseline": "5787cfa699a75805ef41938ec66bc7492714d290",
+    "vcpkg-configuration": {
+        "overlay-triplets": ["./patches/vcpkg-triplets"],
+        "overlay-ports": [
+          "patches/vcpkg-ports/openssl",
+          "patches/vcpkg-ports/xml-security-c"
+        ],
+        "registries": [
+          {
+            "kind": "git",
+            "repository": "https://github.com/microsoft/vcpkg.git",
+            "baseline": "f32fc13dbef629b611fab9103d25e8d6c6ab9f6d",
+            "packages": [ "xalan-c" ]
+          }
+        ]
+    }
+}

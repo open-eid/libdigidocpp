@@ -1,31 +1,18 @@
-#powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 [-openssl] [-xerces] [-xalan] [-xmlsec] [-xsd] [-zlib]
+#powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 [-dependencies] [-xsd]
 param(
 	[string]$vcpkg = "vcpkg\vcpkg.exe",
 	[string]$git = "git.exe",
 	[string]$7zip = "C:\Program Files\7-Zip\7z.exe",
 	[string]$toolset = "142",
 	[string]$xsdver = "xsd-4.0.0-i686-windows",
-	[switch]$openssl = $false,
-	[switch]$xerces = $false,
-	[switch]$xalan = $false,
-	[switch]$xmlsec = $false,
-	[switch]$zlib = $false,
 	[switch]$xsd = $false,
-	[switch]$freetype = $false,
-	[switch]$podofo = $false
+	[switch]$dependencies = $false
 )
-
-$env:VCPKG_OVERLAY_PORTS = "$PSScriptRoot\patches\vcpkg-ports"
-$env:VCPKG_OVERLAY_TRIPLETS = "$PSScriptRoot\patches\vcpkg-triplets"
 
 if(!(Test-Path -Path $vcpkg)) {
 	$vcpkg_dir = (split-path -parent $vcpkg)
 	& $git clone --depth 1 https://github.com/microsoft/vcpkg $vcpkg_dir
 	& $vcpkg_dir\bootstrap-vcpkg.bat
-}
-
-function vcpkg_install($package) {
-	& $vcpkg install "$($package):x86-windows-v$toolset" "$($package):x64-windows-v$toolset"
 }
 
 function xsd() {
@@ -35,35 +22,16 @@ function xsd() {
 	Rename-Item $xsdver xsd
 }
 
-if($openssl) {
-	vcpkg_install("openssl")
-}
-if($xerces) {
-	vcpkg_install("xerces-c")
-}
-if($xalan) {
-	vcpkg_install("xalan-c")
-}
-if($xmlsec) {
-	vcpkg_install("xml-security-c")
-}
 if($xsd) {
 	xsd
 }
-if($zlib) {
-	vcpkg_install("zlib")
+
+if($dependencies) {
+	& $vcpkg install --clean-after-build --triplet x86-windows-v$toolset --x-feature=tests --x-install-root=vcpkg_installed_x86
+	& $vcpkg install --clean-after-build --triplet x64-windows-v$toolset --x-feature=tests --x-install-root=vcpkg_installed_x64
 }
-if($freetype) {
-	vcpkg_install("freetype")
-}
-if($podofo) {
-	vcpkg_install("podofo")
-}
-if(!$openssl -and !$xerces -and !$xalan -and !$xmlsec -and !$xsd -and !$zlib -and !$freetype -and !$podofo) {
-	vcpkg_install("openssl")
-	vcpkg_install("xerces-c")
-	vcpkg_install("xalan-c")
-	vcpkg_install("xml-security-c")
-	vcpkg_install("zlib")
+
+if(!$xsd -and !$dependencies) {
 	xsd
 }
+

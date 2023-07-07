@@ -3,6 +3,7 @@ param(
   [string]$libdigidocpp = $PSScriptRoot,
   [string]$vcpkg = "vcpkg\vcpkg.exe",
   [string]$vcpkg_dir = (split-path -parent $vcpkg),
+  [string]$vcpkg_installed = $libdigidocpp,
   [string]$buildver = "0",
   [string]$msiversion = "3.16.0.$buildver",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.msi",
@@ -16,7 +17,7 @@ param(
   [string]$light = "$env:WIX\bin\light.exe",
   [string]$swig = $null,
   [string]$doxygen = $null,
-  [string]$boost = $null,
+  [switch]$boost = $false,
   [string]$xsd = "$libdigidocpp\xsd",
   [string]$sign = $null,
   [string]$crosssign = $null,
@@ -33,7 +34,6 @@ if ($vcver) {
   $vcver = "-vcvars_ver=$vcver"
 }
 
-$env:VCPKG_OVERLAY_TRIPLETS = "$libdigidocpp\patches\vcpkg-triplets"
 $cmakeext = @()
 $candleext = @()
 $lightext = @()
@@ -47,7 +47,7 @@ if($doxygen) {
   $lightext += "DocFilesFragment.wixobj"
 }
 if($boost) {
-  $cmakeext += "-DBoost_INCLUDE_DIR=$boost"
+  $cmakeext += "-DVCPKG_MANIFEST_FEATURES=tests"
 }
 if($source) {
   Remove-Item source -Force -Recurse
@@ -62,17 +62,18 @@ foreach($platform in @("x86", "x64")) {
   foreach($type in @("Debug", "RelWithDebInfo")) {
     $buildpath = $platform+$type
     Remove-Item $buildpath -Force -Recurse -ErrorAction Ignore
-    & $vcvars $platform $vcver "&&" $cmake "-G$generator" `
+    & $vcvars $platform $vcver "&&" $cmake -B $buildpath -S $libdigidocpp "-G$generator" `
       "-DCMAKE_BUILD_TYPE=$type" `
       "-DCMAKE_INSTALL_PREFIX=$platform" `
       "-DCMAKE_INSTALL_LIBDIR=bin" `
       "-DCMAKE_TOOLCHAIN_FILE=$vcpkg_dir/scripts/buildsystems/vcpkg.cmake" `
       "-DVCPKG_TARGET_TRIPLET=$platform-windows-v$toolset" `
+      "-DVCPKG_INSTALLED_DIR=$vcpkg_installed\vcpkg_installed_$platform" `
       "-DXSD_INCLUDE_DIR=$xsd/libxsd" `
       "-DXSD_EXECUTABLE=$xsd/bin/xsd.exe" `
       "-DSIGNCERT=$sign" `
       "-DCROSSSIGNCERT=$crosssign" `
-      $cmakeext -B $buildpath -S $libdigidocpp "&&" $cmake --build $buildpath --target check install
+      $cmakeext "&&" $cmake --build $buildpath --target check install
   }
 }
 
@@ -80,7 +81,8 @@ if($doxygen) {
   & $heat dir x86/share/doc/libdigidocpp -nologo -cg Documentation -gg -scom -sreg -sfrag -srd -dr DocumentationFolder -var var.docLocation -out DocFilesFragment.wxs
 }
 & $heat dir x86/include -nologo -cg Headers -gg -scom -sreg -sfrag -srd -dr HeadersFolder -var var.headersLocation -out HeadersFragment.wxs
-& $vcvars x86 "&&" $candle -nologo "-dICON=$libdigidocpp/cmake/modules/ID.ico" "-dMSI_VERSION=$msiversion" "-dvcpkg=$vcpkg_dir" "-dvcpkg_suffix=windows-v$toolset" `
+& $vcvars x86 "&&" $candle -nologo "-dICON=$libdigidocpp/cmake/modules/ID.ico" "-dMSI_VERSION=$msiversion" `
+  "-dvcpkg_x86=$vcpkg_installed\vcpkg_installed_x86\x86-windows-v$toolset" "-dvcpkg_x64=$vcpkg_installed\vcpkg_installed_x64\x64-windows-v$toolset" `
   "-dheadersLocation=x86/include" "-dlibdigidocpp=." $candleext $libdigidocpp\libdigidocpp.wxs HeadersFragment.wxs
 & $light -nologo -out $msi_name -ext WixUIExtension `
   "-dWixUIBannerBmp=$libdigidocpp/cmake/modules/banner.bmp" `
