@@ -55,12 +55,10 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
     string_view canonicalizationMethod) const
 {
     try {
-        stringstream ofs;
-        saveToXml(ofs);
         XSECProvider prov;
         auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
-        auto doc = SecureDOMParser().parseIStream(ofs);
-        unique_ptr<DSIGSignature,decltype(deleteSig)> sig(prov.newSignatureFromDOM(doc.get()), deleteSig);
+        DOMNode *node = signatures->element(id());
+        unique_ptr<DSIGSignature,decltype(deleteSig)> sig(prov.newSignatureFromDOM(node->getOwnerDocument(), node), deleteSig);
         unique_ptr<URIResolver> uriresolver = make_unique<URIResolver>(bdoc);
         unique_ptr<XSECKeyInfoResolverDefault> keyresolver = make_unique<XSECKeyInfoResolverDefault>();
         sig->setURIResolver(uriresolver.get());
@@ -72,15 +70,14 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
         safeBuffer m_errStr;
         m_errStr.sbXMLChIn((const XMLCh*)u"");
 
-        std::array<XMLByte, 1024> buf{};
+        array<XMLByte, 1024> buf{};
         DSIGReferenceList *list = sig->getReferenceList();
         for(size_t i = 0; i < list->getSize(); ++i)
         {
-            XSECBinTXFMInputStream *stream = list->item(i)->makeBinInputStream();
+            unique_ptr<XSECBinTXFMInputStream> stream(list->item(i)->makeBinInputStream());
             for(XMLSize_t size = stream->readBytes(buf.data(), buf.size()); size > 0;
                  size = stream->readBytes(buf.data(), buf.size()))
                 digest->update(buf.data(), size);
-            delete stream;
         }
     }
     catch(const Parsing &e)
@@ -137,14 +134,14 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
              u"RefsOnlyTimeStamp" })
     {
         try {
-            calcDigestOnNode(digest, XADES_NAMESPACE, name, canonicalizationMethod);
+            calcDigestOnNode(digest, Signatures::XADES_NAMESPACE, name, canonicalizationMethod);
         } catch(const Exception &) {
             DEBUG("Element %s not found", xsd::cxx::xml::transcode<char>(name).data());
         }
     }
 
     try {
-        calcDigestOnNode(digest, XADESv141_NAMESPACE, u"TimeStampValidationData", canonicalizationMethod);
+        calcDigestOnNode(digest, Signatures::XADESv141_NAMESPACE, u"TimeStampValidationData", canonicalizationMethod);
     } catch(const Exception &) {
         DEBUG("Element TimeStampValidationData not found");
     }
@@ -170,7 +167,7 @@ void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
     usp.archiveTimeStampV141().push_back(std::move(ts));
     usp.contentOrder().emplace_back(UnsignedSignaturePropertiesType::archiveTimeStampV141Id,
         usp.archiveTimeStampV141().size() - 1);
-    sigdata_.clear();
+    signatures->reloadDOM();
 }
 
 TS SignatureXAdES_LTA::tsaFromBase64() const

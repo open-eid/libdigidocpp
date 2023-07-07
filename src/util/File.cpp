@@ -345,13 +345,12 @@ string File::digidocppPath()
  * @param relativeFilePath file name to be appended to the full path
  * @return full file path in the format "file:///fullpath" in URI encoding.
  */
-string File::fullPathUrl(const string &path)
+string File::fullPathUrl(string path)
 {
 #ifdef _WIN32
     // Under windows replace the path delimiters
-    string result = path;
-    replace(result.begin(), result.end(), '\\', '/');
-    return "file:///" + File::toUri(result);
+    replace(path.begin(), path.end(), '\\', '/');
+    return "file:///" + File::toUri(path);
 #else
     return "file://" + File::toUri(path);
 #endif

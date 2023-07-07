@@ -21,6 +21,8 @@
 
 #include "Signature.h"
 
+#include "xml/SecureDOMParser.h"
+
 #include <map>
 #include <memory>
 
@@ -33,12 +35,38 @@ namespace digidoc
     namespace xades { class CertIDType; class DigestAlgAndValueType; class QualifyingPropertiesType; class SignedSignaturePropertiesType; }
     namespace asic { class XAdESSignaturesType; class Document_signatures; }
 
+    class Signatures
+    {
+    public:
+        explicit Signatures();
+        Signatures(std::istream &data, ASiContainer *container);
+        ~Signatures();
+
+        xercesc::DOMElement* element(std::string_view id) const;
+        size_t count() const;
+        void reloadDOM();
+        void save(std::ostream &os) const;
+
+        static const std::string ASIC_NAMESPACE;
+        static const std::string OPENDOCUMENT_NAMESPACE;
+        static const std::string XADES_NAMESPACE;
+        static const std::string XADESv141_NAMESPACE;
+
+        std::unique_ptr<asic::XAdESSignaturesType> asicsignature;
+        std::unique_ptr<asic::Document_signatures> odfsignature;
+
+    private:
+        void parseDOM(std::istream &data, const std::string &schema_location = {});
+
+        std::unique_ptr<xercesc::DOMDocument> doc;
+    };
+
     class SignatureXAdES_B : public Signature
     {
 
       public:
           SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer);
-          SignatureXAdES_B(std::istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation = false);
+          SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, size_t i, ASiContainer *container);
           ~SignatureXAdES_B() override;
 
           std::string id() const override;
@@ -66,7 +94,7 @@ namespace digidoc
               const std::vector<unsigned char> &digestValue, const std::string& type = {});
           void addDataObjectFormat(const std::string& uri, const std::string& mime);
 
-          void saveToXml(std::ostream &os) const;
+          std::shared_ptr<Signatures> signatures;
 
       protected:
           std::vector<unsigned char> getSignatureValue() const;
@@ -74,18 +102,11 @@ namespace digidoc
           xades::SignedSignaturePropertiesType& getSignedSignatureProperties() const;
           void calcDigestOnNode(Digest* calc, const std::string& ns,
               std::u16string_view tagName, std::string_view canonicalizationMethod = {}) const;
-          void checkCertID(const xades::CertIDType &certID, const X509Cert &cert) const;
-          static void checkDigest(const xades::DigestAlgAndValueType &digest, const std::vector<unsigned char> &data) ;
+          static void checkCertID(const xades::CertIDType &certID, const X509Cert &cert);
+          static void checkDigest(const xades::DigestAlgAndValueType &digest, const std::vector<unsigned char> &data);
 
-          static const std::string ASIC_NAMESPACE;
-          static const std::string XADES_NAMESPACE;
-          static const std::string XADESv141_NAMESPACE;
-          static const std::string OPENDOCUMENT_NAMESPACE;
-          dsig::SignatureType *signature = nullptr;
-          std::unique_ptr<asic::XAdESSignaturesType> asicsignature;
-          std::unique_ptr<asic::Document_signatures> odfsignature;
-          ASiContainer *bdoc;
-          std::string sigdata_;
+          dsig::SignatureType *signature {};
+          ASiContainer *bdoc {};
 
       private:
           DISABLE_COPY(SignatureXAdES_B);

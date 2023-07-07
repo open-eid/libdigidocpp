@@ -54,7 +54,7 @@ namespace digidoc
               static std::string fileName(const std::string& path);
               static std::string directory(const std::string& path);
               static std::string path(std::string dir, std::string_view relativePath);
-              static std::string fullPathUrl(const std::string &path);
+              static std::string fullPathUrl(std::string path);
               static std::string tempFileName();
               static void createDirectory(std::string path);
               static void deleteTempFiles();

@@ -57,10 +57,10 @@ using namespace xercesc;
 using namespace xml_schema;
 namespace xml = xsd::cxx::xml;
 
-const string SignatureXAdES_B::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3.2#";
-const string SignatureXAdES_B::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
-const string SignatureXAdES_B::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.1#";
-const string SignatureXAdES_B::OPENDOCUMENT_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0";
+const string Signatures::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3.2#";
+const string Signatures::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
+const string Signatures::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.1#";
+const string Signatures::OPENDOCUMENT_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0";
 const map<string,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist = {
     {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.1",{ // https://www.sk.ee/repository/bdoc-spec21.pdf
         // SHA-1
@@ -114,11 +114,130 @@ static Base64Binary toBase64(const vector<unsigned char> &v)
 
 }
 
+Signatures::Signatures()
+    : asicsignature(make_unique<XAdESSignaturesType>())
+{}
+
+
+Signatures::Signatures(istream &data, ASiContainer *container)
+{
+    Properties properties;
+    const auto xsdPath = Conf::instance()->xsdPath();
+    properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(xsdPath + "/XAdES01903v132-201601-relaxed.xsd"));
+    properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(xsdPath + "/XAdES01903v141-201601.xsd"));
+    properties.schema_location(URI_ID_DSIG, File::fullPathUrl(xsdPath + "/xmldsig-core-schema.xsd"));
+    properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(xsdPath + "/en_31916201v010101.xsd"));
+    properties.schema_location(OPENDOCUMENT_NAMESPACE, File::fullPathUrl(xsdPath + "/OpenDocument_dsig.xsd"));
+    parseDOM(data, properties.schema_location());
+
+    try
+    {
+        /* http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
+         * 6.2.2
+         * 3) The root element of each "*signatures*.xml" content shall be either:
+         * a) <asic:XAdESSignatures> as specified in clause A.5, the recommended format; or
+         * b) <document-signatures> as specified in OASIS Open Document Format [9]; or
+         *
+         * Case container is ADoc 1.0 then handle document-signatures root element
+         */
+        if(container->mediaType() == ASiC_E::MIMETYPE_ADOC)
+        {
+            odfsignature = document_signatures(*doc, Flags::dont_initialize, properties);
+            if(odfsignature->signature().empty())
+                THROW("Failed to parse signature XML");
+        }
+        else
+        {
+            asicsignature = xAdESSignatures(*doc, Flags::dont_initialize, properties);
+            if(asicsignature->signature().empty())
+                THROW("Failed to parse signature XML");
+        }
+        // For calcDigestOnNode
+        data.clear();
+        data.seekg(0);
+        parseDOM(data);
+    }
+    catch(const Parsing& e)
+    {
+        stringstream s;
+        s << e;
+        THROW("Failed to parse signature XML: %s", s.str().c_str());
+    }
+    catch(const xsd::cxx::exception& e)
+    {
+        THROW("Failed to parse signature XML: %s", e.what());
+    }
+}
+
+Signatures::~Signatures() = default;
+
+size_t Signatures::count() const
+{
+    if(odfsignature)
+        return odfsignature->signature().size();
+    return asicsignature->signature().size();
+}
+
+xercesc::DOMElement* Signatures::element(string_view id) const
+{
+    DOMNodeList *nodeList = doc->getElementsByTagNameNS(xml::string(URI_ID_DSIG).c_str(), u"Signature");
+    for(XMLSize_t i = 0, count = nodeList->getLength(); i < count; ++i)
+    {
+        auto *elem = static_cast<DOMElement*>(nodeList->item(i));
+        if(id == xml::transcode<char>(elem->getAttribute(u"Id")))
+            return elem;
+    }
+    return {};
+}
+
+void Signatures::parseDOM(istream &data, const std::string &schema_location)
+{
+    doc = SecureDOMParser(schema_location).parseIStream(data);
+}
+
+void Signatures::reloadDOM()
+{
+    // Parse Xerces DOM from file, to preserve the white spaces "as is"
+    // and get the same digest value on XML node.
+    // Canonical XML 1.0 specification (http://www.w3.org/TR/2001/REC-xml-c14n-20010315)
+    // needs all the white spaces from XML file "as is", otherwise the digests won't match.
+    // Therefore we have to use Xerces to parse the XML file each time a digest needs to be
+    // calculated on a XML node. If you are parsing XML files with a parser that doesn't
+    // preserve the white spaces you are DOOMED!
+    // Parse and return a copy of the Xerces DOM tree.
+    // Save to file an parse it again, to make XML Canonicalization work
+    // correctly as expected by the Canonical XML 1.0 specification.
+    // Hope, the next Canonical XMl specification fixes the white spaces preserving "bug".
+    stringstream ofs;
+    save(ofs);
+    parseDOM(ofs);
+}
+
+void Signatures::save(ostream &os) const
+{
+    try
+    {
+        static const NamespaceInfomap map{{
+            {"ds", {URI_ID_DSIG, {}}},
+            {"xades", {XADES_NAMESPACE, {}}},
+            {"asic", {ASIC_NAMESPACE, {}}},
+        }};
+        xAdESSignatures(os, *asicsignature, map, "UTF-8", Flags::dont_initialize);
+    }
+    catch(const xml::invalid_utf8_string &)
+    {
+        THROW("Failed to create signature XML file. Parameters must be in UTF-8.");
+    }
+    if(os.fail())
+        THROW("Failed to create signature XML file.");
+}
+
 /**
  * Creates an empty BDOC-BES signature with mandatory XML nodes.
  */
-SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer)
-    : bdoc(bdoc)
+SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Signer *signer)
+    : signatures(make_shared<Signatures>())
+    , bdoc(container)
 {
     X509Cert c = signer->cert();
     string nr = "S" + to_string(id);
@@ -134,9 +253,8 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
     signatureValue->id(nr + "-SIG");
 
     // Signature (root)
-    asicsignature = make_unique<XAdESSignaturesType>();
-    asicsignature->signature().push_back(make_unique<SignatureType>(std::move(signedInfo), std::move(signatureValue)));
-    signature = &asicsignature->signature().front();
+    signatures->asicsignature->signature().push_back(make_unique<SignatureType>(std::move(signedInfo), std::move(signatureValue)));
+    signature = &signatures->asicsignature->signature().back();
     signature->id(nr);
 
     // Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties
@@ -177,9 +295,11 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
         addDataObjectFormat("#" + referenceId, f->mediaType());
     }
 
+    signatures->reloadDOM();
     Digest calc(digestMethod);
-    calcDigestOnNode(&calc, XADES_NAMESPACE, u"SignedProperties");
+    calcDigestOnNode(&calc, Signatures::XADES_NAMESPACE, u"SignedProperties");
     addReference("#" + nr +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties");
+    signatures->reloadDOM();
 }
 
 /**
@@ -192,60 +312,14 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *
  *                              produced by other systems; default = false
  * @throws SignatureException
  */
-SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
-    : bdoc(bdoc)
+SignatureXAdES_B::SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, size_t i, ASiContainer *container)
+    : signatures(signatures)
+    , bdoc(container)
 {
-    try
-    {
-        stringstream is;
-        is << sigdata.rdbuf();
-        sigdata_ = is.str();
-
-        Properties properties;
-        const auto *xadesShema = relaxSchemaValidation ? "/XAdES01903v132-201601-relaxed.xsd" : "/XAdES01903v132-201601.xsd";
-        properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + xadesShema));
-        properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/XAdES01903v141-201601.xsd"));
-        properties.schema_location(URI_ID_DSIG, File::fullPathUrl(Conf::instance()->xsdPath() + "/xmldsig-core-schema.xsd"));
-        properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/en_31916201v010101.xsd"));
-        properties.schema_location(OPENDOCUMENT_NAMESPACE, File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_dsig.xsd"));
-        unique_ptr<DOMDocument> doc(SecureDOMParser(properties.schema_location()).parseIStream(is));
-        /* http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
-         * 6.2.2
-         * 3) The root element of each "*signatures*.xml" content shall be either:
-         * a) <asic:XAdESSignatures> as specified in clause A.5, the recommended format; or
-         * b) <document-signatures> as specified in OASIS Open Document Format [9]; or
-         *
-         * Case container is ADoc 1.0 then handle document-signatures root element
-         */
-        if(bdoc->mediaType() == ASiC_E::MIMETYPE_ADOC)
-        {
-            odfsignature = document_signatures(*doc, Flags::dont_initialize, properties);
-            if(odfsignature->signature().size() > 1)
-                THROW("More than one signature in signatures.xml file is unsupported");
-            if(odfsignature->signature().empty())
-                THROW("Failed to parse signature XML");
-            signature = &odfsignature->signature().front();
-        }
-        else
-        {
-            asicsignature = xAdESSignatures(*doc, Flags::dont_initialize, properties);
-            if(asicsignature->signature().size() > 1)
-                THROW("More than one signature in signatures.xml file is unsupported");
-            if(asicsignature->signature().empty())
-                THROW("Failed to parse signature XML");
-            signature = &asicsignature->signature().front();
-        }
-    }
-    catch(const Parsing& e)
-    {
-        stringstream s;
-        s << e;
-        THROW("Failed to parse signature XML: %s", s.str().c_str());
-    }
-    catch(const xsd::cxx::exception& e)
-    {
-        THROW("Failed to parse signature XML: %s", e.what());
-    }
+    if(signatures->odfsignature)
+        signature = &signatures->odfsignature->signature().at(i);
+    else
+        signature = &signatures->asicsignature->signature().at(i);
 
     if(const auto &sp = qualifyingProperties().signedProperties())
     {
@@ -301,7 +375,14 @@ SignatureXAdES_B::SignatureXAdES_B(istream &sigdata, ASiContainer *bdoc, bool re
         THROW("Signature element mandatory attribute 'Id' is missing");
 }
 
-SignatureXAdES_B::~SignatureXAdES_B() = default;
+SignatureXAdES_B::~SignatureXAdES_B()
+{
+    auto &seq = signatures->odfsignature ? signatures->odfsignature->signature() : signatures->asicsignature->signature();
+    if(auto i = std::find_if(seq.begin(), seq.end(), [this](const dsig::SignatureType &sig) {
+            return sig.id().get() == signature->id().get();
+        }); i != seq.end())
+        seq.erase(i);
+}
 
 string SignatureXAdES_B::policy() const
 {
@@ -446,18 +527,15 @@ void SignatureXAdES_B::validate(const string &policy) const
     }
 
     try {
-        stringstream ofs;
-        saveToXml(ofs);
-        unique_ptr<DOMDocument> doc(SecureDOMParser().parseIStream(ofs));
-
         XSECProvider prov;
         auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
-        unique_ptr<DSIGSignature, decltype(deleteSig)> sig(prov.newSignatureFromDOM(doc.get()), deleteSig);
-        unique_ptr<URIResolver> uriresolver(new URIResolver(bdoc));
-        unique_ptr<XSECKeyInfoResolverDefault> keyresolver(new XSECKeyInfoResolverDefault);
+        DOMNode *node = signatures->element(id());
+        unique_ptr<DSIGSignature, decltype(deleteSig)> sig(prov.newSignatureFromDOM(node->getOwnerDocument(), node), deleteSig);
+        unique_ptr<URIResolver> uriresolver = make_unique<URIResolver>(bdoc);
+        unique_ptr<XSECKeyInfoResolverDefault> keyresolver = make_unique<XSECKeyInfoResolverDefault>();
         sig->setURIResolver(uriresolver.get());
         sig->setKeyInfoResolver(keyresolver.get());
-        sig->registerIdAttributeName((const XMLCh*)u"ID");
+        sig->registerIdAttributeName((const XMLCh*)u"Id");
         sig->setIdByAttributeName(true);
         sig->load();
 
@@ -598,7 +676,7 @@ vector<unsigned char> SignatureXAdES_B::dataToSign() const
     return calc.result();
 }
 
-void SignatureXAdES_B::checkCertID(const CertIDType &certID, const X509Cert &cert) const
+void SignatureXAdES_B::checkCertID(const CertIDType &certID, const X509Cert &cert)
 {
     const X509IssuerSerialType::X509IssuerNameType &certIssuerName = certID.issuerSerial().x509IssuerName();
     const X509IssuerSerialType::X509SerialNumberType &certSerialNumber = certID.issuerSerial().x509SerialNumber();
@@ -731,7 +809,7 @@ string SignatureXAdES_B::addReference(const string& uri, const string& digestUri
         reference->type(type);
 
     SignedInfoType::ReferenceSequence &seq = signature->signedInfo().reference();
-    reference->id(id() + Log::format("-RefId%lu", (unsigned long)seq.size()));
+    reference->id(id() + Log::format("-RefId%zu", seq.size()));
     seq.push_back(std::move(reference));
 
     return seq.back().id().get();
@@ -895,7 +973,7 @@ void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureV
 {
     SignatureValueType buffer = toBase64(signatureValue);
     signature->signatureValue().swap(buffer);
-    sigdata_.clear();
+    signatures->reloadDOM();
 }
 
 /**
@@ -921,35 +999,14 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
 {
     try
     {
-        // Parse Xerces DOM from file, to preserve the white spaces "as is"
-        // and get the same digest value on XML node.
-        // Canonical XML 1.0 specification (http://www.w3.org/TR/2001/REC-xml-c14n-20010315)
-        // needs all the white spaces from XML file "as is", otherwise the digests won't match.
-        // Therefore we have to use Xerces to parse the XML file each time a digest needs to be
-        // calculated on a XML node. If you are parsing XML files with a parser that doesn't
-        // preserve the white spaces you are DOOMED!
-        // Parse and return a copy of the Xerces DOM tree.
-        // Save to file an parse it again, to make XML Canonicalization work
-        // correctly as expected by the Canonical XML 1.0 specification.
-        // Hope, the next Canonical XMl specification fixes the white spaces preserving "bug".
-        stringstream ofs;
-        saveToXml(ofs);
-        unique_ptr<DOMDocument> doc(SecureDOMParser().parseIStream(ofs));
-
-        DOMNode *node = nullptr;
-        // Select node, on which the digest is calculated.
-        DOMNodeList* nodeList = doc->getElementsByTagNameNS(xml::string(ns).c_str(), tagName.data());
-        if(nodeList->getLength() == 1)
-            node = nodeList->item(0);
-
-        // Make sure that exactly one node was found.
-        if(!node)
+        auto *element = signatures->element(id());
+        DOMNodeList *nodeList = element->getElementsByTagNameNS(xml::string(ns).c_str(), tagName.data());
+        if(nodeList->getLength() != 1)
             THROW("Could not find '%s' node which is in '%s' namespace in signature XML.",
                   xml::transcode<char>(tagName.data()).data(), ns.c_str());
-
         if(canonicalizationMethod.empty())
             canonicalizationMethod = signature->signedInfo().canonicalizationMethod().algorithm();
-        SecureDOMParser::calcDigestOnNode(calc, canonicalizationMethod, doc.get(), node);
+        SecureDOMParser::calcDigestOnNode(calc, canonicalizationMethod, nodeList->item(0));
     }
     catch(const Exception& e)
     {
@@ -980,38 +1037,6 @@ void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
     {
         THROW("Failed to parse signature XML.");
     }
-}
-
-/**
- * Saves signature to file using XAdES XML format.
- *
- * @param os out stream, where the signature XML file is saved.
- * @throws Exception throws exception if the signature file creation failed.
- */
-void SignatureXAdES_B::saveToXml(ostream &os) const
-{
-    if(!sigdata_.empty())
-    {
-        os << sigdata_;
-        return;
-    }
-
-    try
-    {
-        NamespaceInfomap map;
-        map["ds"].name = URI_ID_DSIG;
-        map["xades"].name = XADES_NAMESPACE;
-        map["asic"].name = ASIC_NAMESPACE;
-        XAdESSignaturesType asic;
-        asic.signature().push_back(*signature);
-        xAdESSignatures(os, asic, map, "UTF-8", Flags::dont_initialize);
-    }
-    catch(const xml::invalid_utf8_string &)
-    {
-        THROW("Failed to create signature XML file. Parameters must be in UTF-8.");
-    }
-    if(os.fail())
-        THROW("Failed to create signature XML file.");
 }
 
 string SignatureXAdES_B::city() const

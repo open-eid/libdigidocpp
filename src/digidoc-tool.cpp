@@ -619,7 +619,8 @@ static int open(int argc, char* argv[])
     unsigned int pos = 0;
     for(const Signature *s: doc->signatures())
     {
-        cout << "  Signature " << pos++ << " (" << s->profile().c_str() << "):" << endl;
+        cout << "  Signature " << pos++ << " (" << s->profile().c_str() << "):" << endl
+             << "    ID: " << s->id() << endl;
         // Validate signature. Checks, whether signature format is correct
         // and signed documents checksums are correct.
         if(validateSignature(s, reportwarnings) == EXIT_FAILURE)
