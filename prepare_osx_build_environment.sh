@@ -258,14 +258,14 @@ function openssl {
                 case "${ARGS}" in
                 *simulator*) CC="" CFLAGS="" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
                 *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" ./Configure darwin64-x86_64 --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-                *) CC="" CFLAGS="" ./Configure darwin64-x86_64 --prefix=${TARGET_PATH} shared no-module no-engine no-tests enable-ec_nistp_64_gcc_128
+                *) CC="" CFLAGS="" ./Configure darwin64-x86_64 --prefix=${TARGET_PATH} shared no-module no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;
             *arm64*)
                 case "${ARGS}" in
                 *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" ./Configure darwin64-arm64 --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
                 *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-                *) CC="" CFLAGS="" ./Configure darwin64-arm64 --prefix=${TARGET_PATH} shared no-module no-engine no-tests enable-ec_nistp_64_gcc_128
+                *) CC="" CFLAGS="" ./Configure darwin64-arm64 --prefix=${TARGET_PATH} shared no-module no-tests enable-ec_nistp_64_gcc_128
                 esac
                 ;;
             esac
