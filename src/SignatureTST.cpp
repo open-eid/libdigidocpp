@@ -26,21 +26,16 @@
 #include "util/DateTime.h"
 #include "util/log.h"
 
+#include <sstream>
+
 using namespace digidoc;
 using namespace std;
 
 SignatureTST::SignatureTST(istream &is, ASiC_S *asicSDoc): asicSDoc(asicSDoc)
 {
-    is.seekg(0, istream::end);
-    istream::pos_type pos = is.tellg();
-    const auto size = pos < 0 ? 0 : (unsigned long)pos;
-    is.clear();
-    is.seekg(0, istream::beg);
-
-    vector<unsigned char> buf(size, 0);
-    is.read((char*)buf.data(), streamsize(buf.size()));
-
-    timestampToken = make_unique<TS>(buf.data(), buf.size());
+    stringstream data;
+    data << is.rdbuf();
+    timestampToken = make_unique<TS>(data.str());
 }
 
 SignatureTST::~SignatureTST() = default;

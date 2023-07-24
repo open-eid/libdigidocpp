@@ -163,7 +163,7 @@ SiVaContainer::SiVaContainer(const string &path, bool useHashCode)
     else if(ext == "pdf")
     {
         d->mediaType = "application/pdf";
-        d->dataFiles.push_back(new DataFilePrivate(std::move(ifs), fileName, "application/pdf"));
+        d->dataFiles.push_back(new DataFilePrivate(std::move(ifs), fileName, "application/pdf", File::fileSize(d->path)));
     }
     else if(find(asic.cbegin(), asic.cend(), ext) != asic.cend())
     {
@@ -185,9 +185,8 @@ SiVaContainer::SiVaContainer(const string &path, bool useHashCode)
             const auto directory = File::directory(file);
             if(directory.empty() || directory == "/" || directory == "./")
             {
-                auto data = make_unique<stringstream>();
-                z.extract(file, *data);
-                d->dataFiles.push_back(new DataFilePrivate(std::move(data), file, "application/octet-stream"));
+                auto properties = z.properties(file);
+                d->dataFiles.push_back(new DataFilePrivate(z.stream(file), file, "application/octet-stream", properties.size));
             }
         }
     }
@@ -381,6 +380,7 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
                 d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(base64_decode(b64)),
                     xml::transcode<char>(item->getAttribute(cpXMLCh(u"Filename"))),
                     xml::transcode<char>(item->getAttribute(cpXMLCh(u"MimeType"))),
+                    0,
                     xml::transcode<char>(item->getAttribute(cpXMLCh(u"Id")))));
             }
 

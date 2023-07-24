@@ -67,7 +67,7 @@ ASiC_E::ASiC_E(const string &path)
     : ASiContainer(MIMETYPE_ASIC_E)
     , d(make_unique<Private>())
 {
-    auto zip = load(path, true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
+    auto *zip = load(path, true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
     parseManifestAndLoadFiles(*zip);
 }
 
@@ -229,12 +229,11 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 
     try
     {
-        stringstream manifestdata;
-        z.extract("META-INF/manifest.xml", manifestdata);
+        unique_ptr<istream> manifestdata = z.stream("META-INF/manifest.xml");
         xml_schema::Properties p;
         p.schema_location(ASiC_E::MANIFEST_NAMESPACE,
             File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
-        unique_ptr<xercesc::DOMDocument> doc = SecureDOMParser(p.schema_location(), true).parseIStream(manifestdata);
+        unique_ptr<xercesc::DOMDocument> doc = SecureDOMParser(p.schema_location(), true).parseIStream(*manifestdata);
         unique_ptr<manifest::Manifest> manifest = manifest::manifest(*doc, {}, p);
 
         set<string> manifestFiles;
@@ -267,9 +266,9 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             if(mediaType() == MIMETYPE_ADOC &&
                (file.full_path().compare(0, 9, "META-INF/") == 0 ||
                 file.full_path().compare(0, 9, "metadata/") == 0))
-                d->metadata.push_back(new DataFilePrivate(dataStream(file.full_path(), z), file.full_path(), file.media_type()));
+                d->metadata.push_back(dataFile(file.full_path(), file.media_type()));
             else
-                addDataFilePrivate(dataStream(file.full_path(), z), file.full_path(), file.media_type());
+                addDataFilePrivate(file.full_path(), file.media_type());
         }
         if(!mimeFound)
             THROW("Manifest is missing mediatype file entry.");
@@ -288,9 +287,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                     THROW("Multiple signature files with same name found '%s'", file.c_str());
                 try
                 {
-                    stringstream data;
-                    z.extract(file, data);
-                    auto signatures = make_shared<Signatures>(data, this);
+                    auto signatures = make_shared<Signatures>(*z.stream(file), this);
                     for(size_t i = 0, count = signatures->count(); i < count; ++i)
                         addSignature(make_unique<SignatureXAdES_LTA>(signatures, i, this));
                 }

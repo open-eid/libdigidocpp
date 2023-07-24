@@ -43,7 +43,7 @@ ASiC_S::ASiC_S(): ASiContainer(MIMETYPE_ASIC_S)
  */
 ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
 {
-    auto z = load(path, false, {mediaType()});
+    auto *z = load(path, false, {mediaType()});
     static const string_view metaInf = "META-INF/";
 
     for(const string &file: z->list())
@@ -55,17 +55,13 @@ ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
             {
                 if(!signatures().empty())
                     THROW("Can not add signature to ASiC-S container which already contains a signature.");
-                stringstream data;
-                z->extract(file, data);
-                addSignature(make_unique<SignatureTST>(data, this));
+                addSignature(make_unique<SignatureTST>(*z->stream(file), this));
             }
             if(file == "META-INF/signatures.xml")
             {
                 if(!signatures().empty())
                     THROW("Can not add signature to ASiC-S container which already contains a signature.");
-                stringstream data;
-                z->extract(file, data);
-                auto signatures = make_shared<Signatures>(data, this);
+                auto signatures = make_shared<Signatures>(*z->stream(file), this);
                 for(size_t i = 0, count = signatures->count(); i < count; ++i)
                     addSignature(make_unique<SignatureXAdES_LTA>(signatures, i, this));
             }
@@ -77,7 +73,7 @@ ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
         {
             if(!dataFiles().empty())
                 THROW("Can not add document to ASiC-S container which already contains a document.");
-            addDataFile(dataStream(file, *z), file, "application/octet-stream");
+            addDataFilePrivate(file, "application/octet-stream");
         }
     }
 

@@ -40,6 +40,7 @@ namespace digidoc
           ~ZipSerialize();
 
           std::vector<std::string> list() const;
+          std::unique_ptr<std::istream> stream(const std::string &file) const;
           void extract(const std::string &file, std::ostream &os) const;
           void addFile(const std::string &containerPath, std::istream &is, const Properties &prop, Flags flags = NoFlags);
           Properties properties(const std::string &file) const;

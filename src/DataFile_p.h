@@ -30,7 +30,7 @@ namespace digidoc
 class DataFilePrivate final: public DataFile
 {
 public:
-	DataFilePrivate(std::unique_ptr<std::istream> &&is, std::string filename, std::string mediatype, std::string id = {});
+    DataFilePrivate(std::unique_ptr<std::istream> &&is, std::string filename, std::string mediatype, unsigned long size, std::string id = {});
 
 	std::string id() const final { return m_id.empty() ? m_filename : m_id; }
 	std::string fileName() const final { return m_filename; }
