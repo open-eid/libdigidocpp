@@ -165,7 +165,7 @@ jobs:
     - name: Prepare vcpkg X64
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 5787cfa699a75805ef41938ec66bc7492714d290
+        vcpkgGitCommitId: 2f6176ce98fee807a207dc9e8fec213f111c291b
         vcpkgJsonGlob: ${{ steps.path.outputs.value }}/vcpkg.json
         runVcpkgInstall: true
         runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
@@ -175,7 +175,7 @@ jobs:
     - name: Prepare vcpkg X86
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 5787cfa699a75805ef41938ec66bc7492714d290
+        vcpkgGitCommitId: 2f6176ce98fee807a207dc9e8fec213f111c291b
         vcpkgJsonGlob: ${{ steps.path.outputs.value }}/vcpkg.json
         runVcpkgInstall: true
         runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
@@ -184,6 +184,10 @@ jobs:
         VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
     - name: Install dependencies
       run: choco install doxygen.install swig -y > $null
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+        architecture: x86
     - name: Build xsd
       run: .\prepare_win_build_environment.ps1 -xsd
     - name: Build

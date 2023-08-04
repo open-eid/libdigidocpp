@@ -131,7 +131,7 @@ TS::TS(const unsigned char *data, size_t size)
 #ifndef OPENSSL_NO_CMS
     if(d)
         return;
-    OpenSSLException(EXCEPTION_PARAMS("ignore")); //Clear errors
+    ERR_clear_error();
     /**
      * Handle CMS based TimeStamp tokens
      * https://rt.openssl.org/Ticket/Display.html?id=4519
@@ -139,12 +139,14 @@ TS::TS(const unsigned char *data, size_t size)
      *
      * If PKCS7 wrapped TimeStamp parsing fails, try with CMS wrapping
      */
-    auto bio = SCOPE_PTR(BIO, BIO_new_mem_buf((void*)data, int(size)));
-    cms.reset(d2i_CMS_bio(bio.get(), nullptr), CMS_ContentInfo_free);
+    cms.reset(d2i_CMS_ContentInfo(nullptr, &data, long(size)), [](CMS_ContentInfo *contentInfo) {
+        CMS_ContentInfo_free(contentInfo);
+        ERR_clear_error();
+    });
     if(!cms || OBJ_obj2nid(CMS_get0_eContentType(cms.get())) != NID_id_smime_ct_TSTInfo)
         cms.reset();
 
-    OpenSSLException(EXCEPTION_PARAMS("ignore")); //Clear errors
+    ERR_clear_error();
 #endif
 }
 
