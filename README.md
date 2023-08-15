@@ -5,6 +5,7 @@
  * License: LGPL 2.1
  * &copy; Estonian Information System Authority
  * [Architecture of ID-software](http://open-eid.github.io)
+ * [API Documentation](http://open-eid.github.io/libdigidocpp)
 
 ## Building
 [![Build Status](https://github.com/open-eid/libdigidocpp/workflows/CI/badge.svg?branch=master)](https://github.com/open-eid/libdigidocpp/actions)
@@ -110,8 +111,7 @@
         cmake -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake `
               -DVCPKG_TARGET_TRIPLET=x64-windows-v142 `
               -DVCPKG_MANIFEST_FEATURES=tests `
-              -DXSD_INCLUDE_DIR=xsd/libxsd `
-              -DXSD_EXECUTABLE=xsd/bin/xsd.exe `
+              -DXSD_ROOT=xsd/libxsd `
               -B build -S .
 
    Optional CMake parameters:

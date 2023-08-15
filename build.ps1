@@ -69,8 +69,7 @@ foreach($platform in @("x86", "x64")) {
       "-DCMAKE_TOOLCHAIN_FILE=$vcpkg_dir/scripts/buildsystems/vcpkg.cmake" `
       "-DVCPKG_TARGET_TRIPLET=$platform-windows-v$toolset" `
       "-DVCPKG_INSTALLED_DIR=$vcpkg_installed\vcpkg_installed_$platform" `
-      "-DXSD_INCLUDE_DIR=$xsd/libxsd" `
-      "-DXSD_EXECUTABLE=$xsd/bin/xsd.exe" `
+      "-DXSD_ROOT=$xsd" `
       "-DSIGNCERT=$sign" `
       "-DCROSSSIGNCERT=$crosssign" `
       $cmakeext "&&" $cmake --build $buildpath --target check install

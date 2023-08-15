@@ -49,18 +49,16 @@
 
 @implementation MasterViewController
 
+#if TESTING
 - (void)viewDidLoad {
     [super viewDidLoad];
-#if TESTING
     self.tableView.contentInset = UIEdgeInsetsMake(20, 0, 0, 0);
     URLTableViewCell *urlView = [self.tableView dequeueReusableCellWithIdentifier:@"URL"];
     urlView.isAccessibilityElement = NO;
     urlView.accessibilityElements = @[urlView.search, urlView.run];
     self.tableView.tableHeaderView = urlView;
-#endif
 }
 
-#if TESTING
 - (IBAction)runTest:(id)sender {
     URLTableViewCell *urlView = (URLTableViewCell *)self.tableView.tableHeaderView;
     [urlView.search endEditing:YES];

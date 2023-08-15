@@ -169,7 +169,8 @@
 		4E7663901B5A37AC00672ACF /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1340;
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
 				ORGANIZATIONNAME = RIA;
 				TargetAttributes = {
 					4E7663971B5A37AC00672ACF = {
@@ -357,6 +358,7 @@
 				BUILD_NUMBER = 0;
 				CODE_SIGN_ENTITLEMENTS = libdigidocpp/libdigidocpp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -407,6 +409,7 @@
 				BUILD_NUMBER = 0;
 				CODE_SIGN_ENTITLEMENTS = libdigidocpp/libdigidocpp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
