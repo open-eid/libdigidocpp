@@ -184,6 +184,10 @@ jobs:
         VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
     - name: Install dependencies
       run: choco install doxygen.install swig -y > $null
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+        architecture: x86
     - name: Build xsd
       run: .\prepare_win_build_environment.ps1 -xsd
     - name: Build

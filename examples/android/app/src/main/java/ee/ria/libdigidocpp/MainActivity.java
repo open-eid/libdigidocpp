@@ -26,6 +26,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
 import java.util.Objects;
@@ -45,16 +47,6 @@ public class MainActivity extends Activity {
 		System.loadLibrary("digidoc_java");
 	}
 
-	static private void saveToFile(InputStream in, String path) throws IOException {
-		try (FileOutputStream out = new FileOutputStream(path)) {
-			byte[] buffer = new byte[10240];
-			int count;
-			while ((count = in.read(buffer)) != -1) {
-				out.write(buffer, 0, count);
-			}
-		}
-	}
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -67,14 +59,14 @@ public class MainActivity extends Activity {
 			try (ZipInputStream zis = new ZipInputStream(getResources().openRawResource(R.raw.schema))) {
 				ZipEntry ze;
 				while ((ze = zis.getNextEntry()) != null) {
-					saveToFile(zis, cache + "/" + ze.getName());
+					Files.copy(zis, Paths.get(cache, ze.getName()));
 				}
 			}
 			try (InputStream in = getResources().openRawResource(R.raw.test)) {
-				saveToFile(in, cache + "/test.bdoc");
+				Files.copy(in, Paths.get(cache, "test.bdoc"));
 			}
 			try (ByteArrayInputStream bin = new ByteArrayInputStream(new byte[] {})) {
-				saveToFile(bin, cache + "/EE_T.xml");
+				Files.copy(bin, Paths.get(cache, "EE_T.xml"));
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -224,7 +216,7 @@ public class MainActivity extends Activity {
 			}
 
 			try (FileInputStream in = new FileInputStream(cache + "/digidocpp.log")) {
-				saveToFile(in, Environment.getExternalStorageDirectory().getAbsolutePath() + "/digidocpp.log");
+				Files.copy(in, Paths.get(Environment.getExternalStorageDirectory().getAbsolutePath(), "digidocpp.log"));
 			}
 			try (FileOutputStream out = new FileOutputStream(Environment.getExternalStorageDirectory().getAbsolutePath() + "/result.json")) {
 				out.write(r.toString().getBytes(StandardCharsets.UTF_8));
@@ -235,11 +227,11 @@ public class MainActivity extends Activity {
 		findViewById(R.id.run).setEnabled(true);
 	}
 
-	private static void deleteRecursive(File fileOrDirectory) {
+	private static boolean deleteRecursive(File fileOrDirectory) {
 		if (fileOrDirectory.isDirectory())
 			for (File child : Objects.requireNonNull(fileOrDirectory.listFiles()))
 				deleteRecursive(child);
-		fileOrDirectory.delete();
+		return fileOrDirectory.delete();
 	}
 
 	static private abstract class URLTask extends AsyncTask<Void, Void, Exception> {
@@ -269,8 +261,8 @@ public class MainActivity extends Activity {
 		DownloadTask(MainActivity activity) {
 			super(activity);
 			path = new File(activity.getCacheDir() + "/validate");
-			deleteRecursive(path);
-			path.mkdir();
+			if (deleteRecursive(path))
+				path.mkdir();
 		}
 
 		@Override
@@ -285,7 +277,7 @@ public class MainActivity extends Activity {
 					ZipEntry ze;
 					while ((ze = zis.getNextEntry()) != null) {
 						try {
-							saveToFile(zis, path + "/" + ze.getName());
+							Files.copy(zis, Paths.get(path.getPath(), ze.getName()));
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
