@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cstring>
 #include <iterator>
 
@@ -54,9 +55,8 @@ using ESS_ISSUER_SERIAL = struct ESS_issuer_serial {
  * @param cert X.509 certificate.
  */
 X509Crypto::X509Crypto(X509Cert cert)
- : cert(move(cert))
-{
-}
+    : cert(std::move(cert))
+{}
 
 bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
 {
@@ -98,7 +98,7 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
  * @return 0 if equal, otherwise a number different from 0 is returned
  * @throw IOException if error
  */
-int X509Crypto::compareIssuerToString(const string &name) const
+int X509Crypto::compareIssuerToString(string_view name) const
 {
     static const array list {
         "CN", "commonName",
@@ -107,58 +107,53 @@ int X509Crypto::compareIssuerToString(const string &name) const
         "O", "organizationName",
         "OU", "organizationalUnitName",
         "C", "countryName",
-        "STREET", "streetAddress",
+        "STREET", "street", "streetAddress",
         "DC", "domainComponent",
         "UID", "userId"
     };
 
-    for(size_t old = 0, pos = 0; ; )
+    for(size_t old = 0, pos = name.find(','); ; pos = name.find(',', old))
     {
-        pos = name.find(',', old);
         if(pos == string::npos)
-        {
             pos = name.size();
-            if(pos < old)
-                break;
-        }
-        else
+        if(pos < old)
+            break;
+        if(name[pos-1] == '\\')
         {
-            if(name[pos-1] == '\\')
-            {
-                old = pos;
-                continue;
-            }
+            old = pos + 1;
+            continue;
         }
 
-        string nameitem = name.substr(old, pos - old);
+        auto nameitem = name.substr(old, pos - old);
         old = pos + 1;
 
-        if((pos = nameitem.find('=')) == string::npos ||
-            nameitem.compare(pos-1, 1, "\\") == 0)
+        if(pos = nameitem.find('=');
+            pos == string::npos || pos == 0 || nameitem[pos-1] == '\\')
             continue;
 
-        string obj = nameitem.substr(0, pos);
-        if(find(list.cbegin(), list.cend(), obj) == list.cend())
+        auto obj = find(list.cbegin(), list.cend(), nameitem.substr(0, pos));
+        if(obj == list.cend())
             continue;
 
-        ASN1_OBJECT *obja = OBJ_txt2obj(obj.c_str(), 0);
-        string tmp = nameitem.substr(pos+1, pos-old);
+        if(*obj == "STREET"sv)
+            obj++;
+        ASN1_OBJECT *obja = OBJ_txt2obj(*obj, 0);
+        if(!obja)
+            continue;
 
-        string value;
-        char data[] = "00";
-        static const string escape = " #+,;<=>\\";
-        for(string::const_iterator i = tmp.cbegin(); i != tmp.cend(); ++i)
+        static const string_view escape = " #+,;<=>\\";
+        string value(nameitem.substr(pos+1, pos-old));
+        static const errc ok{};
+        int8_t result{};
+        for(string::size_type pos = value.find('\\'); pos < value.size(); pos = value.find('\\', ++pos))
         {
-            if(*i == '\\' && distance(i, tmp.cend()) > 2 && isxdigit(*(i+1)) && isxdigit(*(i+2)))
+            if(auto data = value.data() + pos + 1; from_chars(data, data + 2, result, 16).ec == ok)
             {
-                data[0] = *(++i);
-                data[1] = *(++i);
-                value += static_cast<char>(strtoul(data, nullptr, 16));
+                value[pos] = result;
+                value.erase(pos + 1, 2);
             }
-            else if(*i == '\\' && escape.find(*(i+1)) == string::npos)
-                value += *(++i);
-            else
-                value += *i;
+            else if(escape.find(value[pos+1]) == string::npos)
+                value.erase(pos, 1);
         }
 
         bool found = false;
