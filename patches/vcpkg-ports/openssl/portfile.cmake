@@ -19,7 +19,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO openssl/openssl
     REF "openssl-${VERSION}"
-    SHA512 4762ce7faa0d7f43d0d4882700dcb10cd31bb025c52110fb2f1a8d3911f4ed92153db982935be6f38f45ae3f030f7edb4968e96dd5a41367ad7365c03c25edb1
+    SHA512 5c20269f9666eae0111252378baf196d74ae14a68b19cac49703d73fa564f7ae7aaf06209f5a3d7dc48c014ddb2e760bdf765141c14adde63edee552a8de015e
     PATCHES
         disable-apps.patch
         disable-install-docs.patch
@@ -39,6 +39,12 @@ vcpkg_list(SET CONFIGURE_OPTIONS
     no-weak-ssl-ciphers
     no-tests
 )
+
+set(INSTALL_FIPS "")
+if("fips" IN_LIST FEATURES)
+    vcpkg_list(APPEND INSTALL_FIPS install_fips)
+    vcpkg_list(APPEND CONFIGURE_OPTIONS enable-fips)
+endif()
 
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
     vcpkg_list(APPEND CONFIGURE_OPTIONS shared)

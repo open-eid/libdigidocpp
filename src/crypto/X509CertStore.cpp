@@ -187,7 +187,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
                 SCOPE(EVP_PKEY, pub, X509_get_pubkey(issuer.handle()));
                 if(X509_verify(x509, pub.get()) == 1)
                     return true;
-                OpenSSLException(EXCEPTION_PARAMS("ignore")); //Clear errors
+                ERR_clear_error();
                 return false;
             }))
             continue;
@@ -234,7 +234,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
     if(noqscd)
         return true;
 
-    const TSL::Validity *v = static_cast<const TSL::Validity*>(X509_STORE_CTX_get_ex_data(csc.get(), 0));
+    const auto *v = static_cast<const TSL::Validity*>(X509_STORE_CTX_get_ex_data(csc.get(), 0));
     const vector<string> policies = cert.certificatePolicies();
     const vector<string> qcstatement = cert.qcStatements();
     const vector<X509Cert::KeyUsage> keyUsage = cert.keyUsage();
