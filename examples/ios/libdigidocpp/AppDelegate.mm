@@ -48,7 +48,7 @@ public:
         digidoc::initialize("libdigidocpp iOS");
         // Skip URL will be opened in application: openURL:
         if (launchOptions[UIApplicationLaunchOptionsURLKey] == nil) {
-            [self openFile:[NSBundle.mainBundle pathForResource:@"test" ofType:@"bdoc"] copy:YES];
+            [self openFile:[NSBundle.mainBundle pathForResource:@"test" ofType:@"bdoc"]];
         }
     } catch(const digidoc::Exception &e) {
         NSLog(@"%s", e.msg().c_str());
@@ -59,30 +59,14 @@ public:
 - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options {
     delete self.doc;
     self.doc = nullptr;
-    BOOL result = [self openFile:url.path copy:YES];
+    BOOL result = [self openFile:url.path];
     UITableViewController *master = (UITableViewController*)self.window.rootViewController;
     [master.tableView reloadData];
     return result;
 }
 
-- (BOOL)openFile:(NSString*)from copy:(BOOL)copy {
+- (BOOL)openFile:(NSString*)path {
     try {
-        NSArray *documentPath = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-        NSString *path = [NSString stringWithFormat:@"%@/%@", documentPath.firstObject, from.lastPathComponent];
-        NSError *error;
-        [NSFileManager.defaultManager removeItemAtPath:path error:&error];
-        if (error) {
-            NSLog(@"Failed to remove file %@", error);
-            error = nil;
-        }
-        if (copy)
-            [NSFileManager.defaultManager copyItemAtPath:from toPath:path error:&error];
-        else
-            [NSFileManager.defaultManager moveItemAtPath:from toPath:path error:&error];
-        if (error) {
-            NSLog(@"Failed to copy/move file %@", error);
-            return NO;
-        }
         self.doc = digidoc::Container::openPtr(path.UTF8String).release();
         return YES;
     } catch(const digidoc::Exception &e) {

@@ -83,7 +83,7 @@
             if(unzResult != UNZ_OK)
                 break;
             std::string fileNameTmp(fileInfo.size_filename, 0);
-            unzResult = unzGetCurrentFileInfo(open, &fileInfo, &fileNameTmp[0], uLong(fileNameTmp.size()), nullptr, 0, nullptr, 0);
+            unzResult = unzGetCurrentFileInfo(open, &fileInfo, fileNameTmp.c_str(), uLong(fileNameTmp.size()), nullptr, 0, nullptr, 0);
             if(unzResult != UNZ_OK)
                 break;
 
@@ -113,11 +113,11 @@
                 try {
                     std::unique_ptr<digidoc::Container> d(digidoc::Container::open(file.UTF8String));
                     for (const digidoc::DataFile *f: d->dataFiles()) {
-                        NSMutableDictionary *tmp = [[NSMutableDictionary alloc] init];
-                        tmp[@"f"] = [NSString stdstring:f->fileName()];
-                        tmp[@"m"] = [NSString stdstring:f->mediaType()];
-                        tmp[@"s"] = @(f->fileSize());
-                        [dataFiles addObject:tmp];
+                        [dataFiles addObject:@{
+                            @"f": [NSString stdstring:f->fileName()],
+                            @"m": [NSString stdstring:f->mediaType()],
+                            @"s": @(f->fileSize()),
+                        }];
                     }
                     for (const digidoc::Signature *s: d->signatures())
                     {

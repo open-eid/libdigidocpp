@@ -9,12 +9,12 @@
 /* Begin PBXBuildFile section */
 		4E25CC401B5D1D85005E0B79 /* test.bdoc in Resources */ = {isa = PBXBuildFile; fileRef = 4E25CC3F1B5D1D85005E0B79 /* test.bdoc */; };
 		4E25CC421B5D1EDA005E0B79 /* schema in Resources */ = {isa = PBXBuildFile; fileRef = 4E25CC411B5D1EDA005E0B79 /* schema */; };
+		4E26A2292AB4E38600E2B732 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E26A2282AB4E38600E2B732 /* LaunchScreen.storyboard */; };
 		4E76639E1B5A37AC00672ACF /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E76639D1B5A37AC00672ACF /* main.mm */; };
 		4E7663A11B5A37AC00672ACF /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E7663A01B5A37AC00672ACF /* AppDelegate.mm */; };
 		4E7663A41B5A37AC00672ACF /* MasterViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E7663A31B5A37AC00672ACF /* MasterViewController.mm */; };
 		4E7663AA1B5A37AC00672ACF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663A81B5A37AC00672ACF /* Main.storyboard */; };
 		4E7663AC1B5A37AC00672ACF /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663AB1B5A37AC00672ACF /* Images.xcassets */; };
-		4E7663AF1B5A37AC00672ACF /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663AD1B5A37AC00672ACF /* LaunchScreen.xib */; };
 		4E85E5F7285364BF00A65763 /* libdigidocpp_util.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E85E5F6285364BF00A65763 /* libdigidocpp_util.a */; };
 		4ECD5FAA2010A15A00BCC616 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FA92010A15A00BCC616 /* libcrypto.a */; };
 		4ECD5FB02010A1B700BCC616 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FAB2010A1B700BCC616 /* libssl.a */; };
@@ -32,6 +32,7 @@
 /* Begin PBXFileReference section */
 		4E25CC3F1B5D1D85005E0B79 /* test.bdoc */ = {isa = PBXFileReference; lastKnownFileType = file; path = test.bdoc; sourceTree = "<group>"; };
 		4E25CC411B5D1EDA005E0B79 /* schema */ = {isa = PBXFileReference; lastKnownFileType = folder; name = schema; path = "$(SDKPATH)/etc/digidocpp/schema"; sourceTree = "<absolute>"; };
+		4E26A2282AB4E38600E2B732 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4E7663981B5A37AC00672ACF /* libdigidocpp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = libdigidocpp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E76639C1B5A37AC00672ACF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4E76639D1B5A37AC00672ACF /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
@@ -40,7 +41,6 @@
 		4E7663A31B5A37AC00672ACF /* MasterViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MasterViewController.mm; sourceTree = "<group>"; };
 		4E7663A91B5A37AC00672ACF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		4E7663AB1B5A37AC00672ACF /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		4E7663AE1B5A37AC00672ACF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		4E85E5F6285364BF00A65763 /* libdigidocpp_util.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp_util.a; path = "$(SDKPATH)/lib/libdigidocpp_util.a"; sourceTree = "<absolute>"; };
 		4EAC9AA729125D5200A39880 /* libdigidocpp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = libdigidocpp.entitlements; sourceTree = "<group>"; };
 		4ECD5FA92010A15A00BCC616 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = "$(SDKPATH)/lib/libcrypto.a"; sourceTree = "<absolute>"; };
@@ -106,22 +106,14 @@
 				4E7663A01B5A37AC00672ACF /* AppDelegate.mm */,
 				4E7663A31B5A37AC00672ACF /* MasterViewController.mm */,
 				4E7663A81B5A37AC00672ACF /* Main.storyboard */,
+				4E26A2282AB4E38600E2B732 /* LaunchScreen.storyboard */,
 				4E7663AB1B5A37AC00672ACF /* Images.xcassets */,
-				4E7663AD1B5A37AC00672ACF /* LaunchScreen.xib */,
-				4E76639B1B5A37AC00672ACF /* Supporting Files */,
-			);
-			path = libdigidocpp;
-			sourceTree = "<group>";
-		};
-		4E76639B1B5A37AC00672ACF /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				4E25CC411B5D1EDA005E0B79 /* schema */,
-				4E25CC3F1B5D1D85005E0B79 /* test.bdoc */,
 				4E76639C1B5A37AC00672ACF /* Info.plist */,
 				4E76639D1B5A37AC00672ACF /* main.mm */,
+				4E25CC3F1B5D1D85005E0B79 /* test.bdoc */,
+				4E25CC411B5D1EDA005E0B79 /* schema */,
 			);
-			name = "Supporting Files";
+			path = libdigidocpp;
 			sourceTree = "<group>";
 		};
 		4ECD5FA82010A15A00BCC616 /* Frameworks */ = {
@@ -170,13 +162,11 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 1500;
 				ORGANIZATIONNAME = RIA;
 				TargetAttributes = {
 					4E7663971B5A37AC00672ACF = {
 						CreatedOnToolsVersion = 6.4;
-						DevelopmentTeam = ET847QJV9F;
-						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -205,8 +195,8 @@
 			files = (
 				4E25CC421B5D1EDA005E0B79 /* schema in Resources */,
 				4E7663AA1B5A37AC00672ACF /* Main.storyboard in Resources */,
-				4E7663AF1B5A37AC00672ACF /* LaunchScreen.xib in Resources */,
 				4E7663AC1B5A37AC00672ACF /* Images.xcassets in Resources */,
+				4E26A2292AB4E38600E2B732 /* LaunchScreen.storyboard in Resources */,
 				4E25CC401B5D1D85005E0B79 /* test.bdoc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -235,14 +225,6 @@
 			name = Main.storyboard;
 			sourceTree = "<group>";
 		};
-		4E7663AD1B5A37AC00672ACF /* LaunchScreen.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				4E7663AE1B5A37AC00672ACF /* Base */,
-			);
-			name = LaunchScreen.xib;
-			sourceTree = "<group>";
-		};
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
@@ -250,16 +232,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
@@ -272,14 +257,14 @@
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_BITCODE = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -288,14 +273,13 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -306,16 +290,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
@@ -328,14 +315,13 @@
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_BITCODE = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -344,7 +330,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
@@ -357,13 +343,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_NUMBER = 0;
 				CODE_SIGN_ENTITLEMENTS = libdigidocpp/libdigidocpp.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/libdigidocpp",
-				);
+				DEVELOPMENT_TEAM = ET847QJV9F;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"TESTING=$(TESTING)",
@@ -374,19 +358,13 @@
 					"$(MINIZIP)",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Libdigidocpp;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.xib;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SDKPATH)/lib",
-					"$(PROJECT_DIR)",
-				);
+				LIBRARY_SEARCH_PATHS = "$(SDKPATH)/lib";
 				MARKETING_VERSION = 1.0;
 				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
@@ -394,10 +372,8 @@
 				SDKPATH = /Library/libdigidocpp.iphoneos;
 				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
 				"SDKPATH[sdk=macosx*]" = /Library/libdigidocpp.iphonecatalyst;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				TARGETED_DEVICE_FAMILY = "1,2";
 				TESTING = 0;
 			};
 			name = Debug;
@@ -408,13 +384,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_NUMBER = 0;
 				CODE_SIGN_ENTITLEMENTS = libdigidocpp/libdigidocpp.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/libdigidocpp",
-				);
+				DEVELOPMENT_TEAM = ET847QJV9F;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"TESTING=$(TESTING)",
@@ -425,19 +399,13 @@
 					"$(MINIZIP)",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Libdigidocpp;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.xib;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(SDKPATH)/lib",
-					"$(PROJECT_DIR)",
-				);
+				LIBRARY_SEARCH_PATHS = "$(SDKPATH)/lib";
 				MARKETING_VERSION = 1.0;
 				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
 				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
@@ -445,10 +413,8 @@
 				SDKPATH = /Library/libdigidocpp.iphoneos;
 				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
 				"SDKPATH[sdk=macosx*]" = /Library/libdigidocpp.iphonecatalyst;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				TARGETED_DEVICE_FAMILY = "1,2";
 				TESTING = 0;
 			};
 			name = Release;

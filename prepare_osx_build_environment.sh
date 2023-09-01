@@ -62,7 +62,7 @@ case "$@" in
   CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
-  : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="13.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   ;;
@@ -72,7 +72,7 @@ case "$@" in
   CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
-  : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="13.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -target x86_64-apple-ios-macabi -isysroot ${SYSROOT}"
   ;;
@@ -82,7 +82,7 @@ case "$@" in
   CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
   : ${ARCHS:="arm64"}
-  : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="13.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   ;;
@@ -92,7 +92,7 @@ case "$@" in
   CONFIGURE="--disable-static --enable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="10.15"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="11.0"}
   export MACOSX_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } "
   ;;
@@ -408,8 +408,8 @@ case "$@" in
     echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
     echo "To control iOS, macOS builds set environment variables:"
     echo " minimum deployment target"
-    echo " - MACOSX_DEPLOYMENT_TARGET=10.15"
-    echo " - IPHONEOS_DEPLOYMENT_TARGET=12.0"
+    echo " - MACOSX_DEPLOYMENT_TARGET=11.0"
+    echo " - IPHONEOS_DEPLOYMENT_TARGET=13.0"
     echo " archs to build on macOS/iOS"
     echo " - ARCHS=\"arm64 x86_64\" (macOS)"
     echo " - ARCHS=\"arm64\" (iOS)"

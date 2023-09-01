@@ -75,24 +75,21 @@ BinInputStream* URIResolver::resolveURI(const XMLCh *uri)
         throw XSECException(XSECException::ErrorOpeningURI,
             "XSECURIResolverXerces - anonymous references not supported in default URI Resolvers");
 
-#ifdef _WIN32
-    string _uri = File::decodeName(reinterpret_cast<const wchar_t *>(uri));
-#else
-    string _uri = xsd::cxx::xml::transcode<char>(uri);
-#endif
-    if(strncmp(_uri.c_str(), "/", 1) == 0) _uri.erase(0, 1);
+    string _uri = File::fromUriPath(xsd::cxx::xml::transcode<char>(uri));
+    if(_uri.front() == '/')
+        _uri.erase(0);
     for(const DataFile *file: doc_->dataFiles())
     {
-        if(file->fileName() == File::fromUriPath(_uri))
+        if(file->fileName() == _uri)
             return new IStreamInputStream(static_cast<const DataFilePrivate*>(file)->m_is.get());
     }
 
     if(doc_->mediaType() == ASiC_E::MIMETYPE_ADOC)
     {
-        ASiC_E *adoc = static_cast<ASiC_E*>(doc_);
+        auto *adoc = static_cast<ASiC_E*>(doc_);
         for(const DataFile *file: adoc->metaFiles())
         {
-            if(file->fileName() == File::fromUriPath(_uri))
+            if(file->fileName() == _uri)
                 return new IStreamInputStream(static_cast<const DataFilePrivate*>(file)->m_is.get());
         }
     }

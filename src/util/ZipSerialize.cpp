@@ -20,7 +20,6 @@
 #include "ZipSerialize.h"
 
 #include "DateTime.h"
-#include "File.h"
 #include "log.h"
 
 #include <minizip/unzip.h>
@@ -30,6 +29,7 @@
 #endif
 
 #include <array>
+#include <filesystem>
 #include <iostream>
 
 using namespace digidoc;
@@ -63,14 +63,14 @@ ZipSerialize::ZipSerialize(string path, bool create)
     if(create)
     {
         DEBUG("ZipSerialize::create(%s)", d->path.c_str());
-        d->create = zipOpen2((const char*)util::File::encodeName(d->path).c_str(), APPEND_STATUS_CREATE, nullptr, &d->def);
+        d->create = zipOpen2((const char*)filesystem::u8path(d->path).c_str(), APPEND_STATUS_CREATE, nullptr, &d->def);
         if(!d->create)
             THROW("Failed to create ZIP file '%s'.", d->path.c_str());
     }
     else
     {
         DEBUG("ZipSerialize::open(%s)", d->path.c_str());
-        d->open = unzOpen2((const char*)util::File::encodeName(d->path).c_str(), &d->def);
+        d->open = unzOpen2((const char*)filesystem::u8path(d->path).c_str(), &d->def);
         if(!d->open)
             THROW("Failed to open ZIP file '%s'.", d->path.c_str());
     }

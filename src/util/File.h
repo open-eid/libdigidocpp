@@ -21,6 +21,7 @@
 
 #include "../Exception.h"
 
+#include <filesystem>
 #include <stack>
 
 namespace digidoc
@@ -34,18 +35,9 @@ namespace digidoc
         class File
         {
           public:
-#ifdef _WIN32
-              using f_string = std::wstring;
-              using f_string_view = std::wstring_view;
-#else
-              using f_string = std::string;
-              using f_string_view = std::string_view;
-#endif
               static std::string confPath();
               static std::string digidocppPath();
-              static f_string encodeName(std::string_view fileName);
-              static std::string decodeName(const f_string_view &localFileName);
-              static bool isRelative(const std::string &path);
+              static std::filesystem::path encodeName(std::string_view fileName);
               static time_t modifiedTime(const std::string &path);
               static void updateModifiedTime(const std::string &path, time_t time);
               static bool fileExists(const std::string& path);
@@ -55,7 +47,7 @@ namespace digidoc
               static std::string directory(const std::string& path);
               static std::string path(std::string dir, std::string_view relativePath);
               static std::string fullPathUrl(std::string path);
-              static std::string tempFileName();
+              static std::filesystem::path tempFileName();
               static void createDirectory(std::string path);
               static void deleteTempFiles();
               static bool removeFile(const std::string &path);
@@ -71,10 +63,7 @@ namespace digidoc
 #ifdef __APPLE__
               static std::string frameworkResourcesPath(std::string_view name);
 #endif
-              static std::stack<std::string> tempFiles;
-#ifndef _WIN32
-              static std::string env(std::string_view varname);
-#endif
+              static std::stack<std::filesystem::path> tempFiles;
         };
 
     }

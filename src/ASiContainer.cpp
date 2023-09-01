@@ -152,7 +152,7 @@ unique_ptr<iostream> ASiContainer::dataStream(const string &path, const ZipSeria
 {
     unique_ptr<iostream> data;
     if(d->properties[path].size > MAX_MEM_FILE)
-        data = make_unique<fstream>(File::encodeName(File::tempFileName()), fstream::in|fstream::out|fstream::binary|fstream::trunc);
+        data = make_unique<fstream>(File::tempFileName(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
     else
         data = make_unique<stringstream>();
     z.extract(path, *data);
