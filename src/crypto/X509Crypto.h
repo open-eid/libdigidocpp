@@ -30,7 +30,7 @@ namespace digidoc
           X509Crypto(X509Cert cert);
 
           bool compareIssuerToDer(const std::vector<unsigned char> &issuer) const;
-          int compareIssuerToString(const std::string &name) const;
+          int compareIssuerToString(std::string_view name) const;
           bool isRSAKey() const;
 
           bool verify(const std::string &method, const std::vector<unsigned char> &digest,
