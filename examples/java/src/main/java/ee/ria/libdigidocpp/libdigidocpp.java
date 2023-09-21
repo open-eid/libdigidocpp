@@ -108,7 +108,7 @@ public class libdigidocpp {
                 b.addDataFile(args[i], "application/octet-stream");
 
             X509Certificate cert = toX509(Files.readAllBytes(FileSystems.getDefault().getPath(args[args.length - 2])));
-            Signature c = b.prepareWebSignature(cert.getEncoded(), "BES/time-stamp");
+            Signature c = b.prepareWebSignature(cert.getEncoded(), "time-stamp");
             System.out.println("Signature method: " + c.signatureMethod());
             System.out.println("Digest to sign: " + toHex(c.dataToSign()));
             System.out.println("Please enter signed digest in hex: ");
@@ -118,7 +118,7 @@ public class libdigidocpp {
             scanner.close();
 
             c.setSignatureValue(fromHex(signature));
-            c.extendSignatureProfile("BES/time-stamp");
+            c.extendSignatureProfile("time-stamp");
             b.save();
         }
         catch (Exception e)

@@ -156,7 +156,7 @@ namespace DigiDocCSharp
 
                 X509Certificate cert = new X509Certificate();
                 cert.Import(args[args.Length - 2]);
-                Signature c = b.prepareWebSignature(cert.Export(X509ContentType.Cert), "BES/time-stamp");
+                Signature c = b.prepareWebSignature(cert.Export(X509ContentType.Cert), "time-stamp");
                 Console.WriteLine("Signature method: " + c.signatureMethod());
                 Console.WriteLine("Digest to sign: " + BitConverter.ToString(c.dataToSign()).Replace("-", string.Empty));
                 Console.WriteLine("Please enter signed digest in hex: ");
@@ -168,7 +168,7 @@ namespace DigiDocCSharp
 
                 byte[] signature = Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
                 c.setSignatureValue(signature);
-                c.extendSignatureProfile("BES/time-stamp");
+                c.extendSignatureProfile("time-stamp");
                 b.save();
             }
             catch (Exception e)
