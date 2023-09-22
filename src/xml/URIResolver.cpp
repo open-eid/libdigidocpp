@@ -29,6 +29,7 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/framework/XSECException.hpp>
 DIGIDOCPP_WARNING_POP
 
+#define XSD_CXX11
 #include <xsd/cxx/xml/string.hxx>
 
 #include <istream>
