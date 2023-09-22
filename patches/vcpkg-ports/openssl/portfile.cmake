@@ -19,7 +19,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO openssl/openssl
     REF "openssl-${VERSION}"
-    SHA512 5c20269f9666eae0111252378baf196d74ae14a68b19cac49703d73fa564f7ae7aaf06209f5a3d7dc48c014ddb2e760bdf765141c14adde63edee552a8de015e
+    SHA512 4dd485720a335879bd52d0045edf65fd8397b6f6b6afb3e2c756230937304975b3bd95f67933cadde175cae81d420a692fcf7e96b9f9d2b059ea387a8d9ac305
     PATCHES
         disable-apps.patch
         disable-install-docs.patch
@@ -72,4 +72,4 @@ else()
 endif()
 
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
-file(INSTALL "${SOURCE_PATH}/LICENSE.txt" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)
+vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/LICENSE.txt")
