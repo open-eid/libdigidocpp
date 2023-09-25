@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 if(POLICY CMP0122)
   cmake_policy(SET CMP0122 NEW)
 endif()
-project(libdigidocpp VERSION 3.16.0)
+project(libdigidocpp VERSION 3.17.0)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 include(VersionInfo)

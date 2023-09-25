@@ -11,9 +11,9 @@ if [ "$#" -eq 0 ]; then
   echo " - MACOSX_DEPLOYMENT_TARGET=10.15"
   echo " - IPHONEOS_DEPLOYMENT_TARGET=12.0"
   echo " archs to build on macOS/iOS"
-  echo " - ARCHS=\"x86_64 arm64\" (macOS)"
+  echo " - ARCHS=\"arm64 x86_64\" (macOS)"
   echo " - ARCHS=\"arm64\" (iOS)"
-  echo " - ARCHS=\"x86_64\" (iPhoneSimulator)"
+  echo " - ARCHS=\"arm64 x86_64\" (iPhoneSimulator)"
   exit
 fi
 
@@ -55,7 +55,7 @@ case "$@" in
     echo "Building for iOS Simulator"
     TARGET=iphonesimulator
     SYSROOT=iphonesimulator
-    : ${ARCHS:="x86_64"}
+    : ${ARCHS:="arm64 x86_64"}
     ;;
   *catalyst*)
     echo "Building for iOS macOS Catalyst"
@@ -63,7 +63,7 @@ case "$@" in
     SYSROOT=macosx
     export CFLAGS="-target x86_64-apple-ios-macabi"
     export CXXFLAGS="-target x86_64-apple-ios-macabi"
-    : ${ARCHS:="x86_64 arm64"}
+    : ${ARCHS:="arm64 x86_64"}
     ;;
   *)
     echo "Building for iOS"
@@ -88,7 +88,7 @@ case "$@" in
   echo "Building for macOS"
   TARGET=macOS
   TARGET_PATH=/Library/libdigidocpp
-  : ${ARCHS:="x86_64 arm64"}
+  : ${ARCHS:="arm64 x86_64"}
   : ${MACOSX_DEPLOYMENT_TARGET:="10.15"}
   export MACOSX_DEPLOYMENT_TARGET
 esac
