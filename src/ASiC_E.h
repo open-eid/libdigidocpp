@@ -46,7 +46,7 @@ namespace digidoc
           void save(const std::string &path = {}) final;
           std::vector<DataFile*> metaFiles() const;
 
-          void addAdESSignature(std::istream &sigdata) final;
+          void addAdESSignature(std::istream &data) final;
           Signature* prepareSignature(Signer *signer) final;
           Signature* sign(Signer* signer) final;
 

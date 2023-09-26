@@ -152,14 +152,14 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
     if(ext == "ddoc")
     {
         d->mediaType = "application/x-ddoc";
-        d->ddoc = move(ifs);
+        d->ddoc = std::move(ifs);
         ifs = parseDDoc(useHashCode);
         is = ifs.get();
     }
     else
     {
         d->mediaType = "application/pdf";
-        d->dataFiles.push_back(new DataFilePrivate(move(ifs), fileName, "application/pdf"));
+        d->dataFiles.push_back(new DataFilePrivate(std::move(ifs), fileName, "application/pdf"));
     }
 
     array<XMLByte, 48*100> buf{};
@@ -182,7 +182,7 @@ SiVaContainer::SiVaContainer(const string &path, const string &ext, bool useHash
 
     string req = json({
         {"filename", fileName},
-        {"document", move(b64)},
+        {"document", std::move(b64)},
         {"signaturePolicy", "POLv4"}
     }).dump();
     Connect::Result r = Connect(CONF(verifyServiceUri), "POST", 0, CONF(verifyServiceCerts)).exec({
@@ -357,7 +357,7 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
             if(!useHashCode)
                 continue;
             Digest calc(URI_SHA1);
-            SecureDOMParser::calcDigestOnNode(&calc, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315", dom.get(), item);
+            SecureDOMParser::calcDigestOnNode(&calc, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315", item);
             vector<unsigned char> digest = calc.result();
             XMLSize_t size = 0;
             if(XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))

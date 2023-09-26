@@ -46,8 +46,8 @@ SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer
 : SignatureXAdES_T(id, bdoc, signer)
 {}
 
-SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool relaxSchemaValidation)
-: SignatureXAdES_T(sigdata, bdoc, relaxSchemaValidation)
+SignatureXAdES_LT::SignatureXAdES_LT(const std::shared_ptr<Signatures> &signatures, size_t i, ASiContainer *container)
+    : SignatureXAdES_T(signatures, i, container)
 {
     try {
         // ADOC files are default T level, take OCSP response to create temporary LT level
@@ -58,7 +58,7 @@ SignatureXAdES_LT::SignatureXAdES_LT(istream &sigdata, ASiContainer *bdoc, bool 
             X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::OCSP);
             if(!issuer)
                 THROW("Could not find certificate issuer '%s' in certificate store.",
-                    cert.issuerName().c_str());
+                      cert.issuerName().c_str());
 
             addOCSPValue(id().replace(0, 1, "N"), OCSP(cert, issuer));
         }
@@ -219,7 +219,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const string &profile)
     X509Cert cert = signingCertificate();
     X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
     if(!issuer)
-        issuer = X509CertStore::instance()->issuerFromAIA(cert);
+        issuer = X509CertStore::issuerFromAIA(cert);
     if(!issuer)
         THROW("Could not find certificate issuer '%s' in certificate store or from AIA.",
             cert.issuerName().c_str());
@@ -229,7 +229,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const string &profile)
 
     addCertificateValue(id() + "-CA-CERT", issuer);
     addOCSPValue(id().replace(0, 1, "N"), ocsp);
-    sigdata_.clear();
+    signatures->reloadDOM();
 }
 
 /**

@@ -92,7 +92,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     usp.contentOrder().emplace_back(UnsignedSignaturePropertiesType::ContentOrderType(
         UnsignedSignaturePropertiesType::signatureTimeStampId,
         usp.signatureTimeStamp().size() - 1));
-    sigdata_.clear();
+    signatures->reloadDOM();
 }
 
 TS SignatureXAdES_T::TimeStamp() const
@@ -187,10 +187,8 @@ void SignatureXAdES_T::validate(const std::string &policy) const
                 THROW("CertificateValues::EncapsulatedX509Certificate count does not equal with CompleteCertificateRefs::Cert");
             for(size_t i = 0; i < ocspRefs->oCSPRef().size(); ++i)
             {
-                const auto &base64 = ocspValues->encapsulatedOCSPValue().at(i);
-                const auto &ocspRef = ocspRefs->oCSPRef().at(i);
-                OCSP ocsp((const unsigned char*)base64.data(), base64.size());
-                checkDigest(ocspRef.digestAlgAndValue().get(), ocsp);
+                OCSP ocsp(ocspValues->encapsulatedOCSPValue().at(i));
+                checkDigest(ocspRefs->oCSPRef().at(i).digestAlgAndValue().get(), ocsp);
             }
         }
 
@@ -206,7 +204,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
                        u"AttributeRevocationRefs" })
                 {
                     try {
-                        calcDigestOnNode(digest, XADES_NAMESPACE, name, canonicalizationMethod);
+                        calcDigestOnNode(digest, Signatures::XADES_NAMESPACE, name, canonicalizationMethod);
                     } catch(const Exception &) {
                         DEBUG("Element %s not found", xsd::cxx::xml::transcode<char>(name).data());
                     }

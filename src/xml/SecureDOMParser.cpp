@@ -89,9 +89,9 @@ SecureDOMParser::SecureDOMParser(const string &schema_location, bool dont_valida
 }
 
 void SecureDOMParser::calcDigestOnNode(Digest *calc,
-    string_view algorithmType, DOMDocument *doc, DOMNode *node)
+    string_view algorithmType, DOMNode *node)
 {
-    XSECC14n20010315 c14n(doc, node);
+    XSECC14n20010315 c14n(node->getOwnerDocument(), node);
     c14n.setCommentsProcessing(false);
     c14n.setUseNamespaceStack(true);
 
@@ -116,7 +116,7 @@ void SecureDOMParser::calcDigestOnNode(Digest *calc,
         THROW("Unsupported canonicalization method '%s'", algorithmType.data());
     }
 
-    std::array<unsigned char, 10240> buffer{};
+    array<unsigned char, 10240> buffer{};
     XMLSize_t bytes = 0;
     while((bytes = c14n.outputBuffer(buffer.data(), buffer.size())) > 0)
         calc->update(buffer.data(), bytes);
@@ -133,7 +133,7 @@ void SecureDOMParser::doctypeDecl(const DTDElementDecl& root,
     DOMLSParserImpl::doctypeDecl(root, public_id, system_id, has_internal, has_external);
 }
 
-unique_ptr<DOMDocument> SecureDOMParser::parseIStream(std::istream &is)
+unique_ptr<DOMDocument> SecureDOMParser::parseIStream(istream &is)
 {
     // Wrap the standard input stream.
     Wrapper4InputSource wrap(new xml::sax::std_input_source(is));

@@ -33,7 +33,6 @@
 
 #include <xercesc/util/OutOfMemoryException.hpp>
 
-#include <fstream>
 #include <set>
 
 using namespace digidoc;
@@ -110,16 +109,18 @@ void ASiC_E::save(const string &path)
     s.addFile("META-INF/manifest.xml", manifest, zproperty("META-INF/manifest.xml"));
 
     for(const DataFile *file: dataFiles())
-        s.addFile(file->fileName(), *(static_cast<const DataFilePrivate*>(file)->m_is.get()), zproperty(file->fileName()));
+        s.addFile(file->fileName(), *(static_cast<const DataFilePrivate*>(file)->m_is), zproperty(file->fileName()));
 
+    std::set<Signatures*> saved;
     unsigned int i = 0;
     for(Signature *iter: signatures())
     {
         string file = Log::format("META-INF/signatures%u.xml", i++);
-        SignatureXAdES_B *signature = static_cast<SignatureXAdES_B*>(iter);
-
+        auto *signature = static_cast<SignatureXAdES_B*>(iter);
+        if(!saved.insert(signature->signatures.get()).second)
+            continue;
         stringstream ofs;
-        signature->saveToXml(ofs);
+        signature->signatures->save(ofs);
         s.addFile(file, ofs, zproperty(file));
     }
 }
@@ -138,7 +139,7 @@ unique_ptr<Container> ASiC_E::createInternal(const string &path)
  * @param sigdata signature, which is added to the container.
  * @throws Exception throws exception if there are no documents in container.
  */
-void ASiC_E::addAdESSignature(istream &sigdata)
+void ASiC_E::addAdESSignature(istream &data)
 {
     if(dataFiles().empty())
         THROW("No documents in container, can not add signature.");
@@ -147,7 +148,9 @@ void ASiC_E::addAdESSignature(istream &sigdata)
 
     try
     {
-        addSignature(make_unique<SignatureXAdES_LTA>(sigdata, this));
+        auto signatures = make_shared<Signatures>(data, this);
+        for(size_t i = 0, count = signatures->count(); i < count; ++i)
+            addSignature(make_unique<SignatureXAdES_LTA>(signatures, i, this));
     }
     catch(const Exception &e)
     {
@@ -218,7 +221,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     DEBUG("ASiC_E::readManifest()");
 
     const vector<string> &list = z.list();
-    size_t mcount = size_t(count(list.cbegin(), list.cend(), "META-INF/manifest.xml"));
+    auto mcount = size_t(count(list.cbegin(), list.cend(), "META-INF/manifest.xml"));
     if(mcount < 1)
         THROW("Manifest file is missing");
     if(mcount > 1)
@@ -254,7 +257,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             if(file.full_path().back() == '/') // Skip Directory entries
                 continue;
 
-            size_t fcount = size_t(count(list.cbegin(), list.cend(), file.full_path()));
+            auto fcount = size_t(count(list.cbegin(), list.cend(), file.full_path()));
             if(fcount < 1)
                 THROW("File described in manifest '%s' does not exist in container.", file.full_path().c_str());
             if(fcount > 1)
@@ -287,7 +290,9 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 {
                     stringstream data;
                     z.extract(file, data);
-                    addSignature(make_unique<SignatureXAdES_LTA>(data, this, true));
+                    auto signatures = make_shared<Signatures>(data, this);
+                    for(size_t i = 0, count = signatures->count(); i < count; ++i)
+                        addSignature(make_unique<SignatureXAdES_LTA>(signatures, i, this));
                 }
                 catch(const Exception &e)
                 {
@@ -354,7 +359,7 @@ Signature* ASiC_E::prepareSignature(Signer *signer)
 
 Signature *ASiC_E::sign(Signer* signer)
 {
-    SignatureXAdES_LTA *s = static_cast<SignatureXAdES_LTA*>(prepareSignature(signer));
+    auto *s = static_cast<SignatureXAdES_LTA*>(prepareSignature(signer));
     try
     {
         s->setSignatureValue(signer->sign(s->signatureMethod(), s->dataToSign()));
