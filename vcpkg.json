@@ -8,7 +8,7 @@
     "features": {
       "tests": { "description": "Build tests", "dependencies": ["boost-test"] }
     },
-    "builtin-baseline": "4a8d11802f0a9ffbe5c68f6143d61d469d800a7d",
+    "builtin-baseline": "6a349fe1fbea1e5fcda2e0775f555d829a5e82df",
     "vcpkg-configuration": {
         "overlay-triplets": ["./patches/vcpkg-triplets"],
         "overlay-ports": [

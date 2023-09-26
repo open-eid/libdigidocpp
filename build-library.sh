@@ -5,7 +5,7 @@ set -e
 if [ "$#" -eq 0 ]; then
   echo "Usage:"
   echo "  $0 target [maketask]"
-  echo "  target: osx ios iossimulator ioscatalyst androidarm androidarm64 androidx86 androidx86_64"
+  echo "  target: osx ios iossimulator ioscatalyst androidarm androidarm64 androidx86_64"
   echo "To control iOS, macOS builds set environment variables:"
   echo " minimum deployment target"
   echo " - MACOSX_DEPLOYMENT_TARGET=10.15"
@@ -23,10 +23,6 @@ case "$@" in
   *x86_64*)
     TARGET=androidx86_64
     ARCH="x86_64"
-    ;;
-  *x86*)
-    TARGET=androidx86
-    ARCH="x86"
     ;;
   *arm64*)
     TARGET=androidarm64

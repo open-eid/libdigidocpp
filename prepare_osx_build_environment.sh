@@ -5,9 +5,9 @@ XERCES_DIR=xerces-c-3.2.4
 XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-3.0.9
-LIBXML2_DIR=libxml2-2.10.3
-ANDROID_NDK=android-ndk-r25
+OPENSSL_DIR=openssl-3.0.11
+LIBXML2_DIR=libxml2-2.11.5
+ANDROID_NDK=android-ndk-r26
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
 PODOFO_DIR=podofo-0.9.4
@@ -18,22 +18,17 @@ case "$@" in
   case "$@" in
   *x86_64*)
     ARCH=x86_64
-    ARCH_ABI="x86_64"
+    ARCH_ABI=x86_64
     CROSS_COMPILE=x86_64-linux-android
-    ;;
-  *x86*)
-    ARCH=x86
-    ARCH_ABI="x86"
-    CROSS_COMPILE=i686-linux-android
     ;;
   *arm64*)
     ARCH=arm64
-    ARCH_ABI="arm64-v8a"
+    ARCH_ABI=arm64-v8a
     CROSS_COMPILE=aarch64-linux-android
     ;;
   *)
     ARCH=arm
-    ARCH_ABI="armeabi-v7a"
+    ARCH_ABI=armeabi-v7a
     CROSS_COMPILE=armv7a-linux-androideabi
     ;;
   esac
@@ -64,7 +59,7 @@ case "$@" in
 *simulator*)
   echo "Building for iOS Simulator"
   TARGET_PATH=/Library/libdigidocpp.iphonesimulator
-  CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
+  CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
@@ -74,7 +69,7 @@ case "$@" in
 *ioscatalyst*)
   echo "Building for iOS macOS Catalyst"
   TARGET_PATH=/Library/libdigidocpp.iphonecatalyst
-  CONFIGURE="--host=x86_64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
+  CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
@@ -84,7 +79,7 @@ case "$@" in
 *ios*)
   echo "Building for iOS"
   TARGET_PATH=/Library/libdigidocpp.iphoneos
-  CONFIGURE="--host=arm-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
+  CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
   : ${ARCHS:="arm64"}
   : ${IPHONEOS_DEPLOYMENT_TARGET:="12.0"}
@@ -253,22 +248,11 @@ function openssl {
     *)
         for ARCH in ${ARCHS}
         do
-            case "${ARCH}" in
-            *x86_64*)
-                case "${ARGS}" in
-                *simulator*) CC="" CFLAGS="-arch x86_64" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" ./Configure darwin64-x86_64 --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-                *) CC="" CFLAGS="" ./Configure darwin64-x86_64 --prefix=${TARGET_PATH} shared no-module no-tests enable-ec_nistp_64_gcc_128
-                esac
-                ;;
-            *arm64*)
-                case "${ARGS}" in
-                *simulator*) CC="" CFLAGS="-arch arm64" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-                *catalyst*) CC="" CFLAGS="-target x86_64-apple-ios-macabi" ./Configure darwin64-arm64 --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-                *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-                *) CC="" CFLAGS="" ./Configure darwin64-arm64 --prefix=${TARGET_PATH} shared no-module no-tests enable-ec_nistp_64_gcc_128
-                esac
-                ;;
+            case "${ARGS}" in
+            *simulator*) CC="" CFLAGS="-arch ${ARCH}" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+            *catalyst*) CC="" CFLAGS="-target ${ARCH}-apple-ios-macabi" ./Configure darwin64-${ARCH} --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+            *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+            *) CC="" CFLAGS="" ./Configure darwin64-${ARCH} --prefix=${TARGET_PATH} shared no-module no-tests enable-ec_nistp_64_gcc_128
             esac
             make -s > /dev/null
             if [[ ${ARCHS} == ${ARCH}* ]]; then
@@ -420,7 +404,7 @@ case "$@" in
 *)
     echo "Usage:"
     echo "  $0 [target] [task]"
-    echo "  target: osx ios iossimulator ioscatalyst androidarm androidarm64 androidx86 androidx86_64"
+    echo "  target: osx ios iossimulator ioscatalyst androidarm androidarm64 androidx86_64"
     echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
     echo "To control iOS, macOS builds set environment variables:"
     echo " minimum deployment target"
