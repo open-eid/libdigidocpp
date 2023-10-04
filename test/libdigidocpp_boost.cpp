@@ -30,8 +30,6 @@
 #include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
 
-#include <openssl/opensslv.h>
-
 namespace digidoc
 {
 
@@ -41,7 +39,7 @@ public:
     TestFixture()
     {
         copyTSL("EE_T-good.xml");
-        digidoc::initialize("untitestboost");
+        initialize("untitestboost");
     }
 };
 
@@ -123,9 +121,9 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(X509CertSuite)
 BOOST_AUTO_TEST_CASE(parameters)
 {
-    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
-    X509Cert c = signer1->cert();
-    BOOST_CHECK_EQUAL(c, signer1->cert());
+    PKCS12Signer signer1("signer1.p12", "signer1");
+    X509Cert c = signer1.cert();
+    BOOST_CHECK_EQUAL(c, signer1.cert());
     BOOST_CHECK_EQUAL(!c, false);
     BOOST_CHECK_EQUAL(c, true);
 
@@ -143,27 +141,30 @@ BOOST_AUTO_TEST_CASE(parameters)
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(X509Crypto)
+BOOST_AUTO_TEST_SUITE(X509CryptoSuite)
 BOOST_AUTO_TEST_CASE(parameters)
 {
     X509Cert cert("47101010033.cer", X509Cert::Pem);
-    digidoc::X509Crypto crypto(cert);
+    X509Crypto crypto(cert);
     BOOST_CHECK_EQUAL(crypto.isRSAKey(), true);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()), 0);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of ESTEID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of EST\\45ID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()+"EE"), -1);
 
-    digidoc::X509Crypto test(X509Cert("test.crt", X509Cert::Pem));
+    X509Cert cert1("unicode.crt", X509Cert::Pem);
+    BOOST_CHECK_EQUAL(X509Crypto(cert1).compareIssuerToString(cert1.issuerName()), 0);
+
+    X509Crypto test(X509Cert("test.crt", X509Cert::Pem));
     BOOST_CHECK_EQUAL(test.compareIssuerToString("CN=\\\"test\\\""), 0);
 
-    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
+    PKCS12Signer signer1("signer1.p12", "signer1");
     const vector<unsigned char> data{'H','e','l','l','o',' ','w','o','r','l','d'};
     vector<unsigned char> digest = Digest(URI_SHA256).result(data);
-    vector<unsigned char> signature = signer1->sign(URI_SHA256, digest);
-    BOOST_CHECK_EQUAL(digidoc::X509Crypto(signer1->cert()).verify(URI_SHA256, digest, signature), true);
+    vector<unsigned char> signature = signer1.sign(URI_SHA256, digest);
+    BOOST_CHECK_EQUAL(X509Crypto(signer1.cert()).verify(URI_SHA256, digest, signature), true);
     digest[0] += 1;
-    BOOST_CHECK_EQUAL(digidoc::X509Crypto(signer1->cert()).verify(URI_SHA256, digest, signature), false);
+    BOOST_CHECK_EQUAL(X509Crypto(signer1.cert()).verify(URI_SHA256, digest, signature), false);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -291,17 +292,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 
     BOOST_CHECK_THROW(d->removeSignature(0U), Exception);
 
-    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
-    signer1->setProfile("time-stamp");
-    BOOST_CHECK_THROW(d->sign(signer1.get()), Exception);
+    PKCS12Signer signer1("signer1.p12", "signer1");
+    signer1.setProfile("time-stamp");
+    BOOST_CHECK_THROW(d->sign(&signer1), Exception);
 
     // Add first Signature
     BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
-    BOOST_CHECK_NO_THROW(d->sign(signer1.get()));
+    BOOST_CHECK_NO_THROW(d->sign(&signer1));
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     if(d->signatures().size() == 1)
     {
-        BOOST_CHECK_EQUAL(d->signatures().at(0)->signingCertificate(), signer1->cert());
+        BOOST_CHECK_EQUAL(d->signatures().at(0)->signingCertificate(), signer1.cert());
         BOOST_CHECK_NO_THROW(d->signatures().at(0)->validate());
     }
     BOOST_CHECK_NO_THROW(d->save(Doc::EXT + ".tmp"));
@@ -311,12 +312,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_THROW(d->removeDataFile(0U), Exception);
 
     // Add second Signature
-    auto signer2 = make_unique<PKCS12Signer>("signer2.p12", "signer2");
-    BOOST_CHECK_NO_THROW(d->sign(signer2.get()));
+    PKCS12Signer signer2("signer2.p12", "signer2");
+    BOOST_CHECK_NO_THROW(d->sign(&signer2));
     BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
     if(d->signatures().size() == 2)
     {
-        BOOST_CHECK_EQUAL(d->signatures().at(1)->signingCertificate(), signer2->cert());
+        BOOST_CHECK_EQUAL(d->signatures().at(1)->signingCertificate(), signer2.cert());
         BOOST_CHECK_NO_THROW(d->signatures().at(1)->validate());
     }
     BOOST_CHECK_NO_THROW(d->save());
@@ -325,18 +326,18 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_NO_THROW(d->removeSignature(0U));
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     if(d->signatures().size() == 1)
-        BOOST_CHECK_EQUAL(d->signatures().at(0)->signingCertificate(), signer2->cert());
+        BOOST_CHECK_EQUAL(d->signatures().at(0)->signingCertificate(), signer2.cert());
 
     if(d->mediaType() == ASiCE::TYPE)
     {
-        auto signer3 = make_unique<PKCS12Signer>("signerEC.p12", "signerEC");
+        PKCS12Signer signer3("signerEC.p12", "signerEC");
         Signature *s3 = nullptr;
-        BOOST_CHECK_NO_THROW(s3 = d->sign(signer3.get()));
+        BOOST_CHECK_NO_THROW(s3 = d->sign(&signer3));
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
         if(s3)
         {
             BOOST_CHECK_EQUAL(s3->signatureMethod(), URI_ECDSA_SHA256);
-            BOOST_CHECK_EQUAL(s3->signingCertificate(), signer3->cert());
+            BOOST_CHECK_EQUAL(s3->signingCertificate(), signer3.cert());
             BOOST_CHECK_NO_THROW(s3->validate());
         }
         BOOST_CHECK_NO_THROW(d->save());
@@ -344,9 +345,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         // Reload from file and validate
         d = Container::openPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
-        if((s3 = d->signatures().back()))
+        if(s3 = d->signatures().back(); s3)
         {
-            BOOST_CHECK_EQUAL(s3->signingCertificate(), signer3->cert());
+            BOOST_CHECK_EQUAL(s3->signingCertificate(), signer3.cert());
             BOOST_CHECK_NO_THROW(s3->validate());
         }
 
@@ -355,43 +356,43 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
 
         // TSA signature
-        signer2->setProfile("time-stamp-archive");
-        BOOST_CHECK_NO_THROW(s3 = d->sign(signer2.get()));
-        //BOOST_CHECK_EQUAL(s3->TSCertificate(), signer2->cert());
+        signer2.setProfile("time-stamp-archive");
+        BOOST_CHECK_NO_THROW(s3 = d->sign(&signer2));
+        //BOOST_CHECK_EQUAL(s3->TSCertificate(), signer2.cert());
         //BOOST_CHECK_NO_THROW(s3->validate());
         BOOST_CHECK_NO_THROW(d->save(Doc::EXT + "-TSA.tmp"));
         BOOST_CHECK_NO_THROW(d->removeSignature(1U));
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
 
         // Save with no SignatureValue and later add signautre value
-        signer2->setProfile("time-stamp");
+        signer2.setProfile("time-stamp");
         d = Container::createPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
         Signature *s = nullptr;
-        BOOST_CHECK_NO_THROW(s = d->prepareSignature(signer2.get()));
+        BOOST_CHECK_NO_THROW(s = d->prepareSignature(&signer2));
         vector<unsigned char> signatureValue;
-        BOOST_CHECK_NO_THROW(signatureValue = signer2->sign(s->signatureMethod(), s->dataToSign()));
+        BOOST_CHECK_NO_THROW(signatureValue = signer2.sign(s->signatureMethod(), s->dataToSign()));
         BOOST_CHECK_NO_THROW(d->save());
         d = Container::openPtr(Doc::EXT + ".tmp");
         s = d->signatures().back();
         BOOST_CHECK_NO_THROW(s->setSignatureValue(signatureValue));
-        BOOST_CHECK_NO_THROW(s->extendSignatureProfile(signer2->profile()));
+        BOOST_CHECK_NO_THROW(s->extendSignatureProfile(signer2.profile()));
         BOOST_CHECK_NO_THROW(d->save());
         BOOST_CHECK_NO_THROW(s->validate());
 
         // RSA PSS tests
         d = Container::createPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
-        signer1->setMethod(URI_RSA_PSS_SHA256);
-        BOOST_CHECK_NO_THROW(s = d->sign(signer1.get()));
+        signer1.setMethod(URI_RSA_PSS_SHA256);
+        BOOST_CHECK_NO_THROW(s = d->sign(&signer1));
         BOOST_CHECK_NO_THROW(s->validate());
-        BOOST_CHECK_EQUAL(s->signatureMethod(), signer1->method());
-        auto signer4 = make_unique<PKCS12Signer>("signerEC384.p12", "signerEC");
-        signer4->setProfile("BES"); // Not signed with same Issuer
+        BOOST_CHECK_EQUAL(s->signatureMethod(), signer1.method());
+        PKCS12Signer signer4("signerEC384.p12", "signerEC");
+        signer4.setProfile("BES"); // Not signed with same Issuer
         d = Container::createPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
         Signature *s4 = nullptr;
-        BOOST_CHECK_NO_THROW(s4 = d->sign(signer4.get()));
+        BOOST_CHECK_NO_THROW(s4 = d->sign(&signer4));
         BOOST_CHECK_EQUAL(s4->signatureMethod(), URI_ECDSA_SHA384);
     }
 
@@ -402,13 +403,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 {
-    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
+    PKCS12Signer signer1("signer1.p12", "signer1");
     for(const string &data : {"0123456789~#%&()=`@{[]}'", "öäüõ"})
     {
         auto d = Container::createPtr("test." + Doc::EXT);
         const Signature *s1 = nullptr;
         BOOST_CHECK_NO_THROW(d->addDataFile(data + ".txt", "text/plain"));
-        BOOST_CHECK_NO_THROW(s1 = d->sign(signer1.get()));
+        BOOST_CHECK_NO_THROW(s1 = d->sign(&signer1));
         if(s1)
             s1->validate();
         d->save(data + Doc::EXT + ".tmp");
@@ -422,23 +423,23 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
 {
     auto d = Container::createPtr("test." + Doc::EXT);
-    auto signer1 = make_unique<PKCS12Signer>("signer1.p12", "signer1");
+    PKCS12Signer signer1("signer1.p12", "signer1");
 
-    signer1->setSignatureProductionPlace("Tartu", "Tartumaa", "12345", "Estonia");
+    signer1.setSignatureProductionPlace("Tartu", "Tartumaa", "12345", "Estonia");
 
     vector<string> roles{"Role1"};
-    signer1->setSignerRoles( roles );
+    signer1.setSignerRoles( roles );
 
     const Signature *s1 = nullptr;
     BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
     BOOST_CHECK_NO_THROW(d->addDataFile("test2.bin", "text/plain"));
-    BOOST_CHECK_NO_THROW(s1 = d->sign(signer1.get()));
+    BOOST_CHECK_NO_THROW(s1 = d->sign(&signer1));
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     if(s1)
     {
         BOOST_CHECK_NO_THROW(s1->validate());
         BOOST_CHECK_EQUAL(s1->id(), "S0");
-        BOOST_CHECK_EQUAL(s1->signingCertificate(), signer1->cert());
+        BOOST_CHECK_EQUAL(s1->signingCertificate(), signer1.cert());
         BOOST_CHECK_EQUAL(s1->signerRoles(), roles);
         BOOST_CHECK_EQUAL(s1->city(), "Tartu");
         BOOST_CHECK_EQUAL(s1->stateOrProvince(), "Tartumaa");
@@ -455,8 +456,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
     if(d->signatures().size() == 1U)
         BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
 
-    auto signer3 = make_unique<PKCS12Signer>("signer3.p12", "signer3");
-    BOOST_CHECK_THROW(d->sign(signer3.get()), Exception); // OCSP UNKNOWN
+    PKCS12Signer signer3("signer3.p12", "signer3");
+    BOOST_CHECK_THROW(d->sign(&signer3), Exception); // OCSP UNKNOWN
 }
 BOOST_AUTO_TEST_SUITE_END()
 
