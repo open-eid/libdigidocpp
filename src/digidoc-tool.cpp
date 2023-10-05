@@ -32,7 +32,6 @@
 #include "util/log.h"
 
 #include <algorithm>
-#include <filesystem>
 #include <iostream>
 #include <optional>
 #include <sstream>

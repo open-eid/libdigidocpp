@@ -23,7 +23,6 @@
 
 #include <algorithm>
 #include <ctime>
-#include <filesystem>
 #include <locale>
 #include <sstream>
 #include <sys/stat.h>
@@ -62,7 +61,7 @@ using f_statbuf = struct stat;
 using f_utimbuf = struct utimbuf;
 #endif
 
-stack<string> File::tempFiles;
+stack<fs::path> File::tempFiles;
 
 string File::confPath()
 {
@@ -73,63 +72,21 @@ string File::confPath()
 #elif defined(_WIN32)
     return dllPath("digidocpp.dll");
 #else
-    return path(env("SNAP"), DIGIDOCPP_CONFIG_DIR "/");
+    fs::path result;
+    if(char *var = getenv("SNAP"))
+        result = fs::path(var);
+    return (result / DIGIDOCPP_CONFIG_DIR "/").u8string();
 #endif
 }
-
-#ifndef _WIN32
-string File::env(string_view varname)
-{
-    if(char *var = getenv(varname.data()))
-        return decodeName(var);
-    return {};
-}
-#endif
 
 /**
  * Encodes path to compatible std lib
  * @param fileName path
  * @return encoded path
  */
-File::f_string File::encodeName(string_view fileName)
+fs::path File::encodeName(string_view fileName)
 {
-    if(fileName.empty())
-        return {};
-#ifdef __APPLE__
-    CFStringRef ref = CFStringCreateWithBytesNoCopy({}, (UInt8 *)fileName.data(),
-        CFIndex(fileName.size()), kCFStringEncodingUTF8, FALSE, kCFAllocatorNull);
-    string out(fileName.size() * 2, 0);
-    CFStringGetFileSystemRepresentation(ref, out.data(), CFIndex(out.size()));
-    CFRelease(ref);
-    out.resize(strlen(out.c_str()));
-#else
-    f_string out = fs::u8path(fileName);
-#endif
-    return out;
-}
-
-/**
- * Decodes path from std lib path
- * @param localFileName path
- * @return decoded path
- */
-string File::decodeName(const f_string_view &localFileName)
-{
-    if(localFileName.empty())
-        return {};
-#ifdef __APPLE__
-    CFMutableStringRef ref = CFStringCreateMutable(nullptr, 0);
-    CFStringAppendCString(ref, localFileName.data(), kCFStringEncodingUTF8);
-    CFStringNormalize(ref, kCFStringNormalizationFormC);
-
-    string out(localFileName.size() * 2, 0);
-    CFStringGetCString(ref, out.data(), CFIndex(out.size()), kCFStringEncodingUTF8);
-    CFRelease(ref);
-    out.resize(strlen(out.c_str()));
-#else
-    string out = fs::path(localFileName).u8string();
-#endif
-    return out;
+    return fs::u8path(fileName);
 }
 
 /**
@@ -140,8 +97,7 @@ string File::decodeName(const f_string_view &localFileName)
  */
 bool File::fileExists(const string& path)
 {
-    f_statbuf fileInfo;
-    return f_stat(encodeName(path).c_str(), &fileInfo) == 0 && (fileInfo.st_mode & S_IFMT) == S_IFREG;
+    return fs::is_regular_file(fs::u8path(path));
 }
 
 #ifdef _WIN32
@@ -167,14 +123,13 @@ string File::dllPath(string_view dll)
 time_t File::modifiedTime(const string &path)
 {
     f_statbuf fileInfo;
-    return f_stat(encodeName(path).c_str(), &fileInfo) ? time(nullptr) : fileInfo.st_mtime;
+    return f_stat(fs::u8path(path).c_str(), &fileInfo) ? time(nullptr) : fileInfo.st_mtime;
 }
 
 void File::updateModifiedTime(const string &path, time_t time)
 {
-    f_string _path = encodeName(path);
     f_utimbuf u_time { time, time };
-    if(f_utime(_path.c_str(), &u_time))
+    if(f_utime(fs::u8path(path).c_str(), &u_time))
         THROW("Failed to update file modified time.");
 }
 
@@ -193,8 +148,7 @@ string File::fileExtension(const string &path)
  */
 unsigned long File::fileSize(const string &path)
 {
-    f_statbuf fileInfo;
-    return f_stat(encodeName(path).c_str(), &fileInfo) ? 0 : (unsigned long)fileInfo.st_size;
+    return fs::file_size(fs::u8path(path));
 }
 
 /**
@@ -266,26 +220,22 @@ string File::path(string dir, string_view relativePath)
 /**
  * @return returns temporary filename.
  */
-string File::tempFileName()
+fs::path File::tempFileName()
 {
 #ifdef _WIN32
     // requires TMP environment variable to be set
     wchar_t *fileName = _wtempnam(nullptr, nullptr); // TODO: static buffer, not thread-safe
     if(!fileName)
         THROW("Failed to create a temporary file name.");
-    string path = fs::path(fileName).u8string();
+    tempFiles.emplace(fileName);
     free(fileName);
 #else
-#ifdef __APPLE__
-    string path = File::path(env("TMPDIR"), "XXXXXX");
-#else
-    string path = "/tmp/XXXXXX";
-#endif
-    if(mkstemp(path.data()) == -1)
+    string tmp = "XXXXXX";
+    if(mkstemp(tmp.data()) == -1)
         THROW("Failed to create a temporary file name.");
+    tempFiles.push(fs::temp_directory_path() / tmp);
 #endif
-    tempFiles.push(path);
-    return path;
+    return tempFiles.top();
 }
 
 /**
@@ -300,7 +250,7 @@ void File::createDirectory(string path)
         THROW("Can not create directory with no name.");
     if(path.back() == '/' || path.back() == '\\')
         path.pop_back();
-    f_string _path = encodeName(path);
+    auto _path = fs::u8path(path);
 #ifdef _WIN32
     int result = _wmkdir(_path.c_str());
 #else
@@ -327,7 +277,9 @@ string File::digidocppPath()
     CoTaskMemFree(knownFolder);
     return appData;
 #elif defined(ANDROID)
-    return path(env("HOME"), ".digidocpp");
+    if(char *var = getenv("HOME"))
+        return (fs::path(var) / ".digidocpp").u8string();
+    return {};
 #else
     string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
     passwd pwbuf {};
@@ -362,21 +314,19 @@ string File::fullPathUrl(string path)
  */
 void File::deleteTempFiles()
 {
+    error_code ec;
     while(!tempFiles.empty())
     {
-        if(!removeFile(tempFiles.top()))
-            WARN( "Tried to remove the temporary file or directory '%s', but failed.", tempFiles.top().c_str() );
+        if(!fs::remove(tempFiles.top(), ec) || ec)
+            WARN("Tried to remove the temporary file or directory '%s', but failed.", tempFiles.top().u8string().c_str());
         tempFiles.pop();
     }
 }
 
 bool File::removeFile(const string &path)
 {
-#ifdef _WIN32
-    return _wremove(fs::u8path(path).c_str()) == 0;
-#else
-    return remove(encodeName(path).c_str()) == 0;
-#endif
+    error_code ec;
+    return fs::remove(fs::u8path(path), ec);
 }
 
 /**
