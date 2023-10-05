@@ -23,3 +23,6 @@ done
 openssl req -out signerEC.req -new -newkey ec:<(openssl ecparam -name secp384r1) -nodes -keyout signerEC.key -subj "/C=EE/CN=signer EC"
 openssl x509 -req -in signerEC.req -out signerEC.crt -CA inter.crt -CAkey inter.key -CAserial interserial.txt -extfile openssl.conf -extensions v3_usr -days 3650
 openssl pkcs12 -export -nodes -in signerEC.crt -inkey signerEC.key -out signerEC.p12 -password pass:signerEC
+
+openssl req -out unicode.req -new -newkey ec:<(openssl ecparam -name secp384r1) -nodes -keyout unicode.key -subj "/C=EE/CN=unicodeöäüõ" -utf8
+openssl x509 -req -in unicode.req -out unicode.crt -signkey unicode.key -days 365 

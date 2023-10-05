@@ -27,15 +27,9 @@
 #include <crypto/X509Cert.h>
 #include <util/File.h>
 
-#ifdef _WIN32
-#include <direct.h>
-#define chdir _chdir
-#else
-#include <unistd.h>
-#endif
-
 using namespace digidoc;
 using namespace std;
+namespace fs = filesystem;
 
 namespace std
 {
@@ -102,7 +96,6 @@ public:
 		profiles.emplace("1.3.6.1.4.1.10015.3.1.1");
 		return profiles;
 	}
-	bool PKCS12Disable() const override { return true; }
 	string TSUrl() const override { return "http://demo.sk.ee/tsa/"; }
 	bool TSLAutoUpdate() const override { return false; }
 	string TSLCache() const override { return path; }
@@ -128,10 +121,7 @@ public:
 		if(argc > 1)
 		{
 			//BOOST_MESSAGE("Data path " + string(boost::unit_test::framework::master_test_suite().argv[argc-1]));
-DIGIDOCPP_WARNING_PUSH
-DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-result")
-			chdir(boost::unit_test::framework::master_test_suite().argv[argc-1]);
-DIGIDOCPP_WARNING_POP
+            fs::current_path(boost::unit_test::framework::master_test_suite().argv[argc-1]);
 			path = conf->path = boost::unit_test::framework::master_test_suite().argv[argc-1];
 		}
 		boost::unit_test::unit_test_monitor.register_exception_translator<Exception>(&translate_exception);
@@ -155,11 +145,8 @@ DIGIDOCPP_WARNING_POP
 
 	void copyTSL(const string &from)
 	{
-		ifstream i(util::File::encodeName(from).c_str(), ofstream::binary);
-		ofstream o(util::File::encodeName(path + "/EE_T.xml").c_str(), ifstream::binary);
-		o << i.rdbuf();
-		o.close();
-		i.close();
+        ofstream(util::File::encodeName(path + "/EE_T.xml"), ifstream::binary)
+            << ifstream(util::File::encodeName(from), ofstream::binary).rdbuf();
 	}
 
 	string path = ".";
