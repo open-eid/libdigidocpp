@@ -36,7 +36,6 @@ case "$@" in
   : ${ANDROID_NDK_HOME:=$(ls -d /Volumes/android-ndk-r*/AndroidNDK*.app/Contents/NDK)}
   TARGET_PATH=/Library/libdigidocpp.${TARGET}
   CMAKEARGS="
-    -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH};/usr/local;/opt/homebrew \
     -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
     -DANDROID_PLATFORM=28 \
     -DANDROID_ABI=${ARCH} \
@@ -72,13 +71,14 @@ case "$@" in
   : ${IPHONEOS_DEPLOYMENT_TARGET:="13.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   CMAKEARGS="
+    -DCMAKE_SYSTEM_NAME=iOS \
     -DCMAKE_OSX_SYSROOT=${SYSROOT} \
-    -DFRAMEWORK=off \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} \
     -DSWIG_EXECUTABLE=NOTFOUND \
     -DBoost_INCLUDE_DIR=NOTFOUND \
     -DDOXYGEN_EXECUTABLE=NOTFOUND \
-    -DBUILD_TOOLS=NO \
-    -DBUILD_SHARED_LIBS=NO"
+    -DFRAMEWORK_DESTINATION=${TARGET_PATH}/lib
+    -DBUILD_TOOLS=NO"
   ;;
 *)
   echo "Building for macOS"
@@ -93,6 +93,7 @@ cmake --fresh -B ${TARGET} -S . \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
     -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
+    -DCMAKE_FIND_ROOT_PATH="${TARGET_PATH};/usr/local;/opt/homebrew" \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
     -DXercesC_ROOT=${TARGET_PATH} \
     ${CMAKEARGS}
