@@ -14,6 +14,8 @@
 #include <digidocpp/Exception.h>
 #include "unzip.h"
 
+#include <array>
+
 @interface NSString (Digidoc)
 + (NSString*)stdstring:(const std::string&)str;
 @end
