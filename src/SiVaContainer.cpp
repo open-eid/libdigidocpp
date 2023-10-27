@@ -55,7 +55,7 @@ using namespace std;
 using namespace xercesc;
 using json = nlohmann::json;
 
-static string base64_decode(const XMLCh *in) {
+static auto base64_decode(const XMLCh *in) {
     static constexpr array<uint8_t, 128> T{
         0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
         0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
@@ -67,7 +67,7 @@ static string base64_decode(const XMLCh *in) {
         0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x64, 0x64, 0x64, 0x64, 0x64
     };
 
-    string out;
+    auto out = make_unique<stringstream>();
     int value = 0;
     int bits = -8;
     for(; in; ++in)
@@ -79,9 +79,9 @@ static string base64_decode(const XMLCh *in) {
         if(check == 0x64)
             break;
         value = (value << 6) + check;
-        if((bits += 6) < 0)
+        if(bits += 6; bits < 0)
             continue;
-        out.push_back(char((value >> bits) & 0xFF));
+        out->put(char((value >> bits) & 0xFF));
         bits -= 8;
     }
     return out;
@@ -382,7 +382,7 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
 
             if(const XMLCh *b64 = item->getTextContent())
             {
-                d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(base64_decode(b64)),
+                d->dataFiles.push_back(new DataFilePrivate(base64_decode(b64),
                     xml::transcode<char>(item->getAttribute(cpXMLCh(u"Filename"))),
                     xml::transcode<char>(item->getAttribute(cpXMLCh(u"MimeType"))),
                     xml::transcode<char>(item->getAttribute(cpXMLCh(u"Id")))));
@@ -393,8 +393,7 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
             Digest calc(URI_SHA1);
             SecureDOMParser::calcDigestOnNode(&calc, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315", item);
             vector<unsigned char> digest = calc.result();
-            XMLSize_t size = 0;
-            if(XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))
+            if(XMLSize_t size = 0; XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))
             {
                 item->setAttribute(cpXMLCh(u"ContentType"), cpXMLCh(u"HASHCODE"));
                 item->setAttribute(cpXMLCh(u"DigestType"), cpXMLCh(u"sha1"));
