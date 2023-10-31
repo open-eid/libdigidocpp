@@ -82,7 +82,7 @@ jobs:
     steps:
     - name: Install Deps
       run: |
-        dnf install -y \
+        dnf install -y --setopt=install_weak_deps=False \
           git gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel \
           https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
     - name: Checkout
@@ -105,7 +105,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:23.04']
+        container: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:23.04', 'ubuntu:23.10']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions
