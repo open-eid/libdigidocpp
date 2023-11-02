@@ -48,12 +48,6 @@ public:
     map<string, ZipSerialize::Properties> properties;
 };
 
-const string_view ASiContainer::ASICE_EXTENSION = "asice";
-const string_view ASiContainer::ASICE_EXTENSION_ABBR = "sce";
-const string_view ASiContainer::ASICS_EXTENSION = "asics";
-const string_view ASiContainer::ASICS_EXTENSION_ABBR = "scs";
-const string_view ASiContainer::BDOC_EXTENSION = "bdoc";
-
 const string ASiContainer::MIMETYPE_ASIC_E = "application/vnd.etsi.asic-e+zip";
 const string ASiContainer::MIMETYPE_ASIC_S = "application/vnd.etsi.asic-s+zip";
 //https://signa.mitsoft.lt/static/signa-web/webResources/docs/ADOC_specification_approved20090907_EN.pdf

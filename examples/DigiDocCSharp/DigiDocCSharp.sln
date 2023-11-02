@@ -1,20 +1,25 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C# Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34009.444
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DigiDocCSharp", "DigiDocCSharp.csproj", "{DDEE2029-EA2A-49D2-80CB-F0E2E396B005}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x86 = Debug|x86
-		Release|x86 = Release|x86
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DDEE2029-EA2A-49D2-80CB-F0E2E396B005}.Debug|x86.ActiveCfg = Debug|x86
-		{DDEE2029-EA2A-49D2-80CB-F0E2E396B005}.Debug|x86.Build.0 = Debug|x86
-		{DDEE2029-EA2A-49D2-80CB-F0E2E396B005}.Release|x86.ActiveCfg = Release|x86
-		{DDEE2029-EA2A-49D2-80CB-F0E2E396B005}.Release|x86.Build.0 = Release|x86
+		{DDEE2029-EA2A-49D2-80CB-F0E2E396B005}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDEE2029-EA2A-49D2-80CB-F0E2E396B005}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDEE2029-EA2A-49D2-80CB-F0E2E396B005}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDEE2029-EA2A-49D2-80CB-F0E2E396B005}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7D43E58D-0FD9-4023-A18F-D69EE6A229E1}
 	EndGlobalSection
 EndGlobal

@@ -68,7 +68,8 @@ namespace digidoc
 static string m_appName = "libdigidocpp";
 static string m_userAgent = "libdigidocpp";
 static vector<decltype(&Container::createPtr)> m_createList {};
-static vector<decltype(&Container::openPtr)> m_openList {};
+using OpenCB = std::unique_ptr<Container> (*)(const std::string &path, ContainerOpenCB *cb);
+static vector<OpenCB> m_openList {};
 }
 
 /**
@@ -96,14 +97,7 @@ string digidoc::userAgent() { return m_userAgent; }
  * Returns libdigidocpp library version
  */
 string digidoc::version() {
-    string ver = FILE_VER_STR;
-#if defined(DYNAMIC_LIBDIGIDOC) || defined(LINKED_LIBDIGIDOC)
-    ver += "_ddoc";
-#endif
-#ifdef PDF_SUPPORT
-    ver += "_siva";
-#endif
-    return ver;
+    return FILE_VER_STR;
 }
 
 /**
@@ -349,9 +343,21 @@ Container* Container::open(const string &path)
  */
 unique_ptr<Container> Container::openPtr(const string &path)
 {
+    return openPtr(path, {});
+}
+
+/**
+ * Opens container from a file
+ *
+ * @param path
+ * @param cb Callback called when needed
+ * @throws Exception
+ */
+unique_ptr<Container> Container::openPtr(const string &path, ContainerOpenCB *cb)
+{
     for(auto open: m_openList)
     {
-        if(unique_ptr<Container> container = open(path))
+        if(unique_ptr<Container> container = open(path, cb))
             return container;
     }
     return ASiC_E::openInternal(path);
@@ -417,7 +423,7 @@ unique_ptr<Container> Container::openPtr(const string &path)
  *
  * It must contain static members:
  * * static Container* createInternal(const std::string &path);
- * * static Container* openInternal(const std::string &path);
+ * * static Container* openInternal(const std::string &path, digidoc::ContainerOpenCB *cb);
  *
  * @see Container::create, Container::open
  */
