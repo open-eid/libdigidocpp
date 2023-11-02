@@ -133,7 +133,8 @@ public class libdigidocpp {
         try
         {
             System.out.println("Opening file: " + file);
-            Container b = Container.open(file);
+            ContainerOpen cb = new ContainerOpen();
+            Container b = Container.open(file, cb);
             assert b != null;
 
             System.out.println("Files:");
@@ -199,5 +200,11 @@ public class libdigidocpp {
                     + Character.digit(s.charAt(i+1), 16));
         }
         return data;
+    }
+
+    static private class ContainerOpen extends ContainerOpenCB
+    {
+        @Override
+        public boolean validateOnline() { return true; }
     }
 }

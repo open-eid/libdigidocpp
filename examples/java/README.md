@@ -6,4 +6,4 @@
 
 ## Run
 
-    java -Djava.library.path=/Library/libdigidocpp/lib -jar build/libs/libdigidoc.jar
+    java -Djava.library.path=/some/path/lib -jar build/libs/libdigidoc.jar

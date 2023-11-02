@@ -1380,6 +1380,8 @@ Signature Validation Policy
 Default POLv2
 
 http://open-eid.github.io/SiVa/siva/appendix/validation_policy/</td></tr>
+<tr><td>\-\-offline	</td><td>Optional</td><td>
+open container offline (eg. Don't send to SiVa)</td></tr>
 <tr><td>\-\-warnings=
 
 (ignore, warning, error)	</td><td>Optional</td><td>

@@ -184,7 +184,8 @@ namespace DigiDocCSharp
             try
             {
                 Console.WriteLine("Opening file: " + file);
-                Container b = Container.open(file);
+                var cb = new ContainerOpen();
+                Container b = Container.open(file, cb);
 
                 Console.WriteLine("Files:");
                 foreach (DataFile d in b.dataFiles())
@@ -225,5 +226,10 @@ namespace DigiDocCSharp
             Console.WriteLine("DigiDocCSharp " + Assembly.GetExecutingAssembly().GetName().Version +
                 " libdigidocpp " + digidoc.digidoc.version());
         }
+    }
+
+    class ContainerOpen : ContainerOpenCB 
+    {
+        override public bool validateOnline() { return true; }
     }
 }

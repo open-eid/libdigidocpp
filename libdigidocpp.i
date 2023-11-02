@@ -19,7 +19,7 @@
 
 // digidocpp.i - SWIG interface for libdigidocpp library
 
-%module digidoc
+%module(directors="1") digidoc
 
 %begin %{
 #ifdef _MSC_VER
@@ -231,6 +231,8 @@ extern "C"
 %newobject digidoc::Container::open;
 %newobject digidoc::Container::create;
 
+%feature("director") digidoc::ContainerOpenCB;
+
 %typemap(javacode) digidoc::Conf %{
   public Conf transfer() {
     swigCMemOwn = false;
@@ -318,16 +320,21 @@ namespace std {
     }
 }
 %extend digidoc::Container {
+    static digidoc::Container* open(const std::string &path, digidoc::ContainerOpenCB *cb)
+    {
+        return digidoc::Container::openPtr(path, cb).release();
+    }
+
     digidoc::Signature* prepareWebSignature(const std::vector<unsigned char> &cert, const std::string &profile = {},
                                    const std::vector<std::string> &roles = {},
                                    const std::string &city = {}, const std::string &state = {},
                                    const std::string &postalCode = {}, const std::string &country = {})
     {
-        class : public digidoc::Signer
+        class final: public digidoc::Signer
         {
         public:
-            digidoc::X509Cert cert() const override { return _cert; }
-            std::vector<unsigned char> sign(const std::string &, const std::vector<unsigned char> &) const override
+            digidoc::X509Cert cert() const final { return _cert; }
+            std::vector<unsigned char> sign(const std::string &, const std::vector<unsigned char> &) const final
             {
                 THROW("Not implemented");
             }

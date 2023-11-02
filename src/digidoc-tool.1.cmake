@@ -27,6 +27,7 @@ Command open:
                              http://open-eid.github.io/SiVa/siva/appendix/validation_policy/
     --extractAll[=path]    - extracts documents without validating signatures (to path when provided)
     --validateOnExtract    - validates container before extracting files
+    --offline              - open container offline (eg. Don't send to SiVa)
 
 Command add:
   Example: digidoc-tool add --file=file1.txt container-file.asice
