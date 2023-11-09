@@ -102,7 +102,7 @@ public:
     static std::unique_ptr<Container> openInternal(const std::string &path);
 
 private:
-    SiVaContainer(const std::string &path, const std::string &ext, bool useHashCode);
+	SiVaContainer(const std::string &path, bool useHashCode);
     DISABLE_COPY(SiVaContainer);
 
 	std::unique_ptr<std::istream> parseDDoc(bool useHashCode);
