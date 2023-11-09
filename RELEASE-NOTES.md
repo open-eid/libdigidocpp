@@ -1,3 +1,11 @@
+Libdigidocpp library [3.17.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.17.0) release notes
+--------------------------------------
+- Update libraries and platform support (#549, #554, #558, #553)
+- Improve signature and container compatibility (#543, #545, #559, #561, #552)
+- Other fixes and optimizations (#542, #550, #557, #544, #551, #555)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.16.0...v3.17.0)
+
 Libdigidocpp library [3.16.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.16.0) release notes
 --------------------------------------
 - Update libraries and platform support (#530, #477, #534, #535)

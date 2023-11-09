@@ -44,7 +44,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends}
 Recommends:
- opensc
+ opensc-pkcs11
 Conflicts:
  libdigidoc2 (<<3.0)
 Description: DigiDoc digital signature library
