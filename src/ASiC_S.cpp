@@ -102,7 +102,7 @@ void ASiC_S::addAdESSignature(istream & /*signature*/)
     THROW("Not implemented.");
 }
 
-unique_ptr<Container> ASiC_S::openInternal(const string &path)
+unique_ptr<Container> ASiC_S::openInternal(const string &path, ContainerOpenCB * /*cb*/)
 {
     if (!isContainerSimpleFormat(path))
         return {};

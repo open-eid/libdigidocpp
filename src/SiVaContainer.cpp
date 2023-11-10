@@ -144,15 +144,14 @@ void SignatureSiVa::validate(const string &policy) const
 }
 
 
-SiVaContainer::SiVaContainer(const string &path, bool useHashCode)
+SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHashCode)
     : d(make_unique<Private>())
 {
-    string ext = File::fileExtension(path);
-    DEBUG("SiVaContainer::SiVaContainer(%s, %s, %d)", path.c_str(), ext.c_str(), useHashCode);
+    DEBUG("SiVaContainer::SiVaContainer(%s, %d)", path.c_str(), useHashCode);
     unique_ptr<istream> ifs = make_unique<ifstream>(File::encodeName(d->path = path), ifstream::binary);
     auto fileName = File::fileName(path);
+    auto ext = File::fileExtension(path);
     istream *is = ifs.get();
-    static const array asic {"asice", "sce", "asics", "scs"};
     if(ext == "ddoc")
     {
         d->mediaType = "application/x-ddoc";
@@ -165,8 +164,10 @@ SiVaContainer::SiVaContainer(const string &path, bool useHashCode)
         d->mediaType = "application/pdf";
         d->dataFiles.push_back(new DataFilePrivate(std::move(ifs), fileName, "application/pdf"));
     }
-    else if(find(asic.cbegin(), asic.cend(), ext) != asic.cend())
+    else if(static const array asic {"asice", "sce", "asics", "scs"};
+        find(asic.cbegin(), asic.cend(), ext) != asic.cend())
     {
+        static const string_view metaInf = "META-INF/";
         ZipSerialize z(path, false);
         vector<string> list = z.list();
         if(list.empty() || list.front() != "mimetype")
@@ -174,13 +175,16 @@ SiVaContainer::SiVaContainer(const string &path, bool useHashCode)
         if(d->mediaType = ASiContainer::readMimetype(z);
             d->mediaType != ASiContainer::MIMETYPE_ASIC_E && d->mediaType != ASiContainer::MIMETYPE_ASIC_S)
             THROW("Unknown file");
-        if(none_of(list.cbegin(), list.cend(), [](const string &file) { return file.find("p7s") != string::npos; }))
+        if(static const string_view suffix = "META-INF/";
+            none_of(list.cbegin(), list.cend(), [](const string &file) {
+                auto index = file.size() - suffix.size();
+                return file.size() > suffix.size() && file.rfind(metaInf, 0) == 0 && file.find(suffix, index) == index;
+            }))
             THROW("Unknown file");
 
-        static const string metaInf = "META-INF/";
         for(const string &file: list)
         {
-            if(file == "mimetype" || file.substr(0, metaInf.size()) == metaInf)
+            if(file == "mimetype" || file.rfind(metaInf, 0) == 0)
                 continue;
             const auto directory = File::directory(file);
             if(directory.empty() || directory == "/" || directory == "./")
@@ -193,6 +197,9 @@ SiVaContainer::SiVaContainer(const string &path, bool useHashCode)
     }
     else
         THROW("Unknown file");
+
+    if(cb && !cb->validateOnline())
+        return;
 
     array<XMLByte, 4800> buf{};
     string b64;
@@ -220,6 +227,7 @@ SiVaContainer::SiVaContainer(const string &path, bool useHashCode)
     Connect::Result r = Connect(CONF(verifyServiceUri), "POST", 0, CONF(verifyServiceCerts)).exec({
         {"Content-Type", "application/json;charset=UTF-8"}
     }, (const unsigned char*)req.c_str(), req.size());
+    req.clear();
 
     if(!r.isOK() && !r.isStatusCode("400"))
         THROW("Failed to send request to SiVa");
@@ -287,7 +295,7 @@ SiVaContainer::SiVaContainer(const string &path, bool useHashCode)
         for(const json &error: signature.value<json>("errors", {}))
         {
             string message = error["content"];
-            if(message.find("Bad digest for DataFile") == 0 && useHashCode)
+            if(message.find("Bad digest for DataFile", 0) == 0 && useHashCode)
                 THROW("%s", message.c_str());
             s->_exceptions.emplace_back(EXCEPTION_PARAMS("%s", message.c_str()));
         }
@@ -344,15 +352,15 @@ vector<DataFile *> SiVaContainer::dataFiles() const
     return d->dataFiles;
 }
 
-unique_ptr<Container> SiVaContainer::openInternal(const string &path)
+unique_ptr<Container> SiVaContainer::openInternal(const string &path, ContainerOpenCB *cb)
 {
     try {
-        return unique_ptr<Container>(new SiVaContainer(path, true));
+        return unique_ptr<Container>(new SiVaContainer(path, cb, true));
     } catch(const Exception &e) {
         if(e.msg().find("Bad digest for DataFile") == 0)
-            return unique_ptr<Container>(new SiVaContainer(path, false));
+            return unique_ptr<Container>(new SiVaContainer(path, cb, false));
         if(e.msg() == "Unknown file")
-           return {};
+            return {};
         throw;
     }
 }

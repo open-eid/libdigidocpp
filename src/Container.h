@@ -40,6 +40,11 @@ DIGIDOCPP_EXPORT void terminate();
 DIGIDOCPP_EXPORT std::string userAgent();
 DIGIDOCPP_EXPORT std::string version();
 
+struct ContainerOpenCB {
+    virtual ~ContainerOpenCB() = default;
+    virtual bool validateOnline() const { return true; }
+};
+
 class DIGIDOCPP_EXPORT Container
 {
 public:
@@ -66,6 +71,7 @@ public:
     static std::unique_ptr<Container> createPtr(const std::string &path);
     DIGIDOCPP_DEPRECATED static Container* open(const std::string &path);
     static std::unique_ptr<Container> openPtr(const std::string &path);
+    static std::unique_ptr<Container> openPtr(const std::string &path, digidoc::ContainerOpenCB *cb);
     template<class T>
     static void addContainerImplementation();
 
