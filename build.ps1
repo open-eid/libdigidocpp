@@ -72,7 +72,7 @@ foreach($platform in @("x86", "x64")) {
       "-DXSD_ROOT=$xsd" `
       "-DSIGNCERT=$sign" `
       "-DCROSSSIGNCERT=$crosssign" `
-      $cmakeext "&&" $cmake --build $buildpath --target check install
+      $cmakeext "&&" $cmake --build $buildpath --target check "&&" $cmake --build $buildpath --target install
   }
 }
 
