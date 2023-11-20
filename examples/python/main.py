@@ -2,6 +2,13 @@ import digidoc
 import sys
 import os
 
+class ContainerOpenCB(digidoc.ContainerOpenCB):
+
+    def __init__(self):
+        digidoc.ContainerOpenCB.__init__(self)
+
+    def validateOnline(self):
+        return True
 
 class Program:
     digidoc.initialize()
@@ -78,7 +85,8 @@ class Program:
 
     def verify(self, file):
         print("Opening file: " + file)
-        doc = digidoc.Container.open(file)
+        cb = ContainerOpenCB()
+        doc = digidoc.Container.open(file, cb)
 
         print("Files:")
         for d in doc.dataFiles():

@@ -326,6 +326,7 @@ static int printUsage(const char *executable)
     << "                               http://open-eid.github.io/SiVa/siva/appendix/validation_policy/" << endl
     << "      --extractAll[=path]    - extracts documents without validating signatures (to path when provided)" << endl
     << "      --validateOnExtract    - validates container before extracting files" << endl << endl
+    << "      --offline              - open container offline (eg. Don't send to SiVa)" << endl << endl
     << "  Command add:" << endl
     << "    Example: " << executable << " add --file=file1.txt container-file.asice" << endl
     << "    Available options:" << endl
@@ -539,6 +540,11 @@ static int open(int argc, char* argv[])
     fs::path extractPath;
     bool validateOnExtract = false;
     int returnCode = EXIT_SUCCESS;
+    struct OpenCB final: public ContainerOpenCB
+    {
+        bool online = true;
+        bool validateOnline() const final { return online; }
+    } cb;
 
     // Parse command line arguments.
     for(int i = 2; i < argc; i++)
@@ -566,6 +572,8 @@ static int open(int argc, char* argv[])
             validateOnExtract = true;
         else if(arg.find("--policy=") == 0)
             policy = arg.substr(9);
+        else if(arg.find("--offline") == 0)
+            cb.online = false;
         else
             path = arg;
     }
@@ -575,7 +583,7 @@ static int open(int argc, char* argv[])
 
     unique_ptr<Container> doc;
     try {
-        doc = Container::openPtr(path);
+        doc = Container::openPtr(path, &cb);
     } catch(const Exception &e) {
         cout << "Failed to parse container" << endl;
         cout << "  Exception:" << endl << e;

@@ -102,7 +102,7 @@ void ASiC_S::addAdESSignature(istream & /*signature*/)
     THROW("Not implemented.");
 }
 
-unique_ptr<Container> ASiC_S::openInternal(const string &path)
+unique_ptr<Container> ASiC_S::openInternal(const string &path, ContainerOpenCB * /*cb*/)
 {
     if (!isContainerSimpleFormat(path))
         return {};
@@ -130,11 +130,9 @@ Signature *ASiC_S::sign(Signer * /*signer*/)
 bool ASiC_S::isContainerSimpleFormat(const string &path)
 {
     DEBUG("isContainerSimpleFormat(path = '%s')", path.c_str());
-    const auto extension = util::File::fileExtension(path);
-    if(extension == ASICE_EXTENSION || extension == ASICE_EXTENSION_ABBR ||
-       extension == BDOC_EXTENSION)
+    if(util::File::fileExtension(path, {"asice", "sce", "bdoc"}))
         return false;
-    if(extension == ASICS_EXTENSION || extension == ASICS_EXTENSION_ABBR)
+    if(util::File::fileExtension(path, {"asics", "scs"}))
         return true;
     DEBUG("Check if ASiC/zip containter");
     try

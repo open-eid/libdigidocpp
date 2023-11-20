@@ -38,12 +38,6 @@ namespace digidoc
     class ASiContainer: public Container
     {
       public:
-          static const std::string_view ASICE_EXTENSION;
-          static const std::string_view ASICE_EXTENSION_ABBR;
-          static const std::string_view ASICS_EXTENSION;
-          static const std::string_view ASICS_EXTENSION_ABBR;
-          static const std::string_view BDOC_EXTENSION;
-
           static const std::string MIMETYPE_ASIC_E;
           static const std::string MIMETYPE_ASIC_S;
           static const std::string MIMETYPE_ADOC;

@@ -133,14 +133,17 @@ void File::updateModifiedTime(const string &path, time_t time)
         THROW("Failed to update file modified time.");
 }
 
-string File::fileExtension(const string &path)
+bool File::fileExtension(string_view path, initializer_list<string_view> list)
 {
     size_t pos = path.find_last_of('.');
     if(pos == string::npos)
-        return {};
-    string ext = path.substr(pos + 1);
-    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-    return ext;
+        return false;
+    string_view ext = path.substr(pos + 1);
+    return any_of(list.begin(), list.end(), [ext](string_view exp) {
+        return equal(ext.cbegin(), ext.cend(), exp.cbegin(), exp.cend(), [](auto a, auto b) {
+            return tolower(a) == tolower(b);
+        });
+    });
 }
 
 /**

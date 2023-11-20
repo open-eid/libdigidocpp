@@ -99,13 +99,13 @@ public:
     Signature* sign(Signer* signer) final;
 
     static std::unique_ptr<Container> createInternal(const std::string &path);
-    static std::unique_ptr<Container> openInternal(const std::string &path);
+    static std::unique_ptr<Container> openInternal(const std::string &path, ContainerOpenCB *cb);
 
 private:
-	SiVaContainer(const std::string &path, bool useHashCode);
+    SiVaContainer(const std::string &path, ContainerOpenCB *cb, bool useHashCode);
     DISABLE_COPY(SiVaContainer);
 
-	std::unique_ptr<std::istream> parseDDoc(bool useHashCode);
+    std::unique_ptr<std::istream> parseDDoc(bool useHashCode);
 
     class Private;
     std::unique_ptr<Private> d;
