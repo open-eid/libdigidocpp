@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/cmake/modules/VersionInfo.cmake)
+    message(FATAL_ERROR "cmake submodule directory empty, did you 'git clone --recursive'?")
+endif()
+
 if(POLICY CMP0122)
-  cmake_policy(SET CMP0122 NEW)
+    cmake_policy(SET CMP0122 NEW)
 endif()
 project(libdigidocpp VERSION 3.17.0)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)

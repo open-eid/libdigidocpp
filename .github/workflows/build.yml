@@ -23,7 +23,10 @@ jobs:
       run: |
         brew update
         brew install doxygen boost xsd || brew link --overwrite xsd
-        brew unlink xerces-c python@3.10 python@3.11
+        brew unlink xerces-c
+        brew unlink python@3.10 || true
+        brew unlink python@3.11 || true
+        brew unlink python@3.12 || true
     - name: Cache
       uses: actions/cache@v3
       id: cache
