@@ -3,11 +3,11 @@ apply plugin: 'com.android.application'
 def libsPath = '/Library/libdigidocpp'
 
 android {
-    compileSdk 33
+    compileSdk 34
     defaultConfig {
         applicationId "ee.ria.libdigidocpp"
         minSdk 28
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
         if (System.getenv("BUILD_NUMBER")) {
