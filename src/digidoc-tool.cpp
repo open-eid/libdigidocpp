@@ -35,6 +35,7 @@
 #include <iostream>
 #include <optional>
 #include <sstream>
+#include <unordered_map>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -291,7 +292,7 @@ public:
     optional<bool> rsaPss;
     string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
     vector<unsigned char> thumbprint;
-    vector<pair<string,string> > files;
+    unordered_map<string,string> files;
     vector<string> roles;
     bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
     static string_view RED, GREEN, YELLOW, RESET;
@@ -389,7 +390,7 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg.find("--file=") == 0)
         {
             string arg2(i+1 < argc ? toUTF8(argv[i+1]) : string());
-            files.emplace_back(arg.substr(7),
+            files.emplace(arg.substr(7),
                 arg2.find("--mime=") == 0 ? arg2.substr(7) : "application/octet-stream");
         }
 #ifdef _WIN32
@@ -458,7 +459,7 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
         class WebSigner final: public Signer
         {
         public:
-            WebSigner(X509Cert cert): _cert(std::move(cert)) {}
+            explicit WebSigner(X509Cert cert): _cert(std::move(cert)) {}
             X509Cert cert() const final { return _cert; }
             vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const final
             {
@@ -747,8 +748,8 @@ static int add(const ToolConfig &p, const char *program)
         return EXIT_FAILURE;
     }
 
-    for(const pair<string,string> &file: p.files)
-        doc->addDataFile(file.first, file.second);
+    for(const auto &[file, mime]: p.files)
+        doc->addDataFile(file, mime);
     doc->save();
     return EXIT_SUCCESS;
 }
@@ -770,12 +771,11 @@ static int signContainer(Container *doc, const unique_ptr<Signer> &signer, bool 
         try {
             signature->validate();
             cout << "    Validation: " << ToolConfig::GREEN << "OK" << ToolConfig::RESET << endl;
+            return EXIT_SUCCESS;
         } catch(const Exception &e) {
             cout << "    Validation: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
             cout << "     Exception:" << endl << e;
-            return EXIT_FAILURE;
         }
-        return EXIT_SUCCESS;
     }
     return EXIT_FAILURE;
 }
@@ -801,8 +801,8 @@ static int create(const ToolConfig &p, const char *program)
         return EXIT_FAILURE;
     }
 
-    for(const pair<string,string> &file: p.files)
-        doc->addDataFile(file.first, file.second);
+    for(const auto &[file, mime]: p.files)
+        doc->addDataFile(file, mime);
 
     int returnCode = EXIT_SUCCESS;
     if(p.doSign)
@@ -830,10 +830,11 @@ static int createBatch(const ToolConfig &p, const char *program)
     {
         if(!fs::is_regular_file(file.status()) || file.path().extension() == ".asice")
             continue;
-        cout << "Signing file: " << file.path().u8string() << endl;
+        const auto path = file.path().u8string();
+        cout << "Signing file: " << path << endl;
         try {
-            unique_ptr<Container> doc = Container::createPtr(file.path().u8string() + ".asice");
-            doc->addDataFile(file.path().u8string(), "application/octet-stream");
+            unique_ptr<Container> doc = Container::createPtr(path + ".asice");
+            doc->addDataFile(path, "application/octet-stream");
             if(signContainer(doc.get(), signer, p.dontValidate) == EXIT_FAILURE)
                 returnCode = EXIT_FAILURE;
             doc->save();
@@ -891,8 +892,8 @@ static int websign(const ToolConfig &p, const char *program)
         return EXIT_FAILURE;
     }
 
-    for(const pair<string,string> &file: p.files)
-        doc->addDataFile(file.first, file.second);
+    for(const auto &[file, mime]: p.files)
+        doc->addDataFile(file, mime);
 
     int returnCode = EXIT_SUCCESS;
     if(Signature *signature = doc->prepareSignature(p.getSigner(true).get()))
@@ -921,6 +922,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
         << "         Type: " << t.type() << endl
         << "    Territory: " << t.territory() << endl
         << "     Operator: " << t.operatorName() << endl
+        << "     Sequence: " << t.sequenceNumber() << endl
         << "       Issued: " << t.issueDate() << endl
         << "  Next update: " << t.nextUpdate() << endl
         << "Pointers:" << endl;
@@ -945,11 +947,18 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
             << "        Url: " << p.location << endl;
         for(const X509Cert &cert: p.certs)
             cout << "     Signer: " << cert << endl;
-        TSL tp(cache + "/" + p.territory + ".xml");
-        cout << "    TSL: " << p.location << endl
+        string path = cache + "/" + p.territory + ".xml";
+        if(error_code ec; !fs::exists(fs::u8path(path), ec))
+        {
+            cout << "              TSL: missing" << endl;
+            continue;
+        }
+        TSL tp(path);
+        cout << "              TSL: " << p.location << endl
             << "             Type: " << tp.type() << endl
             << "        Territory: " << tp.territory() << endl
             << "         Operator: " << tp.operatorName() << endl
+            << "         Sequence: " << tp.sequenceNumber() << endl
             << "           Issued: " << tp.issueDate() << endl
             << "      Next update: " << tp.nextUpdate() << endl;
         try {
@@ -963,7 +972,8 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
         }
         for(const TSL::Service &s: tp.services())
         {
-            cout << "          Service: " << s.name << endl;
+            cout << "          Service: " << s.name << endl
+                << "             Type: " << s.type << endl;
             for(const X509Cert &x: s.certs)
                 cout << "             Cert: " << x << endl;
         }
