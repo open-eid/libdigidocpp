@@ -52,7 +52,7 @@ find_package(ZLIB REQUIRED)
 find_package(MiniZip 1 QUIET) # version range (0...<2.0.0) requires CMake>=3.19
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig)
-    pkg_check_modules(MINIZIP minizip IMPORTED_TARGET minizip<2.0.0)
+    pkg_check_modules(MINIZIP minizip IMPORTED_TARGET)
 endif()
 find_package(SWIG)
 find_package(JNI)
