@@ -91,6 +91,14 @@ SecureDOMParser::SecureDOMParser(const string &schema_location, bool dont_valida
 void SecureDOMParser::calcDigestOnNode(Digest *calc,
     string_view algorithmType, DOMNode *node)
 {
+    /*
+     * https://www.w3.org/TR/xmldsig-core1/
+     * The Reference Processing Model (section 4.4.3.2 The Reference Processing Model) requires use of
+     * Canonical XML 1.0 [XML-C14N] as default processing behavior when a transformation is expecting an octet-stream.
+     */
+    if(algorithmType.empty())
+        algorithmType = URI_ID_C14N_NOC;
+
     XSECC14n20010315 c14n(node->getOwnerDocument(), node);
     c14n.setCommentsProcessing(false);
     c14n.setUseNamespaceStack(true);
@@ -113,7 +121,7 @@ void SecureDOMParser::calcDigestOnNode(Digest *calc,
         c14n.setInclusive11();
         c14n.setCommentsProcessing(true);
     } else {
-        THROW("Unsupported canonicalization method '%s'", algorithmType.data());
+        THROW("Unsupported canonicalization method '%.*s'", int(algorithmType.size()), algorithmType.data());
     }
 
     array<unsigned char, 10240> buffer{};
