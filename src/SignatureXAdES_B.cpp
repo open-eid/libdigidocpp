@@ -244,7 +244,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
 
     // Signature->SignedInfo
     auto signedInfo = make_unique<SignedInfoType>(
-        make_unique<CanonicalizationMethodType>(/*URI_ID_EXC_C14N_NOC*/URI_ID_C14N11_NOC),
+        make_unique<CanonicalizationMethodType>(URI_ID_C14N11_NOC),
         make_unique<SignatureMethodType>(X509Crypto(c).isRSAKey() ?
             Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method())));
 
@@ -291,7 +291,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
     string digestMethod = Conf::instance()->digestUri();
     for(const DataFile *f: bdoc->dataFiles())
     {
-        string referenceId = addReference(File::toUriPath(f->fileName()), digestMethod, f->calcDigest(digestMethod), {});
+        string referenceId = addReference(File::toUriPath(f->fileName()), digestMethod, f->calcDigest(digestMethod));
         addDataObjectFormat("#" + referenceId, f->mediaType());
     }
 
@@ -299,7 +299,8 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
     Digest calc(digestMethod);
     calcDigestOnNode(&calc, Signatures::XADES_NAMESPACE, u"SignedProperties",
         signature->signedInfo().canonicalizationMethod().algorithm());
-    addReference("#" + nr +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties");
+    addReference("#" + nr +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties",
+        signature->signedInfo().canonicalizationMethod().algorithm());
     signatures->reloadDOM();
 }
 
@@ -803,15 +804,21 @@ void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime
  * @throws SignatureException throws exception if the digest method is not supported.
  */
 string SignatureXAdES_B::addReference(const string& uri, const string& digestUri,
-        const vector<unsigned char> &digestValue, const string& type)
+        const vector<unsigned char> &digestValue, const string &type, const string &canon)
 {
     auto reference = make_unique<ReferenceType>(make_unique<DigestMethodType>(digestUri), toBase64(digestValue));
-    reference->uRI(uri);
+    reference->uRI(make_unique<Uri>(uri));
     if(!type.empty())
         reference->type(type);
 
+    if(!canon.empty())
+    {
+        reference->transforms(make_unique<TransformsType>());
+        reference->transforms()->transform().push_back(make_unique<TransformType>(canon));
+    }
+
     SignedInfoType::ReferenceSequence &seq = signature->signedInfo().reference();
-    reference->id(id() + Log::format("-RefId%zu", seq.size()));
+    reference->id(make_unique<Id>(id() + Log::format("-RefId%zu", seq.size())));
     seq.push_back(std::move(reference));
 
     return seq.back().id().get();
