@@ -4,7 +4,7 @@ permissions:
   contents: read
 env:
   BUILD_NUMBER: ${{ github.run_number }}
-  MAKEFLAGS: -j3
+  CMAKE_BUILD_PARALLEL_LEVEL: 3
 jobs:
   macos:
     name: Build on macOS for ${{ matrix.target }}
@@ -14,7 +14,7 @@ jobs:
         target: [osx, ios, iossimulator, androidarm, androidarm64, androidx86_64]
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Install dependencies
@@ -23,9 +23,12 @@ jobs:
       run: |
         brew update
         brew install doxygen boost xsd || brew link --overwrite xsd
-        brew unlink xerces-c python@3.10 python@3.11
+        brew unlink xerces-c
+        brew unlink python@3.10 || true
+        brew unlink python@3.11 || true
+        brew unlink python@3.12 || true
     - name: Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       id: cache
       with:
         path: cache
@@ -60,13 +63,13 @@ jobs:
         zip -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
     - name: Archive artifacts
       if: matrix.target == 'osx'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pkgs
         path: macOS/libdigidocpp*.*
     - name: Archive artifacts
       if: matrix.target != 'osx'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.target }}
         path: libdigidocpp*.zip
@@ -76,17 +79,20 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:37', 'fedora:38']
-    env:
-      MAKEFLAGS: -j3
+        container: ['fedora:37', 'fedora:38', 'fedora:39']
     steps:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
-          git gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel \
-          https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
+          git gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel xsd
+    - name: Install CMake
+      if: matrix.container == 'fedora:39'
+      run: |
+        dnf install -y --setopt=install_weak_deps=False wget
+        wget -q https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.sh
+        sh cmake-3.28.1-linux-x86_64.sh --skip-license --prefix=/usr/local
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Build
@@ -114,7 +120,7 @@ jobs:
     - name: Install dependencies
       run: apt update -qq && apt install --no-install-recommends -y git lsb-release fakeroot build-essential devscripts debhelper cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-distutils libboost-test-dev lintian
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Setup changelog
@@ -147,12 +153,11 @@ jobs:
           image: windows-2019
           vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
     env:
-      MAKEFLAGS: ""
       VER_SUFFIX: .VS${{ matrix.toolset }}
       VERSION: 3.17.0.${{ github.run_number }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - uses: mad9000/actions-find-and-replace-string@3
@@ -165,7 +170,7 @@ jobs:
     - name: Prepare vcpkg X64
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 6a349fe1fbea1e5fcda2e0775f555d829a5e82df
+        vcpkgGitCommitId: 18b028fe785e707265fa0e35590b7537ae1d12ea
         vcpkgJsonGlob: ${{ steps.path.outputs.value }}/vcpkg.json
         runVcpkgInstall: true
         runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
@@ -175,7 +180,7 @@ jobs:
     - name: Prepare vcpkg X86
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 6a349fe1fbea1e5fcda2e0775f555d829a5e82df
+        vcpkgGitCommitId: 18b028fe785e707265fa0e35590b7537ae1d12ea
         vcpkgJsonGlob: ${{ steps.path.outputs.value }}/vcpkg.json
         runVcpkgInstall: true
         runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
@@ -212,7 +217,7 @@ jobs:
       contents: write
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Install dependencies
@@ -222,7 +227,7 @@ jobs:
         cmake -B build -S .
         cmake --build build --target docs
     - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./build/doc
@@ -236,7 +241,7 @@ jobs:
       PROJECTNAME: ${{ github.repository }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Install dependencies
@@ -250,7 +255,7 @@ jobs:
       run: |
         cmake .
         export PATH=$PWD/cov-analysis-linux64/bin:$PATH
-        cov-build --dir cov-int make
+        cov-build --dir cov-int cmake --build .
     - name: Submit the result to Coverity Scan
       run: |
         tar czvf upload.tgz cov-int
@@ -270,7 +275,7 @@ jobs:
       security-events: write
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Install dependencies

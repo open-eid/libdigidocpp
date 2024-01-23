@@ -1,13 +1,13 @@
 #!/bin/sh
 set -e
 
-XERCES_DIR=xerces-c-3.2.4
+XERCES_DIR=xerces-c-3.2.5
 XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
-OPENSSL_DIR=openssl-3.0.11
+OPENSSL_DIR=openssl-3.0.12
 LIBXML2_DIR=libxml2-2.11.5
-ANDROID_NDK=android-ndk-r26
+ANDROID_NDK=android-ndk-r26b
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
 PODOFO_DIR=podofo-0.9.4
