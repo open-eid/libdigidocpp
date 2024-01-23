@@ -87,16 +87,13 @@ DataFile::DataFile() = default;
 DataFile::~DataFile() = default;
 
 
-DataFilePrivate::DataFilePrivate(unique_ptr<istream> &&is, string filename, string mediatype, string id)
+DataFilePrivate::DataFilePrivate(unique_ptr<istream> &&is, string filename, string mediatype, unsigned long size, string id)
     : m_is(std::move(is))
     , m_id(std::move(id))
     , m_filename(std::move(filename))
     , m_mediatype(std::move(mediatype))
-{
-    m_is->seekg(0, istream::end);
-    istream::pos_type pos = m_is->tellg();
-    m_size = pos < 0 ? 0 : (unsigned long)pos;
-}
+    , m_size(size)
+{}
 
 vector<unsigned char> DataFilePrivate::calcDigest(const string &method) const
 {

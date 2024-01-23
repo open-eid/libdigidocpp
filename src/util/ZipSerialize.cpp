@@ -31,9 +31,90 @@
 #include <array>
 #include <filesystem>
 #include <iostream>
+#include <streambuf>
+#include <utility>
 
 using namespace digidoc;
 using namespace std;
+
+class ZipStreambuf final : public streambuf
+{
+public:
+    ZipStreambuf(unzFile _file, string _path)
+        : file(_file)
+        , path(std::move(_path))
+    {
+        open();
+    }
+
+    ~ZipStreambuf() final
+    {
+        unzCloseCurrentFile(file);
+    }
+
+protected:
+    int_type underflow() final
+    {
+        if(gptr() < egptr())
+            return traits_type::to_int_type(*gptr());
+
+        int bytesRead = unzReadCurrentFile(file, buffer.data(), unsigned(buffer.size()));
+        if(bytesRead <= UNZ_EOF) {
+            setg(nullptr, nullptr, nullptr);
+            return traits_type::eof();
+        }
+
+        setg(buffer.data(), buffer.data(), buffer.data() + bytesRead);
+        return traits_type::to_int_type(*gptr());
+    }
+
+    pos_type seekoff(off_type off, ios_base::seekdir dir, ios_base::openmode which) final
+    {
+        switch(dir)
+        {
+        case ios_base::beg:
+            return seekpos(off, which);
+        case ios_base::cur:
+        case ios_base::end:
+        default: return -1;
+        }
+    }
+
+    pos_type seekpos(pos_type pos, ios_base::openmode /* which */) final
+    {
+        if (pos != 0)
+            return -1;
+        open();
+        return pos;
+    }
+
+private:
+    void open()
+    {
+        unzCloseCurrentFile(file);
+        if(int unzResult = unzLocateFile(file, path.c_str(), 1); unzResult != UNZ_OK)
+            THROW("Failed to locate file inside ZIP container. ZLib error: %d", unzResult);
+        if(int unzResult = unzOpenCurrentFile(file); unzResult != UNZ_OK)
+            THROW("Failed to open file inside ZIP container. ZLib error: %d", unzResult);
+        setg(buffer.data(), buffer.data(), buffer.data());
+    }
+
+    unzFile file{};
+    string path;
+    array<char, 64*1024> buffer{};
+};
+
+class ZipIStream : public istream
+{
+public:
+    ZipIStream(unzFile file, string path)
+        : zipStreambuf(file, std::move(path))
+        , istream(&zipStreambuf)
+    {}
+
+private:
+    ZipStreambuf zipStreambuf;
+};
 
 class ZipSerialize::Private
 {
@@ -106,17 +187,23 @@ vector<string> ZipSerialize::list() const
             THROW("Failed to go to the next file inside ZIP container. ZLib error: %d", unzResult);
 
         unz_file_info fileInfo{};
-        unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, nullptr, 0, nullptr, 0, nullptr, 0);
-        if(unzResult != UNZ_OK)
+        if(unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, nullptr, 0, nullptr, 0, nullptr, 0); unzResult != UNZ_OK)
             THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
         auto &fileName = list.emplace_back(fileInfo.size_filename, 0);
-        unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, fileName.data(), uLong(fileName.size()), nullptr, 0, nullptr, 0);
-        if(unzResult != UNZ_OK)
+        if(unzResult = unzGetCurrentFileInfo(d->open, &fileInfo, fileName.data(), uLong(fileName.size()), nullptr, 0, nullptr, 0); unzResult != UNZ_OK)
             THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
     }
 
     return list;
+}
+
+unique_ptr<istream> ZipSerialize::stream(const string &file) const
+{
+    DEBUG("ZipSerializePrivate::extract(%s)", file.c_str());
+    if(file.empty() || file.back() == '/')
+        return {};
+    return make_unique<ZipIStream>(d->open, file);
 }
 
 /**
@@ -133,14 +220,13 @@ void ZipSerialize::extract(const string &file, ostream &os) const
     if(file.empty() || file.back() == '/')
         return;
 
-    int unzResult = unzLocateFile(d->open, file.c_str(), 1);
-    if(unzResult != UNZ_OK)
+    if(int unzResult = unzLocateFile(d->open, file.c_str(), 1); unzResult != UNZ_OK)
         THROW("Failed to locate file inside ZIP container. ZLib error: %d", unzResult);
 
-    unzResult = unzOpenCurrentFile(d->open);
-    if(unzResult != UNZ_OK)
+    if(int unzResult = unzOpenCurrentFile(d->open); unzResult != UNZ_OK)
         THROW("Failed to open file inside ZIP container. ZLib error: %d", unzResult);
 
+    int unzResult {};
     array<char,10240> buf{};
     for(int currentStreamSize = 0;
          (unzResult = unzReadCurrentFile(d->open, buf.data(), buf.size())) > UNZ_EOF; currentStreamSize += unzResult)

@@ -46,6 +46,7 @@ public:
     vector<DataFile*> documents;
     vector<Signature*> signatures;
     map<string, ZipSerialize::Properties> properties;
+    unique_ptr<ZipSerialize> z;
 };
 
 const string ASiContainer::MIMETYPE_ASIC_E = "application/vnd.etsi.asic-e+zip";
@@ -70,12 +71,12 @@ ASiContainer::ASiContainer(const string &mimetype)
  * @param supported supported mimetypes.
  * @return returns zip serializer for the container.
  */
-unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeRequired, const set<string> &supported)
+ZipSerialize* ASiContainer::load(const string &path, bool mimetypeRequired, const set<string> &supported)
 {
     DEBUG("ASiContainer::ASiContainer(path = '%s')", path.c_str());
-    auto z = make_unique<ZipSerialize>(d->path = path, false);
+    d->z = make_unique<ZipSerialize>(d->path = path, false);
 
-    vector<string> list = z->list();
+    vector<string> list = d->z->list();
     if(list.empty())
         THROW("Failed to parse container");
 
@@ -85,16 +86,16 @@ unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeReq
     // ETSI TS 102 918: mimetype has to be the first in the archive
     if(list.front() == "mimetype")
     {
-        d->mimetype = readMimetype(*z);
+        d->mimetype = readMimetype(*d->z);
         DEBUG("mimetype = '%s'", d->mimetype.c_str());
         if(supported.find(d->mimetype) == supported.cend())
             THROW("Incorrect mimetype '%s'", d->mimetype.c_str());
     }
 
     for(const string &file: list)
-        d->properties[file] = z->properties(file);
+        d->properties[file] = d->z->properties(file);
 
-    return z;
+    return d->z.get();
 }
 
 string ASiContainer::mediaType() const
@@ -132,25 +133,9 @@ vector<Signature *> ASiContainer::signatures() const
     return d->signatures;
 }
 
-/**
- * <p>
- * Read a datafile from container.
- * </p>
- * If expected size of the data is too big, then stream is written to temp file.
- *
- * @param path name of the file in zip container stream is used to read from.
- * @param z Zip container.
- * @return returns data as a stream.
- */
-unique_ptr<iostream> ASiContainer::dataStream(const string &path, const ZipSerialize &z) const
+DataFilePrivate* ASiContainer::dataFile(const std::string &path, const std::string &mediaType) const
 {
-    unique_ptr<iostream> data;
-    if(d->properties[path].size > MAX_MEM_FILE)
-        data = make_unique<fstream>(File::tempFileName(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
-    else
-        data = make_unique<stringstream>();
-    z.extract(path, *data);
-    return data;
+    return new DataFilePrivate(d->z->stream(path), path, mediaType, d->properties[path].size);
 }
 
 /**
@@ -185,7 +170,7 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
             *data << file.rdbuf();
         is = std::move(data);
     }
-    addDataFilePrivate(std::move(is), fileName, mediaType);
+    d->documents.push_back(new DataFilePrivate(std::move(is), fileName, mediaType, prop.size));
 }
 
 void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
@@ -193,7 +178,8 @@ void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, c
     addDataFileChecks(fileName, mediaType);
     if(fileName.find_last_of("/\\") != string::npos)
         THROW("Document file '%s' cannot contain directory path.", fileName.c_str());
-    addDataFilePrivate(std::move(is), fileName, mediaType);
+    istream::pos_type pos = is->tellg();
+    d->documents.push_back(new DataFilePrivate(std::move(is), fileName, mediaType, pos < 0 ? 0 : (unsigned long)pos));
 }
 
 void ASiContainer::addDataFileChecks(const string &fileName, const string &mediaType)
@@ -208,9 +194,9 @@ void ASiContainer::addDataFileChecks(const string &fileName, const string &media
         THROW("MediaType does not meet format requirements (RFC2045, section 5.1) '%s'.", mediaType.c_str());
 }
 
-void ASiContainer::addDataFilePrivate(unique_ptr<istream> is, const string &fileName, const string &mediaType)
+void ASiContainer::addDataFilePrivate(const string &fileName, const string &mediaType)
 {
-    d->documents.push_back(new DataFilePrivate(std::move(is), fileName, mediaType));
+    d->documents.push_back(dataFile(fileName, mediaType));
 }
 
 /**
@@ -292,17 +278,16 @@ void ASiContainer::zproperty(const string &file, ZipSerialize::Properties &&prop
 string ASiContainer::readMimetype(const ZipSerialize &z)
 {
     DEBUG("ASiContainer::readMimetype()");
-    stringstream is;
-    z.extract("mimetype", is);
+    auto is = z.stream("mimetype");
     string text;
-    is >> text;
+    *is >> text;
     if(!is)
         THROW("Failed to read mimetype.");
     // Contains UTF-16 BOM
-    if(text.find("\xFF\xEF") == 0 || text.find("\xEF\xFF") == 0)
+    if(text.rfind("\xFF\xEF", 0) == 0 || text.rfind("\xEF\xFF", 0) == 0)
         THROW("Mimetype file must be UTF-8 format.");
     // contains UTF-8 BOM, remove
-    if(text.find("\xEF\xBB\xBF") == 0)
+    if(text.rfind("\xEF\xBB\xBF", 0) == 0)
         text.erase(text.cbegin(), text.cbegin() + 3);
     return text;
 }

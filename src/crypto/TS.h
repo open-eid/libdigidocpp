@@ -31,6 +31,8 @@ class TS
 {
 public:
     TS(const std::string &url, const Digest &digest);
+    template <class Container>
+    inline TS(const Container &data): TS((const unsigned char*)data.data(), data.size()) {}
     TS(const unsigned char *data = nullptr, size_t size = 0);
 
     X509Cert cert() const;
