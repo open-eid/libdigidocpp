@@ -84,7 +84,7 @@ jobs:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
-          git gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel xsd
+          git gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel xsd minizip-devel
     - name: Install CMake
       if: matrix.container == 'fedora:39'
       run: |
