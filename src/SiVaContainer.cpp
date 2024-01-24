@@ -194,7 +194,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     else
         THROW("Unknown file");
 
-    if(cb && !cb->validateOnline())
+    if(useHashCode && cb && !cb->validateOnline())
         THROW("Online validation disabled");
 
     array<XMLByte, 4800> buf{};
@@ -364,28 +364,27 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path, ContainerO
 unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
 {
     namespace xml = xsd::cxx::xml;
-    using cpXMLCh = const XMLCh*;
     try
     {
         unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(*d->ddoc));
-        DOMNodeList *nodeList = dom->getElementsByTagName(cpXMLCh(u"DataFile"));
+        DOMNodeList *nodeList = dom->getElementsByTagName(u"DataFile");
         for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
         {
             auto *item = static_cast<DOMElement*>(nodeList->item(i));
             if(!item)
                 continue;
 
-            if(XMLString::compareString(item->getAttribute(cpXMLCh(u"ContentType")), cpXMLCh(u"HASHCODE")) == 0)
+            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"HASHCODE") == 0)
                 THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
-            if(XMLString::compareString(item->getAttribute(cpXMLCh(u"ContentType")), cpXMLCh(u"EMBEDDED_BASE64")) != 0)
+            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"EMBEDDED_BASE64") != 0)
                 continue;
 
             if(const XMLCh *b64 = item->getTextContent())
             {
                 d->dataFiles.push_back(new DataFilePrivate(base64_decode(b64),
-                    xml::transcode<char>(item->getAttribute(cpXMLCh(u"Filename"))),
-                    xml::transcode<char>(item->getAttribute(cpXMLCh(u"MimeType"))),
-                    xml::transcode<char>(item->getAttribute(cpXMLCh(u"Id")))));
+                    xml::transcode<char>(item->getAttribute(u"Filename")),
+                    xml::transcode<char>(item->getAttribute(u"MimeType")),
+                    xml::transcode<char>(item->getAttribute(u"Id"))));
             }
 
             if(!useHashCode)
@@ -395,22 +394,22 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
             vector<unsigned char> digest = calc.result();
             if(XMLSize_t size = 0; XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))
             {
-                item->setAttribute(cpXMLCh(u"ContentType"), cpXMLCh(u"HASHCODE"));
-                item->setAttribute(cpXMLCh(u"DigestType"), cpXMLCh(u"sha1"));
+                item->setAttribute(u"ContentType", u"HASHCODE");
+                item->setAttribute(u"DigestType", u"sha1");
                 xml::string outXMLCh(reinterpret_cast<const char*>(out));
-                item->setAttribute(cpXMLCh(u"DigestValue"), outXMLCh.c_str());
+                item->setAttribute(u"DigestValue", outXMLCh.c_str());
                 item->setTextContent(nullptr);
                 delete out;
             }
         }
 
-        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(cpXMLCh(u"LS"));
+        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(u"LS");
         unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
         unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
         auto result = make_unique<stringstream>();
         xml::dom::ostream_format_target out(*result);
         pDomLsOutput->setByteStream(&out);
-        pSerializer->setNewLine(cpXMLCh(u"\n"));
+        pSerializer->setNewLine(u"\n");
         pSerializer->write(dom.get(), pDomLsOutput.get());
         return result;
     }
