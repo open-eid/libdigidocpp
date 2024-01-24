@@ -107,10 +107,43 @@ function xerces {
     rm -rf ${XERCES_DIR}
     tar xf ${XERCES_DIR}.tar.xz
     cd ${XERCES_DIR}
-    sed -ie 's!SUBDIRS = doc src tests samples!SUBDIRS = src!' Makefile.in 
-    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --enable-transcoder-iconv --disable-netaccessor-curl
-    make -s
-    sudo make install
+    sed -ie 's!add_subdirectory(doc)!!' CMakeLists.txt
+    sed -ie 's!add_subdirectory(tests)!!' CMakeLists.txt
+    sed -ie 's!add_subdirectory(samples)!!' CMakeLists.txt
+    case "${ARGS}" in
+    *android*)
+      cmake -S . \
+        -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
+        -DANDROID_PLATFORM=${API} \
+        -DANDROID_ABI=${ARCH_ABI} \
+        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=NO
+      ;;
+    *ios*|*simulator*)
+      cmake -S . \
+        -DCMAKE_OSX_SYSROOT=${SYSROOT} \
+        -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
+        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=NO \
+        -Dtranscoder=iconv \
+        -Dnetwork-accessor=socket
+      ;;
+    *)
+      cmake -S . \
+        -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
+        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=YES \
+        -DCMAKE_MACOSX_RPATH=NO \
+        -DCMAKE_BUILD_WITH_INSTALL_NAME_DIR=YES \
+        -DCMAKE_INSTALL_NAME_DIR=${TARGET_PATH}/lib \
+        -Dtranscoder=iconv \
+        -Dnetwork-accessor=socket
+      ;;
+    esac
+    cmake --build . && sudo cmake --install .
     cd -
 }
 
@@ -131,7 +164,7 @@ function xalan {
     mv tmp src/xalanc/CMakeLists.txt
     case "${ARGS}" in
     *android*)
-      cmake \
+      cmake -S . \
         -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
         -DANDROID_PLATFORM=${API} \
         -DANDROID_ABI=${ARCH_ABI} \
@@ -139,36 +172,32 @@ function xalan {
         -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=NO \
-        . && make -s MsgCreator
+        && cmake --build . --target MsgCreator
         cp ../patches/MsgCreator src/xalanc/Utils/MsgCreator
-        make -s && sudo make install
       ;;
     *ios*|*simulator*)
-      cmake \
+      cmake -S . \
         -DCMAKE_OSX_SYSROOT=${SYSROOT} \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=NO \
-        . && make -s MsgCreator
+        && cmake --build . --target MsgCreator
         cp ../patches/MsgCreator src/xalanc/Utils/MsgCreator
-        make -s && sudo make install
       ;;
     *)
-      cmake \
-        -DCMAKE_MACOSX_RPATH=NO \
+      cmake -S . \
         -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
         -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=YES \
-        . && make -s && sudo make install
-      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalanMsg.112.dylib \
-        ${TARGET_PATH}/lib/libxalanMsg.*.0.dylib
-      sudo install_name_tool -id ${TARGET_PATH}/lib/libxalan-c.112.dylib \
-        -change libxalanMsg.112.dylib ${TARGET_PATH}/lib/libxalanMsg.112.dylib \
-        ${TARGET_PATH}/lib/libxalan-c.*.0.dylib
+        -DCMAKE_MACOSX_RPATH=NO \
+        -DCMAKE_BUILD_WITH_INSTALL_NAME_DIR=YES \
+        -DCMAKE_INSTALL_NAME_DIR=${TARGET_PATH}/lib \
+        -Dtranscoder=default
       ;;
     esac
+    cmake --build . && sudo cmake --install .
     cd -
 }
 
@@ -187,7 +216,7 @@ function xml_security {
     CXXFLAGS="${CXXFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" \
     xerces_CFLAGS="-I${TARGET_PATH}/include" xerces_LIBS="-L${TARGET_PATH}/lib -lxalanMsg -lxalan-c -lxerces-c" \
     openssl_CFLAGS="-I${TARGET_PATH}/include" openssl_LIBS="-L${TARGET_PATH}/lib -lcrypto" \
-    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xalan=${TARGET_PATH}
+    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xalan=${TARGET_PATH} --without-nss lt_cv_apple_cc_single_mod=yes
     sed -ie 's!PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)!PROGRAMS = !; s!bin_PROGRAMS = $(am__EXEEXT_2)!bin_PROGRAMS = !' xsec/Makefile
     make -s
     sudo make install
