@@ -6,7 +6,7 @@ XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-3.0.13
-LIBXML2_DIR=libxml2-2.11.5
+LIBXML2_DIR=libxml2-2.12.5
 ANDROID_NDK=android-ndk-r26b
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
@@ -232,11 +232,11 @@ function libxml2 {
       return 0
       ;;
     esac
-    if [ ! -f ${LIBXML2_DIR}.tar.gz ]; then
-        curl -O -L http://xmlsoft.org/sources/${LIBXML2_DIR}.tar.gz
+    if [ ! -f ${LIBXML2_DIR}.tar.xz ]; then
+        curl -O -L https://download.gnome.org/sources/libxml2/2.12/${LIBXML2_DIR}.tar.xz
     fi
     rm -rf ${LIBXML2_DIR}
-    tar xf ${LIBXML2_DIR}.tar.gz
+    tar xf ${LIBXML2_DIR}.tar.xz
     cd ${LIBXML2_DIR}
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --without-python
     # Android is missing glob.h
@@ -429,6 +429,7 @@ case "$@" in
     openssl
     xalan
     xml_security
+    libxml2
     ;;
 *)
     echo "Usage:"

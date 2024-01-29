@@ -243,7 +243,7 @@ vector<TSL::Service> TSL::parse()
     string cache = CONF(TSLCache);
     vector<X509Cert> cert = CONF(TSLCerts);
     File::createDirectory(cache);
-    return parse(url, cert, cache, File::fileName(url));
+    return parse(url, cert, cache, string(File::fileName(url)));
 }
 
 vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs,

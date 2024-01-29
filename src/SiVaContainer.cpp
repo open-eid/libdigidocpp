@@ -149,7 +149,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
 {
     DEBUG("SiVaContainer::SiVaContainer(%s, %d)", path.c_str(), useHashCode);
     unique_ptr<istream> ifs = make_unique<ifstream>(File::encodeName(d->path = path), ifstream::binary);
-    auto fileName = File::fileName(path);
+    string fileName(File::fileName(path));
     istream *is = ifs.get();
     if(File::fileExtension(path, {"ddoc"}))
     {

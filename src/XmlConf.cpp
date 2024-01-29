@@ -22,59 +22,34 @@
 #include "crypto/X509Cert.h"
 #include "util/File.h"
 #include "util/log.h"
-#include "xml/conf.hxx"
+#include "xml/XMLDocument.h"
 
-#include <fstream>
+#include <map>
+#include <optional>
 
 using namespace std;
 using namespace digidoc;
 using namespace digidoc::util;
-using namespace xercesc;
-using namespace xml_schema;
 
 namespace digidoc
 {
 
 template <class A>
-class XmlConfParam: public unique_ptr<A>
+class XmlConfParam: public optional<A>
 {
 public:
-    XmlConfParam(string &&_name, A &&def = {}): name(std::move(_name)), defaultValue(std::move(def)) {}
+    constexpr XmlConfParam(std::string_view _name, A &&def = {}): name(_name), defaultValue(std::move(def)) {}
 
-    bool setValue(const Configuration::ParamType &p, bool global)
+    template <class V>
+    constexpr void setValue(V other, const A &defaultValue)
     {
-        if(p.name() != name)
-            return false;
-        if(global && p.lock().present()) locked = p.lock().get();
-        if(global || !locked)
-        {
-            if constexpr(is_same<A,bool>::value)
-                operator =(p == "true");
-            else if constexpr(is_integral<A>::value)
-                operator =(stoi(p));
-            else
-                operator =(p);
-        }
-        return true;
+        if(defaultValue == other)
+            optional<A>::reset();
+        else
+            optional<A>::emplace(std::forward<V>(other));
     }
 
-    XmlConfParam &operator=(const A &other)
-    {
-        unique_ptr<A>::reset(defaultValue != other ? new A(other) : nullptr);
-        return *this;
-    }
-
-    operator A() const
-    {
-        return value(defaultValue);
-    }
-
-    A value(const A &def) const
-    {
-        return unique_ptr<A>::get() ? *unique_ptr<A>::get(): def;
-    }
-
-    const string name;
+    const std::string_view name;
     const A defaultValue;
     bool locked = false;
 };
@@ -82,10 +57,10 @@ public:
 class XmlConf::Private
 {
 public:
-    Private(const string &path = {}, string schema = {});
+    Private(const string &path, string schema);
 
+    auto loadDoc(const string &path) const;
     void init(const string &path, bool global);
-    unique_ptr<Configuration> read(const string &path) const;
     template <class A>
     void setUserConf(XmlConfParam<A> &param, A &&defined, const A &value);
 
@@ -107,7 +82,7 @@ public:
     XmlConfParam<int> TSLTimeOut{"tsl.timeOut", 10};
     XmlConfParam<string> verifyServiceUri{"verify.serivceUri"};
     map<string,string> ocsp;
-    std::set<std::string> ocspTMProfiles;
+    set<string> ocspTMProfiles;
 
     string SCHEMA_LOC;
     static const string USER_CONF_LOC;
@@ -119,19 +94,6 @@ const string XmlConf::Private::USER_CONF_LOC = File::path(File::digidocppPath(),
 XmlConf::Private::Private(const string &path, string schema)
     : SCHEMA_LOC(std::move(schema))
 {
-    try {
-        if(!XMLPlatformUtils::fgMemoryManager)
-            XMLPlatformUtils::Initialize();
-    }
-    catch (const XMLException &e) {
-        try {
-            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
-            THROW("Error during initialization of Xerces: %s", result.c_str());
-        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-            THROW("Error during initialization of Xerces");
-        }
-    }
-
     if(path.empty())
     {
         init(File::path(File::confPath(), "digidocpp.conf"), true);
@@ -141,6 +103,22 @@ XmlConf::Private::Private(const string &path, string schema)
         init(path, true);
 }
 
+auto XmlConf::Private::loadDoc(const string &path) const {
+    LIBXML_TEST_VERSION
+    auto doc = XMLDocument(path, "configuration");
+    if(!doc)
+    {
+        WARN("Failed to parse configuration: %s", path.c_str());
+        return doc;
+    }
+    if(!doc.validateSchema(SCHEMA_LOC))
+    {
+        WARN("Failed to validate configuration: %s (%s)", path.c_str(), SCHEMA_LOC.c_str());
+        doc.reset();
+    }
+    return doc;
+}
+
 /**
  * Load and parse xml from path. Initialize XmlConf member variables from xml.
  * @param path to use for initializing conf
@@ -148,74 +126,63 @@ XmlConf::Private::Private(const string &path, string schema)
 void XmlConf::Private::init(const string& path, bool global)
 {
     DEBUG("XmlConfPrivate::init(%s, %u)", path.c_str(), global);
-    unique_ptr<Configuration> conf = read(path);
-    for(const Configuration::ParamType &p: conf->param())
-    {
-        if(logLevel.setValue(p, global) ||
-            logFile.setValue(p, global) ||
-            digestUri.setValue(p, global) ||
-            signatureDigestUri.setValue(p, global) ||
-            PKCS11Driver.setValue(p, global) ||
-            proxyForceSSL.setValue(p, global) ||
-            proxyTunnelSSL.setValue(p, global) ||
-            proxyHost.setValue(p, global) ||
-            proxyPort.setValue(p, global) ||
-            proxyUser.setValue(p, global) ||
-            proxyPass.setValue(p, global) ||
-            TSUrl.setValue(p, global) ||
-            TSLAutoUpdate.setValue(p, global) ||
-            TSLCache.setValue(p, global) ||
-            TSLOnlineDigest.setValue(p, global) ||
-            TSLTimeOut.setValue(p, global) ||
-            verifyServiceUri.setValue(p, global))
-            continue;
-        if(p.name() == "ocsp.tm.profile" && global)
-            ocspTMProfiles.emplace(p);
-        else
-            WARN("Unknown configuration parameter %s", p.name().c_str());
-    }
+    if(File::fileSize(path) == 0)
+        return;
 
-    for(const Configuration::OcspType &o: conf->ocsp())
-        ocsp[o.issuer()] = o;
-}
-
-/**
- * Parses xml configuration given path
- * @param path to parse xml config
- * @return returns parsed xml configuration
- */
-unique_ptr<Configuration> XmlConf::Private::read(const string &path) const
-{
-    try
+    auto doc = loadDoc(path);
+    if(!doc)
+        return;
+    for(XMLNode elem: doc)
     {
-        if(File::fileExists(path) && File::fileSize(path) > 0)
+        if(auto name = elem.name(); name == "param")
         {
-            Properties props;
-            props.no_namespace_schema_location(SCHEMA_LOC);
-            return configuration(path, Flags::dont_initialize, props);
+            auto paramName = elem.property("name");
+            string_view value = elem;
+            optional<bool> lock;
+            if(auto val = elem.property("name"); !val.empty())
+                lock = val == "true";
+            auto setValue = [&](auto &param) {
+                if(paramName != param.name)
+                    return false;
+                if(global && lock.has_value()) param.locked = lock.value();
+                if(global || !param.locked)
+                {
+                    using type = typename remove_reference_t<decltype(param)>::value_type;
+                    if constexpr(is_same_v<type,bool>)
+                        param.setValue(value == "true", param.defaultValue);
+                    else if constexpr(is_integral_v<type>)
+                        param.setValue(atoi(value.data()), param.defaultValue);
+                    else
+                        param.setValue(value, param.defaultValue);
+                }
+                return true;
+            };
+            if(setValue(logLevel) ||
+                setValue(logFile) ||
+                setValue(digestUri) ||
+                setValue(signatureDigestUri) ||
+                setValue(PKCS11Driver) ||
+                setValue(proxyForceSSL) ||
+                setValue(proxyTunnelSSL) ||
+                setValue(proxyHost) ||
+                setValue(proxyPort) ||
+                setValue(proxyUser) ||
+                setValue(proxyPass) ||
+                setValue(TSUrl) ||
+                setValue(TSLAutoUpdate) ||
+                setValue(TSLCache) ||
+                setValue(TSLOnlineDigest) ||
+                setValue(TSLTimeOut) ||
+                setValue(verifyServiceUri))
+                continue;
+            if(name == "ocsp.tm.profile" && global)
+                ocspTMProfiles.emplace(value);
         }
+        else if(name == "ocsp")
+            ocsp.emplace(elem.property("issuer"), elem);
+        else
+            WARN("Unknown configuration parameter %.*s", int(name.size()), name.data());
     }
-    catch(const xml_schema::Exception& e)
-    {
-        WARN("Failed to parse configuration: %s (%s) - %s",
-            path.c_str(), SCHEMA_LOC.c_str(), e.what());
-    }
-    catch(const xsd::cxx::xml::properties<char>::argument & /* e */)
-    {
-        WARN("Failed to parse configuration: %s (%s)",
-            path.c_str(), SCHEMA_LOC.c_str());
-    }
-    catch(const xsd::cxx::xml::invalid_utf8_string & /* e */)
-    {
-        WARN("Failed to parse configuration: %s (%s)",
-            path.c_str(), SCHEMA_LOC.c_str());
-    }
-    catch(const xsd::cxx::xml::invalid_utf16_string & /* e */)
-    {
-        WARN("Failed to parse configuration: %s (%s)",
-            path.c_str(), SCHEMA_LOC.c_str());
-    }
-    return make_unique<Configuration>();
 }
 
 /**
@@ -231,35 +198,40 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, A &&defined, const A 
 {
     if(param.locked)
         return;
-    param = value;
-    unique_ptr<Configuration> conf = read(USER_CONF_LOC);
-    Configuration::ParamSequence &paramSeq = conf->param();
-    for(auto it = paramSeq.begin(); it != paramSeq.end(); ++it)
+    param.setValue(value, defined);
+
+    auto doc = loadDoc(USER_CONF_LOC);
+    if(!doc)
     {
-        if(param.name == it->name())
-        {
-            paramSeq.erase(it);
-            break;
-        }
+        doc = XMLDocument::create("configuration");
+        doc.setProperty("noNamespaceSchemaLocation", SCHEMA_LOC,
+            doc.addNS("http://www.w3.org/2001/XMLSchema-instance", "xsi"));
     }
-    if(defined != value) //if it's a new parameter
+
+    // Remove old entries
+    for(auto i = doc.begin(); i != doc.end();)
     {
-        if constexpr(is_same<A,bool>::value)
-            paramSeq.push_back(make_unique<Param>(value ? "true" : "false", param.name));
-        else if constexpr(is_integral<A>::value)
-            paramSeq.push_back(make_unique<Param>(to_string(value), param.name));
+        if(XMLNode node{*i}; i.name() == "param" && node.property("name") == param.name)
+            i = XMLNode::erase(i);
         else
-            paramSeq.push_back(make_unique<Param>(std::move(value), param.name));
+            ++i;
+    }
+
+    if(param.has_value())
+    {
+        XMLNode p = doc.addChild("param");
+        p.setProperty("name", param.name);
+        if constexpr(is_same_v<A,bool>)
+            p = param.value() ? "true" : "false";
+        else if constexpr(is_integral_v<A>)
+            p = to_string(param.value());
+        else
+            p = param.value();
     }
 
     File::createDirectory(File::directory(USER_CONF_LOC));
-    ofstream ofs(File::encodeName(USER_CONF_LOC));
-    if (ofs.fail())
-        THROW("Failed to open configuration: %s", USER_CONF_LOC.c_str());
-    NamespaceInfomap map{{
-        {{}, {{}, SCHEMA_LOC}}
-    }};
-    configuration(ofs, *conf, map, "UTF-8", Flags::dont_initialize);
+    if(!doc.save(USER_CONF_LOC.c_str()))
+        ERR("Failed to save configuration: %s (%s)", USER_CONF_LOC.c_str(), SCHEMA_LOC.c_str());
 }
 
 
@@ -363,7 +335,7 @@ TYPE XmlConfV4::PROP() const { return VALUE; } \
 TYPE XmlConfV5::PROP() const { return VALUE; }
 
 #define GET1(TYPE, PROP) \
-GET1EX(TYPE, PROP, d->PROP.value(Conf::PROP()))
+GET1EX(TYPE, PROP, d->PROP.value_or(Conf::PROP()))
 
 #define SET1EX(TYPE, SET, VALUE) \
 void XmlConf::SET(TYPE value) { VALUE; } \

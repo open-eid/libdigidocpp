@@ -165,14 +165,14 @@ unique_ptr<iostream> ASiContainer::dataStream(const string &path, const ZipSeria
  */
 void ASiContainer::addDataFile(const string &path, const string &mediaType)
 {
-    string fileName = File::fileName(path);
+    string fileName(File::fileName(path));
     addDataFileChecks(fileName, mediaType);
     if(!File::fileExists(path))
         THROW("Document file '%s' does not exist.", path.c_str());
 
     ZipSerialize::Properties prop { appInfo(), File::modifiedTime(path), File::fileSize(path) };
     bool useTempFile = prop.size > MAX_MEM_FILE;
-    zproperty(File::fileName(path), std::move(prop));
+    zproperty(fileName, std::move(prop));
     unique_ptr<istream> is;
     if(useTempFile)
     {

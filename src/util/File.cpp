@@ -149,9 +149,10 @@ bool File::fileExtension(string_view path, initializer_list<string_view> list)
 /**
  * Returns file size
  */
-unsigned long File::fileSize(const string &path)
+unsigned long File::fileSize(string_view path) noexcept
 {
-    return fs::file_size(fs::u8path(path));
+    error_code ec;
+    return fs::file_size(fs::u8path(path), ec);
 }
 
 /**
@@ -160,7 +161,7 @@ unsigned long File::fileSize(const string &path)
  * @param path full path of the file.
  * @return returns file name from the file full path in UTF-8.
  */
-string File::fileName(const string& path)
+string_view File::fileName(string_view path)
 {
     size_t pos = path.find_last_of("/\\");
     return pos == string::npos ? path : path.substr(pos + 1);
@@ -191,10 +192,10 @@ string File::frameworkResourcesPath(string_view name)
  * @param path full path of the file.
  * @return returns directory part of the file full path.
  */
-string File::directory(const string& path)
+string_view File::directory(string_view path)
 {
     size_t pos = path.find_last_of("/\\");
-    return pos == string::npos ? string() : path.substr(0, pos);
+    return pos == string::npos ? string_view() : path.substr(0, pos);
 }
 
 /**
@@ -247,12 +248,12 @@ fs::path File::tempFileName()
  * @param path full path of the directory created.
  * @throws IOException exception is thrown if the directory creation failed.
  */
-void File::createDirectory(string path)
+void File::createDirectory(string_view path)
 {
     if(path.empty())
         THROW("Can not create directory with no name.");
     if(path.back() == '/' || path.back() == '\\')
-        path.pop_back();
+        path.remove_suffix(1);
     auto _path = fs::u8path(path);
 #ifdef _WIN32
     int result = _wmkdir(_path.c_str());
@@ -261,13 +262,13 @@ void File::createDirectory(string path)
 #endif
     if(result == 0 || errno == EEXIST)
     {
-        DEBUG("Created directory or direcotry exists '%s'", path.c_str());
+        DEBUG("Created directory or direcotry exists '%.*s'", int(path.size()), path.data());
         return;
     }
     if(errno != ENOENT)
-        THROW("Failed to create directory '%s', errno = %d", path.c_str(), errno);
+        THROW("Failed to create directory '%.*s', errno = %d", int(path.size()), path.data(), errno);
     createDirectory(directory(path));
-    createDirectory(std::move(path));
+    createDirectory(path);
 }
 
 string File::digidocppPath()
@@ -294,7 +295,7 @@ string File::digidocppPath()
 }
 
 /**
- * Constructs the full file path in the format "file:///fullpath" in URI encoding. 
+ * Constructs the full file path in the format "file:///fullpath" in URI encoding.
  *
  * @param fullDirectory full directory path to the relativeFilePath
  * @param relativeFilePath file name to be appended to the full path
@@ -305,9 +306,9 @@ string File::fullPathUrl(string path)
 #ifdef _WIN32
     // Under windows replace the path delimiters
     replace(path.begin(), path.end(), '\\', '/');
-    return "file:///" + File::toUri(path);
+    return "file:///" + toUri(path);
 #else
-    return "file://" + File::toUri(path);
+    return "file://" + toUri(path);
 #endif
 }
 
@@ -336,9 +337,9 @@ void File::deleteTempFiles()
  * @param str_in the string to be converted
  * @return the string converted to the URI format
  */
-string File::toUri(const string &path)
+string File::toUri(string_view path)
 {
-    static const string legal_chars = "-_.!~*'();/?:@&=+$,";
+    static const string_view legal_chars = "-_.!~*'();/?:@&=+$,";
     static const locale locC("C");
     ostringstream dst;
     for(const char &i: path)
@@ -369,7 +370,7 @@ string File::toUri(const string &path)
  */
 string File::toUriPath(const string &path)
 {
-    static const string unreserved = "-._~/";
+    static const string_view unreserved = "-._~/";
     //static string sub-delims = "!$&'()*+,;="
     static const locale locC("C");
     ostringstream dst;

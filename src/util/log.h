@@ -39,8 +39,6 @@ namespace digidoc
         static std::string format(const char *fmt, ...);
         static void out(LogType type, const char *file, unsigned int line, const char *format, ...);
         static void dbgPrintfMemImpl(const char *msg, const void *ptr, size_t size, const char *file, int line);
-
-    private:
         static std::string formatArgList(const char *fmt, va_list args);
     };
 }

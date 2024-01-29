@@ -63,6 +63,7 @@
           <File Source="$(var.VCPKG)\Xalan-C_1_12.dll" />
           <File Source="$(var.VCPKG)\XalanMessages_1_12.dll" />
           <File Source="$(var.VCPKG)\xsec_2_0.dll" />
+          <File Source="$(var.VCPKG)\libxml2.dll"/>
           <File Name="digidocpp.dll" />
           <File Name="digidoc-tool.exe" />
           <File Source="$(var.libdigidocpp)\etc\digidocpp\digidocpp.conf" />
