@@ -30,6 +30,8 @@
 #include "util/File.h"
 #include "util/log.h"
 
+#include <libxml/parser.h>
+
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
 DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
@@ -186,6 +188,7 @@ void digidoc::terminate()
     } catch (...) {
         // Don't throw on terminate
     }
+    xmlCleanupParser();
     m_createList.clear();
     m_openList.clear();
     m_appName.clear();

@@ -149,9 +149,10 @@ bool File::fileExtension(string_view path, initializer_list<string_view> list)
 /**
  * Returns file size
  */
-unsigned long File::fileSize(const string &path)
+unsigned long File::fileSize(string_view path) noexcept
 {
-    return fs::file_size(fs::u8path(path));
+    error_code ec;
+    return fs::file_size(fs::u8path(path), ec);
 }
 
 /**

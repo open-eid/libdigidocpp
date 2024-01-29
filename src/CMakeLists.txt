@@ -14,8 +14,6 @@ configure_file( ${CMAKE_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf )
 
 set(SCHEMA_DIR ${CMAKE_SOURCE_DIR}/etc/schema)
 set(XML_DIR ${CMAKE_CURRENT_BINARY_DIR}/xml)
-XSD_SCHEMA( xsd_SRCS IGNORE ${XML_DIR} ${SCHEMA_DIR}/conf.xsd
-     --root-element configuration )
 XSD_SCHEMA( xsd_SRCS IGNORE ${XML_DIR} ${SCHEMA_DIR}/OpenDocument_manifest.xsd
     --root-element manifest
     --namespace-map urn:oasis:names:tc:opendocument:xmlns:manifest:1.0=digidoc::manifest )
@@ -161,6 +159,7 @@ add_library(digidocpp_priv STATIC
     xml/SecureDOMParser.cpp
     xml/UnsignedSignaturePropertiesType.cpp
     xml/URIResolver.cpp
+    XMLDocument.h
 )
 
 set_target_properties(digidocpp_util digidocpp_priv PROPERTIES
@@ -183,6 +182,7 @@ target_link_libraries(digidocpp_priv
     digidocpp_util
     XmlSecurityC::XmlSecurityC
     ZLIB::ZLIB
+    LibXml2::LibXml2
     $<$<C_COMPILER_ID:MSVC>:Ws2_32>
 )
 

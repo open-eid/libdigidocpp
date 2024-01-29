@@ -3,6 +3,13 @@
     "version": "3.18.0",
     "dependencies": [
       "xml-security-c",
+      {
+        "name": "libxml2",
+        "features": [
+          "zlib"
+        ],
+        "default-features": false
+      },
       "zlib"
     ],
     "features": {
