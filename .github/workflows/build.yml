@@ -79,7 +79,7 @@ jobs:
     container: ${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:37', 'fedora:38', 'fedora:39']
+        container: ['fedora:38', 'fedora:39']
     steps:
     - name: Install Deps
       run: |
@@ -154,7 +154,7 @@ jobs:
           vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
     env:
       VER_SUFFIX: .VS${{ matrix.toolset }}
-      VERSION: 3.17.0.${{ github.run_number }}
+      VERSION: 3.18.0.${{ github.run_number }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
