@@ -221,7 +221,7 @@ X509Cert PKCS11Signer::cert() const
             vector<CK_BYTE> id = d->attribute(session, obj, CKA_ID);
             if(d->findObject(session, CKO_PUBLIC_KEY, id).empty())
                 continue;
-            certSlotMapping.push_back({x509, slot, id});
+            certSlotMapping.push_back({x509, slot, std::move(id)});
             certificates.push_back(std::move(x509));
         }
     }

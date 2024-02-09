@@ -42,6 +42,11 @@ using namespace digidoc::xades;
 using namespace std;
 using namespace xml_schema;
 
+static Base64Binary toBase64(const vector<unsigned char> &v)
+{
+    return {const_cast<unsigned char*>(v.data()), v.size(), v.size(), false};
+}
+
 SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer)
 : SignatureXAdES_T(id, bdoc, signer)
 {}
@@ -92,7 +97,7 @@ string SignatureXAdES_LT::OCSPProducedAt() const
 string SignatureXAdES_LT::trustedSigningTime() const
 {
     string time = OCSPProducedAt();
-    return time.empty() || profile().find(ASiC_E::ASIC_TM_PROFILE) == string::npos ? SignatureXAdES_T::trustedSigningTime() : time;
+    return time.empty() || profile().find(ASiC_E::ASIC_TM_PROFILE) == string::npos ? SignatureXAdES_T::trustedSigningTime() : std::move(time);
 }
 
 /**
@@ -248,16 +253,15 @@ void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert
             unsignedSignatureProperties().certificateValues();
     if(values.empty())
     {
-        values.push_back(CertificateValuesType());
+        values.push_back(make_unique<CertificateValuesType>());
         unsignedSignatureProperties().contentOrder().push_back(
             UnsignedSignaturePropertiesType::ContentOrderType(
                 UnsignedSignaturePropertiesType::certificateValuesId, values.size() - 1));
     }
 
-    vector<unsigned char> der = x509;
-    CertificateValuesType::EncapsulatedX509CertificateType certData({der.data(), der.size(), der.size(), false});
-    certData.id(certId);
-    values[0].encapsulatedX509Certificate().push_back(certData);
+    auto certData = make_unique<CertificateValuesType::EncapsulatedX509CertificateType>(toBase64(x509));
+    certData->id(certId);
+    values[0].encapsulatedX509Certificate().push_back(std::move(certData));
 }
 
 void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
@@ -266,17 +270,16 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
 
     createUnsignedSignatureProperties();
 
-    vector<unsigned char> der = ocsp;
-    OCSPValuesType::EncapsulatedOCSPValueType ocspValueData({der.data(), der.size(), der.size(), false});
-    ocspValueData.id(id);
+    auto ocspValueData = make_unique<OCSPValuesType::EncapsulatedOCSPValueType>(toBase64(ocsp));
+    ocspValueData->id(id);
 
-    OCSPValuesType ocspValue;
-    ocspValue.encapsulatedOCSPValue().push_back(ocspValueData);
+    auto ocspValue = make_unique<OCSPValuesType>();
+    ocspValue->encapsulatedOCSPValue().push_back(std::move(ocspValueData));
 
-    RevocationValuesType revocationValues;
-    revocationValues.oCSPValues(ocspValue);
+    auto revocationValues = make_unique<RevocationValuesType>();
+    revocationValues->oCSPValues(std::move(ocspValue));
 
-    unsignedSignatureProperties().revocationValues().push_back(revocationValues);
+    unsignedSignatureProperties().revocationValues().push_back(std::move(revocationValues));
     unsignedSignatureProperties().contentOrder().push_back(
         UnsignedSignaturePropertiesType::ContentOrderType(
             UnsignedSignaturePropertiesType::revocationValuesId,

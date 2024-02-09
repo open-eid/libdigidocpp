@@ -326,12 +326,6 @@ void File::deleteTempFiles()
     }
 }
 
-bool File::removeFile(const string &path)
-{
-    error_code ec;
-    return fs::remove(fs::u8path(path), ec);
-}
-
 /**
  * Helper method for converting strings with non-ascii characters to the URI format (%HH for each non-ascii character).
  *

@@ -89,7 +89,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const ve
     {
         hostname = c->proxyHost() + ":" + c->proxyPort();
         if(usessl == 0 || (CONF(proxyForceSSL)))
-            path = url;
+            path = std::move(url);
     }
 
     DEBUG("Connecting to Host: %s timeout: %i", hostname.c_str(), _timeout);
