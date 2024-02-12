@@ -11,10 +11,7 @@ param(
   [string]$cmake = "cmake.exe",
   [string]$generator = "NMake Makefiles",
   [string]$vcvars = "vcvarsall",
-  [string]$wix = "$env:WIX",
-  [string]$heat = "$wix\bin\heat.exe",
-  [string]$candle = "$wix\bin\candle.exe",
-  [string]$light = "$wix\bin\light.exe",
+  [string]$wix = "wix.exe",
   [string]$swig = $null,
   [string]$doxygen = $null,
   [switch]$boost = $false,
@@ -22,18 +19,21 @@ param(
   [string]$sign = $null
 )
 
+# Hack to fetch heat.exe tool
+& dotnet new console -o wix-heat --force
+& dotnet add wix-heat package WixToolset.Heat
+$heat = Get-ChildItem "$env:USERPROFILE\.nuget\packages\WixToolset.Heat" -Include heat.exe -Recurse
+
 $cmakeext = @()
-$candleext = @()
-$lightext = @()
+$wixext = @()
 $target = @("all")
 if($swig) {
   $cmakeext += "-DSWIG_EXECUTABLE=$swig"
-  $candleext += "-dswig=$swig"
+  $wixext += "-d", "swig=$swig"
 }
 if($doxygen) {
   $cmakeext += "-DDOXYGEN_EXECUTABLE=$doxygen"
-  $candleext += "-ddocLocation=$platform/share/doc/libdigidocpp", "DocFilesFragment.wxs"
-  $lightext += "DocFilesFragment.wixobj"
+  $wixext += "-d", "docLocation=$platform/share/doc/libdigidocpp", "DocFilesFragment.wxs"
 }
 if($boost) {
   $cmakeext += "-DVCPKG_MANIFEST_FEATURES=tests"
@@ -54,16 +54,21 @@ foreach($type in @("Debug", "RelWithDebInfo")) {
 }
 
 if($doxygen) {
-  & $heat dir $platform/share/doc/libdigidocpp -nologo -cg Documentation -gg -scom -sreg -sfrag -srd -dr DocumentationFolder -var var.docLocation -out DocFilesFragment.wxs
+  & $heat[0] dir $platform/share/doc/libdigidocpp -nologo -cg Documentation -gg -scom -sreg -sfrag -srd -dr DocumentationFolder -var var.docLocation -out DocFilesFragment.wxs
 }
-& $heat dir $platform/include -nologo -cg Headers -gg -scom -sreg -sfrag -srd -dr HeadersFolder -var var.headersLocation -out HeadersFragment.wxs
-& $candle -nologo -arch $platform "-dICON=$libdigidocpp/cmake/modules/ID.ico" "-dMSI_VERSION=$msiversion" `
-  "-dvcpkg=$vcpkg_installed\vcpkg_installed_$platform\$platform-windows" "-dheadersLocation=$platform/include" `
-  "-dlibdigidocpp=$platform" $candleext $libdigidocpp\libdigidocpp.wxs HeadersFragment.wxs
-& $light -nologo -out $msi_name -ext WixUIExtension `
-  "-dWixUIBannerBmp=$libdigidocpp/cmake/modules/banner.bmp" `
-  "-dWixUIDialogBmp=$libdigidocpp/cmake/modules/dlgbmp.bmp" `
-  $lightext libdigidocpp.wixobj HeadersFragment.wixobj
+
+& $heat[0] dir $platform/include -nologo -cg Headers -gg -scom -sreg -sfrag -srd -dr HeadersFolder -var var.headersLocation -out HeadersFragment.wxs
+& $wix build -nologo -arch $platform -out $msi_name $wixext `
+  -ext WixToolset.UI.wixext `
+  -bv "WixUIBannerBmp=$libdigidocpp/cmake/modules/banner.bmp" `
+  -bv "WixUIDialogBmp=$libdigidocpp/cmake/modules/dlgbmp.bmp" `
+  -d "ICON=$libdigidocpp/cmake/modules/ID.ico" `
+  -d "MSI_VERSION=$msiversion" `
+  -d "vcpkg=$vcpkg_installed/vcpkg_installed_$platform/$platform-windows" `
+  -d "libdigidocpp=$platform" `
+  -d "headersLocation=$platform/include" `
+  HeadersFragment.wxs `
+  $libdigidocpp\libdigidocpp.wxs
 
 if($sign) {
   signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `

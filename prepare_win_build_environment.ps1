@@ -3,10 +3,11 @@ param(
 	[string]$vcpkg = "vcpkg\vcpkg.exe",
 	[string]$git = "git.exe",
 	[switch]$xsd = $false,
+	[switch]$wix = $false,
 	[switch]$dependencies = $false
 )
 
-function xsd() {
+if($xsd) {
 	$client = new-object System.Net.WebClient
 	& mkdir xsd
 	foreach($xsdver in @("xsd-4.2.0-x86_64-windows10", "libxsd-4.2.0-windows")) {
@@ -17,8 +18,9 @@ function xsd() {
 	}
 }
 
-if($xsd) {
-	xsd
+if($wix) {
+	& dotnet tool install --global wix
+	& wix extension add -g WixToolset.UI.wixext
 }
 
 if($dependencies) {
@@ -29,9 +31,5 @@ if($dependencies) {
 	}
 	& $vcpkg install --clean-after-build --triplet x86-windows --x-feature=tests --x-install-root=vcpkg_installed_x86
 	& $vcpkg install --clean-after-build --triplet x64-windows --x-feature=tests --x-install-root=vcpkg_installed_x64
-}
-
-if(!$xsd -and !$dependencies) {
-	xsd
 }
 

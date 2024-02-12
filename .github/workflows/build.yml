@@ -179,6 +179,10 @@ jobs:
         architecture: ${{ matrix.platform }}
     - name: Build xsd
       run: .\prepare_win_build_environment.ps1 -xsd
+    - name: Install WiX
+      run: |
+        dotnet tool install -g wix
+        wix extension -g add WixToolset.UI.wixext
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
       with:
