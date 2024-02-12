@@ -10,7 +10,6 @@
     },
     "builtin-baseline": "18b028fe785e707265fa0e35590b7537ae1d12ea",
     "vcpkg-configuration": {
-        "overlay-triplets": ["./patches/vcpkg-triplets"],
         "overlay-ports": [
           "patches/vcpkg-ports/openssl",
           "patches/vcpkg-ports/xml-security-c"
