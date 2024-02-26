@@ -2,7 +2,6 @@
 param(
 	[string]$vcpkg = "vcpkg\vcpkg.exe",
 	[string]$git = "git.exe",
-	[string]$toolset = "142",
 	[switch]$xsd = $false,
 	[switch]$dependencies = $false
 )
@@ -28,8 +27,8 @@ if($dependencies) {
 		& $git clone --depth 1 https://github.com/microsoft/vcpkg $vcpkg_dir
 		& $vcpkg_dir\bootstrap-vcpkg.bat
 	}
-	& $vcpkg install --clean-after-build --triplet x86-windows-v$toolset --x-feature=tests --x-install-root=vcpkg_installed_x86
-	& $vcpkg install --clean-after-build --triplet x64-windows-v$toolset --x-feature=tests --x-install-root=vcpkg_installed_x64
+	& $vcpkg install --clean-after-build --triplet x86-windows --x-feature=tests --x-install-root=vcpkg_installed_x86
+	& $vcpkg install --clean-after-build --triplet x64-windows --x-feature=tests --x-install-root=vcpkg_installed_x64
 }
 
 if(!$xsd -and !$dependencies) {
