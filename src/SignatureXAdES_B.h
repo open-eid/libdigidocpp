@@ -120,14 +120,11 @@ namespace digidoc
           void setKeyInfo(const X509Cert& cert);
           void setSigningCertificate(const X509Cert& cert);
           void setSigningCertificateV2(const X509Cert& cert);
-          void setSignatureProductionPlace(const std::string &city,
-              const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
-          void setSignatureProductionPlaceV2(const std::string &city, const std::string &streetAddress,
+          template<class T>
+          void setSignatureProductionPlace(const std::string &city, const std::string &streetAddress,
               const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
           template<class T>
-          inline auto signerRoles(const std::vector<std::string> &signerRoles);
-          void setSignerRoles(const std::vector<std::string>& signerRoles);
-          void setSignerRolesV2(const std::vector<std::string>& signerRoles);
+          void setSignerRoles(const std::vector<std::string> &signerRoles);
           void setSigningTime(time_t signingTime);
 
           // offline checks

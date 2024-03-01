@@ -277,14 +277,16 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
     if(signer->usingENProfile())
     {
         setSigningCertificateV2(c);
-        setSignatureProductionPlaceV2(signer->city(), signer->streetAddress(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
-        setSignerRolesV2(signer->signerRoles());
+        setSignatureProductionPlace<SignatureProductionPlaceV2Type>(signer->city(), signer->streetAddress(),
+            signer->stateOrProvince(), signer->postalCode(), signer->countryName());
+        setSignerRoles<SignerRoleV2Type>(signer->signerRoles());
     }
     else
     {
         setSigningCertificate(c);
-        setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
-        setSignerRoles(signer->signerRoles());
+        setSignatureProductionPlace<SignatureProductionPlaceType>(signer->city(), signer->streetAddress(),
+            signer->stateOrProvince(), signer->postalCode(), signer->countryName());
+        setSignerRoles<SignerRoleType>(signer->signerRoles());
     }
     setSigningTime(time(nullptr));
 
@@ -879,43 +881,17 @@ void SignatureXAdES_B::setSigningCertificateV2(const X509Cert& x509)
  *
  * @param spp signature production place.
  */
-void SignatureXAdES_B::setSignatureProductionPlace(const string &city,
-    const string &stateOrProvince, const string &postalCode, const string &countryName)
-{
-    if(city.empty() && stateOrProvince.empty() &&
-        postalCode.empty() && countryName.empty())
-        return;
-
-    auto signatureProductionPlace = make_unique<SignatureProductionPlaceType>();
-    if(!city.empty())
-        signatureProductionPlace->city(city);
-    if(!stateOrProvince.empty())
-        signatureProductionPlace->stateOrProvince(stateOrProvince);
-    if(!postalCode.empty())
-        signatureProductionPlace->postalCode(postalCode);
-    if(!countryName.empty())
-        signatureProductionPlace->countryName(countryName);
-
-    getSignedSignatureProperties().signatureProductionPlace(std::move(signatureProductionPlace));
-}
-
-/**
- * Sets signature production place.
- *
- * @param spp signature production place.
- */
-void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
+template<class T>
+void SignatureXAdES_B::setSignatureProductionPlace(const string &city, const string &streetAddress,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
 {
     if(city.empty() && streetAddress.empty() && stateOrProvince.empty() &&
         postalCode.empty() && countryName.empty())
         return;
 
-    auto signatureProductionPlace = make_unique<SignatureProductionPlaceV2Type>();
+    auto signatureProductionPlace = make_unique<T>();
     if(!city.empty())
         signatureProductionPlace->city(city);
-    if(!streetAddress.empty())
-        signatureProductionPlace->streetAddress(streetAddress);
     if(!stateOrProvince.empty())
         signatureProductionPlace->stateOrProvince(stateOrProvince);
     if(!postalCode.empty())
@@ -923,12 +899,28 @@ void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const s
     if(!countryName.empty())
         signatureProductionPlace->countryName(countryName);
 
-    getSignedSignatureProperties().signatureProductionPlaceV2(std::move(signatureProductionPlace));
+    if constexpr (is_same_v<T, SignatureProductionPlaceV2Type>)
+    {
+        if(!streetAddress.empty())
+            signatureProductionPlace->streetAddress(streetAddress);
+        getSignedSignatureProperties().signatureProductionPlaceV2(std::move(signatureProductionPlace));
+    }
+    else
+        getSignedSignatureProperties().signatureProductionPlace(std::move(signatureProductionPlace));
 }
 
+/**
+ * Sets signer claimed roles to the signature.
+ * NB! Only ClaimedRoles are supported. CerifiedRoles are not supported.
+ *
+ * @param roles signer roles.
+ */
 template<class T>
-auto SignatureXAdES_B::signerRoles(const vector<string> &roles)
+void SignatureXAdES_B::setSignerRoles(const vector<string> &roles)
 {
+    if(roles.empty())
+        return;
+
     auto claimedRoles = make_unique<ClaimedRolesListType>();
     claimedRoles->claimedRole().reserve(roles.size());
     for(const string &role: roles)
@@ -936,31 +928,11 @@ auto SignatureXAdES_B::signerRoles(const vector<string> &roles)
 
     auto signerRole = make_unique<T>();
     signerRole->claimedRoles(std::move(claimedRoles));
-    return signerRole;
-}
 
-/**
- * Sets signer claimed roles to the signature.
- * NB! Only ClaimedRoles are supported. CerifiedRoles are not supported.
- *
- * @param roles signer roles.
- */
-void SignatureXAdES_B::setSignerRoles(const vector<string> &roles)
-{
-    if(!roles.empty())
-        getSignedSignatureProperties().signerRole(signerRoles<SignerRoleType>(roles));
-}
-
-/**
- * Sets signer claimed roles to the signature.
- * NB! Only ClaimedRoles are supported. CerifiedRoles are not supported.
- *
- * @param roles signer roles.
- */
-void SignatureXAdES_B::setSignerRolesV2(const vector<string> &roles)
-{
-    if(!roles.empty())
-        getSignedSignatureProperties().signerRoleV2(signerRoles<SignerRoleV2Type>(roles));
+    if constexpr (is_same_v<T, SignerRoleV2Type>)
+        getSignedSignatureProperties().signerRoleV2(std::move(signerRole));
+    else
+        getSignedSignatureProperties().signerRole(std::move(signerRole));
 }
 
 /**
@@ -1104,21 +1076,21 @@ string SignatureXAdES_B::countryName() const
 
 vector<string> SignatureXAdES_B::signerRoles() const
 {
-    const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence = [&] {
-        // return elements from SignerRole element or SignerRoleV2 when available
-        if(const auto &role = getSignedSignatureProperties().signerRole();
-            role && role->claimedRoles())
-            return role->claimedRoles()->claimedRole();
-        if(const auto &roleV2 = getSignedSignatureProperties().signerRoleV2();
-            roleV2 && roleV2->claimedRoles())
-            return roleV2->claimedRoles()->claimedRole();
-        return ClaimedRolesListType::ClaimedRoleSequence{};
-    }();
-    vector<string> roles;
-    roles.reserve(claimedRoleSequence.size());
-    for(const ClaimedRolesListType::ClaimedRoleType &type: claimedRoleSequence)
-        roles.emplace_back(type.text());
-    return roles;
+    auto toRoles = [](const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence) -> vector<string> {
+        vector<string> roles;
+        roles.reserve(claimedRoleSequence.size());
+        for(const auto &type: claimedRoleSequence)
+            roles.emplace_back(type.text());
+        return roles;
+    };
+    // return elements from SignerRole element or SignerRoleV2 when available
+    if(const auto &role = getSignedSignatureProperties().signerRole();
+        role && role->claimedRoles())
+        return toRoles(role->claimedRoles()->claimedRole());
+    if(const auto &roleV2 = getSignedSignatureProperties().signerRoleV2();
+        roleV2 && roleV2->claimedRoles())
+        return toRoles(roleV2->claimedRoles()->claimedRole());
+    return {};
 }
 
 string SignatureXAdES_B::claimedSigningTime() const

@@ -564,7 +564,7 @@ static int open(int argc, char* argv[])
             if(auto pos = arg.find('='); pos != string::npos)
             {
                 fs::path newPath = fs::u8path(arg.substr(pos + 1));
-                extractPath = newPath.is_relative() ? extractPath / newPath : newPath;
+                extractPath = newPath.is_relative() ? extractPath / newPath : std::move(newPath);
             }
             if(!fs::is_directory(extractPath))
                 THROW("Path is not directory");
@@ -576,7 +576,7 @@ static int open(int argc, char* argv[])
         else if(arg.find("--offline") == 0)
             cb.online = false;
         else
-            path = arg;
+            path = std::move(arg);
     }
 
     if(path.empty())
@@ -689,11 +689,11 @@ static int remove(int argc, char *argv[])
     {
         string arg(ToolConfig::toUTF8(argv[i]));
         if(arg.find("--document=") == 0)
-            documents.push_back(stoi(arg.substr(11)));
+            documents.push_back(unsigned(stoi(arg.substr(11))));
         else if(arg.find("--signature=") == 0)
-            signatures.push_back(stoi(arg.substr(12)));
+            signatures.push_back(unsigned(stoi(arg.substr(12))));
         else
-            path = arg;
+            path = std::move(arg);
     }
 
     if(path.empty())
@@ -953,7 +953,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
             cout << "              TSL: missing" << endl;
             continue;
         }
-        TSL tp(path);
+        TSL tp(std::move(path));
         cout << "              TSL: " << p.location << endl
             << "             Type: " << tp.type() << endl
             << "        Territory: " << tp.territory() << endl
