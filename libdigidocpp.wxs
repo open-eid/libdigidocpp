@@ -4,6 +4,12 @@
   <?define LibrariesDevGuid = "{9B16F8D1-11AA-4AF4-B8C2-96B4EC7E79CD}" ?>
   <?define SchemasGuid = "{C42EE645-286C-4B80-B73E-AF82B8D4D778}" ?>
   <?define OpenSSLSuffix = "-x64" ?>
+<?elseif $(sys.BUILDARCH) = arm64 ?>
+  <?define UpgradeCode = "{de2f0796-01fe-4291-bfc1-c01f631d082b}" ?>
+  <?define LibrariesGuid = "{49ab6a46-423f-4d3a-98ea-1c8d251eac4f}" ?>
+  <?define LibrariesDevGuid = "{5a6642c3-528e-4394-8ace-3bca16f53d9f}" ?>
+  <?define SchemasGuid = "{78069c8e-8521-4688-a9d1-1020696ac52d}" ?>
+  <?define OpenSSLSuffix = "-arm64" ?>
 <?else?>
   <?define UpgradeCode = "{7f1b1519-b527-4130-998d-233f4d050f14}" ?>
   <?define LibrariesGuid = "{f730eb17-fafc-440a-88a8-e8795be746b1}" ?>

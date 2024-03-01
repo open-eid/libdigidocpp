@@ -7,5 +7,5 @@
     "xalan-c",
     "openssl"
   ],
-  "supports": "windows & (x86 | x64)"
+  "supports": "windows & (x86 | x64 | arm64)"
 }
