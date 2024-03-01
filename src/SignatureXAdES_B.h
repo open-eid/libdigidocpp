@@ -91,7 +91,7 @@ namespace digidoc
           std::vector<std::string> signerRoles() const override;
 
           std::string addReference(const std::string& uri, const std::string& digestUri,
-              const std::vector<unsigned char> &digestValue, const std::string& type = {});
+              const std::vector<unsigned char> &digestValue, const std::string& type = {}, const std::string &canon = {});
           void addDataObjectFormat(const std::string& uri, const std::string& mime);
 
           std::shared_ptr<Signatures> signatures;
