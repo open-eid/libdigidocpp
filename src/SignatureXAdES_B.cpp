@@ -297,7 +297,8 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
 
     signatures->reloadDOM();
     Digest calc(digestMethod);
-    calcDigestOnNode(&calc, Signatures::XADES_NAMESPACE, u"SignedProperties");
+    calcDigestOnNode(&calc, Signatures::XADES_NAMESPACE, u"SignedProperties",
+        signature->signedInfo().canonicalizationMethod().algorithm());
     addReference("#" + nr +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties");
     signatures->reloadDOM();
 }
@@ -543,7 +544,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         m_errStr.sbXMLChIn((const XMLCh*)u"");
 
         if(!DSIGReference::verifyReferenceList(sig->getReferenceList(), m_errStr))
-        //if(!sig->verify()) //xml-security-c < 2.0.0 does not support URI_ID_C14N11_NOC canonicalization
+        //if(!sig->verify()) //xml-security-c does not support URI_RSA_PSS_SHA
         {
             //string s = xml::transcode<char>(sig->getErrMsgs())
             string s = xml::transcode<char>(m_errStr.rawXMLChBuffer());
@@ -672,7 +673,8 @@ vector<unsigned char> SignatureXAdES_B::dataToSign() const
 {
     // Calculate SHA digest of the Signature->SignedInfo node.
     Digest calc(signatureMethod());
-    calcDigestOnNode(&calc, URI_ID_DSIG, u"SignedInfo");
+    calcDigestOnNode(&calc, URI_ID_DSIG, u"SignedInfo",
+        signature->signedInfo().canonicalizationMethod().algorithm());
     return calc.result();
 }
 
@@ -994,18 +996,16 @@ vector<unsigned char> SignatureXAdES_B::getSignatureValue() const
  * @param ns signature tag namespace.
  * @param tagName signature tag name.
  */
-void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
+void SignatureXAdES_B::calcDigestOnNode(Digest* calc, string_view ns,
     u16string_view tagName, string_view canonicalizationMethod) const
 {
     try
     {
         auto *element = signatures->element(id());
-        DOMNodeList *nodeList = element->getElementsByTagNameNS(xml::string(ns).c_str(), tagName.data());
+        DOMNodeList *nodeList = element->getElementsByTagNameNS(xml::string(ns.data()).c_str(), tagName.data());
         if(nodeList->getLength() != 1)
-            THROW("Could not find '%s' node which is in '%s' namespace in signature XML.",
-                  xml::transcode<char>(tagName.data()).data(), ns.c_str());
-        if(canonicalizationMethod.empty())
-            canonicalizationMethod = signature->signedInfo().canonicalizationMethod().algorithm();
+            THROW("Could not find '%s' node which is in '%.*s' namespace in signature XML.",
+                  xml::transcode<char>(tagName.data()).c_str(), int(ns.size()), ns.data());
         SecureDOMParser::calcDigestOnNode(calc, canonicalizationMethod, nodeList->item(0));
     }
     catch(const Exception& e)
