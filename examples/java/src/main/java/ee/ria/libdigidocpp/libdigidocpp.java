@@ -1,11 +1,12 @@
 package ee.ria.libdigidocpp;
 
 import java.io.ByteArrayInputStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.HexFormat;
 import java.util.Scanner;
 
 public class libdigidocpp {
@@ -41,7 +42,7 @@ public class libdigidocpp {
             Container b = Container.open(file);
             assert b != null;
             DataFiles d = b.dataFiles();
-            String dest = FileSystems.getDefault().getPath(d.get(index).fileName()).toAbsolutePath().toString();
+            String dest = Paths.get(d.get(index).fileName()).toAbsolutePath().toString();
             System.out.println("Extracting file " + d.get(index).fileName() + " to " + dest);
             d.get(index).saveAs(dest);
         }
@@ -99,7 +100,7 @@ public class libdigidocpp {
 
     static void websign(String[] args) {
         digidoc.initializeLib("libdigidocpp-java", "");
-        try
+        try (Scanner scanner = new Scanner(System.in))
         {
             System.out.println("Creating file: " + args[args.length - 1]);
             Container b = Container.create(args[args.length - 1]);
@@ -107,17 +108,14 @@ public class libdigidocpp {
             for (int i = 1; i < args.length - 2; ++i)
                 b.addDataFile(args[i], "application/octet-stream");
 
-            X509Certificate cert = toX509(Files.readAllBytes(FileSystems.getDefault().getPath(args[args.length - 2])));
+            X509Certificate cert = toX509(Files.readAllBytes(Paths.get(args[args.length - 2])));
             Signature c = b.prepareWebSignature(cert.getEncoded(), "time-stamp");
             System.out.println("Signature method: " + c.signatureMethod());
-            System.out.println("Digest to sign: " + toHex(c.dataToSign()));
+            System.out.println("Digest to sign: " + HexFormat.of().formatHex(c.dataToSign()));
             System.out.println("Please enter signed digest in hex: ");
 
-            Scanner scanner = new Scanner(System.in);
             String signature = scanner.nextLine();
-            scanner.close();
-
-            c.setSignatureValue(fromHex(signature));
+            c.setSignatureValue(HexFormat.of().parseHex(signature));
             c.extendSignatureProfile("time-stamp");
             b.save();
         }
@@ -173,33 +171,12 @@ public class libdigidocpp {
     }
 
     static void version() {
-        System.out.println("DigiDocCSharp 0.3 libdigidocpp " + digidoc.version());
+        System.out.println("DigiDocJAVA 0.3 libdigidocpp " + digidoc.version());
     }
 
     static X509Certificate toX509(byte[] der) throws CertificateException {
         CertificateFactory cf = CertificateFactory.getInstance("X509");
         return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(der));
-    }
-
-    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-    static String toHex(byte[] bytes) {
-        char[] hex = new char[bytes.length * 2];
-        int i = 0;
-        for (byte b : bytes) {
-            hex[i++] = HEX_ARRAY[(b & 0xF0) >>> 4];
-            hex[i++] = HEX_ARRAY[b & 0x0F];
-        }
-        return new String(hex);
-    }
-
-    static byte[] fromHex(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
-        }
-        return data;
     }
 
     static private class ContainerOpen extends ContainerOpenCB

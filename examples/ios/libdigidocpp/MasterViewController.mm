@@ -83,7 +83,7 @@
             if(unzResult != UNZ_OK)
                 break;
             std::string fileNameTmp(fileInfo.size_filename, 0);
-            unzResult = unzGetCurrentFileInfo(open, &fileInfo, fileNameTmp.c_str(), uLong(fileNameTmp.size()), nullptr, 0, nullptr, 0);
+            unzResult = unzGetCurrentFileInfo(open, &fileInfo, fileNameTmp.data(), uLong(fileNameTmp.size()), nullptr, 0, nullptr, 0);
             if(unzResult != UNZ_OK)
                 break;
 
@@ -100,10 +100,10 @@
                     break;
 
                 int size = 0;
-                char buf[10240];
+                std::array<char, 10240> buf{};
                 NSMutableData *data = [[NSMutableData alloc] init];
-                while((size = unzReadCurrentFile(open, buf, 10240)) > 0)
-                    [data appendBytes:buf length:size];
+                while((size = unzReadCurrentFile(open, buf.data(), buf.size())) > 0)
+                    [data appendBytes:buf.data() length:size];
                 unzResult = unzCloseCurrentFile(open);
 
                 [data writeToFile:file atomically:YES];
@@ -111,7 +111,7 @@
                 NSString *diagnostics = @"";
                 NSMutableArray *dataFiles = [[NSMutableArray alloc] init];
                 try {
-                    std::unique_ptr<digidoc::Container> d(digidoc::Container::open(file.UTF8String));
+                    auto d = digidoc::Container::openPtr(file.UTF8String);
                     for (const digidoc::DataFile *f: d->dataFiles()) {
                         [dataFiles addObject:@{
                             @"f": [NSString stdstring:f->fileName()],
