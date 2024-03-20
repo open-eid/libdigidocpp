@@ -65,7 +65,7 @@ jobs:
       if: matrix.target == 'osx'
       uses: actions/upload-artifact@v4
       with:
-        name: pkgs
+        name: macOS
         path: macOS/libdigidocpp*.*
     - name: Archive artifacts
       if: matrix.target != 'osx'
@@ -74,19 +74,19 @@ jobs:
         name: ${{ matrix.target }}
         path: libdigidocpp*.zip
   fedora:
-    name: Build on Fedora to ${{ matrix.container }}
+    name: Build on Fedora ${{ matrix.container }}
     runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
+    container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:38', 'fedora:39']
+        container: [38, 39]
     steps:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
           git gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel xsd minizip-devel
     - name: Install CMake
-      if: matrix.container == 'fedora:39'
+      if: matrix.container == 39
       run: |
         dnf install -y --setopt=install_weak_deps=False wget
         wget -q https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.sh
@@ -101,17 +101,17 @@ jobs:
         cmake --build build
         cmake --build build --target package
     - name: Archive artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: rpms
+        name: fedora_${{ matrix.container }}
         path: build/libdigidocpp*.rpm
   ubuntu:
-    name: Build on Ubuntu to ${{ matrix.container }}
+    name: Build on Ubuntu ${{ matrix.container }}
     runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
+    container: ubuntu:${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:23.10']
+        container: ['20.04', '22.04', '23.10']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions
@@ -135,9 +135,9 @@ jobs:
     - name: Lintian
       run: lintian *.deb;
     - name: Archive artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: debs
+        name: ubuntu_${{ matrix.container }}
         path: libdigidocpp*.*
   windows:
     name: Build on Windows
@@ -172,8 +172,8 @@ jobs:
         VCPKG_DEFAULT_TRIPLET: ${{ matrix.platform }}-windows
         VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
     - name: Install dependencies
-      run: choco install doxygen.install swig -y > $null
-    - uses: actions/setup-python@v4
+      run: choco install doxygen.install -y > $null
+    - uses: actions/setup-python@v5
       with:
         python-version: 3.11
         architecture: ${{ matrix.platform }}
@@ -182,7 +182,7 @@ jobs:
     - name: Install WiX
       run: |
         dotnet tool install -g wix
-        wix extension -g add WixToolset.UI.wixext
+        wix extension -g add WixToolset.UI.wixext/4.0.4
     - name: Setup dev env
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -198,9 +198,9 @@ jobs:
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
           -boost
     - name: Archive artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: msi
+        name: msi_${{ matrix.toolset }}_${{ matrix.platform }}
         path: ./*.msi
   pages:
     name: Deploy pages
@@ -263,7 +263,7 @@ jobs:
   codeql:
     name: Run CodeQL tests
     if: github.repository == 'open-eid/libdigidocpp'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       security-events: write
     steps:
@@ -272,9 +272,9 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: cpp
         queries: +security-and-quality
@@ -287,7 +287,7 @@ jobs:
           -DBUILD_TOOLS=NO
         cmake --build build
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         upload: False
         output: sarif-results
@@ -303,6 +303,6 @@ jobs:
         input: sarif-results/cpp.sarif
         output: sarif-results/cpp.sarif
     - name: Upload results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: sarif-results/cpp.sarif
