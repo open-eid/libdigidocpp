@@ -26,6 +26,10 @@
 #include <libxml/xmlschemas.h>
 #include <libxml/c14n.h> // needs to be last to workaround old libxml2 errors
 
+#include <xmlsec/xmltree.h>
+#include <xmlsec/xmldsig.h>
+#include <xmlsec/crypto.h>
+
 #include <openssl/evp.h>
 
 #include <memory>
@@ -162,6 +166,12 @@ struct XMLElem
     pointer d{};
 };
 
+struct XMLName
+{
+    std::string_view name = {};
+    std::string_view ns = {};
+};
+
 struct XMLNode: public XMLElem<xmlNode>
 {
     struct iterator: XMLElem<xmlNode>
@@ -221,6 +231,11 @@ struct XMLNode: public XMLElem<xmlNode>
         return next;
     }
 
+    operator std::vector<unsigned char>()
+    {
+        return from_base64(operator sv());
+    }
+
     XMLNode& operator=(sv text) noexcept
     {
         if(!d)
@@ -235,12 +250,11 @@ struct XMLNode: public XMLElem<xmlNode>
     {
         return find(*begin(), name, ns());
     }
-};
 
-struct XMLName
-{
-    std::string_view name = {};
-    std::string_view ns = {};
+    constexpr XMLNode operator/(const XMLName &name) const noexcept
+    {
+        return find(*begin(), name.name, name.ns);
+    }
 };
 
 struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
@@ -263,7 +277,7 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
     }
 
     XMLDocument(std::string_view path, const XMLName &n = {}) noexcept
-        : XMLDocument(xmlParseFile(path.data()), n)
+        : XMLDocument(path.empty() ? nullptr : xmlParseFile(path.data()), n)
     {}
 
     static XMLDocument openStream(std::istream &is, const XMLName &name = {}, bool hugeFile = false)
@@ -366,6 +380,22 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
             return false;
         xmlSchemaSetValidErrors(validate.get(), schemaValidationError, schemaValidationWarning, nullptr);
         return xmlSchemaValidateDoc(validate.get(), get()) == 0;
+    }
+
+    static bool verifySignature(XMLNode signature) noexcept
+    {
+        auto mngr = make_unique_ptr(xmlSecKeysMngrCreate(), xmlSecKeysMngrDestroy);
+        if(!mngr)
+            return false;
+        if(xmlSecCryptoAppDefaultKeysMngrInit(mngr.get()) < 0)
+            return false;
+        auto ctx = make_unique_ptr(xmlSecDSigCtxCreate(mngr.get()), xmlSecDSigCtxDestroy);
+        if(!ctx)
+            return false;
+        ctx->keyInfoReadCtx.flags |= XMLSEC_KEYINFO_FLAGS_X509DATA_DONT_VERIFY_CERTS;
+        if(xmlSecDSigCtxVerify(ctx.get(), signature.d) < 0)
+            return false;
+        return ctx->status == xmlSecDSigStatusSucceeded;
     }
 
     static void schemaValidationError(void */*ctx*/, const char *msg, ...) noexcept

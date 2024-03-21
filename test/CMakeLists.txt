@@ -29,15 +29,15 @@ add_test(NAME TSLTest_CA-non-qa
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
 add_test(NAME TSLTest_CA-withdrawn
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
 add_test(NAME TSLTest_CA-withdrawn-granted-before
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn-granted-before.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
-add_test(NAME TSLTest_CA-withdrawn-granted-after
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn-granted-after.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
+add_test(NAME TSLTest_CA-withdrawn-granted-later
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn-granted-later.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
 add_test(NAME TSLTest_OCSP-invalid-type
@@ -52,8 +52,8 @@ add_test(NAME TSLTest_OCSP-withdrawn-granted-before
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-withdrawn-granted-before.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
-add_test(NAME TSLTest_OCSP-withdrawn-granted-after
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-withdrawn-granted-after.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
+add_test(NAME TSLTest_OCSP-withdrawn-granted-later
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-withdrawn-granted-later.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
 add_test(NAME TSLTest_TSA-invalid-type
@@ -68,8 +68,8 @@ add_test(NAME TSLTest_TSA-withdrawn-granted-before
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-TSA-withdrawn-granted-before.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
-add_test(NAME TSLTest_TSA-withdrawn-granted-after
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-TSA-withdrawn-granted-after.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
+add_test(NAME TSLTest_TSA-withdrawn-granted-later
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-TSA-withdrawn-granted-later.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
 add_test(NAME TSLTest_EE_T-no_QCStatement

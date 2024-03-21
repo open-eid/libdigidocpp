@@ -21,34 +21,36 @@
 
 #include "X509Cert.h"
 
+#include "XMLDocument.h"
+
 #include <map>
 #include <optional>
 
 namespace digidoc
 {
+struct XMLNode;
 class Exception;
-namespace tsl { class TrustStatusListType; class InternationalNamesType; class OtherTSLPointerType; }
 
-class TSL
+class TSL: private XMLDocument
 {
 public:
     struct Qualifier { std::vector<std::string> qualifiers; std::vector<std::vector<std::string>> policySet; std::vector<std::map<X509Cert::KeyUsage,bool>> keyUsage; std::string assert_; };
     using Qualifiers = std::optional<std::vector<Qualifier>>;
-    struct Service { std::vector<X509Cert> certs; std::map<time_t,Qualifiers> validity; std::string type, additional, name; };
+    struct Service { std::vector<X509Cert> certs; std::map<std::string,Qualifiers> validity; std::string type, additional, name; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
 
-    TSL(std::string file = {});
+    TSL(const std::string &file = {});
     bool isExpired() const;
-    void validate(const X509Cert &cert) const;
+    void validate() const;
     void validate(const std::vector<X509Cert> &certs, int recursion = 0) const;
 
-    std::string_view type() const;
-    std::string_view operatorName() const;
-    std::string territory() const;
+    std::string_view type() const noexcept;
+    std::string_view operatorName() const noexcept;
+    std::string_view territory() const noexcept;
     unsigned long long sequenceNumber() const;
-    std::string issueDate() const;
-    std::string nextUpdate() const;
-    std::string url() const;
+    std::string_view issueDate() const noexcept;
+    std::string_view nextUpdate() const noexcept;
+    std::string_view url() const noexcept;
 
     std::vector<Pointer> pointers() const;
     std::vector<Service> services() const;
@@ -57,6 +59,7 @@ public:
     static std::vector<Service> parse();
 
 private:
+    std::string path() const;
     std::vector<std::string> pivotURLs() const;
     X509Cert signingCert() const;
     std::vector<X509Cert> signingCerts() const;
@@ -68,14 +71,12 @@ private:
     static std::vector<Service> parse(const std::string &url, const std::vector<X509Cert> &certs,
         const std::string &cache, const std::string &territory);
     static TSL parseTSL(const std::string &url, const std::vector<X509Cert> &certs,
-        const std::string &cache, const std::string &territory);
-    template<class Info>
-    static bool parseInfo(const Info &info, Service &s);
-    static std::vector<X509Cert> serviceDigitalIdentities(const tsl::OtherTSLPointerType &other,
-        std::string_view region);
-    static std::string_view toString(const tsl::InternationalNamesType &obj, std::string_view lang = "en");
+        const std::string &cache, const std::string &territory) ;
+    static bool parseInfo(XMLNode info, Service &s);
+    static std::vector<X509Cert> serviceDigitalIdentity(XMLNode other, std::string_view ctx);
+    static std::vector<X509Cert> serviceDigitalIdentities(XMLNode other, std::string_view ctx);
+    static std::string_view toString(XMLNode obj, std::string_view lang = "en") noexcept;
 
-    std::shared_ptr<tsl::TrustStatusListType> tsl;
-    std::string path;
+    XMLNode schemeInformation;
 };
 }

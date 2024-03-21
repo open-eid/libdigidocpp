@@ -55,6 +55,8 @@
       <File Name="XalanMessages_1_12.dll" />
       <File Name="xsec_2_0.dll" />
       <File Name="libxml2.dll" />
+      <File Name="libxmlsec1.dll" />
+      <File Name="libxmlsec1-openssl.dll" />
     </ComponentGroup>
 
     <ComponentGroup Id="Libraries" Source="$(var.libdigidocpp)\bin">

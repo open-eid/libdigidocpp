@@ -24,7 +24,6 @@
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/TSL.h"
 #include "util/DateTime.h"
-#include "util/File.h"
 #include "util/log.h"
 
 #include <openssl/conf.h>
@@ -32,7 +31,6 @@
 #include <openssl/x509v3.h>
 
 #include <algorithm>
-#include <iomanip>
 
 using namespace digidoc;
 using namespace std;
@@ -80,7 +78,7 @@ X509CertStore::~X509CertStore() = default;
 
 void X509CertStore::activate(const X509Cert &cert) const
 {
-    if(std::max(TSL::activate(cert.issuerName("C")), TSL::activate(cert.subjectName("C"))))
+    if(std::max<bool>(TSL::activate(cert.issuerName("C")), TSL::activate(cert.subjectName("C"))))
         d->update();
 }
 
@@ -197,7 +195,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
         X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
         if(!(X509_VERIFY_PARAM_get_flags(param) & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
             return 1;
-        auto current = X509_VERIFY_PARAM_get_time(param);
+        auto current = util::date::to_string(X509_VERIFY_PARAM_get_time(param));
         for(auto i = s.validity.crbegin(), end = s.validity.crend(); i != end; ++i)
         {
             if(current >= i->first)

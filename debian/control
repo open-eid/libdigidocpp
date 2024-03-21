@@ -4,10 +4,12 @@ Priority: optional
 Maintainer: RIA <info@ria.ee>
 Build-Depends:
  debhelper-compat (= 12),
+ pkg-config,
  cmake,
  libxml-security-c-dev,
  xsdcxx (>= 4.0) | xsd (>= 4.0),
  libxml2-dev,
+ libxmlsec1-dev,
  doxygen,
  swig,
  java11-sdk-headless,

@@ -33,6 +33,7 @@ namespace digidoc
         public:
             static struct tm gmtime(time_t t);
             static time_t mkgmtime(struct tm &t);
+            static std::string to_string(time_t t);
             static std::string to_string(const tm &date);
             static std::string to_string(const xml_schema::DateTime &time);
             static time_t xsd2time_t(const xml_schema::DateTime &time);
