@@ -191,16 +191,20 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
                 return false;
             }))
             continue;
-        X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&s.validity.front()));
+        if(s.validity.empty())
+            continue;
+        X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Qualifiers*>(&s.validity.begin()->second));
         X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
         if(!(X509_VERIFY_PARAM_get_flags(param) & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
             return 1;
-        for(const TSL::Validity &v: s.validity)
+        auto current = X509_VERIFY_PARAM_get_time(param);
+        for(auto i = s.validity.crbegin(), end = s.validity.crend(); i != end; ++i)
         {
-            if(X509_VERIFY_PARAM_get_time(param) >= v.start &&
-                (v.end == 0 || X509_VERIFY_PARAM_get_time(param) <= v.end))
+            if(current >= i->first)
             {
-                X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Validity*>(&v));
+                if(!i->second.has_value())
+                    break;
+                X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Qualifiers*>(&i->second));
                 return 1;
             }
         }
@@ -234,7 +238,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
     if(noqscd)
         return true;
 
-    const auto *v = static_cast<const TSL::Validity*>(X509_STORE_CTX_get_ex_data(csc.get(), 0));
+    const auto *qualifiers = static_cast<const TSL::Qualifiers*>(X509_STORE_CTX_get_ex_data(csc.get(), 0));
     const vector<string> policies = cert.certificatePolicies();
     const vector<string> qcstatement = cert.qcStatements();
     const vector<X509Cert::KeyUsage> keyUsage = cert.keyUsage();
@@ -264,7 +268,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
         });
     };
 
-    for(const TSL::Qualifier &q: v->qualifiers)
+    for(const TSL::Qualifier &q: qualifiers->value())
     {
         if(q.assert_ == "all")
         {
