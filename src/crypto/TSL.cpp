@@ -49,18 +49,20 @@ using namespace std;
 using namespace xercesc;
 using namespace xml_schema;
 
-const set<string_view> TSL::SCHEMES_URI = {
+namespace digidoc {
+
+constexpr array SCHEMES_URI {
     "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/schemes",
     "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUlistofthelists",
 };
 
-const set<string_view> TSL::GENERIC_URI = {
+constexpr array GENERIC_URI {
     "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/TSLType/generic",
     "http://uri.etsi.org/TrstSvc/TSLtype/generic/eSigDir-1999-93-EC-TrustedList",
     "http://uri.etsi.org/TrstSvc/TrustedList/TSLType/EUgeneric",
 };
 
-const set<string_view> TSL::SERVICESTATUS_START = {
+constexpr array SERVICESTATUS_START {
     "http://uri.etsi.org/TrstSvc/eSigDir-1999-93-EC-TrustedList/Svcstatus/undersupervision",
     //ts_119612v010201
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision",
@@ -72,7 +74,7 @@ const set<string_view> TSL::SERVICESTATUS_START = {
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/recognisedatnationallevel",
 };
 
-const set<string_view> TSL::SERVICESTATUS_END = {
+constexpr array SERVICESTATUS_END {
     //ts_119612v010201
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionceased",
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionrevoked",
@@ -83,7 +85,7 @@ const set<string_view> TSL::SERVICESTATUS_END = {
     "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/deprecatedatnationallevel",
 };
 
-const set<string_view> TSL::SERVICES_SUPPORTED = {
+constexpr array SERVICES_SUPPORTED {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
     //"http://uri.etsi.org/TrstSvc/Svctype/CA/PKC", //???
     //"http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC", //???
@@ -101,13 +103,15 @@ constexpr bool find(const C &list, const T &value)
     return find(list.begin(), list.end(), value) != list.end();
 }
 
+}
+
 
 
 TSL::TSL(string file)
     : path(std::move(file))
 {
     try {
-        if(!File::fileExists(path))
+        if(path.empty() || File::fileSize(path) == 0)
             return;
         Properties properties;
         properties.schema_location("http://uri.etsi.org/02231/v2#",
@@ -149,10 +153,10 @@ bool TSL::activate(const string &territory)
     if(territory.size() != 2)
         return false;
     string cache = CONF(TSLCache);
-    string path = cache + "/" + territory + ".xml";
+    string path = cache + '/' + territory + ".xml";
     if(File::fileExists(path))
         return false;
-    ofstream(File::encodeName(path), ofstream::binary) << " ";
+    ofstream(File::encodeName(path), ofstream::binary) << ' ';
     return true;
 }
 
@@ -172,8 +176,7 @@ vector<TSL::Service> TSL::services() const
             Service s;
             s.type = serviceInfo.serviceTypeIdentifier();
             s.name = toString(serviceInfo.serviceName());
-            time_t previousTime = 0;
-            if(!parseInfo(serviceInfo, s, previousTime))
+            if(!parseInfo(serviceInfo, s))
                 continue;
             if(service.serviceHistory())
             {
@@ -182,7 +185,7 @@ vector<TSL::Service> TSL::services() const
                     if(history.serviceTypeIdentifier() != serviceInfo.serviceTypeIdentifier())
                         DEBUG("History service type is not supported %s", history.serviceTypeIdentifier().c_str());
                     else
-                        parseInfo(history, s, previousTime);
+                        parseInfo(history, s);
                 }
             }
             services.push_back(std::move(s));
@@ -232,9 +235,9 @@ string TSL::nextUpdate() const
         string() : date::to_string(tsl->schemeInformation().nextUpdate().dateTime().get());
 }
 
-string TSL::operatorName() const
+string_view TSL::operatorName() const
 {
-    return !tsl ? string() : toString(tsl->schemeInformation().schemeOperatorName());
+    return !tsl ? string_view() : toString(tsl->schemeInformation().schemeOperatorName());
 }
 
 vector<TSL::Service> TSL::parse()
@@ -257,7 +260,7 @@ vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs
         vector< future< vector<TSL::Service> > > futures;
         for(const TSL::Pointer &p: tsl.pointers())
         {
-            if(!File::fileExists(cache + "/" + p.territory + ".xml"))
+            if(!File::fileExists(cache + '/' + p.territory + ".xml"))
                 continue;
             futures.push_back(async(launch::async, [p, cache]{
                 return parse(p.location, p.certs, cache, p.territory + ".xml");
@@ -320,7 +323,7 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
         ofstream(File::encodeName(path), ofstream::binary|fstream::trunc)
             << ifstream(File::encodeName(tmp), fstream::binary).rdbuf();
         error_code ec;
-        std::filesystem::remove(std::filesystem::u8path(tmp), ec);
+        filesystem::remove(filesystem::u8path(tmp), ec);
 
         ofstream(File::encodeName(path + ".etag"), ofstream::trunc) << etag;
         DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
@@ -337,7 +340,7 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
 }
 
 template<class Info>
-bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
+bool TSL::parseInfo(const Info &info, Service &s)
 {
     vector<Qualifier> qualifiers;
     if(info.serviceInformationExtensions())
@@ -347,7 +350,7 @@ bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
             if(extension.critical())
             {
                 if(extension.takenOverByType())
-                    WARN("Found critical extension TakenOverByType '%s'", toString(extension.takenOverByType()->tSPName()).c_str());
+                    WARN("Found critical extension TakenOverByType '%s'", toString(extension.takenOverByType()->tSPName()).data());
                 if(extension.expiredCertsRevocationInfo())
                 {
                     WARN("Found critical extension ExpiredCertsRevocationInfo");
@@ -417,10 +420,11 @@ bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
     }
 
     if(find(SERVICESTATUS_START, info.serviceStatus()))
-        s.validity.push_back({date::xsd2time_t(info.statusStartingTime()), previousTime, std::move(qualifiers)});
-    else if(!find(SERVICESTATUS_END, info.serviceStatus()))
+        s.validity.emplace(date::xsd2time_t(info.statusStartingTime()), std::move(qualifiers));
+    else if(find(SERVICESTATUS_END, info.serviceStatus()))
+        s.validity.emplace(date::xsd2time_t(info.statusStartingTime()), nullopt);
+    else
         DEBUG("Unknown service status %s", info.serviceStatus().c_str());
-    previousTime = date::xsd2time_t(info.statusStartingTime());
     return true;
 }
 
@@ -462,16 +466,16 @@ vector<TSL::Pointer> TSL::pointers() const
     return pointer;
 }
 
-unsigned long long  TSL::sequenceNumber() const
+unsigned long long TSL::sequenceNumber() const
 {
     return !tsl ? 0 : tsl->schemeInformation().tSLSequenceNumber();
 }
 
 vector<X509Cert> TSL::serviceDigitalIdentities(const tsl::OtherTSLPointerType &other, string_view region)
 {
-    if(!other.serviceDigitalIdentities())
-        return {};
     vector<X509Cert> result;
+    if(!other.serviceDigitalIdentities())
+        return result;
     for(const auto &service: other.serviceDigitalIdentities()->serviceDigitalIdentity())
     {
         for(const auto &digitalID: service.digitalId())
@@ -509,9 +513,9 @@ X509Cert TSL::signingCert() const
 
 vector<X509Cert> TSL::signingCerts() const
 {
-    if(!tsl || !tsl->schemeInformation().pointersToOtherTSL())
-        return {};
     vector<X509Cert> result;
+    if(!tsl || !tsl->schemeInformation().pointersToOtherTSL())
+        return result;
     for(const auto &other: tsl->schemeInformation().pointersToOtherTSL()->otherTSLPointer())
     {
         vector<X509Cert> certs = serviceDigitalIdentities(other, "pivot");
@@ -526,7 +530,7 @@ string TSL::territory() const
         string() : tsl->schemeInformation().schemeTerritory().get();
 }
 
-string TSL::toString(const InternationalNamesType &obj, string_view lang)
+string_view TSL::toString(const InternationalNamesType &obj, string_view lang)
 {
     for(const InternationalNamesType::NameType &name: obj.name())
         if(name.lang() == lang)
@@ -534,9 +538,9 @@ string TSL::toString(const InternationalNamesType &obj, string_view lang)
     return obj.name().front();
 }
 
-string TSL::type() const
+string_view TSL::type() const
 {
-    return !tsl ? string() : tsl->schemeInformation().tSLType();
+    return !tsl ? string_view() : tsl->schemeInformation().tSLType();
 }
 
 string TSL::url() const
@@ -681,7 +685,7 @@ bool TSL::validateRemoteDigest(const string &url)
 
     vector<unsigned char> digest;
     if(r.content.size() == 32)
-        digest.assign(r.content.c_str(), r.content.c_str() + r.content.size());
+        digest.assign(r.content.cbegin(), r.content.cend());
     else
     {
         r.content.erase(r.content.find_last_not_of(" \n\r\t") + 1);
