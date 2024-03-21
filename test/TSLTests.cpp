@@ -28,9 +28,9 @@ class TSLFixture: public DigiDocPPFixture
 {
 public:
     TSLFixture()
+        : DigiDocPPFixture{boost::unit_test::framework::master_test_suite().argv[
+            boost::unit_test::framework::master_test_suite().argc - 3]}
     {
-        copyTSL(boost::unit_test::framework::master_test_suite().argv[
-            boost::unit_test::framework::master_test_suite().argc - 3]);
         digidoc::initialize("untitestboost");
     }
 };
