@@ -25,6 +25,8 @@
 #include <libxml/xmlschemas.h>
 
 #include <memory>
+#include <istream>
+#include <ostream>
 
 namespace digidoc {
 
@@ -55,10 +57,15 @@ struct XMLElem
     template<class C>
     constexpr static C find(C n, xmlElementType type) noexcept
     {
-        for(; n; n = n->next)
-            if(n->type == type)
-                return n;
-        return {};
+        for(; n && n->type != type; n = n->next);
+        return n;
+    }
+
+    template<class C>
+    constexpr static C find(C n, sv name, sv ns) noexcept
+    {
+        for(; n && (n.name() != name || n.ns() != ns); ++n);
+        return n;
     }
 
     constexpr static sv to_string_view(const xmlChar *str) noexcept
@@ -87,6 +94,13 @@ struct XMLElem
         return *this;
     }
 
+    constexpr auto operator++(int) noexcept
+    {
+        auto c = *this;
+        d = find(operator++(), c.name(), c.ns()).d;
+        return c;
+    }
+
     constexpr operator sv() const noexcept
     {
         auto text = find(d ? d->children : nullptr, XML_TEXT_NODE);
@@ -98,10 +112,6 @@ struct XMLElem
 
 struct XMLNode: public XMLElem<xmlNode>
 {
-    struct Name_NS {
-        sv name, ns;
-    };
-
     struct iterator: XMLElem<xmlNode>
     {
         using iterator_category = std::forward_iterator_tag;
@@ -137,12 +147,12 @@ struct XMLNode: public XMLElem<xmlNode>
 
     constexpr sv property(sv name, sv ns = {}) const noexcept
     {
-        for(XMLElem<xmlAttr> a{d ? d->properties : nullptr}; a; ++a)
-        {
-            if(a.name() == name && a.ns() == ns)
-                return a;
-        }
-        return {};
+        return find(XMLElem<xmlAttr>{d ? d->properties : nullptr}, name, ns);
+    }
+
+    void setProperty(sv name, sv value, sv ns) const noexcept
+    {
+        setProperty(name, value, searchNS(ns));
     }
 
     void setProperty(sv name, sv value, xmlNsPtr ns = {}) const noexcept
@@ -168,6 +178,11 @@ struct XMLNode: public XMLElem<xmlNode>
         xmlFree(content);
         return *this;
     }
+
+    constexpr XMLNode operator/(sv name) const noexcept
+    {
+        return find(*begin(), name, ns());
+    }
 };
 
 struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
@@ -186,6 +201,20 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
         : XMLDocument(xmlParseFile(path.data()), name)
     {}
 
+    static XMLDocument openStream(std::istream &is, std::string_view name = {}, std::string_view ns = {})
+    {
+        auto ctxt = make_unique_ptr(xmlCreateIOParserCtxt(nullptr, nullptr, [](void *context, char *buffer, int len) -> int {
+            auto *is = static_cast<std::istream *>(context);
+            is->read(buffer, len);
+            return is->good() || is->eof() ? int(is->gcount()) : -1;
+        }, nullptr, &is, XML_CHAR_ENCODING_NONE), xmlFreeParserCtxt);
+        ctxt->linenumbers = 1;
+        auto result = xmlParseDocument(ctxt.get());
+        if(result != 0 || !ctxt->wellFormed)
+            THROW("%s", ctxt->lastError.message);
+        return {ctxt->myDoc, name, ns};
+    }
+
     static XMLDocument create(std::string_view name = {}, std::string_view href = {}, std::string_view prefix = {}) noexcept
     {
         XMLDocument doc(xmlNewDoc(nullptr));
@@ -202,6 +231,15 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
     bool save(std::string_view path) const noexcept
     {
         return xmlSaveFormatFileEnc(path.data(), get(), "UTF-8", 1) > 0;
+    }
+
+    bool save(std::ostream &os) const noexcept
+    {
+        auto *buf = xmlOutputBufferCreateIO([](void *context, const char *buffer, int len) {
+            auto *os = static_cast<std::ostream *>(context);
+            return os->write(buffer, len) ? len : -1;
+        }, nullptr, &os, nullptr);
+        return xmlSaveFormatFileTo(buf, get(), "UTF-8", 1) > 0;
     }
 
     bool validateSchema(const std::string &schemaPath) const noexcept

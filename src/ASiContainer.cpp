@@ -172,7 +172,7 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
 
     ZipSerialize::Properties prop { appInfo(), File::modifiedTime(path), File::fileSize(path) };
     bool useTempFile = prop.size > MAX_MEM_FILE;
-    zproperty(File::fileName(path), std::move(prop));
+    zproperty(fileName, std::move(prop));
     unique_ptr<istream> is;
     if(useTempFile)
     {
@@ -185,7 +185,7 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
             *data << file.rdbuf();
         is = std::move(data);
     }
-    addDataFilePrivate(std::move(is), fileName, mediaType);
+    addDataFilePrivate(std::move(is), std::move(fileName), mediaType);
 }
 
 void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
@@ -208,9 +208,9 @@ void ASiContainer::addDataFileChecks(const string &fileName, const string &media
         THROW("MediaType does not meet format requirements (RFC2045, section 5.1) '%s'.", mediaType.c_str());
 }
 
-void ASiContainer::addDataFilePrivate(unique_ptr<istream> is, const string &fileName, const string &mediaType)
+void ASiContainer::addDataFilePrivate(unique_ptr<istream> is, string fileName, string mediaType)
 {
-    d->documents.push_back(new DataFilePrivate(std::move(is), fileName, mediaType));
+    d->documents.push_back(new DataFilePrivate(std::move(is), std::move(fileName), std::move(mediaType)));
 }
 
 /**

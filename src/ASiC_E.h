@@ -40,7 +40,6 @@ namespace digidoc
           static const std::string_view ASIC_TS_PROFILE;
           static const std::string_view ASIC_TMA_PROFILE;
           static const std::string_view ASIC_TSA_PROFILE;
-          static const std::string MANIFEST_NAMESPACE;
 
           ~ASiC_E() final;
           void save(const std::string &path = {}) final;
