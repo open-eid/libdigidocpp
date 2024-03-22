@@ -6,6 +6,3 @@ DEB_MAKE_CHECK_TARGET = test
 
 override_dh_builddeb:
 	dh_builddeb -- -Zgzip
-
-override_dh_auto_test:
-	DEB_BUILD_OPTIONS=parallel=1 dh_auto_test

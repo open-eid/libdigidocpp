@@ -4,7 +4,7 @@ permissions:
   contents: read
 env:
   BUILD_NUMBER: ${{ github.run_number }}
-  CMAKE_BUILD_PARALLEL_LEVEL: 3
+  CMAKE_BUILD_PARALLEL_LEVEL: 4
 jobs:
   macos:
     name: Build on macOS for ${{ matrix.target }}
