@@ -16,9 +16,9 @@
 1. Install dependencies
 
         # Ubuntu
-        sudo apt install cmake xxd libxml-security-c-dev xsdcxx libssl-dev zlib1g-dev
+        sudo apt install cmake xxd libxml-security-c-dev xsdcxx libxml2-dev libssl-dev zlib1g-dev
         # Fedora
-        sudo dnf install cmake gcc-c++ openssl-devel xerces-c-devel xml-security-c-devel xsd zlib-devel vim-common
+        sudo dnf install cmake gcc-c++ openssl-devel xerces-c-devel xml-security-c-devel xsd libxml2-devel zlib-devel vim-common
 
 	* doxygen - Optional, for API documentation
 	* libboost-test-dev - Optional, for unittests

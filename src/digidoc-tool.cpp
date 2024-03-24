@@ -917,7 +917,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
 {
     int returnCode = EXIT_SUCCESS;
     string cache = CONF(TSLCache);
-    TSL t(cache + "/" + File::fileName(CONF(TSLUrl)));
+    TSL t((cache + "/").append(File::fileName(CONF(TSLUrl))));
     cout << "TSL: " << t.url() << endl
         << "         Type: " << t.type() << endl
         << "    Territory: " << t.territory() << endl
