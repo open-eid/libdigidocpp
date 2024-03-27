@@ -145,7 +145,7 @@ add_library(digidocpp_util STATIC
     util/log.cpp
 )
 
-target_link_libraries(digidocpp_util PRIVATE $<$<PLATFORM_ID:Darwin>:-framework\ CoreFoundation>)
+target_link_libraries(digidocpp_util PRIVATE $<$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:iOS>>:-framework\ CoreFoundation>)
 
 add_library(digidocpp_priv STATIC
     ${xsd_SRCS}
@@ -328,7 +328,7 @@ install( TARGETS digidocpp
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     RESOURCE DESTINATION ${DIGIDOCPP_CONFIG_DIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp
-    FRAMEWORK DESTINATION /Library/Frameworks
+    FRAMEWORK DESTINATION ${FRAMEWORK_DESTINATION}
 )
 
 if(WIN32)
@@ -357,13 +357,12 @@ source_group(Resources FILES ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf)
 source_group(Resources/schemas FILES ${SCHEMA_FILES})
 
 if( FRAMEWORK )
-    add_custom_command( TARGET digidoc-tool POST_BUILD
-        COMMAND cp $<TARGET_FILE:digidoc-tool> $<TARGET_FILE_DIR:digidocpp>/Resources )
+    install(TARGETS minizip DESTINATION ${CMAKE_INSTALL_LIBDIR}) # for example ios application
     set_source_files_properties( ${SCHEMA_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/schema )
     set_source_files_properties( ${CRYPTO_HEADER} PROPERTIES MACOSX_PACKAGE_LOCATION Headers/crypto )
     list( GET XmlSecurityC_LIBRARIES 0 LIBPATH )
     get_filename_component( LIBPATH ${LIBPATH} PATH )
-    add_custom_target( embedlibs DEPENDS digidoc-tool
+    add_custom_target( embedlibs DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
         COMMAND mkdir -p $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND ln -s -f Versions/Current/Libraries $<TARGET_BUNDLE_DIR:digidocpp>
         COMMAND cp ${XmlSecurityC_LIBRARIES} $<TARGET_FILE_DIR:digidocpp>/Libraries
@@ -396,31 +395,41 @@ if( FRAMEWORK )
             -change '${LIBPATH}/libxml-security-c.20.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
             -change '${LIBPATH}/libxalan-c.112.dylib' '@loader_path/Libraries/libxalan-c.dylib'
             $<TARGET_FILE:digidocpp>
-        COMMAND install_name_tool
-            -change '${LIBPATH}/libcrypto.3.dylib' '@executable_path/../Libraries/libcrypto.dylib'
-            -change '${LIBPATH}/libssl.3.dylib' '@executable_path/../Libraries/libssl.dylib'
-            -change '${LIBPATH}/libxerces-c-3.2.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
-            -change '${LIBPATH}/libxml-security-c.20.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
-            -change '${LIBPATH}/libxalan-c.112.dylib' '@executable_path/../Libraries/libxalan-c.dylib'
-            $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
-        COMMAND touch $<TARGET_FILE:digidoc-tool>
     )
-    add_custom_target( codesign DEPENDS digidoc-tool
+    if(BUILD_TOOLS)
+        add_custom_command(TARGET digidoc-tool POST_BUILD
+            COMMAND cp $<TARGET_FILE:digidoc-tool> $<TARGET_FILE_DIR:digidocpp>/Resources)
+        add_custom_command(TARGET embedlibs POST_BUILD
+            COMMAND install_name_tool
+                -change '${LIBPATH}/libcrypto.3.dylib' '@executable_path/../Libraries/libcrypto.dylib'
+                -change '${LIBPATH}/libssl.3.dylib' '@executable_path/../Libraries/libssl.dylib'
+                -change '${LIBPATH}/libxerces-c-3.2.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
+                -change '${LIBPATH}/libxml-security-c.20.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
+                -change '${LIBPATH}/libxalan-c.112.dylib' '@executable_path/../Libraries/libxalan-c.dylib'
+                $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
+            COMMAND touch $<TARGET_FILE:digidoc-tool>
+        )
+    endif()
+    if(IOS)
+        add_custom_command(TARGET digidocpp POST_BUILD
+            COMMAND /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string ${CMAKE_OSX_DEPLOYMENT_TARGET}" $<TARGET_FILE_DIR:digidocpp>/Info.plist)
+    endif()
+    add_custom_target(codesign DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
         COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}"
             $<TARGET_FILE_DIR:digidocpp>/Libraries/*
-            $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
+            $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool>
             $<TARGET_BUNDLE_DIR:digidocpp>
-        COMMAND touch $<TARGET_FILE:digidoc-tool>
+        COMMAND touch $<TARGET_FILE:digidocpp> $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE:digidoc-tool>>
     )
-    add_custom_target( pkgbuild DEPENDS digidoc-tool
+    add_custom_target(pkgbuild DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
         COMMAND make install DESTDIR=install
         COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>"
             ${CMAKE_BINARY_DIR}/libdigidocpp_${VERSION}$ENV{VER_SUFFIX}.pkg
         COMMAND_EXPAND_LISTS
     )
-    add_custom_target( zipdebug DEPENDS digidoc-tool
+    add_custom_target(zipdebug DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
         COMMAND dsymutil -o libdigidocpp.dSYM $<TARGET_FILE:digidocpp>
-        COMMAND dsymutil -o libdigidocpp.dSYM $<TARGET_FILE:digidoc-tool>
+            $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE:digidoc-tool>>
         COMMAND zip -r ${CMAKE_BINARY_DIR}/libdigidocpp-dbg_${VERSION}$ENV{VER_SUFFIX}.zip libdigidocpp.dSYM
     )
 else()
