@@ -319,7 +319,7 @@ ConfV4* ConfV4::instance() { return dynamic_cast<ConfV4*>(Conf::instance()); }
 vector<X509Cert> ConfV4::verifyServiceCerts() const
 {
     if(X509Cert cert = verifyServiceCert())
-        return { cert };
+        return { std::move(cert) };
     return {};
 }
 

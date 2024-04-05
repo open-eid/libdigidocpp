@@ -334,8 +334,10 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
             return is->good() || is->eof() ? int(is->gcount()) : -1;
         }, nullptr, &is, XML_CHAR_ENCODING_NONE), xmlFreeParserCtxt);
         ctxt->linenumbers = 1;
+        ctxt->options |= XML_PARSE_NOENT|XML_PARSE_DTDLOAD|XML_PARSE_DTDATTR|XML_PARSE_NONET;
+        ctxt->loadsubset |= XML_DETECT_IDS|XML_COMPLETE_ATTRS;
         if(hugeFile)
-            ctxt->options = XML_PARSE_HUGE;
+            ctxt->options |= XML_PARSE_HUGE;
         auto result = xmlParseDocument(ctxt.get());
         if(result != 0 || !ctxt->wellFormed)
             THROW("%s", ctxt->lastError.message);
