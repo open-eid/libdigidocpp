@@ -117,7 +117,8 @@ void ASiC_E::save(const string &path)
         if(!saved.insert(signature->signatures.get()).second)
             continue;
         stringstream ofs;
-        signature->signatures->save(ofs);
+        if(!signature->signatures->save(ofs))
+            THROW("Failed to create signature XML file.");
         s.addFile(file, ofs, zproperty(file));
     }
 }
@@ -146,8 +147,8 @@ void ASiC_E::addAdESSignature(istream &data)
     try
     {
         auto signatures = make_shared<Signatures>(data, this);
-        for(size_t i = 0, count = signatures->count(); i < count; ++i)
-            addSignature(make_unique<SignatureXAdES_LTA>(signatures, i, this));
+        for(auto s = signatures->signature(); s; s++)
+            addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
     }
     catch(const Exception &e)
     {
@@ -177,7 +178,7 @@ void ASiC_E::createManifest(ostream &os)
     auto doc = XMLDocument::create("manifest", MANIFEST_NS, "manifest");
     doc.setProperty("version", "1.2", MANIFEST_NS);
     auto add = [&doc](string_view path, string_view mime) {
-        auto file = doc.addChild("file-entry", MANIFEST_NS);
+        auto file = doc+"file-entry";
         file.setProperty("full-path", path, MANIFEST_NS);
         file.setProperty("media-type", mime, MANIFEST_NS);
     };
@@ -217,8 +218,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
         set<string_view> manifestFiles;
         bool mimeFound = false;
         auto doc = XMLDocument::openStream(manifestdata, {"manifest", MANIFEST_NS});
-        if(!doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd")))
-            THROW("Failed to parse manifest XML");
+        doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
         for(auto file = doc/"file-entry"; file; file++)
         {
             auto full_path = file.property("full-path", MANIFEST_NS);
@@ -273,8 +273,8 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                     stringstream data;
                     z.extract(file, data);
                     auto signatures = make_shared<Signatures>(data, this);
-                    for(size_t i = 0, count = signatures->count(); i < count; ++i)
-                        addSignature(make_unique<SignatureXAdES_LTA>(signatures, i, this));
+                    for(auto s = signatures->signature(); s; s++)
+                        addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
                 }
                 catch(const Exception &e)
                 {

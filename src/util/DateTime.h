@@ -22,8 +22,6 @@
 #include <ctime>
 #include <string>
 
-#include "xml/xmldsig-core-schema.hxx"
-
 namespace digidoc
 {
     namespace util
@@ -35,9 +33,6 @@ namespace digidoc
             static time_t mkgmtime(struct tm &t);
             static std::string to_string(time_t t);
             static std::string to_string(const tm &date);
-            static std::string to_string(const xml_schema::DateTime &time);
-            static time_t xsd2time_t(const xml_schema::DateTime &time);
-            static xml_schema::DateTime makeDateTime(time_t time);
         };
     }
 }

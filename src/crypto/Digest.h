@@ -70,7 +70,7 @@ namespace digidoc
     class Digest
     {
       public:
-          Digest(const std::string &uri = {});
+          Digest(std::string_view uri = {});
           ~Digest();
           void update(const unsigned char *data, size_t length);
           std::vector<unsigned char> result(const std::vector<unsigned char> &data);

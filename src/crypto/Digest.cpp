@@ -34,14 +34,14 @@ using namespace digidoc;
  * @param uri digest method URI (e.g. 'http://www.w3.org/2001/04/xmlenc#sha256' for SHA256).
  * @throws Exception throws exception if the digest calculator initialization failed.
  */
-Digest::Digest(const string &uri)
+Digest::Digest(string_view uri)
     : d(SCOPE_PTR(EVP_MD_CTX, EVP_MD_CTX_new()))
 {
     if(uri.empty() && Conf::instance()->digestUri() == URI_SHA1)
-        THROW("Unsupported digest method %s", uri.c_str());
+        THROW("Unsupported digest method %.*s", int(uri.size()), uri.data());
     int method = toMethod(uri.empty() ? Conf::instance()->digestUri() : uri);
     if(EVP_DigestInit(d.get(), EVP_get_digestbynid(method)) != 1)
-        THROW_OPENSSLEXCEPTION("Failed to initialize %s digest calculator", uri.c_str());
+        THROW_OPENSSLEXCEPTION("Failed to initialize %.*s digest calculator", int(uri.size()), uri.data());
 }
 
 /**

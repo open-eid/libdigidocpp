@@ -21,47 +21,31 @@
 
 #include "Signature.h"
 
-#include "xml/SecureDOMParser.h"
+#include "XMLDocument.h"
 
 #include <map>
-#include <memory>
-#include <sstream>
 
 namespace digidoc
 {
-    class ASiContainer;
-    class Digest;
-    class Signer;
-    namespace dsig { class SignatureType; }
-    namespace xades { class CertIDType; class DigestAlgAndValueType; class QualifyingPropertiesType; class SignedSignaturePropertiesType; }
-    namespace asic { class XAdESSignaturesType; class Document_signatures; }
+    constexpr std::string_view ASIC_NS {"http://uri.etsi.org/02918/v1.2.1#"};
+    constexpr std::string_view OPENDOCUMENT_NS {"urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0"};
+    constexpr std::string_view DSIG_NS {"http://www.w3.org/2000/09/xmldsig#"};
+    constexpr std::string_view XADES_NS {"http://uri.etsi.org/01903/v1.3.2#"};
+    constexpr std::string_view XADESv141_NS {"http://uri.etsi.org/01903/v1.4.1#"};
+    constexpr std::string_view REF_TYPE {"http://uri.etsi.org/01903#SignedProperties"};
 
-    class Signatures
+    class ASiContainer;
+    class Signer;
+    class Signatures: public XMLDocument
     {
     public:
         explicit Signatures();
         Signatures(std::istream &data, ASiContainer *container);
-        ~Signatures();
 
-        xercesc::DOMElement* element(std::string_view id) const;
-        size_t count() const;
-        void reloadDOM();
-        void save(std::ostream &os) const;
-
-        static const std::string ASIC_NAMESPACE;
-        static const std::string OPENDOCUMENT_NAMESPACE;
-        static const std::string XADES_NAMESPACE;
-        static const std::string XADESv141_NAMESPACE;
-
-        std::unique_ptr<asic::XAdESSignaturesType> asicsignature;
-        std::unique_ptr<asic::Document_signatures> odfsignature;
-
-    private:
-        void parseDOM(std::istream &data, const std::string &schema_location = {});
-        void saveXML(std::ostream &os) const;
-
-        std::unique_ptr<xercesc::DOMDocument> doc;
-        std::stringstream copy;
+        constexpr XMLNode signature() const noexcept
+        {
+            return (*this)/XMLName{"Signature", DSIG_NS};
+        }
     };
 
     class SignatureXAdES_B : public Signature
@@ -69,46 +53,43 @@ namespace digidoc
 
       public:
           SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer);
-          SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, size_t i, ASiContainer *container);
-          ~SignatureXAdES_B() override;
+          SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container);
 
-          std::string id() const override;
-          std::string claimedSigningTime() const override;
+          std::string id() const final;
+          std::string claimedSigningTime() const final;
           std::string trustedSigningTime() const override;
-          X509Cert signingCertificate() const override;
-          std::string signatureMethod() const override;
+          X509Cert signingCertificate() const final;
+          std::string signatureMethod() const final;
           void validate() const final;
           void validate(const std::string &policy) const override;
-          std::vector<unsigned char> dataToSign() const override;
-          void setSignatureValue(const std::vector<unsigned char> &signatureValue) override;
+          std::vector<unsigned char> dataToSign() const final;
+          void setSignatureValue(const std::vector<unsigned char> &signatureValue) final;
 
           // Xades properties
-          std::string policy() const override;
-          std::string SPUri() const override;
-          std::string profile() const override;
-          std::string city() const override;
-          std::string stateOrProvince() const override;
-          std::string streetAddress() const override;
-          std::string postalCode() const override;
-          std::string countryName() const override;
-          std::vector<std::string> signerRoles() const override;
-
-          std::string addReference(const std::string& uri, const std::string& digestUri,
-              const std::vector<unsigned char> &digestValue, const std::string& type = {}, const std::string &canon = {});
-          void addDataObjectFormat(const std::string& uri, const std::string& mime);
+          std::string policy() const final;
+          std::string SPUri() const final;
+          std::string profile() const final;
+          std::string city() const final;
+          std::string stateOrProvince() const final;
+          std::string streetAddress() const final;
+          std::string postalCode() const final;
+          std::string countryName() const final;
+          std::vector<std::string> signerRoles() const final;
 
           std::shared_ptr<Signatures> signatures;
 
       protected:
+          std::string_view canonicalizationMethod() const noexcept;
           std::vector<unsigned char> getSignatureValue() const;
-          xades::QualifyingPropertiesType& qualifyingProperties() const;
-          xades::SignedSignaturePropertiesType& getSignedSignatureProperties() const;
-          void calcDigestOnNode(Digest* calc, std::string_view ns,
-              std::u16string_view tagName, std::string_view canonicalizationMethod) const;
-          static void checkCertID(const xades::CertIDType &certID, const X509Cert &cert);
-          static void checkDigest(const xades::DigestAlgAndValueType &digest, const std::vector<unsigned char> &data);
+          constexpr XMLNode qualifyingProperties() const noexcept
+          {
+              return signature/"Object"/XMLName{"QualifyingProperties", XADES_NS};
+          }
+          constexpr XMLNode signedSignatureProperties() const noexcept;
+          static void checkCertID(XMLNode certID, const X509Cert &cert);
+          static void checkDigest(XMLNode digest, const std::vector<unsigned char> &data);
 
-          dsig::SignatureType *signature {};
+          XMLNode signature;
           ASiContainer *bdoc {};
 
       private:
@@ -118,20 +99,19 @@ namespace digidoc
           {
               const std::vector<unsigned char> SHA1, SHA224, SHA256, SHA384, SHA512;
           };
-          static const std::map<std::string,Policy> policylist;
+          static const std::map<std::string_view,Policy> policylist;
 
-          void setKeyInfo(const X509Cert& cert);
-          void setSigningCertificate(const X509Cert& cert);
-          void setSigningCertificateV2(const X509Cert& cert);
-          template<class T>
-          void setSignatureProductionPlace(const std::string &city, const std::string &streetAddress,
-              const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
-          template<class T>
-          void setSignerRoles(const std::vector<std::string> &signerRoles);
-          void setSigningTime(time_t signingTime);
+          std::string addReference(const std::string& uri, const std::string& digestUri,
+              const std::vector<unsigned char> &digestValue, std::string_view type = {}, std::string_view canon = {});
+          void addDataObjectFormat(const std::string& uri, const std::string& mime);
+          void setSigningCertificate(std::string_view name, const X509Cert& cert) noexcept;
+          void setSignatureProductionPlace(std::string_view name, const std::string &city,
+              const std::string &streetAddress, const std::string &stateOrProvince,
+              const std::string &postalCode, const std::string &countryName) noexcept;
+          void setSignerRoles(std::string_view name, const std::vector<std::string> &signerRoles) noexcept;
+          constexpr XMLNode V1orV2(std::string_view v1, std::string_view v2) const noexcept;
 
           // offline checks
-          void checkSignatureValue() const;
           void checkSigningCertificate(bool noqscd) const;
           void checkKeyInfo() const;
     };

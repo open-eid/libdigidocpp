@@ -21,10 +21,7 @@
 
 #include "log.h"
 
-#include <cstdlib>
-#include <iomanip>
-#include <sstream>
-#include <ctime>
+#include <cstring>
 
 using namespace digidoc::util;
 using namespace std;
@@ -64,56 +61,4 @@ string date::to_string(const tm &date)
     if(strftime(result.data(), result.size() + 1, "%Y-%m-%dT%H:%M:%SZ", &date) == 0)
         return {};
     return result;
-}
-
-/// Dedicated helper for converting xml-schema-style DateTyme into a Zulu-string.
-///
-/// @param time GMT time as code-synth xml-schema type.
-/// @return a string format of date-time e.g. "2007-12-25T14:06:01Z".
-string date::to_string(const xml_schema::DateTime& time)
-{
-    stringstream stream;
-    stream << setfill('0') << dec
-        << setw(4) << time.year() << "-"
-        << setw(2) << time.month() << "-"
-        << setw(2) << time.day() << "T"
-        << setw(2) << time.hours() << ":"
-        << setw(2) << time.minutes() << ":"
-        << setw(2) << time.seconds() << "Z";
-    return stream.str();
-}
-
-time_t date::xsd2time_t(const xml_schema::DateTime &xml)
-{
-    tm t {
-        int(xml.seconds()),
-        xml.minutes(),
-        xml.hours(),
-        xml.day(),
-        xml.month() - 1,
-        xml.year() - 1900,
-        0,
-        0,
-        0,
-#ifndef _WIN32
-        0,
-        nullptr,
-#endif
-    };
-    return mkgmtime(t);
-}
-
-xml_schema::DateTime date::makeDateTime(time_t time)
-{
-    tm lt = gmtime(time);
-    return {
-        lt.tm_year + 1900,
-        static_cast<unsigned short>( lt.tm_mon + 1 ),
-        static_cast<unsigned short>( lt.tm_mday ),
-        static_cast<unsigned short>( lt.tm_hour ),
-        static_cast<unsigned short>( lt.tm_min ),
-        double(lt.tm_sec),
-        0, //zone +0h
-        0, //zone +0min
-    };
 }

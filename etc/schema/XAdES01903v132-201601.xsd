@@ -154,9 +154,11 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 	<!-- End UnsignedProperties-->
 	<!-- Start SignedSignatureProperties-->
 	<!-- Definition changed: added new optional children for EN -->
+	<!--Relaxed (not completly valid) definition of type SignedSignatureProperties:
+	    elements of the type can be given in any order (all vs any)                      -->
 	<xsd:element name="SignedSignatureProperties" type="SignedSignaturePropertiesType"/>
 	<xsd:complexType name="SignedSignaturePropertiesType">
-		<xsd:sequence>
+		<xsd:all>
 			<xsd:element ref="SigningTime" minOccurs="0"/>
 			<xsd:element ref="SigningCertificate" minOccurs="0"/>
 			<xsd:element ref="SigningCertificateV2" minOccurs="0"/>
@@ -165,8 +167,8 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 			<xsd:element ref="SignatureProductionPlaceV2" minOccurs="0"/>
 			<xsd:element ref="SignerRole" minOccurs="0"/>
 			<xsd:element ref="SignerRoleV2" minOccurs="0"/>
-			<xsd:any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
-		</xsd:sequence>
+			<!--xsd:any namespace="##other" minOccurs="0" maxOccurs="unbounded"/-->
+		</xsd:all>
 		<xsd:attribute name="Id" type="xsd:ID" use="optional"/>
 	</xsd:complexType>
 	<!-- End SignedSignatureProperties-->
@@ -342,14 +344,16 @@ EncapsulatedPKIDataType and containers for time-stamp tokens -->
 	</xsd:complexType>
 	<!-- End CommitmentTypeIndication -->
 	<!-- Start SignatureProductionPlace -->
+	<!--Relaxed (not completly valid) definition of type SignatureProductionPlaceType:
+	    elements of the type can be given in any order (all vs any) -->
 	<xsd:element name="SignatureProductionPlace" type="SignatureProductionPlaceType"/>
 	<xsd:complexType name="SignatureProductionPlaceType">
-		<xsd:sequence>
+		<xsd:all>
 			<xsd:element name="City" type="xsd:string" minOccurs="0"/>
 			<xsd:element name="StateOrProvince" type="xsd:string" minOccurs="0"/>
 			<xsd:element name="PostalCode" type="xsd:string" minOccurs="0"/>
 			<xsd:element name="CountryName" type="xsd:string" minOccurs="0"/>
-		</xsd:sequence>
+		</xsd:all>
 	</xsd:complexType>
 	<!-- End SignatureProductionPlace -->
 	<!-- Start SignatureProductionPlaceV2 and SignatureProductionPlaceV2Type -->

@@ -30,6 +30,13 @@
 #include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
 
+#include <xmlsec/xmlsec.h>
+
+constexpr auto VERSION_CHECK(int major, int minor, int patch)
+{
+    return (major<<16)|(minor<<8)|patch;
+}
+
 namespace digidoc
 {
 
@@ -152,14 +159,6 @@ BOOST_AUTO_TEST_CASE(parameters)
 
     X509Crypto test(X509Cert("test.crt", X509Cert::Pem));
     BOOST_CHECK_EQUAL(test.compareIssuerToString("CN=\\\"test\\\""), 0);
-
-    PKCS12Signer signer1("signer1.p12", "signer1");
-    const vector<unsigned char> data{'H','e','l','l','o',' ','w','o','r','l','d'};
-    vector<unsigned char> digest = Digest(URI_SHA256).result(data);
-    vector<unsigned char> signature = signer1.sign(URI_SHA256, digest);
-    BOOST_CHECK_EQUAL(X509Crypto(signer1.cert()).verify(URI_SHA256, digest, signature), true);
-    digest[0] += 1;
-    BOOST_CHECK_EQUAL(X509Crypto(signer1.cert()).verify(URI_SHA256, digest, signature), false);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -375,13 +374,16 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_NO_THROW(d->save());
         BOOST_CHECK_NO_THROW(s->validate());
 
-        // RSA PSS tests
-        d = Container::createPtr(Doc::EXT + ".tmp");
-        BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
-        signer1.setMethod(URI_RSA_PSS_SHA256);
-        BOOST_CHECK_NO_THROW(s = d->sign(&signer1));
-        BOOST_CHECK_NO_THROW(s->validate());
-        BOOST_CHECK_EQUAL(s->signatureMethod(), signer1.method());
+        if constexpr (VERSION_CHECK(XMLSEC_VERSION_MAJOR, XMLSEC_VERSION_MINOR, XMLSEC_VERSION_SUBMINOR) >= VERSION_CHECK(1, 3, 0))
+        {
+            // RSA PSS tests
+            d = Container::createPtr(Doc::EXT + ".tmp");
+            BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+            signer1.setMethod(URI_RSA_PSS_SHA256);
+            BOOST_CHECK_NO_THROW(s = d->sign(&signer1));
+            BOOST_CHECK_NO_THROW(s->validate());
+            BOOST_CHECK_EQUAL(s->signatureMethod(), signer1.method());
+        }
     }
 
     // Remove second Signature
@@ -433,7 +435,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signatureParameters, Doc, DocTypes)
         BOOST_CHECK_EQUAL(s1->stateOrProvince(), "Tartumaa");
         BOOST_CHECK_EQUAL(s1->postalCode(), "12345");
         BOOST_CHECK_EQUAL(s1->countryName(), "Estonia");
-        string time_s = util::date::to_string(util::date::gmtime(time(nullptr))).substr(0, 16);
+        string time_s = util::date::to_string(time(nullptr)).substr(0, 16);
         BOOST_WARN_EQUAL(s1->claimedSigningTime().substr(0, 16), time_s);
         BOOST_WARN_EQUAL(s1->OCSPProducedAt().substr(0, 16), time_s);
         BOOST_CHECK_EQUAL(s1->OCSPCertificate().subjectName("CN").find_first_of("TEST of SK OCSP RESPONDER"), 0U);

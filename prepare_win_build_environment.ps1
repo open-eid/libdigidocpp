@@ -2,21 +2,9 @@
 param(
 	[string]$vcpkg = "vcpkg\vcpkg.exe",
 	[string]$git = "git.exe",
-	[switch]$xsd = $false,
 	[switch]$wix = $false,
 	[switch]$dependencies = $false
 )
-
-if($xsd) {
-	$client = new-object System.Net.WebClient
-	& mkdir xsd
-	foreach($xsdver in @("xsd-4.2.0-x86_64-windows10", "libxsd-4.2.0-windows")) {
-		$client.DownloadFile("https://www.codesynthesis.com/download/xsd/4.2/windows/windows10/x86_64/$xsdver.zip", "$PSScriptRoot\$xsdver.zip")
-		& tar xf "$xsdver.zip"
-		& xcopy /e /r /y $xsdver\*.* xsd
-		& Remove-Item $xsdver -Force -Recurse -ErrorAction Ignore
-	}
-}
 
 if($wix) {
 	& dotnet tool install --global wix

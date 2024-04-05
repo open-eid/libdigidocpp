@@ -19,21 +19,13 @@
 
 #include "X509Crypto.h"
 
-#include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
-#include "util/File.h"
-#include "util/log.h"
 
-#include <openssl/asn1t.h>
-#include <openssl/err.h>
 #include <openssl/ts.h>
-#include <openssl/x509v3.h>
 
 #include <algorithm>
 #include <array>
 #include <charconv>
-#include <cstring>
-#include <iterator>
 
 using namespace digidoc;
 using namespace std;
@@ -96,7 +88,6 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
  *
  * @param issuer name
  * @return 0 if equal, otherwise a number different from 0 is returned
- * @throw IOException if error
  */
 int X509Crypto::compareIssuerToString(string_view name) const
 {
@@ -181,82 +172,4 @@ bool X509Crypto::isRSAKey() const
 {
     EVP_PKEY *key = X509_get0_pubkey(cert.handle());
     return key && EVP_PKEY_base_id(key) == EVP_PKEY_RSA;
-}
-
-/**
- * Verify signature with RSA public key from X.509 certificate.
- *
- * @param digestMethod digest method (e.g NID_sha1 for SHA1, see openssl/obj_mac.h).
- * @param digest digest value, this value is compared with the digest value decrypted from the <code>signature</code>.
- * @param signature signature value, this value is decrypted to get the digest and compared with
- *        the digest value provided in <code>digest</code>.
- * @return returns <code>true</code> if the signature value matches with the digest, otherwise <code>false</code>
- *         is returned.
- * @throws IOException throws exception if X.509 certificate is not missing or does not have a RSA public key.
- */
-bool X509Crypto::verify(const string &method, const vector<unsigned char> &digest, const vector<unsigned char> &signature)
-{
-    if(!cert)
-        THROW("X.509 certificate parameter is not set in RSACrypt, can not verify signature.");
-
-    if(signature.empty())
-        THROW("Signature value is empty.");
-
-    EVP_PKEY *key = X509_get0_pubkey(cert.handle());
-    if(!key)
-        THROW("Certificate does not have a public key, can not verify signature.");
-
-    SCOPE(EVP_PKEY_CTX, ctx, EVP_PKEY_CTX_new(key, nullptr));
-    switch(EVP_PKEY_base_id(key))
-    {
-    case EVP_PKEY_RSA:
-        break;
-    case EVP_PKEY_EC:
-    {
-        SCOPE(ECDSA_SIG, sig, ECDSA_SIG_new());
-        ECDSA_SIG_set0(sig.get(),
-            BN_bin2bn(signature.data(), int(signature.size()/2), nullptr),
-            BN_bin2bn(&signature[signature.size()/2], int(signature.size()/2), nullptr));
-        vector<unsigned char> asn1 = i2d(sig.get(), i2d_ECDSA_SIG);
-        return ctx &&
-            EVP_PKEY_verify_init(ctx.get()) == 1 &&
-            EVP_PKEY_verify(ctx.get(), asn1.data(), asn1.size(), digest.data(), digest.size()) == 1;
-    }
-    default: THROW("Unsupported public key");
-    }
-
-    int nid = Digest::toMethod(method);
-    if(Digest::isRsaPssUri(method))
-    {
-        return ctx &&
-            EVP_PKEY_verify_init(ctx.get()) == 1 &&
-            EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PSS_PADDING) == 1 &&
-            EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx.get(), RSA_PSS_SALTLEN_DIGEST) == 1 &&
-            EVP_PKEY_CTX_set_signature_md(ctx.get(), EVP_get_digestbynid(nid)) == 1 &&
-            EVP_PKEY_verify(ctx.get(), signature.data(), signature.size(), digest.data(), digest.size()) == 1;
-    }
-
-    size_t size = 0;
-    if(!ctx ||
-        EVP_PKEY_verify_recover_init(ctx.get()) <= 0 ||
-        EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_PADDING) <= 0 ||
-        EVP_PKEY_verify_recover(ctx.get(), nullptr, &size, signature.data(), signature.size()) <= 0)
-        return false;
-    vector<unsigned char> decrypted(size);
-    if(EVP_PKEY_verify_recover(ctx.get(), decrypted.data(), &size, signature.data(), signature.size()) <= 0)
-        return false;
-    decrypted.resize(size);
-    const unsigned char *p = decrypted.data();
-    SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(decrypted.size())));
-    if(!sig)
-        return false;
-    const X509_ALGOR *algor = nullptr;
-    const ASN1_OCTET_STRING *value = nullptr;
-    X509_SIG_get0(sig.get(), &algor, &value);
-
-    if(algor->parameter && ASN1_TYPE_get(algor->parameter) != V_ASN1_NULL)
-        return false;
-    return nid == OBJ_obj2nid(algor->algorithm) &&
-        size_t(value->length) == digest.size() &&
-        memcmp(value->data, digest.data(), digest.size()) == 0;
 }

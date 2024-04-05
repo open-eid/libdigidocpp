@@ -21,7 +21,6 @@
 
 #include "ASiC_E.h"
 #include "ASiC_S.h"
-#include "DataFile.h"
 #include "Exception.h"
 #include "PDF.h"
 #include "SiVaContainer.h"
@@ -33,35 +32,9 @@
 #include <libxml/parser.h>
 #ifndef XMLSEC_NO_XSLT
 #include <libxslt/xslt.h>
-#include <libxslt/security.h>
 #endif
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/crypto.h>
-
-DIGIDOCPP_WARNING_PUSH
-DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
-DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
-#include <xercesc/util/XMLString.hpp>
-#include <xsec/utils/XSECPlatformUtils.hpp>
-DIGIDOCPP_WARNING_POP
-#if XSEC_VERSION_MAJOR == 1 && !defined(XSEC_NO_XALAN) || defined(XSEC_HAVE_XALAN)
-#define USE_XALAN
-#include <xalanc/XPath/XPathEvaluator.hpp>
-DIGIDOCPP_WARNING_PUSH
-DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
-#include <xalanc/XalanTransformer/XalanTransformer.hpp>
-DIGIDOCPP_WARNING_POP
-#ifdef XALAN_USING_XALAN
-XALAN_USING_XALAN(XPathEvaluator)
-XALAN_USING_XALAN(XalanTransformer)
-#else
-using xalanc::XPathEvaluator;
-using xalanc::XalanTransformer;
-#endif
-#endif
-
-#define XSD_CXX11
-#include <xsd/cxx/xml/string.hxx>
 
 #include <algorithm>
 #include <sstream>
@@ -69,7 +42,6 @@ using xalanc::XalanTransformer;
 
 using namespace digidoc;
 using namespace std;
-using namespace xercesc;
 
 namespace digidoc
 {
@@ -77,9 +49,7 @@ static string m_appName = "libdigidocpp";
 static string m_userAgent = "libdigidocpp";
 static vector<decltype(&Container::createPtr)> m_createList {};
 static vector<std::unique_ptr<Container> (*)(const std::string &path, ContainerOpenCB *cb)> m_openList {};
-#ifndef XMLSEC_NO_XSLT
-static xsltSecurityPrefsPtr xsltSecPrefs {};
-#endif
+int initXmlSecCallback();
 }
 
 /**
@@ -133,56 +103,28 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
     m_appName = appInfo;
     m_userAgent = userAgent;
 
-    try {
-        if(!XMLPlatformUtils::fgMemoryManager)
-            XMLPlatformUtils::Initialize();
-#ifdef USE_XALAN
-        XPathEvaluator::initialize();
-        XalanTransformer::initialize();
-#endif
-        XSECPlatformUtils::Initialise();
-    }
-    catch (const XMLException &e) {
-        try {
-            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
-            THROW("Error during initialisation of Xerces: %s", result.c_str());
-        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-            THROW("Error during initialisation of Xerces.");
-        }
-    }
-
     LIBXML_TEST_VERSION
     xmlLineNumbersDefaultValue = 1;
     xmlLoadExtDtdDefaultValue = XML_DETECT_IDS | XML_COMPLETE_ATTRS;
     xmlSubstituteEntitiesDefault(1);
     xmlIndentTreeOutput = 1;
-#ifndef XMLSEC_NO_XSLT
-    xsltSecPrefs = xsltNewSecurityPrefs();
-    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_FILE,        xsltSecurityForbid);
-    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_FILE,       xsltSecurityForbid);
-    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_CREATE_DIRECTORY, xsltSecurityForbid);
-    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_NETWORK,     xsltSecurityForbid);
-    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_NETWORK,    xsltSecurityForbid);
-    xsltSetDefaultSecurityPrefs(xsltSecPrefs);
-#endif
     if(xmlSecInit() < 0)
         THROW("Error during initialisation of xmlsec.");
     if(xmlSecCheckVersion() != 1)
         THROW("Error during initialisation of xmlsec. Loaded xmlsec library version is not compatible");
-
-    /* Load default crypto engine if we are supporting dynamic
-     * loading for xmlsec-crypto libraries. Use the crypto library
-     * name ("openssl", "nss", etc.) to load corresponding
-     * xmlsec-crypto library.
-     */
 #ifdef XMLSEC_CRYPTO_DYNAMIC_LOADING
-    if(xmlSecCryptoDLLoadLibrary(nullptr) < 0)
+    if(xmlSecCryptoDLLoadLibrary("openssl") < 0)
         THROW("Error during initialisation of xmlsec. Unable to load default xmlsec-crypto library");
 #endif
     if(xmlSecCryptoAppInit(nullptr) < 0)
         THROW("Error during initialisation of xmlsec. Crypto initialization failed.");
     if(xmlSecCryptoInit() < 0)
         THROW("Error during initialisation of xmlsec. xmlsec-crypto initialization failed.");
+    if(initXmlSecCallback() < 0)
+        THROW("Error during initialisation of xmlsec. Failed to register custom callbacks.");
+
+    INFO("Libxml2 version: %s", LIBXML_DOTTED_VERSION);
+    INFO("Xmlsec1 version: %s", XMLSEC_VERSION);
 
     if(!Conf::instance())
         Conf::init(new XmlConfCurrent);
@@ -218,14 +160,6 @@ void digidoc::terminate()
 {
     try {
         Conf::init(nullptr);
-
-        XSECPlatformUtils::Terminate();
-#ifdef USE_XALAN
-        XalanTransformer::terminate();
-        XPathEvaluator::terminate();
-#endif
-        XMLPlatformUtils::Terminate();
-
         util::File::deleteTempFiles();
     } catch (...) {
         // Don't throw on terminate
@@ -235,7 +169,6 @@ void digidoc::terminate()
     xmlSecCryptoAppShutdown();
     xmlSecShutdown();
 #ifndef XMLSEC_NO_XSLT
-    xsltFreeSecurityPrefs(xsltSecPrefs);
     xsltCleanupGlobals();
 #endif
     xmlCleanupParser();

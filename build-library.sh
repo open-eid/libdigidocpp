@@ -93,7 +93,6 @@ cmake --fresh -B ${TARGET} -S . \
     -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
     -DCMAKE_FIND_ROOT_PATH="${TARGET_PATH};/usr/local;/opt/homebrew" \
     -DOPENSSL_ROOT_DIR=${TARGET_PATH} \
-    -DXercesC_ROOT=${TARGET_PATH} \
     ${CMAKEARGS}
 cmake --build ${TARGET}
 

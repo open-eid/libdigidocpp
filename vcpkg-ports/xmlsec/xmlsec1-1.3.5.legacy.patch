@@ -1,0 +1,122 @@
+--- xmlsec1-1.3.5.orig/src/openssl/signatures.c	2024-07-18 22:53:55
++++ xmlsec1-1.3.5/src/openssl/signatures.c	2024-07-24 00:04:16
+@@ -35,6 +35,7 @@
+ #ifdef XMLSEC_OPENSSL_API_300
+ #include <openssl/core_names.h>
+ #endif /* XMLSEC_OPENSSL_API_300 */
++#include <openssl/x509.h>
+ 
+ #include "../cast_helpers.h"
+ #include "openssl_compat.h"
+@@ -920,15 +921,22 @@
+                 "ret=%d", ret);
+             goto error;
+         }
++        ret = EVP_PKEY_CTX_set_signature_md(pKeyCtx, ctx->digest);
+     } else {
+-        ret = EVP_PKEY_verify_init(pKeyCtx);
++        if((ctx->mode == xmlSecOpenSSLEvpSignatureMode_RsaPadding) && (ctx->rsaPadding == RSA_PKCS1_PADDING)) {
++            ret = EVP_PKEY_verify_recover_init(pKeyCtx);
++        } else {
++            ret = EVP_PKEY_verify_init(pKeyCtx);
++        }
+         if(ret <= 0) {
+             xmlSecOpenSSLError2("EVP_PKEY_verify_init", xmlSecTransformGetName(transform),
+                 "ret=%d", ret);
+             goto error;
+         }
++        if((ctx->mode != xmlSecOpenSSLEvpSignatureMode_RsaPadding) || (ctx->rsaPadding != RSA_PKCS1_PADDING)) {
++            ret = EVP_PKEY_CTX_set_signature_md(pKeyCtx, ctx->digest);
++        }
+     }
+-    ret = EVP_PKEY_CTX_set_signature_md(pKeyCtx, ctx->digest);
+     if(ret <= 0) {
+         xmlSecOpenSSLError2("EVP_PKEY_CTX_set_signature_md", xmlSecTransformGetName(transform),
+             "ret=%d", ret);
+@@ -981,11 +989,16 @@
+     xmlSecByte dgst[EVP_MAX_MD_SIZE];
+     unsigned int dgstSize = sizeof(dgst);
+     EVP_PKEY_CTX *pKeyCtx = NULL;
+-    unsigned char * fixedData = NULL;
++    unsigned char * fixedData = NULL, * recvData = NULL;
++    const unsigned char * recvDataPtr;
+     int fixedDataLen = 0;
++    size_t recvDataLen = 0;
+     unsigned int dataLen;
+     int ret;
+     int res = -1;
++    X509_SIG * sig = NULL;
++    const X509_ALGOR *algor = NULL;
++    const ASN1_OCTET_STRING *value = NULL;
+ 
+     xmlSecAssert2(xmlSecOpenSSLEvpSignatureCheckId(transform), -1);
+     xmlSecAssert2(transform->operation == xmlSecTransformOperationVerify, -1);
+@@ -1017,8 +1030,51 @@
+ 
+     switch(ctx->mode) {
+     case xmlSecOpenSSLEvpSignatureMode_RsaPadding:
++        XMLSEC_SAFE_CAST_SIZE_TO_UINT(dataSize, dataLen, goto done, xmlSecTransformGetName(transform));
++        if(ctx->rsaPadding != RSA_PKCS1_PADDING) {
++            ret = EVP_PKEY_verify(pKeyCtx, (xmlSecByte*)data, dataLen, dgst, dgstSize);
++            break;
++        }
++
++        ret = EVP_PKEY_verify_recover(pKeyCtx, NULL, &recvDataLen, data, dataLen);
++        if((ret <= 0) || (recvDataLen <= 0)) {
++            xmlSecOpenSSLError("EVP_PKEY_verify_recover", xmlSecTransformGetName(transform));
++            goto done;
++        }
++
++        recvData = OPENSSL_malloc(recvDataLen);
++        ret = EVP_PKEY_verify_recover(pKeyCtx, recvData, &recvDataLen, data, dataLen);
++        if((ret <= 0) || (recvDataLen <= 0)) {
++            xmlSecOpenSSLError("EVP_PKEY_verify_recover", xmlSecTransformGetName(transform));
++            goto done;
++        }
++
++        recvDataPtr = recvData;
++        sig = d2i_X509_SIG(NULL, &recvDataPtr, (long)recvDataLen);
++        if(!sig) {
++            xmlSecOpenSSLError("d2i_X509_SIG", xmlSecTransformGetName(transform));
++            goto done;
++        }
++
++        X509_SIG_get0(sig, &algor, &value);
++        if((algor->parameter != NULL) && (ASN1_TYPE_get(algor->parameter) != V_ASN1_NULL)) {
++            xmlSecInternalError("Signature algorithm parameter type is not ASN1 NULL", xmlSecTransformGetName(transform));
++            goto done;
++        }
++
++        if(EVP_MD_nid(ctx->digest) != OBJ_obj2nid(algor->algorithm)) {
++            xmlSecInternalError("Signature digest method does not match excpected digest method", xmlSecTransformGetName(transform));
++            goto done;
++        }
++
++        if(((const unsigned int)value->length == dgstSize) && (memcmp(value->data, dgst, dgstSize) == 0)) {
++            ret = 1;
++        } else {
++            ret = 0;
++        }
++        break;
++
+     case xmlSecOpenSSLEvpSignatureMode_Gost:
+-        /* simple RSA or GOST padding */
+         XMLSEC_SAFE_CAST_SIZE_TO_UINT(dataSize, dataLen, goto done, xmlSecTransformGetName(transform));
+         ret = EVP_PKEY_verify(pKeyCtx, (xmlSecByte*)data, dataLen, dgst, dgstSize);
+         break;
+@@ -1073,9 +1129,15 @@
+     res = 0;
+ 
+ done:
++    if(sig != NULL) {
++        X509_SIG_free(sig);
++    }
+     if(fixedData != NULL) {
+         OPENSSL_free(fixedData);
+     }
++    if(recvData != NULL) {
++        OPENSSL_free(recvData);
++    }
+     if(pKeyCtx != NULL) {
+         EVP_PKEY_CTX_free(pKeyCtx);
+     }

@@ -12,38 +12,6 @@ endif()
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
 configure_file( ${CMAKE_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf )
 
-set(SCHEMA_DIR ${CMAKE_SOURCE_DIR}/etc/schema)
-set(XML_DIR ${CMAKE_CURRENT_BINARY_DIR}/xml)
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/xmldsig-core-schema.xsd
-    --root-element-none
-    --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
-    --custom-type ObjectType=/ObjectTypeBase
-    --hxx-epilogue \"\#include <xml/ObjectType.h>\" )
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdES01903v132-201601.xsd
-    --root-element-none
-    --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
-    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
-    --custom-type AnyType=/AnyTypeBase
-    --custom-type UnsignedSignaturePropertiesType=/UnsignedSignaturePropertiesTypeBase
-    --ordered-type UnsignedSignaturePropertiesType
-    --hxx-epilogue \"\#include <xml/AnyType.h>\"
-    --hxx-epilogue \"\#include <xml/UnsignedSignaturePropertiesType.h>\" )
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/XAdES01903v141-201601.xsd
-    --root-element-none
-    --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
-    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
-    --namespace-map http://uri.etsi.org/01903/v1.4.1\#=digidoc::xadesv141)
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/en_31916201v010101.xsd
-    --root-element XAdESSignatures
-    --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
-    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades
-    --namespace-map http://uri.etsi.org/02918/v1.2.1\#=digidoc::asic )
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/OpenDocument_dsig.xsd
-    --root-element document-signatures
-    --namespace-map urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0=digidoc::asic
-    --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig)
-
-
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "namespace digidoc {\nstatic const std::vector<X509Cert> tslcerts {\n")
 foreach(TSL_CERT ${TSL_CERTS})
     file(READ ${TSL_CERT} filedata HEX)
@@ -52,12 +20,12 @@ foreach(TSL_CERT ${TSL_CERTS})
 endforeach()
 file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "};\n}")
 
+set(SCHEMA_DIR ${CMAKE_SOURCE_DIR}/etc/schema)
 set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd
     ${SCHEMA_DIR}/OpenDocument_manifest_v1_2.xsd
     ${SCHEMA_DIR}/xmldsig-core-schema.xsd
     ${SCHEMA_DIR}/XAdES01903v132-201601.xsd
-    ${SCHEMA_DIR}/XAdES01903v132-201601-relaxed.xsd
     ${SCHEMA_DIR}/XAdES01903v141-201601.xsd
     ${SCHEMA_DIR}/en_31916201v010101.xsd
     ${SCHEMA_DIR}/OpenDocument_dsig.xsd
@@ -89,28 +57,17 @@ add_library(digidocpp_util STATIC
 target_link_libraries(digidocpp_util PRIVATE $<$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:iOS>>:-framework\ CoreFoundation>)
 
 add_library(digidocpp_priv STATIC
-    ${xsd_SRCS}
     crypto/Connect.cpp
     crypto/Digest.cpp
     crypto/TSL.cpp
     crypto/X509Crypto.cpp
     util/DateTime.cpp
-    xml/AnyType.cpp
-    xml/ObjectType.cpp
-    xml/SecureDOMParser.cpp
-    xml/UnsignedSignaturePropertiesType.cpp
-    xml/URIResolver.cpp
     XMLDocument.h
 )
 
 set_target_properties(digidocpp_util digidocpp_priv PROPERTIES
     COMPILE_DEFINITIONS digidocpp_EXPORTS
     POSITION_INDEPENDENT_CODE YES
-)
-
-target_compile_definitions(digidocpp_priv PUBLIC
-    $<$<CXX_COMPILER_ID:AppleClang>:XSD_CXX11_TEMPLATE_ALIAS>
-    $<$<CXX_COMPILER_ID:Clang>:XSD_CXX11_TEMPLATE_ALIAS>
 )
 
 target_include_directories(digidocpp_priv PUBLIC
@@ -121,9 +78,9 @@ target_include_directories(digidocpp_priv PUBLIC
 
 target_link_libraries(digidocpp_priv
     digidocpp_util
-    XmlSecurityC::XmlSecurityC
     ZLIB::ZLIB
     LibXml2::LibXml2
+    OpenSSL::SSL
     xmlsec
     $<$<C_COMPILER_ID:MSVC>:Ws2_32>
 )
@@ -302,49 +259,38 @@ if( FRAMEWORK )
     install(TARGETS minizip DESTINATION ${CMAKE_INSTALL_LIBDIR}) # for example ios application
     set_source_files_properties( ${SCHEMA_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/schema )
     set_source_files_properties( ${CRYPTO_HEADER} PROPERTIES MACOSX_PACKAGE_LOCATION Headers/crypto )
-    list( GET XmlSecurityC_LIBRARIES 0 LIBPATH )
+    list(GET OPENSSL_LIBRARIES 0 LIBPATH)
     get_filename_component( LIBPATH ${LIBPATH} PATH )
+    set(COPY_LIBRARIES_SCRIPT ${CMAKE_BINARY_DIR}/copy_libraries.cmake)
+    file(WRITE ${COPY_LIBRARIES_SCRIPT} "
+    message(\"Copy dependencies: \$ENV{LIBRARY} \$ENV{BUNDLE_DIR}\")
+    file(GET_RUNTIME_DEPENDENCIES LIBRARIES \$ENV{LIBRARY} RESOLVED_DEPENDENCIES_VAR OUT)
+    file(COPY \${OUT} DESTINATION \$ENV{BUNDLE_DIR})
+    ")
     add_custom_target( embedlibs DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
         COMMAND mkdir -p $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND ln -s -f Versions/Current/Libraries $<TARGET_BUNDLE_DIR:digidocpp>
-        COMMAND cp ${XmlSecurityC_LIBRARIES} ${XMLSEC1_OPENSSL_LINK_LIBRARIES} $<TARGET_FILE_DIR:digidocpp>/Libraries
-        COMMAND rm $<TARGET_FILE_DIR:digidocpp>/Libraries/*.tbd
+        COMMAND ${CMAKE_COMMAND} -E env
+            LIBRARY=$<TARGET_FILE:digidocpp>
+            BUNDLE_DIR=$<TARGET_BUNDLE_CONTENT_DIR:digidocpp>/Libraries
+            ${CMAKE_COMMAND} -P ${COPY_LIBRARIES_SCRIPT}
         COMMAND chmod 644 $<TARGET_FILE_DIR:digidocpp>/Libraries/*
-        COMMAND install_name_tool -id 'libcrypto.dylib'
-            $<TARGET_FILE_DIR:digidocpp>/Libraries/libcrypto.dylib
-        COMMAND install_name_tool -id 'libssl.dylib'
-            -change '${LIBPATH}/libcrypto.3.dylib' '@loader_path/libcrypto.dylib'
-            $<TARGET_FILE_DIR:digidocpp>/Libraries/libssl.dylib
-        COMMAND install_name_tool -id 'libxerces-c.dylib'
-            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxerces-c.dylib
-        COMMAND install_name_tool -id 'libxalanMsg.dylib'
-            -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/libxerces-c.dylib'
-            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxalanMsg.dylib
-        COMMAND install_name_tool -id 'libxalan-c.dylib'
-            -change '${LIBPATH}/libxalanMsg.112.dylib' '@loader_path/libxalanMsg.dylib'
-            -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/libxerces-c.dylib'
-            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxalan-c.dylib
-        COMMAND install_name_tool -id 'libxml-security-c.dylib'
-            -change '${LIBPATH}/libcrypto.3.dylib' '@loader_path/libcrypto.dylib'
-            -change '${LIBPATH}/libssl.3.dylib' '@loader_path/libssl.dylib'
-            -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/libxerces-c.dylib'
-            -change '${LIBPATH}/libxalan-c.112.dylib' '@loader_path/libxalan-c.dylib'
-            -change '${LIBPATH}/libxalanMsg.112.dylib' '@loader_path/libxalanMsg.dylib'
-            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxml-security-c.dylib
+        COMMAND install_name_tool -id 'libcrypto.3.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libcrypto.3.dylib
+        COMMAND install_name_tool -id 'libssl.3.dylib'
+            -change '${LIBPATH}/libcrypto.3.dylib' '@loader_path/libcrypto.3.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libssl.3.dylib
         COMMAND install_name_tool -id 'libxmlsec1.1.dylib'
-            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxmlsec1.dylib
-        COMMAND install_name_tool -id 'libxmlsec1-openssl.dylib'
-            -change '${LIBPATH}/libcrypto.3.dylib' '@loader_path/libcrypto.dylib'
-            -change '${LIBPATH}/libxmlsec1.1.dylib' '@loader_path/libxmlsec1.dylib'
-            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxmlsec1-openssl.dylib
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxmlsec1.1.dylib
+        COMMAND install_name_tool -id 'libxmlsec1-openssl.1.dylib'
+            -change '${LIBPATH}/libcrypto.3.dylib' '@loader_path/libcrypto.3.dylib'
+            -change '${LIBPATH}/libxmlsec1.1.dylib' '@loader_path/libxmlsec1.1.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxmlsec1-openssl.1.dylib
         COMMAND install_name_tool
-            -change '${LIBPATH}/libcrypto.3.dylib' '@loader_path/Libraries/libcrypto.dylib'
-            -change '${LIBPATH}/libssl.3.dylib' '@loader_path/Libraries/libssl.dylib'
-            -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/Libraries/libxerces-c.dylib'
-            -change '${LIBPATH}/libxml-security-c.20.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
-            -change '${LIBPATH}/libxalan-c.112.dylib' '@loader_path/Libraries/libxalan-c.dylib'
-            -change '${LIBPATH}/libxmlsec1.1.dylib' '@loader_path/Libraries/libxmlsec1.dylib'
-            -change '${LIBPATH}/libxmlsec1-openssl.1.dylib' '@loader_path/Libraries/libxmlsec1-openssl.dylib'
+            -change '${LIBPATH}/libcrypto.3.dylib' '@loader_path/Libraries/libcrypto.3.dylib'
+            -change '${LIBPATH}/libssl.3.dylib' '@loader_path/Libraries/libssl.3.dylib'
+            -change '${LIBPATH}/libxmlsec1.1.dylib' '@loader_path/Libraries/libxmlsec1.1.dylib'
+            -change '${LIBPATH}/libxmlsec1-openssl.1.dylib' '@loader_path/Libraries/libxmlsec1-openssl.1.dylib'
             $<TARGET_FILE:digidocpp>
     )
     if(BUILD_TOOLS)
@@ -352,13 +298,10 @@ if( FRAMEWORK )
             COMMAND cp $<TARGET_FILE:digidoc-tool> $<TARGET_FILE_DIR:digidocpp>/Resources)
         add_custom_command(TARGET embedlibs POST_BUILD
             COMMAND install_name_tool
-                -change '${LIBPATH}/libcrypto.3.dylib' '@executable_path/../Libraries/libcrypto.dylib'
-                -change '${LIBPATH}/libssl.3.dylib' '@executable_path/../Libraries/libssl.dylib'
-                -change '${LIBPATH}/libxerces-c-3.2.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
-                -change '${LIBPATH}/libxml-security-c.20.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
-                -change '${LIBPATH}/libxalan-c.112.dylib' '@executable_path/../Libraries/libxalan-c.dylib'
-                -change '${LIBPATH}/libxmlsec1.1.dylib' '@executable_path/../Libraries/libxmlsec1.dylib'
-                -change '${LIBPATH}/libxmlsec1-openssl.1.dylib' '@executable_path/../Libraries/libxmlsec1-openssl.dylib'
+                -change '${LIBPATH}/libcrypto.3.dylib' '@executable_path/../Libraries/libcrypto.3.dylib'
+                -change '${LIBPATH}/libssl.3.dylib' '@executable_path/../Libraries/libssl.3.dylib'
+                -change '${LIBPATH}/libxmlsec1.1.dylib' '@executable_path/../Libraries/libxmlsec1.1.dylib'
+                -change '${LIBPATH}/libxmlsec1-openssl.1.dylib' '@executable_path/../Libraries/libxmlsec1-openssl.1.dylib'
                 $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
             COMMAND touch $<TARGET_FILE:digidoc-tool>
         )

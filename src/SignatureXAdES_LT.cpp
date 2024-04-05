@@ -29,35 +29,23 @@
 #include "util/DateTime.h"
 #include "util/log.h"
 
-DIGIDOCPP_WARNING_PUSH
-DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
-#include <xsec/dsig/DSIGConstants.hpp>
-DIGIDOCPP_WARNING_POP
-
+#include <algorithm>
 #include <ctime>
 
 using namespace digidoc;
-using namespace digidoc::dsig;
-using namespace digidoc::xades;
 using namespace std;
-using namespace xml_schema;
-
-static Base64Binary toBase64(const vector<unsigned char> &v)
-{
-    return {const_cast<unsigned char*>(v.data()), v.size(), v.size(), false};
-}
 
 SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer)
 : SignatureXAdES_T(id, bdoc, signer)
 {}
 
-SignatureXAdES_LT::SignatureXAdES_LT(const std::shared_ptr<Signatures> &signatures, size_t i, ASiContainer *container)
-    : SignatureXAdES_T(signatures, i, container)
+SignatureXAdES_LT::SignatureXAdES_LT(const std::shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container)
+    : SignatureXAdES_T(signatures, s, container)
 {
     try {
         // ADOC files are default T level, take OCSP response to create temporary LT level
         if(bdoc->mediaType() == ASiContainer::MIMETYPE_ADOC &&
-            unsignedSignatureProperties().revocationValues().empty())
+            !(unsignedSignatureProperties()/"RevocationValues"))
         {
             X509Cert cert = signingCertificate();
             X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::OCSP);
@@ -121,13 +109,13 @@ void SignatureXAdES_LT::validate(const string &policy) const
     }
 
     try {
-        const UnsignedSignaturePropertiesType::RevocationValuesSequence &revSeq =
-            unsignedSignatureProperties().revocationValues();
-        if(revSeq.empty())
+        auto revocationValues = unsignedSignatureProperties()/"RevocationValues";
+        if(!revocationValues)
             THROW_MAIN(exception, "RevocationValues object is missing")
-        if(revSeq.size() > 1)
+        if(revocationValues + 1)
             THROW_MAIN(exception, "More than one RevocationValues object is not supported")
-        if(!revSeq.front().oCSPValues().present())
+        auto ocspValues = revocationValues/"OCSPValues";
+        if(!ocspValues)
             THROW_MAIN(exception, "OCSPValues is missing")
 
         /*
@@ -136,7 +124,7 @@ void SignatureXAdES_LT::validate(const string &policy) const
          */
         bool foundSignerOCSP = false;
         vector<Exception> ocspExceptions;
-        for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: revSeq.front().oCSPValues()->encapsulatedOCSPValue())
+        for(auto resp = ocspValues/"EncapsulatedOCSPValue"; resp; resp++)
         {
             OCSP ocsp(resp);
             try {
@@ -177,7 +165,7 @@ void SignatureXAdES_LT::validate(const string &policy) const
                 time_t producedAt_t = util::date::mkgmtime(producedAt);
                 tm timeStampTime = TimeStamp().time();
                 time_t timeStampTime_t = util::date::mkgmtime(timeStampTime);
-                if(timeStampTime_t > producedAt_t)
+                if(auto diff = difftime(producedAt_t, timeStampTime_t); diff < 0)
                 {
                     /*
                      * ETSI TS 103 171 V2.1.1 (2012-03)
@@ -189,7 +177,7 @@ void SignatureXAdES_LT::validate(const string &policy) const
                     e.setCode(Exception::OCSPBeforeTimeStamp);
                     exception.addCause(e);
                 }
-                if((producedAt_t - timeStampTime_t > 15 * 60) && !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
+                else if(diff > 15 * 60 && !Exception::hasWarningIgnore(Exception::ProducedATLateWarning))
                 {
                     Exception e(EXCEPTION_PARAMS("TimeStamp time and OCSP producedAt are over 15m off TS: %s OCSP: %s", TimeStampTime().c_str(), producedAt_s.c_str()));
                     e.setCode(Exception::ProducedATLateWarning);
@@ -234,7 +222,6 @@ void SignatureXAdES_LT::extendSignatureProfile(const string &profile)
 
     addCertificateValue(id() + "-CA-CERT", issuer);
     addOCSPValue(id().replace(0, 1, "N"), ocsp);
-    signatures->reloadDOM();
 }
 
 /**
@@ -247,43 +234,22 @@ void SignatureXAdES_LT::addCertificateValue(const string& certId, const X509Cert
     DEBUG("SignatureXAdES_LT::addCertificateValue(%s, X509Cert{%s,%s})",
         certId.c_str(), x509.serial().c_str(), x509.subjectName().c_str());
 
-    createUnsignedSignatureProperties();
+    auto usp = unsignedSignatureProperties();
+    auto values = usp/"CertificateValues";
+    if(!values)
+        values = usp + "CertificateValues";
 
-    UnsignedSignaturePropertiesType::CertificateValuesSequence &values =
-            unsignedSignatureProperties().certificateValues();
-    if(values.empty())
-    {
-        values.push_back(make_unique<CertificateValuesType>());
-        unsignedSignatureProperties().contentOrder().push_back(
-            UnsignedSignaturePropertiesType::ContentOrderType(
-                UnsignedSignaturePropertiesType::certificateValuesId, values.size() - 1));
-    }
-
-    auto certData = make_unique<CertificateValuesType::EncapsulatedX509CertificateType>(toBase64(x509));
-    certData->id(certId);
-    values[0].encapsulatedX509Certificate().push_back(std::move(certData));
+    auto enc = values + "EncapsulatedX509Certificate";
+    enc.setProperty("Id", certId);
+    enc = x509;
 }
 
 void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
 {
     DEBUG("SignatureXAdES_LT::addOCSPValue(%s, %s)", id.c_str(), util::date::to_string(ocsp.producedAt()).c_str());
-
-    createUnsignedSignatureProperties();
-
-    auto ocspValueData = make_unique<OCSPValuesType::EncapsulatedOCSPValueType>(toBase64(ocsp));
-    ocspValueData->id(id);
-
-    auto ocspValue = make_unique<OCSPValuesType>();
-    ocspValue->encapsulatedOCSPValue().push_back(std::move(ocspValueData));
-
-    auto revocationValues = make_unique<RevocationValuesType>();
-    revocationValues->oCSPValues(std::move(ocspValue));
-
-    unsignedSignatureProperties().revocationValues().push_back(std::move(revocationValues));
-    unsignedSignatureProperties().contentOrder().push_back(
-        UnsignedSignaturePropertiesType::ContentOrderType(
-            UnsignedSignaturePropertiesType::revocationValuesId,
-            unsignedSignatureProperties().revocationValues().size() - 1));
+    auto enc = unsignedSignatureProperties() + "RevocationValues" + "OCSPValues" + "EncapsulatedOCSPValue";
+    enc.setProperty("Id", id);
+    enc = ocsp;
 }
 
 /**
@@ -295,13 +261,8 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
 {
     try
     {
-        if(unsignedSignatureProperties().revocationValues().empty())
-            return {};
-        const RevocationValuesType &t = unsignedSignatureProperties().revocationValues().front();
-        if(!t.oCSPValues().present() || t.oCSPValues()->encapsulatedOCSPValue().empty())
-            return {};
-        // Return OCSP response that matches with signingCertificate
-        for(const OCSPValuesType::EncapsulatedOCSPValueType &resp: t.oCSPValues()->encapsulatedOCSPValue())
+        auto ocspValues = unsignedSignatureProperties()/"RevocationValues"/"OCSPValues";
+        for(auto resp = ocspValues/"EncapsulatedOCSPValue"; resp; resp++)
         {
             try {
                 OCSP ocsp(resp);
@@ -311,7 +272,7 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
             }
         }
         // Return first OCSP response when chains are not complete and validation fails
-        return {t.oCSPValues()->encapsulatedOCSPValue().front()};
+        return {ocspValues/"EncapsulatedOCSPValue"};
     }
     catch(const Exception &)
     {}

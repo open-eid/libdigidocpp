@@ -30,38 +30,17 @@
 #include "util/DateTime.h"
 #include "util/log.h"
 #include "util/File.h"
-#include "xml/en_31916201v010101.hxx"
-#include "xml/OpenDocument_dsig.hxx"
-#include "xml/SecureDOMParser.h"
-#include "xml/URIResolver.h"
 
-DIGIDOCPP_WARNING_PUSH
-DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
-DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
-DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
-#include <xsec/dsig/DSIGReference.hpp>
-#include <xsec/enc/XSECKeyInfoResolverDefault.hpp>
-#include <xsec/framework/XSECException.hpp>
-#include <xsec/framework/XSECProvider.hpp>
-DIGIDOCPP_WARNING_POP
+#include <xmlsec/io.h>
+#include <xmlsec/errors.h>
 
 #include <regex>
 
 using namespace digidoc;
-using namespace digidoc::asic;
-using namespace digidoc::dsig;
 using namespace digidoc::util;
-using namespace digidoc::xades;
 using namespace std;
-using namespace xercesc;
-using namespace xml_schema;
-namespace xml = xsd::cxx::xml;
 
-const string Signatures::XADES_NAMESPACE = "http://uri.etsi.org/01903/v1.3.2#";
-const string Signatures::XADESv141_NAMESPACE = "http://uri.etsi.org/01903/v1.4.1#";
-const string Signatures::ASIC_NAMESPACE = "http://uri.etsi.org/02918/v1.2.1#";
-const string Signatures::OPENDOCUMENT_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0";
-const map<string,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist = {
+const map<string_view,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist{
     {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.1",{ // https://www.sk.ee/repository/bdoc-spec21.pdf
         // SHA-1
         {   0x80,0x81,0xe2,0x69,0xeb,0x44,0x13,0xde,0x20,0x6e,0x40,0x91,0xca,0x04,0x3d,0x5a,
@@ -107,140 +86,145 @@ const map<string,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist = {
 namespace digidoc
 {
 
-static Base64Binary toBase64(const vector<unsigned char> &v)
+thread_local ASiContainer *cb_doc {};
+thread_local Exception *cb_exception {};
+
+int initXmlSecCallback()
 {
-    return {const_cast<unsigned char*>(v.data()), v.size(), v.size(), false};
-}
-
-}
-
-Signatures::Signatures()
-    : asicsignature(make_unique<XAdESSignaturesType>())
-{}
-
-
-Signatures::Signatures(istream &data, ASiContainer *container)
-{
-    Properties properties;
-    const auto xsdPath = Conf::instance()->xsdPath();
-    properties.schema_location(XADES_NAMESPACE, File::fullPathUrl(xsdPath + "/XAdES01903v132-201601-relaxed.xsd"));
-    properties.schema_location(XADESv141_NAMESPACE, File::fullPathUrl(xsdPath + "/XAdES01903v141-201601.xsd"));
-    properties.schema_location(URI_ID_DSIG, File::fullPathUrl(xsdPath + "/xmldsig-core-schema.xsd"));
-    properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(xsdPath + "/en_31916201v010101.xsd"));
-    properties.schema_location(OPENDOCUMENT_NAMESPACE, File::fullPathUrl(xsdPath + "/OpenDocument_dsig.xsd"));
-    copy << data.rdbuf();
-
-    parseDOM(copy, properties.schema_location());
-
-    try
-    {
-        /* http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
-         * 6.2.2
-         * 3) The root element of each "*signatures*.xml" content shall be either:
-         * a) <asic:XAdESSignatures> as specified in clause A.5, the recommended format; or
-         * b) <document-signatures> as specified in OASIS Open Document Format [9]; or
-         *
-         * Case container is ADoc 1.0 then handle document-signatures root element
-         */
-        if(container->mediaType() == ASiC_E::MIMETYPE_ADOC)
+    xmlSecErrorsSetCallback([](const char *file, int line, const char *func,
+                               const char *errorObject, const char *errorSubject, int reason, const char *msg) {
+        auto orUnknown = [](const char *str) { return str ? str : "unknown"; };
+        const char *error_msg = "";
+        const char *ofile {}, *ofunc = "NULL";
+        int oline {};
+        for(size_t i = 0; i < XMLSEC_ERRORS_MAX_NUMBER; ++i)
         {
-            odfsignature = document_signatures(*doc, Flags::dont_initialize, properties);
-            if(odfsignature->signature().empty())
-                THROW("Failed to parse signature XML");
+            if(xmlSecErrorsGetCode(i) == reason)
+            {
+                error_msg = xmlSecErrorsGetMsg(i);
+                break;
+            }
+        }
+        if(cb_exception)
+        {
+            if(reason == XMLSEC_ERRORS_R_CRYPTO_FAILED)
+            {
+                Exception e(orUnknown(file), line, Log::format("%s:obj=%s:subj=%s:reason=%d - %s",
+                    func, orUnknown(errorObject), orUnknown(errorSubject), reason, error_msg));
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+                while(unsigned long error = ERR_get_error_line(&ofile, &oline))
+#else
+                while(unsigned long error = ERR_get_error_all(&ofile, &oline, &ofunc, nullptr, nullptr))
+#endif
+                {
+                    Exception err(ofile, oline, ERR_error_string(error, nullptr));
+#ifndef LIBRESSL_VERSION_NUMBER
+                    if(ERR_GET_LIB(error) == ERR_R_BIO_LIB && ERR_GET_REASON(error) == ERR_R_SYS_LIB)
+                        e.setCode(Exception::ExceptionCode::HostNotFound);
+#endif
+                    e.addCause(err);
+                }
+                cb_exception->addCause(e);
+            }
+            else
+                cb_exception->addCause({orUnknown(file), line, Log::format("%s:obj=%s:subj=%s:reason=%d - %s %s",
+                    func, orUnknown(errorObject), orUnknown(errorSubject), reason, error_msg, msg)});
         }
         else
         {
-            asicsignature = xAdESSignatures(*doc, Flags::dont_initialize, properties);
-            if(asicsignature->signature().empty())
-                THROW("Failed to parse signature XML");
+            Log::out(Log::WarnType, orUnknown(file), unsigned(line), "%s:obj=%s:subj=%s:reason=%d - %s %s",
+                func, orUnknown(errorObject), orUnknown(errorSubject), reason, error_msg, msg);
+            if(reason == XMLSEC_ERRORS_R_CRYPTO_FAILED)
+            {
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+                while(unsigned long error = ERR_get_error_line(&ofile, &oline))
+#else
+                while(unsigned long error = ERR_get_error_all(&ofile, &oline, &ofunc, nullptr, nullptr))
+#endif
+                    Log::out(Log::WarnType, ofile, unsigned(oline), "%s: %s",
+                        ofunc, ERR_error_string(error, nullptr));
+            }
         }
-        // For calcDigestOnNode
-        data.clear();
-        data.seekg(0);
-        parseDOM(data);
-    }
-    catch(const Parsing& e)
-    {
-        stringstream s;
-        s << e;
-        THROW("Failed to parse signature XML: %s", s.str().c_str());
-    }
-    catch(const xsd::cxx::exception& e)
-    {
-        THROW("Failed to parse signature XML: %s", e.what());
-    }
+    });
+
+    return xmlSecIORegisterCallbacks(
+        [](const char */*name*/) -> int {
+            return cb_doc ? 1 : 0;
+        },
+        [](const char *name) -> void * {
+            if(!cb_doc)
+            {
+                xmlSecError(__FILE__,__LINE__, "xmlSecIORegisterCallbacks", nullptr, nullptr, 0,
+                    "Container is not open");
+                return {};
+            }
+
+            auto find = [name](auto files) -> const DataFile* {
+                for(const DataFile *file: files)
+                {
+                    if(file->fileName() == name)
+                        return file;
+                }
+                return {};
+            };
+
+            const DataFile *file = find(cb_doc->dataFiles());
+            if(!file && cb_doc->mediaType() == ASiC_E::MIMETYPE_ADOC)
+                file = find(static_cast<ASiC_E*>(cb_doc)->metaFiles());
+
+            if(!file)
+            {
+                xmlSecError(__FILE__,__LINE__, "xmlSecIORegisterCallbacks", nullptr, nullptr, 0,
+                    "Failed to locate file '%s' in container", name);
+                return {};
+            }
+
+            auto *is = dynamic_cast<const DataFilePrivate*>(file)->m_is.get();
+            is->clear();
+            is->seekg(0);
+            return is;
+        },
+        [](void *ctx, char *buf, int len) -> int {
+            auto *is = static_cast<std::istream*>(ctx);
+            is->read(buf, len);
+            return int(is->gcount());
+        },
+        [](void */*ctx*/) -> int {
+            return 0;
+        });
+}
 }
 
-Signatures::~Signatures() = default;
-
-size_t Signatures::count() const
+Signatures::Signatures()
+    : XMLDocument(create("XAdESSignatures", ASIC_NS, "asic"))
 {
-    if(odfsignature)
-        return odfsignature->signature().size();
-    return asicsignature->signature().size();
+    addNS(DSIG_NS, "ds");
+    addNS(XADES_NS, "xades");
 }
 
-xercesc::DOMElement* Signatures::element(string_view id) const
+Signatures::Signatures(istream &data, ASiContainer *container)
+    : XMLDocument(openStream(data))
 {
-    DOMNodeList *nodeList = doc->getElementsByTagNameNS(xml::string(URI_ID_DSIG).c_str(), u"Signature");
-    for(XMLSize_t i = 0, count = nodeList->getLength(); i < count; ++i)
-    {
-        auto *elem = static_cast<DOMElement*>(nodeList->item(i));
-        if(id == xml::transcode<char>(elem->getAttribute(u"Id")))
-            return elem;
+    /* http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
+     * 6.2.2
+     * 3) The root element of each "*signatures*.xml" content shall be either:
+     * a) <asic:XAdESSignatures> as specified in clause A.5, the recommended format; or
+     * b) <document-signatures> as specified in OASIS Open Document Format [9]; or
+     *
+     * Case container is ADoc 1.0 then handle document-signatures root element
+     */
+    try {
+        if(container->mediaType() == ASiC_E::MIMETYPE_ADOC && name() == "document-signatures" && ns() == OPENDOCUMENT_NS)
+            validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_dsig.xsd"));
+        else
+            validateSchema(File::path(Conf::instance()->xsdPath(), "en_31916201v010101.xsd"));
     }
-    return {};
-}
-
-void Signatures::parseDOM(istream &data, const std::string &schema_location)
-{
-    doc = SecureDOMParser(schema_location).parseIStream(data);
-}
-
-void Signatures::reloadDOM()
-{
-    // Parse Xerces DOM from file, to preserve the white spaces "as is"
-    // and get the same digest value on XML node.
-    // Canonical XML 1.0 specification (http://www.w3.org/TR/2001/REC-xml-c14n-20010315)
-    // needs all the white spaces from XML file "as is", otherwise the digests won't match.
-    // Therefore we have to use Xerces to parse the XML file each time a digest needs to be
-    // calculated on a XML node. If you are parsing XML files with a parser that doesn't
-    // preserve the white spaces you are DOOMED!
-    // Parse and return a copy of the Xerces DOM tree.
-    // Save to file an parse it again, to make XML Canonicalization work
-    // correctly as expected by the Canonical XML 1.0 specification.
-    // Hope, the next Canonical XMl specification fixes the white spaces preserving "bug".
-    copy.str({});
-    copy.clear();
-    saveXML(copy);
-    parseDOM(copy);
-}
-
-void Signatures::save(ostream &os) const
-{
-    if(copy.str().empty())
-        return saveXML(os);
-    os << copy.str();
-}
-
-void Signatures::saveXML(ostream &os) const
-{
-    try
-    {
-        static const NamespaceInfomap map{{
-            {"ds", {URI_ID_DSIG, {}}},
-            {"xades", {XADES_NAMESPACE, {}}},
-            {"asic", {ASIC_NAMESPACE, {}}},
-        }};
-        xAdESSignatures(os, *asicsignature, map, "UTF-8", Flags::dont_initialize);
+    catch(const Exception &e) {
+        THROW_CAUSE(e, "Failed to validate signature XML");
     }
-    catch(const xml::invalid_utf8_string &)
-    {
-        THROW("Failed to create signature XML file. Parameters must be in UTF-8.");
-    }
-    if(os.fail())
-        THROW("Failed to create signature XML file.");
 }
+
+
 
 /**
  * Creates an empty BDOC-BES signature with mandatory XML nodes.
@@ -251,54 +235,41 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
 {
     X509Cert c = signer->cert();
     string nr = "S" + to_string(id);
+    auto canonMethod = XMLDocument::C14D_ID_1_1;
 
-    // Signature->SignedInfo
-    auto signedInfo = make_unique<SignedInfoType>(
-        make_unique<CanonicalizationMethodType>(URI_ID_C14N11_NOC),
-        make_unique<SignatureMethodType>(X509Crypto(c).isRSAKey() ?
-            Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method())));
+    signature = *signatures + XMLName{"Signature", DSIG_NS};
+    signature.setProperty("Id", nr);
+    auto signedInfo = signature + "SignedInfo";
+    (signedInfo + "CanonicalizationMethod").setProperty("Algorithm", canonMethod);
+    (signedInfo + "SignatureMethod").setProperty("Algorithm", X509Crypto(c).isRSAKey() ?
+            Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()));
 
-    // Signature->SignatureValue
-    auto signatureValue = make_unique<SignatureValueType>();
-    signatureValue->id(nr + "-SIG");
+    (signature + "SignatureValue").setProperty("Id", nr + "-SIG");
+    signature + "KeyInfo" + "X509Data" + "X509Certificate" = c;
 
-    // Signature (root)
-    signatures->asicsignature->signature().push_back(make_unique<SignatureType>(std::move(signedInfo), std::move(signatureValue)));
-    signature = &signatures->asicsignature->signature().back();
-    signature->id(nr);
+    auto qualifyingProperties = signature + "Object" + XMLName{"QualifyingProperties", XADES_NS};
+    qualifyingProperties.setProperty("Target", "#" + nr);
 
-    // Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties
-    auto signedProperties = make_unique<SignedPropertiesType>();
-    signedProperties->signedSignatureProperties(make_unique<SignedSignaturePropertiesType>());
-    signedProperties->id(nr + "-SignedProperties");
-
-    // Signature->Object->QualifyingProperties
-    auto qualifyingProperties = make_unique<QualifyingPropertiesType>("#" + nr);
-    qualifyingProperties->signedProperties(std::move(signedProperties));
-
-    // Signature->Object
-    auto object = make_unique<ObjectType>();
-    object->qualifyingProperties().push_back(std::move(qualifyingProperties));
-
-    signature->object().push_back(std::move(object));
+    auto signedProperties = qualifyingProperties + "SignedProperties";
+    signedProperties.setProperty("Id", nr + "-SignedProperties");
+    auto signedSignatureProperties = signedProperties + "SignedSignatureProperties";
+    signedSignatureProperties + "SigningTime" = date::to_string(time({}));
 
     //Fill XML-DSIG/XAdES properties
-    setKeyInfo(c);
     if(signer->usingENProfile())
     {
-        setSigningCertificateV2(c);
-        setSignatureProductionPlace<SignatureProductionPlaceV2Type>(signer->city(), signer->streetAddress(),
-            signer->stateOrProvince(), signer->postalCode(), signer->countryName());
-        setSignerRoles<SignerRoleV2Type>(signer->signerRoles());
+        setSigningCertificate("SigningCertificateV2", c);
+        setSignatureProductionPlace("SignatureProductionPlaceV2",
+            signer->city(), signer->streetAddress(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
+        setSignerRoles("SignerRoleV2", signer->signerRoles());
     }
     else
     {
-        setSigningCertificate(c);
-        setSignatureProductionPlace<SignatureProductionPlaceType>(signer->city(), signer->streetAddress(),
-            signer->stateOrProvince(), signer->postalCode(), signer->countryName());
-        setSignerRoles<SignerRoleType>(signer->signerRoles());
+        setSigningCertificate("SigningCertificate", c);
+        setSignatureProductionPlace("SignatureProductionPlace",
+            signer->city(), signer->streetAddress(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
+        setSignerRoles("SignerRole", signer->signerRoles());
     }
-    setSigningTime(time(nullptr));
 
     string digestMethod = Conf::instance()->digestUri();
     for(const DataFile *f: bdoc->dataFiles())
@@ -307,13 +278,9 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
         addDataObjectFormat("#" + referenceId, f->mediaType());
     }
 
-    signatures->reloadDOM();
     Digest calc(digestMethod);
-    calcDigestOnNode(&calc, Signatures::XADES_NAMESPACE, u"SignedProperties",
-        signature->signedInfo().canonicalizationMethod().algorithm());
-    addReference("#" + nr +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties",
-        signature->signedInfo().canonicalizationMethod().algorithm());
-    signatures->reloadDOM();
+    signatures->c14n(&calc, canonMethod, signedProperties);
+    addReference("#" + nr + "-SignedProperties", calc.uri(), calc.result(), REF_TYPE, canonMethod);
 }
 
 /**
@@ -321,99 +288,74 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
  *
  * @param sigdata Input stream
  * @param bdoc BDOC container
- * @param relaxSchemaValidation Flag indicating if relaxed schema should be used for validation -
- *                              elements of SignatureProductionPlaceType can be in any order in signatures
- *                              produced by other systems; default = false
  * @throws SignatureException
  */
-SignatureXAdES_B::SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, size_t i, ASiContainer *container)
+SignatureXAdES_B::SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container)
     : signatures(signatures)
+    , signature(s)
     , bdoc(container)
 {
-    if(signatures->odfsignature)
-        signature = &signatures->odfsignature->signature().at(i);
-    else
-        signature = &signatures->asicsignature->signature().at(i);
+    XMLNode object = signature/"Object";
+    if(!object)
+        THROW("Signature block 'Object' is missing.");
+    if(object + 1)
+        THROW("Signature block contains more than one 'Object' block.");
 
-    if(const auto &sp = qualifyingProperties().signedProperties())
-    {
-        if(const auto &sdop = sp->signedDataObjectProperties())
-        {
-            if(!sdop->commitmentTypeIndication().empty())
-                DEBUG("CommitmentTypeIndicationType is not supported");
-            if(!sdop->allDataObjectsTimeStamp().empty())
-                THROW("AllDataObjectsTimeStamp is not supported");
-            if(!sdop->individualDataObjectsTimeStamp().empty())
-                THROW("IndividualDataObjectsTimeStampType is not supported");
-        }
-    }
-    if(const auto &up = qualifyingProperties().unsignedProperties())
-    {
-        if(up->unsignedDataObjectProperties())
-            THROW("UnsignedDataObjectProperties are not supported");
-        if(const auto &usp = up->unsignedSignatureProperties())
-        {
-            if(!usp->counterSignature().empty())
-                THROW("CounterSignature is not supported");
-            if(!usp->completeCertificateRefs().empty())
-                WARN("CompleteCertificateRefs are not supported");
-            if(!usp->completeRevocationRefs().empty())
-                WARN("CompleteRevocationRefs are not supported");
-            if(!usp->attributeCertificateRefs().empty())
-                THROW("AttributeCertificateRefs are not supported");
-            if(!usp->attributeRevocationRefs().empty())
-                THROW("AttributeRevocationRefs are not supported");
-            if(!usp->sigAndRefsTimeStamp().empty())
-                WARN("SigAndRefsTimeStamp is not supported");
-            if(!usp->refsOnlyTimeStamp().empty())
-                THROW("RefsOnlyTimeStamp is not supported");
-            if(!usp->attrAuthoritiesCertValues().empty())
-                THROW("AttrAuthoritiesCertValues are not supported");
-            if(!usp->attributeRevocationValues().empty())
-                THROW("AttributeRevocationValues are not supported");
-            if(!usp->archiveTimeStamp().empty())
-                THROW("ArchiveTimeStamp is not supported");
-            if(!usp->timeStampValidationData().empty())
-                WARN("TimeStampValidationData is not supported");
-        }
-    }
+    // QualifyingProperties
+    XMLNode qp = object/XMLName{"QualifyingProperties", XADES_NS};
+    if(!qp)
+        THROW("Signature block 'QualifyingProperties' is missing.");
+    if(qp + 1)
+        THROW("Signature block 'Object' contains more than one 'QualifyingProperties' block.");
 
-    // Base class has verified the signature to be valid according to XML-DSig.
-    // Now perform additional checks here and throw if this signature is
-    // ill-formed according to BDoc.
+    XMLNode sp = qp/"SignedProperties";
+    if(!sp)
+        THROW("QualifyingProperties block 'SignedProperties' is missing.");
+    if(!(sp/"SignedSignatureProperties"))
+        THROW("SignedProperties block 'SignedSignatureProperties' is missing.");
 
-    getSignedSignatureProperties(); // assumed to throw in case this block doesn't exist
     signingCertificate(); // assumed to throw in case this block doesn't exist
 
     if(id().empty())
         THROW("Signature element mandatory attribute 'Id' is missing");
+
+    if(auto sdop = qp/"SignedProperties"/"SignedDataObjectProperties")
+    {
+        if(sdop/"CommitmentTypeIndication")
+            DEBUG("CommitmentTypeIndicationType is not supported");
+        for(const char *elem: {"AllDataObjectsTimeStamp", "IndividualDataObjectsTimeStamp"})
+            if(sdop/elem)
+                THROW("%s is not supported", elem);
+    }
+
+    if(auto up = qp/"UnsignedProperties")
+    {
+        if(up/"UnsignedDataObjectProperties")
+            THROW("UnsignedDataObjectProperties are not supported");
+        if(auto usp = up/"UnsignedSignatureProperties")
+        {
+            for(const char *elem: {"CounterSignature", "AttributeCertificateRefs", "AttributeRevocationRefs", "RefsOnlyTimeStamp",
+                    "AttrAuthoritiesCertValues", "AttributeRevocationValues", "ArchiveTimeStamp"})
+                if(usp/elem)
+                    THROW("%s is not supported", elem);
+            for(const char *elem: {"CompleteCertificateRefs", "CompleteRevocationRefs", "SigAndRefsTimeStamp", "TimeStampValidationData"})
+                if(usp/elem)
+                    WARN("%s are not supported", elem);
+        }
+    }
 }
 
-SignatureXAdES_B::~SignatureXAdES_B()
+string_view SignatureXAdES_B::canonicalizationMethod() const noexcept
 {
-    auto &seq = signatures->odfsignature ? signatures->odfsignature->signature() : signatures->asicsignature->signature();
-    if(auto i = std::find_if(seq.begin(), seq.end(), [this](const dsig::SignatureType &sig) {
-            return sig.id().get() == signature->id().get();
-        }); i != seq.end())
-        seq.erase(i);
+    return (signature/"SignedInfo"/"CanonicalizationMethod").property("Algorithm");
 }
 
 string SignatureXAdES_B::policy() const
 {
-    const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
-            getSignedSignatureProperties().signaturePolicyIdentifier();
-    if(!identifier)
-        return {};
-
-    const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
-    if(!id)
-        return {};
-
-    const ObjectIdentifierType::IdentifierType &objid = id->sigPolicyId().identifier();
-    if(!objid.qualifier() || objid.qualifier().get() != QualifierType::OIDAsURN)
-        return {};
-
-    return objid;
+    if(auto id = signedSignatureProperties()/"SignaturePolicyIdentifier"/"SignaturePolicyId"/"SigPolicyId"/"Identifier";
+        id && id.property("Qualifier") == "OIDAsURN")
+        return string(id);
+    return {};
 }
 
 /**
@@ -422,28 +364,15 @@ string SignatureXAdES_B::policy() const
 string SignatureXAdES_B::profile() const
 {
     string base = policy().empty() ? "BES" : "EPES";
-    try {
-        auto up = qualifyingProperties().unsignedProperties();
-        if(!up)
-            return base;
-        auto usp = up->unsignedSignatureProperties();
-        if(!usp)
-            return base;
-
-        if(!usp->signatureTimeStamp().empty())
-        {
-            if(!usp->archiveTimeStampV141().empty())
-                return (base + '/').append(ASiC_E::ASIC_TSA_PROFILE);
-            return (base + '/').append(ASiC_E::ASIC_TS_PROFILE);
-        }
-        if(!usp->revocationValues().empty())
-        {
-            if(!usp->archiveTimeStampV141().empty())
-                return (base + '/').append(ASiC_E::ASIC_TMA_PROFILE);
-            return (base + '/').append(ASiC_E::ASIC_TM_PROFILE);
-        }
-    }
-    catch(const Exception &) {}
+    auto usp = qualifyingProperties()/"UnsignedProperties"/"UnsignedSignatureProperties";
+    if(!usp)
+        return base;
+    if(usp/"SignatureTimeStamp")
+        return (base + '/').append(
+            usp/XMLName{"ArchiveTimeStamp", XADESv141_NS} ? ASiC_E::ASIC_TSA_PROFILE : ASiC_E::ASIC_TS_PROFILE);
+    if(usp/"RevocationValues")
+        return (base + '/').append(
+            usp/XMLName{"ArchiveTimeStamp", XADESv141_NS} ? ASiC_E::ASIC_TMA_PROFILE : ASiC_E::ASIC_TM_PROFILE);
     return base;
 }
 
@@ -454,24 +383,8 @@ string SignatureXAdES_B::trustedSigningTime() const
 
 string SignatureXAdES_B::SPUri() const
 {
-    const SignedSignaturePropertiesType::SignaturePolicyIdentifierOptional &identifier =
-            getSignedSignatureProperties().signaturePolicyIdentifier();
-    if(!identifier)
-        return {};
-
-    const SignaturePolicyIdentifierType::SignaturePolicyIdOptional &id = identifier->signaturePolicyId();
-    if(!id)
-        return {};
-
-    const SignaturePolicyIdType::SigPolicyQualifiersOptional &qual = id->sigPolicyQualifiers();
-    if(!qual)
-        return {};
-
-    for(const SigPolicyQualifiersListType::SigPolicyQualifierType &i: qual->sigPolicyQualifier())
-        if(i.sPURI())
-            return i.sPURI().get();
-
-    return {};
+    return string(signedSignatureProperties()
+        /"SignaturePolicyIdentifier"/"SignaturePolicyId"/"SigPolicyQualifiers"/"SigPolicyQualifier"/"SPURI");
 }
 
 void SignatureXAdES_B::validate() const
@@ -494,8 +407,9 @@ void SignatureXAdES_B::validate(const string &policy) const
     // It'll be only thrown in case we have a reason (cause).
     Exception exception(EXCEPTION_PARAMS("Signature validation"));
 
-    if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
-       (signatureMethod() == URI_RSA_SHA1 || signatureMethod() == URI_ECDSA_SHA1))
+    if(auto method = signatureMethod();
+        !Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
+       (method == URI_RSA_SHA1 || method == URI_ECDSA_SHA1))
     {
         Exception e(EXCEPTION_PARAMS("Signature digest weak"));
         e.setCode(Exception::SignatureDigestWeak);
@@ -506,93 +420,51 @@ void SignatureXAdES_B::validate(const string &policy) const
     {
         if(SPUri().empty())
             EXCEPTION_ADD(exception, "Signature SPUri is missing");
-
-        if(auto p = policylist.find(SignatureXAdES_B::policy()); p != policylist.cend())
-        {
-            if(const auto &identifier = getSignedSignatureProperties().signaturePolicyIdentifier())
-            {
-                if(const auto &id = identifier->signaturePolicyId())
-                {
-#if 0 //Disabled IB-3684
-                    const DigestAlgAndValueType &hash = id->sigPolicyHash();
-                    vector<unsigned char> digest(hash.digestValue().begin(), hash.digestValue().end());
-
-                    bool valid = false;
-                    if(hash.digestMethod().algorithm() == URI_SHA1) valid = digest == p->second.SHA1;
-                    else if(hash.digestMethod().algorithm() == URI_SHA224) valid = digest == p->second.SHA224;
-                    else if(hash.digestMethod().algorithm() == URI_SHA256) valid = digest == p->second.SHA256;
-                    else if(hash.digestMethod().algorithm() == URI_SHA384) valid = digest == p->second.SHA384;
-                    else if(hash.digestMethod().algorithm() == URI_SHA512) valid = digest == p->second.SHA512;
-                    else
-                        EXCEPTION_ADD(exception, "Signature policy unknwon digest method");
-
-                    if(!valid)
-                        EXCEPTION_ADD(exception, "Signature policy digest does not match");
-#endif
-                }
-                else
-                    EXCEPTION_ADD(exception, "Signature policy digest is missing");
-            }
-            else
-                EXCEPTION_ADD(exception, "Signature policy digest is missing");
-        }
-        else
+        if(auto p = policylist.find(SignatureXAdES_B::policy()); p == policylist.cend())
             EXCEPTION_ADD(exception, "Signature policy does not match BDOC 2.1 policy");
-    }
-
-    try {
-        XSECProvider prov;
-        auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
-        DOMNode *node = signatures->element(id());
-        unique_ptr<DSIGSignature, decltype(deleteSig)> sig(prov.newSignatureFromDOM(node->getOwnerDocument(), node), deleteSig);
-        unique_ptr<URIResolver> uriresolver = make_unique<URIResolver>(bdoc);
-        unique_ptr<XSECKeyInfoResolverDefault> keyresolver = make_unique<XSECKeyInfoResolverDefault>();
-        sig->setURIResolver(uriresolver.get());
-        sig->setKeyInfoResolver(keyresolver.get());
-        sig->registerIdAttributeName((const XMLCh*)u"Id");
-        sig->setIdByAttributeName(true);
-        sig->load();
-
-        safeBuffer m_errStr;
-        m_errStr.sbXMLChIn((const XMLCh*)u"");
-
-        if(!DSIGReference::verifyReferenceList(sig->getReferenceList(), m_errStr))
-        //if(!sig->verify()) //xml-security-c does not support URI_RSA_PSS_SHA
+        else if(auto identifier = signedSignatureProperties()/"SignaturePolicyIdentifier"; !identifier)
+            EXCEPTION_ADD(exception, "Signature policy digest is missing");
+        else if(auto id = identifier/"SignaturePolicyId"; !id)
+            EXCEPTION_ADD(exception, "Signature policy digest is missing");
+        else
         {
-            //string s = xml::transcode<char>(sig->getErrMsgs())
-            string s = xml::transcode<char>(m_errStr.rawXMLChBuffer());
-            EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
+#if 0 //Disabled IB-3684
+            auto hash = id/"SigPolicyHash";
+            auto algo = hash[{"DigestMethod", DSIG_NS}].property("Algorithm");
+            vector<unsigned char> digest = hash[{"DigestValue", DSIG_NS}];
+
+            bool valid = false;
+            if(algo == URI_SHA1) valid = digest == p->second.SHA1;
+            else if(algo == URI_SHA224) valid = digest == p->second.SHA224;
+            else if(algo == URI_SHA256) valid = digest == p->second.SHA256;
+            else if(algo == URI_SHA384) valid = digest == p->second.SHA384;
+            else if(algo == URI_SHA512) valid = digest == p->second.SHA512;
+            else
+                EXCEPTION_ADD(exception, "Signature policy unknwon digest method");
+
+            if(!valid)
+                EXCEPTION_ADD(exception, "Signature policy digest does not match");
+#endif
         }
     }
-    catch(const Parsing &e)
-    {
-        stringstream s;
-        s << e;
-        EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.str().c_str());
-    }
-    catch(const XSECException &e)
-    {
-        string s = xml::transcode<char>(e.getMsg());
-        EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
-    }
-    catch(const XMLException &e)
-    {
-        string s = xml::transcode<char>(e.getMessage());
-        EXCEPTION_ADD(exception, "Failed to validate signature: %s", s.c_str());
-    }
-    catch(...)
-    {
-        EXCEPTION_ADD(exception, "Failed to validate signature");
-    }
 
-    const SignedPropertiesType &sp = qualifyingProperties().signedProperties().get();
+    cb_doc = bdoc;
+    cb_exception = &exception;
+    bool result = XMLDocument::verifySignature(signature, &exception);
+    cb_doc = {};
+    cb_exception = {};
+    if(!result)
+        EXCEPTION_ADD(exception, "Failed to validate signature");
+
+    auto sp = qualifyingProperties()/"SignedProperties";
+    auto sdop = sp/"SignedDataObjectProperties";
     map<string,string> mimeinfo;
-    if(sp.signedDataObjectProperties())
+    if(sdop)
     {
-        for(const DataObjectFormatType &data: sp.signedDataObjectProperties()->dataObjectFormat())
+        for(auto data = sdop/"DataObjectFormat"; data; data++)
         {
-            if(data.mimeType())
-                mimeinfo.insert({data.objectReference(), data.mimeType().get()});
+            if(auto mime = data/"MimeType")
+                mimeinfo.emplace(data.property("ObjectReference"), mime);
         }
     }
     else
@@ -603,37 +475,38 @@ void SignatureXAdES_B::validate(const string &policy) const
     }
 
     map<string,string> signatureref;
-    string signedPropertiesId = sp.id() ? "#" + sp.id().get() : string();
+    string_view signedPropertiesId = sp.property("Id");
     bool signedInfoFound = false;
-    for(const ReferenceType &ref: signature->signedInfo().reference())
+    for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
     {
-        if(!ref.uRI() || ref.uRI()->empty())
+        auto uri = ref.property("URI");
+        if(uri.empty())
         {
             EXCEPTION_ADD(exception, "Reference URI missing");
             continue;
         }
 
-        if((ref.digestMethod().algorithm() == URI_SHA1 ||
-           ref.digestMethod().algorithm() == URI_SHA224) &&
-           !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
+        if(auto algo = (ref/"DigestMethod").property("Algorithm");
+            !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
+            (algo == URI_SHA1 || algo == URI_SHA224))
         {
-            Exception e(EXCEPTION_PARAMS("Reference '%s' digest weak", ref.uRI().get().c_str()));
+            Exception e(EXCEPTION_PARAMS("Reference '%.*s' digest weak", int(uri.size()), uri.data()));
             e.setCode(Exception::ReferenceDigestWeak);
             exception.addCause(e);
         }
 
-        if(ref.uRI().get() == signedPropertiesId)
+        if(uri.front() == '#' && uri.substr(1) == signedPropertiesId && ref.property("Type") == REF_TYPE)
             signedInfoFound = true;
-        else if(!sp.signedDataObjectProperties())
+        else if(!sdop)
             continue; // DataObjectProperties is missing, no need to match later MediaTypes
-        else if(!ref.id())
-            EXCEPTION_ADD(exception, "Reference '%s' ID  missing", ref.uRI().get().c_str());
+        else if(ref.property("Id").empty())
+            EXCEPTION_ADD(exception, "Reference '%.*s' ID  missing", int(uri.size()), uri.data());
         else
         {
-            string uri = File::fromUriPath(ref.uRI().get());
-            if(uri.front() == '/')
-                uri.erase(0);
-            signatureref.insert({ uri, mimeinfo["#"+ref.id().get()] });
+            string uriPath = File::fromUriPath(uri);
+            if(uriPath.front() == '/')
+                uriPath.erase(0);
+            signatureref.emplace(uriPath, mimeinfo[string("#").append(ref.property("Id"))]);
         }
     }
     if(!signedInfoFound)
@@ -672,9 +545,6 @@ void SignatureXAdES_B::validate(const string &policy) const
     try { checkKeyInfo(); }
     catch(const Exception& e) { exception.addCause(e); }
 
-    try { checkSignatureValue(); }
-    catch(const Exception& e) { exception.addCause(e); }
-
     try { checkSigningCertificate(policy == POLv1); }
     catch(const Exception& e) { exception.addCause(e); }
 
@@ -684,32 +554,32 @@ void SignatureXAdES_B::validate(const string &policy) const
 
 vector<unsigned char> SignatureXAdES_B::dataToSign() const
 {
-    // Calculate SHA digest of the Signature->SignedInfo node.
     Digest calc(signatureMethod());
-    calcDigestOnNode(&calc, URI_ID_DSIG, u"SignedInfo",
-        signature->signedInfo().canonicalizationMethod().algorithm());
+    auto signedInfo = signature/"SignedInfo";
+    signatures->c14n(&calc, (signedInfo/"CanonicalizationMethod").property("Algorithm"), signedInfo);
     return calc.result();
 }
 
-void SignatureXAdES_B::checkCertID(const CertIDType &certID, const X509Cert &cert)
+void SignatureXAdES_B::checkCertID(XMLNode certID, const X509Cert &cert)
 {
-    const X509IssuerSerialType::X509IssuerNameType &certIssuerName = certID.issuerSerial().x509IssuerName();
-    const X509IssuerSerialType::X509SerialNumberType &certSerialNumber = certID.issuerSerial().x509SerialNumber();
+    auto issuerSerial = certID/"IssuerSerial";
+    string_view certIssuerName = issuerSerial/XMLName{"X509IssuerName", DSIG_NS};
+    string_view certSerialNumber = issuerSerial/XMLName{"X509SerialNumber", DSIG_NS};
     if(X509Crypto(cert).compareIssuerToString(certIssuerName) == 0 && cert.serial() == certSerialNumber)
-        return checkDigest(certID.certDigest(), cert);
-    DEBUG("certIssuerName: \"%s\"", certIssuerName.c_str());
+        return checkDigest(certID/"CertDigest", cert);
+    DEBUG("certIssuerName: \"%.*s\"", int(certIssuerName.size()), certIssuerName.data());
     DEBUG("x509.getCertIssuerName() \"%s\"", cert.issuerName().c_str());
-    DEBUG("sertCerials = %s %s", cert.serial().c_str(), certSerialNumber.c_str());
+    DEBUG("sertCerials = %s %.*s", cert.serial().c_str(), int(certSerialNumber.size()), certSerialNumber.data());
     THROW("Signing certificate issuer information does not match");
 }
 
-void SignatureXAdES_B::checkDigest(const DigestAlgAndValueType &digest, const vector<unsigned char> &data)
+void SignatureXAdES_B::checkDigest(XMLNode digest, const vector<unsigned char> &data)
 {
-    vector<unsigned char> calcDigest = Digest(digest.digestMethod().algorithm()).result(data);
-    if(digest.digestValue().size() == calcDigest.size() &&
-        memcmp(calcDigest.data(), digest.digestValue().data(), digest.digestValue().size()) == 0)
+    auto calcDigest = Digest((digest/XMLName{"DigestMethod", DSIG_NS}).property("Algorithm")).result(data);
+    vector<unsigned char> digestValue = digest/XMLName{"DigestValue", DSIG_NS};
+    if(digestValue == calcDigest)
         return;
-    DEBUGMEM("Document cert digest", digest.digestValue().data(), digest.digestValue().size());
+    DEBUGMEM("Document cert digest", digestValue.data(), digestValue.size());
     DEBUGMEM("Calculated cert digest", calcDigest.data(), calcDigest.size());
     THROW("Signing certificate digest does not match");
 }
@@ -721,29 +591,26 @@ void SignatureXAdES_B::checkDigest(const DigestAlgAndValueType &digest, const ve
 void SignatureXAdES_B::checkKeyInfo() const
 {
     X509Cert x509 = signingCertificate();
-    if(const auto &sigCertOpt = getSignedSignatureProperties().signingCertificate())
+    if(auto sigCert = signedSignatureProperties()/"SigningCertificate")
     {
-        const CertIDListType::CertSequence &certs = sigCertOpt->cert();
-        if(certs.size() != 1)
-            THROW("Number of SigningCertificates is %zu, must be 1", certs.size());
-        return checkCertID(certs.front(), x509);
+        if(auto certs = sigCert/"Cert"; certs || !(certs + 1))
+            return checkCertID(certs, x509);
+        THROW("Number of SigningCertificates must be 1");
     }
-    if(const auto &sigCertV2Opt = getSignedSignatureProperties().signingCertificateV2())
+    if(auto sigCertV2 = signedSignatureProperties()/"SigningCertificateV2")
     {
-        const CertIDListV2Type::CertSequence &certs = sigCertV2Opt->cert();
-        if(certs.size() != 1)
-            THROW("Number of SigningCertificatesV2 is %zu, must be 1", certs.size());
+        auto certs = sigCertV2/"Cert";
+        if(!certs || certs + 1)
+            THROW("Number of SigningCertificatesV2 must be 1");
 
         // Verify IssuerSerialV2, optional parameter
-        const auto &cert = certs.front();
-        if(cert.issuerSerialV2())
+        if(vector<unsigned char> issuerSerialV2 = certs/"IssuerSerialV2"; !issuerSerialV2.empty())
         {
-            if(!X509Crypto(x509).compareIssuerToDer(
-                    {cert.issuerSerialV2()->begin(), cert.issuerSerialV2()->end()}))
+            if(!X509Crypto(x509).compareIssuerToDer(issuerSerialV2))
                 THROW("Signing certificate issuer information does not match");
         }
 
-        return checkDigest(cert.certDigest(), x509);
+        return checkDigest(certs/"CertDigest", x509);
     }
     THROW("SigningCertificate/SigningCertificateV2 not found");
 }
@@ -769,38 +636,16 @@ void SignatureXAdES_B::checkSigningCertificate(bool noqscd) const
     }
 }
 
-/**
- * Validate signature value.
- *
- * @throws throws exception if signature value did not match.
- */
-void SignatureXAdES_B::checkSignatureValue() const
-{
-    try
-    {
-        vector<unsigned char> sha = dataToSign();
-        DEBUGMEM("Digest to sign", sha.data(), sha.size());
-        if(!X509Crypto(signingCertificate()).verify(signatureMethod(), sha, getSignatureValue()))
-            THROW_OPENSSLEXCEPTION("Signature is not valid.");
-    }
-    catch(const Exception &e)
-    {
-        THROW_CAUSE(e, "Failed to validate signatureValue.");
-    }
-}
-
 void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime)
 {
-    QualifyingPropertiesType::SignedPropertiesOptional& spOpt = qualifyingProperties().signedProperties();
-    if(!spOpt)
-        THROW("QualifyingProperties block 'SignedProperties' is missing.");
+    auto sp = qualifyingProperties()/"SignedProperties";
+    auto sdop = sp/"SignedDataObjectProperties";
+    if(!sdop)
+        sdop = sp + "SignedDataObjectProperties";
 
-    if(!spOpt->signedDataObjectProperties())
-        spOpt->signedDataObjectProperties(make_unique<SignedDataObjectPropertiesType>());
-
-    auto dataObject = make_unique<DataObjectFormatType>(uri);
-    dataObject->mimeType(mime);
-    spOpt->signedDataObjectProperties()->dataObjectFormat().push_back(std::move(dataObject));
+    auto dataObjectFormat = sdop + "DataObjectFormat";
+    dataObjectFormat.setProperty("ObjectReference", uri);
+    dataObjectFormat + "MimeType" = mime;
 }
 
 /**
@@ -816,41 +661,25 @@ void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime
  * @throws SignatureException throws exception if the digest method is not supported.
  */
 string SignatureXAdES_B::addReference(const string& uri, const string& digestUri,
-        const vector<unsigned char> &digestValue, const string &type, const string &canon)
+        const vector<unsigned char> &digestValue, string_view type, string_view canon)
 {
-    auto reference = make_unique<ReferenceType>(make_unique<DigestMethodType>(digestUri), toBase64(digestValue));
-    reference->uRI(make_unique<Uri>(uri));
+    auto signedInfo = signature/"SignedInfo";
+    size_t i = 0;
+    for(auto reference = signedInfo/"Reference"; reference; reference++, ++i);
+    auto refId = Log::format("%s-RefId%zu", id().c_str(), i);
+
+    auto reference = signedInfo + "Reference";
+    reference.setProperty("Id", refId);
     if(!type.empty())
-        reference->type(type);
+        reference.setProperty("Type", type);
+    reference.setProperty("URI", uri);
 
     if(!canon.empty())
-    {
-        reference->transforms(make_unique<TransformsType>());
-        reference->transforms()->transform().push_back(make_unique<TransformType>(canon));
-    }
+        (reference + "Transforms" + "Transform").setProperty("Algorithm", canon);
+    (reference + "DigestMethod").setProperty("Algorithm", digestUri);
+    reference + "DigestValue" = digestValue;
 
-    SignedInfoType::ReferenceSequence &seq = signature->signedInfo().reference();
-    reference->id(make_unique<Id>(id() + Log::format("-RefId%zu", seq.size())));
-    seq.push_back(std::move(reference));
-
-    return seq.back().id().get();
-}
-
-/**
- * Adds signing certificate to the signature XML. The DER encoded X.509 certificate is added to
- * Signature->KeyInfo->X509Data->X509Certificate.
- *
- * @param cert certificate that is used for signing the signature XML.
- */
-void SignatureXAdES_B::setKeyInfo(const X509Cert& x509)
-{
-    // BASE64 encoding of a DER-encoded X.509 certificate = PEM encoded.
-    auto x509Data = make_unique<X509DataType>();
-    x509Data->x509Certificate().push_back(toBase64(x509));
-
-    auto keyInfo = make_unique<KeyInfoType>();
-    keyInfo->x509Data().push_back(std::move(x509Data));
-    signature->keyInfo(std::move(keyInfo));
+    return refId;
 }
 
 /**
@@ -859,31 +688,22 @@ void SignatureXAdES_B::setKeyInfo(const X509Cert& x509)
  *
  * @param cert certificate that is used for signing the signature XML.
  */
-void SignatureXAdES_B::setSigningCertificate(const X509Cert& x509)
+void SignatureXAdES_B::setSigningCertificate(string_view name, const X509Cert& x509) noexcept
 {
     // Calculate digest of the X.509 certificate.
-    Digest digest;
-    auto signingCertificate = make_unique<CertIDListType>();
-    signingCertificate->cert().push_back(make_unique<CertIDType>(
-        DigestAlgAndValueType(make_unique<DigestMethodType>(digest.uri()), toBase64(digest.result(x509))),
-        X509IssuerSerialType(x509.issuerName(), x509.serial())));
-    getSignedSignatureProperties().signingCertificate(std::move(signingCertificate));
-}
+    auto cert = signedSignatureProperties() + name.data() + "Cert";
 
-/**
- * Adds signing certificate to the signature XML. Certificate info is added to
- * Signature->Object->QualifyingProperties->SignedProperties->SignedSignatureProperties->SigningCertificateV2.
- *
- * @param cert certificate that is used for signing the signature XML.
- */
-void SignatureXAdES_B::setSigningCertificateV2(const X509Cert& x509)
-{
-    // Calculate digest of the X.509 certificate.
     Digest digest;
-    auto signingCertificate = make_unique<CertIDListV2Type>();
-    signingCertificate->cert().push_back(make_unique<CertIDTypeV2>(
-        make_unique<DigestAlgAndValueType>(make_unique<DigestMethodType>(digest.uri()), toBase64(digest.result(x509)))));
-    getSignedSignatureProperties().signingCertificateV2(std::move(signingCertificate));
+    auto certDigest = cert + "CertDigest";
+    (certDigest + XMLName{"DigestMethod", DSIG_NS}).setProperty("Algorithm", digest.uri());
+    certDigest + XMLName{"DigestValue", DSIG_NS} = digest.result(x509);
+
+    if(name == "SigningCertificate")
+    {
+        auto issuerSerial = cert + "IssuerSerial";
+        (issuerSerial + XMLName{"X509IssuerName", DSIG_NS}) = x509.issuerName();
+        issuerSerial + XMLName{"X509SerialNumber", DSIG_NS} = x509.serial();
+    }
 }
 
 /**
@@ -891,32 +711,25 @@ void SignatureXAdES_B::setSigningCertificateV2(const X509Cert& x509)
  *
  * @param spp signature production place.
  */
-template<class T>
-void SignatureXAdES_B::setSignatureProductionPlace(const string &city, const string &streetAddress,
-    const string &stateOrProvince, const string &postalCode, const string &countryName)
+void SignatureXAdES_B::setSignatureProductionPlace(string_view name,
+    const string &city, const string &streetAddress, const string &stateOrProvince,
+    const string &postalCode, const string &countryName) noexcept
 {
     if(city.empty() && streetAddress.empty() && stateOrProvince.empty() &&
         postalCode.empty() && countryName.empty())
         return;
 
-    auto signatureProductionPlace = make_unique<T>();
+    auto signatureProductionPlace = signedSignatureProperties() + name.data();
     if(!city.empty())
-        signatureProductionPlace->city(city);
+        signatureProductionPlace + "City" = city;
     if(!stateOrProvince.empty())
-        signatureProductionPlace->stateOrProvince(stateOrProvince);
+        signatureProductionPlace + "StateOrProvince" = stateOrProvince;
     if(!postalCode.empty())
-        signatureProductionPlace->postalCode(postalCode);
+        signatureProductionPlace + "PostalCode" = postalCode;
     if(!countryName.empty())
-        signatureProductionPlace->countryName(countryName);
-
-    if constexpr (is_same_v<T, SignatureProductionPlaceV2Type>)
-    {
-        if(!streetAddress.empty())
-            signatureProductionPlace->streetAddress(streetAddress);
-        getSignedSignatureProperties().signatureProductionPlaceV2(std::move(signatureProductionPlace));
-    }
-    else
-        getSignedSignatureProperties().signatureProductionPlace(std::move(signatureProductionPlace));
+        signatureProductionPlace + "CountryName" = countryName;
+    if(name == "SignatureProductionPlaceV2" && !streetAddress.empty())
+        signatureProductionPlace + "StreetAddress" = streetAddress;
 }
 
 /**
@@ -925,34 +738,13 @@ void SignatureXAdES_B::setSignatureProductionPlace(const string &city, const str
  *
  * @param roles signer roles.
  */
-template<class T>
-void SignatureXAdES_B::setSignerRoles(const vector<string> &roles)
+void SignatureXAdES_B::setSignerRoles(string_view name, const vector<string> &roles) noexcept
 {
     if(roles.empty())
         return;
-
-    auto claimedRoles = make_unique<ClaimedRolesListType>();
-    claimedRoles->claimedRole().reserve(roles.size());
+    auto claimedRoles = signedSignatureProperties() + name.data() + "ClaimedRoles";
     for(const string &role: roles)
-        claimedRoles->claimedRole().push_back(role);
-
-    auto signerRole = make_unique<T>();
-    signerRole->claimedRoles(std::move(claimedRoles));
-
-    if constexpr (is_same_v<T, SignerRoleV2Type>)
-        getSignedSignatureProperties().signerRoleV2(std::move(signerRole));
-    else
-        getSignedSignatureProperties().signerRole(std::move(signerRole));
-}
-
-/**
- * Sets signature signing time.
- *
- * @param signingTime signing time.
- */
-void SignatureXAdES_B::setSigningTime(time_t signingTime)
-{
-    getSignedSignatureProperties().signingTime(date::makeDateTime(signingTime));
+        claimedRoles + "ClaimedRole" = role;
 }
 
 /**
@@ -962,9 +754,7 @@ void SignatureXAdES_B::setSigningTime(time_t signingTime)
  */
 void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureValue)
 {
-    SignatureValueType buffer = toBase64(signatureValue);
-    signature->signatureValue().swap(buffer);
-    signatures->reloadDOM();
+    signature/"SignatureValue" = signatureValue;
 }
 
 /**
@@ -972,207 +762,86 @@ void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureV
  */
 vector<unsigned char> SignatureXAdES_B::getSignatureValue() const
 {
-    const SignatureType::SignatureValueType &signatureValueType = signature->signatureValue();
-    return {signatureValueType.begin(), signatureValueType.end()};
-}
-
-/**
- * Canonicalize XML node using one of the supported methods in XML-DSIG
- * Using Xerces for parsing XML to preserve the white spaces "as is" and get
- * the same digest value on XML node each time.
- *
- * @param calc digest calculator implementation.
- * @param ns signature tag namespace.
- * @param tagName signature tag name.
- */
-void SignatureXAdES_B::calcDigestOnNode(Digest* calc, string_view ns,
-    u16string_view tagName, string_view canonicalizationMethod) const
-{
-    try
-    {
-        auto *element = signatures->element(id());
-        DOMNodeList *nodeList = element->getElementsByTagNameNS(xml::string(ns.data()).c_str(), tagName.data());
-        if(nodeList->getLength() != 1)
-            THROW("Could not find '%s' node which is in '%.*s' namespace in signature XML.",
-                  xml::transcode<char>(tagName.data()).c_str(), int(ns.size()), ns.data());
-        SecureDOMParser::calcDigestOnNode(calc, canonicalizationMethod, nodeList->item(0));
-    }
-    catch(const Exception& e)
-    {
-        THROW_CAUSE(e, "Failed to create Xerces DOM from signature XML.");
-    }
-    catch(const XMLException& e)
-    {
-        try {
-            string msg = xml::transcode<char>(e.getMessage());
-            THROW("Failed to parse signature XML: %s", msg.c_str());
-        } catch(const xml::invalid_utf16_string & /* ex */) {
-            THROW("Failed to parse signature XML.");
-        }
-    }
-    catch(const DOMException& e)
-    {
-        try {
-            string msg = xml::transcode<char>(e.getMessage());
-            THROW("Failed to parse signature XML: %s", msg.c_str());
-        } catch(const xml::invalid_utf16_string & /* ex */) {
-            THROW("Failed to parse signature XML.");
-        }
-    }
-    catch(const xml::invalid_utf16_string & /* ex */) {
-        THROW("Failed to parse signature XML.");
-    }
-    catch(...)
-    {
-        THROW("Failed to parse signature XML.");
-    }
+    return signature/"SignatureValue";
 }
 
 string SignatureXAdES_B::city() const
 {
-    // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
-    if(const auto &sigProdPlace = getSignedSignatureProperties().signatureProductionPlace();
-        sigProdPlace && sigProdPlace->city())
-        return sigProdPlace->city().get();
-    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
-        sigProdPlaceV2 && sigProdPlaceV2->city())
-        return sigProdPlaceV2->city().get();
-    return {};
+    return string(V1orV2("SignatureProductionPlace", "SignatureProductionPlaceV2")/"City");
 }
 
 string SignatureXAdES_B::stateOrProvince() const
 {
-    // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
-    if(const auto &sigProdPlace = getSignedSignatureProperties().signatureProductionPlace();
-        sigProdPlace && sigProdPlace->stateOrProvince())
-        return sigProdPlace->stateOrProvince().get();
-    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
-        sigProdPlaceV2 && sigProdPlaceV2->stateOrProvince())
-        return sigProdPlaceV2->stateOrProvince().get();
-    return {};
+    return string(V1orV2("SignatureProductionPlace", "SignatureProductionPlaceV2")/"StateOrProvince");
 }
 
 string SignatureXAdES_B::streetAddress() const
 {
-    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
-        sigProdPlaceV2 && sigProdPlaceV2->streetAddress())
-        return sigProdPlaceV2->streetAddress().get();
-    return {};
+    return string(signedSignatureProperties()/"SignatureProductionPlaceV2"/"StreetAddress");
 }
 
 string SignatureXAdES_B::postalCode() const
 {
-    // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
-    if(const auto &sigProdPlace = getSignedSignatureProperties().signatureProductionPlace();
-        sigProdPlace && sigProdPlace->postalCode())
-        return sigProdPlace->postalCode().get();
-    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
-        sigProdPlaceV2 && sigProdPlaceV2->postalCode())
-        return sigProdPlaceV2->postalCode().get();
-    return {};
+    return string(V1orV2("SignatureProductionPlace", "SignatureProductionPlaceV2")/"PostalCode");
 }
 
 string SignatureXAdES_B::countryName() const
 {
-    // return elements from SignatureProductionPlace element or SignatureProductionPlaceV2 when available
-    if(const auto &sigProdPlace = getSignedSignatureProperties().signatureProductionPlace();
-        sigProdPlace && sigProdPlace->countryName())
-        return sigProdPlace->countryName().get();
-    if(const auto &sigProdPlaceV2 = getSignedSignatureProperties().signatureProductionPlaceV2();
-        sigProdPlaceV2 && sigProdPlaceV2->countryName())
-        return sigProdPlaceV2->countryName().get();
-    return {};
+    return string(V1orV2("SignatureProductionPlace", "SignatureProductionPlaceV2")/"CountryName");
 }
 
 vector<string> SignatureXAdES_B::signerRoles() const
 {
-    auto toRoles = [](const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence) -> vector<string> {
-        vector<string> roles;
-        roles.reserve(claimedRoleSequence.size());
-        for(const auto &type: claimedRoleSequence)
-            roles.emplace_back(type.text());
-        return roles;
-    };
-    // return elements from SignerRole element or SignerRoleV2 when available
-    if(const auto &role = getSignedSignatureProperties().signerRole();
-        role && role->claimedRoles())
-        return toRoles(role->claimedRoles()->claimedRole());
-    if(const auto &roleV2 = getSignedSignatureProperties().signerRoleV2();
-        roleV2 && roleV2->claimedRoles())
-        return toRoles(roleV2->claimedRoles()->claimedRole());
-    return {};
+    vector<string> claimedRoles;
+    for(auto claimedRole = V1orV2("SignerRole", "SignerRoleV2")/"ClaimedRoles"/"ClaimedRole"; claimedRole; claimedRole++)
+        claimedRoles.emplace_back(claimedRole);
+    return claimedRoles;
 }
 
 string SignatureXAdES_B::claimedSigningTime() const
 {
-    if(const auto &signingTime = getSignedSignatureProperties().signingTime())
-        return date::to_string(signingTime.get());
-    return {};
+    return string(signedSignatureProperties()/"SigningTime");
 }
 
 X509Cert SignatureXAdES_B::signingCertificate() const
 {
-    const SignatureType::KeyInfoOptional &keyInfoOptional = signature->keyInfo();
-    if(!keyInfoOptional)
-        THROW("Signature does not contain signer certificate");
-
-    try
-    {
-        for(const KeyInfoType::X509DataType &x509Data: keyInfoOptional->x509Data())
+    try {
+        for(auto x509Data = signature/"KeyInfo"/"X509Data"; x509Data; x509Data++)
         {
-            if(x509Data.x509Certificate().empty())
-                continue;
-            const X509DataType::X509CertificateType &data = x509Data.x509Certificate().front();
-            return X509Cert((const unsigned char*)data.data(), data.size());
+            if(vector<unsigned char> cert = x509Data/"X509Certificate"; !cert.empty())
+                return X509Cert(cert);
         }
+        THROW("Signature does not contain signer certificate");
     }
     catch(const Exception &e)
     {
         THROW_CAUSE(e, "Failed to read X509 certificate");
     }
-    THROW("Signature does not contain signer certificate");
 }
 
 string SignatureXAdES_B::id() const
 {
-    return signature->id() ? signature->id().get() : string();
+    return string(signature.property("Id"));
 }
 
 string SignatureXAdES_B::signatureMethod() const
 {
-    return signature->signedInfo().signatureMethod().algorithm();
-}
-
-QualifyingPropertiesType& SignatureXAdES_B::qualifyingProperties() const
-{
-    SignatureType::ObjectSequence& oSeq = signature->object();
-    if ( oSeq.empty() )
-        THROW("Signature block 'Object' is missing.");
-    if(oSeq.size() != 1)
-        THROW("Signature block contains more than one 'Object' block.");
-
-    // QualifyingProperties
-    ObjectType::QualifyingPropertiesSequence& qpSeq = oSeq.front().qualifyingProperties();
-    if ( qpSeq.empty() )
-        THROW("Signature block 'QualifyingProperties' is missing.");
-    if(qpSeq.size() != 1)
-        THROW("Signature block 'Object' contains more than one 'QualifyingProperties' block.");
-
-    return qpSeq.front();
+    return string((signature/"SignedInfo"/"SignatureMethod").property("Algorithm"));
 }
 
 /**
-* Helper that retrieves SignedSignatureProperties xades object. It will throw
-* in case the block is not present.
+* Helper that retrieves SignedSignatureProperties xades object.
 *
-* @return returns the SignedSignaturePropertiesType object.
+* @return returns the XMLNode object.
 */
-SignedSignaturePropertiesType& SignatureXAdES_B::getSignedSignatureProperties() const
+constexpr XMLNode SignatureXAdES_B::signedSignatureProperties() const noexcept
 {
-    QualifyingPropertiesType::SignedPropertiesOptional& spOpt = qualifyingProperties().signedProperties();
-    if(!spOpt)
-        THROW("QualifyingProperties block 'SignedProperties' is missing.");
-    if(!spOpt->signedSignatureProperties())
-        THROW("SignedProperties block 'SignedSignatureProperties' is missing.");
-    return spOpt->signedSignatureProperties().get();
+    return qualifyingProperties()/"SignedProperties"/"SignedSignatureProperties";
+}
+
+constexpr XMLNode SignatureXAdES_B::V1orV2(string_view v1, string_view v2) const noexcept
+{
+    auto ssp = signedSignatureProperties();
+    auto elem = ssp/v1;
+    return elem ? elem : ssp/v2;
 }

@@ -25,6 +25,7 @@
 #include "util/DateTime.h"
 #include "util/File.h"
 
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <fstream>

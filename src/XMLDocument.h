@@ -38,6 +38,8 @@
 
 namespace digidoc {
 
+#define VERSION_CHECK(major, minor, patch) (((major)<<16)|((minor)<<8)|(patch))
+
 template<typename> struct unique_xml;
 template<class T>
 struct unique_xml<void(T *)>
@@ -49,9 +51,10 @@ template<typename T>
 using unique_xml_t = typename unique_xml<T>::type;
 
 template<class T, typename D>
+[[nodiscard]]
 constexpr std::unique_ptr<T, D> make_unique_ptr(T *p, D d) noexcept
 {
-    return {p, d};
+    return {p, std::forward<D>(d)};
 }
 
 static std::vector<unsigned char> from_base64(std::string_view data)
@@ -72,10 +75,8 @@ static std::vector<unsigned char> from_base64(std::string_view data)
             data = {};
         else
             data.remove_prefix(pos + 1);
-        if(EVP_DecodeUpdate(ctx.get(), &result[dataPos], &size, (const unsigned char*)sub.data(), int(sub.size())) >= 0)
-            continue;
-        result.clear();
-        return result;
+        if(EVP_DecodeUpdate(ctx.get(), &result[dataPos], &size, (const unsigned char*)sub.data(), int(sub.size())) == -1)
+            THROW("Invalid Base64 Binary");
     }
 
     if(EVP_DecodeFinal(ctx.get(), &result[dataPos], &size) == 1)
@@ -110,6 +111,14 @@ struct XMLElem
     using sv = std::string_view;
     using pcxmlChar = const xmlChar *;
 
+    static constexpr sv whitespace {" \n\r\f\t\v"};
+
+    template<class C, typename P>
+    constexpr static auto safe(C c, P p) noexcept
+    {
+        return c ? c->*p : nullptr;
+    }
+
     template<class C>
     constexpr static C find(C n, xmlElementType type) noexcept
     {
@@ -124,19 +133,27 @@ struct XMLElem
         return n;
     }
 
-    constexpr static sv to_string_view(const xmlChar *str) noexcept
+    template<class C, typename P>
+    constexpr static sv to_string_view(C d, P p) noexcept
     {
+        auto str = safe(d, p);
         return str ? sv(sv::const_pointer(str)) : sv();
+    }
+
+    template<typename P>
+    constexpr auto children(P p, xmlElementType type = XML_ELEMENT_NODE) const noexcept
+    {
+        return find(safe(d, p), type);
     }
 
     constexpr sv name() const noexcept
     {
-        return to_string_view(d ? d->name : nullptr);
+        return to_string_view(d, &T::name);
     }
 
     constexpr sv ns() const noexcept
     {
-        return to_string_view(d && d->ns ? d->ns->href : nullptr);
+        return to_string_view(safe(d, &T::ns), &xmlNs::href);
     }
 
     constexpr operator bool() const noexcept
@@ -159,8 +176,10 @@ struct XMLElem
 
     constexpr operator sv() const noexcept
     {
-        auto text = find(d ? d->children : nullptr, XML_TEXT_NODE);
-        return to_string_view(text ? text->content : nullptr);
+        auto *text = children(&value_type::children, XML_TEXT_NODE);
+        auto result = to_string_view(text, &std::decay_t<decltype(*text)>::content);
+        result.remove_prefix(std::min<size_t>(result.find_first_not_of(whitespace), result.size()));
+        return result;
     }
 
     pointer d{};
@@ -168,8 +187,8 @@ struct XMLElem
 
 struct XMLName
 {
-    std::string_view name = {};
-    std::string_view ns = {};
+    std::string_view name;
+    std::string_view ns;
 };
 
 struct XMLNode: public XMLElem<xmlNode>
@@ -184,17 +203,12 @@ struct XMLNode: public XMLElem<xmlNode>
 
     constexpr iterator begin() const noexcept
     {
-        return {find(d ? d->children : nullptr, XML_ELEMENT_NODE)};
+        return {children(&value_type::children)};
     }
 
     constexpr iterator end() const noexcept
     {
         return {};
-    }
-
-    XMLNode addChild(sv name, sv ns = {}) const noexcept
-    {
-        return {xmlNewChild(d, searchNS(ns), pcxmlChar(name.data()), nullptr)};
     }
 
     xmlNsPtr addNS(sv href, sv prefix = {}) const noexcept
@@ -209,7 +223,7 @@ struct XMLNode: public XMLElem<xmlNode>
 
     constexpr sv property(sv name, sv ns = {}) const noexcept
     {
-        return find(XMLElem<xmlAttr>{d ? d->properties : nullptr}, name, ns);
+        return find(XMLElem<xmlAttr>{children(&value_type::properties, XML_ATTRIBUTE_NODE)}, name, ns);
     }
 
     void setProperty(sv name, sv value, sv ns) const noexcept
@@ -238,7 +252,7 @@ struct XMLNode: public XMLElem<xmlNode>
 
     XMLNode& operator=(sv text) noexcept
     {
-        if(!d)
+        if(!d || text.empty())
             return *this;
         xmlChar *content = xmlEncodeSpecialChars(d->doc, pcxmlChar(text.data()));
         xmlNodeSetContent(d, content);
@@ -255,6 +269,29 @@ struct XMLNode: public XMLElem<xmlNode>
     {
         return find(*begin(), name.name, name.ns);
     }
+
+    XMLNode operator+(const XMLName &name) const noexcept
+    {
+        return {xmlNewChild(d, searchNS(name.ns), pcxmlChar(name.name.data()), nullptr)};
+    }
+
+    XMLNode operator+(const char *name) const noexcept
+    {
+        return operator +({name, ns()});
+    }
+
+    constexpr auto operator+(int n) noexcept
+    {
+        XMLNode c{*this};
+        for(int i = 0; c && i < n; ++i, c++);
+        return c;
+    }
+
+    XMLNode& operator=(const std::vector<unsigned char> &data)
+    {
+        operator=(to_base64(data));
+        return *this;
+    }
 };
 
 struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
@@ -268,7 +305,7 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
 
     using XMLNode::operator bool;
 
-    XMLDocument(element_type *ptr, const XMLName &n = {}) noexcept
+    XMLDocument(element_type *ptr = {}, const XMLName &n = {}) noexcept
         : std::unique_ptr<element_type, deleter_type>(ptr, xmlFreeDoc)
         , XMLNode{xmlDocGetRootElement(get())}
     {
@@ -333,11 +370,11 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
         }
         else if(!algo.empty())
             THROW("Unsupported canonicalization method '%.*s'", int(algo.size()), algo.data());
-        auto *buf = xmlOutputBufferCreateIO([](void *context, const char *buffer, int len) {
+        auto buf = make_unique_ptr(xmlOutputBufferCreateIO([](void *context, const char *buffer, int len) {
             auto *digest = static_cast<Digest *>(context);
             digest->update(pcxmlChar(buffer), size_t(len));
             return len;
-        }, nullptr, digest, nullptr);
+        }, nullptr, digest, nullptr), xmlOutputBufferClose);
         int size = xmlC14NExecute(get(), [](void *root, xmlNodePtr node, xmlNodePtr parent) constexpr noexcept {
             if(root == node)
                 return 1;
@@ -347,14 +384,14 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
                     return 1;
             }
             return 0;
-        }, node.d, mode, nullptr, with_comments, buf);
+        }, node.d, mode, nullptr, with_comments, buf.get());
         if(size < 0)
             THROW("Failed to canonicalizate input");
     }
 
     bool save(std::string_view path) const noexcept
     {
-        return xmlSaveFormatFileEnc(path.data(), get(), "UTF-8", 1) > 0;
+        return xmlSaveFormatFileEnc(path.data(), get(), "UTF-8", 0) > 0;
     }
 
     bool save(std::ostream &os) const noexcept
@@ -363,26 +400,28 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
             auto *os = static_cast<std::ostream *>(context);
             return os->write(buffer, len) ? len : -1;
         }, nullptr, &os, nullptr);
-        return xmlSaveFormatFileTo(buf, get(), "UTF-8", 1) > 0;
+        return xmlSaveFormatFileTo(buf, get(), "UTF-8", 0) > 0;
     }
 
-    bool validateSchema(const std::string &schemaPath) const noexcept
+    void validateSchema(const std::string &schemaPath) const
     {
         auto parser = make_unique_ptr(xmlSchemaNewParserCtxt(schemaPath.c_str()), xmlSchemaFreeParserCtxt);
         if(!parser)
-            return false;
+            THROW("Failed to create schema parser context %s", schemaPath.c_str());
         xmlSchemaSetParserErrors(parser.get(), schemaValidationError, schemaValidationWarning, nullptr);
         auto schema = make_unique_ptr(xmlSchemaParse(parser.get()), xmlSchemaFree);
         if(!schema)
-            return false;
+            THROW("Failed to parse schema %s", schemaPath.c_str());
         auto validate = make_unique_ptr(xmlSchemaNewValidCtxt(schema.get()), xmlSchemaFreeValidCtxt);
         if(!validate)
-            return false;
-        xmlSchemaSetValidErrors(validate.get(), schemaValidationError, schemaValidationWarning, nullptr);
-        return xmlSchemaValidateDoc(validate.get(), get()) == 0;
+            THROW("Failed to create schema validation context %s", schemaPath.c_str());
+        Exception e(EXCEPTION_PARAMS("Failed to XML with schema"));
+        xmlSchemaSetValidErrors(validate.get(), schemaValidationError, schemaValidationWarning, &e);
+        if(xmlSchemaValidateDoc(validate.get(), get()) != 0)
+            throw e;
     }
 
-    static bool verifySignature(XMLNode signature) noexcept
+    static bool verifySignature(XMLNode signature, [[maybe_unused]] Exception *e = {}) noexcept
     {
         auto mngr = make_unique_ptr(xmlSecKeysMngrCreate(), xmlSecKeysMngrDestroy);
         if(!mngr)
@@ -393,18 +432,41 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
         if(!ctx)
             return false;
         ctx->keyInfoReadCtx.flags |= XMLSEC_KEYINFO_FLAGS_X509DATA_DONT_VERIFY_CERTS;
-        if(xmlSecDSigCtxVerify(ctx.get(), signature.d) < 0)
+        int result = xmlSecDSigCtxVerify(ctx.get(), signature.d);
+#if VERSION_CHECK(XMLSEC_VERSION_MAJOR, XMLSEC_VERSION_MINOR, XMLSEC_VERSION_SUBMINOR) >= VERSION_CHECK(1, 3, 0)
+        if(ctx->failureReason == xmlSecDSigFailureReasonReference)
+        {
+            for(xmlSecSize i = 0; i < xmlSecPtrListGetSize(&(ctx->signedInfoReferences)); ++i)
+            {
+                auto *ref = xmlSecDSigReferenceCtxPtr(xmlSecPtrListGetItem(&(ctx->signedInfoReferences), i));
+                if(ref->status != xmlSecDSigStatusSucceeded)
+                {
+                    if(e)
+                        e->addCause(Exception(EXCEPTION_PARAMS("Failed to validate Reference '%s'", ref->uri)));
+                    else
+                        WARN("Failed to validate Reference '%s'", ref->uri);
+                }
+            }
+        }
+#endif
+        if(result < 0)
             return false;
         return ctx->status == xmlSecDSigStatusSucceeded;
     }
 
-    static void schemaValidationError(void */*ctx*/, const char *msg, ...) noexcept
+    static void schemaValidationError(void *ctx, const char *msg, ...) noexcept
     {
         va_list args{};
         va_start(args, msg);
         std::string m = Log::formatArgList(msg, args);
         va_end(args);
-        ERR("Schema validation error: %s", m.c_str());
+        if(ctx)
+        {
+            auto *e = static_cast<Exception*>(ctx);
+            e->addCause(digidoc::Exception(EXCEPTION_PARAMS("Schema validation error: %s", m.c_str())));
+        }
+        else
+            ERR("Schema validation error: %s", m.c_str());
     }
 
     static void schemaValidationWarning(void */*ctx*/, const char *msg, ...) noexcept

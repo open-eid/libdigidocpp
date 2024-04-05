@@ -2,7 +2,6 @@
     "name": "libdigidocpp",
     "version": "3.18.0",
     "dependencies": [
-      "xml-security-c",
       {
         "name": "libxml2",
         "default-features": false
@@ -16,17 +15,8 @@
     "builtin-baseline": "4065f37d0a6628ef17cf6ee15385f9091f1075bc",
     "vcpkg-configuration": {
         "overlay-ports": [
-          "patches/vcpkg-ports/openssl",
-          "patches/vcpkg-ports/xml-security-c",
-          "patches/vcpkg-ports/xmlsec"
-        ],
-        "registries": [
-          {
-            "kind": "git",
-            "repository": "https://github.com/microsoft/vcpkg.git",
-            "baseline": "f32fc13dbef629b611fab9103d25e8d6c6ab9f6d",
-            "packages": [ "xalan-c" ]
-          }
+          "vcpkg-ports/openssl",
+          "vcpkg-ports/xmlsec"
         ]
     }
 }

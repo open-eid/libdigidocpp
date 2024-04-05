@@ -149,7 +149,7 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
         std::array<unsigned char,SHA_DIGEST_LENGTH> sha1{};
         ASN1_BIT_STRING *key = X509_get0_pubkey_bitstr(cert.handle());
         SHA1(key->data, size_t(key->length), sha1.data());
-        return sha1.size() == hash->length && memcmp(hash->data, sha1.data(), sha1.size()) == 0;
+        return equal(sha1.cbegin(), sha1.cend(), hash->data, std::next(hash->data, hash->length));
     }
     return false;
 }
