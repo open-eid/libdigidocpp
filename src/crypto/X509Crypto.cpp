@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <unordered_map>
 
 using namespace digidoc;
 using namespace std;
@@ -103,26 +104,33 @@ int X509Crypto::compareIssuerToString(string_view name) const
         "UID", "userId"
     };
 
-    for(size_t old = 0, pos = name.find(','); ; pos = name.find(',', old))
+    bool escape = false;
+    string_view key;
+    std::unordered_map<string_view,string_view> data;
+    for(size_t i = 0, pos = 0; i < name.size(); ++i)
     {
-        if(pos == string::npos)
-            pos = name.size();
-        if(pos < old)
-            break;
-        if(name[pos-1] == '\\')
+        if(escape)
+            escape = false;
+        else if(char chr = name[i]; chr == '\\')
+            escape = true;
+        else if(chr == '=' && key.empty())
         {
-            old = pos + 1;
-            continue;
+            key = name.substr(pos, i - pos);
+            pos += key.size() + 1;
         }
+        else if(auto last = (i + 1) == name.size(); last || chr == ',')
+        {
+            auto value = name.substr(pos, last ? string_view::npos : i - pos);
+            data[key] = value;
+            key = {};
+            pos += value.size() + 1;
+        }
+    }
 
-        auto nameitem = name.substr(old, pos - old);
-        old = pos + 1;
-
-        if(pos = nameitem.find('=');
-            pos == string::npos || pos == 0 || nameitem[pos-1] == '\\')
-            continue;
-
-        auto obj = find(list.cbegin(), list.cend(), nameitem.substr(0, pos));
+    X509_NAME *issuer = X509_get_issuer_name(cert.handle());
+    for(const auto &[key, val]: data)
+    {
+        auto obj = find(list.cbegin(), list.cend(), key);
         if(obj == list.cend())
             continue;
 
@@ -130,13 +138,13 @@ int X509Crypto::compareIssuerToString(string_view name) const
             obj++;
         ASN1_OBJECT *obja = OBJ_txt2obj(*obj, 0);
         if(!obja)
-            continue;
+            return -1;
 
         static const string_view escape = " #+,;<=>\\";
-        string value(nameitem.substr(pos+1, pos-old));
+        string value(val);
         static const errc ok{};
         uint8_t result{};
-        for(string::size_type pos = value.find('\\'); pos < value.size(); pos = value.find('\\', ++pos))
+        for(size_t pos = value.find('\\'); pos < value.size(); pos = value.find('\\', ++pos))
         {
             if(auto data = next(value.data(), pos + 1); from_chars(data, next(data, 2), result, 16).ec == ok)
             {
@@ -148,7 +156,6 @@ int X509Crypto::compareIssuerToString(string_view name) const
         }
 
         bool found = false;
-        X509_NAME *issuer = X509_get_issuer_name(cert.handle());
         for(int i = 0; i < X509_NAME_entry_count(issuer); ++i)
         {
             X509_NAME_ENTRY *entb = X509_NAME_get_entry(issuer, i);

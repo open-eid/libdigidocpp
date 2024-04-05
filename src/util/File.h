@@ -51,7 +51,7 @@ namespace digidoc
               static void deleteTempFiles();
               static std::string toUriPath(const std::string &path);
               static std::string fromUriPath(std::string_view path);
-              static std::vector<unsigned char> hexToBin(const std::string &in);
+              static std::vector<unsigned char> hexToBin(std::string_view in);
 #ifdef _WIN32
               static std::string dllPath(std::string_view dll);
 #endif
