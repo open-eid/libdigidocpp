@@ -156,13 +156,13 @@ void XmlConf::Private::init(const string& path, bool global)
     {
         if(elem.name() == "ocsp")
         {
-            ocsp.emplace(elem.property("issuer"), elem);
+            ocsp.emplace(elem["issuer"], elem);
             continue;
         }
-        auto paramName = elem.property("name");
+        auto paramName = elem["name"];
         string_view value = elem;
         optional<bool> lock;
-        if(auto val = elem.property("lock"); !val.empty())
+        if(auto val = elem["lock"]; !val.empty())
             lock = val == "true";
         auto setValue = [&](auto &param) {
             if(paramName != param.name)
@@ -229,7 +229,7 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, A value)
     // Remove old entries
     for(auto i = doc.begin(); i != doc.end();)
     {
-        if(XMLNode n{*i}; n.name() == "param" && n.property("name") == param.name)
+        if(XMLNode n{*i}; n.name() == "param" && n["name"] == param.name)
             i = XMLNode::erase(i);
         else
             ++i;

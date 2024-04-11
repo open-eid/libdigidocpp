@@ -70,12 +70,12 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
 
     Digest calc;
     auto method = canonicalizationMethod();
-    signatures->c14n(&calc, method, signature/"SignatureValue");
+    signatures->c14n(&calc, method, signatureValue());
 
     TS tsa(CONF(TSUrl), calc);
     auto ts = usp + "SignatureTimeStamp";
     ts.setProperty("Id", id() + Log::format("-T%zu", i));
-    (ts + XMLName{"CanonicalizationMethod", DSIG_NS}).setProperty("Algorithm", method);
+    (ts + CanonicalizationMethod).setProperty("Algorithm", method);
     ts + "EncapsulatedTimeStamp" = tsa;
 }
 
@@ -110,7 +110,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             THROW("More than one SignatureTimeStamp is not supported");
 
         TS tsa = verifyTS(ts, exception, [this](Digest *digest, string_view canonicalizationMethod) {
-            signatures->c14n(digest, canonicalizationMethod, signature/"SignatureValue");
+            signatures->c14n(digest, canonicalizationMethod, signatureValue());
         });
 
         tm tm = tsa.time();
@@ -164,7 +164,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
         for(auto sigAndRefsTS = usp/"SigAndRefsTimeStamp"; sigAndRefsTS; sigAndRefsTS++)
         {
             verifyTS(sigAndRefsTS, exception, [this, usp](Digest *digest, string_view canonicalizationMethod) {
-                signatures->c14n(digest, canonicalizationMethod, signature/"SignatureValue");
+                signatures->c14n(digest, canonicalizationMethod, signatureValue());
                 for(const auto *name: {
                        "SignatureTimeStamp",
                        "CompleteCertificateRefs",
@@ -197,7 +197,7 @@ XMLNode SignatureXAdES_T::unsignedSignatureProperties() const
 TS SignatureXAdES_T::verifyTS(XMLNode timestamp, digidoc::Exception &exception,
     std::function<void (Digest *, std::string_view)> &&calcDigest)
 {
-    auto ets = timestamp/XMLName{"EncapsulatedTimeStamp", XADES_NS};
+    auto ets = timestamp/EncapsulatedTimeStamp;
     if(!ets)
         THROW("Missing EncapsulatedTimeStamp");
     if(ets + 1)
@@ -205,9 +205,8 @@ TS SignatureXAdES_T::verifyTS(XMLNode timestamp, digidoc::Exception &exception,
 
     TS ts(ets);
     Digest calc(ts.digestMethod());
-    calcDigest(&calc, (timestamp/XMLName{"CanonicalizationMethod", DSIG_NS}).property("Algorithm"));
+    calcDigest(&calc, (timestamp/CanonicalizationMethod)["Algorithm"]);
     ts.verify(calc.result());
-
 
     if(ts.digestMethod() == URI_SHA1 &&
         !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))

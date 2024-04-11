@@ -34,6 +34,9 @@ namespace digidoc
     constexpr std::string_view XADESv141_NS {"http://uri.etsi.org/01903/v1.4.1#"};
     constexpr std::string_view REF_TYPE {"http://uri.etsi.org/01903#SignedProperties"};
 
+    constexpr XMLName QualifyingProperties {"QualifyingProperties", XADES_NS};
+    constexpr XMLName CanonicalizationMethod {"CanonicalizationMethod", DSIG_NS};
+
     class ASiContainer;
     class Signer;
     class Signatures: public XMLDocument
@@ -64,7 +67,7 @@ namespace digidoc
           void validate() const final;
           void validate(const std::string &policy) const override;
           std::vector<unsigned char> dataToSign() const final;
-          void setSignatureValue(const std::vector<unsigned char> &signatureValue) final;
+          void setSignatureValue(const std::vector<unsigned char> &value) final;
 
           // Xades properties
           std::string policy() const final;
@@ -81,10 +84,13 @@ namespace digidoc
 
       protected:
           std::string_view canonicalizationMethod() const noexcept;
-          std::vector<unsigned char> getSignatureValue() const;
+          constexpr XMLNode signatureValue() const noexcept
+          {
+              return signature/"SignatureValue";
+          }
           constexpr XMLNode qualifyingProperties() const noexcept
           {
-              return signature/"Object"/XMLName{"QualifyingProperties", XADES_NS};
+              return signature/"Object"/QualifyingProperties;
           }
           constexpr XMLNode signedSignatureProperties() const noexcept;
           static void checkCertID(XMLNode certID, const X509Cert &cert);

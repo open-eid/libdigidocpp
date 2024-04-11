@@ -21,112 +21,95 @@
 
 #include "ASiC_E.h"
 #include "Conf.h"
+#include "DataFile_p.h"
 #include "crypto/Digest.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
+#include "util/File.h"
+
+#include <algorithm>
+#include <array>
 
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
+namespace digidoc
+{
+constexpr XMLName ArchiveTimeStamp {"ArchiveTimeStamp", XADESv141_NS};
+}
+
 void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
     string_view canonicalizationMethod) const
 {
-#if 0
-    try {
-        XSECProvider prov;
-        auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
-        DOMNode *node = signatures->element(id());
-        unique_ptr<DSIGSignature,decltype(deleteSig)> sig(prov.newSignatureFromDOM(node->getOwnerDocument(), node), deleteSig);
-        unique_ptr<URIResolver> uriresolver = make_unique<URIResolver>(bdoc);
-        unique_ptr<XSECKeyInfoResolverDefault> keyresolver = make_unique<XSECKeyInfoResolverDefault>();
-        sig->setURIResolver(uriresolver.get());
-        sig->setKeyInfoResolver(keyresolver.get());
-        sig->registerIdAttributeName((const XMLCh*)u"ID");
-        sig->setIdByAttributeName(true);
-        sig->load();
-
-        safeBuffer m_errStr;
-        m_errStr.sbXMLChIn((const XMLCh*)u"");
-
-        array<XMLByte, 1024> buf{};
-        DSIGReferenceList *list = sig->getReferenceList();
-        for(size_t i = 0; i < list->getSize(); ++i)
+    for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
+    {
+        auto uri = ref["URI"];
+        if(ref["Type"] == REF_TYPE)
         {
-            unique_ptr<XSECBinTXFMInputStream> stream(list->item(i)->makeBinInputStream());
-            for(XMLSize_t size = stream->readBytes(buf.data(), buf.size()); size > 0;
-                 size = stream->readBytes(buf.data(), buf.size()))
-                digest->update(buf.data(), size);
+            auto sp = qualifyingProperties()/"SignedProperties";
+            if(uri.front() != '#' || sp["Id"] != uri.substr(1))
+                THROW("Invalid SignedProperties ID");
+            signatures->c14n(digest, canonicalizationMethod, sp);
+            continue;
         }
-    }
-    catch(const Parsing &e)
-    {
-        stringstream s;
-        s << e;
-        THROW("Failed to calculate digest: %s", s.str().c_str());
-    }
-    catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-        THROW("Failed to calculate digest");
-    }
-    catch(const XSECException &e)
-    {
-        try {
-            string result = xsd::cxx::xml::transcode<char>(e.getMsg());
-            THROW("Failed to calculate digest: %s", result.c_str());
-        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-            THROW("Failed to calculate digest");
-        }
-    }
-    catch(XMLException &e)
-    {
-        try {
-            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
-            THROW("Failed to calculate digest: %s", result.c_str());
-        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-            THROW("Failed to calculate digest");
-        }
-    }
-    catch(...)
-    {
-        THROW("Failed to calculate digest");
-    }
 
-    for(const auto *name: {u"SignedInfo", u"SignatureValue", u"KeyInfo"})
-    {
-        try {
-            calcDigestOnNode(digest, DSIG_NS, name, canonicalizationMethod);
-        } catch(const Exception &) {
-            DEBUG("Element %s not found", xsd::cxx::xml::transcode<char>(name).data());
+        string uriPath = File::fromUriPath(uri);
+        if(uriPath.front() == '/')
+            uriPath.erase(0);
+
+        auto files = bdoc->dataFiles();
+        auto file = find_if(files.cbegin(), files.cend(), [&uriPath](DataFile *file) {
+            return file->fileName() == uriPath;
+        });
+        if(file == files.cend())
+            THROW("Filed to find reference URI in container");
+
+        std::istream *is = static_cast<const DataFilePrivate*>(*file)->m_is.get();
+        array<unsigned char, 10240> buf{};
+        is->clear();
+        is->seekg(0);
+        while(*is)
+        {
+            is->read((char*)buf.data(), streamsize(buf.size()));
+            if(is->gcount() > 0)
+                digest->update(buf.data(), size_t(is->gcount()));
         }
     }
 
+    for(const auto *name: {"SignedInfo", "SignatureValue", "KeyInfo"})
+    {
+        if(auto elem = signature/name)
+            signatures->c14n(digest, canonicalizationMethod, elem);
+        else
+            DEBUG("Element %s not found", name);
+    }
+
+    auto usp = unsignedSignatureProperties();
     for(const auto *name: {
-             u"SignatureTimeStamp",
-             u"CounterSignature",
-             u"CompleteCertificateRefs",
-             u"CompleteRevocationRefs",
-             u"AttributeCertificateRefs",
-             u"AttributeRevocationRefs",
-             u"CertificateValues",
-             u"RevocationValues",
-             u"SigAndRefsTimeStamp",
-             u"RefsOnlyTimeStamp" })
+        "SignatureTimeStamp",
+        "CounterSignature",
+        "CompleteCertificateRefs",
+        "CompleteRevocationRefs",
+        "AttributeCertificateRefs",
+        "AttributeRevocationRefs",
+        "CertificateValues",
+        "RevocationValues",
+        "SigAndRefsTimeStamp",
+        "RefsOnlyTimeStamp" })
     {
-        try {
-            calcDigestOnNode(digest, Signatures::XADES_NAMESPACE, name, canonicalizationMethod);
-        } catch(const Exception &) {
-            DEBUG("Element %s not found", xsd::cxx::xml::transcode<char>(name).data());
-        }
+        if(auto elem = usp/name)
+            signatures->c14n(digest, canonicalizationMethod, elem);
+        else
+            DEBUG("Element %s not found", name);
     }
 
-    try {
-        calcDigestOnNode(digest, Signatures::XADESv141_NAMESPACE, u"TimeStampValidationData", canonicalizationMethod);
-    } catch(const Exception &) {
+    if(auto elem = usp/XMLName{"TimeStampValidationData", XADESv141_NS})
+        signatures->c14n(digest, canonicalizationMethod, elem);
+    else
         DEBUG("Element TimeStampValidationData not found");
-    }
     //ds:Object
-#endif
 }
 
 void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
@@ -134,38 +117,23 @@ void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
     SignatureXAdES_LT::extendSignatureProfile(profile);
     if(profile != ASiC_E::ASIC_TSA_PROFILE)
         return;
-#if 0
     Digest calc;
-    calcArchiveDigest(&calc, signature->signedInfo().canonicalizationMethod().algorithm());
+    auto method = canonicalizationMethod();
+    calcArchiveDigest(&calc, method);
+
     TS tsa(CONF(TSUrl), calc);
-    vector<unsigned char> der = tsa;
-    auto &usp = unsignedSignatureProperties();
-    auto ts = make_unique<xadesv141::ArchiveTimeStampType>();
-    ts->id(id() + "-A0");
-    ts->canonicalizationMethod(signature->signedInfo().canonicalizationMethod());
-    ts->encapsulatedTimeStamp().push_back(make_unique<EncapsulatedPKIDataType>(
-        Base64Binary(der.data(), der.size(), der.size(), false)));
-    usp.archiveTimeStampV141().push_back(std::move(ts));
-    usp.contentOrder().emplace_back(UnsignedSignaturePropertiesType::archiveTimeStampV141Id,
-        usp.archiveTimeStampV141().size() - 1);
-    signatures->reloadDOM();
-#endif
+    auto ts = unsignedSignatureProperties() + ArchiveTimeStamp;
+    ts.setNS(ts.addNS(XADESv141_NS, "xades141"));
+    ts.setProperty("Id", id() + "-A0");
+    (ts + CanonicalizationMethod).setProperty("Algorithm", method);
+    ts + EncapsulatedTimeStamp = tsa;
 }
 
 TS SignatureXAdES_LTA::tsaFromBase64() const
 {
-#if 0
     try {
-        if(unsignedSignatureProperties().archiveTimeStampV141().empty())
-            return {};
-        const xadesv141::ArchiveTimeStampType &ts = unsignedSignatureProperties().archiveTimeStampV141().front();
-        if(ts.encapsulatedTimeStamp().empty())
-            return {};
-        const GenericTimeStampType::EncapsulatedTimeStampType &bin =
-                ts.encapsulatedTimeStamp().front();
-        return {(const unsigned char*)bin.data(), bin.size()};
+        return {unsignedSignatureProperties()/ArchiveTimeStamp/EncapsulatedTimeStamp};
     } catch(const Exception &) {}
-#endif
     return {};
 }
 
@@ -196,24 +164,16 @@ void SignatureXAdES_LTA::validate(const string &policy) const
         return;
     }
 
-#if 0
     try {
-        if(unsignedSignatureProperties().archiveTimeStampV141().empty())
+        auto ts = unsignedSignatureProperties()/ArchiveTimeStamp;
+        if(!ts)
             THROW("Missing ArchiveTimeStamp element");
-
-        const xadesv141::ArchiveTimeStampType &ts = unsignedSignatureProperties().archiveTimeStampV141().front();
-        if(ts.encapsulatedTimeStamp().empty())
-            THROW("Missing EncapsulatedTimeStamp");
-
         verifyTS(ts, exception, [this](Digest *digest, string_view canonicalizationMethod) {
             calcArchiveDigest(digest, canonicalizationMethod);
         });
     } catch(const Exception &e) {
         exception.addCause(e);
     }
-#else
-    EXCEPTION_ADD(exception, "LTA validation is not supported");
-#endif
     if(!exception.causes().empty())
         throw exception;
 }
