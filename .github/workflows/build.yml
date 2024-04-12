@@ -79,7 +79,7 @@ jobs:
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [38, 39]
+        container: [38, 39, 40]
     steps:
     - name: Install Deps
       run: |
@@ -111,14 +111,14 @@ jobs:
     container: ubuntu:${{ matrix.container }}
     strategy:
       matrix:
-        container: ['20.04', '22.04', '23.10']
+        container: ['20.04', '22.04', '23.10', '24.04']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions
       DEBEMAIL: github-actions@github.com
     steps:
     - name: Install dependencies
-      run: apt update -qq && apt install --no-install-recommends -y git lsb-release fakeroot build-essential devscripts debhelper cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-distutils libboost-test-dev lintian
+      run: apt update -qq && apt install --no-install-recommends -y git lsb-release build-essential devscripts debhelper cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-setuptools libboost-test-dev lintian
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -155,7 +155,6 @@ jobs:
           vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
     env:
       VER_SUFFIX: .VS${{ matrix.toolset }}
-      VERSION: 3.18.0.${{ github.run_number }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -181,16 +180,11 @@ jobs:
       run: .\prepare_win_build_environment.ps1 -xsd
     - name: Install WiX
       run: |
-        dotnet tool install -g wix
-        wix extension -g add WixToolset.UI.wixext/4.0.4
-    - name: Setup dev env
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: ${{ matrix.platform }}
+        dotnet tool install -g wix --version 5.0.0
+        wix extension -g add WixToolset.UI.wixext/5.0.0
     - name: Build
       run: |
         & .\build.ps1 `
-          -msiversion $env:VERSION `
           -vcpkg_installed ${{ github.workspace }}/vcpkg_installed `
           -vcvars "${{ matrix.vcvars }}" `
           -platform ${{ matrix.platform }} `
