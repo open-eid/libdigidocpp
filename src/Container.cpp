@@ -68,19 +68,14 @@ namespace digidoc
 static string m_appName = "libdigidocpp";
 static string m_userAgent = "libdigidocpp";
 static vector<decltype(&Container::createPtr)> m_createList {};
-using OpenCB = std::unique_ptr<Container> (*)(const std::string &path, ContainerOpenCB *cb);
-static vector<OpenCB> m_openList {};
+static vector<std::unique_ptr<Container> (*)(const std::string &path, ContainerOpenCB *cb)> m_openList {};
 }
 
 /**
- * @class digidoc::Container
- * @brief Offers functionality for handling data files and signatures in a container.
+ * @typedef initCallBack
+ * @param e digidoc::Exception that occured on initialization
  *
- * Container can contain several files and all these files can be signed using
- * signing certificates. Container can only be signed if it contains data files.
- * data files can be added and removed from container only if the container is
- * not signed. To add or remove data files from signed container remove all the
- * signatures before modifying data files list in container.
+ * Used in digidoc::initialize to notfiy if the initalization has completed
  */
 
 /**
@@ -198,6 +193,35 @@ void digidoc::terminate()
 }
 
 /**
+ * @struct digidoc::ContainerOpenCB
+ * @brief Used on container open to provide additional info.
+ *
+ * ContainerOpenCB struct is used on
+ * digidoc::Container::openPtr(const std::string &path, digidoc::ContainerOpenCB *cb)
+ * when additional info is requested.
+ */
+
+/**
+ * @fn digidoc::ContainerOpenCB::validateOnline
+ * Called when requested access online resources.
+ */
+/**
+ * @fn digidoc::ContainerOpenCB::~ContainerOpenCB
+ * Releases resources.
+ */
+
+/**
+ * @class digidoc::Container
+ * @brief Offers functionality for handling data files and signatures in a container.
+ *
+ * Container can contain several files and all these files can be signed using
+ * signing certificates. Container can only be signed if it contains data files.
+ * data files can be added and removed from container only if the container is
+ * not signed. To add or remove data files from signed container remove all the
+ * signatures before modifying data files list in container.
+ */
+
+/**
  * Create a new container object and specify the DigiDoc container type
  */
 Container::Container() = default;
@@ -261,7 +285,7 @@ void Container::addDataFile(unique_ptr<istream> /*is*/, const string & /*fileNam
  */
 void Container::addAdESSignature(const std::vector<unsigned char> &signature)
 {
-    stringstream s(string(signature.begin(), signature.end()));
+    stringstream s({signature.begin(), signature.end()});
     addAdESSignature(s);
 }
 
@@ -350,7 +374,7 @@ unique_ptr<Container> Container::openPtr(const string &path)
  * Opens container from a file
  *
  * @param path
- * @param cb Callback called when needed
+ * @param cb Callback called when additional info is requested (digidoc::ContainerOpenCB::validateOnline)
  * @throws Exception
  */
 unique_ptr<Container> Container::openPtr(const string &path, ContainerOpenCB *cb)

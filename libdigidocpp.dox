@@ -10,18 +10,18 @@ Additional documentation about the library can be found from GitHub wiki section
 /*! \page manual Libdigidocpp Programmer's Guide
 
 \section introduction Introduction
-Libdigidocpp is the C++ library for creating applications handling digital signatures, their creation and verification. The digitally signed files are created in "DigiDoc format" (with .bdoc or .asice file extensions), compliant to XML Advanced Electronic Signatures (XAdES), technical standard published by European Telecommunication Standards Institute (ETSI).
+Libdigidocpp is the C++ library for creating applications handling digital signatures, their creation and verification. The digitally signed files are created in "DigiDoc format" (with .asice file extension), compliant to XML Advanced Electronic Signatures (\ref XAdES), technical standard published by European Telecommunication Standards Institute (ETSI).
 
-Additionally the libdigidocpp library can be used to read and verify the digitally timestamped containers (using .asics file extension) with a single datafile. There is possible to validate \ref PDF and legacy container formats with \ref SiVa service.
+Additionally the libdigidocpp library can be used to read and verify the digitally timestamped containers (using .asics file extension) with a single datafile. There is possible to validate \ref ASiC (\ref CAdES), \ref PDF and \ref DDOC formats  with \ref SiVa service.
 
-Development of the library can be monitored in GitHub environment: <a href="https://github.com/open-eid/libdigidocpp">https://github.com/open-eid/libdigidocpp</a>
+Development of the library can be monitored in GitHub environment: <a href="https://github.com/open-eid/libdigidocpp">https://github.com/open-eid/libdigidocpp</a>.
 
 \subsection about About DigiDoc
-Libdigidocpp library forms a part of the wider DigiDoc system framework which offers a full-scale architecture for digital signature and documents, consisting of software libraries (C, C++ and Java), SiVa service and end-user applications such as DigiDoc4 Client according to the following figure:
+Libdigidocpp library forms a part of the wider DigiDoc system framework which offers a full-scale architecture for digital signature and documents, consisting of software libraries (C++ and Java), SiVa service and end-user applications such as DigiDoc4 Client according to the following figure:
 
 \image html digidoc_framework.svg "DigiDoc framework"
 
-It is easy to integrate DigiDoc components into existing applications in order to allow for creation, handling, forwarding and verification of digital signatures and support file encryption/decryption. All applications share common digitally signed file formats.
+It is easy to integrate DigiDoc components into existing applications in order to allow for creation, handling, forwarding and verification of digital signatures. All applications share common digitally signed file formats.
 
 
 
@@ -30,15 +30,16 @@ It is easy to integrate DigiDoc components into existing applications in order t
 
 \subsection format Format of digitally signed file
 Actively used digitally signed file formats in DigiDoc system are:
-- BDOC 2.1 - default format for files in Libdigidocpp library, described in \ref BDOC "BDOC2.1:2013";
-- ASiC-S - timestamped container, described in \ref ASiC "The ETSI standard TS 102 918". The library implements only read-only support for the format.
+- ASiC-E - default format for files in Libdigidocpp library, described in \ref ASiC "The ETSI standard ETSI EN 319 162-1";
+- BDOC 2.1 - legacy format, described in \ref BDOC "BDOC2.1:2013", The library implements only read-only support for the format;
+- ASiC-S - timestamped container, described in \ref ASiC "The ETSI standard ETSI EN 319 162-1". The library implements only read-only support for the format.
 
-The following chapters provides an overview of BDOC 2.1 digitally signed file format which is the preferred format for creating signed documents in Libdigidocpp library.
+The following chapters provides an overview of ASiC-E (XAdES) digitally signed file format which is the preferred format for creating signed documents in Libdigidocpp library.
 
 
 
-\subsubsection container BDOC container format
-The ETSI standard \ref ASiC "TS 102 918" called Associated Signature Containers (ASiC) defines format of container for encapsulation of signed files and signatures with extra information. The ETSI \ref ASiC-BP "TS 103 174" "ASiC Baseline Profile" profiles in further on. The container type used in case of BDOC 2.1 documents is Associated Signature Extended form (ASiC-E).
+\subsubsection container ASiC-E (XAdES) container format
+The ETSI standard \ref ASiC "EN 319 162-1" called Associated Signature Containers (ASiC) defines format of container for encapsulation of signed files and signatures with extra information. The container type used in case of ASiC-E documents is Associated Signature Extended form. In the container \ref XAdES_EN "XAdES EN 319 132-1" (XML Advanced Electronic Signatures) format signatures are used.
 
 ASiC-E container is a ZIP file consisting of the following objects:
 - a file named "mimetype", containing only the following value: application/vnd.etsi.asic-e+zip
@@ -47,18 +48,18 @@ ASiC-E container is a ZIP file consisting of the following objects:
 	- manifest.xml – a file containing list of all files in the container. The list does not contain the "mimetype" file and files in META-INF subdirectory.
 	- signatures*.xml – one file for each signature, ‘*’ in the file’s name denotes the sequence number of a signature (counting starts from zero). The signatures*.xml file also incorporates certificates, validity confirmation and meta-data about the signer.
 
-When BDOC 2.1 container is signed then all files in the container are signed, except of the mimetype file and files in META-INF subdirectory.
+When ASiC-E container is signed then all files in the container are signed, except of the mimetype file and files in META-INF subdirectory.
 
-Original files (which were signed) along with the signature(s), validation confirmation(s) and certificates are encapsulated within the container. As a result, it is possible to verify signature validity without any additional external information – the verifier should trust the issuer of signer’s certificate and the OCSP responder’s certificate.
+Original files (which were signed) along with the signature(s), timestamp(s), validation confirmation(s) and certificates are encapsulated within the container. As a result, it is possible to verify signature validity without any additional external information – the verifier should trust the issuer of signer’s certificate, TS Authority and the OCSP responder’s certificate.
 
-\image html asic.svg "BDOC 2.1 container's contents"
-
-
+\image html asic.svg "ASiC-E container's contents"
 
 
-\subsubsection profiles BDOC signature profiles
 
-The format of the BDOC 2.1 digitally signed file is based on ETSI \ref XAdES "TS 101 903" standard called XML Advanced Electronic Signatures ("XAdES"). The XAdES standard defines formats for advanced electronic signatures that remain valid over long periods of time. The ETSI standard \ref XAdES-BP "TS 103 171" "XAdES Baseline Profile" further profiles the XAdES signature by putting limitations on choices.
+
+\subsubsection profiles Legacy BDOC signature profiles
+
+The format of the BDOC 2.1 digitally signed file is based on ETSI \ref XAdES "XAdES TS 101 903" standard. The XAdES standard defines formats for advanced electronic signatures that remain valid over long periods of time. The ETSI standard \ref XAdES-BP "TS 103 171" "XAdES Baseline Profile" further profiles the XAdES signature by putting limitations on choices.
 
 BDOC 2.1 specification defines two profiles of qualified BDOC signatures: BDOC with time-mark and BDOC with time-stamp. Both of the profiles offer long-term validation possibility by incorporating the necessary validation data in the signature. Both of the profiles are compliant to XAdES LT-Level requirements.
 
@@ -164,13 +165,19 @@ ETSI TS 103 171 V2.1.1 (2012-03) - XAdES Baseline Profile
 
 http://www.etsi.org/deliver/etsi_ts/103100_103199/103171/02.01.01_60/ts_103171v020101p.pdf
 </td></tr><tr><td>\anchor XAdES_EN XAdES EN</td><td>
-ETSI EN 319 132-1 V1.1.1 (2016-04) - XAdES digital signatures
+ETSI EN 319 132-1 V1.2.1 (2022-02) - Building blocks and XAdES baseline signatures
 
+https://www.etsi.org/deliver/etsi_en/319100_319199/31913201/01.02.01_60/en_31913201v010201p.pdf<br />
+Other versions:<br />
 http://www.etsi.org/deliver/etsi_en/319100_319199/31913201/01.01.01_60/en_31913201v010101p.pdf
 </td></tr><tr><td>\anchor XAdES-Validation XAdES Validation</td><td>
 ETSI TS 102 853 V1.1.2 (2012-10) – Signature validation procedures and policies
 
 http://www.etsi.org/deliver/etsi_ts/102800_102899/102853/01.01.02_60/ts_102853v010102p.pdf
+</td></tr><tr><td>\anchor CAdES CAdES EN</td><td>
+ETSI EN 319 122-1 V1.2.1 (2021-10) - Building blocks and CAdES baseline signatures
+
+https://www.etsi.org/deliver/etsi_en/319100_319199/31912201/01.02.01_60/en_31912201v010201p.pdf
 </td></tr><tr><td>\anchor ZIP PKWARE ZIP</td><td>
 ZIP File Format Specification
 

@@ -35,7 +35,7 @@ Conf* Conf::INSTANCE = nullptr;
 
 /**
  * @typedef digidoc::ConfCurrent
- * @see digidoc::ConfV5
+ * Reference to latest ConfV5 class.
  */
 
 /**

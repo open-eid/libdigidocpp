@@ -265,7 +265,7 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, A &&defined, const A 
 
 /**
  * @typedef digidoc::XmlConfCurrent
- * @see digidoc::XmlConfV5
+ * Reference to latest XmlConfV5 class
  */
 
 /**
