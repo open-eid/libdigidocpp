@@ -128,7 +128,9 @@ Signatures::Signatures(istream &data, ASiContainer *container)
     properties.schema_location(URI_ID_DSIG, File::fullPathUrl(xsdPath + "/xmldsig-core-schema.xsd"));
     properties.schema_location(ASIC_NAMESPACE, File::fullPathUrl(xsdPath + "/en_31916201v010101.xsd"));
     properties.schema_location(OPENDOCUMENT_NAMESPACE, File::fullPathUrl(xsdPath + "/OpenDocument_dsig.xsd"));
-    parseDOM(data, properties.schema_location());
+    copy << data.rdbuf();
+
+    parseDOM(copy, properties.schema_location());
 
     try
     {
@@ -208,12 +210,20 @@ void Signatures::reloadDOM()
     // Save to file an parse it again, to make XML Canonicalization work
     // correctly as expected by the Canonical XML 1.0 specification.
     // Hope, the next Canonical XMl specification fixes the white spaces preserving "bug".
-    stringstream ofs;
-    save(ofs);
-    parseDOM(ofs);
+    copy.str({});
+    copy.clear();
+    saveXML(copy);
+    parseDOM(copy);
 }
 
 void Signatures::save(ostream &os) const
+{
+    if(copy.str().empty())
+        return saveXML(os);
+    os << copy.str();
+}
+
+void Signatures::saveXML(ostream &os) const
 {
     try
     {
