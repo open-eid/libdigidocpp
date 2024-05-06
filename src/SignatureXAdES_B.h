@@ -25,6 +25,7 @@
 
 #include <map>
 #include <memory>
+#include <sstream>
 
 namespace digidoc
 {
@@ -57,8 +58,10 @@ namespace digidoc
 
     private:
         void parseDOM(std::istream &data, const std::string &schema_location = {});
+        void saveXML(std::ostream &os) const;
 
         std::unique_ptr<xercesc::DOMDocument> doc;
+        std::stringstream copy;
     };
 
     class SignatureXAdES_B : public Signature
