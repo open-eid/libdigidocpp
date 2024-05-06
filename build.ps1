@@ -4,8 +4,8 @@ param(
   [string]$vcpkg = "vcpkg\vcpkg.exe",
   [string]$vcpkg_dir = (split-path -parent $vcpkg),
   [string]$vcpkg_installed = $libdigidocpp,
-  [string]$buildver = "0",
-  [string]$msiversion = "3.18.0.$buildver",
+  [string]$build_number = $(if ($null -eq $env:BUILD_NUMBER) {"0"} else {$env:BUILD_NUMBER}),
+  [string]$msiversion = "3.18.0.$build_number",
   [string]$platform = "x64",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.$platform.msi",
   [string]$cmake = "cmake.exe",
@@ -19,11 +19,6 @@ param(
   [string]$sign = $null
 )
 
-# Hack to fetch heat.exe tool
-& dotnet new console -o wix-heat --force
-& dotnet add wix-heat package WixToolset.Heat
-$heat = Get-ChildItem "$env:USERPROFILE\.nuget\packages\WixToolset.Heat" -Include heat.exe -Recurse
-
 $cmakeext = @()
 $wixext = @()
 $target = @("all")
@@ -33,7 +28,7 @@ if($swig) {
 }
 if($doxygen) {
   $cmakeext += "-DDOXYGEN_EXECUTABLE=$doxygen"
-  $wixext += "-d", "docLocation=$platform/share/doc/libdigidocpp", "DocFilesFragment.wxs"
+  $wixext += "-d", "docLocation=$(Get-Location)/$platform/share/doc/libdigidocpp"
 }
 if($boost) {
   $cmakeext += "-DVCPKG_MANIFEST_FEATURES=tests"
@@ -53,21 +48,14 @@ foreach($type in @("Debug", "RelWithDebInfo")) {
     $cmakeext "&&" $cmake --build $buildpath --target $target "&&" $cmake --install $buildpath
 }
 
-if($doxygen) {
-  & $heat[0] dir $platform/share/doc/libdigidocpp -nologo -cg Documentation -gg -scom -sreg -sfrag -srd -dr DocumentationFolder -var var.docLocation -out DocFilesFragment.wxs
-}
-
-& $heat[0] dir $platform/include -nologo -cg Headers -gg -scom -sreg -sfrag -srd -dr HeadersFolder -var var.headersLocation -out HeadersFragment.wxs
-& $wix build -nologo -arch $platform -out $msi_name $wixext `
+& $vcvars $platform "&&" $wix build -nologo -arch $platform -out $msi_name $wixext `
   -ext WixToolset.UI.wixext `
   -bv "WixUIBannerBmp=$libdigidocpp/cmake/modules/banner.bmp" `
   -bv "WixUIDialogBmp=$libdigidocpp/cmake/modules/dlgbmp.bmp" `
   -d "ICON=$libdigidocpp/cmake/modules/ID.ico" `
   -d "MSI_VERSION=$msiversion" `
   -d "vcpkg=$vcpkg_installed/vcpkg_installed_$platform/$platform-windows" `
-  -d "libdigidocpp=$platform" `
-  -d "headersLocation=$platform/include" `
-  HeadersFragment.wxs `
+  -d "libdigidocpp=$(Get-Location)/$platform" `
   $libdigidocpp\libdigidocpp.wxs
 
 if($sign) {

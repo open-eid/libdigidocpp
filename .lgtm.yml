@@ -1,4 +1,0 @@
-extraction:
-  cpp:
-     configure:
-        command: "cmake -DPODOFO_INCLUDE_DIR=NOTFOUND -DSWIG_EXECUTABLE=NOTFOUND ."
