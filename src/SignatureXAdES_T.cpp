@@ -66,7 +66,7 @@ string SignatureXAdES_T::TimeStampTime() const
 string SignatureXAdES_T::trustedSigningTime() const
 {
     string time = TimeStampTime();
-    return time.empty() ? SignatureXAdES_B::trustedSigningTime() : time;
+    return time.empty() ? SignatureXAdES_B::trustedSigningTime() : std::move(time);
 }
 
 void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)

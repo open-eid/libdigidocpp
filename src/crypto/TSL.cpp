@@ -37,6 +37,7 @@ DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
 #include <xsec/framework/XSECProvider.hpp>
 DIGIDOCPP_WARNING_POP
 
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <future>
@@ -94,10 +95,16 @@ const set<string_view> TSL::SERVICES_SUPPORTED = {
     "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES", //???
 };
 
+template<typename C, typename T>
+constexpr bool find(const C &list, const T &value)
+{
+    return find(list.begin(), list.end(), value) != list.end();
+}
+
 
 
 TSL::TSL(string file)
-    : path(move(file))
+    : path(std::move(file))
 {
     try {
         if(!File::fileExists(path))
@@ -124,7 +131,7 @@ TSL::TSL(string file)
             string result = xsd::cxx::xml::transcode<char>(e.getMessage());
             WARN("Failed to parse TSL %s %s: %s", territory().c_str(), path.c_str(), result.c_str());
         } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-             WARN("Failed to parse TSL %s %s", territory().c_str(), path.c_str());
+            WARN("Failed to parse TSL %s %s", territory().c_str(), path.c_str());
         }
     }
     catch(const Exception &e)
@@ -145,14 +152,13 @@ bool TSL::activate(const string &territory)
     string path = cache + "/" + territory + ".xml";
     if(File::fileExists(path))
         return false;
-    ofstream(File::encodeName(path).c_str(), ofstream::binary) << " ";
+    ofstream(File::encodeName(path), ofstream::binary) << " ";
     return true;
 }
 
 vector<TSL::Service> TSL::services() const
 {
-    if(GENERIC_URI.find(type()) == GENERIC_URI.cend() ||
-        !tsl->trustServiceProviderList())
+    if(!find(GENERIC_URI, type()) || !tsl->trustServiceProviderList())
         return {};
 
     vector<Service> services;
@@ -161,7 +167,7 @@ vector<TSL::Service> TSL::services() const
         for(const TSPServiceType &service: pointer.tSPServices().tSPService())
         {
             const TSPServiceInformationType &serviceInfo = service.serviceInformation();
-            if(SERVICES_SUPPORTED.find(serviceInfo.serviceTypeIdentifier()) == SERVICES_SUPPORTED.cend())
+            if(!find(SERVICES_SUPPORTED, serviceInfo.serviceTypeIdentifier()))
                 continue;
             Service s;
             s.type = serviceInfo.serviceTypeIdentifier();
@@ -179,7 +185,7 @@ vector<TSL::Service> TSL::services() const
                         parseInfo(history, s, previousTime);
                 }
             }
-            services.push_back(move(s));
+            services.push_back(std::move(s));
         }
     }
     return services;
@@ -187,7 +193,7 @@ vector<TSL::Service> TSL::services() const
 
 void TSL::debugException(const digidoc::Exception &e)
 {
-    Log::out(Log::DebugType, e.file().c_str(), e.line(), "%s", e.msg().c_str());
+    Log::out(Log::DebugType, e.file().c_str(), unsigned(e.line()), "%s", e.msg().c_str());
     for(const Exception &ex: e.causes())
         debugException(ex);
 }
@@ -197,9 +203,9 @@ string TSL::fetch(const string &url, const string &path)
     try
     {
         Connect::Result r = Connect(url, "GET", CONF(TSLTimeOut)).exec({{"Accept-Encoding", "gzip"}});
-        if(!r.isOK() || r.content.empty())
+        if(!r || r.content.empty())
             THROW("HTTP status code is not 200 or content is empty");
-        ofstream(File::encodeName(path).c_str(), fstream::binary|fstream::trunc) << r.content;
+        ofstream(File::encodeName(path), fstream::binary|fstream::trunc) << r.content;
         return r.headers["ETag"];
     }
     catch(const Exception &)
@@ -311,11 +317,12 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
         tsl.validate(certs);
         valid = tsl;
 
-        ofstream(File::encodeName(path).c_str(), ofstream::binary|fstream::trunc)
-            << ifstream(File::encodeName(tmp).c_str(), fstream::binary).rdbuf();
-        File::removeFile(tmp);
+        ofstream(File::encodeName(path), ofstream::binary|fstream::trunc)
+            << ifstream(File::encodeName(tmp), fstream::binary).rdbuf();
+        error_code ec;
+        std::filesystem::remove(std::filesystem::u8path(tmp), ec);
 
-        ofstream(File::encodeName(path + ".etag").c_str(), ofstream::trunc) << etag;
+        ofstream(File::encodeName(path + ".etag"), ofstream::trunc) << etag;
         DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
     } catch(const Exception &) {
         ERR("TSL %s signature is invalid", territory.c_str());
@@ -353,7 +360,7 @@ bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
             {
                 for(const QualificationElementType &element: extension.qualificationsType()->qualificationElement())
                 {
-                    Qualifier q;
+                    Qualifier &q = qualifiers.emplace_back();
                     for(const QualifierType &qualifier: element.qualifiers().qualifier())
                     {
                         if(qualifier.uri())
@@ -364,7 +371,7 @@ bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
                         q.assert_ = criteria.assert_().get();
                     for(const KeyUsageType &keyUsage: criteria.keyUsage())
                     {
-                        map<X509Cert::KeyUsage,bool> usage;
+                        map<X509Cert::KeyUsage,bool> &usage = q.keyUsage.emplace_back();
                         for(const KeyUsageBitType &bit: keyUsage.keyUsageBit())
                         {
                             if(!bit.name())
@@ -388,16 +395,14 @@ bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
                             if(bit.name().get() == "decipherOnly")
                                 usage[X509Cert::DecipherOnly] = bit;
                         }
-                        q.keyUsage.push_back(move(usage));
                     }
                     for(const PoliciesListType &policySet: criteria.policySet())
                     {
-                        vector<string> policies;
+                        vector<string> &policies = q.policySet.emplace_back();
+                        policies.reserve(policySet.policyIdentifier().size());
                         for(const xades::ObjectIdentifierType &policy: policySet.policyIdentifier())
                             policies.push_back(policy.identifier());
-                        q.policySet.push_back(move(policies));
                     }
-                    qualifiers.push_back(move(q));
                 }
             }
         }
@@ -411,9 +416,9 @@ bool TSL::parseInfo(const Info &info, Service &s, time_t &previousTime)
         s.certs.emplace_back((const unsigned char*)base64.data(), base64.size());
     }
 
-    if(SERVICESTATUS_START.find(info.serviceStatus()) != SERVICESTATUS_START.cend())
-        s.validity.push_back({date::xsd2time_t(info.statusStartingTime()), previousTime, qualifiers});
-    else if(SERVICESTATUS_END.find(info.serviceStatus()) == SERVICESTATUS_END.cend())
+    if(find(SERVICESTATUS_START, info.serviceStatus()))
+        s.validity.push_back({date::xsd2time_t(info.statusStartingTime()), previousTime, std::move(qualifiers)});
+    else if(!find(SERVICESTATUS_END, info.serviceStatus()))
         DEBUG("Unknown service status %s", info.serviceStatus().c_str());
     previousTime = date::xsd2time_t(info.statusStartingTime());
     return true;
@@ -438,8 +443,7 @@ vector<string> TSL::pivotURLs() const
 
 vector<TSL::Pointer> TSL::pointers() const
 {
-    if(SCHEMES_URI.find(type()) == SCHEMES_URI.cend() ||
-        !tsl->schemeInformation().pointersToOtherTSL())
+    if(!find(SCHEMES_URI, type()) || !tsl->schemeInformation().pointersToOtherTSL())
         return {};
     vector<Pointer> pointer;
     for(const OtherTSLPointersType::OtherTSLPointerType &other:
@@ -453,7 +457,7 @@ vector<TSL::Pointer> TSL::pointers() const
         p.location = string(other.tSLLocation());
         p.certs = serviceDigitalIdentities(other, p.territory);
         if(!p.certs.empty())
-            pointer.push_back(move(p));
+            pointer.push_back(std::move(p));
     }
     return pointer;
 }
@@ -615,8 +619,8 @@ void TSL::validate(const vector<X509Cert> &certs, int recursion) const
     if(!pivot.tsl)
     {
         string etag = fetch(urls[0], path);
-        ofstream(File::encodeName(path + ".etag").c_str(), ofstream::trunc) << etag;
-        pivot = TSL(path);
+        ofstream(File::encodeName(path + ".etag"), ofstream::trunc) << etag;
+        pivot = TSL(std::move(path));
     }
     pivot.validate(certs, recursion + 1);
     validate(pivot.signingCerts(), recursion);
@@ -633,7 +637,7 @@ bool TSL::validateETag(const string &url)
     Connect::Result r;
     try {
         r = Connect(url, "HEAD", CONF(TSLTimeOut)).exec({{"Accept-Encoding", "gzip"}});
-        if(!r.isOK())
+        if(!r)
             return false;
     } catch(const Exception &e) {
         debugException(e);
@@ -641,7 +645,7 @@ bool TSL::validateETag(const string &url)
         return false;
     }
 
-    map<string,string>::const_iterator it = r.headers.find("ETag");
+    auto it = r.headers.find("ETag");
     if(it == r.headers.cend())
         return validateRemoteDigest(url);
 
@@ -666,8 +670,8 @@ bool TSL::validateRemoteDigest(const string &url)
     Connect::Result r;
     try
     {
-        r= Connect(url.substr(0, pos) + ".sha2", "GET", CONF(TSLTimeOut)).exec();
-        if(!r.isOK())
+        r = Connect(url.substr(0, pos) + ".sha2", "GET", CONF(TSLTimeOut)).exec();
+        if(!r)
             return false;
     } catch(const Exception &e) {
         debugException(e);
@@ -687,7 +691,7 @@ bool TSL::validateRemoteDigest(const string &url)
     }
 
     Digest sha(URI_RSA_SHA256);
-    vector<unsigned char> buf(10240, 0);
+    array<unsigned char, 10240> buf{};
     ifstream is(path, ifstream::binary);
     while(is)
     {

@@ -4,7 +4,7 @@ permissions:
   contents: read
 env:
   BUILD_NUMBER: ${{ github.run_number }}
-  MAKEFLAGS: -j3
+  CMAKE_BUILD_PARALLEL_LEVEL: 4
 jobs:
   macos:
     name: Build on macOS for ${{ matrix.target }}
@@ -14,7 +14,7 @@ jobs:
         target: [osx, ios, iossimulator, androidarm, androidarm64, androidx86_64]
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Install dependencies
@@ -23,9 +23,12 @@ jobs:
       run: |
         brew update
         brew install doxygen boost xsd || brew link --overwrite xsd
-        brew unlink xerces-c python@3.10 python@3.11
+        brew unlink xerces-c
+        brew unlink python@3.10 || true
+        brew unlink python@3.11 || true
+        brew unlink python@3.12 || true
     - name: Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       id: cache
       with:
         path: cache
@@ -60,33 +63,36 @@ jobs:
         zip -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
     - name: Archive artifacts
       if: matrix.target == 'osx'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: pkgs
+        name: macOS
         path: macOS/libdigidocpp*.*
     - name: Archive artifacts
       if: matrix.target != 'osx'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.target }}
         path: libdigidocpp*.zip
   fedora:
-    name: Build on Fedora to ${{ matrix.container }}
+    name: Build on Fedora ${{ matrix.container }}
     runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
+    container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: ['fedora:37', 'fedora:38']
-    env:
-      MAKEFLAGS: -j3
+        container: [38, 39, 40]
     steps:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
-          git gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel \
-          https://www.codesynthesis.com/download/xsd/4.0/linux-gnu/x86_64/xsd-4.0.0-1.x86_64.rpm
+          git gcc-c++ cmake rpm-build xml-security-c-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel xsd minizip-devel
+    - name: Install CMake
+      if: matrix.container == 39
+      run: |
+        dnf install -y --setopt=install_weak_deps=False wget
+        wget -q https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.sh
+        sh cmake-3.28.1-linux-x86_64.sh --skip-license --prefix=/usr/local
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Build
@@ -95,26 +101,26 @@ jobs:
         cmake --build build
         cmake --build build --target package
     - name: Archive artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: rpms
+        name: fedora_${{ matrix.container }}
         path: build/libdigidocpp*.rpm
   ubuntu:
-    name: Build on Ubuntu to ${{ matrix.container }}
+    name: Build on Ubuntu ${{ matrix.container }}
     runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
+    container: ubuntu:${{ matrix.container }}
     strategy:
       matrix:
-        container: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:23.10']
+        container: ['20.04', '22.04', '23.10', '24.04']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions
       DEBEMAIL: github-actions@github.com
     steps:
     - name: Install dependencies
-      run: apt update -qq && apt install --no-install-recommends -y git lsb-release fakeroot build-essential devscripts debhelper cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-distutils libboost-test-dev lintian
+      run: apt update -qq && apt install --no-install-recommends -y git lsb-release build-essential devscripts debhelper cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-setuptools libboost-test-dev lintian
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Setup changelog
@@ -129,9 +135,9 @@ jobs:
     - name: Lintian
       run: lintian *.deb;
     - name: Archive artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: debs
+        name: ubuntu_${{ matrix.container }}
         path: libdigidocpp*.*
   windows:
     name: Build on Windows
@@ -139,6 +145,7 @@ jobs:
     strategy:
       matrix:
         toolset: [143, 142]
+        platform: [x86, x64]
         include:
         - toolset: 143
           image: windows-2022
@@ -147,62 +154,47 @@ jobs:
           image: windows-2019
           vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
     env:
-      MAKEFLAGS: ""
       VER_SUFFIX: .VS${{ matrix.toolset }}
-      VERSION: 3.17.0.${{ github.run_number }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
-    - uses: mad9000/actions-find-and-replace-string@3
-      id: path
-      with:
-        source: ${{ github.workspace }}
-        find: '\'
-        replace: '/'
-        replaceAll: true
-    - name: Prepare vcpkg X64
+    - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 6a349fe1fbea1e5fcda2e0775f555d829a5e82df
-        vcpkgJsonGlob: ${{ steps.path.outputs.value }}/vcpkg.json
+        vcpkgGitCommitId: 1f619be01b436b796dab797dd1e1721c5676f8ac
+        vcpkgJsonGlob: ./vcpkg.json
         runVcpkgInstall: true
         runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
       env:
-        VCPKG_DEFAULT_TRIPLET: x64-windows-v${{ matrix.toolset }}
-        VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
-    - name: Prepare vcpkg X86
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 6a349fe1fbea1e5fcda2e0775f555d829a5e82df
-        vcpkgJsonGlob: ${{ steps.path.outputs.value }}/vcpkg.json
-        runVcpkgInstall: true
-        runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
-      env:
-        VCPKG_DEFAULT_TRIPLET: x86-windows-v${{ matrix.toolset }}
+        VCPKG_DEFAULT_TRIPLET: ${{ matrix.platform }}-windows
         VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
     - name: Install dependencies
-      run: choco install doxygen.install swig -y > $null
-    - uses: actions/setup-python@v4
+      run: choco install doxygen.install -y > $null
+    - uses: actions/setup-python@v5
       with:
         python-version: 3.11
-        architecture: x86
+        architecture: ${{ matrix.platform }}
     - name: Build xsd
       run: .\prepare_win_build_environment.ps1 -xsd
+    - name: Install WiX
+      run: |
+        dotnet tool install -g wix --version 5.0.0
+        wix extension -g add WixToolset.UI.wixext/5.0.0
     - name: Build
       run: |
         & .\build.ps1 `
-          -msiversion $env:VERSION `
-          -toolset ${{ matrix.toolset }} `
+          -vcpkg_installed ${{ github.workspace }}/vcpkg_installed `
           -vcvars "${{ matrix.vcvars }}" `
+          -platform ${{ matrix.platform }} `
           -swig C:/ProgramData/chocolatey/bin/swig.exe `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
           -boost
     - name: Archive artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: msi
+        name: msi_${{ matrix.toolset }}_${{ matrix.platform }}
         path: ./*.msi
   pages:
     name: Deploy pages
@@ -212,7 +204,7 @@ jobs:
       contents: write
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Install dependencies
@@ -236,7 +228,7 @@ jobs:
       PROJECTNAME: ${{ github.repository }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Install dependencies
@@ -250,7 +242,7 @@ jobs:
       run: |
         cmake .
         export PATH=$PWD/cov-analysis-linux64/bin:$PATH
-        cov-build --dir cov-int make
+        cov-build --dir cov-int cmake --build .
     - name: Submit the result to Coverity Scan
       run: |
         tar czvf upload.tgz cov-int
@@ -265,18 +257,18 @@ jobs:
   codeql:
     name: Run CodeQL tests
     if: github.repository == 'open-eid/libdigidocpp'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       security-events: write
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake vim-common xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: cpp
         queries: +security-and-quality
@@ -289,7 +281,7 @@ jobs:
           -DBUILD_TOOLS=NO
         cmake --build build
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         upload: False
         output: sarif-results
@@ -305,6 +297,6 @@ jobs:
         input: sarif-results/cpp.sarif
         output: sarif-results/cpp.sarif
     - name: Upload results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: sarif-results/cpp.sarif

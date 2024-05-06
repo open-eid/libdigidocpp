@@ -1,199 +1,134 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?if $(sys.BUILDARCH) = x64 ?>
+  <?define UpgradeCode = "{93985BBA-6B59-443B-80C8-BA987407F8B8}" ?>
+  <?define OpenSSLSuffix = "-x64" ?>
+<?elseif $(sys.BUILDARCH) = arm64 ?>
+  <?define UpgradeCode = "{de2f0796-01fe-4291-bfc1-c01f631d082b}" ?>
+  <?define OpenSSLSuffix = "-arm64" ?>
+<?else?>
+  <?define UpgradeCode = "{7f1b1519-b527-4130-998d-233f4d050f14}" ?>
+  <?define OpenSSLSuffix = "" ?>
+<?endif?>
+
 <?if $(env.VisualStudioVersion) = "17.0" ?>
 <?define VCVER = "143" ?>
 <?elseif $(env.VisualStudioVersion) = "16.0" ?>
 <?define VCVER = "142" ?>
 <?endif?>
-<?define VCPKG_X86 = "$(var.vcpkg_x86)\bin" ?>
-<?define VCPKG_X64 = "$(var.vcpkg_x64)\bin" ?>
-<?define VCPKG_X86D = "$(var.vcpkg_x86)\debug\bin" ?>
-<?define VCPKG_X64D = "$(var.vcpkg_x64)\debug\bin" ?>
 
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Name="Libdigidocpp" UpgradeCode="{93985BBA-6B59-443B-80C8-BA987407F8B8}"
-      Id="*" Language="1033" Version="$(var.MSI_VERSION)" Codepage="1251" Manufacturer="RIA">
-    <Package Keywords="Installer" InstallerVersion="405" Compressed="yes"/>
-    <MediaTemplate EmbedCab="yes" CompressionLevel="high"/>
-    <Icon Id="ID.ico" SourceFile="$(var.ICON)"/>
-    <Property Id="ARPPRODUCTICON" Value="ID.ico"/>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="Libdigidocpp $(sys.BUILDARCH)" UpgradeCode="$(var.UpgradeCode)"
+      Language="1033" Version="$(var.MSI_VERSION)" Manufacturer="RIA" InstallerVersion="500">
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <Icon Id="ID.ico" SourceFile="$(var.ICON)" />
+    <Property Id="ARPPRODUCTICON" Value="ID.ico" />
     <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage=
-      "A newer version of [ProductName] is already installed. If you are trying to downgrade, please uninstall the newer version first."/>
+        "A newer version of [ProductName] is already installed. If you are trying to downgrade, please uninstall the newer version first." />
     <UI>
-       <UIRef Id="WixUI_Mondo" />
-       <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="SetupTypeDlg" Order="3">1</Publish>
-       <Publish Dialog="SetupTypeDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="3">1</Publish>
+       <ui:WixUI Id="WixUI_Mondo" />
+       <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="SetupTypeDlg" Order="3" />
+       <Publish Dialog="SetupTypeDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="3" />
     </UI>
 
-    <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id='ProgramFilesFolder'>
-          <Directory Id="APPLICATIONFOLDER" Name="libdigidocpp">
-            <Directory Id="X86FOLDER" Name="x86">
-              <Component Id="LibrariesX86" Guid="{57A72AF6-5458-4106-BFC8-A611DAF89A59}">
-                <File Source="$(env.VCTOOLSREDISTDIR)\x86\Microsoft.VC$(var.VCVER).CRT\msvcp140.dll"/>
-                <File Source="$(env.VCTOOLSREDISTDIR)\x86\Microsoft.VC$(var.VCVER).CRT\vcruntime140.dll"/>
-                <File Source="$(var.VCPKG_X86)\libcrypto-3.dll"/>
-                <File Source="$(var.VCPKG_X86)\libssl-3.dll"/>
-                <File Source="$(var.VCPKG_X86)\legacy.dll"/>
-                <File Source="$(var.VCPKG_X86)\zlib1.dll"/>
-                <File Source="$(var.VCPKG_X86)\xerces-c_3_2.dll"/>
-                <File Source="$(var.VCPKG_X86)\Xalan-C_1_12.dll"/>
-                <File Source="$(var.VCPKG_X86)\XalanMessages_1_12.dll"/>
-                <File Source="$(var.VCPKG_X86)\xsec_2_0.dll"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.dll"/>
-<?ifdef var.swig ?>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.dll"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_java.dll"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\_digidoc_python.pyd"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc.py"/>
-<?endif?>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.exe"/>
-                <File Source="$(var.libdigidocpp)\x86\etc\digidocpp\digidocpp.conf"/>
-              </Component>
-              <Component Id="LibrariesDevX86" Guid="{9B16F8D1-11AA-4AF4-B8C2-96B4EC7E79CD}">
-                <File Source="$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\msvcp140d.dll"/>
-                <File Source="$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\vcruntime140d.dll"/>
-                <File Source="$(var.VCPKG_X86D)\zlibd1.dll"/>
-                <File Source="$(var.VCPKG_X86D)\xerces-c_3_2D.dll"/>
-                <File Source="$(var.VCPKG_X86D)\Xalan-C_1_12D.dll"/>
-                <File Source="$(var.VCPKG_X86D)\XalanMessages_1_12D.dll"/>
-                <File Source="$(var.VCPKG_X86D)\xsec_2_0D.dll"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc-tool.pdb"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.lib"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidocpp.pdb"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.dll"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.lib"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidocppd.pdb"/>
-<?ifdef var.swig ?>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharp.pdb"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharpd.dll"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_csharpd.pdb"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_java.pdb"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_javad.dll"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\digidoc_javad.pdb"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\_digidoc_python.pdb"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\_digidoc_pythond.pyd"/>
-                <File Source="$(var.libdigidocpp)\x86\bin\_digidoc_pythond.pdb"/>
-<?endif?>
-              </Component>
-              <Directory Id="SchemaFolderX86" Name="schema"
-                  FileSource="$(var.libdigidocpp)\x86\etc\digidocpp\schema">
-                <Component Id="SchemasX86" Guid="{C42EE645-286C-4B80-B73E-AF82B8D4D778}">
-                  <File Name="xml.xsd"/>
-                  <File Name="conf.xsd"/>
-                  <File Name="OpenDocument_manifest.xsd"/>
-                  <File Name="OpenDocument_manifest_v1_2.xsd"/>
-                  <File Name="xmldsig-core-schema.xsd"/>
-                  <File Name="XAdES01903v132-201601.xsd"/>
-                  <File Name="XAdES01903v132-201601-relaxed.xsd"/>
-                  <File Name="XAdES01903v141-201601.xsd"/>
-                  <File Name="ts_119612v020201_201601xsd.xsd"/>
-                  <File Name="en_31916201v010101.xsd"/>
-                  <File Name="OpenDocument_dsig.xsd"/>
-                </Component>
-              </Directory>
-            </Directory>
-            <Directory Id="X64FOLDER" Name="x64">
-              <Component Id="LibrariesX64" Guid="{1A068454-C881-49D3-A3C4-58D513C2BFE9}">
-                <File Source="$(env.VCTOOLSREDISTDIR)\x64\Microsoft.VC$(var.VCVER).CRT\msvcp140.dll" Id="msvcp140_64.dll"/>
-                <File Source="$(env.VCTOOLSREDISTDIR)\x64\Microsoft.VC$(var.VCVER).CRT\vcruntime140.dll" Id="vcruntime140_64.dll"/>
-                <File Source="$(var.VCPKG_X64)\libcrypto-3-x64.dll"/>
-                <File Source="$(var.VCPKG_X64)\libssl-3-x64.dll"/>
-                <File Source="$(var.VCPKG_X64)\legacy.dll" Id="legaxy_64.dll"/>
-                <File Source="$(var.VCPKG_X64)\zlib1.dll" Id="zlib1_64.dll"/>
-                <File Source="$(var.VCPKG_X64)\xerces-c_3_2.dll" Id="xerces_c_3_2.dll_64"/>
-                <File Source="$(var.VCPKG_X64)\Xalan-C_1_12.dll" Id="Xalan_C_1_12.dll_64"/>
-                <File Source="$(var.VCPKG_X64)\XalanMessages_1_12.dll" Id="XalanMessages_1_12.dll_64"/>
-                <File Source="$(var.VCPKG_X64)\xsec_2_0.dll" Id="xsec_2_0.dll_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.dll" Id="digidocpp.dll_64"/>
-<?ifdef var.swig ?>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.dll" Id="digidoc_csharp.dll_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_java.dll" Id="digidoc_java.dll_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\_digidoc_python.pyd" Id="_digidoc_python.pyd_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc.py" Id="digidoc.py_64"/>
-<?endif?>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.exe" Id="digidoc_tool.exe_64"/>
-                <File Source="$(var.libdigidocpp)\x64\etc\digidocpp\digidocpp.conf" Id="digidocpp.conf_64"/>
-              </Component>
-              <Component Id="LibrariesDevX64" Guid="{D992688C-0D4A-4C22-BEF4-582D7FA91731}">
-                <File Source="$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\msvcp140d.dll" Id="msvcp140d_64.dll"/>
-                <File Source="$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\x86\Microsoft.VC$(var.VCVER).DebugCRT\vcruntime140d.dll" Id="vcruntime140d_64.dll"/>
-                <File Source="$(var.VCPKG_X64D)\zlibd1.dll" Id="zlibd1_64.dll"/>
-                <File Source="$(var.VCPKG_X64D)\xerces-c_3_2D.dll" Id="xerces_c_3_2D.dll_64"/>
-                <File Source="$(var.VCPKG_X64D)\Xalan-C_1_12D.dll" Id="Xalan_C_1_12D.dll_64"/>
-                <File Source="$(var.VCPKG_X64D)\XalanMessages_1_12D.dll" Id="XalanMessages_1_12D.dll_64"/>
-                <File Source="$(var.VCPKG_X64D)\xsec_2_0D.dll" Id="xsec_2_0D.dll_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc-tool.pdb" Id="digidoc_tool.pdb_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.lib" Id="digidocpp.lib_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidocpp.pdb" Id="digidocpp.pdb_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.dll" Id="digidocppd.dll_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.lib" Id="digidocppd.lib_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidocppd.pdb" Id="digidocppd.pdb_64"/>
-<?ifdef var.swig ?>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharp.pdb" Id="digidoc_csharp.pdb_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharpd.dll" Id="digidoc_csharpd.dll_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_csharpd.pdb" Id="digidoc_csharpd.pdb_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_java.pdb" Id="digidoc_java.pdb_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_javad.dll" Id="digidoc_javad.dll_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\digidoc_javad.pdb" Id="digidoc_javad.pdb_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\_digidoc_python.pdb" Id="_digidoc_python.pdb_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\_digidoc_pythond.pyd" Id="_digidoc_pythond.pyd_64"/>
-                <File Source="$(var.libdigidocpp)\x64\bin\_digidoc_pythond.pdb" Id="_digidoc_pythond.pdb_64"/>
-<?endif?>
-              </Component>
-              <Directory Id="SchemaFolderX64" Name="schema"
-                  FileSource="$(var.libdigidocpp)\x64\etc\digidocpp\schema">
-                <Component Id="SchemasX64" Guid="{699EDAA2-89F0-43E6-97DB-D37CA059CFFE}">
-                  <File Name="xml.xsd" Id="xml.xsd_64"/>
-                  <File Name="conf.xsd" Id="conf.xsd_64"/>
-                  <File Name="OpenDocument_manifest.xsd" Id="OpenDocument_manifest.xsd_64"/>
-                  <File Name="OpenDocument_manifest_v1_2.xsd" Id="OpenDocument_manifest_v1_2.xsd_64"/>
-                  <File Name="xmldsig-core-schema.xsd" Id="xmldsig_core_schema.xsd_64"/>
-                  <File Name="XAdES01903v132-201601.xsd" Id="XAdES01903v132_201601.xsd_64"/>
-                  <File Name="XAdES01903v132-201601-relaxed.xsd" Id="XAdES01903v132_201601_relaxed.xsd_64"/>
-                  <File Name="XAdES01903v141-201601.xsd" Id="XAdES01903v141_201601.xsd_64"/>
-                  <File Name="ts_119612v020201_201601xsd.xsd" Id="ts_119612v020201_201601xsd.xsd_64"/>
-                  <File Name="en_31916201v010101.xsd" Id="en_31916201v010101.xsd_64"/>
-                  <File Name="OpenDocument_dsig.xsd" Id="OpenDocument_dsig.xsd_64"/>
-                </Component>
-              </Directory>
-            </Directory>
-<?ifdef var.docLocation ?>
-            <Directory Id="DocumentationFolder" Name="documentation"/>
-<?endif?>
-<?ifdef var.sourceLocation ?>
-            <Directory Id="SourceFolder" Name="source"/>
-<?endif?>
-            <Directory Id="HeadersFolder" Name="include"/>
-          </Directory>
-      </Directory>
-    </Directory>
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="libdigidocpp" />
+    </StandardDirectory>
 
-    <Feature Id="InstallLibdigidocpp" Level="1" Title="Libdigidocpp" Display="expand" ConfigurableDirectory="APPLICATIONFOLDER">
-<?ifdef var.sourceLocation ?>
-      <Feature Id="InstallSource" Level="1" Title="Source">
-        <ComponentGroupRef Id="Source"/>
-      </Feature>
+    <ComponentGroup Id="Runtime"
+        Source="$(env.VCTOOLSREDISTDIR)\$(sys.BUILDARCH)\Microsoft.VC$(var.VCVER).CRT">
+      <File Name="msvcp140.dll" />
+      <File Name="msvcp140_1.dll" />
+      <File Name="msvcp140_2.dll" />
+      <File Name="vcruntime140.dll" />
+<?if $(sys.BUILDARCH) != x86 ?>
+      <File Name="vcruntime140_1.dll" />
 <?endif?>
+    </ComponentGroup>
+
+    <ComponentGroup Id="Dependencies" Source="$(var.vcpkg)\bin">
+      <File Name="libcrypto-3$(var.OpenSSLSuffix).dll" />
+      <File Name="libssl-3$(var.OpenSSLSuffix).dll" />
+      <File Name="legacy.dll" />
+      <File Name="zlib1.dll" />
+      <File Name="xerces-c_3_2.dll" />
+      <File Name="Xalan-C_1_12.dll" />
+      <File Name="XalanMessages_1_12.dll" />
+      <File Name="xsec_2_0.dll" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="Libraries" Source="$(var.libdigidocpp)\bin">
+      <File Name="digidocpp.dll" />
+      <File Name="digidoc-tool.exe" />
+      <File Source="$(var.libdigidocpp)\etc\digidocpp\digidocpp.conf" />
+<?ifdef var.swig ?>
+      <File Name="digidoc_csharp.dll" />
+      <File Name="digidoc_java.dll" />
+      <File Name="_digidoc_python.pyd" />
+      <File Name="digidoc.py" />
+<?endif?>
+    </ComponentGroup>
+
+    <ComponentGroup Id="RuntimeDev"
+        Source="$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\$(sys.BUILDARCH)\Microsoft.VC$(var.VCVER).DebugCRT">
+      <File Name="msvcp140d.dll" />
+      <File Name="msvcp140_1d.dll" />
+      <File Name="msvcp140_2d.dll" />
+      <File Name="vcruntime140d.dll" />
+<?if $(sys.BUILDARCH) != x86 ?>
+      <File Name="vcruntime140_1d.dll" />
+<?endif?>
+    </ComponentGroup>
+
+    <ComponentGroup Id="DependenciesDev" Source="$(var.vcpkg)\debug\bin">
+      <File Name="zlibd1.dll" />
+      <File Name="xerces-c_3_2D.dll" />
+      <File Name="Xalan-C_1_12D.dll" />
+      <File Name="XalanMessages_1_12D.dll" />
+      <File Name="xsec_2_0D.dll" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="LibrariesDev" Source="$(var.libdigidocpp)\bin">
+      <Files Include="*.pdb" />
+      <File Name="digidocpp.lib" />
+      <File Name="digidocppd.dll" />
+      <File Name="digidocppd.lib" />
+<?ifdef var.swig ?>
+      <File Name="digidoc_csharpd.dll" />
+      <File Name="digidoc_javad.dll" />
+      <File Name="_digidoc_pythond.pyd" />
+<?endif?>
+    </ComponentGroup>
+
+    <ComponentGroup Id="Schemas" Directory="INSTALLFOLDER" Subdirectory="schema">
+      <Files Include="$(var.libdigidocpp)\etc\digidocpp\schema\*.xsd" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="Headers" Directory="INSTALLFOLDER" Subdirectory="include">
+      <Files Include="$(var.libdigidocpp)\include\**" />
+    </ComponentGroup>
+  
+<?ifdef var.docLocation ?>
+    <ComponentGroup Id="Documentation" Directory="INSTALLFOLDER" Subdirectory="documentation">
+      <Files Include="$(var.docLocation)\**" />
+    </ComponentGroup>
+<?endif?>
+
+    <Feature Id="InstallLibdigidocpp" Level="1" Title="Libdigidocpp" Display="expand" ConfigurableDirectory="INSTALLFOLDER">
+      <ComponentGroupRef Id="Runtime" />
+      <ComponentGroupRef Id="Dependencies" />
+      <ComponentGroupRef Id="Libraries" />
+      <ComponentGroupRef Id="Schemas" />
+      <Feature Id="InstallDevel" Level="1" Title="Development">
+        <ComponentGroupRef Id="Headers" />
+        <ComponentGroupRef Id="RuntimeDev" />
+        <ComponentGroupRef Id="DependenciesDev" />
+        <ComponentGroupRef Id="LibrariesDev" />
+      </Feature>
 <?ifdef var.docLocation ?>
       <Feature Id="InstallDocumentation" Level="1" Title="Documentation">
-        <ComponentGroupRef Id="Documentation"/>
+        <ComponentGroupRef Id="Documentation" />
       </Feature>
 <?endif?>
-      <Feature Id="InstallDevel" Level="1" Title="Development">
-        <ComponentGroupRef Id="Headers"/>
-        <?foreach ARCH in X86;X64?>
-        <Feature Id="InstallLibdigidocppDev$(var.ARCH)" Level="1" Title="$(var.ARCH)">
-          <ComponentRef Id="Libraries$(var.ARCH)"/>
-          <ComponentRef Id="LibrariesDev$(var.ARCH)"/>
-        </Feature>
-        <?endforeach?>
-      </Feature>
-      <?foreach ARCH in X86;X64?>
-      <Feature Id="InstallLibdigidocpp$(var.ARCH)" Level="1" Title="$(var.ARCH)">
-        <ComponentRef Id="Libraries$(var.ARCH)"/>
-        <ComponentRef Id="Schemas$(var.ARCH)"/>
-      </Feature>
-      <?endforeach?>
     </Feature>
-  </Product>
+  </Package>
 </Wix>

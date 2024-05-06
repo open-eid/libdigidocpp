@@ -4,7 +4,8 @@ plugins {
 group 'ee.ria'
 sourceSets.main.java.srcDirs += ['/Library/libdigidocpp/include', '/usr/include']
 java {
-    sourceCompatibility = 8
+    targetCompatibility JavaVersion.VERSION_17
+    sourceCompatibility JavaVersion.VERSION_17
 }
 base {
     archivesName = 'libdigidocpp'

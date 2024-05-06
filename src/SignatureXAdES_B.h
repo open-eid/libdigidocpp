@@ -94,7 +94,7 @@ namespace digidoc
           std::vector<std::string> signerRoles() const override;
 
           std::string addReference(const std::string& uri, const std::string& digestUri,
-              const std::vector<unsigned char> &digestValue, const std::string& type = {});
+              const std::vector<unsigned char> &digestValue, const std::string& type = {}, const std::string &canon = {});
           void addDataObjectFormat(const std::string& uri, const std::string& mime);
 
           std::shared_ptr<Signatures> signatures;
@@ -103,8 +103,8 @@ namespace digidoc
           std::vector<unsigned char> getSignatureValue() const;
           xades::QualifyingPropertiesType& qualifyingProperties() const;
           xades::SignedSignaturePropertiesType& getSignedSignatureProperties() const;
-          void calcDigestOnNode(Digest* calc, const std::string& ns,
-              std::u16string_view tagName, std::string_view canonicalizationMethod = {}) const;
+          void calcDigestOnNode(Digest* calc, std::string_view ns,
+              std::u16string_view tagName, std::string_view canonicalizationMethod) const;
           static void checkCertID(const xades::CertIDType &certID, const X509Cert &cert);
           static void checkDigest(const xades::DigestAlgAndValueType &digest, const std::vector<unsigned char> &data);
 
@@ -123,14 +123,11 @@ namespace digidoc
           void setKeyInfo(const X509Cert& cert);
           void setSigningCertificate(const X509Cert& cert);
           void setSigningCertificateV2(const X509Cert& cert);
-          void setSignatureProductionPlace(const std::string &city,
-              const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
-          void setSignatureProductionPlaceV2(const std::string &city, const std::string &streetAddress,
+          template<class T>
+          void setSignatureProductionPlace(const std::string &city, const std::string &streetAddress,
               const std::string &stateOrProvince, const std::string &postalCode, const std::string &countryName);
           template<class T>
-          inline auto signerRoles(const std::vector<std::string> &signerRoles);
-          void setSignerRoles(const std::vector<std::string>& signerRoles);
-          void setSignerRolesV2(const std::vector<std::string>& signerRoles);
+          void setSignerRoles(const std::vector<std::string> &signerRoles);
           void setSigningTime(time_t signingTime);
 
           // offline checks

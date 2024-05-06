@@ -254,7 +254,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
 
     // Signature->SignedInfo
     auto signedInfo = make_unique<SignedInfoType>(
-        make_unique<CanonicalizationMethodType>(/*URI_ID_EXC_C14N_NOC*/URI_ID_C14N11_NOC),
+        make_unique<CanonicalizationMethodType>(URI_ID_C14N11_NOC),
         make_unique<SignatureMethodType>(X509Crypto(c).isRSAKey() ?
             Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method())));
 
@@ -287,28 +287,32 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
     if(signer->usingENProfile())
     {
         setSigningCertificateV2(c);
-        setSignatureProductionPlaceV2(signer->city(), signer->streetAddress(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
-        setSignerRolesV2(signer->signerRoles());
+        setSignatureProductionPlace<SignatureProductionPlaceV2Type>(signer->city(), signer->streetAddress(),
+            signer->stateOrProvince(), signer->postalCode(), signer->countryName());
+        setSignerRoles<SignerRoleV2Type>(signer->signerRoles());
     }
     else
     {
         setSigningCertificate(c);
-        setSignatureProductionPlace(signer->city(), signer->stateOrProvince(), signer->postalCode(), signer->countryName());
-        setSignerRoles(signer->signerRoles());
+        setSignatureProductionPlace<SignatureProductionPlaceType>(signer->city(), signer->streetAddress(),
+            signer->stateOrProvince(), signer->postalCode(), signer->countryName());
+        setSignerRoles<SignerRoleType>(signer->signerRoles());
     }
     setSigningTime(time(nullptr));
 
     string digestMethod = Conf::instance()->digestUri();
     for(const DataFile *f: bdoc->dataFiles())
     {
-        string referenceId = addReference(File::toUriPath(f->fileName()), digestMethod, f->calcDigest(digestMethod), {});
+        string referenceId = addReference(File::toUriPath(f->fileName()), digestMethod, f->calcDigest(digestMethod));
         addDataObjectFormat("#" + referenceId, f->mediaType());
     }
 
     signatures->reloadDOM();
     Digest calc(digestMethod);
-    calcDigestOnNode(&calc, Signatures::XADES_NAMESPACE, u"SignedProperties");
-    addReference("#" + nr +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties");
+    calcDigestOnNode(&calc, Signatures::XADES_NAMESPACE, u"SignedProperties",
+        signature->signedInfo().canonicalizationMethod().algorithm());
+    addReference("#" + nr +"-SignedProperties", calc.uri(), calc.result(), "http://uri.etsi.org/01903#SignedProperties",
+        signature->signedInfo().canonicalizationMethod().algorithm());
     signatures->reloadDOM();
 }
 
@@ -553,7 +557,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         m_errStr.sbXMLChIn((const XMLCh*)u"");
 
         if(!DSIGReference::verifyReferenceList(sig->getReferenceList(), m_errStr))
-        //if(!sig->verify()) //xml-security-c < 2.0.0 does not support URI_ID_C14N11_NOC canonicalization
+        //if(!sig->verify()) //xml-security-c does not support URI_RSA_PSS_SHA
         {
             //string s = xml::transcode<char>(sig->getErrMsgs())
             string s = xml::transcode<char>(m_errStr.rawXMLChBuffer());
@@ -682,7 +686,8 @@ vector<unsigned char> SignatureXAdES_B::dataToSign() const
 {
     // Calculate SHA digest of the Signature->SignedInfo node.
     Digest calc(signatureMethod());
-    calcDigestOnNode(&calc, URI_ID_DSIG, u"SignedInfo");
+    calcDigestOnNode(&calc, URI_ID_DSIG, u"SignedInfo",
+        signature->signedInfo().canonicalizationMethod().algorithm());
     return calc.result();
 }
 
@@ -811,15 +816,21 @@ void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime
  * @throws SignatureException throws exception if the digest method is not supported.
  */
 string SignatureXAdES_B::addReference(const string& uri, const string& digestUri,
-        const vector<unsigned char> &digestValue, const string& type)
+        const vector<unsigned char> &digestValue, const string &type, const string &canon)
 {
     auto reference = make_unique<ReferenceType>(make_unique<DigestMethodType>(digestUri), toBase64(digestValue));
-    reference->uRI(uri);
+    reference->uRI(make_unique<Uri>(uri));
     if(!type.empty())
         reference->type(type);
 
+    if(!canon.empty())
+    {
+        reference->transforms(make_unique<TransformsType>());
+        reference->transforms()->transform().push_back(make_unique<TransformType>(canon));
+    }
+
     SignedInfoType::ReferenceSequence &seq = signature->signedInfo().reference();
-    reference->id(id() + Log::format("-RefId%zu", seq.size()));
+    reference->id(make_unique<Id>(id() + Log::format("-RefId%zu", seq.size())));
     seq.push_back(std::move(reference));
 
     return seq.back().id().get();
@@ -880,43 +891,17 @@ void SignatureXAdES_B::setSigningCertificateV2(const X509Cert& x509)
  *
  * @param spp signature production place.
  */
-void SignatureXAdES_B::setSignatureProductionPlace(const string &city,
-    const string &stateOrProvince, const string &postalCode, const string &countryName)
-{
-    if(city.empty() && stateOrProvince.empty() &&
-        postalCode.empty() && countryName.empty())
-        return;
-
-    auto signatureProductionPlace = make_unique<SignatureProductionPlaceType>();
-    if(!city.empty())
-        signatureProductionPlace->city(city);
-    if(!stateOrProvince.empty())
-        signatureProductionPlace->stateOrProvince(stateOrProvince);
-    if(!postalCode.empty())
-        signatureProductionPlace->postalCode(postalCode);
-    if(!countryName.empty())
-        signatureProductionPlace->countryName(countryName);
-
-    getSignedSignatureProperties().signatureProductionPlace(std::move(signatureProductionPlace));
-}
-
-/**
- * Sets signature production place.
- *
- * @param spp signature production place.
- */
-void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
+template<class T>
+void SignatureXAdES_B::setSignatureProductionPlace(const string &city, const string &streetAddress,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
 {
     if(city.empty() && streetAddress.empty() && stateOrProvince.empty() &&
         postalCode.empty() && countryName.empty())
         return;
 
-    auto signatureProductionPlace = make_unique<SignatureProductionPlaceV2Type>();
+    auto signatureProductionPlace = make_unique<T>();
     if(!city.empty())
         signatureProductionPlace->city(city);
-    if(!streetAddress.empty())
-        signatureProductionPlace->streetAddress(streetAddress);
     if(!stateOrProvince.empty())
         signatureProductionPlace->stateOrProvince(stateOrProvince);
     if(!postalCode.empty())
@@ -924,12 +909,28 @@ void SignatureXAdES_B::setSignatureProductionPlaceV2(const string &city, const s
     if(!countryName.empty())
         signatureProductionPlace->countryName(countryName);
 
-    getSignedSignatureProperties().signatureProductionPlaceV2(std::move(signatureProductionPlace));
+    if constexpr (is_same_v<T, SignatureProductionPlaceV2Type>)
+    {
+        if(!streetAddress.empty())
+            signatureProductionPlace->streetAddress(streetAddress);
+        getSignedSignatureProperties().signatureProductionPlaceV2(std::move(signatureProductionPlace));
+    }
+    else
+        getSignedSignatureProperties().signatureProductionPlace(std::move(signatureProductionPlace));
 }
 
+/**
+ * Sets signer claimed roles to the signature.
+ * NB! Only ClaimedRoles are supported. CerifiedRoles are not supported.
+ *
+ * @param roles signer roles.
+ */
 template<class T>
-auto SignatureXAdES_B::signerRoles(const vector<string> &roles)
+void SignatureXAdES_B::setSignerRoles(const vector<string> &roles)
 {
+    if(roles.empty())
+        return;
+
     auto claimedRoles = make_unique<ClaimedRolesListType>();
     claimedRoles->claimedRole().reserve(roles.size());
     for(const string &role: roles)
@@ -937,31 +938,11 @@ auto SignatureXAdES_B::signerRoles(const vector<string> &roles)
 
     auto signerRole = make_unique<T>();
     signerRole->claimedRoles(std::move(claimedRoles));
-    return signerRole;
-}
 
-/**
- * Sets signer claimed roles to the signature.
- * NB! Only ClaimedRoles are supported. CerifiedRoles are not supported.
- *
- * @param roles signer roles.
- */
-void SignatureXAdES_B::setSignerRoles(const vector<string> &roles)
-{
-    if(!roles.empty())
-        getSignedSignatureProperties().signerRole(signerRoles<SignerRoleType>(roles));
-}
-
-/**
- * Sets signer claimed roles to the signature.
- * NB! Only ClaimedRoles are supported. CerifiedRoles are not supported.
- *
- * @param roles signer roles.
- */
-void SignatureXAdES_B::setSignerRolesV2(const vector<string> &roles)
-{
-    if(!roles.empty())
-        getSignedSignatureProperties().signerRoleV2(signerRoles<SignerRoleV2Type>(roles));
+    if constexpr (is_same_v<T, SignerRoleV2Type>)
+        getSignedSignatureProperties().signerRoleV2(std::move(signerRole));
+    else
+        getSignedSignatureProperties().signerRole(std::move(signerRole));
 }
 
 /**
@@ -1004,18 +985,16 @@ vector<unsigned char> SignatureXAdES_B::getSignatureValue() const
  * @param ns signature tag namespace.
  * @param tagName signature tag name.
  */
-void SignatureXAdES_B::calcDigestOnNode(Digest* calc, const string& ns,
+void SignatureXAdES_B::calcDigestOnNode(Digest* calc, string_view ns,
     u16string_view tagName, string_view canonicalizationMethod) const
 {
     try
     {
         auto *element = signatures->element(id());
-        DOMNodeList *nodeList = element->getElementsByTagNameNS(xml::string(ns).c_str(), tagName.data());
+        DOMNodeList *nodeList = element->getElementsByTagNameNS(xml::string(ns.data()).c_str(), tagName.data());
         if(nodeList->getLength() != 1)
-            THROW("Could not find '%s' node which is in '%s' namespace in signature XML.",
-                  xml::transcode<char>(tagName.data()).data(), ns.c_str());
-        if(canonicalizationMethod.empty())
-            canonicalizationMethod = signature->signedInfo().canonicalizationMethod().algorithm();
+            THROW("Could not find '%s' node which is in '%.*s' namespace in signature XML.",
+                  xml::transcode<char>(tagName.data()).c_str(), int(ns.size()), ns.data());
         SecureDOMParser::calcDigestOnNode(calc, canonicalizationMethod, nodeList->item(0));
     }
     catch(const Exception& e)
@@ -1107,21 +1086,21 @@ string SignatureXAdES_B::countryName() const
 
 vector<string> SignatureXAdES_B::signerRoles() const
 {
-    const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence = [&] {
-        // return elements from SignerRole element or SignerRoleV2 when available
-        if(const auto &role = getSignedSignatureProperties().signerRole();
-            role && role->claimedRoles())
-            return role->claimedRoles()->claimedRole();
-        if(const auto &roleV2 = getSignedSignatureProperties().signerRoleV2();
-            roleV2 && roleV2->claimedRoles())
-            return roleV2->claimedRoles()->claimedRole();
-        return ClaimedRolesListType::ClaimedRoleSequence{};
-    }();
-    vector<string> roles;
-    roles.reserve(claimedRoleSequence.size());
-    for(const ClaimedRolesListType::ClaimedRoleType &type: claimedRoleSequence)
-        roles.emplace_back(type.text());
-    return roles;
+    auto toRoles = [](const ClaimedRolesListType::ClaimedRoleSequence &claimedRoleSequence) -> vector<string> {
+        vector<string> roles;
+        roles.reserve(claimedRoleSequence.size());
+        for(const auto &type: claimedRoleSequence)
+            roles.emplace_back(type.text());
+        return roles;
+    };
+    // return elements from SignerRole element or SignerRoleV2 when available
+    if(const auto &role = getSignedSignatureProperties().signerRole();
+        role && role->claimedRoles())
+        return toRoles(role->claimedRoles()->claimedRole());
+    if(const auto &roleV2 = getSignedSignatureProperties().signerRoleV2();
+        roleV2 && roleV2->claimedRoles())
+        return toRoles(roleV2->claimedRoles()->claimedRole());
+    return {};
 }
 
 string SignatureXAdES_B::claimedSigningTime() const

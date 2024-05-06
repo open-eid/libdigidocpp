@@ -1,6 +1,6 @@
 {
     "name": "libdigidocpp",
-    "version": "3.16.0",
+    "version": "3.18.0",
     "dependencies": [
       "xml-security-c",
       "zlib"
@@ -8,9 +8,8 @@
     "features": {
       "tests": { "description": "Build tests", "dependencies": ["boost-test"] }
     },
-    "builtin-baseline": "6a349fe1fbea1e5fcda2e0775f555d829a5e82df",
+    "builtin-baseline": "1f619be01b436b796dab797dd1e1721c5676f8ac",
     "vcpkg-configuration": {
-        "overlay-triplets": ["./patches/vcpkg-triplets"],
         "overlay-ports": [
           "patches/vcpkg-ports/openssl",
           "patches/vcpkg-ports/xml-security-c"

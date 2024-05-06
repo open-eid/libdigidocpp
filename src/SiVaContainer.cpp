@@ -55,7 +55,7 @@ using namespace std;
 using namespace xercesc;
 using json = nlohmann::json;
 
-static string base64_decode(const XMLCh *in) {
+static auto base64_decode(const XMLCh *in) {
     static constexpr array<uint8_t, 128> T{
         0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
         0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
@@ -67,7 +67,7 @@ static string base64_decode(const XMLCh *in) {
         0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x64, 0x64, 0x64, 0x64, 0x64
     };
 
-    string out;
+    auto out = make_unique<stringstream>();
     int value = 0;
     int bits = -8;
     for(; in; ++in)
@@ -79,9 +79,9 @@ static string base64_decode(const XMLCh *in) {
         if(check == 0x64)
             break;
         value = (value << 6) + check;
-        if((bits += 6) < 0)
+        if(bits += 6; bits < 0)
             continue;
-        out.push_back(char((value >> bits) & 0xFF));
+        out->put(char((value >> bits) & 0xFF));
         bits -= 8;
     }
     return out;
@@ -194,7 +194,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     else
         THROW("Unknown file");
 
-    if(cb && !cb->validateOnline())
+    if(useHashCode && cb && !cb->validateOnline())
         THROW("Online validation disabled");
 
     array<XMLByte, 4800> buf{};
@@ -364,28 +364,27 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path, ContainerO
 unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
 {
     namespace xml = xsd::cxx::xml;
-    using cpXMLCh = const XMLCh*;
     try
     {
         unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(*d->ddoc));
-        DOMNodeList *nodeList = dom->getElementsByTagName(cpXMLCh(u"DataFile"));
+        DOMNodeList *nodeList = dom->getElementsByTagName(u"DataFile");
         for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
         {
             auto *item = static_cast<DOMElement*>(nodeList->item(i));
             if(!item)
                 continue;
 
-            if(XMLString::compareString(item->getAttribute(cpXMLCh(u"ContentType")), cpXMLCh(u"HASHCODE")) == 0)
+            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"HASHCODE") == 0)
                 THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
-            if(XMLString::compareString(item->getAttribute(cpXMLCh(u"ContentType")), cpXMLCh(u"EMBEDDED_BASE64")) != 0)
+            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"EMBEDDED_BASE64") != 0)
                 continue;
 
             if(const XMLCh *b64 = item->getTextContent())
             {
-                d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(base64_decode(b64)),
-                    xml::transcode<char>(item->getAttribute(cpXMLCh(u"Filename"))),
-                    xml::transcode<char>(item->getAttribute(cpXMLCh(u"MimeType"))),
-                    xml::transcode<char>(item->getAttribute(cpXMLCh(u"Id")))));
+                d->dataFiles.push_back(new DataFilePrivate(base64_decode(b64),
+                    xml::transcode<char>(item->getAttribute(u"Filename")),
+                    xml::transcode<char>(item->getAttribute(u"MimeType")),
+                    xml::transcode<char>(item->getAttribute(u"Id"))));
             }
 
             if(!useHashCode)
@@ -393,25 +392,24 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
             Digest calc(URI_SHA1);
             SecureDOMParser::calcDigestOnNode(&calc, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315", item);
             vector<unsigned char> digest = calc.result();
-            XMLSize_t size = 0;
-            if(XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))
+            if(XMLSize_t size = 0; XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))
             {
-                item->setAttribute(cpXMLCh(u"ContentType"), cpXMLCh(u"HASHCODE"));
-                item->setAttribute(cpXMLCh(u"DigestType"), cpXMLCh(u"sha1"));
+                item->setAttribute(u"ContentType", u"HASHCODE");
+                item->setAttribute(u"DigestType", u"sha1");
                 xml::string outXMLCh(reinterpret_cast<const char*>(out));
-                item->setAttribute(cpXMLCh(u"DigestValue"), outXMLCh.c_str());
+                item->setAttribute(u"DigestValue", outXMLCh.c_str());
                 item->setTextContent(nullptr);
                 delete out;
             }
         }
 
-        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(cpXMLCh(u"LS"));
+        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(u"LS");
         unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
         unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
         auto result = make_unique<stringstream>();
         xml::dom::ostream_format_target out(*result);
         pDomLsOutput->setByteStream(&out);
-        pSerializer->setNewLine(cpXMLCh(u"\n"));
+        pSerializer->setNewLine(u"\n");
         pSerializer->write(dom.get(), pDomLsOutput.get());
         return result;
     }

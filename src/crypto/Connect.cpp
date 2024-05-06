@@ -37,6 +37,16 @@
 #include <Winsock2.h>
 #endif
 
+#if defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
+#define TARGET_ARCH "arm64"
+#elif defined(__arm__) || defined(_M_ARM)
+#define TARGET_ARCH "arm"
+#elif defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || defined(_M_X64)
+#define TARGET_ARCH "x86_64"
+#else
+#define TARGET_ARCH "x86"
+#endif
+
 using namespace digidoc;
 using namespace std;
 
@@ -73,13 +83,13 @@ Connect::Connect(const string &_url, const string &method, int timeout, const ve
             baseurl = url.substr(0, pos);
     }
 
-    string hostname = host + ":" + port;
+    string hostname = host + ':' + port;
     Conf *c = Conf::instance();
     if(!c->proxyHost().empty() && !c->proxyPort().empty())
     {
         hostname = c->proxyHost() + ":" + c->proxyPort();
         if(usessl == 0 || (CONF(proxyForceSSL)))
-            path = url;
+            path = std::move(url);
     }
 
     DEBUG("Connecting to Host: %s timeout: %i", hostname.c_str(), _timeout);
@@ -106,7 +116,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const ve
         if(!c->proxyHost().empty() && (CONF(proxyTunnelSSL)))
         {
             BIO_printf(d, "CONNECT %s:%s HTTP/1.0\r\n", host.c_str(), port.c_str());
-            addHeader("Host", host + ":" + port);
+            addHeader("Host", host + ':' + port);
             sendProxyAuth();
             doProxyConnect = true;
             Result r = exec();
@@ -166,9 +176,9 @@ Connect::Connect(const string &_url, const string &method, int timeout, const ve
     if(port == "80" || port == "443")
         addHeader("Host", host);
     else
-        addHeader("Host", host + ":" + port);
+        addHeader("Host", host + ':' + port);
     if(!userAgent().empty())
-        addHeader("User-Agent", "LIB libdigidocpp/" + string(FILE_VER_STR) + " APP " + userAgent());
+        addHeader("User-Agent", "LIB libdigidocpp/" FILE_VER_STR " (" TARGET_ARCH ") APP " + userAgent());
     if(usessl == 0)
         sendProxyAuth();
 }
@@ -179,9 +189,9 @@ Connect::~Connect()
         BIO_free_all(d);
 }
 
-void Connect::addHeader(const string &key, const string &value)
+void Connect::addHeader(string_view key, string_view value)
 {
-    BIO_printf(d, "%s: %s\r\n", key.c_str(), value.c_str());
+    BIO_printf(d, "%.*s: %.*s\r\n", int(key.size()), key.data(), int(value.size()), value.data());
 }
 
 string Connect::decompress(const string &encoding, const string &data)
@@ -225,17 +235,17 @@ string Connect::decompress(const string &encoding, const string &data)
     return out;
 }
 
-Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
+Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> headers,
     const vector<unsigned char> &data)
 {
     return exec(headers, data.data(), data.size());
 }
 
-Connect::Result Connect::exec(initializer_list<pair<string,string>> headers,
+Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> headers,
     const unsigned char *data, size_t size)
 {
-    for(const pair<string,string> &it: headers)
-        addHeader(it.first, it.second);
+    for(const auto &[key, value]: headers)
+        addHeader(key, value);
 
     if(size != 0)
     {

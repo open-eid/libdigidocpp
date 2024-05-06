@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
-if(POLICY CMP0122)
-  cmake_policy(SET CMP0122 NEW)
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/cmake/modules/VersionInfo.cmake)
+    message(FATAL_ERROR "cmake submodule directory empty, did you 'git clone --recursive'?")
 endif()
-project(libdigidocpp VERSION 3.17.1)
+
+if(POLICY CMP0122)
+    cmake_policy(SET CMP0122 NEW)
+endif()
+project(libdigidocpp VERSION 3.18.0)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 include(VersionInfo)
@@ -16,6 +20,8 @@ set_env( TSL_CERTS
     ${CMAKE_SOURCE_DIR}/etc/tl-mp4.crt
     ${CMAKE_SOURCE_DIR}/etc/tl-mp5.crt
     ${CMAKE_SOURCE_DIR}/etc/tl-mp6.crt
+    ${CMAKE_SOURCE_DIR}/etc/tl-mp7.crt
+    ${CMAKE_SOURCE_DIR}/etc/tl-mp8.crt
     CACHE FILEPATH "TSL trust list signing certificates" )
 set_env( TSA_URL "http://dd-at.ria.ee/tsa" CACHE STRING "Default TSA URL" )
 set_env( SIVA_URL "https://siva.eesti.ee/V3/validate" CACHE STRING "Default SiVa validation service URL" )
@@ -48,7 +54,7 @@ find_package(ZLIB REQUIRED)
 find_package(MiniZip 1 QUIET) # version range (0...<2.0.0) requires CMake>=3.19
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig)
-    pkg_check_modules(MINIZIP minizip IMPORTED_TARGET minizip<2.0.0)
+    pkg_check_modules(MINIZIP minizip IMPORTED_TARGET)
 endif()
 find_package(SWIG)
 find_package(JNI)

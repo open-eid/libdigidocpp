@@ -22,6 +22,7 @@
 #include "DateTime.h"
 #include "log.h"
 
+#include <zlib.h>
 #include <minizip/unzip.h>
 #include <minizip/zip.h>
 #ifdef _WIN32
