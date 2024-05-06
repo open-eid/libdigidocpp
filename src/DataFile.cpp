@@ -51,7 +51,7 @@ using namespace std;
  * In case of DDoc files, the parameter is ignored and SHA1 hash is always returned
  *
  * @param method method uri for calculating digest.
- * @return returns calculated digest.
+ * @return returns calculated digest value.
  * @throws Exception throws exception if the file does not exist or digest calculation fails.
  */
 /**
@@ -115,7 +115,7 @@ vector<unsigned char> DataFilePrivate::calcDigest(const string &method) const
 
 void DataFilePrivate::saveAs(const string& path) const
 {
-    ofstream ofs(File::encodeName(path).c_str(), ofstream::binary);
+    ofstream ofs(File::encodeName(path), ofstream::binary);
     saveAs(ofs);
 }
 
