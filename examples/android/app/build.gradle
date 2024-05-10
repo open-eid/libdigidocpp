@@ -6,7 +6,7 @@ android {
     compileSdk 34
     defaultConfig {
         applicationId "ee.ria.libdigidocpp"
-        minSdk 28
+        minSdk 30
         targetSdk 34
         versionCode 1
         versionName "1.0"
@@ -30,16 +30,16 @@ android {
     namespace 'ee.ria.libdigidocpp'
 }
 
-task schemaZip(type:Zip) {
+tasks.register('schemaZip', Zip) {
     println "Create schema zip"
-    from (libsPath + '.androidarm/etc/digidocpp/schema/') {
+    from(libsPath + '.androidarm/etc/digidocpp/schema/') {
         include '*'
     }
     destinationDirectory = file('src/main/res/raw/')
     archiveFileName = 'schema.zip'
 }
 
-task copyLibs {
+tasks.register('copyLibs') {
     println "Copy jniLibs"
     copy {
         from libsPath + '.androidarm/lib/libdigidoc_java.so'

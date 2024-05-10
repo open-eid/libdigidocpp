@@ -7,7 +7,7 @@ XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-3.0.13
 LIBXML2_DIR=libxml2-2.12.5
-ANDROID_NDK=android-ndk-r26b
+ANDROID_NDK=android-ndk-r26d
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
 PODOFO_DIR=podofo-0.9.4
@@ -44,7 +44,7 @@ case "$@" in
   fi
 
   TARGET_PATH=/Library/libdigidocpp.android${ARCH}
-  API=28
+  API=30
   export ANDROID_NDK_HOME
   export ANDROID_NDK_ROOT=${ANDROID_NDK_HOME}
   export PATH=${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/darwin-x86_64/bin:$PATH
@@ -62,7 +62,7 @@ case "$@" in
   CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphonesimulator --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
-  : ${IPHONEOS_DEPLOYMENT_TARGET:="13.0"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="15.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   ;;
@@ -72,9 +72,9 @@ case "$@" in
   CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
-  : ${IPHONEOS_DEPLOYMENT_TARGET:="13.0"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="15.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
-  export CFLAGS="-arch ${ARCHS// / -arch } -target x86_64-apple-ios-macabi -isysroot ${SYSROOT}"
+  export CFLAGS="-arch ${ARCHS// / -arch } -target x86_64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-macabi -isysroot ${SYSROOT}"
   ;;
 *ios*)
   echo "Building for iOS"
@@ -82,7 +82,7 @@ case "$@" in
   CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk iphoneos --show-sdk-path)
   : ${ARCHS:="arm64"}
-  : ${IPHONEOS_DEPLOYMENT_TARGET:="13.0"}
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="15.0"}
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   ;;
@@ -92,7 +92,7 @@ case "$@" in
   CONFIGURE="--disable-static --enable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="11.0"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="12.0"}
   export MACOSX_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } "
   ;;
@@ -438,8 +438,8 @@ case "$@" in
     echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
     echo "To control iOS, macOS builds set environment variables:"
     echo " minimum deployment target"
-    echo " - MACOSX_DEPLOYMENT_TARGET=11.0"
-    echo " - IPHONEOS_DEPLOYMENT_TARGET=13.0"
+    echo " - MACOSX_DEPLOYMENT_TARGET=12.0"
+    echo " - IPHONEOS_DEPLOYMENT_TARGET=15.0"
     echo " archs to build on macOS/iOS"
     echo " - ARCHS=\"arm64 x86_64\" (macOS)"
     echo " - ARCHS=\"arm64\" (iOS)"

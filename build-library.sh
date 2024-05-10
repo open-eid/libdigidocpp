@@ -8,8 +8,8 @@ if [ "$#" -eq 0 ]; then
   echo "  target: osx ios iossimulator ioscatalyst androidarm androidarm64 androidx86_64"
   echo "To control iOS, macOS builds set environment variables:"
   echo " minimum deployment target"
-  echo " - MACOSX_DEPLOYMENT_TARGET=11.0"
-  echo " - IPHONEOS_DEPLOYMENT_TARGET=13.0"
+  echo " - MACOSX_DEPLOYMENT_TARGET=12.0"
+  echo " - IPHONEOS_DEPLOYMENT_TARGET=15.0"
   echo " archs to build on macOS/iOS"
   echo " - ARCHS=\"arm64 x86_64\" (macOS)"
   echo " - ARCHS=\"arm64\" (iOS)"
@@ -37,7 +37,7 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp.${TARGET}
   CMAKEARGS="
     -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
-    -DANDROID_PLATFORM=28 \
+    -DANDROID_PLATFORM=30 \
     -DANDROID_ABI=${ARCH} \
     -DBoost_INCLUDE_DIR=NOTFOUND \
     -DDOXYGEN_EXECUTABLE=NOTFOUND \
@@ -45,34 +45,32 @@ case "$@" in
     -DBUILD_SHARED_LIBS=NO"
   ;;
 *ios*)
+  : ${IPHONEOS_DEPLOYMENT_TARGET:="15.0"}
+  export IPHONEOS_DEPLOYMENT_TARGET
   case "$@" in
   *simulator*)
     echo "Building for iOS Simulator"
     TARGET=iphonesimulator
-    SYSROOT=iphonesimulator
+    CMAKEARGS="-DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_SYSTEM_NAME=iOS"
     : ${ARCHS:="arm64 x86_64"}
     ;;
   *catalyst*)
     echo "Building for iOS macOS Catalyst"
     TARGET=iphonecatalyst
-    SYSROOT=macosx
-    export CFLAGS="-target x86_64-apple-ios-macabi"
-    export CXXFLAGS="-target x86_64-apple-ios-macabi"
+    CMAKEARGS="-DCMAKE_OSX_SYSROOT=macosx"
+    export CFLAGS="-target x86_64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-macabi"
+    export CXXFLAGS="-target x86_64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-macabi"
     : ${ARCHS:="arm64 x86_64"}
     ;;
   *)
     echo "Building for iOS"
     TARGET=iphoneos
-    SYSROOT=iphoneos
+    CMAKEARGS="-DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_SYSTEM_NAME=iOS"
     : ${ARCHS:="arm64"}
     ;;
   esac
   TARGET_PATH=/Library/libdigidocpp.${TARGET}
-  : ${IPHONEOS_DEPLOYMENT_TARGET:="13.0"}
-  export IPHONEOS_DEPLOYMENT_TARGET
-  CMAKEARGS="
-    -DCMAKE_SYSTEM_NAME=iOS \
-    -DCMAKE_OSX_SYSROOT=${SYSROOT} \
+  CMAKEARGS="${CMAKEARGS} \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} \
     -DSWIG_EXECUTABLE=NOTFOUND \
     -DBoost_INCLUDE_DIR=NOTFOUND \
@@ -85,7 +83,7 @@ case "$@" in
   TARGET=macOS
   TARGET_PATH=/Library/libdigidocpp
   : ${ARCHS:="arm64 x86_64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="11.0"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="12.0"}
   export MACOSX_DEPLOYMENT_TARGET
 esac
 
