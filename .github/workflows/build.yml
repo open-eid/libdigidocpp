@@ -60,7 +60,7 @@ jobs:
       run: |
         ./build-library.sh ${{ matrix.target }} install/strip
         cd /Library
-        zip -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
+        zip --symlinks -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
     - name: Archive artifacts
       if: matrix.target == 'osx'
       uses: actions/upload-artifact@v4

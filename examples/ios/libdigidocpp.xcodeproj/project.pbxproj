@@ -8,31 +8,37 @@
 
 /* Begin PBXBuildFile section */
 		4E25CC401B5D1D85005E0B79 /* test.bdoc in Resources */ = {isa = PBXBuildFile; fileRef = 4E25CC3F1B5D1D85005E0B79 /* test.bdoc */; };
-		4E25CC421B5D1EDA005E0B79 /* schema in Resources */ = {isa = PBXBuildFile; fileRef = 4E25CC411B5D1EDA005E0B79 /* schema */; };
 		4E26A2292AB4E38600E2B732 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E26A2282AB4E38600E2B732 /* LaunchScreen.storyboard */; };
+		4E34C8402AE9292A00DD78B0 /* digidocpp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E34C83F2AE9292A00DD78B0 /* digidocpp.framework */; };
+		4E34C8412AE9292A00DD78B0 /* digidocpp.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4E34C83F2AE9292A00DD78B0 /* digidocpp.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4E76639E1B5A37AC00672ACF /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E76639D1B5A37AC00672ACF /* main.mm */; };
 		4E7663A11B5A37AC00672ACF /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E7663A01B5A37AC00672ACF /* AppDelegate.mm */; };
 		4E7663A41B5A37AC00672ACF /* MasterViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4E7663A31B5A37AC00672ACF /* MasterViewController.mm */; };
 		4E7663AA1B5A37AC00672ACF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663A81B5A37AC00672ACF /* Main.storyboard */; };
 		4E7663AC1B5A37AC00672ACF /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4E7663AB1B5A37AC00672ACF /* Images.xcassets */; };
-		4E85E5F7285364BF00A65763 /* libdigidocpp_util.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E85E5F6285364BF00A65763 /* libdigidocpp_util.a */; };
-		4ECD5FAA2010A15A00BCC616 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FA92010A15A00BCC616 /* libcrypto.a */; };
-		4ECD5FB02010A1B700BCC616 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FAB2010A1B700BCC616 /* libssl.a */; };
-		4ECD5FB12010A1B700BCC616 /* libxalan-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FAC2010A1B700BCC616 /* libxalan-c.a */; };
-		4ECD5FB22010A1B700BCC616 /* libxerces-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FAD2010A1B700BCC616 /* libxerces-c.a */; };
-		4ECD5FB32010A1B700BCC616 /* libxalanMsg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FAE2010A1B700BCC616 /* libxalanMsg.a */; };
-		4ECD5FB42010A1B700BCC616 /* libxml-security-c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FAF2010A1B700BCC616 /* libxml-security-c.a */; };
 		4ECD5FB72010A33800BCC616 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FB62010A33800BCC616 /* libz.tbd */; };
 		4ECD5FBB2010A38900BCC616 /* libminizip.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FB82010A38900BCC616 /* libminizip.a */; };
-		4ECD5FBC2010A38900BCC616 /* libdigidocpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FB92010A38900BCC616 /* libdigidocpp.a */; };
-		4ECD5FBD2010A38900BCC616 /* libdigidocpp_priv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4ECD5FBA2010A38900BCC616 /* libdigidocpp_priv.a */; };
 		4EF2169520496F780013677E /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4EF2169420496F780013677E /* UIKit.framework */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		4E34C8422AE9292A00DD78B0 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				4E34C8412AE9292A00DD78B0 /* digidocpp.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		4E25CC3F1B5D1D85005E0B79 /* test.bdoc */ = {isa = PBXFileReference; lastKnownFileType = file; path = test.bdoc; sourceTree = "<group>"; };
-		4E25CC411B5D1EDA005E0B79 /* schema */ = {isa = PBXFileReference; lastKnownFileType = folder; name = schema; path = "$(SDKPATH)/etc/digidocpp/schema"; sourceTree = "<absolute>"; };
 		4E26A2282AB4E38600E2B732 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		4E34C83F2AE9292A00DD78B0 /* digidocpp.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = digidocpp.framework; path = "$(SDKPATH)/lib/digidocpp.framework"; sourceTree = "<absolute>"; };
 		4E7663981B5A37AC00672ACF /* libdigidocpp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = libdigidocpp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E76639C1B5A37AC00672ACF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4E76639D1B5A37AC00672ACF /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
@@ -41,18 +47,9 @@
 		4E7663A31B5A37AC00672ACF /* MasterViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MasterViewController.mm; sourceTree = "<group>"; };
 		4E7663A91B5A37AC00672ACF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		4E7663AB1B5A37AC00672ACF /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		4E85E5F6285364BF00A65763 /* libdigidocpp_util.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp_util.a; path = "$(SDKPATH)/lib/libdigidocpp_util.a"; sourceTree = "<absolute>"; };
 		4EAC9AA729125D5200A39880 /* libdigidocpp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = libdigidocpp.entitlements; sourceTree = "<group>"; };
-		4ECD5FA92010A15A00BCC616 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcrypto.a; path = "$(SDKPATH)/lib/libcrypto.a"; sourceTree = "<absolute>"; };
-		4ECD5FAB2010A1B700BCC616 /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libssl.a; path = "$(SDKPATH)/lib/libssl.a"; sourceTree = "<absolute>"; };
-		4ECD5FAC2010A1B700BCC616 /* libxalan-c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libxalan-c.a"; path = "$(SDKPATH)/lib/libxalan-c.a"; sourceTree = "<absolute>"; };
-		4ECD5FAD2010A1B700BCC616 /* libxerces-c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libxerces-c.a"; path = "$(SDKPATH)/lib/libxerces-c.a"; sourceTree = "<absolute>"; };
-		4ECD5FAE2010A1B700BCC616 /* libxalanMsg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libxalanMsg.a; path = "$(SDKPATH)/lib/libxalanMsg.a"; sourceTree = "<absolute>"; };
-		4ECD5FAF2010A1B700BCC616 /* libxml-security-c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libxml-security-c.a"; path = "$(SDKPATH)/lib/libxml-security-c.a"; sourceTree = "<absolute>"; };
 		4ECD5FB62010A33800BCC616 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		4ECD5FB82010A38900BCC616 /* libminizip.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libminizip.a; path = "$(SDKPATH)/lib/libminizip.a"; sourceTree = "<absolute>"; };
-		4ECD5FB92010A38900BCC616 /* libdigidocpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp.a; path = "$(SDKPATH)/lib/libdigidocpp.a"; sourceTree = "<absolute>"; };
-		4ECD5FBA2010A38900BCC616 /* libdigidocpp_priv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdigidocpp_priv.a; path = "$(SDKPATH)/lib/libdigidocpp_priv.a"; sourceTree = "<absolute>"; };
 		4ED367C424EA910E0020905B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4EF2169420496F780013677E /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -63,17 +60,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				4EF2169520496F780013677E /* UIKit.framework in Frameworks */,
-				4ECD5FBC2010A38900BCC616 /* libdigidocpp.a in Frameworks */,
-				4ECD5FBD2010A38900BCC616 /* libdigidocpp_priv.a in Frameworks */,
 				4ECD5FBB2010A38900BCC616 /* libminizip.a in Frameworks */,
-				4ECD5FB42010A1B700BCC616 /* libxml-security-c.a in Frameworks */,
-				4ECD5FB02010A1B700BCC616 /* libssl.a in Frameworks */,
-				4ECD5FAA2010A15A00BCC616 /* libcrypto.a in Frameworks */,
-				4ECD5FB12010A1B700BCC616 /* libxalan-c.a in Frameworks */,
-				4ECD5FB32010A1B700BCC616 /* libxalanMsg.a in Frameworks */,
-				4E85E5F7285364BF00A65763 /* libdigidocpp_util.a in Frameworks */,
-				4ECD5FB22010A1B700BCC616 /* libxerces-c.a in Frameworks */,
 				4ECD5FB72010A33800BCC616 /* libz.tbd in Frameworks */,
+				4E34C8402AE9292A00DD78B0 /* digidocpp.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -111,7 +100,6 @@
 				4E76639C1B5A37AC00672ACF /* Info.plist */,
 				4E76639D1B5A37AC00672ACF /* main.mm */,
 				4E25CC3F1B5D1D85005E0B79 /* test.bdoc */,
-				4E25CC411B5D1EDA005E0B79 /* schema */,
 			);
 			path = libdigidocpp;
 			sourceTree = "<group>";
@@ -120,16 +108,8 @@
 			isa = PBXGroup;
 			children = (
 				4EF2169420496F780013677E /* UIKit.framework */,
-				4ECD5FA92010A15A00BCC616 /* libcrypto.a */,
-				4ECD5FB92010A38900BCC616 /* libdigidocpp.a */,
-				4ECD5FBA2010A38900BCC616 /* libdigidocpp_priv.a */,
-				4E85E5F6285364BF00A65763 /* libdigidocpp_util.a */,
+				4E34C83F2AE9292A00DD78B0 /* digidocpp.framework */,
 				4ECD5FB82010A38900BCC616 /* libminizip.a */,
-				4ECD5FAB2010A1B700BCC616 /* libssl.a */,
-				4ECD5FAC2010A1B700BCC616 /* libxalan-c.a */,
-				4ECD5FAE2010A1B700BCC616 /* libxalanMsg.a */,
-				4ECD5FAD2010A1B700BCC616 /* libxerces-c.a */,
-				4ECD5FAF2010A1B700BCC616 /* libxml-security-c.a */,
 				4ECD5FB62010A33800BCC616 /* libz.tbd */,
 			);
 			name = Frameworks;
@@ -145,6 +125,7 @@
 				4E7663941B5A37AC00672ACF /* Sources */,
 				4E7663951B5A37AC00672ACF /* Frameworks */,
 				4E7663961B5A37AC00672ACF /* Resources */,
+				4E34C8422AE9292A00DD78B0 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -193,7 +174,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4E25CC421B5D1EDA005E0B79 /* schema in Resources */,
 				4E7663AA1B5A37AC00672ACF /* Main.storyboard in Resources */,
 				4E7663AC1B5A37AC00672ACF /* Images.xcassets in Resources */,
 				4E26A2292AB4E38600E2B732 /* LaunchScreen.storyboard in Resources */,
@@ -345,11 +325,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_NUMBER = 0;
 				CODE_SIGN_ENTITLEMENTS = libdigidocpp/libdigidocpp.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = ET847QJV9F;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(SDKPATH)/lib";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"TESTING=$(TESTING)",
@@ -357,7 +338,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SDKPATH)/include",
-					"$(MINIZIP)",
+					"$(PROJECT_DIR)/../../src/minizip",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -366,14 +347,17 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				LIBRARY_SEARCH_PATHS = "$(SDKPATH)/lib";
 				MARKETING_VERSION = 1.0;
-				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
-				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = ee.ria.libdigidocpp.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKPATH = /Library/libdigidocpp.iphoneos;
-				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
-				"SDKPATH[sdk=macosx*]" = /Library/libdigidocpp.iphonecatalyst;
+				SDKPATH = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.iphoneos";
+				"SDKPATH[sdk=iphonesimulator*]" = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.iphonesimulator";
+				"SDKPATH[sdk=macosx*]" = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.iphonecatalyst";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TESTING = 0;
@@ -386,11 +370,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				BUILD_NUMBER = 0;
 				CODE_SIGN_ENTITLEMENTS = libdigidocpp/libdigidocpp.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = ET847QJV9F;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(SDKPATH)/lib";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"TESTING=$(TESTING)",
@@ -398,7 +383,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SDKPATH)/include",
-					"$(MINIZIP)",
+					"$(PROJECT_DIR)/../../src/minizip",
 				);
 				INFOPLIST_FILE = libdigidocpp/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -407,14 +392,17 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				LIBRARY_SEARCH_PATHS = "$(SDKPATH)/lib";
 				MARKETING_VERSION = 1.0;
-				MINIZIP = "$(PROJECT_DIR)/../../src/minizip";
-				PRODUCT_BUNDLE_IDENTIFIER = "ee.ria.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = ee.ria.libdigidocpp.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKPATH = /Library/libdigidocpp.iphoneos;
-				"SDKPATH[sdk=iphonesimulator*]" = /Library/libdigidocpp.iphonesimulator;
-				"SDKPATH[sdk=macosx*]" = /Library/libdigidocpp.iphonecatalyst;
+				SDKPATH = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.iphoneos";
+				"SDKPATH[sdk=iphonesimulator*]" = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.iphonesimulator";
+				"SDKPATH[sdk=macosx*]" = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.iphonecatalyst";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TESTING = 0;

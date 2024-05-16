@@ -12,5 +12,4 @@
         Open Xcode project and run on simulator
 
 
-AppDelegate.mm contains how to override digidoc::XmlConf to point right cache folder for TSL lists and XSD schema folders.
-Project also includes schema folder (/Library/libdigidocpp.iphoneos/etc/digidocpp/schema).
+AppDelegate.mm contains how to override digidoc::XmlConf to point right cache folder for TSL lists.

@@ -279,7 +279,7 @@ string File::digidocppPath()
     string appData = (fs::path(knownFolder) / "digidocpp").u8string();
     CoTaskMemFree(knownFolder);
     return appData;
-#elif defined(ANDROID)
+#elif defined(ANDROID) || TARGET_OS_SIMULATOR
     if(char *var = getenv("HOME"))
         return (fs::path(var) / ".digidocpp").u8string();
     return {};

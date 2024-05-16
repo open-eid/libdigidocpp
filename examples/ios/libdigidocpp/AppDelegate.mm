@@ -13,30 +13,25 @@
 #include <digidocpp/Exception.h>
 #include <digidocpp/crypto/X509Cert.h>
 
-class DigiDocConf: public digidoc::ConfCurrent
+class DigiDocConf final: public digidoc::ConfCurrent
 {
 public:
-    int logLevel() const override
+    int logLevel() const final
     {
         return 4;
     }
 
-    std::string logFile() const override
+    std::string logFile() const final
     {
         return [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/libdigidocpp.log"].UTF8String;
     }
 
-    std::string TSLCache() const override
+    std::string TSLCache() const final
     {
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
         NSString *libraryDirectory = paths[0];
         [NSFileManager.defaultManager createFileAtPath:[libraryDirectory stringByAppendingPathComponent:@"EE_T.xml"] contents:nil attributes:nil];
         return libraryDirectory.UTF8String;
-    }
-
-    std::string xsdPath() const override
-    {
-        return [NSBundle.mainBundle pathForResource:@"schema" ofType:NSString.string].UTF8String;
     }
 };
 
