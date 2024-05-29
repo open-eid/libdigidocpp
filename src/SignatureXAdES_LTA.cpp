@@ -22,6 +22,7 @@
 #include "ASiC_E.h"
 #include "Conf.h"
 #include "crypto/Digest.h"
+#include "crypto/Signer.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
@@ -148,15 +149,15 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
     //ds:Object
 }
 
-void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
+void SignatureXAdES_LTA::extendSignatureProfile(Signer *signer)
 {
-    SignatureXAdES_LT::extendSignatureProfile(profile);
-    if(profile != ASiC_E::ASIC_TSA_PROFILE)
+    SignatureXAdES_LT::extendSignatureProfile(signer);
+    if(signer->profile() != ASiC_E::ASIC_TSA_PROFILE)
         return;
 
     Digest calc;
     calcArchiveDigest(&calc, signature->signedInfo().canonicalizationMethod().algorithm());
-    TS tsa(CONF(TSUrl), calc);
+    TS tsa(CONF(TSUrl), calc, signer->userAgent());
     vector<unsigned char> der = tsa;
     auto &usp = unsignedSignatureProperties();
     auto ts = make_unique<xadesv141::ArchiveTimeStampType>();
@@ -178,9 +179,7 @@ TS SignatureXAdES_LTA::tsaFromBase64() const
         const xadesv141::ArchiveTimeStampType &ts = unsignedSignatureProperties().archiveTimeStampV141().front();
         if(ts.encapsulatedTimeStamp().empty())
             return {};
-        const GenericTimeStampType::EncapsulatedTimeStampType &bin =
-                ts.encapsulatedTimeStamp().front();
-        return {(const unsigned char*)bin.data(), bin.size()};
+        return {ts.encapsulatedTimeStamp().front()};
     } catch(const Exception &) {}
     return {};
 }

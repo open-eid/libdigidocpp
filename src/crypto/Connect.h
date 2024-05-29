@@ -26,8 +26,8 @@
 #include <string>
 #include <vector>
 
-typedef struct bio_st BIO;
-typedef struct ssl_ctx_st SSL_CTX;
+using BIO = struct bio_st;
+using SSL_CTX = struct ssl_ctx_st;
 
 namespace digidoc {
 
@@ -41,9 +41,10 @@ public:
         {
             return !isOK();
         }
-        bool isStatusCode(const std::string &code) const
+        template<class T>
+        bool isStatusCode(T code) const
         {
-            return result.find(code) != std::string::npos;
+            return result.find(std::forward<T>(code)) != std::string::npos;
         }
         bool isOK() const
         {
@@ -60,7 +61,7 @@ public:
     };
 
     Connect(const std::string &url, const std::string &method = "POST",
-        int timeout = 0, const std::vector<X509Cert> &certs = {});
+        int timeout = 0, const std::vector<X509Cert> &certs = {}, const std::string &userAgentData = {});
     ~Connect();
     Result exec(std::initializer_list<std::pair<std::string_view,std::string_view>> headers,
         const std::vector<unsigned char> &data);
@@ -73,15 +74,13 @@ private:
     void addHeader(std::string_view key, std::string_view value);
     void sendProxyAuth();
     static std::string decompress(const std::string &encoding, const std::string &data) ;
-    void waitReadWrite(bool read) const;
 
     std::string baseurl, _method;
     BIO *d = nullptr;
     std::shared_ptr<SSL_CTX> ssl;
     int _timeout;
     bool doProxyConnect = false;
-    int fd = -1;
-	int recursive = 0;
+    int recursive = 0;
 };
 
 }

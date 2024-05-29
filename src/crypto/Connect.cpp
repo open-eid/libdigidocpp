@@ -57,7 +57,20 @@ using namespace std;
     throw ex; \
 }
 
-Connect::Connect(const string &_url, const string &method, int timeout, const vector<X509Cert> &certs)
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+int BIO_socket_wait(int fd, bool read, time_t timeout)
+{
+    fd_set confds;
+    FD_ZERO(&confds);
+    FD_SET(fd, &confds);
+    timeval tv { timeout, 0 };
+    return select(fd + 1, read ? &confds : nullptr, read ? nullptr : &confds, nullptr, &tv);
+}
+#endif
+
+
+
+Connect::Connect(const string &_url, const string &method, int timeout, const vector<X509Cert> &certs, const string &userAgentData)
     : _method(method)
     , _timeout(timeout)
 {
@@ -167,9 +180,9 @@ Connect::Connect(const string &_url, const string &method, int timeout, const ve
         }
     }
 
-    fd = BIO_get_fd(d, nullptr);
-    if(_timeout > 0)
-        waitReadWrite(false);
+    if(int fd = BIO_get_fd(d, nullptr);
+        _timeout > 0 && BIO_socket_wait(fd, BIO_should_read(d), _timeout) == -1)
+        DEBUG("select failed");
 
     BIO_printf(d, "%s %s HTTP/1.1\r\n", method.c_str(), path.c_str());
     addHeader("Connection", "close");
@@ -178,7 +191,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const ve
     else
         addHeader("Host", host + ':' + port);
     if(!userAgent().empty())
-        addHeader("User-Agent", "LIB libdigidocpp/" FILE_VER_STR " (" TARGET_ARCH ") APP " + userAgent());
+        addHeader("User-Agent", "LIB libdigidocpp/" FILE_VER_STR " (" TARGET_ARCH ") APP " + userAgent() + " " + userAgentData);
     if(usessl == 0)
         sendProxyAuth();
 }
@@ -341,16 +354,4 @@ void Connect::sendProxyAuth()
     (void)BIO_flush(b64.get());
     BIO_pop(b64.get());
     BIO_printf(d, "\r\n");
-}
-
-void Connect::waitReadWrite(bool read) const
-{
-    if(fd < 0)
-        return;
-    fd_set confds;
-    FD_ZERO(&confds);
-    FD_SET(fd, &confds);
-    timeval tv { _timeout, 0 };
-    if(select(fd + 1, read ? &confds : nullptr, read ? nullptr : &confds, nullptr, &tv) == -1)
-        DEBUG("select failed");
 }
