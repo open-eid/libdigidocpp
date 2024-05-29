@@ -22,6 +22,7 @@
 #include "ASiC_E.h"
 #include "Conf.h"
 #include "crypto/Digest.h"
+#include "crypto/Signer.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
@@ -129,15 +130,15 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
 #endif
 }
 
-void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
+void SignatureXAdES_LTA::extendSignatureProfile(Signer *signer)
 {
-    SignatureXAdES_LT::extendSignatureProfile(profile);
-    if(profile != ASiC_E::ASIC_TSA_PROFILE)
+    SignatureXAdES_LT::extendSignatureProfile(signer);
+    if(signer->profile() != ASiC_E::ASIC_TSA_PROFILE)
         return;
 #if 0
     Digest calc;
     calcArchiveDigest(&calc, signature->signedInfo().canonicalizationMethod().algorithm());
-    TS tsa(CONF(TSUrl), calc);
+    TS tsa(CONF(TSUrl), calc, signer->userAgent());
     vector<unsigned char> der = tsa;
     auto &usp = unsignedSignatureProperties();
     auto ts = make_unique<xadesv141::ArchiveTimeStampType>();

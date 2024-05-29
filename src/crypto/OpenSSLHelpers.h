@@ -39,7 +39,8 @@ namespace digidoc
 #define SCOPE(TYPE, VAR, DATA) auto VAR = SCOPE_PTR_FREE(TYPE, DATA, TYPE##_free)
 
 template<class T, typename Func>
-std::vector<unsigned char> i2d(T *obj, Func func)
+[[nodiscard]]
+inline std::vector<unsigned char> i2d(T *obj, Func func)
 {
     if(!obj)
         return {};
@@ -47,9 +48,16 @@ std::vector<unsigned char> i2d(T *obj, Func func)
     if(size <= 0)
         return {};
     std::vector<unsigned char> result(size_t(size), 0);
-    if(unsigned char *p = result.data(); func(obj, &p) <= 0)
+    if(unsigned char *p = result.data(); func(obj, &p) != size)
         return {};
     return result;
+}
+
+template<class T, typename Func>
+[[nodiscard]]
+inline std::vector<unsigned char> i2d(const T &obj, Func func)
+{
+    return i2d(obj.get(), std::forward<Func>(func));
 }
 
 /**
