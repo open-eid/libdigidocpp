@@ -40,7 +40,7 @@ namespace DigiDocCSharp
             try
             {
                 Console.WriteLine("Creating file: " + args[args.Length - 1]);
-                Container b = Container.create(args[args.Length - 1]);
+                var b = Container.create(args[args.Length - 1]);
                 for (int i = 1; i < args.Length - 1; ++i)
                 {
                     b.addDataFile(args[i], "application/octet-stream");
@@ -60,9 +60,9 @@ namespace DigiDocCSharp
             try
             {
                 Console.WriteLine("Opening file: " + file);
-                Container b = Container.open(file);
-                DataFile d = b.dataFiles()[index];
-                string dest = Path.Combine(Directory.GetCurrentDirectory(), d.fileName());
+                var b = Container.open(file);
+                var d = b.dataFiles()[index];
+                var dest = Path.Combine(Directory.GetCurrentDirectory(), d.fileName());
                 Console.WriteLine("Extracting file {0} to {1}", d.fileName(), dest);
                 try
                 {
@@ -114,7 +114,7 @@ namespace DigiDocCSharp
             try
             {
                 Console.WriteLine("Creating file: " + args[args.Length - 1]);
-                Container b = Container.create(args[args.Length - 1]);
+                var b = Container.create(args[args.Length - 1]);
 #if _WINDOWS
                 for (int i = 1; i < args.Length - 1; ++i)
 #else
@@ -148,26 +148,27 @@ namespace DigiDocCSharp
             try
             {
                 Console.WriteLine("Creating file: " + args[args.Length - 1]);
-                Container b = Container.create(args[args.Length - 1]);
+                var b = Container.create(args[args.Length - 1]);
                 for (int i = 1; i < args.Length - 2; ++i)
                 {
                     b.addDataFile(args[i], "application/octet-stream");
                 }
 
                 var cert = new X509Certificate(args[args.Length - 2]);
-                Signature c = b.prepareWebSignature(cert.Export(X509ContentType.Cert), "time-stamp");
+                var signer = new ExternalSigner(cert.Export(X509ContentType.Cert));
+                var c = b.prepareSignature(signer);
                 Console.WriteLine("Signature method: " + c.signatureMethod());
                 Console.WriteLine("Digest to sign: " + BitConverter.ToString(c.dataToSign()).Replace("-", string.Empty));
                 Console.WriteLine("Please enter signed digest in hex: ");
 
-                byte[] inputBuffer = new byte[1024];
-                Stream inputStream = Console.OpenStandardInput(inputBuffer.Length);
+                var inputBuffer = new byte[1024];
+                var inputStream = Console.OpenStandardInput(inputBuffer.Length);
                 Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, inputBuffer.Length));
-                string hex = Console.ReadLine();
+                var hex = Console.ReadLine();
 
-                byte[] signature = Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
+                var signature = Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
                 c.setSignatureValue(signature);
-                c.extendSignatureProfile("time-stamp");
+                c.extendSignatureProfile(signer);
                 b.save();
             }
             catch (Exception e)
@@ -184,7 +185,7 @@ namespace DigiDocCSharp
             {
                 Console.WriteLine("Opening file: " + file);
                 var cb = new ContainerOpen();
-                Container b = Container.open(file, cb);
+                var b = Container.open(file, cb);
 
                 Console.WriteLine("Files:");
                 foreach (DataFile d in b.dataFiles())

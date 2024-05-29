@@ -20,6 +20,7 @@
 #include "Signature.h"
 
 #include "Exception.h"
+#include "crypto/Signer.h"
 #include "crypto/X509Cert.h"
 
 #include <algorithm>
@@ -166,7 +167,22 @@ void Signature::validate(const std::string & /*policy*/) const { validate(); }
  *
  * @param profile Target profile
  */
-void Signature::extendSignatureProfile(const string & /*profile*/) {}
+void Signature::extendSignatureProfile(const string &profile) {
+    struct ProfileSigner: public Signer
+    {
+        X509Cert cert() const { return X509Cert(); }
+        vector<unsigned char> sign(const string &/*method*/, const vector<unsigned char> &/*digest*/) const { return {}; }
+    } signer;
+    signer.setProfile(profile);
+    extendSignatureProfile(&signer);
+}
+
+/**
+ * Extends signature to selected profile
+ *
+ * @param signer Signer parameters
+ */
+void Signature::extendSignatureProfile(Signer * /*signer*/) {}
 
 /**
  * Returns signature policy when it is available or empty string.

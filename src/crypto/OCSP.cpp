@@ -45,7 +45,7 @@ using namespace std;
 /**
  * Initialize OCSP certificate validator.
  */
-OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer)
+OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &userAgent)
 {
     if(!cert)
         THROW("Can not check X.509 certificate, certificate is NULL pointer.");
@@ -79,12 +79,12 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer)
     if(!OCSP_request_add1_nonce(req.get(), nullptr, 32)) // rfc8954: SIZE(1..32)
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 
-    Connect::Result result = Connect(url, "POST").exec({
+    Connect::Result result = Connect(url, "POST", 0, {}, userAgent).exec({
         {"Content-Type", "application/ocsp-request"},
         {"Accept", "application/ocsp-response"},
         {"Connection", "Close"},
         {"Cache-Control", "no-cache"}
-    }, i2d(req.get(), i2d_OCSP_REQUEST));
+    }, i2d(req, i2d_OCSP_REQUEST));
 
     if(result.isForbidden())
         THROW("OCSP service responded - Forbidden");
@@ -175,7 +175,7 @@ X509Cert OCSP::responderCert() const
 
 OCSP::operator vector<unsigned char>() const
 {
-    return i2d(resp.get(), i2d_OCSP_RESPONSE);
+    return i2d(resp, i2d_OCSP_RESPONSE);
 }
 
 /**

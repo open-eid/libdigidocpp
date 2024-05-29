@@ -295,7 +295,7 @@ Signature *ASiC_E::sign(Signer* signer)
     try
     {
         s->setSignatureValue(signer->sign(s->signatureMethod(), s->dataToSign()));
-        s->extendSignatureProfile(signer->profile());
+        s->extendSignatureProfile(signer);
     }
     catch(const Exception& e)
     {

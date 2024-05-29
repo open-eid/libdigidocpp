@@ -60,7 +60,7 @@ static ostream &operator<<(ostream &os, const X509Cert &cert)
 static ostream &operator<<(ostream &os, const vector<unsigned char> &data)
 {
     os << hex << uppercase << setfill('0');
-    for(const unsigned char &i: data)
+    for(unsigned char i: data)
         os << setw(2) << static_cast<int>(i) << ' ';
     return os << dec << nouppercase << setfill(' ');
 }
@@ -287,13 +287,21 @@ public:
     optional<string> uri;
     optional<string> siguri;
 
-    // Params
-    optional<bool> rsaPss;
-    string path, profile, pkcs11, pkcs12, pin, city, street, state, postalCode, country, cert;
-    vector<unsigned char> thumbprint;
-    unordered_map<string,string> files;
+    // Signer
+    string profile, city, street, state, postalCode, country, userAgent;
     vector<string> roles;
-    bool cng = true, selectFirst = false, doSign = true, dontValidate = false, XAdESEN = false;
+    bool XAdESEN = false;
+
+    // Token
+    optional<bool> rsaPss;
+    string pkcs11, pkcs12, pin, cert;
+    vector<unsigned char> thumbprint;
+    bool cng = true, selectFirst = false;
+
+    // Params
+    string path;
+    unordered_map<string,string> files;
+    bool doSign = true, dontValidate = false;
     static string_view RED, GREEN, YELLOW, RESET;
 };
 
@@ -322,8 +330,6 @@ static int printUsage(const char *executable)
     << "    Example: " << executable << " open container-file.asice" << endl
     << "    Available options:" << endl
     << "      --warnings=(ignore,warning,error) - warning handling (default warning)" << endl
-    << "      --policy=(POLv1,POLv2) - Signature Validation Policy (default POLv2)" << endl
-    << "                               http://open-eid.github.io/SiVa/siva/appendix/validation_policy/" << endl
     << "      --extractAll[=path]    - extracts documents without validating signatures (to path when provided)" << endl
     << "      --validateOnExtract    - validates container before extracting files" << endl << endl
     << "      --offline              - open container offline (eg. Don't send to SiVa)" << endl << endl
@@ -367,6 +373,7 @@ static int printUsage(const char *executable)
     << "      --rsapss       - Use RSA PSS padding" << endl
     << "      --tsurl        - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
     << "      --dontValidate - Don't validate container on signature creation" << endl << endl
+    << "      --userAgent    - Additional info info that is sent to TSA or OCSP service" << endl << endl
     << "  All commands:" << endl
     << "      --nocolor      - Disable terminal colors" << endl
     << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
@@ -484,6 +491,7 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
     signer->setSignatureProductionPlaceV2(city, street, state, postalCode, country);
     signer->setSignerRoles(roles);
     signer->setProfile(profile);
+    signer->setUserAgent(userAgent);
     if(rsaPss.has_value())
         signer->setMethod(rsaPss.value() ? Digest::toRsaPssUri(signatureDigestUri()) : Digest::toRsaUri(signatureDigestUri()));
     return signer;
@@ -536,7 +544,7 @@ static int validateSignature(const Signature *s, ToolConfig::Warning warning = T
 static int open(int argc, char* argv[])
 {
     ToolConfig::Warning reportwarnings = ToolConfig::WWarning;
-    string path, policy;
+    string path;
     fs::path extractPath;
     bool validateOnExtract = false;
     int returnCode = EXIT_SUCCESS;
@@ -570,8 +578,6 @@ static int open(int argc, char* argv[])
         }
         else if(arg == "--validateOnExtract")
             validateOnExtract = true;
-        else if(arg.find("--policy=") == 0)
-            policy = arg.substr(9);
         else if(arg.find("--offline") == 0)
             cb.online = false;
         else
@@ -894,8 +900,9 @@ static int websign(const ToolConfig &p, const char *program)
     for(const auto &[file, mime]: p.files)
         doc->addDataFile(file, mime);
 
-    int returnCode = EXIT_SUCCESS;
-    if(Signature *signature = doc->prepareSignature(p.getSigner(true).get()))
+    int returnCode = EXIT_FAILURE;
+    if(auto signer = p.getSigner(true);
+        Signature *signature = doc->prepareSignature(signer.get()))
     {
         cout << "Signature method: " << signature->signatureMethod() << endl
              << "Digest to sign:   " << signature->dataToSign() << endl
@@ -903,10 +910,8 @@ static int websign(const ToolConfig &p, const char *program)
         string signedData;
         cin >> signedData;
         signature->setSignatureValue(File::hexToBin(signedData));
-        cout << "Test" << File::hexToBin(signedData);
-        signature->extendSignatureProfile(p.profile);
-        if(validateSignature(signature) == EXIT_FAILURE)
-            returnCode = EXIT_FAILURE;
+        signature->extendSignatureProfile(signer.get());
+        returnCode = validateSignature(signature);
     }
     doc->save();
     return returnCode;

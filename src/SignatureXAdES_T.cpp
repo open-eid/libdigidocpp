@@ -20,9 +20,9 @@
 #include "SignatureXAdES_T.h"
 
 #include "ASiC_E.h"
-#include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/OCSP.h"
+#include "crypto/Signer.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
@@ -52,9 +52,9 @@ string SignatureXAdES_T::trustedSigningTime() const
     return time.empty() ? SignatureXAdES_B::trustedSigningTime() : std::move(time);
 }
 
-void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
+void SignatureXAdES_T::extendSignatureProfile(Signer *signer)
 {
-    if(profile.find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
+    if(signer->profile().find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
         return;
 
     auto up = qualifyingProperties()/"UnsignedProperties";
@@ -72,7 +72,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     auto method = canonicalizationMethod();
     signatures->c14n(calc, method, signatureValue());
 
-    TS tsa(CONF(TSUrl), calc);
+    TS tsa(calc, signer->userAgent());
     auto ts = usp + "SignatureTimeStamp";
     ts.setProperty("Id", id() + Log::format("-T%zu", i));
     (ts + CanonicalizationMethod).setProperty("Algorithm", method);

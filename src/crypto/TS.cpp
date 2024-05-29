@@ -55,7 +55,7 @@ void *OPENSSL_memdup(const void *data, size_t size)
 }
 #endif
 
-TS::TS(const string &url, const Digest &digest)
+TS::TS(const Digest &digest, const std::string &userAgent)
 {
     auto req = SCOPE_PTR(TS_REQ, TS_REQ_new());
     TS_REQ_set_version(req.get(), 1);
@@ -87,12 +87,12 @@ TS::TS(const string &url, const Digest &digest)
         RAND_bytes(nonce->data, nonce->length);
     TS_REQ_set_nonce(req.get(), nonce.get());
 
-    Connect::Result result = Connect(url, "POST", 0, CONF(TSCerts)).exec({
+    Connect::Result result = Connect(CONF(TSUrl), "POST", 0, CONF(TSCerts), userAgent).exec({
         {"Content-Type", "application/timestamp-query"},
         {"Accept", "application/timestamp-reply"},
         {"Connection", "Close"},
         {"Cache-Control", "no-cache"}
-    }, i2d(req.get(), i2d_TS_REQ));
+    }, i2d(req, i2d_TS_REQ));
 
     if(result.isForbidden())
     {
@@ -291,7 +291,7 @@ TS::operator vector<unsigned char>() const
 {
 #ifndef OPENSSL_NO_CMS
     if(cms)
-        return i2d(cms.get(), i2d_CMS_ContentInfo);
+        return i2d(cms, i2d_CMS_ContentInfo);
 #endif
-    return i2d(d.get(), i2d_PKCS7);
+    return i2d(d, i2d_PKCS7);
 }

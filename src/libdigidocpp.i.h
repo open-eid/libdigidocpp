@@ -21,6 +21,7 @@
 
 #include "Container.h"
 #include "XmlConf.h"
+#include "crypto/Signer.h"
 #include "crypto/X509Cert.h"
 #include "util/File.h"
 
@@ -99,6 +100,25 @@ private:
     std::optional<std::vector<X509Cert>> tslCerts, serviceCerts, tsCerts;
     std::optional<std::set<std::string>> TMProfiles;
     std::optional<std::map<std::string,std::string>> OCSPUrls;
+};
+
+class ExternalSigner: public digidoc::Signer
+{
+public:
+    ExternalSigner(const std::vector<unsigned char> &cert)
+        : _cert(cert)
+    {}
+
+private:
+    digidoc::X509Cert cert() const final
+    {
+        return _cert;
+    }
+    std::vector<unsigned char> sign(const std::string &, const std::vector<unsigned char> &) const final
+    {
+        return {};
+    }
+    digidoc::X509Cert _cert;
 };
 
 static void initializeLib(const std::string &appName, const std::string &path)
