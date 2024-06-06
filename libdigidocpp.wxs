@@ -54,6 +54,7 @@
       <File Name="Xalan-C_1_12.dll" />
       <File Name="XalanMessages_1_12.dll" />
       <File Name="xsec_2_0.dll" />
+      <File Name="libxml2.dll" />
     </ComponentGroup>
 
     <ComponentGroup Id="Libraries" Source="$(var.libdigidocpp)\bin">
@@ -106,7 +107,7 @@
     <ComponentGroup Id="Headers" Directory="INSTALLFOLDER" Subdirectory="include">
       <Files Include="$(var.libdigidocpp)\include\**" />
     </ComponentGroup>
-  
+
 <?ifdef var.docLocation ?>
     <ComponentGroup Id="Documentation" Directory="INSTALLFOLDER" Subdirectory="documentation">
       <Files Include="$(var.docLocation)\**" />

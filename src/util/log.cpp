@@ -41,7 +41,7 @@ using namespace std;
  */
 string Log::format(const char* fmt, ...)
 {
-    va_list args;
+    va_list args{};
     va_start(args, fmt);
     string s = formatArgList(fmt, args);
     va_end(args);
@@ -58,13 +58,14 @@ string Log::format(const char* fmt, ...)
  */
 string Log::formatArgList(const char* fmt, va_list args)
 {
+    string result;
     if(!fmt)
-        return "";
-    string result(2048, 0);
-    int size = vsnprintf(&result[0], result.size() + 1, fmt, args);
-    if(size == -1)
-        return {};
-    result.resize(size_t(size));
+        return result;
+    result.resize(2048, 0);
+    if(int size = vsnprintf(result.data(), result.size() + 1, fmt, args); size != -1)
+        result.resize(size_t(size));
+    else
+        result.clear();
     return result;
 }
 
@@ -78,31 +79,29 @@ void Log::out(LogType type, const char *file, unsigned int line, const char *for
     fstream f;
     if(!conf->logFile().empty())
     {
-        f.open(File::encodeName(conf->logFile()).c_str(), fstream::out|fstream::app);
+        f.open(File::encodeName(conf->logFile()), fstream::out|fstream::app);
         o = &f;
     }
-    char outtime[] = "0000-00-00T00:00:00Z";
     time_t t = time(nullptr);
-    struct tm tm {};
+    tm tm {};
 #ifdef _WIN32
-    if(gmtime_s(&tm, &t) == 0)
+    gmtime_s(&tm, &t);
 #else
-    if(gmtime_r(&t, &tm) != nullptr)
+    gmtime_r(&t, &tm);
 #endif
-        strftime(outtime, sizeof(outtime), "%Y-%m-%dT%TZ", &tm);
-    *o << outtime << " ";
+    *o << put_time(&tm, "%Y-%m-%dT%TZ") << ' ';
     switch(type)
     {
-    case ErrorType: *o << "E"; break;
-    case WarnType: *o << "W"; break;
-    case InfoType: *o << "I"; break;
-    case DebugType: *o << "D"; break;
+    case ErrorType: *o << 'E'; break;
+    case WarnType: *o << 'W'; break;
+    case InfoType: *o << 'I'; break;
+    case DebugType: *o << 'D'; break;
     }
-    *o << " [" << File::fileName(file) << ":" << line << "] - ";
+    *o << " [" << File::fileName(file) << ':' << line << "] - ";
 
-    va_list args;
+    va_list args{};
     va_start(args, format);
-    *o << formatArgList(format, args).c_str() << "\n";
+    *o << formatArgList(format, args) << '\n';
     va_end(args);
 }
 
@@ -116,14 +115,14 @@ void Log::dbgPrintfMemImpl(const char *msg, const void *ptr, size_t size, const 
     fstream f;
     if(!conf->logFile().empty())
     {
-        f.open(File::encodeName(conf->logFile()).c_str(), fstream::out|fstream::app);
+        f.open(File::encodeName(conf->logFile()), fstream::out|fstream::app);
         o = &f;
     }
 
     const unsigned char *data = (const unsigned char*)ptr;
-    *o << "DEBUG [" << File::fileName(file) << ":" << line << "] - " << msg << " { ";
+    *o << "DEBUG [" << File::fileName(file) << ':' << line << "] - " << msg << " { ";
     *o << hex << uppercase << setfill('0');
     for(size_t i = 0; i < size; ++i)
         *o << setw(2) << static_cast<int>(data[i]) << ' ';
-    *o << dec << nouppercase << setfill(' ') <<"}:" << size << "\n";
+    *o << dec << nouppercase << setfill(' ') << "}:" << size << '\n';
 }
