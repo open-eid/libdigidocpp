@@ -129,7 +129,7 @@ Exception::Exception(const Exception &other) = default;
 /**
  * Move constructor
  */
-Exception::Exception(Exception &&other) DIGIDOCPP_NOEXCEPT = default;
+Exception::Exception(Exception &&other) noexcept = default;
 
 /**
  * Releases memory
@@ -144,7 +144,7 @@ Exception &Exception::operator=(const Exception &other) = default;
 /**
  * Move operator
  */
-Exception &Exception::operator=(Exception &&other) DIGIDOCPP_NOEXCEPT = default;
+Exception &Exception::operator=(Exception &&other) noexcept = default;
 
 /**
  * Returns exception file

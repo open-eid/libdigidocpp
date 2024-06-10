@@ -71,38 +71,14 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020101_sie_xs
     --namespace-map http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/\#=digidoc::tsl
     --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
 
-if(WIN32)
-    add_executable(embedfile embedfile.cpp)
-endif()
-set(COUNT 0)
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "")
-foreach(TSL_CERT ${TSL_CERTS})
-    math(EXPR COUNT "${COUNT}+1")
-    set(BASE "tslcert${COUNT}")
-    list(APPEND digidocpp_SRCS ${CMAKE_CURRENT_BINARY_DIR}/${BASE}.h)
-    if(WIN32)
-        add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${BASE}.h
-            COMMAND $<TARGET_FILE:embedfile> ${TSL_CERT} ${BASE}_crt ${BASE}.h
-            COMMENT "Generating ${BASE}.h from ${TSL_CERT}"
-        )
-    else()
-        add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${BASE}.h
-            COMMAND xxd -i ${TSL_CERT} ${BASE}.h
-            COMMAND sed -ie 's!unsigned char .*[][]!unsigned char ${BASE}_crt[]!' ${BASE}.h
-            COMMENT "Generating ${BASE}.h from ${TSL_CERT}"
-        )
-    endif()
-    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "#include \"${BASE}.h\"\n")
-endforeach()
-file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "using namespace digidoc;\nstatic const std::vector<X509Cert> tslcerts {\n")
 
-set(COUNT 0)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "namespace digidoc {\nstatic const std::vector<X509Cert> tslcerts {\n")
 foreach(TSL_CERT ${TSL_CERTS})
-    math(EXPR COUNT "${COUNT}+1")
-    set(BASE "tslcert${COUNT}")
-    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "digidoc::X509Cert(${BASE}_crt, std::size(${BASE}_crt), X509Cert::Pem),\n")
+    file(READ ${TSL_CERT} filedata HEX)
+    string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," filedata ${filedata})
+    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "digidoc::X509Cert({${filedata}}, X509Cert::Pem),\n")
 endforeach()
-file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "};")
+file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "};\n}")
 
 set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd

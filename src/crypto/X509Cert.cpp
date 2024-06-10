@@ -268,10 +268,7 @@ X509Cert::X509Cert(const X509Cert &other) = default;
 /**
  * Move constructor.
  */
-X509Cert::X509Cert(X509Cert &&other) DIGIDOCPP_NOEXCEPT
- : cert(move(other.cert))
-{
-}
+X509Cert::X509Cert(X509Cert &&other) noexcept = default;
 
 /**
  * Clean up underlying X509 data.
@@ -428,7 +425,7 @@ string X509Cert::subjectName(const string &obj) const
     return toString(X509_get_subject_name, obj);
 }
 
-string X509Cert::toOID(ASN1_OBJECT *obj) const
+string X509Cert::toOID(ASN1_OBJECT *obj)
 {
     string oid(80, 0);
     oid.resize(size_t(OBJ_obj2txt(oid.data(), int(oid.size()), obj, 1)));
@@ -536,12 +533,7 @@ X509Cert& X509Cert::operator =(const X509Cert &other) = default;
 /**
  * Move operator
  */
-X509Cert& X509Cert::operator =(X509Cert &&other) DIGIDOCPP_NOEXCEPT
-{
-    if(this != &other)
-        cert = move(other.cert);
-    return *this;
-}
+X509Cert& X509Cert::operator =(X509Cert &&other) noexcept = default;
 
 /**
  * Equal operator to compare two objects
