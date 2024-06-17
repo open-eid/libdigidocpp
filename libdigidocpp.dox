@@ -595,7 +595,7 @@ If left unspecified then the logging output is written to standard output stream
 </tr>
 <tr>
   <td>ts.url</td>
-  <td>Specifies the URL of the time-stamping service that is used during signature creation, needed only in case of TS signature profile. By default, the RIA's time-stamping service is used by the library (http://dd-at.ria.ee/tsa)
+  <td>Specifies the URL of the time-stamping service that is used during signature creation, needed only in case of TS signature profile. By default, the RIA's time-stamping service is used by the library (https://eid-dd.ria.ee/ts)
 </td>
 </tr>
 </table>
@@ -877,7 +877,7 @@ In case of BDOC format, you can also use a different digest algorithm for calcul
 
 
 \paragraph API-sign-create Create the signature
-The signing method also adds validation data from external services (OCSP and/or time-stamping servers). Note that the OCSP responder and time-stamping server settings (in case of TS profile) should be configured before calling out the following method (see also \ref initialization and \ref parameters). By default, the RIA's time-stamping service http://dd-at.ria.ee/tsa is used.
+The signing method also adds validation data from external services (OCSP and/or time-stamping servers). Note that the OCSP responder and time-stamping server settings (in case of TS profile) should be configured before calling out the following method (see also \ref initialization and \ref parameters). By default, the RIA's time-stamping service https://eid-dd.ria.ee/ts is used.
 Container holds the Signature object reference and there is no need cleanup memory.
 
 \code{.cpp}
