@@ -22,7 +22,7 @@ set_env( TSL_CERTS
     ${CMAKE_SOURCE_DIR}/etc/tl-mp6.crt
     ${CMAKE_SOURCE_DIR}/etc/tl-mp7.crt
     CACHE FILEPATH "TSL trust list signing certificates" )
-set_env( TSA_URL "http://dd-at.ria.ee/tsa" CACHE STRING "Default TSA URL" )
+set_env(TSA_URL "https://eid-dd.ria.ee/ts" CACHE STRING "Default TSA URL")
 set_env( SIVA_URL "https://siva.eesti.ee/V3/validate" CACHE STRING "Default SiVa validation service URL" )
 set( BUILD_TOOLS YES CACHE BOOL "Build digidoc-tool" )
 set( BUILD_SHARED_LIBS YES CACHE BOOL "Build library as SHARED or STATIC" )
