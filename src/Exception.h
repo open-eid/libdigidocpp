@@ -68,10 +68,10 @@ namespace digidoc
           Exception(const std::string& file, int line, const std::string& msg);
           Exception(const std::string& file, int line, const std::string& msg, const Exception& cause);
           Exception(const Exception &other);
-          Exception(Exception &&other) DIGIDOCPP_NOEXCEPT;
+          Exception(Exception &&other) noexcept;
           virtual ~Exception();
           Exception &operator=(const Exception &other);
-          Exception &operator=(Exception &&other) DIGIDOCPP_NOEXCEPT;
+          Exception &operator=(Exception &&other) noexcept;
 
           std::string file() const;
           int line() const;

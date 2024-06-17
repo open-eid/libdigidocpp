@@ -21,6 +21,7 @@
 
 #include "../Exports.h"
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -80,8 +81,10 @@ namespace digidoc
           explicit X509Cert(X509 *cert = nullptr);
           explicit X509Cert(const unsigned char *bytes, size_t size, Format format = Der);
           explicit X509Cert(const std::vector<unsigned char> &bytes, Format format = Der);
+          inline explicit X509Cert(std::initializer_list<unsigned char> bytes, Format format = Der)
+              : X509Cert(bytes.begin(), bytes.size(), format) {}
           explicit X509Cert(const std::string &path, Format format = Pem);
-          X509Cert(X509Cert &&other) DIGIDOCPP_NOEXCEPT;
+          X509Cert(X509Cert &&other) noexcept;
           X509Cert(const X509Cert &other);
           ~X509Cert();
 
@@ -97,7 +100,7 @@ namespace digidoc
           X509* handle() const;
           operator std::vector<unsigned char>() const;
           X509Cert& operator=(const X509Cert &other);
-          X509Cert& operator=(X509Cert &&other) DIGIDOCPP_NOEXCEPT;
+          X509Cert& operator=(X509Cert &&other) noexcept;
           operator bool() const;
           bool operator !() const;
           bool operator ==(X509 *other) const;
@@ -105,7 +108,7 @@ namespace digidoc
           bool operator !=(const X509Cert &other) const;
 
       private:
-          std::string toOID(ASN1_OBJECT *obj) const;
+          static std::string toOID(ASN1_OBJECT *obj);
           template<typename Func>
           std::string toString(Func func, const std::string &obj) const;
           std::shared_ptr<X509> cert;

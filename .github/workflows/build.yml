@@ -18,13 +18,10 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      env:
-        HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: YES
       run: |
         brew update
-        brew install doxygen boost xsd || brew link --overwrite xsd
+        brew install --formula doxygen boost xsd || brew link --overwrite xsd
         brew unlink xerces-c
-        brew unlink python@3.10 || true
         brew unlink python@3.11 || true
         brew unlink python@3.12 || true
         brew unlink xz
@@ -64,7 +61,7 @@ jobs:
       run: |
         ./build-library.sh ${{ matrix.target }} install/strip
         cd /Library
-        zip --symlinks -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
+        zip -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
     - name: Archive artifacts
       if: matrix.target == 'osx'
       uses: actions/upload-artifact@v4
@@ -88,7 +85,7 @@ jobs:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
-          git gcc-c++ cmake rpm-build xml-security-c-devel libxml2-devel zlib-devel vim-common doxygen boost-test swig python3-devel java-1.8.0-openjdk-devel xsd minizip-devel
+          git gcc-c++ cmake rpm-build xml-security-c-devel libxml2-devel zlib-devel doxygen boost-test swig python3-devel java-17-openjdk-devel xsd minizip-devel
     - name: Install CMake
       if: matrix.container == 39
       run: |
@@ -122,7 +119,7 @@ jobs:
       DEBEMAIL: github-actions@github.com
     steps:
     - name: Install dependencies
-      run: apt update -qq && apt install --no-install-recommends -y git lsb-release build-essential devscripts debhelper cmake xxd xsdcxx libxml-security-c-dev libxml2-dev zlib1g-dev doxygen swig openjdk-8-jdk-headless libpython3-dev python3-setuptools libboost-test-dev lintian
+      run: apt update -qq && apt install --no-install-recommends -y git lsb-release build-essential devscripts debhelper cmake xsdcxx libxml-security-c-dev libxml2-dev zlib1g-dev doxygen swig openjdk-11-jdk-headless libpython3-dev python3-setuptools libboost-test-dev lintian
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -159,6 +156,7 @@ jobs:
           vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
     env:
       VER_SUFFIX: .VS${{ matrix.toolset }}
+      CXXFLAGS: '/D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR' # https://github.com/actions/runner-images/issues/10004
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -212,7 +210,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev doxygen
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xsdcxx libxml-security-c-dev zlib1g-dev doxygen
     - name: Build docs
       run: |
         cmake -B build -S .
@@ -236,7 +234,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
     - name: Download Coverity Build Tool
       run: |
         curl --silent --data "token=$TOKEN&project=$PROJECTNAME" -o cov-analysis-linux64.tar.gz https://scan.coverity.com/download/cxx/linux64
@@ -270,7 +268,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install dependencies
-      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xxd xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
+      run: sudo apt update -qq && sudo apt install --no-install-recommends -y cmake xsdcxx libxml-security-c-dev zlib1g-dev curl ca-certificates
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:

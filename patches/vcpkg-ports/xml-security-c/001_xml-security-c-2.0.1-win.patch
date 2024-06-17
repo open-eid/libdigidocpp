@@ -644,3 +644,15 @@ diff -U3 -r xml-security-c-2.0.1.orig/xsec/framework/XSECW32Config.hpp xml-secur
  // #define XSEC_HAVE_WINCAPI 1
  // #define XSEC_HAVE_NSS 1
  
+diff -U3 -r xml-security-c-2.0.4.orig/xsec/framework/version.rc xml-security-c-2.0.4/xsec/framework/version.rc
+--- xml-security-c-2.0.4.orig/xsec/framework/version.rc	2021-10-28 21:11:29
++++ xml-security-c-2.0.4/xsec/framework/version.rc	2024-06-10 12:58:52
+@@ -7,7 +7,7 @@
+ //
+ // Generated from the TEXTINCLUDE 2 resource.
+ //
+-#include "afxres.h"
++#include "windows.h"
+ 
+ /////////////////////////////////////////////////////////////////////////////
+ #undef APSTUDIO_READONLY_SYMBOLS

@@ -31,11 +31,6 @@
   #else
     #define DIGIDOCPP_DEPRECATED
   #endif
-  #if _MSC_VER >= 1900
-    #define DIGIDOCPP_NOEXCEPT noexcept
-  #else
-    #define DIGIDOCPP_NOEXCEPT
-  #endif
   #define DIGIDOCPP_WARNING_PUSH __pragma(warning(push))
   #define DIGIDOCPP_WARNING_POP __pragma(warning(pop))
   #define DIGIDOCPP_WARNING_DISABLE_CLANG(text)
@@ -45,7 +40,6 @@
 #else
   #define DIGIDOCPP_EXPORT __attribute__ ((visibility("default")))
   #define DIGIDOCPP_DEPRECATED __attribute__ ((__deprecated__))
-  #define DIGIDOCPP_NOEXCEPT noexcept
   #define DIGIDOCPP_DO_PRAGMA(text) _Pragma(#text)
   #define DIGIDOCPP_WARNING_PUSH DIGIDOCPP_DO_PRAGMA(GCC diagnostic push)
   #define DIGIDOCPP_WARNING_POP DIGIDOCPP_DO_PRAGMA(GCC diagnostic pop)
@@ -61,5 +55,5 @@
 #define DISABLE_COPY(Class) \
     Class(const Class &) = delete; \
     Class &operator=(const Class &) = delete; \
-    Class(Class &&) DIGIDOCPP_NOEXCEPT = delete; \
-    Class &operator=(Class &&) DIGIDOCPP_NOEXCEPT = delete
+    Class(Class &&) noexcept = delete; \
+    Class &operator=(Class &&) noexcept = delete

@@ -8,7 +8,6 @@ Build-Depends:
  libxml-security-c-dev,
  xsdcxx (>= 4.0) | xsd (>= 4.0),
  libxml2-dev,
- xxd,
  doxygen,
  swig,
  java8-sdk-headless,
