@@ -152,7 +152,8 @@ bool File::fileExtension(string_view path, initializer_list<string_view> list)
 unsigned long File::fileSize(string_view path) noexcept
 {
     error_code ec;
-    return fs::file_size(fs::u8path(path), ec);
+    auto result = fs::file_size(fs::u8path(path), ec);
+    return ec ? 0 : result;
 }
 
 /**
