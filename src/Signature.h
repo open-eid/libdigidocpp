@@ -26,6 +26,7 @@
 
 namespace digidoc
 {
+    class Signer;
     class X509Cert;
     class DIGIDOCPP_EXPORT Signature
     {
@@ -73,7 +74,7 @@ namespace digidoc
           virtual void validate() const = 0;
           virtual std::vector<unsigned char> dataToSign() const = 0;
           virtual void setSignatureValue(const std::vector<unsigned char> &signatureValue) = 0;
-          virtual void extendSignatureProfile(const std::string &profile);
+          DIGIDOCPP_DEPRECATED virtual void extendSignatureProfile(const std::string &profile);
 
           // Xades properties
           virtual std::string policy() const;
@@ -109,6 +110,9 @@ namespace digidoc
 
           // Other
           virtual std::vector<unsigned char> messageImprint() const;
+
+          // DSig properties
+          virtual void extendSignatureProfile(Signer *signer);
 
       protected:
           Signature();

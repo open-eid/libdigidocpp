@@ -23,6 +23,7 @@
 #include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/OCSP.h"
+#include "crypto/Signer.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
@@ -69,9 +70,9 @@ string SignatureXAdES_T::trustedSigningTime() const
     return time.empty() ? SignatureXAdES_B::trustedSigningTime() : std::move(time);
 }
 
-void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
+void SignatureXAdES_T::extendSignatureProfile(Signer *signer)
 {
-    if(profile.find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
+    if(signer->profile().find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
         return;
 
     createUnsignedSignatureProperties();
@@ -80,7 +81,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
     calcDigestOnNode(&calc, URI_ID_DSIG, u"SignatureValue",
         signature->signedInfo().canonicalizationMethod().algorithm());
 
-    TS tsa(CONF(TSUrl), calc);
+    TS tsa(CONF(TSUrl), calc, signer->userAgent());
     vector<unsigned char> der = tsa;
     auto &usp = unsignedSignatureProperties();
     auto ts = make_unique<UnsignedSignaturePropertiesType::SignatureTimeStampType>();
@@ -100,13 +101,10 @@ TS SignatureXAdES_T::TimeStamp() const
     try {
         if(unsignedSignatureProperties().signatureTimeStamp().empty())
             return {};
-        const UnsignedSignaturePropertiesType::SignatureTimeStampType &ts =
-                unsignedSignatureProperties().signatureTimeStamp().front();
+        const auto &ts = unsignedSignatureProperties().signatureTimeStamp().front();
         if(ts.encapsulatedTimeStamp().empty())
             return {};
-        const GenericTimeStampType::EncapsulatedTimeStampType &bin =
-                ts.encapsulatedTimeStamp().front();
-        return {(const unsigned char*)bin.data(), bin.size()};
+        return {ts.encapsulatedTimeStamp().front()};
     } catch(const Exception &) {}
     return {};
 }
@@ -230,8 +228,7 @@ UnsignedSignaturePropertiesType &SignatureXAdES_T::unsignedSignatureProperties()
 TS SignatureXAdES_T::verifyTS(const xades::XAdESTimeStampType &timestamp, digidoc::Exception &exception,
     std::function<void (Digest *, std::string_view)> &&calcDigest)
 {
-    const GenericTimeStampType::EncapsulatedTimeStampType &bin = timestamp.encapsulatedTimeStamp().front();
-    TS tsa((const unsigned char*)bin.data(), bin.size());
+    TS tsa(timestamp.encapsulatedTimeStamp().front());
     Digest calc(tsa.digestMethod());
     calcDigest(&calc, timestamp.canonicalizationMethod() ?
         string_view(timestamp.canonicalizationMethod()->algorithm()) : string_view());

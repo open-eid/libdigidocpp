@@ -30,8 +30,10 @@ class X509Cert;
 class TS
 {
 public:
-    TS(const std::string &url, const Digest &digest);
+    TS(const std::string &url, const Digest &digest, const std::string &userAgent = {});
     TS(const unsigned char *data = nullptr, size_t size = 0);
+    template <class Container>
+    inline TS(const Container &data): TS((const unsigned char*)data.data(), data.size()) {}
 
     X509Cert cert() const;
     std::string digestMethod() const;
