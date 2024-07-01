@@ -41,7 +41,7 @@
     </xs:complexType>
   </xs:element>
   <xs:attributeGroup name="manifest-attlist">
-    <xs:attribute name="version" use="required" form="qualified">
+    <xs:attribute name="version" form="qualified"><!-- use="required" removed to keep backward compatibility -->
       <xs:simpleType>
         <xs:restriction base="xs:token">
           <xs:enumeration value="1.2"/>

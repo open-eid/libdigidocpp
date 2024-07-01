@@ -22,18 +22,15 @@
 #include "Conf.h"
 #include "DataFile_p.h"
 #include "SignatureXAdES_LTA.h"
+#include "XMLDocument.h"
 #include "crypto/Digest.h"
 #include "crypto/Signer.h"
 #include "util/File.h"
-#include "util/log.h"
 #include "util/ZipSerialize.h"
-#include "xml/OpenDocument_manifest.hxx"
-#include "xml/OpenDocument_manifest_v1_2.hxx"
-#include "xml/SecureDOMParser.h"
 
-#include <xercesc/util/OutOfMemoryException.hpp>
-
+#include <algorithm>
 #include <set>
+#include <sstream>
 
 using namespace digidoc;
 using namespace digidoc::util;
@@ -43,7 +40,7 @@ const string_view ASiC_E::ASIC_TM_PROFILE = "time-mark";
 const string_view ASiC_E::ASIC_TS_PROFILE = "time-stamp";
 const string_view ASiC_E::ASIC_TSA_PROFILE = "time-stamp-archive";
 const string_view ASiC_E::ASIC_TMA_PROFILE = "time-mark-archive";
-const string ASiC_E::MANIFEST_NAMESPACE = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
+constexpr string_view MANIFEST_NS {"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"};
 
 class ASiC_E::Private
 {
@@ -166,7 +163,7 @@ unique_ptr<Container> ASiC_E::openInternal(const string &path)
 
 /**
  * Creates BDoc container manifest file and returns its path.
- * 
+ *
  * Note: If non-ascii characters are present in XML data, we depend on the LANG variable to be set properly
  * (see iconv --list for the list of supported encoding values for libiconv).
  *
@@ -177,40 +174,25 @@ unique_ptr<Container> ASiC_E::openInternal(const string &path)
 void ASiC_E::createManifest(ostream &os)
 {
     DEBUG("ASiC_E::createManifest()");
-
-    try
-    {
-        manifest_1_2::Manifest manifest(manifest_1_2::Manifest::VersionType::cxx_1_2);
-        manifest.file_entry().push_back(make_unique<manifest_1_2::File_entry>("/", mediaType()));
-        for(const DataFile *file: dataFiles())
-            manifest.file_entry().push_back(make_unique<manifest_1_2::File_entry>(file->fileName(), file->mediaType()));
-
-        xml_schema::NamespaceInfomap map;
-        map["manifest"].name = ASiC_E::MANIFEST_NAMESPACE;
-        manifest_1_2::manifest(os, manifest, map, {}, xml_schema::Flags::dont_initialize);
-        if(os.fail())
-            THROW("Failed to create manifest XML");
-    }
-    catch(const xercesc::DOMException &e)
-    {
-        try {
-            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
-            THROW("Failed to create manifest XML file. Error: %s", result.c_str());
-        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-            THROW("Failed to create manifest XML file.");
-        }
-    }
-    catch(const xml_schema::Exception &e)
-    {
-        THROW("Failed to create manifest XML file. Error: %s", e.what());
-    }
+    auto doc = XMLDocument::create("manifest", MANIFEST_NS, "manifest");
+    doc.setProperty("version", "1.2", MANIFEST_NS);
+    auto add = [&doc](string_view path, string_view mime) {
+        auto file = doc.addChild("file-entry", MANIFEST_NS);
+        file.setProperty("full-path", path, MANIFEST_NS);
+        file.setProperty("media-type", mime, MANIFEST_NS);
+    };
+    add("/", mediaType());
+    for(const DataFile *file: dataFiles())
+        add(file->fileName(), file->mediaType());
+    if(!doc.save(os))
+        THROW("Failed to create manifest XML");
 }
 
 /**
  * Parses manifest file and checks that files described in manifest exist, also
  * checks that no extra file do exist that are not described in manifest.xml.
  *
- * Note: If non-ascii characters are present in XML data, we depend on the LANG variable to be set properly 
+ * Note: If non-ascii characters are present in XML data, we depend on the LANG variable to be set properly
  * (see iconv --list for the list of supported encoding values for libiconv).
  *
  * @param path directory on disk of the BDOC container.
@@ -231,45 +213,45 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     {
         stringstream manifestdata;
         z.extract("META-INF/manifest.xml", manifestdata);
-        xml_schema::Properties p;
-        p.schema_location(ASiC_E::MANIFEST_NAMESPACE,
-            File::fullPathUrl(Conf::instance()->xsdPath() + "/OpenDocument_manifest.xsd"));
-        unique_ptr<xercesc::DOMDocument> doc = SecureDOMParser(p.schema_location(), true).parseIStream(manifestdata);
-        unique_ptr<manifest::Manifest> manifest = manifest::manifest(*doc, {}, p);
 
-        set<string> manifestFiles;
+        set<string_view> manifestFiles;
         bool mimeFound = false;
-        for(const manifest::File_entry &file: manifest->file_entry())
+        auto doc = XMLDocument::openStream(manifestdata, "manifest", MANIFEST_NS);
+        if(!doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd")))
+            THROW("Failed to parse manifest XML");
+        for(auto file = doc/"file-entry"; file; file++)
         {
-            DEBUG("full_path = '%s', media_type = '%s'", file.full_path().c_str(), file.media_type().c_str());
+            auto full_path = file.property("full-path", MANIFEST_NS);
+            auto media_type = file.property("media-type", MANIFEST_NS);
+            DEBUG("full_path = '%s', media_type = '%s'", full_path.data(), media_type.data());
 
-            if(manifestFiles.find(file.full_path()) != manifestFiles.end())
-                THROW("Manifest multiple entries defined for file '%s'.", file.full_path().c_str());
+            if(manifestFiles.find(full_path) != manifestFiles.end())
+                THROW("Manifest multiple entries defined for file '%s'.", full_path.data());
 
             // ODF does not specify that mimetype should be first in manifest
-            if(file.full_path() == "/")
+            if(full_path == "/")
             {
-                if(mediaType() != file.media_type())
-                    THROW("Manifest has incorrect container media type defined '%s', expecting '%s'.", file.media_type().c_str(), mediaType().c_str());
+                if(mediaType() != media_type)
+                    THROW("Manifest has incorrect container media type defined '%s', expecting '%s'.", media_type.data(), mediaType().c_str());
                 mimeFound = true;
                 continue;
             }
-            if(file.full_path().back() == '/') // Skip Directory entries
+            if(full_path.back() == '/') // Skip Directory entries
                 continue;
 
-            auto fcount = size_t(count(list.cbegin(), list.cend(), file.full_path()));
+            auto fcount = size_t(count(list.cbegin(), list.cend(), full_path));
             if(fcount < 1)
-                THROW("File described in manifest '%s' does not exist in container.", file.full_path().c_str());
+                THROW("File described in manifest '%s' does not exist in container.", full_path.data());
             if(fcount > 1)
-                THROW("Found multiple references of file '%s' in zip container.", file.full_path().c_str());
+                THROW("Found multiple references of file '%s' in zip container.", full_path.data());
 
-            manifestFiles.insert(file.full_path());
+            manifestFiles.insert(full_path);
             if(mediaType() == MIMETYPE_ADOC &&
-               (file.full_path().compare(0, 9, "META-INF/") == 0 ||
-                file.full_path().compare(0, 9, "metadata/") == 0))
-                d->metadata.push_back(new DataFilePrivate(dataStream(file.full_path(), z), file.full_path(), file.media_type()));
+               (full_path.compare(0, 9, "META-INF/") == 0 ||
+                full_path.compare(0, 9, "metadata/") == 0))
+                d->metadata.push_back(new DataFilePrivate(dataStream(string(full_path), z), string(full_path), string(media_type)));
             else
-                addDataFilePrivate(dataStream(file.full_path(), z), file.full_path(), file.media_type());
+                addDataFilePrivate(dataStream(string(full_path), z), string(full_path), string(media_type));
         }
         if(!mimeFound)
             THROW("Manifest is missing mediatype file entry.");
@@ -306,35 +288,6 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             if(manifestFiles.find(file) == manifestFiles.end())
                 THROW("File '%s' found in container is not described in manifest.", file.c_str());
         }
-    }
-    catch(const xercesc::DOMException &e)
-    {
-        try {
-            string result = xsd::cxx::xml::transcode<char>(e.getMessage());
-            THROW("Failed to create manifest XML file. Error: %s", result.c_str());
-        } catch(const xsd::cxx::xml::invalid_utf16_string & /* ex */) {
-            THROW("Failed to create manifest XML file.");
-        }
-    }
-    catch(const xsd::cxx::xml::invalid_utf16_string &)
-    {
-        THROW("Failed to parse manifest XML: %s", Conf::instance()->xsdPath().c_str());
-    }
-    catch(const xsd::cxx::xml::properties<char>::argument & /* e */)
-    {
-        THROW("Failed to parse manifest XML: %s", Conf::instance()->xsdPath().c_str());
-    }
-    catch(const xsd::cxx::tree::unexpected_element<char> &e)
-    {
-        THROW("Failed to parse manifest XML: %s %s %s", Conf::instance()->xsdPath().c_str(), e.expected_name().c_str(), e.encountered_name().c_str());
-    }
-    catch(const xml_schema::Exception& e)
-    {
-        THROW("Failed to parse manifest XML: %s (xsd path: %s)", e.what(), Conf::instance()->xsdPath().c_str());
-    }
-    catch(const xercesc::OutOfMemoryException &)
-    {
-        THROW("Failed to parse manifest XML: out of memory");
     }
     catch(const Exception &e)
     {
