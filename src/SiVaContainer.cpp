@@ -27,35 +27,27 @@
 #include "ASiContainer.h"
 #include "Conf.h"
 #include "DataFile_p.h"
-#include "Signature.h"
+#include "XMLDocument.h"
 #include "crypto/Connect.h"
-#include "crypto/Digest.h"
 #include "util/File.h"
-#include "util/log.h"
-#include "util/ZipSerialize.h"
-#include "xml/xml.hxx"
-#include "xml/SecureDOMParser.h"
 
 #include "json.hpp"
 
-#include <xercesc/dom/DOM.hpp>
-#include <xercesc/framework/MemBufFormatTarget.hpp>
-#include <xercesc/util/Base64.hpp>
-
-#define XSD_CXX11
-#include <xsd/cxx/xml/string.hxx>
-#include <xsd/cxx/xml/dom/serialization-source.hxx>
-
-#include <algorithm>
 #include <fstream>
+#include <sstream>
 
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
-using namespace xercesc;
 using json = nlohmann::json;
 
-static auto base64_decode(const XMLCh *in) {
+template <class T>
+constexpr T base64_enc_size(T n) noexcept
+{
+    return ((n + 2) / 3) << 2;
+}
+
+static auto base64_decode(string_view data) {
     static constexpr array<uint8_t, 128> T{
         0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
         0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
@@ -70,9 +62,8 @@ static auto base64_decode(const XMLCh *in) {
     auto out = make_unique<stringstream>();
     int value = 0;
     int bits = -8;
-    for(; in; ++in)
+    for(auto c: data)
     {
-        const char c(*in);
         if(c == '\r' || c == '\n' || c == ' ')
             continue;
         uint8_t check = T[c];
@@ -197,7 +188,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     if(useHashCode && cb && !cb->validateOnline())
         THROW("Online validation disabled");
 
-    array<XMLByte, 4800> buf{};
+    array<unsigned char, 4800> buf{};
     string b64;
     is->clear();
     is->seekg(0);
@@ -207,11 +198,10 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
         if(is->gcount() <= 0)
             break;
 
-        XMLSize_t size = 0;
-        XMLByte *out = Base64::encode(buf.data(), XMLSize_t(is->gcount()), &size);
-        if(out)
-            b64.append((char*)out, size);
-        delete out;
+        size_t pos = b64.size();
+        b64.resize(b64.size() + base64_enc_size(buf.size()));
+        int size = EVP_EncodeBlock((unsigned char*)&b64[pos], buf.data(), int(is->gcount()));
+        b64.resize(pos + size);
     }
     ifs.reset();
 
@@ -257,13 +247,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
             s->_tsTime = info.value<string>("timestampCreationTime", {});
             s->_ocspTime = info.value<string>("ocspResponseCreationTime", {});
             if(info.contains("timeAssertionMessageImprint"))
-            {
-                string base64 = info["timeAssertionMessageImprint"];
-                XMLSize_t size = 0;
-                XMLByte *message = Base64::decode((const XMLByte*)base64.c_str(), &size);
-                s->_messageImprint.assign(message, message + size);
-                delete message;
-            }
+                s->_messageImprint = from_base64(info["timeAssertionMessageImprint"].get<string_view>());
             for(const json &signerRole: info.value<json>("signerRole", {}))
                 s->_signerRoles.push_back(signerRole["claimedRole"]);
             if(json signatureProductionPlace = info.value<json>("signatureProductionPlace", {}); !signatureProductionPlace.is_null())
@@ -276,17 +260,15 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
         }
         for(const json &certificate: signature.value<json>("certificates", {}))
         {
-            XMLSize_t size = 0;
-            XMLByte *der = Base64::decode((const XMLByte*)certificate.value<string_view>("content", {}).data(), &size);
+            auto der = from_base64(certificate.value<string_view>("content", {}));
             if(certificate["type"] == "SIGNING")
-                s->_signingCertificate = X509Cert(der, size, X509Cert::Der);
+                s->_signingCertificate = X509Cert(der, X509Cert::Der);
             if(certificate["type"] == "REVOCATION")
-                s->_ocspCertificate = X509Cert(der, size, X509Cert::Der);
+                s->_ocspCertificate = X509Cert(der, X509Cert::Der);
             if(certificate["type"] == "SIGNATURE_TIMESTAMP")
-                s->_tsCertificate = X509Cert(der, size, X509Cert::Der);
+                s->_tsCertificate = X509Cert(der, X509Cert::Der);
             if(certificate["type"] == "ARCHIVE_TIMESTAMP")
-                s->_tsaCertificate = X509Cert(der, size, X509Cert::Der);
-            delete der;
+                s->_tsaCertificate = X509Cert(der, X509Cert::Der);
         }
         for(const json &error: signature.value<json>("errors", {}))
         {
@@ -363,75 +345,32 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path, ContainerO
 
 unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
 {
-    namespace xml = xsd::cxx::xml;
     try
     {
-        unique_ptr<DOMDocument> dom(SecureDOMParser().parseIStream(*d->ddoc));
-        DOMNodeList *nodeList = dom->getElementsByTagName(u"DataFile");
-        for(XMLSize_t i = 0; i < nodeList->getLength(); ++i)
+        auto doc = XMLDocument::openStream(*d->ddoc, {}, true);
+        for(auto dataFile = doc/"DataFile"; dataFile; dataFile++)
         {
-            auto *item = static_cast<DOMElement*>(nodeList->item(i));
-            if(!item)
-                continue;
-
-            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"HASHCODE") == 0)
+            auto contentType = dataFile.property("ContentType");
+            if(contentType == "HASHCODE")
                 THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
-            if(XMLString::compareString(item->getAttribute(u"ContentType"), u"EMBEDDED_BASE64") != 0)
+            if(contentType != "EMBEDDED_BASE64")
                 continue;
-
-            if(const XMLCh *b64 = item->getTextContent())
-            {
-                d->dataFiles.push_back(new DataFilePrivate(base64_decode(b64),
-                    xml::transcode<char>(item->getAttribute(u"Filename")),
-                    xml::transcode<char>(item->getAttribute(u"MimeType")),
-                    xml::transcode<char>(item->getAttribute(u"Id"))));
-            }
-
+            d->dataFiles.push_back(new DataFilePrivate(base64_decode(dataFile),
+                string(dataFile.property("Filename")),
+                string(dataFile.property("MimeType")),
+                string(dataFile.property("Id"))));
             if(!useHashCode)
                 continue;
             Digest calc(URI_SHA1);
-            SecureDOMParser::calcDigestOnNode(&calc, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315", item);
-            vector<unsigned char> digest = calc.result();
-            if(XMLSize_t size = 0; XMLByte *out = Base64::encode(digest.data(), XMLSize_t(digest.size()), &size))
-            {
-                item->setAttribute(u"ContentType", u"HASHCODE");
-                item->setAttribute(u"DigestType", u"sha1");
-                xml::string outXMLCh(reinterpret_cast<const char*>(out));
-                item->setAttribute(u"DigestValue", outXMLCh.c_str());
-                item->setTextContent(nullptr);
-                delete out;
-            }
+            doc.c14n(&calc, XMLDocument::C14D_ID_1_0, dataFile);
+            dataFile.setProperty("ContentType", "HASHCODE");
+            dataFile.setProperty("DigestType", "sha1");
+            dataFile.setProperty("DigestValue", to_base64(calc.result()));
+            dataFile = std::string_view{};
         }
-
-        DOMImplementation *pImplement = DOMImplementationRegistry::getDOMImplementation(u"LS");
-        unique_ptr<DOMLSOutput> pDomLsOutput(pImplement->createLSOutput());
-        unique_ptr<DOMLSSerializer> pSerializer(pImplement->createLSSerializer());
         auto result = make_unique<stringstream>();
-        xml::dom::ostream_format_target out(*result);
-        pDomLsOutput->setByteStream(&out);
-        pSerializer->setNewLine(u"\n");
-        pSerializer->write(dom.get(), pDomLsOutput.get());
+        doc.save(*result);
         return result;
-    }
-    catch(const XMLException& e)
-    {
-        try {
-            string result = xml::transcode<char>(e.getMessage());
-            THROW("Failed to parse DDoc XML: %s", result.c_str());
-        } catch(const xml::invalid_utf16_string & /* ex */) {
-            THROW("Failed to parse DDoc XML.");
-        }
-    }
-    catch(const DOMException& e)
-    {
-        try {
-            string result = xml::transcode<char>(e.getMessage());
-            THROW("Failed to parse DDoc XML: %s", result.c_str());
-        } catch(const xml::invalid_utf16_string & /* ex */) {
-            THROW("Failed to parse DDoc XML.");
-        }
-    } catch(const xml::invalid_utf16_string & /* ex */) {
-        THROW("Failed to parse DDoc XML.");
     }
     catch(const Exception &)
     {

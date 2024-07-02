@@ -19,10 +19,14 @@
 
 #pragma once
 
+#include "crypto/Digest.h"
 #include "util/log.h"
 
 #include <libxml/parser.h>
 #include <libxml/xmlschemas.h>
+#include <libxml/c14n.h> // needs to be last to workaround old libxml2 errors
+
+#include <openssl/evp.h>
 
 #include <memory>
 #include <istream>
@@ -44,6 +48,54 @@ template<class T, typename D>
 constexpr std::unique_ptr<T, D> make_unique_ptr(T *p, D d) noexcept
 {
     return {p, d};
+}
+
+static std::vector<unsigned char> from_base64(std::string_view data)
+{
+    static constexpr std::string_view whitespace {" \n\r\f\t\v"};
+    std::vector<unsigned char> result(EVP_DECODE_LENGTH(data.size()), 0);
+    size_t dataPos = 0;
+    int size = 0;
+    auto ctx = make_unique_ptr(EVP_ENCODE_CTX_new(), EVP_ENCODE_CTX_free);
+    EVP_DecodeInit(ctx.get());
+
+    for(auto pos = data.find_first_of(whitespace);
+         !data.empty();
+         pos = data.find_first_of(whitespace), dataPos += size_t(size))
+    {
+        auto sub = data.substr(0, pos);
+        if(pos == std::string_view::npos)
+            data = {};
+        else
+            data.remove_prefix(pos + 1);
+        if(EVP_DecodeUpdate(ctx.get(), &result[dataPos], &size, (const unsigned char*)sub.data(), int(sub.size())) >= 0)
+            continue;
+        result.clear();
+        return result;
+    }
+
+    if(EVP_DecodeFinal(ctx.get(), &result[dataPos], &size) == 1)
+        result.resize(dataPos + size_t(size));
+    else
+        result.clear();
+    return result;
+}
+
+static std::string to_base64(const std::vector<unsigned char> &data)
+{
+    std::string result(EVP_ENCODE_LENGTH(data.size()), 0);
+    auto ctx = make_unique_ptr(EVP_ENCODE_CTX_new(), EVP_ENCODE_CTX_free);
+    EVP_EncodeInit(ctx.get());
+    int size{};
+    if(EVP_EncodeUpdate(ctx.get(), (unsigned char*)result.data(), &size, data.data(), int(data.size())) < 1)
+    {
+        result.clear();
+        return result;
+    }
+    auto pos = size_t(size);
+    EVP_EncodeFinal(ctx.get(), (unsigned char*)&result[pos], &size);
+    result.resize(pos + size_t(size));
+    return result;
 }
 
 template<class T>
@@ -185,23 +237,36 @@ struct XMLNode: public XMLElem<xmlNode>
     }
 };
 
+struct XMLName
+{
+    std::string_view name = {};
+    std::string_view ns = {};
+};
+
 struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
 {
+    static constexpr std::string_view C14D_ID_1_0 {"http://www.w3.org/TR/2001/REC-xml-c14n-20010315"};
+    static constexpr std::string_view C14D_ID_1_0_COM {"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"};
+    static constexpr std::string_view C14D_ID_1_1 {"http://www.w3.org/2006/12/xml-c14n11"};
+    static constexpr std::string_view C14D_ID_1_1_COM {"http://www.w3.org/2006/12/xml-c14n11#WithComments"};
+    static constexpr std::string_view C14D_ID_1_0_EXC {"http://www.w3.org/2001/10/xml-exc-c14n#"};
+    static constexpr std::string_view C14D_ID_1_0_EXC_COM {"http://www.w3.org/2001/10/xml-exc-c14n#WithComments"};
+
     using XMLNode::operator bool;
 
-    XMLDocument(element_type *ptr, std::string_view _name = {}, std::string_view _ns = {}) noexcept
+    XMLDocument(element_type *ptr, const XMLName &n = {}) noexcept
         : std::unique_ptr<element_type, deleter_type>(ptr, xmlFreeDoc)
         , XMLNode{xmlDocGetRootElement(get())}
     {
-        if(d && !_name.empty() && _name != name() && !_ns.empty() && _ns != ns())
+        if(d && !n.name.empty() && n.name != name() && !n.ns.empty() && n.ns != ns())
             d = {};
     }
 
-    XMLDocument(std::string_view path, std::string_view name = {}) noexcept
-        : XMLDocument(xmlParseFile(path.data()), name)
+    XMLDocument(std::string_view path, const XMLName &n = {}) noexcept
+        : XMLDocument(xmlParseFile(path.data()), n)
     {}
 
-    static XMLDocument openStream(std::istream &is, std::string_view name = {}, std::string_view ns = {})
+    static XMLDocument openStream(std::istream &is, const XMLName &name = {}, bool hugeFile = false)
     {
         auto ctxt = make_unique_ptr(xmlCreateIOParserCtxt(nullptr, nullptr, [](void *context, char *buffer, int len) -> int {
             auto *is = static_cast<std::istream *>(context);
@@ -209,10 +274,12 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
             return is->good() || is->eof() ? int(is->gcount()) : -1;
         }, nullptr, &is, XML_CHAR_ENCODING_NONE), xmlFreeParserCtxt);
         ctxt->linenumbers = 1;
+        if(hugeFile)
+            ctxt->options = XML_PARSE_HUGE;
         auto result = xmlParseDocument(ctxt.get());
         if(result != 0 || !ctxt->wellFormed)
             THROW("%s", ctxt->lastError.message);
-        return {ctxt->myDoc, name, ns};
+        return {ctxt->myDoc, name};
     }
 
     static XMLDocument create(std::string_view name = {}, std::string_view href = {}, std::string_view prefix = {}) noexcept
@@ -226,6 +293,49 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
             xmlDocSetRootElement(doc.get(), doc.d);
         }
         return doc;
+    }
+
+    void c14n(Digest *digest, std::string_view algo, XMLNode node)
+    {
+        xmlC14NMode mode = XML_C14N_1_0;
+        int with_comments = 0;
+        if(algo == C14D_ID_1_0)
+            mode = XML_C14N_1_0;
+        else if(algo == C14D_ID_1_0_COM)
+            with_comments = 1;
+        else if(algo == C14D_ID_1_1)
+            mode = XML_C14N_1_1;
+        else if(algo == C14D_ID_1_1_COM)
+        {
+            mode = XML_C14N_1_1;
+            with_comments = 1;
+        }
+        else if(algo == C14D_ID_1_0_EXC)
+            mode = XML_C14N_EXCLUSIVE_1_0;
+        else if(algo == C14D_ID_1_0_EXC_COM)
+        {
+            mode = XML_C14N_EXCLUSIVE_1_0;
+            with_comments = 1;
+        }
+        else if(!algo.empty())
+            THROW("Unsupported canonicalization method '%.*s'", int(algo.size()), algo.data());
+        auto *buf = xmlOutputBufferCreateIO([](void *context, const char *buffer, int len) {
+            auto *digest = static_cast<Digest *>(context);
+            digest->update(pcxmlChar(buffer), size_t(len));
+            return len;
+        }, nullptr, digest, nullptr);
+        int size = xmlC14NExecute(get(), [](void *root, xmlNodePtr node, xmlNodePtr parent) constexpr noexcept {
+            if(root == node)
+                return 1;
+            for(; parent; parent = parent->parent)
+            {
+                if(root == parent)
+                    return 1;
+            }
+            return 0;
+        }, node.d, mode, nullptr, with_comments, buf);
+        if(size < 0)
+            THROW("Failed to canonicalizate input");
     }
 
     bool save(std::string_view path) const noexcept
