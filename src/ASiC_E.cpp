@@ -216,7 +216,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 
         set<string_view> manifestFiles;
         bool mimeFound = false;
-        auto doc = XMLDocument::openStream(manifestdata, "manifest", MANIFEST_NS);
+        auto doc = XMLDocument::openStream(manifestdata, {"manifest", MANIFEST_NS});
         if(!doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd")))
             THROW("Failed to parse manifest XML");
         for(auto file = doc/"file-entry"; file; file++)
