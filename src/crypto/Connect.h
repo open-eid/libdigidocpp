@@ -37,29 +37,30 @@ public:
     struct Result {
         std::string result, content;
         std::map<std::string,std::string> headers;
-        bool operator !() const
+        operator bool() const noexcept
         {
-            return !isOK();
+            return isOK();
         }
-        bool isStatusCode(const std::string &code) const
+        template<class T>
+        inline bool isStatusCode(T code) const noexcept
         {
-            return result.find(code) != std::string::npos;
+            return result.find(std::forward<T>(code)) != std::string::npos;
         }
-        bool isOK() const
+        bool isOK() const noexcept
         {
             return isStatusCode("200");
         }
-        bool isRedirect() const
+        bool isRedirect() const noexcept
         {
             return isStatusCode("301") || isStatusCode("302");
         }
-        bool isForbidden() const
+        bool isForbidden() const noexcept
         {
             return isStatusCode("403");
         }
     };
 
-    Connect(const std::string &url, const std::string &method = "POST",
+    Connect(const std::string &url, std::string method = "POST",
         int timeout = 0, const std::vector<X509Cert> &certs = {});
     ~Connect();
     Result exec(std::initializer_list<std::pair<std::string_view,std::string_view>> headers,
@@ -73,15 +74,13 @@ private:
     void addHeader(std::string_view key, std::string_view value);
     void sendProxyAuth();
     static std::string decompress(const std::string &encoding, const std::string &data) ;
-    void waitReadWrite(bool read) const;
 
-    std::string baseurl, _method;
+    std::string baseurl, method;
     BIO *d = nullptr;
     std::shared_ptr<SSL_CTX> ssl;
-    int _timeout;
+    int timeout;
     bool doProxyConnect = false;
-    int fd = -1;
-	int recursive = 0;
+    int recursive = 0;
 };
 
 }

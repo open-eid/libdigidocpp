@@ -22,7 +22,7 @@
 #include "X509Cert.h"
 
 #include <map>
-#include <set>
+#include <optional>
 
 namespace digidoc
 {
@@ -33,8 +33,8 @@ class TSL
 {
 public:
     struct Qualifier { std::vector<std::string> qualifiers; std::vector<std::vector<std::string>> policySet; std::vector<std::map<X509Cert::KeyUsage,bool>> keyUsage; std::string assert_; };
-    struct Validity { time_t start, end; std::vector<Qualifier> qualifiers; };
-    struct Service { std::vector<X509Cert> certs; std::vector<Validity> validity; std::string type, additional, name; };
+    using Qualifiers = std::optional<std::vector<Qualifier>>;
+    struct Service { std::vector<X509Cert> certs; std::map<time_t,Qualifiers> validity; std::string type, additional, name; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
 
     TSL(std::string file = {});
@@ -42,8 +42,8 @@ public:
     void validate(const X509Cert &cert) const;
     void validate(const std::vector<X509Cert> &certs, int recursion = 0) const;
 
-    std::string type() const;
-    std::string operatorName() const;
+    std::string_view type() const;
+    std::string_view operatorName() const;
     std::string territory() const;
     unsigned long long sequenceNumber() const;
     std::string issueDate() const;
@@ -70,16 +70,10 @@ private:
     static TSL parseTSL(const std::string &url, const std::vector<X509Cert> &certs,
         const std::string &cache, const std::string &territory);
     template<class Info>
-    static bool parseInfo(const Info &info, Service &s, time_t &previousTime);
+    static bool parseInfo(const Info &info, Service &s);
     static std::vector<X509Cert> serviceDigitalIdentities(const tsl::OtherTSLPointerType &other,
         std::string_view region);
-    static std::string toString(const tsl::InternationalNamesType &obj, std::string_view lang = "en");
-
-    static const std::set<std::string_view> SCHEMES_URI;
-    static const std::set<std::string_view> GENERIC_URI;
-    static const std::set<std::string_view> SERVICESTATUS_START;
-    static const std::set<std::string_view> SERVICESTATUS_END;
-    static const std::set<std::string_view> SERVICES_SUPPORTED;
+    static std::string_view toString(const tsl::InternationalNamesType &obj, std::string_view lang = "en");
 
     std::shared_ptr<tsl::TrustStatusListType> tsl;
     std::string path;

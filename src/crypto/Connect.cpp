@@ -30,7 +30,6 @@
 #include <zlib.h>
 
 #include <algorithm>
-#include <cstring>
 #include <thread>
 
 #ifdef _WIN32
@@ -57,9 +56,22 @@ using namespace std;
     throw ex; \
 }
 
-Connect::Connect(const string &_url, const string &method, int timeout, const vector<X509Cert> &certs)
-    : _method(method)
-    , _timeout(timeout)
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+int BIO_socket_wait(int fd, bool read, time_t timeout)
+{
+    fd_set confds;
+    FD_ZERO(&confds);
+    FD_SET(fd, &confds);
+    timeval tv { timeout, 0 };
+    return select(fd + 1, read ? &confds : nullptr, read ? nullptr : &confds, nullptr, &tv);
+}
+#endif
+
+
+
+Connect::Connect(const string &_url, string _method, int _timeout, const vector<X509Cert> &certs)
+    : method(std::move(_method))
+    , timeout(_timeout)
 {
     DEBUG("Connecting to URL: %s", _url.c_str());
     char *_host = nullptr, *_port = nullptr, *_path = nullptr;
@@ -74,7 +86,7 @@ Connect::Connect(const string &_url, const string &method, int timeout, const ve
     string host = _host ? _host : "";
     string port = _port ? _port : "80";
     string path = _path ? _path : "/";
-    string url = (_path && strlen(_path) == 1 && _path[0] == '/' && _url[_url.size() - 1] != '/') ? _url + "/" : _url;
+    string url = (_path && char_traits<char>::length(_path) == 1 && _path[0] == '/' && _url[_url.size() - 1] != '/') ? _url + '/' : _url;
     OPENSSL_free(_host);
     OPENSSL_free(_port);
     OPENSSL_free(_path);
@@ -167,9 +179,9 @@ Connect::Connect(const string &_url, const string &method, int timeout, const ve
         }
     }
 
-    fd = BIO_get_fd(d, nullptr);
-    if(_timeout > 0)
-        waitReadWrite(false);
+    if(int fd = BIO_get_fd(d, nullptr);
+        _timeout > 0 && BIO_socket_wait(fd, BIO_should_read(d), _timeout) == -1)
+        DEBUG("select failed");
 
     BIO_printf(d, "%s %s HTTP/1.1\r\n", method.c_str(), path.c_str());
     addHeader("Connection", "close");
@@ -272,7 +284,7 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
             break;
         }
         auto end = chrono::high_resolution_clock::now();
-        if(_timeout > 0 && _timeout < chrono::duration_cast<chrono::seconds>(end - start).count())
+        if(timeout > 0 && timeout < chrono::duration_cast<chrono::seconds>(end - start).count())
             break;
     } while(rc != 0);
     r.content.resize(pos);
@@ -322,7 +334,7 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
     if(!r.isRedirect() || recursive > 3)
         return r;
     string url = r.headers["Location"].find("://") != string::npos ? r.headers["Location"] : baseurl + r.headers["Location"];
-    Connect c(url, _method, _timeout);
+    Connect c(url, method, timeout);
     c.recursive = recursive + 1;
     return c.exec(headers);
 }
@@ -341,16 +353,4 @@ void Connect::sendProxyAuth()
     (void)BIO_flush(b64.get());
     BIO_pop(b64.get());
     BIO_printf(d, "\r\n");
-}
-
-void Connect::waitReadWrite(bool read) const
-{
-    if(fd < 0)
-        return;
-    fd_set confds;
-    FD_ZERO(&confds);
-    FD_SET(fd, &confds);
-    timeval tv { _timeout, 0 };
-    if(select(fd + 1, read ? &confds : nullptr, read ? nullptr : &confds, nullptr, &tv) == -1)
-        DEBUG("select failed");
 }
