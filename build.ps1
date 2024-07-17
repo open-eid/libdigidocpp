@@ -59,6 +59,6 @@ foreach($type in @("Debug", "RelWithDebInfo")) {
   $libdigidocpp\libdigidocpp.wxs
 
 if($sign) {
-  signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
+  & $vcvars $platform "&&" signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
     /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 "$msi_name"
 }
