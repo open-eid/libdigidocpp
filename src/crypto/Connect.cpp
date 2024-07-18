@@ -56,17 +56,6 @@ using namespace std;
     throw ex; \
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-int BIO_socket_wait(int fd, bool read, time_t timeout)
-{
-    fd_set confds;
-    FD_ZERO(&confds);
-    FD_SET(fd, &confds);
-    timeval tv { timeout, 0 };
-    return select(fd + 1, read ? &confds : nullptr, read ? nullptr : &confds, nullptr, &tv);
-}
-#endif
-
 
 
 Connect::Connect(const string &_url, string _method, int _timeout, const vector<X509Cert> &certs)
@@ -111,6 +100,7 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
 
     BIO_set_nbio(d, _timeout > 0);
     auto start = chrono::high_resolution_clock::now();
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     while(BIO_do_connect(d) != 1)
     {
         if(_timeout == 0)
@@ -122,6 +112,10 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
             THROW_NETWORKEXCEPTION("Failed to create connection with host timeout: '%s'", hostname.c_str())
         this_thread::sleep_for(chrono::milliseconds(50));
     }
+#else
+    if(BIO_do_connect_retry(d, timeout, -1) < 1)
+        THROW_NETWORKEXCEPTION("Failed to create connection with host timeout: '%s'", hostname.c_str())
+#endif
 
     if(usessl > 0)
     {
@@ -137,7 +131,7 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
             doProxyConnect = false;
         }
 
-        ssl.reset(SSL_CTX_new(SSLv23_client_method()), SSL_CTX_free);
+        ssl.reset(SSL_CTX_new(TLS_client_method()), SSL_CTX_free);
         if(!ssl)
             THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
         SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
@@ -179,9 +173,19 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
         }
     }
 
-    if(int fd = BIO_get_fd(d, nullptr);
-        _timeout > 0 && BIO_socket_wait(fd, BIO_should_read(d), _timeout) == -1)
-        DEBUG("select failed");
+#if OPENSSL_VERSION_NUMBER > 0x30000000L
+    if(_timeout > 0)
+    {
+        int fd = BIO_get_fd(d, nullptr);
+        fd_set confds;
+        FD_ZERO(&confds);
+        FD_SET(fd, &confds);
+        timeval tv { timeout, 0 };
+        int read = BIO_should_read(d);
+        if(select(fd + 1, read ? &confds : nullptr, read ? nullptr : &confds, nullptr, &tv) == -1)
+            DEBUG("select failed");
+    }
+#endif
 
     BIO_printf(d, "%s %s HTTP/1.1\r\n", method.c_str(), path.c_str());
     addHeader("Connection", "close");
@@ -333,7 +337,8 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
 
     if(!r.isRedirect() || recursive > 3)
         return r;
-    string url = r.headers["Location"].find("://") != string::npos ? r.headers["Location"] : baseurl + r.headers["Location"];
+    string location = r.headers.find("Location") == r.headers.cend() ? r.headers["location"] : r.headers["Location"];
+    string url = location.find("://") != string::npos ? location : baseurl + location;
     Connect c(url, method, timeout);
     c.recursive = recursive + 1;
     return c.exec(headers);
