@@ -31,6 +31,12 @@
 #include "util/log.h"
 
 #include <libxml/parser.h>
+#ifndef XMLSEC_NO_XSLT
+#include <libxslt/xslt.h>
+#include <libxslt/security.h>
+#endif
+#include <xmlsec/xmlsec.h>
+#include <xmlsec/crypto.h>
 
 DIGIDOCPP_WARNING_PUSH
 DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
@@ -71,6 +77,9 @@ static string m_appName = "libdigidocpp";
 static string m_userAgent = "libdigidocpp";
 static vector<decltype(&Container::createPtr)> m_createList {};
 static vector<std::unique_ptr<Container> (*)(const std::string &path, ContainerOpenCB *cb)> m_openList {};
+#ifndef XMLSEC_NO_XSLT
+static xsltSecurityPrefsPtr xsltSecPrefs {};
+#endif
 }
 
 /**
@@ -142,6 +151,39 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
         }
     }
 
+    LIBXML_TEST_VERSION
+    xmlLineNumbersDefaultValue = 1;
+    xmlLoadExtDtdDefaultValue = XML_DETECT_IDS | XML_COMPLETE_ATTRS;
+    xmlSubstituteEntitiesDefault(1);
+    xmlIndentTreeOutput = 1;
+#ifndef XMLSEC_NO_XSLT
+    xsltSecPrefs = xsltNewSecurityPrefs();
+    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_FILE,        xsltSecurityForbid);
+    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_FILE,       xsltSecurityForbid);
+    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_CREATE_DIRECTORY, xsltSecurityForbid);
+    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_NETWORK,     xsltSecurityForbid);
+    xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_NETWORK,    xsltSecurityForbid);
+    xsltSetDefaultSecurityPrefs(xsltSecPrefs);
+#endif
+    if(xmlSecInit() < 0)
+        THROW("Error during initialisation of xmlsec.");
+    if(xmlSecCheckVersion() != 1)
+        THROW("Error during initialisation of xmlsec. Loaded xmlsec library version is not compatible");
+
+    /* Load default crypto engine if we are supporting dynamic
+     * loading for xmlsec-crypto libraries. Use the crypto library
+     * name ("openssl", "nss", etc.) to load corresponding
+     * xmlsec-crypto library.
+     */
+#ifdef XMLSEC_CRYPTO_DYNAMIC_LOADING
+    if(xmlSecCryptoDLLoadLibrary(nullptr) < 0)
+        THROW("Error during initialisation of xmlsec. Unable to load default xmlsec-crypto library");
+#endif
+    if(xmlSecCryptoAppInit(nullptr) < 0)
+        THROW("Error during initialisation of xmlsec. Crypto initialization failed.");
+    if(xmlSecCryptoInit() < 0)
+        THROW("Error during initialisation of xmlsec. xmlsec-crypto initialization failed.");
+
     if(!Conf::instance())
         Conf::init(new XmlConfCurrent);
 
@@ -188,6 +230,14 @@ void digidoc::terminate()
     } catch (...) {
         // Don't throw on terminate
     }
+
+    xmlSecCryptoShutdown();
+    xmlSecCryptoAppShutdown();
+    xmlSecShutdown();
+#ifndef XMLSEC_NO_XSLT
+    xsltFreeSecurityPrefs(xsltSecPrefs);
+    xsltCleanupGlobals();
+#endif
     xmlCleanupParser();
     m_createList.clear();
     m_openList.clear();

@@ -42,28 +42,6 @@ XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/OpenDocument_dsig.xsd
     --root-element document-signatures
     --namespace-map urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0=digidoc::asic
     --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig)
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/xml.xsd
-    --root-element-none )
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
-    --root-element TrustServiceStatusList
-    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
-    --namespace-map http://www.w3.org/2000/09/xmldsig\#=digidoc::dsig
-    --custom-type AdditionalInformationType=/AdditionalInformationTypeBase
-    --custom-type ExtensionType=/ExtensionTypeBase
-    --hxx-epilogue \"\#include <xml/ExtensionType.h>\"
-    --hxx-epilogue \"\#include <xml/AdditionalInformationType.h>\" )
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020101_additionaltypes_xsd.xsd
-    --root-element-none
-    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
-    --namespace-map http://uri.etsi.org/02231/v2/additionaltypes\#=digidoc::tsl
-    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
-XSD_SCHEMA( xsd_SRCS XML_HEADER ${XML_DIR} ${SCHEMA_DIR}/ts_119612v020101_sie_xsd.xsd
-    --root-element-none
-    --accessor-regex /assert/assert_/
-    --modifier-regex /assert/assert_/
-    --namespace-map http://uri.etsi.org/02231/v2\#=digidoc::tsl
-    --namespace-map http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/\#=digidoc::tsl
-    --namespace-map http://uri.etsi.org/01903/v1.3.2\#=digidoc::xades )
 
 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "namespace digidoc {\nstatic const std::vector<X509Cert> tslcerts {\n")
@@ -82,10 +60,6 @@ set( SCHEMA_FILES
     ${SCHEMA_DIR}/XAdES01903v132-201601-relaxed.xsd
     ${SCHEMA_DIR}/XAdES01903v141-201601.xsd
     ${SCHEMA_DIR}/en_31916201v010101.xsd
-    ${SCHEMA_DIR}/xml.xsd
-    ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
-    ${SCHEMA_DIR}/ts_119612v020101_additionaltypes_xsd.xsd
-    ${SCHEMA_DIR}/ts_119612v020101_sie_xsd.xsd
     ${SCHEMA_DIR}/OpenDocument_dsig.xsd
 )
 set( PUBLIC_HEADER
@@ -121,9 +95,7 @@ add_library(digidocpp_priv STATIC
     crypto/TSL.cpp
     crypto/X509Crypto.cpp
     util/DateTime.cpp
-    xml/AdditionalInformationType.cpp
     xml/AnyType.cpp
-    xml/ExtensionType.cpp
     xml/ObjectType.cpp
     xml/SecureDOMParser.cpp
     xml/UnsignedSignaturePropertiesType.cpp
@@ -152,6 +124,7 @@ target_link_libraries(digidocpp_priv
     XmlSecurityC::XmlSecurityC
     ZLIB::ZLIB
     LibXml2::LibXml2
+    xmlsec
     $<$<C_COMPILER_ID:MSVC>:Ws2_32>
 )
 
@@ -334,7 +307,8 @@ if( FRAMEWORK )
     add_custom_target( embedlibs DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
         COMMAND mkdir -p $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND ln -s -f Versions/Current/Libraries $<TARGET_BUNDLE_DIR:digidocpp>
-        COMMAND cp ${XmlSecurityC_LIBRARIES} $<TARGET_FILE_DIR:digidocpp>/Libraries
+        COMMAND cp ${XmlSecurityC_LIBRARIES} ${XMLSEC1_OPENSSL_LINK_LIBRARIES} $<TARGET_FILE_DIR:digidocpp>/Libraries
+        COMMAND rm $<TARGET_FILE_DIR:digidocpp>/Libraries/*.tbd
         COMMAND chmod 644 $<TARGET_FILE_DIR:digidocpp>/Libraries/*
         COMMAND install_name_tool -id 'libcrypto.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libcrypto.dylib
@@ -357,12 +331,20 @@ if( FRAMEWORK )
             -change '${LIBPATH}/libxalan-c.112.dylib' '@loader_path/libxalan-c.dylib'
             -change '${LIBPATH}/libxalanMsg.112.dylib' '@loader_path/libxalanMsg.dylib'
             $<TARGET_FILE_DIR:digidocpp>/Libraries/libxml-security-c.dylib
+        COMMAND install_name_tool -id 'libxmlsec1.1.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxmlsec1.dylib
+        COMMAND install_name_tool -id 'libxmlsec1-openssl.dylib'
+            -change '${LIBPATH}/libcrypto.3.dylib' '@loader_path/libcrypto.dylib'
+            -change '${LIBPATH}/libxmlsec1.1.dylib' '@loader_path/libxmlsec1.dylib'
+            $<TARGET_FILE_DIR:digidocpp>/Libraries/libxmlsec1-openssl.dylib
         COMMAND install_name_tool
             -change '${LIBPATH}/libcrypto.3.dylib' '@loader_path/Libraries/libcrypto.dylib'
             -change '${LIBPATH}/libssl.3.dylib' '@loader_path/Libraries/libssl.dylib'
             -change '${LIBPATH}/libxerces-c-3.2.dylib' '@loader_path/Libraries/libxerces-c.dylib'
             -change '${LIBPATH}/libxml-security-c.20.dylib' '@loader_path/Libraries/libxml-security-c.dylib'
             -change '${LIBPATH}/libxalan-c.112.dylib' '@loader_path/Libraries/libxalan-c.dylib'
+            -change '${LIBPATH}/libxmlsec1.1.dylib' '@loader_path/Libraries/libxmlsec1.dylib'
+            -change '${LIBPATH}/libxmlsec1-openssl.1.dylib' '@loader_path/Libraries/libxmlsec1-openssl.dylib'
             $<TARGET_FILE:digidocpp>
     )
     if(BUILD_TOOLS)
@@ -375,6 +357,8 @@ if( FRAMEWORK )
                 -change '${LIBPATH}/libxerces-c-3.2.dylib' '@executable_path/../Libraries/libxerces-c.dylib'
                 -change '${LIBPATH}/libxml-security-c.20.dylib' '@executable_path/../Libraries/libxml-security-c.dylib'
                 -change '${LIBPATH}/libxalan-c.112.dylib' '@executable_path/../Libraries/libxalan-c.dylib'
+                -change '${LIBPATH}/libxmlsec1.1.dylib' '@executable_path/../Libraries/libxmlsec1.dylib'
+                -change '${LIBPATH}/libxmlsec1-openssl.1.dylib' '@executable_path/../Libraries/libxmlsec1-openssl.dylib'
                 $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
             COMMAND touch $<TARGET_FILE:digidoc-tool>
         )

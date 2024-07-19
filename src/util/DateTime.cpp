@@ -50,6 +50,11 @@ time_t date::mkgmtime(struct tm &t)
 #endif
 }
 
+string date::to_string(time_t t)
+{
+    return to_string(gmtime(t));
+}
+
 string date::to_string(const tm &date)
 {
     static const tm zero{};

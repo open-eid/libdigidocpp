@@ -6,7 +6,8 @@ XALAN_DIR=xalan_c-1.12
 XMLSEC_DIR=xml-security-c-2.0.4
 XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-3.0.14
-LIBXML2_DIR=libxml2-2.12.5
+LIBXML2_DIR=libxml2-2.12.8
+XMLSEC1_DIR=xmlsec1-1.3.4
 ANDROID_NDK=android-ndk-r26d
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
@@ -247,6 +248,25 @@ function libxml2 {
     cd -
 }
 
+function xmlsec {
+    echo Building ${XMLSEC1_DIR}
+    if [ ! -f ${XMLSEC1_DIR}.tar.gz ]; then
+        curl -O -L http://www.aleksey.com/xmlsec/download/${XMLSEC1_DIR}.tar.gz
+    fi
+    rm -rf ${XMLSEC1_DIR}
+    tar xf ${XMLSEC1_DIR}.tar.gz
+    cd ${XMLSEC1_DIR}
+    case "${ARGS}" in
+    *android*) CONF_EXTRA="--without-libxslt --with-libxml=${TARGET_PATH}" ;;
+    *ios*) CONF_EXTRA="--without-libxslt" ;;
+    *) ;;
+    esac
+    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} ${CONF_EXTRA} --disable-crypto-dl --without-gnutls --disable-apps --with-openssl=${TARGET_PATH}
+    make -s
+    sudo make install
+    cd -
+}
+
 function xsd {
     echo Building ${XSD}
     #if [ ! -f ${XSD}.tar.bz2 ]; then
@@ -419,6 +439,7 @@ case "$@" in
 *xalan*) xalan ;;
 *xmlsec*) xml_security ;;
 *libxml2*) libxml2 ;;
+*xmlasec*) xmlsec ;;
 *xsd*) xsd ;;
 *openssl*) openssl ;;
 *freetype*) freetype ;;
@@ -430,6 +451,7 @@ case "$@" in
     xalan
     xml_security
     libxml2
+    xmlsec
     ;;
 *)
     echo "Usage:"
