@@ -5,7 +5,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO lsh123/xmlsec
     REF "${release_tag}"
-    SHA512 f75c84e991ab6aaaa910475c1d90c8cd460c48d3753902eb347005ca5679d75ba2b6a67cd2b6953bfe318e645eaf81b56be9c7e5530b4a2e2de0cefba5cefe85
+    SHA512 8574eca37c0be55126e50a76322f96171c9d82dbdd793fdbc26430526488e69db8b41351f136f77bd36f8a3ea238c350bc62dd99214b8348b65dd8055a1c6148
     HEAD_REF master
     PATCHES 
         pkgconfig_fixes.patch
@@ -23,14 +23,6 @@ vcpkg_cmake_install()
 vcpkg_cmake_config_fixup(PACKAGE_NAME unofficial-xmlsec)
 vcpkg_fixup_pkgconfig()
 vcpkg_copy_pdbs()
-
-if(VCPKG_LIBRARY_LINKAGE STREQUAL dynamic)
-  vcpkg_replace_string(
-    "${CURRENT_PACKAGES_DIR}/include/xmlsec/xmlsec.h"
-    "ifdef XMLSEC_NO_SIZE_T"
-    "if 1 //ifdef XMLSEC_NO_SIZE_T"
-  )
-endif()
 
 # unofficial legacy usage
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/xmlsec-config.cmake" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
