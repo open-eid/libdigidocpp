@@ -94,16 +94,18 @@
 	* [Python](https://www.python.org/downloads/) - Optional, for Python bindings
 	* [Java](https://www.oracle.com/java/technologies/downloads/) - Optional, for Java bindings
 
-   Toolset:
-	* 142 - Visual Studio 2019 (Default)
-	* 143 - Visual Studio 2022
+2. Open desired Visual Studio tools command prompt:
+	* x64 Native Tool Command Prompt
+        * x86 Native Tool Command Prompt
+	* ARM64 Native Tool Command Prompt
+        * Or some cross compile combination with target host type
 
-2. Fetch the source
+3. Fetch the source
 
         git clone --recursive https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Configure
+4. Configure
 
         cmake -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake `
               -DVCPKG_TARGET_TRIPLET=x64-windows `
@@ -117,18 +119,18 @@
    After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
    [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
 
-4. Build
+5. Build
 
         cmake --build build
 
-5. Alternative to steps 4. and 5. -
+6. Alternative to steps 4. and 5. -
 
-        powershell -ExecutionPolicy ByPass -File build.ps1 -platform x64
+        powershell -ExecutionPolicy ByPass -File build.ps1
 
     The build script builds executables and installation media for given
     platform (Debug and Release with debug symbols)
 
-6. Execute
+7. Execute
 
         build/src/digidoc-tool.exe
 
