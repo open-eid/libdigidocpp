@@ -28,7 +28,7 @@
 
 2. Fetch the source
 
-        git clone --recursive https://github.com/open-eid/libdigidocpp
+        git clone https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
 3. Configure
@@ -56,7 +56,7 @@
 
 2. Fetch the source
 
-        git clone --recursive https://github.com/open-eid/libdigidocpp
+        git clone https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
 3. Prepare dependencies (available targets: macos, iphoneos, iphonesimulator, androidarm, androidarm64, androidx86_64)
@@ -88,47 +88,56 @@
 	* [Visual Studio Community 2019/2022](https://www.visualstudio.com/downloads/)
 	* [CMake](http://www.cmake.org)
 	* [vcpkg](https://vcpkg.io/)
-	* [Swig](http://swig.org/download.html) - Optional, for C# and Java bindings
-	* [Doxygen](https://www.doxygen.nl/download.html) - Optional, for generationg documentation
+	* [Swig](http://swig.org/download.html) - Optional, for C#, Python and Java bindings
+	* [Doxygen](https://www.doxygen.nl/download.html) - Optional, for generating documentation
 	* [Wix toolset](http://wixtoolset.org/releases/) - Optional, for creating Windows installation packages
 	* [Python](https://www.python.org/downloads/) - Optional, for Python bindings
 	* [Java](https://www.oracle.com/java/technologies/downloads/) - Optional, for Java bindings
 
-   Toolset:
-	* 142 - Visual Studio 2019 (Default)
-	* 143 - Visual Studio 2022
+2. Open desired Visual Studio tools command prompt:
+	* x64 Native Tool Command Prompt
+	* x86 Native Tool Command Prompt
+	* ARM64 Native Tool Command Prompt
+	* Or some cross compile combination with target host type
 
-2. Fetch the source
+3. Fetch the source
 
-        git clone --recursive https://github.com/open-eid/libdigidocpp
+        git clone https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Configure
+4. Configure
 
         cmake -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake `
               -DVCPKG_TARGET_TRIPLET=x64-windows `
               -DVCPKG_MANIFEST_FEATURES=tests `
               -B build -S .
 
-   Optional CMake parameters:
+    Optional CMake parameters:
 
-       -DSWIG_EXECUTABLE=C:/swigwin-4.2.1/swig.exe
+        -DSWIG_EXECUTABLE=C:/swigwin-4.2.1/swig.exe
+        -DDOXYGEN_EXECUTABLE=C:/Program files/doxygen/bin/doxygen.exe
 
-   After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
-   [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
+    After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
+    [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
 
-4. Build
+5. Build
 
         cmake --build build
 
-5. Alternative to steps 4. and 5. -
+6. Alternative to steps 4. and 5. -
 
-        powershell -ExecutionPolicy ByPass -File build.ps1 -platform x64
+        powershell -ExecutionPolicy ByPass -File build.ps1
+
+    Optional build.ps1 parameters:
+
+        -swig C:/swigwin-4.2.1/swig.exe
+        -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
+        -boost
 
     The build script builds executables and installation media for given
     platform (Debug and Release with debug symbols)
 
-6. Execute
+7. Execute
 
         build/src/digidoc-tool.exe
 

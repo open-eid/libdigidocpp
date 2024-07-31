@@ -1,18 +1,18 @@
 #powershell -ExecutionPolicy ByPass -File build.ps1
 param(
   [string]$libdigidocpp = $PSScriptRoot,
-  [string]$platform = "x64",
+  [string]$platform = $env:VSCMD_ARG_TGT_ARCH,
+  [string]$build_number = $(if ($null -eq $env:BUILD_NUMBER) {"0"} else {$env:BUILD_NUMBER}),
+  [string]$msiversion = "4.1.0.$build_number",
+  [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.$platform.msi",
   [string]$git = "git.exe",
   [string]$vcpkg = "vcpkg\vcpkg.exe",
   [string]$vcpkg_dir = (split-path -parent $vcpkg),
   [string]$vcpkg_installed = $libdigidocpp,
   [string]$vcpkg_installed_platform = "$vcpkg_installed\vcpkg_installed_$platform",
-  [string]$build_number = $(if ($null -eq $env:BUILD_NUMBER) {"0"} else {$env:BUILD_NUMBER}),
-  [string]$msiversion = "4.1.0.$build_number",
-  [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.$platform.msi",
+  [string]$vcpkg_triplet = "$platform-windows",
   [string]$cmake = "cmake.exe",
   [string]$generator = "NMake Makefiles",
-  [string]$vcvars = "vcvarsall",
   [string]$swig = $null,
   [string]$doxygen = $null,
   [switch]$boost = $false,
@@ -43,6 +43,13 @@ if($doxygen) {
   $cmakeext += "-DDOXYGEN_EXECUTABLE=$doxygen"
   $wixext += "-d", "docLocation=$(Get-Location)/$platform/share/doc/libdigidocpp"
 }
+if($env:VSCMD_ARG_HOST_ARCH -ne "arm64") {
+  $cmakeext += "-DCMAKE_DISABLE_FIND_PACKAGE_Python3=yes"
+  $wixext += "-d", "disablePython=1"
+  if($platform -eq "arm64") {
+    $boost = $false
+  }
+} 
 if($boost) {
   $cmakeext += "-DVCPKG_MANIFEST_FEATURES=tests"
   $target += "check"
@@ -50,33 +57,35 @@ if($boost) {
 
 foreach($type in @("Debug", "RelWithDebInfo")) {
   $buildpath = $platform+$type
-  & $vcvars $platform "&&" $cmake --fresh -B $buildpath -S $libdigidocpp "-G$generator" `
+  & $cmake --fresh -B $buildpath -S $libdigidocpp "-G$generator" $cmakeext `
     "-DCMAKE_BUILD_TYPE=$type" `
     "-DCMAKE_INSTALL_PREFIX=$platform" `
     "-DCMAKE_INSTALL_LIBDIR=bin" `
     "-DCMAKE_TOOLCHAIN_FILE=$vcpkg_dir/scripts/buildsystems/vcpkg.cmake" `
     "-DVCPKG_INSTALLED_DIR=$vcpkg_installed_platform" `
-    "-DSIGNCERT=$sign" `
-    $cmakeext "&&" $cmake --build $buildpath --target $target "&&" $cmake --install $buildpath
+    "-DVCPKG_TARGET_TRIPLET=$vcpkg_triplet" `
+    "-DSIGNCERT=$sign"
+  & $cmake --build $buildpath --target $target
+  & $cmake --install $buildpath
 }
 
 if($sign) {
-  & $vcvars $platform "&&" signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
+  & signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
     /tr http://timestamp.digicert.com /td SHA256 `
-    $vcpkg_installed_platform/$platform-windows/bin/*.dll `
-    $vcpkg_installed_platform/$platform-windows/debug/bin/*.dll
+    $vcpkg_installed_platform/$vcpkg_triplet/bin/*.dll `
+    $vcpkg_installed_platform/$vcpkg_triplet/debug/bin/*.dll
 }
 
-& $vcvars $platform "&&" wix build -nologo -arch $platform -out $msi_name $wixext `
+& wix build -nologo -arch $platform -out $msi_name $wixext `
   -ext WixToolset.UI.wixext `
   -bv "WixUIBannerBmp=$libdigidocpp/banner.bmp" `
   -bv "WixUIDialogBmp=$libdigidocpp/dlgbmp.bmp" `
   -d "ICON=$libdigidocpp/ID.ico" `
-  -d "vcpkg=$vcpkg_installed_platform/$platform-windows" `
+  -d "vcpkg=$vcpkg_installed_platform/$vcpkg_triplet" `
   -d "libdigidocpp=$(Get-Location)/$platform" `
   $libdigidocpp\libdigidocpp.wxs
 
 if($sign) {
-  & $vcvars $platform "&&" signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
+  & signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
     /tr http://timestamp.digicert.com /td SHA256 "$msi_name"
 }

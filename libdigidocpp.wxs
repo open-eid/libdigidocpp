@@ -1,12 +1,15 @@
 ﻿<?if $(sys.BUILDARCH) = x64 ?>
   <?define UpgradeCode = "{93985BBA-6B59-443B-80C8-BA987407F8B8}" ?>
   <?define OpenSSLSuffix = "-x64" ?>
+  <?define Suffix = "" ?>
 <?elseif $(sys.BUILDARCH) = arm64 ?>
   <?define UpgradeCode = "{de2f0796-01fe-4291-bfc1-c01f631d082b}" ?>
   <?define OpenSSLSuffix = "-arm64" ?>
+  <?define Suffix = "-arm64" ?>
 <?else?>
   <?define UpgradeCode = "{7f1b1519-b527-4130-998d-233f4d050f14}" ?>
   <?define OpenSSLSuffix = "" ?>
+  <?define Suffix = "" ?>
 <?endif?>
 
 <?if $(env.VisualStudioVersion) = "17.0" ?>
@@ -31,7 +34,7 @@
     </UI>
 
     <StandardDirectory Id="ProgramFiles6432Folder">
-      <Directory Id="INSTALLFOLDER" Name="libdigidocpp" />
+      <Directory Id="INSTALLFOLDER" Name="libdigidocpp$(var.Suffix)" />
     </StandardDirectory>
 
     <ComponentGroup Id="Runtime"
@@ -60,8 +63,10 @@
 <?ifdef var.swig ?>
       <File Name="digidoc_csharp.dll" />
       <File Name="digidoc_java.dll" />
+<?ifndef var.disablePython ?>
       <File Name="_digidoc_python.pyd" />
       <File Name="digidoc.py" />
+<?endif?>
 <?endif?>
     </ComponentGroup>
 
@@ -86,7 +91,9 @@
 <?ifdef var.swig ?>
       <File Name="digidoc_csharpd.dll" />
       <File Name="digidoc_javad.dll" />
+<?ifndef var.disablePython ?>
       <File Name="_digidoc_pythond.pyd" />
+<?endif?>
 <?endif?>
     </ComponentGroup>
 
