@@ -15,7 +15,6 @@ param(
   [string]$swig = $null,
   [string]$doxygen = $null,
   [switch]$boost = $false,
-  [string]$xsd = "$libdigidocpp\xsd",
   [string]$sign = $null
 )
 
@@ -43,7 +42,6 @@ foreach($type in @("Debug", "RelWithDebInfo")) {
     "-DCMAKE_INSTALL_LIBDIR=bin" `
     "-DCMAKE_TOOLCHAIN_FILE=$vcpkg_dir/scripts/buildsystems/vcpkg.cmake" `
     "-DVCPKG_INSTALLED_DIR=$vcpkg_installed\vcpkg_installed_$platform" `
-    "-DXSD_ROOT=$xsd" `
     "-DSIGNCERT=$sign" `
     $cmakeext "&&" $cmake --build $buildpath --target $target "&&" $cmake --install $buildpath
 }

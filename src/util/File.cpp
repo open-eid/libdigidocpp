@@ -296,24 +296,6 @@ string File::digidocppPath()
 }
 
 /**
- * Constructs the full file path in the format "file:///fullpath" in URI encoding. 
- *
- * @param fullDirectory full directory path to the relativeFilePath
- * @param relativeFilePath file name to be appended to the full path
- * @return full file path in the format "file:///fullpath" in URI encoding.
- */
-string File::fullPathUrl(string path)
-{
-#ifdef _WIN32
-    // Under windows replace the path delimiters
-    replace(path.begin(), path.end(), '\\', '/');
-    return "file:///" + File::toUri(path);
-#else
-    return "file://" + File::toUri(path);
-#endif
-}
-
-/**
  * Tries to delete all temporary files and directories whose names were handled out with tempFileName, tempDirectory and createTempDirectory.
  * The deletion of directories is recursive.
  */
@@ -326,31 +308,6 @@ void File::deleteTempFiles()
             WARN("Tried to remove the temporary file or directory '%s', but failed.", tempFiles.top().u8string().c_str());
         tempFiles.pop();
     }
-}
-
-/**
- * Helper method for converting strings with non-ascii characters to the URI format (%HH for each non-ascii character).
- *
- * Not converting:
- * (From RFC 2396 "URI Generic Syntax")
- * reserved = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" | "$" | ","
- * mark     = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
- * @param str_in the string to be converted
- * @return the string converted to the URI format
- */
-string File::toUri(const string &path)
-{
-    static const string legal_chars = "-_.!~*'();/?:@&=+$,";
-    static const locale locC("C");
-    ostringstream dst;
-    for(const char &i: path)
-    {
-        if(isalnum(i, locC) || legal_chars.find(i) != string::npos)
-            dst << i;
-        else
-            dst << '%' << hex << uppercase << (static_cast<int>(i) & 0xFF);
-    }
-    return dst.str();
 }
 
 /**
@@ -385,11 +342,11 @@ string File::toUriPath(const string &path)
     return dst.str();
 }
 
-string File::fromUriPath(const string &path)
+string File::fromUriPath(string_view path)
 {
     string ret;
     char data[] = "00";
-    for(string::const_iterator i = path.begin(); i != path.end(); ++i)
+    for(auto i = path.begin(); i != path.end(); ++i)
     {
         if(*i == '%' && (distance(i, path.end()) > 2) && isxdigit(*(i+1)) && isxdigit(*(i+2)))
         {

@@ -31,6 +31,7 @@ class TS
 {
 public:
     TS(const std::string &url, const Digest &digest);
+    inline TS(const std::vector<unsigned char> &data): TS(data.data(), data.size()) {}
     TS(const unsigned char *data = nullptr, size_t size = 0);
 
     X509Cert cert() const;

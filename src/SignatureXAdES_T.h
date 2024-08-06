@@ -26,7 +26,6 @@
 namespace digidoc
 {
 
-namespace xades { class UnsignedSignaturePropertiesType; class XAdESTimeStampType; }
 class TS;
 
 class SignatureXAdES_T: public SignatureXAdES_B
@@ -43,11 +42,10 @@ public:
     void extendSignatureProfile(const std::string &profile) override;
 
 protected:
-    void createUnsignedSignatureProperties();
-    xades::UnsignedSignaturePropertiesType& unsignedSignatureProperties() const;
+    XMLNode unsignedSignatureProperties() const;
     TS TimeStamp() const;
 
-    static TS verifyTS(const xades::XAdESTimeStampType &timestamp, Exception &exception,
+    static TS verifyTS(XMLNode timestamp, Exception &exception,
         std::function<void (Digest *, std::string_view)> &&calcDigest);
 
 private:

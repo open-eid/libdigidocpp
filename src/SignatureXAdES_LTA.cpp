@@ -25,35 +25,15 @@
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
-#include "util/log.h"
-#include "xml/SecureDOMParser.h"
-#include "xml/XAdES01903v141-201601.hxx"
-#include "xml/URIResolver.h"
-
-DIGIDOCPP_WARNING_PUSH
-DIGIDOCPP_WARNING_DISABLE_CLANG("-Wnull-conversion")
-DIGIDOCPP_WARNING_DISABLE_GCC("-Wunused-parameter")
-DIGIDOCPP_WARNING_DISABLE_MSVC(4005)
-#include <xsec/dsig/DSIGReference.hpp>
-#include <xsec/enc/XSECKeyInfoResolverDefault.hpp>
-#include <xsec/framework/XSECException.hpp>
-#include <xsec/framework/XSECProvider.hpp>
-#include <xsec/utils/XSECBinTXFMInputStream.hpp>
-DIGIDOCPP_WARNING_POP
-
-#include <array>
 
 using namespace digidoc;
-using namespace digidoc::dsig;
 using namespace digidoc::util;
-using namespace digidoc::xades;
-using namespace xercesc;
-using namespace xml_schema;
 using namespace std;
 
 void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
     string_view canonicalizationMethod) const
 {
+#if 0
     try {
         XSECProvider prov;
         auto deleteSig = [&](DSIGSignature *s) { prov.releaseSignature(s); };
@@ -115,7 +95,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
     for(const auto *name: {u"SignedInfo", u"SignatureValue", u"KeyInfo"})
     {
         try {
-            calcDigestOnNode(digest, URI_ID_DSIG, name, canonicalizationMethod);
+            calcDigestOnNode(digest, DSIG_NS, name, canonicalizationMethod);
         } catch(const Exception &) {
             DEBUG("Element %s not found", xsd::cxx::xml::transcode<char>(name).data());
         }
@@ -146,6 +126,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
         DEBUG("Element TimeStampValidationData not found");
     }
     //ds:Object
+#endif
 }
 
 void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
@@ -153,7 +134,7 @@ void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
     SignatureXAdES_LT::extendSignatureProfile(profile);
     if(profile != ASiC_E::ASIC_TSA_PROFILE)
         return;
-
+#if 0
     Digest calc;
     calcArchiveDigest(&calc, signature->signedInfo().canonicalizationMethod().algorithm());
     TS tsa(CONF(TSUrl), calc);
@@ -168,10 +149,12 @@ void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
     usp.contentOrder().emplace_back(UnsignedSignaturePropertiesType::archiveTimeStampV141Id,
         usp.archiveTimeStampV141().size() - 1);
     signatures->reloadDOM();
+#endif
 }
 
 TS SignatureXAdES_LTA::tsaFromBase64() const
 {
+#if 0
     try {
         if(unsignedSignatureProperties().archiveTimeStampV141().empty())
             return {};
@@ -182,6 +165,7 @@ TS SignatureXAdES_LTA::tsaFromBase64() const
                 ts.encapsulatedTimeStamp().front();
         return {(const unsigned char*)bin.data(), bin.size()};
     } catch(const Exception &) {}
+#endif
     return {};
 }
 
@@ -212,6 +196,7 @@ void SignatureXAdES_LTA::validate(const string &policy) const
         return;
     }
 
+#if 0
     try {
         if(unsignedSignatureProperties().archiveTimeStampV141().empty())
             THROW("Missing ArchiveTimeStamp element");
@@ -226,6 +211,9 @@ void SignatureXAdES_LTA::validate(const string &policy) const
     } catch(const Exception &e) {
         exception.addCause(e);
     }
+#else
+    EXCEPTION_ADD(exception, "LTA validation is not supported");
+#endif
     if(!exception.causes().empty())
         throw exception;
 }

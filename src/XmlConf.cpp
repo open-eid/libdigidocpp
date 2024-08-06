@@ -130,8 +130,9 @@ auto XmlConf::Private::loadDoc(const string &path) const
         WARN("Failed to parse configuration: %s", path.c_str());
         return doc;
     }
-    if(!doc.validateSchema(SCHEMA_LOC))
-    {
+    try {
+        doc.validateSchema(SCHEMA_LOC);
+    } catch(const Exception & /*e*/) {
         WARN("Failed to validate configuration: %s (%s)", path.c_str(), SCHEMA_LOC.c_str());
         doc.reset();
     }
@@ -236,7 +237,7 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, A value)
 
     if(param.has_value())
     {
-        XMLNode p = doc.addChild("param");
+        XMLNode p = doc+"param";
         p.setProperty("name", param.name);
         if constexpr(is_same_v<A,bool>)
             p = param.value() ? "true" : "false";

@@ -46,13 +46,11 @@ namespace digidoc
               static std::string fileName(const std::string& path);
               static std::string directory(const std::string& path);
               static std::string path(std::string dir, std::string_view relativePath);
-              static std::string fullPathUrl(std::string path);
               static std::filesystem::path tempFileName();
               static void createDirectory(std::string path);
               static void deleteTempFiles();
-              static std::string toUri(const std::string &path);
               static std::string toUriPath(const std::string &path);
-              static std::string fromUriPath(const std::string &path);
+              static std::string fromUriPath(std::string_view path);
               static std::vector<unsigned char> hexToBin(const std::string &in);
 #ifdef _WIN32
               static std::string dllPath(std::string_view dll);

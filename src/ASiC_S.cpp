@@ -66,8 +66,8 @@ ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
                 stringstream data;
                 z->extract(file, data);
                 auto signatures = make_shared<Signatures>(data, this);
-                for(size_t i = 0, count = signatures->count(); i < count; ++i)
-                    addSignature(make_unique<SignatureXAdES_LTA>(signatures, i, this));
+                for(auto s = signatures->signature(); s; s++)
+                    addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
             }
             continue;
         }

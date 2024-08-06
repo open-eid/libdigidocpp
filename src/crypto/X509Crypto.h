@@ -33,9 +33,6 @@ namespace digidoc
           int compareIssuerToString(std::string_view name) const;
           bool isRSAKey() const;
 
-          bool verify(const std::string &method, const std::vector<unsigned char> &digest,
-                      const std::vector<unsigned char> &signature);
-
       private:
           X509Cert cert;
     };

@@ -1,13 +1,9 @@
 #!/bin/sh
 set -e
 
-XERCES_DIR=xerces-c-3.2.5
-XALAN_DIR=xalan_c-1.12
-XMLSEC_DIR=xml-security-c-2.0.4
-XSD=xsd-4.0.0-i686-macosx
 OPENSSL_DIR=openssl-3.0.14
 LIBXML2_DIR=libxml2-2.12.8
-XMLSEC1_DIR=xmlsec1-1.3.5
+XMLSEC_DIR=xmlsec1-1.3.5
 ANDROID_NDK=android-ndk-r26d
 FREETYPE_DIR=freetype-2.10.1
 FONTCONFIG_DIR=fontconfig-2.13.1
@@ -100,130 +96,6 @@ case "$@" in
 esac
 export CXXFLAGS="${CFLAGS} -std=gnu++11 -Wno-null-conversion"
 
-function xerces {
-    echo Building ${XERCES_DIR}
-    if [ ! -f ${XERCES_DIR}.tar.xz ]; then
-        curl -O -L https://dlcdn.apache.org/xerces/c/3/sources/${XERCES_DIR}.tar.xz
-    fi
-    rm -rf ${XERCES_DIR}
-    tar xf ${XERCES_DIR}.tar.xz
-    cd ${XERCES_DIR}
-    sed -ie 's!add_subdirectory(doc)!!' CMakeLists.txt
-    sed -ie 's!add_subdirectory(tests)!!' CMakeLists.txt
-    sed -ie 's!add_subdirectory(samples)!!' CMakeLists.txt
-    case "${ARGS}" in
-    *android*)
-      cmake -S . \
-        -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
-        -DANDROID_PLATFORM=${API} \
-        -DANDROID_ABI=${ARCH_ABI} \
-        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=NO
-      ;;
-    *ios*|*simulator*)
-      cmake -S . \
-        -DCMAKE_OSX_SYSROOT=${SYSROOT} \
-        -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
-        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=NO \
-        -Dtranscoder=iconv \
-        -Dnetwork-accessor=socket
-      ;;
-    *)
-      cmake -S . \
-        -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
-        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=YES \
-        -DCMAKE_MACOSX_RPATH=NO \
-        -DCMAKE_BUILD_WITH_INSTALL_NAME_DIR=YES \
-        -DCMAKE_INSTALL_NAME_DIR=${TARGET_PATH}/lib \
-        -Dtranscoder=iconv \
-        -Dnetwork-accessor=socket
-      ;;
-    esac
-    cmake --build . && sudo cmake --install .
-    cd -
-}
-
-function xalan {
-    echo Building ${XALAN_DIR}
-    if [ ! -f ${XALAN_DIR}.tar.gz ]; then
-        curl -O -L https://dlcdn.apache.org/xalan/xalan-c/sources/${XALAN_DIR}.tar.gz
-    fi
-    rm -rf ${XALAN_DIR}
-    tar xf ${XALAN_DIR}.tar.gz
-    cd ${XALAN_DIR}
-    sed -ie 's!add_subdirectory(samples)!!' CMakeLists.txt
-    sed -ie 's!add_subdirectory(Tests)!!' CMakeLists.txt
-    sed -ie 's!add_subdirectory(docs/doxygen)!!' CMakeLists.txt
-    sed -ie 's!add_subdirectory(src/xalanc/TestXSLT)!!' CMakeLists.txt
-    sed -ie 's!add_subdirectory(src/xalanc/TestXPath)!!' CMakeLists.txt
-    sed -n '1102,1500!p' src/xalanc/CMakeLists.txt > tmp
-    mv tmp src/xalanc/CMakeLists.txt
-    case "${ARGS}" in
-    *android*)
-      cmake -S . \
-        -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
-        -DANDROID_PLATFORM=${API} \
-        -DANDROID_ABI=${ARCH_ABI} \
-        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DCMAKE_FIND_ROOT_PATH=${TARGET_PATH} \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=NO \
-        && cmake --build . --target MsgCreator
-        cp ../patches/MsgCreator src/xalanc/Utils/MsgCreator
-      ;;
-    *ios*|*simulator*)
-      cmake -S . \
-        -DCMAKE_OSX_SYSROOT=${SYSROOT} \
-        -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
-        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=NO \
-        && cmake --build . --target MsgCreator
-        cp ../patches/MsgCreator src/xalanc/Utils/MsgCreator
-      ;;
-    *)
-      cmake -S . \
-        -DCMAKE_OSX_ARCHITECTURES="${ARCHS// /;}" \
-        -DCMAKE_INSTALL_PREFIX=${TARGET_PATH} \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=YES \
-        -DCMAKE_MACOSX_RPATH=NO \
-        -DCMAKE_BUILD_WITH_INSTALL_NAME_DIR=YES \
-        -DCMAKE_INSTALL_NAME_DIR=${TARGET_PATH}/lib \
-        -Dtranscoder=default
-      ;;
-    esac
-    cmake --build . && sudo cmake --install .
-    cd -
-}
-
-function xml_security {
-    echo Building ${XMLSEC_DIR}
-    if [ ! -f ${XMLSEC_DIR}.tar.gz ]; then
-        curl -O -L https://dlcdn.apache.org/santuario/c-library/${XMLSEC_DIR}.tar.gz
-    fi
-    rm -rf ${XMLSEC_DIR}
-    tar xf ${XMLSEC_DIR}.tar.gz
-    cd ${XMLSEC_DIR}
-    patch -Np1 -i ../patches/vcpkg-ports/xml-security-c/002_xml-security-c-SHA3.patch
-    sed -ie 's!as_fn_error $? "cannot run test program while cross compiling!$as_echo_n "cannot run test program while cross compiling!' configure
-    sed -ie 's!#define XSEC_EXPORT!#define XSEC_EXPORT __attribute__ ((visibility("default")))!' xsec/framework/XSECDefs.hpp
-    CFLAGS="${CFLAGS} -fvisibility=hidden" \
-    CXXFLAGS="${CXXFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" \
-    xerces_CFLAGS="-I${TARGET_PATH}/include" xerces_LIBS="-L${TARGET_PATH}/lib -lxalanMsg -lxalan-c -lxerces-c" \
-    openssl_CFLAGS="-I${TARGET_PATH}/include" openssl_LIBS="-L${TARGET_PATH}/lib -lcrypto" \
-    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} --with-xalan=${TARGET_PATH} --without-nss lt_cv_apple_cc_single_mod=yes
-    sed -ie 's!PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)!PROGRAMS = !; s!bin_PROGRAMS = $(am__EXEEXT_2)!bin_PROGRAMS = !' xsec/Makefile
-    make -s
-    sudo make install
-    cd -
-}
-
 function libxml2 {
     echo Building ${LIBXML2_DIR}
     case "${ARGS}" in
@@ -249,35 +121,32 @@ function libxml2 {
 }
 
 function xmlsec {
-    echo Building ${XMLSEC1_DIR}
-    if [ ! -f ${XMLSEC1_DIR}.tar.gz ]; then
-        curl -O -L http://www.aleksey.com/xmlsec/download/${XMLSEC1_DIR}.tar.gz
+    echo Building ${XMLSEC_DIR}
+    if [ ! -f ${XMLSEC_DIR}.tar.gz ]; then
+        curl -O -L http://www.aleksey.com/xmlsec/download/${XMLSEC_DIR}.tar.gz
     fi
-    rm -rf ${XMLSEC1_DIR}
-    tar xf ${XMLSEC1_DIR}.tar.gz
-    cd ${XMLSEC1_DIR}
+    rm -rf ${XMLSEC_DIR}
+    tar xf ${XMLSEC_DIR}.tar.gz
+    cd ${XMLSEC_DIR}
+    patch -Np1 -i ../vcpkg-ports/xmlsec/xmlsec1-1.3.5.legacy.patch
     case "${ARGS}" in
     *android*) CONF_EXTRA="--without-libxslt --with-libxml=${TARGET_PATH}" ;;
     *ios*) CONF_EXTRA="--without-libxslt" ;;
     *) ;;
     esac
-    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} ${CONF_EXTRA} --disable-crypto-dl --without-gnutls --disable-apps --with-openssl=${TARGET_PATH}
+    ./configure --prefix=${TARGET_PATH} ${CONFIGURE} ${CONF_EXTRA} \
+        --disable-crypto-dl \
+        --disable-apps-crypto-dl \
+        --without-gnutls \
+        --without-gcrypt \
+        --without-nss \
+        --with-openssl=${TARGET_PATH} \
+        --disable-apps \
+        --disable-docs \
+        --disable-mans
     make -s
     sudo make install
     cd -
-}
-
-function xsd {
-    echo Building ${XSD}
-    #if [ ! -f ${XSD}.tar.bz2 ]; then
-    #    curl -O -L https://www.codesynthesis.com/download/xsd/4.0/macosx/i686/${XSD}.tar.bz2
-    #fi
-    #rm -rf ${XSD}
-    #tar xf ${XSD}.tar.bz2
-    #sudo mkdir -p ${TARGET_PATH}/bin ${TARGET_PATH}/include
-    #sudo cp ${XSD}/bin/xsd ${TARGET_PATH}/bin/
-    #sudo cp -Rf ${XSD}/libxsd/xsd ${TARGET_PATH}/include/
-    echo "Install XSD from homebrew, official binaries are 32bit and do not work anymore"
 }
 
 function openssl {
@@ -435,21 +304,14 @@ function podofo {
 }
 
 case "$@" in
-*xerces*) xerces ;;
-*xalan*) xalan ;;
-*xmlsec*) xml_security ;;
 *libxml2*) libxml2 ;;
-*xmlasec*) xmlsec ;;
-*xsd*) xsd ;;
+*xmlsec*) xmlsec ;;
 *openssl*) openssl ;;
 *freetype*) freetype ;;
 *fontconfig*) fontconfig ;;
 *podofo*) podofo ;;
 *all*)
-    xerces
     openssl
-    xalan
-    xml_security
     libxml2
     xmlsec
     ;;
@@ -457,7 +319,7 @@ case "$@" in
     echo "Usage:"
     echo "  $0 [target] [task]"
     echo "  target: osx ios iossimulator ioscatalyst androidarm androidarm64 androidx86_64"
-    echo "  tasks: xerces, xalan, openssl, xmlsec, xsd, all, help"
+    echo "  tasks: openssl, libxml2, xmlsec, all, help"
     echo "To control iOS, macOS builds set environment variables:"
     echo " minimum deployment target"
     echo " - MACOSX_DEPLOYMENT_TARGET=12.0"

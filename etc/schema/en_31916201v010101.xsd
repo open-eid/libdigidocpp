@@ -5,6 +5,10 @@
 	attributeFormDefault="unqualified">
 	<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#"
 		schemaLocation="xmldsig-core-schema.xsd"/>
+	<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#"
+		schemaLocation="XAdES01903v132-201601.xsd"/>
+	<xsd:import namespace="http://uri.etsi.org/01903/v1.4.1#"
+		schemaLocation="XAdES01903v141-201601.xsd"/>
 	<xsd:element name="ASiCManifest" type="ASiCManifestType">
 		<xsd:annotation>
 			<xsd:documentation>Schema for ASiCManifest – See ETSI EN 319 162</xsd:documentation>
