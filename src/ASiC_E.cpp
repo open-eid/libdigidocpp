@@ -221,8 +221,8 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
         doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
         for(auto file = doc/"file-entry"; file; file++)
         {
-            auto full_path = file.property("full-path", MANIFEST_NS);
-            auto media_type = file.property("media-type", MANIFEST_NS);
+            auto full_path = file[{"full-path", MANIFEST_NS}];
+            auto media_type = file[{"media-type", MANIFEST_NS}];
             DEBUG("full_path = '%s', media_type = '%s'", full_path.data(), media_type.data());
 
             if(manifestFiles.find(full_path) != manifestFiles.end())

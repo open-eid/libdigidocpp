@@ -159,7 +159,7 @@ jobs:
     - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 4065f37d0a6628ef17cf6ee15385f9091f1075bc
+        vcpkgGitCommitId: 1de2026f28ead93ff1773e6e680387643e914ea1
         vcpkgJsonGlob: ./vcpkg.json
         runVcpkgInstall: true
         runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
@@ -169,9 +169,10 @@ jobs:
     - name: Install dependencies
       run: choco install doxygen.install -y > $null
     - uses: actions/setup-python@v5
+      if: matrix.platform == 'x86'
       with:
-        python-version: 3.11
-        architecture: ${{ matrix.platform }}
+        python-version: 3.12
+        architecture: x86
     - name: Install WiX
       run: |
         dotnet tool install -g wix --version 5.0.0

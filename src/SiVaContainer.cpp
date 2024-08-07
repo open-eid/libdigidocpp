@@ -350,15 +350,15 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
         auto doc = XMLDocument::openStream(*d->ddoc, {}, true);
         for(auto dataFile = doc/"DataFile"; dataFile; dataFile++)
         {
-            auto contentType = dataFile.property("ContentType");
+            auto contentType = dataFile["ContentType"];
             if(contentType == "HASHCODE")
                 THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
             if(contentType != "EMBEDDED_BASE64")
                 continue;
             d->dataFiles.push_back(new DataFilePrivate(base64_decode(dataFile),
-                string(dataFile.property("Filename")),
-                string(dataFile.property("MimeType")),
-                string(dataFile.property("Id"))));
+                string(dataFile["Filename"]),
+                string(dataFile["MimeType"]),
+                string(dataFile["Id"])));
             if(!useHashCode)
                 continue;
             Digest calc(URI_SHA1);
