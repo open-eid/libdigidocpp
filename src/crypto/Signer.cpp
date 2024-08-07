@@ -39,9 +39,10 @@ class Signer::Private
 public:
     optional<string> method;
     string profile = "time-stamp";
-    bool ENProfile = false;
+    string userAgent;
     string city, streetAddress, stateOrProvince, postalCode, countryName;
     vector<string> signerRoles;
+    bool ENProfile = false;
 };
 
 /**
@@ -99,6 +100,15 @@ void Signer::setSignatureProductionPlaceV2(const string &city, const string &str
     d->stateOrProvince = stateOrProvince;
     d->postalCode = postalCode;
     d->countryName = countryName;
+}
+
+/**
+ * Sets additional User-Agent info that is sent to TSA or OCSP service
+ * @param userAgent
+ */
+void Signer::setUserAgent(const string &userAgent)
+{
+    d->userAgent = userAgent;
 }
 
 /**
@@ -242,6 +252,14 @@ string Signer::method() const
         }
     }
     return d->method.value_or(CONF(signatureDigestUri));
+}
+
+/**
+ * Additional User-Agent info that is sent to TSA or OCSP service
+ */
+string Signer::userAgent() const
+{
+    return d->userAgent;
 }
 
 /**

@@ -23,6 +23,7 @@
 #include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/OCSP.h"
+#include "crypto/Signer.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "crypto/X509CertStore.h"
@@ -202,10 +203,10 @@ void SignatureXAdES_LT::validate(const string &policy) const
  *
  * @throws SignatureException
  */
-void SignatureXAdES_LT::extendSignatureProfile(const string &profile)
+void SignatureXAdES_LT::extendSignatureProfile(Signer *signer)
 {
-    SignatureXAdES_T::extendSignatureProfile(profile);
-    if(profile.find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
+    SignatureXAdES_T::extendSignatureProfile(signer);
+    if(signer->profile().find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
         return;
 
     // Get issuer certificate from certificate store.
@@ -217,7 +218,7 @@ void SignatureXAdES_LT::extendSignatureProfile(const string &profile)
         THROW("Could not find certificate issuer '%s' in certificate store or from AIA.",
             cert.issuerName().c_str());
 
-    OCSP ocsp(cert, issuer);
+    OCSP ocsp(cert, issuer, signer->userAgent());
     ocsp.verifyResponse(cert);
 
     addCertificateValue(id() + "-CA-CERT", issuer);
