@@ -338,7 +338,7 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
     if(!r.isRedirect() || recursive > 3)
         return r;
     string location = r.headers.find("Location") == r.headers.cend() ? r.headers["location"] : r.headers["Location"];
-    string url = location.find("://") != string::npos ? location : baseurl + location;
+    string url = location.find("://") != string::npos ? std::move(location) : baseurl + location;
     Connect c(url, method, timeout);
     c.recursive = recursive + 1;
     return c.exec(headers);

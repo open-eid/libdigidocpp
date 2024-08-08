@@ -104,10 +104,6 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
     m_userAgent = userAgent;
 
     LIBXML_TEST_VERSION
-    xmlLineNumbersDefaultValue = 1;
-    xmlLoadExtDtdDefaultValue = XML_DETECT_IDS | XML_COMPLETE_ATTRS;
-    xmlSubstituteEntitiesDefault(1);
-    xmlIndentTreeOutput = 1;
     if(xmlSecInit() < 0)
         THROW("Error during initialisation of xmlsec.");
     if(xmlSecCheckVersion() != 1)

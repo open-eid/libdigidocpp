@@ -27,6 +27,7 @@ namespace digidoc
 {
 
 class TS;
+constexpr XMLName EncapsulatedTimeStamp {"EncapsulatedTimeStamp", XADES_NS};
 
 class SignatureXAdES_T: public SignatureXAdES_B
 {

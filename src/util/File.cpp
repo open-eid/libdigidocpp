@@ -22,6 +22,7 @@
 #include "log.h"
 
 #include <algorithm>
+#include <charconv>
 #include <ctime>
 #include <locale>
 #include <sstream>
@@ -361,15 +362,15 @@ string File::fromUriPath(string_view path)
     return ret;
 }
 
-vector<unsigned char> File::hexToBin(const string &in)
+vector<unsigned char> File::hexToBin(string_view in)
 {
     vector<unsigned char> out;
-    char data[] = "00";
-    for(string::const_iterator i = in.cbegin(); distance(i, in.cend()) >= 2;)
+    out.reserve(in.size() / 2);
+    uint8_t result{};
+    for(size_t pos{}; pos + 1 < in.size(); pos += 2)
     {
-        data[0] = *(i++);
-        data[1] = *(i++);
-        out.push_back(static_cast<unsigned char>(strtoul(data, nullptr, 16)));
+        if(auto i = next(in.data(), pos); from_chars(i, i + 2, result, 16).ec == std::errc{})
+            out.push_back(result);
     }
     return out;
 }

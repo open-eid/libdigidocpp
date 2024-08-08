@@ -2,7 +2,7 @@
 set -e
 
 OPENSSL_DIR=openssl-3.0.14
-LIBXML2_DIR=libxml2-2.12.8
+LIBXML2_DIR=libxml2-2.12.9
 XMLSEC_DIR=xmlsec1-1.3.5
 ANDROID_NDK=android-ndk-r26d
 FREETYPE_DIR=freetype-2.10.1

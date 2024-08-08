@@ -111,8 +111,6 @@ struct XMLElem
     using sv = std::string_view;
     using pcxmlChar = const xmlChar *;
 
-    static constexpr sv whitespace {" \n\r\f\t\v"};
-
     template<class C, typename P>
     constexpr static auto safe(C c, P p) noexcept
     {
@@ -176,6 +174,7 @@ struct XMLElem
 
     constexpr operator sv() const noexcept
     {
+        constexpr sv whitespace {" \n\r\f\t\v"};
         auto *text = children(&value_type::children, XML_TEXT_NODE);
         auto result = to_string_view(text, &std::decay_t<decltype(*text)>::content);
         result.remove_prefix(std::min<size_t>(result.find_first_not_of(whitespace), result.size()));
@@ -221,9 +220,9 @@ struct XMLNode: public XMLElem<xmlNode>
         return xmlSearchNsByHref(nullptr, d, ns.empty() ? nullptr : pcxmlChar(ns.data()));
     }
 
-    constexpr sv property(sv name, sv ns = {}) const noexcept
+    void setNS(xmlNsPtr ns)
     {
-        return find(XMLElem<xmlAttr>{children(&value_type::properties, XML_ATTRIBUTE_NODE)}, name, ns);
+        xmlSetNs(d, ns);
     }
 
     void setProperty(sv name, sv value, sv ns) const noexcept
@@ -280,10 +279,20 @@ struct XMLNode: public XMLElem<xmlNode>
         return operator +({name, ns()});
     }
 
-    constexpr auto operator+(int n) noexcept
+    constexpr sv operator[](const char *name) const noexcept
+    {
+        return operator [](XMLName{name, {}});
+    }
+
+    constexpr sv operator[](const XMLName &n) const noexcept
+    {
+        return find(XMLElem<xmlAttr>{children(&value_type::properties, XML_ATTRIBUTE_NODE)}, n.name, n.ns);
+    }
+
+    constexpr auto operator+(int i) noexcept
     {
         XMLNode c{*this};
-        for(int i = 0; c && i < n; ++i, c++);
+        for(; c && i > 0; --i, c++);
         return c;
     }
 
@@ -325,8 +334,10 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
             return is->good() || is->eof() ? int(is->gcount()) : -1;
         }, nullptr, &is, XML_CHAR_ENCODING_NONE), xmlFreeParserCtxt);
         ctxt->linenumbers = 1;
+        ctxt->options |= XML_PARSE_NOENT|XML_PARSE_DTDLOAD|XML_PARSE_DTDATTR|XML_PARSE_NONET;
+        ctxt->loadsubset |= XML_DETECT_IDS|XML_COMPLETE_ATTRS;
         if(hugeFile)
-            ctxt->options = XML_PARSE_HUGE;
+            ctxt->options |= XML_PARSE_HUGE;
         auto result = xmlParseDocument(ctxt.get());
         if(result != 0 || !ctxt->wellFormed)
             THROW("%s", ctxt->lastError.message);
@@ -340,7 +351,7 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
         {
             doc.d = xmlNewNode(nullptr, pcxmlChar(name.data()));
             if(!href.empty())
-                xmlSetNs(doc.d, doc.addNS(href, prefix));
+                doc.setNS(doc.addNS(href, prefix));
             xmlDocSetRootElement(doc.get(), doc.d);
         }
         return doc;
