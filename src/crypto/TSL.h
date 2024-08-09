@@ -39,7 +39,7 @@ public:
     struct Service { std::vector<X509Cert> certs; std::map<std::string,Qualifiers> validity; std::string type, additional, name; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
 
-    TSL(const std::string &file = {});
+    TSL(std::string file = {});
     bool isExpired() const;
     void validate() const;
     void validate(const std::vector<X509Cert> &certs, int recursion = 0) const;
@@ -59,7 +59,6 @@ public:
     static std::vector<Service> parse();
 
 private:
-    std::string path() const;
     std::vector<std::string> pivotURLs() const;
     X509Cert signingCert() const;
     std::vector<X509Cert> signingCerts() const;
@@ -78,5 +77,6 @@ private:
     static std::string_view toString(XMLNode obj, std::string_view lang = "en") noexcept;
 
     XMLNode schemeInformation;
+    std::string path;
 };
 }

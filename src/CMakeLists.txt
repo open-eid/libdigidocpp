@@ -78,16 +78,13 @@ target_link_libraries(digidocpp_priv
     LibXml2::LibXml2
     OpenSSL::SSL
     xmlsec
-    $<$<C_COMPILER_ID:MSVC>:Ws2_32>
 )
 
 add_library(digidocpp
-    ${digidocpp_SRCS}
     ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf
     ${SCHEMA_FILES}
     ${PUBLIC_HEADER}
     ${CRYPTO_HEADER}
-    ${XML_HEADER}
     Container.cpp
     ASiContainer.cpp
     ASiC_E.cpp
