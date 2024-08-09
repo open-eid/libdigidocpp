@@ -100,11 +100,12 @@ constexpr bool contains(const C &list, const T &value)
 
 
 
-TSL::TSL(const string &file)
+TSL::TSL(string file)
     : XMLDocument(file, {"TrustServiceStatusList", TSL_NS})
     , schemeInformation((*this)/"SchemeInformation")
+    , path(std::move(file))
 {
-    if(file.empty())
+    if(path.empty())
         return;
     if(get())
     {
@@ -112,7 +113,7 @@ TSL::TSL(const string &file)
         xmlSecAddIDs(get(), nullptr, ids.data());
     }
     else
-        WARN("Failed to parse configuration: %s", file.c_str());
+        WARN("Failed to parse configuration: %s", path.c_str());
 }
 
 bool TSL::activate(const string &territory)
@@ -174,7 +175,7 @@ string TSL::fetch(const string &url, const string &path)
         if(!r || r.content.empty())
             THROW("HTTP status code is not 200 or content is empty");
         ofstream(File::encodeName(path), fstream::binary|fstream::trunc) << r.content;
-        return r.headers["ETag"];
+        return r.headers["etag"];
     }
     catch(const Exception &)
     {
@@ -254,19 +255,19 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
         TSL tsl(path);
         tsl.validate(certs);
         valid = std::move(tsl);
-        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
+        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), valid.sequenceNumber());
 
         if(valid.isExpired())
         {
             if(!CONF(TSLAutoUpdate) && CONF(TSLAllowExpired))
                 return valid;
-            THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
+            THROW("TSL %s (%llu) is expired", territory.c_str(), valid.sequenceNumber());
         }
 
-        if(CONF(TSLOnlineDigest) && (File::modifiedTime(path) < (time(nullptr) - (60 * 60 * 24))))
+        if(CONF(TSLOnlineDigest) && (File::modifiedTime(valid.path) < (time(nullptr) - (60 * 60 * 24))))
         {
             if(valid.validateETag(url))
-                File::updateModifiedTime(path, time(nullptr));
+                File::updateModifiedTime(valid.path, time(nullptr));
         }
 
         return valid;
@@ -279,17 +280,18 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
     try {
         string tmp = path + ".tmp";
         string etag = fetch(url, tmp);
-        TSL tsl = TSL(tmp);
+        TSL tsl = TSL(std::move(tmp));
         tsl.validate(certs);
         valid = std::move(tsl);
 
         ofstream(File::encodeName(path), ofstream::binary|fstream::trunc)
-            << ifstream(File::encodeName(tmp), fstream::binary).rdbuf();
+            << ifstream(File::encodeName(valid.path), fstream::binary).rdbuf();
         error_code ec;
-        filesystem::remove(filesystem::u8path(tmp), ec);
+        filesystem::remove(filesystem::u8path(valid.path), ec);
 
         ofstream(File::encodeName(path + ".etag"), ofstream::trunc) << etag;
-        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
+
+        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), valid.sequenceNumber());
     } catch(const Exception &) {
         ERR("TSL %s signature is invalid", territory.c_str());
         if(!valid)
@@ -382,16 +384,11 @@ bool TSL::parseInfo(XMLNode info, Service &s)
     return true;
 }
 
-string TSL::path() const
-{
-    return get() && get()->name ? string(get()->name) : string();
-}
-
 vector<string> TSL::pivotURLs() const
 {
     if(!*this)
         return {};
-    auto current = File::fileName(path());
+    auto current = File::fileName(path);
     if(size_t pos = current.find_first_of('.');
         current.find("pivot") != string::npos && pos != string::npos)
         current = current.substr(0, pos);
@@ -570,16 +567,15 @@ bool TSL::validateETag(const string &url)
         return false;
     }
 
-    auto it = r.headers.find("ETag");
+    auto it = r.headers.find("etag");
     if(it == r.headers.cend())
         return validateRemoteDigest(url);
 
     DEBUG("Remote ETag: %s", it->second.c_str());
-    ifstream is(File::encodeName(path() + ".etag"));
+    ifstream is(File::encodeName(path + ".etag"));
     if(!is.is_open())
         THROW("Cached ETag does not exist");
-    string etag(it->second.size(), 0);
-    is.read(etag.data(), streamsize(etag.size()));
+    string etag(istreambuf_iterator<char>(is), {});
     DEBUG("Cached ETag: %s", etag.c_str());
     if(etag != it->second)
         THROW("Remote ETag does not match");
@@ -617,7 +613,7 @@ bool TSL::validateRemoteDigest(const string &url)
 
     Digest sha(URI_RSA_SHA256);
     array<unsigned char, 10240> buf{};
-    ifstream is(path(), ifstream::binary);
+    ifstream is(path, ifstream::binary);
     while(is)
     {
         is.read((char*)buf.data(), streamsize(buf.size()));
