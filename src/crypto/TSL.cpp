@@ -174,7 +174,7 @@ string TSL::fetch(const string &url, const string &path)
         if(!r || r.content.empty())
             THROW("HTTP status code is not 200 or content is empty");
         ofstream(File::encodeName(path), fstream::binary|fstream::trunc) << r.content;
-        return r.headers["ETag"];
+        return r.headers["etag"];
     }
     catch(const Exception &)
     {
@@ -254,13 +254,13 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
         TSL tsl(path);
         tsl.validate(certs);
         valid = std::move(tsl);
-        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
+        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), valid.sequenceNumber());
 
         if(valid.isExpired())
         {
             if(!CONF(TSLAutoUpdate) && CONF(TSLAllowExpired))
                 return valid;
-            THROW("TSL %s (%llu) is expired", territory.c_str(), tsl.sequenceNumber());
+            THROW("TSL %s (%llu) is expired", territory.c_str(), valid.sequenceNumber());
         }
 
         if(CONF(TSLOnlineDigest) && (File::modifiedTime(path) < (time(nullptr) - (60 * 60 * 24))))
@@ -289,7 +289,7 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
         filesystem::remove(filesystem::u8path(tmp), ec);
 
         ofstream(File::encodeName(path + ".etag"), ofstream::trunc) << etag;
-        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), tsl.sequenceNumber());
+        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), valid.sequenceNumber());
     } catch(const Exception &) {
         ERR("TSL %s signature is invalid", territory.c_str());
         if(!valid)
@@ -570,7 +570,7 @@ bool TSL::validateETag(const string &url)
         return false;
     }
 
-    auto it = r.headers.find("ETag");
+    auto it = r.headers.find("etag");
     if(it == r.headers.cend())
         return validateRemoteDigest(url);
 

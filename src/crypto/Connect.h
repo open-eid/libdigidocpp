@@ -63,8 +63,11 @@ public:
     Connect(const std::string &url, std::string method = "POST",
         int timeout = 0, const std::vector<X509Cert> &certs = {});
     ~Connect();
-    Result exec(std::initializer_list<std::pair<std::string_view,std::string_view>> headers,
-        const std::vector<unsigned char> &data);
+    inline Result exec(std::initializer_list<std::pair<std::string_view,std::string_view>> headers,
+        const std::vector<unsigned char> &data)
+    {
+        return exec(headers, data.data(), data.size());
+    }
     Result exec(std::initializer_list<std::pair<std::string_view,std::string_view>> headers = {},
         const unsigned char *data = nullptr, size_t size = 0);
 
