@@ -12,7 +12,7 @@
     "features": {
       "tests": { "description": "Build tests", "dependencies": ["boost-test"] }
     },
-    "builtin-baseline": "4065f37d0a6628ef17cf6ee15385f9091f1075bc",
+    "builtin-baseline": "0f8b6ddf49fa8ae66a7826234e9ba3fda5f46d3c",
     "vcpkg-configuration": {
         "overlay-ports": [
           "vcpkg-ports/openssl",

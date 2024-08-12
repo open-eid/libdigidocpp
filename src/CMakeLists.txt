@@ -70,11 +70,7 @@ set_target_properties(digidocpp_util digidocpp_priv PROPERTIES
     POSITION_INDEPENDENT_CODE YES
 )
 
-target_include_directories(digidocpp_priv PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${XSD_INCLUDE_DIR}
-)
+target_include_directories(digidocpp_priv PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(digidocpp_priv
     digidocpp_util
@@ -138,9 +134,13 @@ set_target_properties(digidocpp PROPERTIES
     MACOSX_FRAMEWORK_IDENTIFIER "ee.ria.digidocpp"
     MACOSX_RPATH YES
     COMPILE_DEFINITIONS TARGET_NAME="$<TARGET_NAME:digidocpp>"
+    POSITION_INDEPENDENT_CODE YES
 )
 
-target_include_directories(digidocpp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(digidocpp
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
+)
 target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv digidocpp_ver)
 
 if( BUILD_TOOLS )
@@ -235,7 +235,7 @@ if(WIN32)
     target_sources(digidocpp PRIVATE crypto/WinSigner.cpp)
     target_compile_options(digidocpp PUBLIC "/guard:cf")
     target_link_options(digidocpp PUBLIC "/guard:cf")
-    target_link_libraries(digidocpp PRIVATE Crypt32 cryptui ncrypt Ws2_32)
+    target_link_libraries(digidocpp PRIVATE Crypt32 cryptui ncrypt)
     install(FILES $<TARGET_PDB_FILE:digidocpp> $<TARGET_PDB_FILE:digidoc-tool> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
     if(SIGNCERT)
         foreach(TARGET digidocpp digidoc-tool digidoc_java digidoc_csharp digidoc_python)
@@ -318,7 +318,7 @@ if( FRAMEWORK )
         COMMAND touch $<TARGET_FILE:digidocpp> $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE:digidoc-tool>>
     )
     add_custom_target(pkgbuild DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
-        COMMAND make install DESTDIR=install
+        COMMAND DESTDIR=install ${CMAKE_COMMAND} --install .
         COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>"
             ${CMAKE_BINARY_DIR}/libdigidocpp_${VERSION}$ENV{VER_SUFFIX}.pkg
         COMMAND_EXPAND_LISTS

@@ -121,6 +121,7 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
 
     INFO("Libxml2 version: %s", LIBXML_DOTTED_VERSION);
     INFO("Xmlsec1 version: %s", XMLSEC_VERSION);
+    INFO("digidocpp version: %s", FILE_VER_STR);
 
     if(!Conf::instance())
         Conf::init(new XmlConfCurrent);

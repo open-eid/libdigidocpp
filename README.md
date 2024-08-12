@@ -16,15 +16,15 @@
 1. Install dependencies
 
         # Ubuntu
-        sudo apt install cmake xxd libxml-security-c-dev xsdcxx libxml2-dev libssl-dev zlib1g-dev
+        sudo apt install cmake libxml2-dev libxmlsec1-dev zlib1g-dev
         # Fedora
-        sudo dnf install cmake gcc-c++ openssl-devel xerces-c-devel xml-security-c-devel xsd libxml2-devel zlib-devel vim-common
+        sudo dnf install cmake gcc-c++ openssl-devel libxml2-devel xmlsec1-openssl-devel zlib-devel
 
 	* doxygen - Optional, for API documentation
 	* libboost-test-dev - Optional, for unittests
 	* swig - Optional, for C#, Java and python bindings
-	* libpython3-dev, python3-distutils - Optional, for python bindings
-	* openjdk-8-jdk-headless - Optional, for Java bindings
+	* libpython3-dev, python3-setuptools - Optional, for python bindings
+	* openjdk-17-jdk-headless - Optional, for Java bindings
 
 2. Fetch the source
 
@@ -59,23 +59,24 @@
         git clone --recursive https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Prepare dependencies (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86_64)
+3. Prepare dependencies (available targets: macos, iphoneos, iphonesimulator, androidarm, androidarm64, androidx86_64)
 
-        sh prepare_osx_build_environment.sh osx all
+        sh prepare_osx_build_environment.sh macos all
 
 4. Install dependencies
 
-        brew install xsd
-        brew unlink xerces-c
+        brew install pkg-config ninja
 
 	* doxygen - Optional, for API documentation
 	* boost - Optional, for unittests
 	* swig - Optional, for C# and Java bindings
 	* openjdk - Optional, for Java bindings
 
-5. Configure, build and install (available targets: osx, ios, iossimulator, androidarm, androidarm64, androidx86_64)
+5. Configure, build and install (available presets: macos, iphoneos, iphonessimulator, androidarm, androidarm64, androidx86_64)
 
-        ./build-library.sh osx install
+        cmake --preset macos
+        cmake --build --preset macos
+        sudo cmake --build --preset macos --target install
 
 6. Execute
 
@@ -84,7 +85,7 @@
 ### Windows
 
 1. Install dependencies and necessary tools from
-	* [Visual Studio Community 2017/2019/2022](https://www.visualstudio.com/downloads/)
+	* [Visual Studio Community 2019/2022](https://www.visualstudio.com/downloads/)
 	* [CMake](http://www.cmake.org)
 	* [vcpkg](https://vcpkg.io/)
 	* [Swig](http://swig.org/download.html) - Optional, for C# and Java bindings
@@ -102,37 +103,32 @@
         git clone --recursive https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Prepare
-
-        powershell -ExecutionPolicy ByPass -File prepare_win_build_environment.ps1 -toolset 142
-
-4. Configure
+3. Configure
 
         cmake -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake `
-              -DVCPKG_TARGET_TRIPLET=x64-windows-v142 `
+              -DVCPKG_TARGET_TRIPLET=x64-windows `
               -DVCPKG_MANIFEST_FEATURES=tests `
-              -DXSD_ROOT=xsd/libxsd `
               -B build -S .
 
    Optional CMake parameters:
 
-       -DSWIG_EXECUTABLE=C:/swigwin-4.1.1/swig.exe
+       -DSWIG_EXECUTABLE=C:/swigwin-4.2.1/swig.exe
 
    After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
    [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
 
-5. Build
+4. Build
 
         cmake --build build
 
-6. Alternative to steps 4. and 5. -
+5. Alternative to steps 4. and 5. -
 
-        powershell -ExecutionPolicy ByPass -File build.ps1 -toolset 142
+        powershell -ExecutionPolicy ByPass -File build.ps1 -platform x64
 
-    The build script builds executables and installation media for all
-    platforms (x86 and x64 / Debug and Release with debug symbols)
+    The build script builds executables and installation media for given
+    platform (Debug and Release with debug symbols)
 
-7. Execute
+6. Execute
 
         build/src/digidoc-tool.exe
 
