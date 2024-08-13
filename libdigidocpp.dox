@@ -516,7 +516,21 @@ Modifications are marked between xml comment tags.
 <!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
 \endcode
 
+<b>Schema ts_119612v020101_sie_xsd.xsd</b>
+1) The schemas' locations have been modified so that the file is looked up from the local file system.
+\code{.xml}
+<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+<!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES.xsd" -->
+\endcode
 
+<b>Schema ts_119612v020101_additionaltypes_xsd.xsd</b>
+1) The schemas' locations have been modified so that the file is looked up from the local file system.
+\code{.xml}
+<xsd:import namespace="http://uri.etsi.org/02231/v2#" schemaLocation="ts_119612v020201_201601xsd.xsd"/>
+<!-- originally "http://uri.etsi.org/19612/v1.2.1/tsl.xsd" -->
+<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+<!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES.xsd" -->
+\endcode
 
 
 
