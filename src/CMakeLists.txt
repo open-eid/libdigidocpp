@@ -32,6 +32,10 @@ set( SCHEMA_FILES
     ${SCHEMA_DIR}/XAdES01903v141-201601.xsd
     ${SCHEMA_DIR}/en_31916201v010101.xsd
     ${SCHEMA_DIR}/OpenDocument_dsig.xsd
+    ${SCHEMA_DIR}/ts_119612v020201_201601xsd.xsd
+    ${SCHEMA_DIR}/ts_119612v020101_sie_xsd.xsd
+    ${SCHEMA_DIR}/ts_119612v020101_additionaltypes_xsd.xsd
+    ${SCHEMA_DIR}/xml.xsd
 )
 set( PUBLIC_HEADER
     Conf.h

@@ -515,8 +515,27 @@ Modifications are marked between xml comment tags.
 <xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
 <!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
 \endcode
+2) The schemas' locations have been added so that TSL extension content can be validated through lax processing.
+\code{.xml}
+<xsd:import namespace="http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/#" schemaLocation="ts_119612v020101_sie_xsd.xsd"/>
+<xsd:import namespace="http://uri.etsi.org/02231/v2/additionaltypes#" schemaLocation="ts_119612v020101_additionaltypes_xsd.xsd"/>
+\endcode
 
+<b>Schema ts_119612v020101_sie_xsd.xsd</b>
+1) The schemas' locations have been modified so that the file is looked up from the local file system.
+\code{.xml}
+<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+<!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES.xsd" -->
+\endcode
 
+<b>Schema ts_119612v020101_additionaltypes_xsd.xsd</b>
+1) The schemas' locations have been modified so that the file is looked up from the local file system.
+\code{.xml}
+<xsd:import namespace="http://uri.etsi.org/02231/v2#" schemaLocation="ts_119612v020201_201601xsd.xsd"/>
+<!-- originally "http://uri.etsi.org/19612/v1.2.1/tsl.xsd" -->
+<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+<!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES.xsd" -->
+\endcode
 
 
 
