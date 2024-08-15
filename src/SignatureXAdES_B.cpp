@@ -86,6 +86,11 @@ const map<string_view,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist{
 namespace digidoc
 {
 
+constexpr XMLName DigestMethod {"DigestMethod", DSIG_NS};
+constexpr XMLName DigestValue {"DigestValue", DSIG_NS};
+constexpr XMLName X509IssuerName {"X509IssuerName", DSIG_NS};
+constexpr XMLName X509SerialNumber {"X509SerialNumber", DSIG_NS};
+
 thread_local ASiContainer *cb_doc {};
 thread_local Exception *cb_exception {};
 
@@ -345,6 +350,11 @@ SignatureXAdES_B::SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures
     }
 }
 
+SignatureXAdES_B::~SignatureXAdES_B()
+{
+    signatures->erase({signature.d});
+}
+
 string_view SignatureXAdES_B::canonicalizationMethod() const noexcept
 {
     return (signature/"SignedInfo"/"CanonicalizationMethod").property("Algorithm");
@@ -430,8 +440,8 @@ void SignatureXAdES_B::validate(const string &policy) const
         {
 #if 0 //Disabled IB-3684
             auto hash = id/"SigPolicyHash";
-            auto algo = hash[{"DigestMethod", DSIG_NS}].property("Algorithm");
-            vector<unsigned char> digest = hash[{"DigestValue", DSIG_NS}];
+            auto algo = (hash/DigestMethod).property("Algorithm");
+            vector<unsigned char> digest = hash/DigestValue;
 
             bool valid = false;
             if(algo == URI_SHA1) valid = digest == p->second.SHA1;
@@ -486,7 +496,7 @@ void SignatureXAdES_B::validate(const string &policy) const
             continue;
         }
 
-        if(auto algo = (ref/"DigestMethod").property("Algorithm");
+        if(auto algo = (ref/DigestMethod).property("Algorithm");
             !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
             (algo == URI_SHA1 || algo == URI_SHA224))
         {
@@ -563,8 +573,8 @@ vector<unsigned char> SignatureXAdES_B::dataToSign() const
 void SignatureXAdES_B::checkCertID(XMLNode certID, const X509Cert &cert)
 {
     auto issuerSerial = certID/"IssuerSerial";
-    string_view certIssuerName = issuerSerial/XMLName{"X509IssuerName", DSIG_NS};
-    string_view certSerialNumber = issuerSerial/XMLName{"X509SerialNumber", DSIG_NS};
+    string_view certIssuerName = issuerSerial/X509IssuerName;
+    string_view certSerialNumber = issuerSerial/X509SerialNumber;
     if(X509Crypto(cert).compareIssuerToString(certIssuerName) == 0 && cert.serial() == certSerialNumber)
         return checkDigest(certID/"CertDigest", cert);
     DEBUG("certIssuerName: \"%.*s\"", int(certIssuerName.size()), certIssuerName.data());
@@ -575,8 +585,8 @@ void SignatureXAdES_B::checkCertID(XMLNode certID, const X509Cert &cert)
 
 void SignatureXAdES_B::checkDigest(XMLNode digest, const vector<unsigned char> &data)
 {
-    auto calcDigest = Digest((digest/XMLName{"DigestMethod", DSIG_NS}).property("Algorithm")).result(data);
-    vector<unsigned char> digestValue = digest/XMLName{"DigestValue", DSIG_NS};
+    auto calcDigest = Digest((digest/DigestMethod).property("Algorithm")).result(data);
+    vector<unsigned char> digestValue = digest/DigestValue;
     if(digestValue == calcDigest)
         return;
     DEBUGMEM("Document cert digest", digestValue.data(), digestValue.size());
@@ -676,8 +686,8 @@ string SignatureXAdES_B::addReference(const string& uri, const string& digestUri
 
     if(!canon.empty())
         (reference + "Transforms" + "Transform").setProperty("Algorithm", canon);
-    (reference + "DigestMethod").setProperty("Algorithm", digestUri);
-    reference + "DigestValue" = digestValue;
+    (reference + DigestMethod).setProperty("Algorithm", digestUri);
+    reference + DigestValue = digestValue;
 
     return refId;
 }
@@ -688,21 +698,21 @@ string SignatureXAdES_B::addReference(const string& uri, const string& digestUri
  *
  * @param cert certificate that is used for signing the signature XML.
  */
-void SignatureXAdES_B::setSigningCertificate(string_view name, const X509Cert& x509) noexcept
+void SignatureXAdES_B::setSigningCertificate(string_view name, const X509Cert& x509)
 {
     // Calculate digest of the X.509 certificate.
     auto cert = signedSignatureProperties() + name.data() + "Cert";
 
     Digest digest;
     auto certDigest = cert + "CertDigest";
-    (certDigest + XMLName{"DigestMethod", DSIG_NS}).setProperty("Algorithm", digest.uri());
-    certDigest + XMLName{"DigestValue", DSIG_NS} = digest.result(x509);
+    (certDigest + DigestMethod).setProperty("Algorithm", digest.uri());
+    certDigest + DigestValue = digest.result(x509);
 
     if(name == "SigningCertificate")
     {
         auto issuerSerial = cert + "IssuerSerial";
-        (issuerSerial + XMLName{"X509IssuerName", DSIG_NS}) = x509.issuerName();
-        issuerSerial + XMLName{"X509SerialNumber", DSIG_NS} = x509.serial();
+        issuerSerial + X509IssuerName = x509.issuerName();
+        issuerSerial + X509SerialNumber = x509.serial();
     }
 }
 

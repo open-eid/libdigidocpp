@@ -54,6 +54,7 @@ namespace digidoc
       public:
           SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer);
           SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container);
+          ~SignatureXAdES_B();
 
           std::string id() const final;
           std::string claimedSigningTime() const final;
@@ -104,7 +105,7 @@ namespace digidoc
           std::string addReference(const std::string& uri, const std::string& digestUri,
               const std::vector<unsigned char> &digestValue, std::string_view type = {}, std::string_view canon = {});
           void addDataObjectFormat(const std::string& uri, const std::string& mime);
-          void setSigningCertificate(std::string_view name, const X509Cert& cert) noexcept;
+          void setSigningCertificate(std::string_view name, const X509Cert& cert);
           void setSignatureProductionPlace(std::string_view name, const std::string &city,
               const std::string &streetAddress, const std::string &stateOrProvince,
               const std::string &postalCode, const std::string &countryName) noexcept;
