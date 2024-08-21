@@ -122,8 +122,7 @@ static ostream &operator<<(ostream &os, Signature::Validator::Status status)
 
 static ostream &endl(ostream &os)
 {
-    os.put('\n');
-    return os;
+    return os.put('\n');
 }
 }
 
@@ -384,14 +383,14 @@ ToolConfig::ToolConfig(int argc, char *argv[])
 {
     for(int i = 2; i < argc; i++)
     {
-        string arg(toUTF8(argv[i]));
+        string_view arg(argv[i]);
         if(arg.find("--profile=") == 0)
             profile = arg.substr(10);
         else if(arg.find("--file=") == 0)
         {
-            string arg2(i+1 < argc ? toUTF8(argv[i+1]) : string());
+            string_view arg2(i+1 < argc ? argv[i+1] : string_view());
             files.emplace(arg.substr(7),
-                arg2.find("--mime=") == 0 ? arg2.substr(7) : "application/octet-stream");
+                arg2.find("--mime=") == 0 ? toUTF8(arg2.substr(7)) : "application/octet-stream");
         }
 #ifdef _WIN32
         else if(arg == "--cng") cng = true;
@@ -402,23 +401,23 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         {
             cng = false;
             if(arg.find('=') != string::npos)
-                pkcs11 = arg.substr(arg.find('=') + 1);
+                pkcs11 = toUTF8(arg.substr(arg.find('=') + 1));
         }
         else if(arg.find("--pkcs12=") == 0)
         {
             cng = false;
-            pkcs12 = arg.substr(9);
+            pkcs12 = toUTF8(arg.substr(9));
         }
         else if(arg == "--dontValidate") dontValidate = true;
         else if(arg == "--XAdESEN") XAdESEN = true;
         else if(arg.find("--pin=") == 0) pin = arg.substr(6);
-        else if(arg.find("--cert=") == 0) cert = arg.substr(7);
-        else if(arg.find("--city=") == 0) city = arg.substr(7);
-        else if(arg.find("--street=") == 0) street = arg.substr(9);
-        else if(arg.find("--state=") == 0) state = arg.substr(8);
-        else if(arg.find("--postalCode=") == 0) postalCode = arg.substr(13);
-        else if(arg.find("--country=") == 0) country = arg.substr(10);
-        else if(arg.find("--role=") == 0) roles.push_back(arg.substr(7));
+        else if(arg.find("--cert=") == 0) cert = toUTF8(arg.substr(7));
+        else if(arg.find("--city=") == 0) city = toUTF8(arg.substr(7));
+        else if(arg.find("--street=") == 0) street = toUTF8(arg.substr(9));
+        else if(arg.find("--state=") == 0) state = toUTF8(arg.substr(8));
+        else if(arg.find("--postalCode=") == 0) postalCode = toUTF8(arg.substr(13));
+        else if(arg.find("--country=") == 0) country = toUTF8(arg.substr(10));
+        else if(arg.find("--role=") == 0) roles.push_back(toUTF8(arg.substr(7)));
         else if(arg == "--sha224") uri = URI_SHA224;
         else if(arg == "--sha256") uri = URI_SHA256;
         else if(arg == "--sha384") uri = URI_SHA384;
@@ -435,13 +434,13 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg == "--rsapss") rsaPss = true;
         else if(arg.find("--tsurl") == 0) tsurl = arg.substr(8);
         else if(arg.find("--tslurl=") == 0) tslurl = arg.substr(9);
-        else if(arg.find("--tslcert=") == 0) tslcerts = vector<X509Cert>{ X509Cert(arg.substr(10)) };
+        else if(arg.find("--tslcert=") == 0) tslcerts = vector<X509Cert>{ X509Cert(toUTF8(arg.substr(10))) };
         else if(arg == "--TSLAllowExpired") expired = true;
         else if(arg == "--dontsign") doSign = false;
         else if(arg == "--nocolor") RED = GREEN = YELLOW = RESET = {};
-        else if(arg.find("--loglevel=") == 0) _logLevel = stoi(arg.substr(11));
-        else if(arg.find("--logfile=") == 0) _logFile = arg.substr(10);
-        else path = arg;
+        else if(arg.find("--loglevel=") == 0) _logLevel = atoi(arg.substr(11).data());
+        else if(arg.find("--logfile=") == 0) _logFile = toUTF8(arg.substr(10));
+        else path = toUTF8(arg);
     }
 }
 
@@ -917,7 +916,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
 {
     int returnCode = EXIT_SUCCESS;
     string cache = CONF(TSLCache);
-    TSL t(cache + "/" + File::fileName(CONF(TSLUrl)));
+    TSL t(File::path(cache, File::fileName(CONF(TSLUrl))));
     cout << "TSL: " << t.url() << endl
         << "         Type: " << t.type() << endl
         << "    Territory: " << t.territory() << endl
