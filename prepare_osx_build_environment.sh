@@ -2,7 +2,7 @@
 set -e
 
 OPENSSL_DIR=openssl-3.0.14
-LIBXML2_DIR=libxml2-2.12.8
+LIBXML2_DIR=libxml2-2.12.9
 XMLSEC_DIR=xmlsec1-1.3.5
 ANDROID_NDK=android-ndk-r26d
 FREETYPE_DIR=freetype-2.10.1
@@ -63,7 +63,7 @@ case "$@" in
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   ;;
-*ioscatalyst*)
+*iphonecatalyst*)
   echo "Building for iOS macOS Catalyst"
   TARGET_PATH=/Library/libdigidocpp.iphonecatalyst
   CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
@@ -73,7 +73,7 @@ case "$@" in
   export IPHONEOS_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } -target x86_64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-macabi -isysroot ${SYSROOT}"
   ;;
-*ios*)
+*iphoneos*)
   echo "Building for iOS"
   TARGET_PATH=/Library/libdigidocpp.iphoneos
   CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --disable-dependency-tracking"
@@ -84,7 +84,7 @@ case "$@" in
   export CFLAGS="-arch ${ARCHS// / -arch } -isysroot ${SYSROOT}"
   ;;
 *)
-  echo "Building for OSX"
+  echo "Building for macOS"
   TARGET_PATH=/Library/libdigidocpp
   CONFIGURE="--disable-static --enable-shared --disable-dependency-tracking"
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
@@ -131,7 +131,7 @@ function xmlsec {
     patch -Np1 -i ../vcpkg-ports/xmlsec/xmlsec1-1.3.5.legacy.patch
     case "${ARGS}" in
     *android*) CONF_EXTRA="--without-libxslt --with-libxml=${TARGET_PATH}" ;;
-    *ios*) CONF_EXTRA="--without-libxslt" ;;
+    *iphone*) CONF_EXTRA="--without-libxslt" ;;
     *) ;;
     esac
     ./configure --prefix=${TARGET_PATH} ${CONFIGURE} ${CONF_EXTRA} \
@@ -169,7 +169,7 @@ function openssl {
             case "${ARGS}" in
             *simulator*) CC="" CFLAGS="-arch ${ARCH}" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
             *catalyst*) CC="" CFLAGS="-target ${ARCH}-apple-ios-macabi" ./Configure darwin64-${ARCH} --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-            *ios*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+            *iphone*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
             *) CC="" CFLAGS="" ./Configure darwin64-${ARCH} --prefix=${TARGET_PATH} shared no-module no-tests enable-ec_nistp_64_gcc_128
             esac
             make -s > /dev/null
@@ -259,7 +259,7 @@ function podofo {
                     -DZLIB_INCLUDE_DIR=${SYSROOT}/usr/include
                     -DZLIB_LIBRARY=${SYSROOT}/usr/lib/libz.so"
             ;;
-        *ios*|*simulator*)
+        *iphone*)
             PARAMS="-DLIBCRYPTO_LIBRARY_RELEASE=${TARGET_PATH}/lib/libcrypto.a
                     -DPODOFO_BUILD_STATIC=YES
                     -DPODOFO_BUILD_SHARED=NO
@@ -318,7 +318,7 @@ case "$@" in
 *)
     echo "Usage:"
     echo "  $0 [target] [task]"
-    echo "  target: osx ios iossimulator ioscatalyst androidarm androidarm64 androidx86_64"
+    echo "  target: osx iphoneos iphonesimulator iphonecatalyst androidarm androidarm64 androidx86_64"
     echo "  tasks: openssl, libxml2, xmlsec, all, help"
     echo "To control iOS, macOS builds set environment variables:"
     echo " minimum deployment target"

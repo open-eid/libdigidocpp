@@ -39,7 +39,7 @@ The following chapters provides an overview of ASiC-E (XAdES) digitally signed f
 
 
 \subsubsection container ASiC-E (XAdES) container format
-The ETSI standard \ref ASiC "EN 319 162-1" called Associated Signature Containers (ASiC) defines format of container for encapsulation of signed files and signatures with extra information. The container type used in case of ASiC-E documents is Associated Signature Extended form. In the container \ref XAdES_EN "XAdES EN 319 132-1" (XML Advanced Electronic Signatures) format signatures are used.
+The ETSI standard \ref ASiC "EN 319 162-1" called Associated Signature Containers (ASiC) defines format of container for encapsulation of signed files and signatures with extra information. The container type used in case of ASiC-E documents is Associated Signature Extended form. In the container \ref XAdES "XAdES EN 319 132-1" (XML Advanced Electronic Signatures) format signatures are used.
 
 ASiC-E container is a ZIP file consisting of the following objects:
 - a file named "mimetype", containing only the following value: application/vnd.etsi.asic-e+zip
@@ -59,7 +59,7 @@ Original files (which were signed) along with the signature(s), timestamp(s), va
 
 \subsubsection profiles Legacy BDOC signature profiles
 
-The format of the BDOC 2.1 digitally signed file is based on ETSI \ref XAdES "XAdES TS 101 903" standard. The XAdES standard defines formats for advanced electronic signatures that remain valid over long periods of time. The ETSI standard \ref XAdES-BP "TS 103 171" "XAdES Baseline Profile" further profiles the XAdES signature by putting limitations on choices.
+The format of the BDOC 2.1 digitally signed file is based on ETSI \ref XAdES "XAdES TS 101 903" standard. The XAdES standard defines formats for advanced electronic signatures that remain valid over long periods of time. The ETSI standard \ref XAdES "TS 103 171" "XAdES Baseline Profile" further profiles the XAdES signature by putting limitations on choices.
 
 BDOC 2.1 specification defines two profiles of qualified BDOC signatures: BDOC with time-mark and BDOC with time-stamp. Both of the profiles offer long-term validation possibility by incorporating the necessary validation data in the signature. Both of the profiles are compliant to XAdES LT-Level requirements.
 
@@ -154,22 +154,13 @@ XML Signature Syntax and Processing. Version 1.1
 
 http://www.w3.org/TR/xmldsig-core1/
 </td></tr><tr><td>\anchor XAdES XAdES</td><td>
-ETSI TS 101 903 V1.4.2 (2010-12) – XML Advanced Electronic Signatures
-
-http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.04.02_60/ts_101903v010402p.pdf<br />
-Other versions:<br />
-http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.04.01_60/ts_101903v010401p.pdf<br />
-http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.03.02_60/ts_101903v010302p.pdf
-</td></tr><tr><td>\anchor XAdES-BP XAdES Baseline Profile</td><td>
+ETSI EN 319 132-1 V1.3.1 (2024-07) - Building blocks and XAdES baseline signatures<br />
+ETSI TS 101 903 V1.4.2 (2010-12) – XML Advanced Electronic Signatures<br />
 ETSI TS 103 171 V2.1.1 (2012-03) - XAdES Baseline Profile
 
+https://www.etsi.org/deliver/etsi_en/319100_319199/31913201/01.03.01_60/en_31913201v010301p.pdf<br />
+http://www.etsi.org/deliver/etsi_ts/101900_101999/101903/01.04.02_60/ts_101903v010402p.pdf<br />
 http://www.etsi.org/deliver/etsi_ts/103100_103199/103171/02.01.01_60/ts_103171v020101p.pdf
-</td></tr><tr><td>\anchor XAdES_EN XAdES EN</td><td>
-ETSI EN 319 132-1 V1.2.1 (2022-02) - Building blocks and XAdES baseline signatures
-
-https://www.etsi.org/deliver/etsi_en/319100_319199/31913201/01.02.01_60/en_31913201v010201p.pdf<br />
-Other versions:<br />
-http://www.etsi.org/deliver/etsi_en/319100_319199/31913201/01.01.01_60/en_31913201v010101p.pdf
 </td></tr><tr><td>\anchor XAdES-Validation XAdES Validation</td><td>
 ETSI TS 102 853 V1.1.2 (2012-10) – Signature validation procedures and policies
 
@@ -189,19 +180,13 @@ http://docs.oasis-open.org/office/v1.2/cs01/OpenDocument-v1.2-cs01-part3.html#__
 Other versions:<br />
 http://docs.oasis-open.org/office/v1.0/OpenDocument-v1.0-os.pdf
 </td></tr><tr><td>\anchor ASiC ASiC</td><td>
-ETSI EN 319 162-1 V1.1.1 (2016-04) - Associated Signature Containers
+ETSI EN 319 162-1 V1.1.1 (2016-04) - Associated Signature Containers<br />
+ETSI TS 102 918 V1.3.1 (2013-06) - Associated Signature Containers<br />
+ETSI TS 103 174 V2.1.1 (2012-03) - ASiC Baseline Profile
 
 http://www.etsi.org/deliver/etsi_en/319100_319199/31916201/01.01.01_60/en_31916201v010101p.pdf<br />
-Other versions:<br />
 http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf<br />
-http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.01.01_60/ts_102918v010101p.pdf<br />
-http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.02.01_60/ts_102918v010201p.pdf
-</td></tr><tr><td>\anchor ASiC-BP ASiC Baseline Profile</td><td>
-ETSI TS 103 174 V2.1.1 (2012-03)
-
-http://www.etsi.org/deliver/etsi_ts/103100_103199/103174/02.02.01_60/ts_103174v020201p.pdf<br />
-Other versions:<br />
-http://www.etsi.org/deliver/etsi_ts/103100_103199/103174/02.01.01_60/ts_103174v020101p.pdf
+http://www.etsi.org/deliver/etsi_ts/103100_103199/103174/02.02.01_60/ts_103174v020201p.pdf
 </td></tr><tr><td>\anchor PDF PDF (\anchor PAdES PAdES)</td><td>
 ETSI EN 319 142-1 V1.1.1 (2016-04) - PAdES digital signatures
 
@@ -219,12 +204,9 @@ Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation 
 
 http://tools.ietf.org/html/rfc5280
 </td></tr><tr><td>\anchor TSL Trusted Lists</td><td>
-ETSI TS 119 612 V1.1.1 (2013-06)
+ETSI TS 119 612 V2.2.1 (2016-04)
 
-http://www.etsi.org/deliver/etsi_ts/119600_119699/119612/02.02.01_60/ts_119612v020201p.pdf<br />
-Other versions:<br />
-http://www.etsi.org/deliver/etsi_ts/119600_119699/119612/01.01.01_60/ts_119612v010101p.pdf<br />
-http://www.etsi.org/deliver/etsi_ts/102200_102299/102231/03.01.02_60/ts_102231v030102p.pdf
+https://www.etsi.org/deliver/etsi_ts/119600_119699/119612/02.02.01_60/ts_119612v020201p.pdf
 </td></tr><tr><td>\anchor SiVa SiVa</td><td>
 Digital signature validation web service that provides SOAP and JSON API to validate files
 
@@ -375,10 +357,8 @@ Libdigidocpp library depends on the software libraries listed below.
 <table>
 <tr><th>Base Component</th><th>Required/optional</th><th>Description</th></tr>
 <tr><td>OpenSSL</td><td>required</td><td>Used for validating certificates and digest values.</td></tr>
-<tr><td>XercesC</td><td>required</td><td>Used for validating the documents according to XML Schema, reading and writing XML.</td></tr>
-<tr><td>XalanC</td><td>required</td><td>Used for handling XPath references in XML</td></tr>
-<tr><td>XmlSecurityC</td><td>required</td><td>Used for handling signature related components.</td></tr>
-<tr><td>XSD</td><td>required</td><td>Used for dynamically generating C++ source code according to XML Schemas, only used during building process of the library. Required when building the library from source code.</td></tr>
+<tr><td>libxml2</td><td>required</td><td>Used for validating the documents according to XML Schema, reading and writing XML.</td></tr>
+<tr><td>xmlsec</td><td>required</td><td>Used for handling signature related components.</td></tr>
 <tr><td>ZLIB</td><td>required</td><td>Used when compressing and extracting ASiC files in ZIP format.</td></tr>
 <tr><td>Minizip</td><td>required</td><td>Used when creating and opening ZIP container for BDOC file. If the component is not found from system then bundled version with source code is used. Forms a part of ZLIB component.</td></tr>
 <tr><td>PKCS11</td><td>optional</td><td>Used for searching for default PKCS#11 driver in the system so that its path could be registered in configuration entries.</td></tr>
@@ -395,10 +375,10 @@ Several XML schemas are used when creating digitally signed documents in BDOC 2.
 
 <table>
 <tr><th>Schema file</th><th>Description</th>
-</tr><tr><td>OpenDocument_manifest.xsd</td><td>OASIS OpenDocument v1.0 (\ref OpenDocument "OpenDocument")
-Defines the structure of META-INF/manifest.xml file in BDOC container.
-https://www.oasis-open.org/committees/download.php/12570/OpenDocument-manifest-schema-v1.0-os.rng
-</td></tr><tr><td>OpenDocument_dsig.xsd</td><td>OASIS OpenDocument v1.0 (\ref OpenDocument "OpenDocument")
+</tr><tr><td>OpenDocument_manifest.xsd</td><td>OASIS OpenDocument v1.2 (\ref OpenDocument "OpenDocument")
+Defines the structure of META-INF/manifest.xml file in ASiC container.
+https://docs.oasis-open.org/office/v1.2/csd06/OpenDocument-v1.2-csd06-manifest-schema.rng
+</td></tr><tr><td>OpenDocument_dsig.xsd</td><td>OASIS OpenDocument v1.2 (\ref OpenDocument "OpenDocument")
 Defines the structure of META-INF/signature.xml file in ADOC container.
 https://docs.oasis-open.org/office/v1.2/csd06/OpenDocument-v1.2-csd06-dsig-schema.rng
 </td></tr><tr><td>en_31916201v010101.xsd</td><td>Associated Signature Containers (\ref ASiC "ASiC")
@@ -406,12 +386,10 @@ Defines the format of container for encapsulating the signed documents, signatur
 </td></tr><tr><td>xmldsig-core-schema.xsd</td><td>XML Signature Core Schema Instance (\ref XML-DSIG "XML-DSIG")
 Defines XML syntax for digital signatures.
 http://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd
-</td></tr><tr><td>XAdES01903v132-201601.xsd</td><td>XML Advanced Electronic Signatures (\ref XAdES_EN "XAdES EN")
+</td></tr><tr><td>XAdES01903v132-201601.xsd</td><td>XML Advanced Electronic Signatures (\ref XAdES "XAdES EN")
 Defines a set of extensions to XML-DSIG making it suitable for advanced electronic signature.
 http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd
-</tr><tr><td>XAdES01903v132-201601-relaxed.xsd</td><td>Relaxed version of XML Advanced Electronic Signatures (\ref XAdES_EN "XAdES EN")
-Allows to list child elements of the SignatureProductionPlace element in any sequence. Schema is used when validating the BDOC documents in order to accept documents produced by DigiDoc4j library version 1.0.3 and earlier.
-</tr><tr><td>XAdES01903v141-201601.xsd</td><td>Defines XML syntax for additional elements of XAdES signatures that were added with version 1.4.1 of the (\ref XAdES_EN "XAdES EN") standard. Needed for implementing archive time-stamp support in the future.
+</tr><tr><td>XAdES01903v141-201601.xsd</td><td>Defines XML syntax for additional elements of XAdES signatures that were added with version 1.4.1 of the (\ref XAdES "XAdES EN") standard. Needed for implementing archive time-stamp support in the future.
 http://uri.etsi.org/01903/v1.4.1/XAdES01903v141-201601.xsd
 </td></tr><tr><td>ts_119612v020201_201601xsd.xsd<br />ts_119612v020101_additionaltypes_xsd.xsd<br />ts_119612v020101_sie_xsd.xsd</td><td>Defines the format of Trust Service status Lists (\ref TSL) that contain information about trusted CA, OCSP and TSA certificates.
 </td></tr><tr><td>conf.xsd</td><td>Configuration properties’ schema. Defines the Libdigidocpp configuration file’s digidocpp.conf structure (see also \ref conf).
@@ -430,8 +408,13 @@ Modifications are marked between xml comment tags.
 
 1) The schema’s location has been altered so that the imported schema file is looked up from the local file system.
 \code{.xml}
-<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#"
-schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
+<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
+<!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
+\endcode
+2) Additional schema’s location imports has been added so that the imported schema file is looked up from the local file system.
+\code{.xml}
+<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+<xsd:import namespace="http://uri.etsi.org/01903/v1.4.1#" schemaLocation="XAdES01903v141-201601.xsd"/> 
 \endcode
 
 <b>Schema xmldsig-core-schema.xsd</b>
@@ -464,8 +447,8 @@ schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR
 
 1) The schema’s location has been modified so that the file is looked up from the local file system.
 \code{.xml}
-  <xsd:import namespace="http://www.w3.org/2000/09/xmldsig#"
-schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
+<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
+<!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
 \endcode
 2) The "type" attribute has been added, otherwise a warning message would be produced.
 \code{.xml}
@@ -491,18 +474,32 @@ schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR
     </xsd:sequence>
   </xsd:complexType>
 \endcode
-
-<b>Schema XAdES01903v132-201601-relaxed.xsd</b>
-
-1) Change child elements of type SignatureProductionPlaceType from "xsd:sequence" to "xsd:all" in order to allow the child elements to be listed in any order.
+4) Change child elements of type SignedSignaturePropertiesType from "xsd:sequence" to "xsd:all" in order to allow the child elements to be listed in any order.
+\code{.xml}
+<xsd:complexType name="SignedSignaturePropertiesType">
+  <xsd:all>
+    <xsd:element ref="SigningTime" minOccurs="0"/>
+    <xsd:element ref="SigningCertificate" minOccurs="0"/>
+    <xsd:element ref="SigningCertificateV2" minOccurs="0"/>
+    <xsd:element ref="SignaturePolicyIdentifier" minOccurs="0"/>
+    <xsd:element ref="SignatureProductionPlace" minOccurs="0"/>
+    <xsd:element ref="SignatureProductionPlaceV2" minOccurs="0"/>
+    <xsd:element ref="SignerRole" minOccurs="0"/>
+    <xsd:element ref="SignerRoleV2" minOccurs="0"/>
+    <xsd:any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
+  </xsd:all>
+  <xsd:attribute name="Id" type="xsd:ID" use="optional"/>
+</xsd:complexType>
+\endcode
+5) Change child elements of type SignatureProductionPlaceType from "xsd:sequence" to "xsd:all" in order to allow the child elements to be listed in any order.
 \code{.xml}
 <xsd:complexType name="SignatureProductionPlaceType">
-	<xsd:all>
-		<xsd:element name="City" type="xsd:string" minOccurs="0"/>
-		<xsd:element name="StateOrProvince" type="xsd:string" minOccurs="0"/>
-		<xsd:element name="PostalCode" type="xsd:string" minOccurs="0"/>
-		<xsd:element name="CountryName" type="xsd:string" minOccurs="0"/>
-	</xsd:all>
+  <xsd:all>
+    <xsd:element name="City" type="xsd:string" minOccurs="0"/>
+    <xsd:element name="StateOrProvince" type="xsd:string" minOccurs="0"/>
+    <xsd:element name="PostalCode" type="xsd:string" minOccurs="0"/>
+    <xsd:element name="CountryName" type="xsd:string" minOccurs="0"/>
+  </xsd:all>
 </xsd:complexType>
 \endcode
 
@@ -510,15 +507,18 @@ schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally "http://www.w3.org/TR
 
 1) The schema's location has been modified so that the file is looked up from the local file system.
 \code{.xml}
-    <xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/> <!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd" -->
+<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+<!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd" -->
 \endcode
 
 <b>Schema ts_119612v020201_201601xsd.xsd</b>
 
 1) The schemas' locations have been modified so that the file is looked up from the local file system.
 \code{.xml}
-    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/> <!-- originally "http://www.w3.org/2001/xml.xsd" -->
-    <xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/> <!-- originally  http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
+<xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+<!-- originally "http://www.w3.org/2001/xml.xsd" -->
+<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
+<!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
 \endcode
 
 

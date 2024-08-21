@@ -9,7 +9,7 @@ endif()
 if(POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
-project(libdigidocpp VERSION 3.18.0)
+project(libdigidocpp VERSION 4.0.0)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
 
