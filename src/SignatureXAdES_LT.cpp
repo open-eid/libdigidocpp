@@ -44,7 +44,7 @@ SignatureXAdES_LT::SignatureXAdES_LT(const std::shared_ptr<Signatures> &signatur
 {
     try {
         // ADOC files are default T level, take OCSP response to create temporary LT level
-        if(bdoc->mediaType() == ASiContainer::MIMETYPE_ADOC &&
+        if(container->mediaType() == ASiContainer::MIMETYPE_ADOC &&
             !(unsignedSignatureProperties()/"RevocationValues"))
         {
             X509Cert cert = signingCertificate();
@@ -149,7 +149,7 @@ void SignatureXAdES_LT::validate(const string &policy) const
                 string method = Digest::digestInfoUri(ocsp.nonce());
                 if(method.empty())
                     THROW("Nonce digest method is missing");
-                vector<unsigned char> digest = Digest(method).result(getSignatureValue());
+                vector<unsigned char> digest = Digest(method).result(signatureValue());
                 vector<unsigned char> respDigest = Digest::digestInfoDigest(ocsp.nonce());
                 if(digest != respDigest)
                 {

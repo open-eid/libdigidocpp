@@ -34,6 +34,7 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:dsig="urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0">
   <xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
   <xs:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+  <xs:import namespace="http://uri.etsi.org/01903/v1.4.1#" schemaLocation="XAdES01903v141-201601.xsd"/>
   <xs:element name="document-signatures">
     <xs:complexType>
       <xs:sequence>

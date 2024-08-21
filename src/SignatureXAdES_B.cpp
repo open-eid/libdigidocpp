@@ -245,14 +245,14 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
     signature = *signatures + XMLName{"Signature", DSIG_NS};
     signature.setProperty("Id", nr);
     auto signedInfo = signature + "SignedInfo";
-    (signedInfo + "CanonicalizationMethod").setProperty("Algorithm", canonMethod);
+    (signedInfo + CanonicalizationMethod).setProperty("Algorithm", canonMethod);
     (signedInfo + "SignatureMethod").setProperty("Algorithm", X509Crypto(c).isRSAKey() ?
             Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()));
 
     (signature + "SignatureValue").setProperty("Id", nr + "-SIG");
     signature + "KeyInfo" + "X509Data" + "X509Certificate" = c;
 
-    auto qualifyingProperties = signature + "Object" + XMLName{"QualifyingProperties", XADES_NS};
+    auto qualifyingProperties = signature + "Object" + QualifyingProperties;
     qualifyingProperties.setProperty("Target", "#" + nr);
 
     auto signedProperties = qualifyingProperties + "SignedProperties";
@@ -307,7 +307,7 @@ SignatureXAdES_B::SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures
         THROW("Signature block contains more than one 'Object' block.");
 
     // QualifyingProperties
-    XMLNode qp = object/XMLName{"QualifyingProperties", XADES_NS};
+    XMLNode qp = object/QualifyingProperties;
     if(!qp)
         THROW("Signature block 'QualifyingProperties' is missing.");
     if(qp + 1)
@@ -357,13 +357,13 @@ SignatureXAdES_B::~SignatureXAdES_B()
 
 string_view SignatureXAdES_B::canonicalizationMethod() const noexcept
 {
-    return (signature/"SignedInfo"/"CanonicalizationMethod").property("Algorithm");
+    return (signature/"SignedInfo"/CanonicalizationMethod)["Algorithm"];
 }
 
 string SignatureXAdES_B::policy() const
 {
     if(auto id = signedSignatureProperties()/"SignaturePolicyIdentifier"/"SignaturePolicyId"/"SigPolicyId"/"Identifier";
-        id && id.property("Qualifier") == "OIDAsURN")
+        id && id["Qualifier"] == "OIDAsURN")
         return string(id);
     return {};
 }
@@ -440,7 +440,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         {
 #if 0 //Disabled IB-3684
             auto hash = id/"SigPolicyHash";
-            auto algo = (hash/DigestMethod).property("Algorithm");
+            auto algo = (hash/DigestMethod)["Algorithm"];
             vector<unsigned char> digest = hash/DigestValue;
 
             bool valid = false;
@@ -474,7 +474,7 @@ void SignatureXAdES_B::validate(const string &policy) const
         for(auto data = sdop/"DataObjectFormat"; data; data++)
         {
             if(auto mime = data/"MimeType")
-                mimeinfo.emplace(data.property("ObjectReference"), mime);
+                mimeinfo.emplace(data["ObjectReference"], mime);
         }
     }
     else
@@ -485,18 +485,18 @@ void SignatureXAdES_B::validate(const string &policy) const
     }
 
     map<string,string> signatureref;
-    string_view signedPropertiesId = sp.property("Id");
+    string_view signedPropertiesId = sp["Id"];
     bool signedInfoFound = false;
     for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
     {
-        auto uri = ref.property("URI");
+        auto uri = ref["URI"];
         if(uri.empty())
         {
             EXCEPTION_ADD(exception, "Reference URI missing");
             continue;
         }
 
-        if(auto algo = (ref/DigestMethod).property("Algorithm");
+        if(auto algo = (ref/DigestMethod)["Algorithm"];
             !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
             (algo == URI_SHA1 || algo == URI_SHA224))
         {
@@ -505,18 +505,18 @@ void SignatureXAdES_B::validate(const string &policy) const
             exception.addCause(e);
         }
 
-        if(uri.front() == '#' && uri.substr(1) == signedPropertiesId && ref.property("Type") == REF_TYPE)
+        if(uri.front() == '#' && uri.substr(1) == signedPropertiesId && ref["Type"] == REF_TYPE)
             signedInfoFound = true;
         else if(!sdop)
             continue; // DataObjectProperties is missing, no need to match later MediaTypes
-        else if(ref.property("Id").empty())
+        else if(ref["Id"].empty())
             EXCEPTION_ADD(exception, "Reference '%.*s' ID  missing", int(uri.size()), uri.data());
         else
         {
             string uriPath = File::fromUriPath(uri);
             if(uriPath.front() == '/')
                 uriPath.erase(0);
-            signatureref.emplace(uriPath, mimeinfo[string("#").append(ref.property("Id"))]);
+            signatureref.emplace(uriPath, mimeinfo[string("#").append(ref["Id"])]);
         }
     }
     if(!signedInfoFound)
@@ -566,7 +566,7 @@ vector<unsigned char> SignatureXAdES_B::dataToSign() const
 {
     Digest calc(signatureMethod());
     auto signedInfo = signature/"SignedInfo";
-    signatures->c14n(&calc, (signedInfo/"CanonicalizationMethod").property("Algorithm"), signedInfo);
+    signatures->c14n(&calc, (signedInfo/CanonicalizationMethod)["Algorithm"], signedInfo);
     return calc.result();
 }
 
@@ -585,7 +585,7 @@ void SignatureXAdES_B::checkCertID(XMLNode certID, const X509Cert &cert)
 
 void SignatureXAdES_B::checkDigest(XMLNode digest, const vector<unsigned char> &data)
 {
-    auto calcDigest = Digest((digest/DigestMethod).property("Algorithm")).result(data);
+    auto calcDigest = Digest((digest/DigestMethod)["Algorithm"]).result(data);
     vector<unsigned char> digestValue = digest/DigestValue;
     if(digestValue == calcDigest)
         return;
@@ -762,17 +762,9 @@ void SignatureXAdES_B::setSignerRoles(string_view name, const vector<string> &ro
  *
  * @param signatureValue signature value.
  */
-void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &signatureValue)
+void SignatureXAdES_B::setSignatureValue(const vector<unsigned char> &value)
 {
-    signature/"SignatureValue" = signatureValue;
-}
-
-/**
- * @return returns signature value.
- */
-vector<unsigned char> SignatureXAdES_B::getSignatureValue() const
-{
-    return signature/"SignatureValue";
+    signatureValue() = value;
 }
 
 string SignatureXAdES_B::city() const
@@ -831,12 +823,12 @@ X509Cert SignatureXAdES_B::signingCertificate() const
 
 string SignatureXAdES_B::id() const
 {
-    return string(signature.property("Id"));
+    return string(signature["Id"]);
 }
 
 string SignatureXAdES_B::signatureMethod() const
 {
-    return string((signature/"SignedInfo"/"SignatureMethod").property("Algorithm"));
+    return string((signature/"SignedInfo"/"SignatureMethod")["Algorithm"]);
 }
 
 /**

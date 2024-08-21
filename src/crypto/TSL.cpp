@@ -309,7 +309,7 @@ bool TSL::parseInfo(XMLNode info, Service &s)
     vector<Qualifier> qualifiers;
     for(auto extension = info/"ServiceInformationExtensions"/"Extension"; extension; extension++)
     {
-        if(extension.property("Critical") == "true")
+        if(extension["Critical"] == "true")
         {
             if(auto takenOverByType = extension/"TakenOverByType")
                 WARN("Found critical extension TakenOverByType '%s'", toString(takenOverByType/"TSPName").data());
@@ -326,11 +326,11 @@ bool TSL::parseInfo(XMLNode info, Service &s)
             Qualifier &q = qualifiers.emplace_back();
             for(auto qualifier = element/"Qualifiers"/"Qualifier"; qualifier; qualifier++)
             {
-                if(auto uri = qualifier.property("uri"); !uri.empty())
+                if(auto uri = qualifier["uri"]; !uri.empty())
                     q.qualifiers.emplace_back(uri);
             }
             auto criteriaList = element/"CriteriaList";
-            q.assert_ = criteriaList.property("assert");
+            q.assert_ = criteriaList["assert"];
             for(auto criteria: criteriaList)
             {
                 if(criteria.name() == "KeyUsage" && criteria.ns() == ECC_NS)
@@ -338,7 +338,7 @@ bool TSL::parseInfo(XMLNode info, Service &s)
                     map<X509Cert::KeyUsage,bool> &usage = q.keyUsage.emplace_back();
                     for(auto bit = criteria/"KeyUsageBit"; bit; bit++)
                     {
-                        auto name = bit.property("name");
+                        auto name = bit["name"];
                         auto value = string_view(bit) == "true";
                         if(name == "digitalSignature")
                             usage[X509Cert::DigitalSignature] = value;
@@ -395,7 +395,7 @@ vector<string> TSL::pivotURLs() const
     vector<string> result;
     for(auto uriNode = schemeInformation/"SchemeInformationURI"/"URI"; uriNode; uriNode++)
     {
-        if(uriNode.property("lang", XML_NS) != "en")
+        if(uriNode[{"lang", XML_NS}] != "en")
             continue;
         if(string_view uri = uriNode; uri.find("pivot") != string::npos && uri.find(current) == string::npos)
             result.emplace_back(uri);
@@ -493,7 +493,7 @@ string_view TSL::territory() const noexcept
 string_view TSL::toString(XMLNode obj, string_view lang) noexcept
 {
     for(auto n = obj/"Name"; n; n++)
-        if(n.property("lang", XML_NS) == lang)
+        if(n[{"lang", XML_NS}] == lang)
             return n;
     return obj/"Name";
 }
