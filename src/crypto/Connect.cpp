@@ -173,7 +173,7 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
         }
     }
 
-#if OPENSSL_VERSION_NUMBER > 0x30000000L
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     if(_timeout > 0)
     {
         int fd = BIO_get_fd(d, nullptr);
@@ -252,12 +252,6 @@ string Connect::decompress(const string &encoding, const string &data)
 }
 
 Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> headers,
-    const vector<unsigned char> &data)
-{
-    return exec(headers, data.data(), data.size());
-}
-
-Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> headers,
     const unsigned char *data, size_t size)
 {
     for(const auto &[key, value]: headers)
@@ -295,6 +289,10 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
 
     stringstream stream(r.content);
     string line;
+    auto to_lower = [](string str) {
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        return str;
+    };
     while(getline(stream, line))
     {
         line.resize(max<size_t>(line.size() - 1, 0));
@@ -307,18 +305,17 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
         }
         size_t split = line.find(": ");
         if(split != string::npos)
-            r.headers[line.substr(0, split)] = line.substr(split + 2);
+            r.headers[to_lower(line.substr(0, split))] = line.substr(split + 2);
         else
-            r.headers[line] = string();
+            r.headers[to_lower(line)] = string();
     }
 
     pos = r.content.find("\r\n\r\n");
     if(pos != string::npos)
         r.content.erase(0, pos + 4);
-
-    const auto transfer_encoding = r.headers.find("Transfer-Encoding");
-    if(transfer_encoding != r.headers.cend() &&
-        transfer_encoding->second.find("chunked") != string::npos) {
+    if(const auto it = r.headers.find("transfer-encoding");
+        it != r.headers.cend() &&
+        it->second.find("chunked") != string::npos) {
         pos = 0;
         for(size_t chunkpos = r.content.find("\r\n", pos);
             chunkpos != string::npos;
@@ -331,14 +328,14 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
         }
     }
 
-    const auto it = r.headers.find("Content-Encoding");
-    if(it != r.headers.cend())
+    if(const auto it = r.headers.find("content-encoding");
+        it != r.headers.cend())
         r.content = decompress(it->second, r.content);
 
     if(!r.isRedirect() || recursive > 3)
         return r;
-    string location = r.headers.find("Location") == r.headers.cend() ? r.headers["location"] : r.headers["Location"];
-    string url = location.find("://") != string::npos ? location : baseurl + location;
+    string &location = r.headers["location"];
+    string url = location.find("://") != string::npos ? std::move(location) : baseurl + location;
     Connect c(url, method, timeout);
     c.recursive = recursive + 1;
     return c.exec(headers);
