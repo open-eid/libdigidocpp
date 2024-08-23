@@ -113,8 +113,10 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
         this_thread::sleep_for(chrono::milliseconds(50));
     }
 #else
-    if(BIO_do_connect_retry(d, timeout, -1) < 1)
+    if(timeout > 0 && BIO_do_connect_retry(d, timeout, -1) < 1)
         THROW_NETWORKEXCEPTION("Failed to create connection with host timeout: '%s'", hostname.c_str())
+    if(timeout == 0 && BIO_do_connect(d) < 1)
+        THROW_NETWORKEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str())
 #endif
 
     if(usessl > 0)
@@ -313,6 +315,7 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
     pos = r.content.find("\r\n\r\n");
     if(pos != string::npos)
         r.content.erase(0, pos + 4);
+
     if(const auto it = r.headers.find("transfer-encoding");
         it != r.headers.cend() &&
         it->second.find("chunked") != string::npos) {
