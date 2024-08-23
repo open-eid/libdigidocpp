@@ -15,14 +15,13 @@ Schema for XML Signatures
     [2] http://www.w3.org/Consortium/Legal/IPR-FAQ-20000620.html#DTD
 
 _______________________________________________________________________________
-etc/schema/OpenDocument_manifest.rng
+etc/schema/OpenDocument_dsig.rng
 
-	OASIS OpenDocument v1.0
-	OASIS standard, 1 May 2005
-	Relax-NG Manifest Schema
-	$Id$
-	© 2002-2005 OASIS Open
-	© 1999-2005 Sun Microsystems, Inc.
+  OASIS OpenDocument v1.2
+  Committee Draft 05 Rev 02, 11 November 2010
+  Digital Signatures Relax-NG Schema
+  
+  Copyright © OASIS Open 2008-2010. All Rights Reserved.
 
 _______________________________________________________________________________
 etc/schema/OpenDocument_manifest_v1_2.rng

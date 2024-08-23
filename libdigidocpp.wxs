@@ -37,8 +37,6 @@
     <ComponentGroup Id="Runtime"
         Source="$(env.VCTOOLSREDISTDIR)\$(sys.BUILDARCH)\Microsoft.VC$(var.VCVER).CRT">
       <File Name="msvcp140.dll" />
-      <File Name="msvcp140_1.dll" />
-      <File Name="msvcp140_2.dll" />
       <File Name="vcruntime140.dll" />
 <?if $(sys.BUILDARCH) != x86 ?>
       <File Name="vcruntime140_1.dll" />
@@ -70,8 +68,6 @@
     <ComponentGroup Id="RuntimeDev"
         Source="$(env.VCTOOLSREDISTDIR)\Debug_NonRedist\$(sys.BUILDARCH)\Microsoft.VC$(var.VCVER).DebugCRT">
       <File Name="msvcp140d.dll" />
-      <File Name="msvcp140_1d.dll" />
-      <File Name="msvcp140_2d.dll" />
       <File Name="vcruntime140d.dll" />
 <?if $(sys.BUILDARCH) != x86 ?>
       <File Name="vcruntime140_1d.dll" />

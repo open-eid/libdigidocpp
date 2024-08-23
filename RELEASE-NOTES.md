@@ -1,3 +1,23 @@
+Libdigidocpp library [3.18.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.18.0) release notes
+--------------------------------------
+- Major rewrite of library internals due upstream dependecy xalan-c and xml-security-c package has been retired.
+  https://shibboleth.atlassian.net/wiki/spaces/DEV/pages/3726671873/Santuario
+  https://lists.apache.org/thread/tls9xgp45zbhzc9k8jhd3m49r6npbrql
+- Update libraries and platform support
+  (#572, #565, #571, #570, #574, #578, #581, #582, #583, #579, #587, #589, #590, #563, #592, #597, #605, #608, #616)
+- Improve signature and container compatibility
+  (#573, #585, #586, #588, #591, #584, #596, #593, #595, #603, #604, #607, #613, #609)
+- Other fixes and optimizations
+  (#564, #577, #580, #599, #606, #612, #614, #611, #610)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.17.0...v3.18.0)
+
+Libdigidocpp library [3.17.1](https://github.com/open-eid/libdigidocpp/releases/tag/v3.17.1) release notes
+--------------------------------------
+- Keep previous signature in memory to avoid changing its structure
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v3.17.0...v3.17.1)
+
 Libdigidocpp library [3.17.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.17.0) release notes
 --------------------------------------
 - Update libraries and platform support (#549, #554, #558, #553)
