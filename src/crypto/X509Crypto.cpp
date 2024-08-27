@@ -151,7 +151,7 @@ int X509Crypto::compareIssuerToString(string_view name) const
                 value[pos] = char(result);
                 value.erase(pos + 1, 2);
             }
-            else if(escape.find(value[pos+1]) == string::npos)
+            else if(escape.find(value[pos+1]) != string::npos)
                 value.erase(pos, 1);
         }
 

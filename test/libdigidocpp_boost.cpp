@@ -159,6 +159,8 @@ BOOST_AUTO_TEST_CASE(parameters)
 
     X509Crypto test(X509Cert("test.crt", X509Cert::Pem));
     BOOST_CHECK_EQUAL(test.compareIssuerToString("CN=\\\"test\\\""), 0);
+    X509Crypto comma(X509Cert("comma.crt", X509Cert::Pem));
+    BOOST_CHECK_EQUAL(comma.compareIssuerToString("CN=test\\, comma"), 0);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
