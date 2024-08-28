@@ -107,6 +107,7 @@ add_library(digidocpp
     crypto/TS.cpp
     crypto/X509Cert.cpp
     crypto/X509CertStore.cpp
+    $<$<PLATFORM_ID:Windows>:crypto/WinSigner.cpp>
     util/ZipSerialize.cpp
 )
 
@@ -229,7 +230,6 @@ install( TARGETS digidocpp
 
 if(WIN32)
     list(APPEND CRYPTO_HEADER crypto/WinSigner.h)
-    target_sources(digidocpp PRIVATE crypto/WinSigner.cpp)
     target_compile_options(digidocpp PUBLIC "/guard:cf")
     target_link_options(digidocpp PUBLIC "/guard:cf")
     target_link_libraries(digidocpp PRIVATE Crypt32 cryptui ncrypt)
@@ -242,7 +242,7 @@ if(WIN32)
             add_custom_command(TARGET ${TARGET} POST_BUILD
                 COMMAND signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256 /du http://installer.id.ee
                     "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>"
-                    /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 $<TARGET_FILE:${TARGET}>
+                    /tr http://timestamp.digicert.com /td SHA256 $<TARGET_FILE:${TARGET}>
                 COMMAND_EXPAND_LISTS
             )
         endforeach()

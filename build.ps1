@@ -64,7 +64,7 @@ foreach($type in @("Debug", "RelWithDebInfo")) {
 
 if($sign) {
   & $vcvars $platform "&&" signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
-    /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 `
+    /tr http://timestamp.digicert.com /td SHA256 `
     $vcpkg_installed_platform/$platform-windows/bin/*.dll `
     $vcpkg_installed_platform/$platform-windows/debug/bin/*.dll
 }
@@ -81,5 +81,5 @@ if($sign) {
 
 if($sign) {
   & $vcvars $platform "&&" signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
-    /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 "$msi_name"
+    /tr http://timestamp.digicert.com /td SHA256 "$msi_name"
 }
