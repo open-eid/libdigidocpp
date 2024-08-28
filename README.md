@@ -50,16 +50,18 @@
 ### macOS
 
 1. Install dependencies from
-	* [XCode](https://itunes.apple.com/en/app/xcode/id497799835?mt=12)
+	* [XCode](https://itunes.apple.com/en/app/xcode/id497799835?mt=12) - For macOS/iOS development
 	* [CMake](http://www.cmake.org)
 	* [Homebrew](https://brew.sh)
+	* [vcpkg](https://vcpkg.io/) - For Android development (VCPKG_ROOT)
+	* [Android NDK](https://developer.android.com/ndk/downloads) - For Android development (ANDROID_NDK_ROOT)
 
 2. Fetch the source
 
         git clone https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Prepare dependencies (available targets: macos, iphoneos, iphonesimulator, androidarm, androidarm64, androidx86_64)
+3. Prepare dependencies (available targets: macos, iphoneos, iphonesimulator)
 
         sh prepare_osx_build_environment.sh macos all
 
