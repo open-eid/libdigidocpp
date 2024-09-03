@@ -141,6 +141,11 @@ struct XMLElem
         return bool(d);
     }
 
+    constexpr bool operator==(XMLElem other) const noexcept
+    {
+        return d == other.d;
+    }
+
     constexpr auto& operator++() noexcept
     {
         d = d ? find(d->next, d->type) : nullptr;
