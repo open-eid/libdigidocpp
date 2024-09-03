@@ -21,13 +21,18 @@
 
 #include "Exception.h"
 
-#include <string>
-#include <vector>
+#include "crypto/X509Cert.h"
 
 namespace digidoc
 {
     class Signer;
     class X509Cert;
+
+    struct TSAInfo {
+        X509Cert cert;
+        std::string time;
+    };
+
     class DIGIDOCPP_EXPORT Signature
     {
       public:
@@ -86,18 +91,18 @@ namespace digidoc
           virtual std::string countryName() const;
           virtual std::vector<std::string> signerRoles() const;
 
-          //TM profile properties
+          // TM profile properties
           virtual std::string OCSPProducedAt() const;
           virtual X509Cert OCSPCertificate() const;
           DIGIDOCPP_DEPRECATED virtual std::vector<unsigned char> OCSPNonce() const;
 
-          //TS profile properties
+          // TS profile properties
           virtual X509Cert TimeStampCertificate() const;
           virtual std::string TimeStampTime() const;
 
-          //TSA profile properties
-          virtual X509Cert ArchiveTimeStampCertificate() const;
-          virtual std::string ArchiveTimeStampTime() const;
+          // TSA profile properties
+          DIGIDOCPP_DEPRECATED virtual X509Cert ArchiveTimeStampCertificate() const;
+          DIGIDOCPP_DEPRECATED virtual std::string ArchiveTimeStampTime() const;
 
           // Xades properties
           virtual std::string streetAddress() const;
@@ -113,6 +118,9 @@ namespace digidoc
 
           // DSig properties
           virtual void extendSignatureProfile(Signer *signer);
+
+          //TSA profile properties
+          virtual std::vector<TSAInfo> ArchiveTimeStamps() const;
 
       protected:
           Signature();
