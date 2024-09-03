@@ -354,8 +354,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         // TSA signature
         signer2.setProfile("time-stamp-archive");
         BOOST_CHECK_NO_THROW(s3 = d->sign(&signer2));
-        //BOOST_CHECK_EQUAL(s3->TSCertificate(), signer2.cert());
-        //BOOST_CHECK_NO_THROW(s3->validate());
+        BOOST_CHECK_EQUAL(s3->signingCertificate(), signer2.cert());
+        BOOST_CHECK_NO_THROW(s3->validate());
+        // Extend TSA
+        BOOST_CHECK_NO_THROW(s3->extendSignatureProfile(signer2.profile()));
+        BOOST_CHECK_NO_THROW(s3->validate());
         BOOST_CHECK_NO_THROW(d->save(Doc::EXT + "-TSA.tmp"));
         BOOST_CHECK_NO_THROW(d->removeSignature(1U));
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
