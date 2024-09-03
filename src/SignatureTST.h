@@ -54,6 +54,9 @@ public:
     // Xades properties
     std::string profile() const final;
 
+    //TSA profile properties
+    std::vector<TSAInfo> ArchiveTimeStamps() const final;
+
     void save(const ZipSerialize &s) const;
 
 private:

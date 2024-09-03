@@ -91,6 +91,19 @@ SignatureTST::SignatureTST(ASiC_S *asicSDoc, Signer *signer)
 
 SignatureTST::~SignatureTST() = default;
 
+std::vector<TSAInfo> SignatureTST::ArchiveTimeStamps() const
+{
+    std::vector<TSAInfo> result;
+    for(auto i = metadata.cbegin() + 1; i != metadata.cend(); ++i)
+    {
+        if(i->mime != "application/vnd.etsi.timestamp-token")
+            continue;
+        TS ts((const unsigned char*)i->data.data(), i->data.size());
+        result.push_back({ts.cert(), util::date::to_string(ts.time())});
+    }
+    return result;
+}
+
 X509Cert SignatureTST::TimeStampCertificate() const
 {
     return timestampToken->cert();
