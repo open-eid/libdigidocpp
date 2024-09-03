@@ -152,6 +152,10 @@ public class libdigidocpp {
                 System.out.println("Time: " + signature.trustedSigningTime());
                 System.out.println("Cert: " + signature.signingCertificate().getSubjectDN().toString());
                 System.out.println("TimeStamp Cert: " + signature.TimeStampCertificate().getSubjectDN().toString());
+                for(TSAInfo tsaInfo : signature.ArchiveTimeStamps()) {
+                    System.out.println("Archive Time: " + tsaInfo.getTime());
+                    System.out.println("Archive Cert: " + tsaInfo.getCert().getSubjectDN().toString());
+                }
 
                 try
                 {
