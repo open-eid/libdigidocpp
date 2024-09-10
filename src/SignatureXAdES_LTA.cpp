@@ -20,7 +20,6 @@
 #include "SignatureXAdES_LTA.h"
 
 #include "ASiC_E.h"
-#include "Conf.h"
 #include "DataFile_p.h"
 #include "crypto/Digest.h"
 #include "crypto/TS.h"
@@ -110,7 +109,7 @@ void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
     auto method = canonicalizationMethod();
     calcArchiveDigest(calc, method);
 
-    TS tsa(CONF(TSUrl), calc);
+    TS tsa(calc);
     auto ts = unsignedSignatureProperties() + ArchiveTimeStamp;
     ts.setNS(ts.addNS(XADESv141_NS, "xades141"));
     ts.setProperty("Id", id() + "-A0");
