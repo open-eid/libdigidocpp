@@ -61,7 +61,7 @@ ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
                 if(!signatures().empty())
                     THROW("Can not add signature to ASiC-S container which already contains a signature.");
                 auto data = z.extract<stringstream>(file);
-                auto signatures = make_shared<Signatures>(data, this);
+                auto signatures = make_shared<Signatures>(data, mediaType());
                 for(auto s = signatures->signature(); s; s++)
                     addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
             }

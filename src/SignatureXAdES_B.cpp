@@ -190,7 +190,7 @@ int initXmlSecCallback()
             return is;
         },
         [](void *ctx, char *buf, int len) -> int {
-            auto *is = static_cast<std::istream*>(ctx);
+            auto *is = static_cast<istream*>(ctx);
             is->read(buf, len);
             return int(is->gcount());
         },
@@ -207,7 +207,7 @@ Signatures::Signatures()
     addNS(XADES_NS, "xades");
 }
 
-Signatures::Signatures(istream &data, ASiContainer *container)
+Signatures::Signatures(istream &data, string_view mediaType)
     : XMLDocument(openStream(data))
 {
     /* http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
@@ -219,7 +219,7 @@ Signatures::Signatures(istream &data, ASiContainer *container)
      * Case container is ADoc 1.0 then handle document-signatures root element
      */
     try {
-        if(container->mediaType() == ASiC_E::MIMETYPE_ADOC && name() == "document-signatures" && ns() == OPENDOCUMENT_NS)
+        if(mediaType == ASiC_E::MIMETYPE_ADOC && name() == "document-signatures" && ns() == OPENDOCUMENT_NS)
             validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_dsig.xsd"));
         else
             validateSchema(File::path(Conf::instance()->xsdPath(), "en_31916201v010101.xsd"));
@@ -234,8 +234,8 @@ Signatures::Signatures(istream &data, ASiContainer *container)
 /**
  * Creates an empty BDOC-BES signature with mandatory XML nodes.
  */
-SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Signer *signer)
-    : signatures(make_shared<Signatures>())
+SignatureXAdES_B::SignatureXAdES_B(const shared_ptr<Signatures> &signatures, unsigned int id, ASiContainer *container, Signer *signer)
+    : signatures(signatures)
     , bdoc(container)
 {
     X509Cert c = signer->cert();
@@ -295,7 +295,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
  * @param bdoc BDOC container
  * @throws SignatureException
  */
-SignatureXAdES_B::SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container)
+SignatureXAdES_B::SignatureXAdES_B(const shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container)
     : signatures(signatures)
     , signature(s)
     , bdoc(container)
