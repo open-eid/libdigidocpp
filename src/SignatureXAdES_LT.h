@@ -29,7 +29,7 @@ class OCSP;
 class SignatureXAdES_LT: public SignatureXAdES_T
 {
 public:
-    SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer);
+    SignatureXAdES_LT(const std::shared_ptr<Signatures> &signatures, unsigned int id, ASiContainer *bdoc, Signer *signer);
     SignatureXAdES_LT(const std::shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container);
 
     std::string trustedSigningTime() const override;
