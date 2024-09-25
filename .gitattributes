@@ -1,1 +1,1 @@
-patches/vcpkg-ports/**/* -text
+vcpkg-ports/**/* -text

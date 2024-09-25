@@ -48,8 +48,6 @@ using namespace std;
  * - http://www.w3.org/2001/04/xmldsig-more#sha384
  * - http://www.w3.org/2001/04/xmlenc#sha512
  *
- * In case of DDoc files, the parameter is ignored and SHA1 hash is always returned
- *
  * @param method method uri for calculating digest.
  * @return returns calculated digest value.
  * @throws Exception throws exception if the file does not exist or digest calculation fails.
