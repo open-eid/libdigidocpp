@@ -42,7 +42,7 @@ public:
     string mimetype, path;
     vector<DataFile*> documents;
     vector<Signature*> signatures;
-    map<string, ZipSerialize::Properties> properties;
+    map<string, ZipSerialize::Properties, std::less<>> properties;
 };
 
 /**
@@ -62,14 +62,11 @@ ASiContainer::ASiContainer(string_view mimetype)
  * @param supported supported mimetypes.
  * @return returns zip serializer for the container.
  */
-unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeRequired, const set<string_view> &supported)
+ZipSerialize ASiContainer::load(const string &path, bool mimetypeRequired, const set<string_view> &supported)
 {
     DEBUG("ASiContainer::ASiContainer(path = '%s')", path.c_str());
-    auto z = make_unique<ZipSerialize>(d->path = path, false);
-
-    vector<string> list = z->list();
-    if(list.empty())
-        THROW("Failed to parse container");
+    ZipSerialize z(d->path = path, false);
+    vector<string> list = z.list();
 
     // ETSI TS 102 918: mimetype has to be the first in the archive
     if(mimetypeRequired && list.front() != "mimetype")
@@ -77,14 +74,14 @@ unique_ptr<ZipSerialize> ASiContainer::load(const string &path, bool mimetypeReq
 
     if(list.front() == "mimetype")
     {
-        d->mimetype = readMimetype(*z);
+        d->mimetype = readMimetype(z);
         if(supported.find(d->mimetype) == supported.cend())
             THROW("Incorrect mimetype '%s'", d->mimetype.c_str());
     }
     DEBUG("mimetype = '%s'", d->mimetype.c_str());
 
     for(const string &file: list)
-        d->properties[file] = z->properties(file);
+        d->properties[file] = z.properties(file);
 
     return z;
 }
@@ -134,15 +131,11 @@ vector<Signature *> ASiContainer::signatures() const
  * @param z Zip container.
  * @return returns data as a stream.
  */
-unique_ptr<iostream> ASiContainer::dataStream(const string &path, const ZipSerialize &z) const
+unique_ptr<iostream> ASiContainer::dataStream(string_view path, const ZipSerialize &z) const
 {
-    unique_ptr<iostream> data;
-    if(d->properties[path].size > MAX_MEM_FILE)
-        data = make_unique<fstream>(File::tempFileName(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
-    else
-        data = make_unique<stringstream>();
-    z.extract(path, *data);
-    return data;
+    if(auto i = d->properties.find(path); i != d->properties.cend() && i->second.size > MAX_MEM_FILE)
+        return make_unique<fstream>(z.extract<fstream>(path));
+    return make_unique<stringstream>(z.extract<stringstream>(path));
 }
 
 /**
@@ -275,9 +268,7 @@ const ZipSerialize::Properties& ASiContainer::zproperty(const string &file) cons
 string ASiContainer::readMimetype(const ZipSerialize &z)
 {
     DEBUG("ASiContainer::readMimetype()");
-    stringstream is;
-    z.extract("mimetype", is);
-    string text = is.str();
+    string text = z.extract<stringstream>("mimetype").str();
     text.erase(text.find_last_not_of(" \n\r\f\t\v") + 1);
     if(text.empty())
         THROW("Failed to read mimetype.");
