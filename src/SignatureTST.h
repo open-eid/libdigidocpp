@@ -32,6 +32,7 @@ class SignatureTST final: public Signature
 {
 public:
     SignatureTST(const std::string &data, ASiC_S *asicSDoc);
+    SignatureTST(ASiC_S *asicSDoc, Signer *signer);
     ~SignatureTST();
 
     std::vector<unsigned char> messageImprint() const override;

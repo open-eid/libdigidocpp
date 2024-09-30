@@ -21,10 +21,11 @@
 
 #include "SignatureTST.h"
 #include "SignatureXAdES_LTA.h"
+#include "crypto/Signer.h"
+#include "util/algorithm.h"
 #include "util/File.h"
 #include "util/log.h"
 
-#include <algorithm>
 #include <sstream>
 
 using namespace digidoc;
@@ -45,10 +46,6 @@ ASiC_S::ASiC_S(const string &path)
     : ASiContainer(MIMETYPE_ASIC_S)
 {
     auto z = load(path, false, {mediaType()});
-    auto starts_with = [](string_view str, string_view needle) constexpr {
-        return str.size() >= needle.size() && str.compare(0, needle.size(), needle) == 0;
-    };
-
     for(const string &file: z.list())
     {
         if(file == "mimetype")
@@ -87,9 +84,21 @@ ASiC_S::ASiC_S(const string &path)
         THROW("ASiC-S container does not contain any signatures.");
 }
 
-unique_ptr<Container> ASiC_S::createInternal(const string & /*path*/)
+void ASiC_S::addDataFileChecks(const string &fileName, const string &mediaType)
 {
-    return {};
+    ASiContainer::addDataFileChecks(fileName, mediaType);
+    if(!dataFiles().empty())
+        THROW("Can not add document to ASiC-S container which already contains a document.");
+}
+
+unique_ptr<Container> ASiC_S::createInternal(const string &path)
+{
+    if(!util::File::fileExtension(path, {"asics", "scs"}))
+        return {};
+    DEBUG("ASiC_S::createInternal(%s)", path.c_str());
+    auto doc = unique_ptr<ASiC_S>(new ASiC_S());
+    doc->zpath(path);
+    return doc;
 }
 
 void ASiC_S::addAdESSignature(istream & /*signature*/)
@@ -124,9 +133,13 @@ void ASiC_S::save(const ZipSerialize &s)
         s.addFile("META-INF/timestamp.tst", zproperty("META-INF/timestamp.tst"))(static_cast<SignatureTST*>(list.front())->save());
 }
 
-Signature *ASiC_S::sign(Signer * /*signer*/)
+Signature *ASiC_S::sign(Signer *signer)
 {
-    THROW("Not implemented.");
+    if(signer->profile() != ASIC_TST_PROFILE)
+        THROW("ASiC-S container supports only TimeStampToken signing.");
+    if(!signatures().empty())
+        THROW("ASiC-S container supports only one TimeStampToken signature.");
+    return addSignature(make_unique<SignatureTST>(this, signer));
 }
 
 /**
