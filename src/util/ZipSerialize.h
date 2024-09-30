@@ -33,6 +33,16 @@ namespace digidoc
     class ZipSerialize
     {
       public:
+          struct Write {
+              void operator ()(const void *data, size_t size) const;
+              template<class T>
+              constexpr void operator ()(const T &data) const
+              {
+                  operator ()(data.data(), data.size());
+              }
+              std::unique_ptr<void, int (*)(void*)> d;
+          };
+
           struct Properties {
               std::string comment;
               time_t time;
@@ -44,7 +54,7 @@ namespace digidoc
           std::vector<std::string> list() const;
           template<class T>
           T extract(std::string_view file) const;
-          void addFile(const std::string &containerPath, std::istream &is, const Properties &prop, bool compress = true);
+          Write addFile(std::string_view containerPath, const Properties &prop, bool compress = true) const;
           Properties properties(const std::string &file) const;
 
       private:

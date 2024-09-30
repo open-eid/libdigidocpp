@@ -21,10 +21,12 @@
 
 #include "DataFile_p.h"
 #include "Signature.h"
+#include "XMLDocument.h"
 #include "util/File.h"
 #include "util/log.h"
 
 #include <algorithm>
+#include <array>
 #include <ctime>
 #include <fstream>
 #include <map>
@@ -51,7 +53,23 @@ public:
 ASiContainer::ASiContainer(string_view mimetype)
     : d(make_unique<Private>())
 {
-    d->mimetype = mimetype;
+    d->mimetype = string(mimetype);
+}
+
+XMLDocument ASiContainer::createManifest() const
+{
+    DEBUG("ASiContainer::createManifest()");
+    auto doc = XMLDocument::create("manifest", MANIFEST_NS, "manifest");
+    doc.setProperty("version", "1.2", MANIFEST_NS);
+    auto add = [&doc](string_view path, string_view mime) {
+        auto file = doc+"file-entry";
+        file.setProperty("full-path", path, MANIFEST_NS);
+        file.setProperty("media-type", mime, MANIFEST_NS);
+    };
+    add("/", mediaType());
+    for(const DataFile *file: dataFiles())
+        add(file->fileName(), file->mediaType());
+    return doc;
 }
 
 /**
@@ -166,7 +184,7 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
         is = std::move(data);
     }
     d->properties[fileName] = { appInfo(), File::modifiedTime(path), size };
-    addDataFilePrivate(std::move(is), std::move(fileName), mediaType);
+    d->documents.push_back(new DataFilePrivate(std::move(is), std::move(fileName), mediaType));
 }
 
 void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
@@ -174,7 +192,7 @@ void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, c
     addDataFileChecks(fileName, mediaType);
     if(fileName.find_last_of("/\\") != string::npos)
         THROW("Document file '%s' cannot contain directory path.", fileName.c_str());
-    addDataFilePrivate(std::move(is), fileName, mediaType);
+    d->documents.push_back(new DataFilePrivate(std::move(is), fileName, mediaType));
 }
 
 void ASiContainer::addDataFileChecks(const string &fileName, const string &mediaType)
@@ -241,6 +259,34 @@ void ASiContainer::deleteSignature(Signature* s)
     delete s;
 }
 
+void ASiContainer::save(const string &path)
+{
+    if(dataFiles().empty())
+        THROW("Can not save, container is empty.");
+    canSave();
+    if(!path.empty())
+        zpath(path);
+    ZipSerialize s(zpath(), true);
+    s.addFile("mimetype", zproperty("mimetype"), false)(mediaType());
+
+    array<char,10240> buf{};
+    for(const DataFile *file: dataFiles())
+    {
+        auto f = s.addFile(file->fileName(), zproperty(file->fileName()));
+        const auto &is = static_cast<const DataFilePrivate*>(file)->m_is;
+        is->clear();
+        is->seekg(0);
+        while(*is)
+        {
+            is->read(buf.data(), buf.size());
+            if(auto size = is->gcount(); size > 0)
+                f(buf.data(), size_t(size));
+        }
+    }
+
+    save(s);
+}
+
 void ASiContainer::zpath(const string &file)
 {
     d->path = file;
@@ -251,11 +297,11 @@ string ASiContainer::zpath() const
     return d->path;
 }
 
-const ZipSerialize::Properties& ASiContainer::zproperty(const string &file) const
+const ZipSerialize::Properties& ASiContainer::zproperty(string_view file) const
 {
     if(auto i = d->properties.find(file); i != d->properties.cend())
         return i->second;
-    return d->properties[file] = { appInfo(), time(nullptr), 0 };
+    return d->properties[string(file)] = { appInfo(), time(nullptr), 0 };
 }
 
 /**
