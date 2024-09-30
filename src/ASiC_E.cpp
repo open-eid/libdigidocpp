@@ -35,10 +35,6 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-const string_view ASiC_E::ASIC_TM_PROFILE = "time-mark";
-const string_view ASiC_E::ASIC_TS_PROFILE = "time-stamp";
-const string_view ASiC_E::ASIC_TSA_PROFILE = "time-stamp-archive";
-const string_view ASiC_E::ASIC_TMA_PROFILE = "time-mark-archive";
 constexpr string_view MANIFEST_NS {"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"};
 
 class ASiC_E::Private
@@ -85,40 +81,21 @@ vector<DataFile*> ASiC_E::metaFiles() const
  *         document does not exist.
  * @throws Exception is thrown if ASiC_E class is not correctly initialized.
  */
-void ASiC_E::save(const string &path)
+void ASiC_E::save(const ZipSerialize &s)
 {
-    if(dataFiles().empty())
-        THROW("Can not save, container is empty.");
-    if(mediaType() != MIMETYPE_ASIC_E)
-        THROW("'%s' format is not supported", mediaType().c_str());
-
-    if(!path.empty())
-        zpath(path);
-    ZipSerialize s(zpath(), true);
-
-    stringstream mimetype;
-    mimetype << mediaType();
-    s.addFile("mimetype", mimetype, zproperty("mimetype"), false);
-
-    stringstream manifest;
-    createManifest(manifest);
-    s.addFile("META-INF/manifest.xml", manifest, zproperty("META-INF/manifest.xml"));
-
-    for(const DataFile *file: dataFiles())
-        s.addFile(file->fileName(), *(static_cast<const DataFilePrivate*>(file)->m_is), zproperty(file->fileName()));
+    if(!createManifest().save(s.addFile("META-INF/manifest.xml", zproperty("META-INF/manifest.xml"))))
+        THROW("Failed to create manifest XML");
 
     std::set<Signatures*> saved;
     unsigned int i = 0;
     for(Signature *iter: signatures())
     {
-        string file = Log::format("META-INF/signatures%u.xml", i++);
-        auto *signature = static_cast<SignatureXAdES_B*>(iter);
+        auto *signature = dynamic_cast<SignatureXAdES_B*>(iter);
         if(!saved.insert(signature->signatures.get()).second)
             continue;
-        stringstream ofs;
-        if(!signature->signatures->save(ofs))
+        string file = Log::format("META-INF/signatures%u.xml", i++);
+        if(!signature->signatures->save(s.addFile(file, zproperty(file))))
             THROW("Failed to create signature XML file.");
-        s.addFile(file, ofs, zproperty(file));
     }
 }
 
@@ -164,14 +141,10 @@ unique_ptr<Container> ASiC_E::openInternal(const string &path)
 /**
  * Creates BDoc container manifest file and returns its path.
  *
- * Note: If non-ascii characters are present in XML data, we depend on the LANG variable to be set properly
- * (see iconv --list for the list of supported encoding values for libiconv).
- *
- *
  * @return returns created manifest file path.
  * @throws Exception exception is thrown if manifest file creation failed.
  */
-void ASiC_E::createManifest(ostream &os)
+XMLDocument ASiC_E::createManifest()
 {
     DEBUG("ASiC_E::createManifest()");
     auto doc = XMLDocument::create("manifest", MANIFEST_NS, "manifest");
@@ -184,8 +157,7 @@ void ASiC_E::createManifest(ostream &os)
     add("/", mediaType());
     for(const DataFile *file: dataFiles())
         add(file->fileName(), file->mediaType());
-    if(!doc.save(os))
-        THROW("Failed to create manifest XML");
+    return doc;
 }
 
 /**
@@ -291,7 +263,7 @@ Signature* ASiC_E::prepareSignature(Signer *signer)
 
 Signature *ASiC_E::sign(Signer* signer)
 {
-    auto *s = static_cast<SignatureXAdES_LTA*>(prepareSignature(signer));
+    auto *s = dynamic_cast<SignatureXAdES_LTA*>(prepareSignature(signer));
     try
     {
         s->setSignatureValue(signer->sign(s->signatureMethod(), s->dataToSign()));
