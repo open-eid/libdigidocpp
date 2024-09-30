@@ -366,7 +366,7 @@ static int printUsage(const char *executable)
     << "  Command sign:" << endl
     << "    Example: " << executable << " sign demo-container.asice" << endl
     << "    Available options:" << endl
-    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive" << endl
+    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive, TimeStampToken, time-stamp-token" << endl
     << "      --XAdESEN      - use XAdES EN profile" << endl
     << "      --city=        - city of production place" << endl
     << "      --street=      - streetAddress of production place in XAdES EN profile" << endl
