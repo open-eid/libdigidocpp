@@ -365,7 +365,8 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
             dataFile = std::string_view{};
         }
         auto result = make_unique<stringstream>();
-        doc.save(*result);
+        if(!doc.save([&result](const char *data, size_t size) { result->write(data, streamsize(size)); }))
+            THROW("Failed to save DDoc");
         return result;
     }
     catch(const Exception &)

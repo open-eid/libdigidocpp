@@ -23,6 +23,8 @@
 
 namespace digidoc
 {
+    class XMLDocument;
+
     /**
      * Implements the BDOC specification of the signed digital document container.
      * Container can contain several files and all these files can be signed using
@@ -34,13 +36,12 @@ namespace digidoc
     class ASiC_E final : public ASiContainer
     {
       public:
-          static const std::string_view ASIC_TM_PROFILE;
-          static const std::string_view ASIC_TS_PROFILE;
-          static const std::string_view ASIC_TMA_PROFILE;
-          static const std::string_view ASIC_TSA_PROFILE;
+          static constexpr std::string_view ASIC_TM_PROFILE = "time-mark";
+          static constexpr std::string_view ASIC_TS_PROFILE = "time-stamp";
+          static constexpr std::string_view ASIC_TMA_PROFILE = "time-mark-archive";
+          static constexpr std::string_view ASIC_TSA_PROFILE = "time-stamp-archive";
 
           ~ASiC_E() final;
-          void save(const std::string &path = {}) final;
           std::vector<DataFile*> metaFiles() const;
 
           void addAdESSignature(std::istream &data) final;
@@ -54,8 +55,9 @@ namespace digidoc
           ASiC_E();
           ASiC_E(const std::string &path);
           DISABLE_COPY(ASiC_E);
-          void createManifest(std::ostream &os);
+          XMLDocument createManifest();
           void parseManifestAndLoadFiles(const ZipSerialize &z);
+          void save(const ZipSerialize &s) final;
 
           class Private;
           std::unique_ptr<Private> d;
