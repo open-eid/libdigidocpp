@@ -31,7 +31,7 @@ class TS;
 class SignatureTST final: public Signature
 {
 public:
-    SignatureTST(std::istream &sigdata, ASiC_S *asicSDoc);
+    SignatureTST(const std::string &data, ASiC_S *asicSDoc);
     ~SignatureTST();
 
     std::string trustedSigningTime() const final;

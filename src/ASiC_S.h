@@ -23,8 +23,6 @@
 
 namespace digidoc
 {
-    class ZipSerialize;
-
     /**
     * Implements the ASiC-S specification of the timestamped digital document container.
     * Container contains a single datafile object and one time assertion file.
