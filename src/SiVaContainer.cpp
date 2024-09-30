@@ -159,7 +159,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
         static const string_view metaInf = "META-INF/";
         ZipSerialize z(path, false);
         vector<string> list = z.list();
-        if(list.empty() || list.front() != "mimetype")
+        if(list.front() != "mimetype")
             THROW("Missing mimetype");
         if(d->mediaType = ASiContainer::readMimetype(z);
             d->mediaType != ASiContainer::MIMETYPE_ASIC_E && d->mediaType != ASiContainer::MIMETYPE_ASIC_S)
@@ -173,13 +173,9 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
         {
             if(file == "mimetype" || file.rfind(metaInf, 0) == 0)
                 continue;
-            const auto directory = File::directory(file);
-            if(directory.empty() || directory == "/" || directory == "./")
-            {
-                auto data = make_unique<stringstream>();
-                z.extract(file, *data);
-                d->dataFiles.push_back(new DataFilePrivate(std::move(data), file, "application/octet-stream"));
-            }
+            if(const auto directory = File::directory(file);
+                directory.empty() || directory == "/" || directory == "./")
+                d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(z.extract<stringstream>(file)), file, "application/octet-stream"));
         }
     }
     else

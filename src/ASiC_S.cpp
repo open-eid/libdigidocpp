@@ -23,7 +23,6 @@
 #include "SignatureXAdES_LTA.h"
 #include "util/File.h"
 #include "util/log.h"
-#include "util/ZipSerialize.h"
 
 #include <algorithm>
 #include <sstream>
@@ -46,7 +45,7 @@ ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
     auto z = load(path, false, {mediaType()});
     static const string_view metaInf = "META-INF/";
 
-    for(const string &file: z->list())
+    for(const string &file: z.list())
     {
         if(file == "mimetype" ||
             (metaInf.size() < file.size() && file.compare(0, metaInf.size(), metaInf) == 0))
@@ -55,16 +54,13 @@ ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
             {
                 if(!signatures().empty())
                     THROW("Can not add signature to ASiC-S container which already contains a signature.");
-                stringstream data;
-                z->extract(file, data);
-                addSignature(make_unique<SignatureTST>(data, this));
+                addSignature(make_unique<SignatureTST>(z.extract<stringstream>(file).str(), this));
             }
             if(file == "META-INF/signatures.xml")
             {
                 if(!signatures().empty())
                     THROW("Can not add signature to ASiC-S container which already contains a signature.");
-                stringstream data;
-                z->extract(file, data);
+                auto data = z.extract<stringstream>(file);
                 auto signatures = make_shared<Signatures>(data, this);
                 for(auto s = signatures->signature(); s; s++)
                     addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
@@ -77,7 +73,7 @@ ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
         {
             if(!dataFiles().empty())
                 THROW("Can not add document to ASiC-S container which already contains a document.");
-            addDataFile(dataStream(file, *z), file, "application/octet-stream");
+            addDataFile(dataStream(file, z), file, "application/octet-stream");
         }
     }
 
@@ -139,7 +135,7 @@ bool ASiC_S::isContainerSimpleFormat(const string &path)
     {
         ZipSerialize z(path, false);
         vector<string> list = z.list();
-        return !list.empty() && list.front() == "mimetype" && readMimetype(z) == MIMETYPE_ASIC_S;
+        return list.front() == "mimetype" && readMimetype(z) == MIMETYPE_ASIC_S;
     }
     catch(const Exception &)
     {
