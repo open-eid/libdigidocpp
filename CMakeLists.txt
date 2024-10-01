@@ -95,7 +95,7 @@ enable_testing()
 add_subdirectory(src)
 add_subdirectory(examples)
 
-find_package( Boost COMPONENTS unit_test_framework )
+find_package(Boost COMPONENTS unit_test_framework QUIET)
 if(TARGET Boost::unit_test_framework)
     add_subdirectory(test)
 endif()

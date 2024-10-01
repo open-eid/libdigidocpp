@@ -11,7 +11,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO openssl/openssl
     REF "openssl-${VERSION}"
-    SHA512 ebd70c82ef2b8d882858e26333c27b8975e55cc8a350b646c24505cd6feba1e92d4894026ec6b0cefe6d7dcbedb5799bd72df4114c832efb2616b68ad303f5d1
+    SHA512 d6f10f0f07dfa29d6d3f8a82d32c316a9c1ae3f54ecccfd11be0a5e01402779061c9389207968b3da4a67efd8d19b1695f6a1c45fde0d0f4e7b267a316ddb59c
     PATCHES
         disable-apps.patch
         command-line-length.patch
