@@ -60,6 +60,9 @@ extern "C"
     SWIGEXPORT int SWIGSTDCALL ByteVector_size(void *ptr) {
        return static_cast<std::vector<unsigned char>*>(ptr)->size();
     }
+    SWIGEXPORT void SWIGSTDCALL ByteVector_free(void *ptr) {
+        delete static_cast<std::vector<unsigned char>*>(ptr);
+    }
     SWIGEXPORT void* SWIGSTDCALL ByteVector_to(unsigned char *data, int size) {
        return new std::vector<unsigned char>(data, data + size);
     }
@@ -72,112 +75,93 @@ extern "C"
   public static extern global::System.IntPtr ByteVector_data(global::System.IntPtr data);
   [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_size")]
   public static extern int ByteVector_size(global::System.IntPtr data);
+  [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_free")]
+  public static extern void ByteVector_free(global::System.IntPtr data);
   [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_to")]
   public static extern global::System.IntPtr ByteVector_to(
-    [global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPArray)]byte[] data, int size);
-
-  public class UTF8Marshaler : global::System.Runtime.InteropServices.ICustomMarshaler {
-    static UTF8Marshaler static_instance = new UTF8Marshaler();
-
-    public global::System.IntPtr MarshalManagedToNative(object managedObj) {
-        if (managedObj == null)
-            return global::System.IntPtr.Zero;
-        if (!(managedObj is string))
-            throw new global::System.Runtime.InteropServices.MarshalDirectiveException(
-                   "UTF8Marshaler must be used on a string.");
-
-        // not null terminated
-        byte[] strbuf = global::System.Text.Encoding.UTF8.GetBytes((string)managedObj);
-        global::System.IntPtr buffer = global::System.Runtime.InteropServices.Marshal.AllocHGlobal(strbuf.Length + 1);
-        global::System.Runtime.InteropServices.Marshal.Copy(strbuf, 0, buffer, strbuf.Length);
-
-        // write the terminating null
-        global::System.Runtime.InteropServices.Marshal.WriteByte(buffer + strbuf.Length, 0);
-        return buffer;
-    }
-
-    public unsafe object MarshalNativeToManaged(global::System.IntPtr pNativeData) {
-        byte* walk = (byte*)pNativeData;
-
-        // find the end of the string
-        while (*walk != 0) {
-            walk++;
-        }
-        int length = (int)(walk - (byte*)pNativeData);
-
-        // should not be null terminated
-        byte[] strbuf = new byte[length];
-        // skip the trailing null
-        global::System.Runtime.InteropServices.Marshal.Copy((global::System.IntPtr)pNativeData, strbuf, 0, length);
-        return global::System.Text.Encoding.UTF8.GetString(strbuf);
-    }
-
-    public void CleanUpNativeData(global::System.IntPtr pNativeData) {
-        global::System.Runtime.InteropServices.Marshal.FreeHGlobal(pNativeData);
-    }
-
-    public void CleanUpManagedData(object managedObj) {
-    }
-
-    public int GetNativeDataSize() {
-        return -1;
-    }
-
-    public static global::System.Runtime.InteropServices.ICustomMarshaler GetInstance(string cookie) {
-        return static_instance;
-    }
-  }
+  [global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPArray)]byte[] data, int size);
 %}
 
 #ifdef SWIGJAVA
-%typemap(in) std::vector<unsigned char> %{
-    jbyte *$input_ptr = jenv->GetByteArrayElements($input, NULL);
-    jsize $input_size = jenv->GetArrayLength($input);
-    std::vector<unsigned char> $1_data($input_ptr, $input_ptr+$input_size);
-    $1 = &$1_data;
-    jenv->ReleaseByteArrayElements($input, $input_ptr, JNI_ABORT);
-%}
-%typemap(out) std::vector<unsigned char> %{
-    jresult = jenv->NewByteArray((&result)->size());
-    jenv->SetByteArrayRegion(jresult, 0, (&result)->size(), (const jbyte*)(&result)->data());
-%}
-%typemap(jtype) std::vector<unsigned char> "byte[]"
+%fragment("SWIG_VectorUnsignedCharToJavaArray", "header") {
+static jbyteArray SWIG_VectorUnsignedCharToJavaArray(JNIEnv *jenv, const std::vector<unsigned char> &data) {
+    jbyteArray jresult = JCALL1(NewByteArray, jenv, data.size());
+    if (!jresult)
+        return nullptr;
+    JCALL4(SetByteArrayRegion, jenv, jresult, 0, data.size(), (const jbyte*)data.data());
+    return jresult;
+}}
+%fragment("SWIG_JavaArrayToVectorUnsignedChar", "header") {
+static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *jenv, jbyteArray data) {
+    std::vector<unsigned char> *result = new std::vector<unsigned char>(JCALL1(GetArrayLength, jenv, data));
+    JCALL4(GetByteArrayRegion, jenv, data, 0, result->size(), (jbyte*)result->data());
+    return result;
+}}
+%typemap(in, fragment="SWIG_JavaArrayToVectorUnsignedChar") std::vector<unsigned char>
+%{ $1 = SWIG_JavaArrayToVectorUnsignedChar(jenv, $input); %}
+%typemap(out, fragment="SWIG_VectorUnsignedCharToJavaArray") std::vector<unsigned char>, digidoc::X509Cert
+%{ $result = SWIG_VectorUnsignedCharToJavaArray(jenv, $1); %}
+%typemap(jtype) std::vector<unsigned char>, digidoc::X509Cert "byte[]"
 %typemap(jstype) std::vector<unsigned char> "byte[]"
-%typemap(jni) std::vector<unsigned char> "jbyteArray"
-%typemap(javain) std::vector<unsigned char> "$javainput"
+%typemap(jstype) digidoc::X509Cert "java.security.cert.X509Certificate"
+%typemap(jni) std::vector<unsigned char>, digidoc::X509Cert "jbyteArray"
+%typemap(javain) std::vector<unsigned char>, digidoc::X509Cert "$javainput"
 %typemap(javaout) std::vector<unsigned char> {
     return $jnicall;
   }
+%typemap(javaout, throws="java.security.cert.CertificateException, java.io.IOException") digidoc::X509Cert {
+    byte[] der = $jnicall;
+    java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X509");
+    try (java.io.ByteArrayInputStream is = new java.io.ByteArrayInputStream(der)) {
+        return (java.security.cert.X509Certificate) cf.generateCertificate(is);
+    }
+  }
+
 #elif defined(SWIGCSHARP)
 %typemap(cstype) std::vector<unsigned char> "byte[]"
-%typemap(csin,
-         pre= "	global::System.IntPtr cPtr$csinput = digidocPINVOKE.ByteVector_to($csinput, $csinput.Length);
-	global::System.Runtime.InteropServices.HandleRef handleRef$csinput = new global::System.Runtime.InteropServices.HandleRef(this, cPtr$csinput);"
+%typemap(cstype) digidoc::X509Cert "System.Security.Cryptography.X509Certificates.X509Certificate2"
+%typemap(csin, pre= "    global::System.IntPtr cPtr$csinput = digidocPINVOKE.ByteVector_to($csinput, $csinput.Length);
+    var handleRef$csinput = new global::System.Runtime.InteropServices.HandleRef(this, cPtr$csinput);"
 ) std::vector<unsigned char> "handleRef$csinput"
 %typemap(csout, excode=SWIGEXCODE) std::vector<unsigned char> {
-  global::System.IntPtr data = $imcall;$excode
-  byte[] result = new byte[$modulePINVOKE.ByteVector_size(data)];
-  global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(data), result, 0, result.Length);
-  return result;
-}
-#elif defined(SWIGPYTHON)
-  %typemap(in) std::vector<unsigned char> %{
-  if (PyBytes_Check($input)) {
-    const char *data = PyBytes_AsString($input);
-    $1 = new std::vector<unsigned char>(data, data + PyBytes_Size($input));
-  } else if (PyString_Check($input)) {
-    const char *data = PyString_AsString($input);
-    $1 = new std::vector<unsigned char>(data, data + PyString_Size($input));
-  } else {
-    PyErr_SetString(PyExc_TypeError, "not a bytes");
-    SWIG_fail;
+    global::System.IntPtr cPtr = $imcall;$excode
+    byte[] result = new byte[$modulePINVOKE.ByteVector_size(cPtr)];
+    global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(cPtr), result, 0, result.Length);
+    $modulePINVOKE.ByteVector_free(cPtr);
+    return result;
   }
-  %}
+%typemap(csout, excode=SWIGEXCODE) digidoc::X509Cert {
+    global::System.IntPtr cPtr = $imcall;$excode
+    byte[] der = new byte[$modulePINVOKE.ByteVector_size(cPtr)];
+    global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(cPtr), der, 0, der.Length);
+    $modulePINVOKE.ByteVector_free(cPtr);
+    return new System.Security.Cryptography.X509Certificates.X509Certificate2(der);
+  }
+%typemap(out) std::vector<unsigned char> %{  $result = new std::vector<unsigned char>(std::move($1)); %}
+%typemap(out) digidoc::X509Cert %{  $result = new std::vector<unsigned char>($1); %}
+
+#elif defined(SWIGPYTHON)
+%typemap(in) std::vector<unsigned char> %{
+    if (PyBytes_Check($input)) {
+        const char *data = PyBytes_AsString($input);
+        $1 = new std::vector<unsigned char>(data, data + PyBytes_Size($input));
+    } else if (PyString_Check($input)) {
+        const char *data = PyString_AsString($input);
+        $1 = new std::vector<unsigned char>(data, data + PyString_Size($input));
+    } else {
+        PyErr_SetString(PyExc_TypeError, "not a bytes");
+        SWIG_fail;
+    }
+%}
 %typemap(out) std::vector<unsigned char>
 %{ $result = PyBytes_FromStringAndSize((const char*)(&result)->data(), (&result)->size()); %}
+%typemap(out) digidoc::X509Cert {
+    std::vector<unsigned char> temp = $1;
+    $result = PyBytes_FromStringAndSize((const char*)temp.data(), temp.size());
+}
+#endif
 %typemap(freearg) std::vector<unsigned char>
 %{ delete $1; %}
-#endif
 %apply std::vector<unsigned char> { std::vector<unsigned char> const & };
 
 %exception %{
@@ -208,11 +192,6 @@ extern "C"
 %ignore digidoc::ConfV2::verifyServiceCert;
 %ignore digidoc::ConfV4::verifyServiceCerts;
 %ignore digidoc::ConfV5::TSCerts;
-%ignore digidoc::Signer::cert;
-%ignore digidoc::Signature::signingCertificate;
-%ignore digidoc::Signature::OCSPCertificate;
-%ignore digidoc::Signature::TimeStampCertificate;
-%ignore digidoc::Signature::ArchiveTimeStampCertificate;
 // hide stream methods, swig cannot generate usable wrappers
 %ignore digidoc::DataFile::saveAs(std::ostream &os) const;
 %ignore digidoc::Container::addAdESSignature(std::istream &signature);
@@ -260,15 +239,10 @@ def transfer(self):
 %include "std_vector.i"
 %include "std_map.i"
 #ifdef SWIGCSHARP
-namespace std {
-  %typemap(imtype,
-    inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]",
-    outattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]")
-    string "string"
-  %typemap(imtype,
-    inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]",
-    outattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]") const string & "string"
-}
+%typemap(imtype,
+  inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
+  outattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]")
+  std::string, const std::string & "string"
 #endif
 
 // Handle DigiDoc Export declarations
@@ -294,31 +268,6 @@ namespace std {
 %template(DataFiles) std::vector<digidoc::DataFile*>;
 %template(Signatures) std::vector<digidoc::Signature*>;
 
-// override X509Cert methods to return byte array
-%extend digidoc::Signer {
-    std::vector<unsigned char> cert() const
-    {
-        return $self->cert();
-    }
-}
-%extend digidoc::Signature {
-    std::vector<unsigned char> signingCertificateDer() const
-    {
-        return $self->signingCertificate();
-    }
-    std::vector<unsigned char> OCSPCertificateDer() const
-    {
-        return $self->OCSPCertificate();
-    }
-    std::vector<unsigned char> TimeStampCertificateDer() const
-    {
-        return $self->TimeStampCertificate();
-    }
-    std::vector<unsigned char> ArchiveTimeStampCertificateDer() const
-    {
-        return $self->ArchiveTimeStampCertificate();
-    }
-}
 %extend digidoc::Container {
     static digidoc::Container* open(const std::string &path, digidoc::ContainerOpenCB *cb)
     {
