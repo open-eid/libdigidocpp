@@ -96,8 +96,8 @@ void SignatureTST::validate() const
         const auto *dataFile = static_cast<const DataFilePrivate*>(asicSDoc->dataFiles().front());
         timestampToken->verify(dataFile->calcDigest(digestMethod));
 
-        if(digestMethod == URI_SHA1 &&
-            !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
+        if(!Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
+            Digest::isWeakDigest(digestMethod))
         {
             Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", digestMethod.c_str()));
             e.setCode(Exception::ReferenceDigestWeak);

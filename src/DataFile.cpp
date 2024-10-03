@@ -23,7 +23,6 @@
 #include "util/File.h"
 #include "util/log.h"
 
-#include <array>
 #include <fstream>
 
 using namespace digidoc;
@@ -98,19 +97,18 @@ DataFilePrivate::DataFilePrivate(unique_ptr<istream> &&is, string filename, stri
     m_size = pos < 0 ? 0 : (unsigned long)pos;
 }
 
-vector<unsigned char> DataFilePrivate::calcDigest(const string &method) const
+void DataFilePrivate::digest(const Digest &digest) const
 {
-    Digest digest(method);
-    array<unsigned char, 10240> buf{};
     m_is->clear();
     m_is->seekg(0);
-    while(*m_is)
-    {
-        m_is->read((char*)buf.data(), streamsize(buf.size()));
-        if(m_is->gcount() > 0)
-            digest.update(buf.data(), size_t(m_is->gcount()));
-    }
-    return digest.result();
+    digest.update(*m_is);
+}
+
+vector<unsigned char> DataFilePrivate::calcDigest(const string &method) const
+{
+    Digest d(method);
+    digest(d);
+    return d.result();
 }
 
 void DataFilePrivate::saveAs(const string& path) const

@@ -26,6 +26,7 @@
 
 namespace digidoc
 {
+class Digest;
 
 class DataFilePrivate final: public DataFile
 {
@@ -37,6 +38,7 @@ public:
 	unsigned long fileSize() const final { return m_size; }
 	std::string mediaType() const final { return m_mediatype; }
 
+	void digest(const Digest &method) const;
 	std::vector<unsigned char> calcDigest(const std::string &method) const final;
 	void saveAs(std::ostream &os) const final;
 	void saveAs(const std::string& path) const final;

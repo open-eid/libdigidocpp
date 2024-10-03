@@ -47,7 +47,7 @@ protected:
     TS TimeStamp() const;
 
     static TS verifyTS(XMLNode timestamp, Exception &exception,
-        std::function<void (Digest *, std::string_view)> &&calcDigest);
+        std::function<void (const Digest &, std::string_view)> &&calcDigest);
 
 private:
     DISABLE_COPY(SignatureXAdES_T);

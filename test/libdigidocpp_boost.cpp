@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
         if(s3)
         {
-            BOOST_CHECK_EQUAL(s3->signatureMethod(), URI_ECDSA_SHA384);
+            BOOST_CHECK_EQUAL(s3->signatureMethod(), "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384");
             BOOST_CHECK_EQUAL(s3->signingCertificate(), signer3.cert());
             BOOST_CHECK_NO_THROW(s3->validate());
         }
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
             // RSA PSS tests
             d = Container::createPtr(Doc::EXT + ".tmp");
             BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
-            signer1.setMethod(URI_RSA_PSS_SHA256);
+            signer1.setMethod("http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1");
             BOOST_CHECK_NO_THROW(s = d->sign(&signer1));
             BOOST_CHECK_NO_THROW(s->validate());
             BOOST_CHECK_EQUAL(s->signatureMethod(), signer1.method());

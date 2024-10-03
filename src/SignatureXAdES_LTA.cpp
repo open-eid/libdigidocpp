@@ -29,7 +29,6 @@
 #include "util/File.h"
 
 #include <algorithm>
-#include <array>
 
 using namespace digidoc;
 using namespace digidoc::util;
@@ -40,8 +39,7 @@ namespace digidoc
 constexpr XMLName ArchiveTimeStamp {"ArchiveTimeStamp", XADESv141_NS};
 }
 
-void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
-    string_view canonicalizationMethod) const
+void SignatureXAdES_LTA::calcArchiveDigest(const Digest &digest, string_view canonicalizationMethod) const
 {
     for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
     {
@@ -66,16 +64,7 @@ void SignatureXAdES_LTA::calcArchiveDigest(Digest *digest,
         if(file == files.cend())
             THROW("Filed to find reference URI in container");
 
-        std::istream *is = static_cast<const DataFilePrivate*>(*file)->m_is.get();
-        array<unsigned char, 10240> buf{};
-        is->clear();
-        is->seekg(0);
-        while(*is)
-        {
-            is->read((char*)buf.data(), streamsize(buf.size()));
-            if(is->gcount() > 0)
-                digest->update(buf.data(), size_t(is->gcount()));
-        }
+        static_cast<const DataFilePrivate*>(*file)->digest(digest);
     }
 
     for(const auto *name: {"SignedInfo", "SignatureValue", "KeyInfo"})
@@ -119,7 +108,7 @@ void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
         return;
     Digest calc;
     auto method = canonicalizationMethod();
-    calcArchiveDigest(&calc, method);
+    calcArchiveDigest(calc, method);
 
     TS tsa(CONF(TSUrl), calc);
     auto ts = unsignedSignatureProperties() + ArchiveTimeStamp;
@@ -168,7 +157,7 @@ void SignatureXAdES_LTA::validate(const string &policy) const
         auto ts = unsignedSignatureProperties()/ArchiveTimeStamp;
         if(!ts)
             THROW("Missing ArchiveTimeStamp element");
-        verifyTS(ts, exception, [this](Digest *digest, string_view canonicalizationMethod) {
+        verifyTS(ts, exception, [this](const Digest &digest, string_view canonicalizationMethod) {
             calcArchiveDigest(digest, canonicalizationMethod);
         });
     } catch(const Exception &e) {

@@ -355,7 +355,7 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
         return doc;
     }
 
-    void c14n(Digest *digest, std::string_view algo, XMLNode node)
+    void c14n(const Digest &digest, std::string_view algo, XMLNode node)
     {
         xmlC14NMode mode = XML_C14N_1_0;
         int with_comments = 0;
@@ -383,7 +383,7 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
             auto *digest = static_cast<Digest *>(context);
             digest->update(pcxmlChar(buffer), size_t(len));
             return len;
-        }, nullptr, digest, nullptr), xmlOutputBufferClose);
+        }, nullptr, const_cast<Digest*>(&digest), nullptr), xmlOutputBufferClose);
         int size = xmlC14NExecute(get(), [](void *root, xmlNodePtr node, xmlNodePtr parent) constexpr noexcept {
             if(root == node)
                 return 1;

@@ -71,13 +71,14 @@ namespace digidoc
     {
       public:
           Digest(std::string_view uri = {});
-          ~Digest();
-          void update(const unsigned char *data, size_t length);
+          void update(const unsigned char *data, size_t length) const;
+          void update(std::istream &is) const;
           std::vector<unsigned char> result(const std::vector<unsigned char> &data);
           std::vector<unsigned char> result() const;
           std::string uri() const;
 
           static bool isRsaPssUri(std::string_view uri);
+          static bool isWeakDigest(std::string_view uri);
           static std::string toRsaUri(const std::string &uri);
           static std::string toRsaPssUri(std::string uri);
           static std::string toEcUri(const std::string &uri);
@@ -88,7 +89,6 @@ namespace digidoc
           static std::string digestInfoUri(const std::vector<unsigned char> &digest);
 
       private:
-          DISABLE_COPY(Digest);
           std::unique_ptr<EVP_MD_CTX, void (*)(EVP_MD_CTX*)> d;
     };
 

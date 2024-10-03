@@ -611,15 +611,9 @@ bool TSL::validateRemoteDigest(const string &url)
         digest = File::hexToBin(r.content);
     }
 
-    Digest sha(URI_RSA_SHA256);
-    array<unsigned char, 10240> buf{};
+    Digest sha(URI_SHA256);
     ifstream is(path, ifstream::binary);
-    while(is)
-    {
-        is.read((char*)buf.data(), streamsize(buf.size()));
-        if(is.gcount() > 0)
-            sha.update(buf.data(), size_t(is.gcount()));
-    }
+    sha.update(is);
 
     if(!digest.empty() && digest != sha.result())
         THROW("TSL %s remote digest does not match local. TSL might be outdated", territory().data());
