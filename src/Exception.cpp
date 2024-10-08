@@ -44,6 +44,10 @@ std::vector<Exception::ExceptionCode> Exception::ignores {};
  * General error, no specific code
  * @var digidoc::Exception::NetworkError
  * Network error, network connection errors
+ * @var digidoc::Exception::HostNotFound
+ * Network error, host not found
+ * @var digidoc::Exception::InvalidUrl
+ * Network error, invalid URL
  *
  * @var digidoc::Exception::CertificateIssuerMissing
  * Signer's certificate's issuer certificate is missing

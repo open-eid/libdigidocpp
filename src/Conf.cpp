@@ -334,7 +334,7 @@ vector<X509Cert> ConfV4::verifyServiceCerts() const
  * @see @ref parameters
  */
 /**
- * Version 4 config with new parameters
+ * Version 5 config with new parameters
  */
 ConfV5::ConfV5() = default;
 
