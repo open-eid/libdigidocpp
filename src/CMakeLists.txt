@@ -1,12 +1,12 @@
-if(NOT MINIZIP_FOUND)
+if(TARGET PkgConfig::MINIZIP)
+    add_library(minizip INTERFACE)
+    target_link_libraries(minizip INTERFACE PkgConfig::MINIZIP)
+else()
     message(STATUS "MiniZip not found; using bundled copy.")
     add_library(minizip STATIC minizip/zip.c minizip/unzip.c minizip/ioapi.c $<$<C_COMPILER_ID:MSVC>:minizip/iowin32.c>)
     target_compile_options(minizip PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-parameter -Wno-unused-value>)
     set_target_properties(minizip PROPERTIES COMPILE_DEFINITIONS "NOUNCRYPT;NOCRYPT" POSITION_INDEPENDENT_CODE YES)
     target_link_libraries(minizip ZLIB::ZLIB)
-else()
-    add_library(minizip INTERFACE)
-    target_link_libraries(minizip INTERFACE PkgConfig::MINIZIP)
 endif()
 
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
@@ -123,7 +123,7 @@ set_property(SOURCE Conf.cpp APPEND PROPERTY COMPILE_DEFINITIONS
 )
 
 set_target_properties(digidocpp PROPERTIES
-    VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
+    VERSION ${PROJECT_VERSION}
     SOVERSION 1
     PUBLIC_HEADER "${PUBLIC_HEADER}"
     RESOURCE ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf
@@ -230,7 +230,7 @@ install( TARGETS digidocpp
 
 if(WIN32)
     list(APPEND CRYPTO_HEADER crypto/WinSigner.h)
-    target_compile_options(digidocpp PUBLIC "/guard:cf")
+    target_compile_options(digidocpp_util PUBLIC "/guard:cf")
     target_link_options(digidocpp PUBLIC "/guard:cf")
     target_link_libraries(digidocpp PRIVATE Crypt32 cryptui ncrypt)
     install(FILES $<TARGET_PDB_FILE:digidocpp> $<TARGET_PDB_FILE:digidoc-tool> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)

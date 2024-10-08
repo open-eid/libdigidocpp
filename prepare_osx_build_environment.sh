@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-OPENSSL_DIR=openssl-3.0.14
+OPENSSL_DIR=openssl-3.0.15
 LIBXML2_DIR=libxml2-2.12.9
 XMLSEC_DIR=xmlsec1-1.3.5
 ANDROID_NDK=android-ndk-r26d
