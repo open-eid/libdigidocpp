@@ -76,8 +76,6 @@ add_compile_definitions(HAVE_CTYPE_H)
 add_compile_definitions(HAVE_MALLOC_H)
 add_compile_definitions(HAVE_MEMORY_H)
 add_compile_definitions(XMLSEC_DEFAULT_CRYPTO="openssl")
-add_compile_definitions(XMLSEC_NO_GOST)
-add_compile_definitions(XMLSEC_NO_GOST2012)
 add_compile_definitions(UNICODE)
 add_compile_definitions(_UNICODE)
 add_compile_definitions(_MBCS)
@@ -89,15 +87,18 @@ if(NOT BUILD_SHARED_LIBS)
     set(XMLSEC_CORE_CFLAGS "-DLIBXML_STATIC -DLIBXSLT_STATIC -DXMLSEC_STATIC -DXMLSEC_NO_CRYPTO_DYNAMIC_LOADING")
     set(XMLSEC_OPENSSL_CFLAGS ${XMLSEC_CORE_CFLAGS})
 else()
-    set(XMLSEC_CORE_CFLAGS "-DXMLSEC_DL_WIN32")
+    set(XMLSEC_CORE_CFLAGS "")
     set(XMLSEC_OPENSSL_CFLAGS ${XMLSEC_CORE_CFLAGS})
 endif()
 
 target_compile_definitions(xmlsec1
-    PRIVATE ${XMLSEC_CORE_CFLAGS}
+    PRIVATE ${XMLSEC_CORE_CFLAGS} $<$<PLATFORM_ID:Windows>:XMLSEC_DL_WIN32>
     PUBLIC XMLSEC_NO_XSLT XMLSEC_CRYPTO_OPENSSL
 )
-target_compile_definitions(xmlsec1-openssl PRIVATE ${XMLSEC_OPENSSL_CFLAGS})
+target_compile_definitions(xmlsec1-openssl
+    PRIVATE ${XMLSEC_OPENSSL_CFLAGS}
+    PUBLIC XMLSEC_NO_GOST XMLSEC_NO_GOST2012
+)
 
 install(TARGETS xmlsec1 xmlsec1-openssl
     EXPORT xmlsecExport

@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        target: [macos, iphoneos, iphonesimulator, androidarm, androidarm64, androidx86_64]
+        target: [macos, iphoneos, iphonesimulator]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -34,9 +34,6 @@ jobs:
     - name: Build openssl
       if: steps.cache.outputs.cache-hit != 'true'
       run: ./prepare_osx_build_environment.sh openssl ${{ matrix.target }}
-    - name: Build libxml2
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: ./prepare_osx_build_environment.sh libxml2 ${{ matrix.target }}
     - name: Build xmlsec
       if: steps.cache.outputs.cache-hit != 'true'
       run: ./prepare_osx_build_environment.sh xmlsec ${{ matrix.target }}
@@ -69,6 +66,42 @@ jobs:
         path: build/macos/libdigidocpp*.*
     - name: Archive artifacts
       if: matrix.target != 'macos'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.target }}
+        path: libdigidocpp*.zip
+  android:
+    name: Build on Ubuntu for ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+        - target: androidarm
+          triplet: arm-neon-android
+        - target: androidarm64
+          triplet: arm64-android
+        - target: androidx86_64
+          triplet: x64-android
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Prepare vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 0f8b6ddf49fa8ae66a7826234e9ba3fda5f46d3c
+        vcpkgJsonGlob: ./vcpkg.json
+        runVcpkgInstall: true
+      env:
+        VCPKG_DEFAULT_TRIPLET: ${{ matrix.triplet }}
+    - name: Build
+      run: |
+        cmake --preset ${{ matrix.target }} "-GUnix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=libdigidocpp.${{ matrix.target }}
+        cmake --build --preset ${{ matrix.target }}
+        cmake --build --preset ${{ matrix.target }} --target install/strip
+        zip -q -r libdigidocpp.${{ matrix.target }}.zip libdigidocpp.${{ matrix.target }}
+    - name: Archive artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.target }}
