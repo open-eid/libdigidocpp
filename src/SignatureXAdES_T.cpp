@@ -70,7 +70,7 @@ void SignatureXAdES_T::extendSignatureProfile(const std::string &profile)
 
     Digest calc;
     auto method = canonicalizationMethod();
-    signatures->c14n(&calc, method, signatureValue());
+    signatures->c14n(calc, method, signatureValue());
 
     TS tsa(CONF(TSUrl), calc);
     auto ts = usp + "SignatureTimeStamp";
@@ -109,7 +109,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
         if(ts + 1)
             THROW("More than one SignatureTimeStamp is not supported");
 
-        TS tsa = verifyTS(ts, exception, [this](Digest *digest, string_view canonicalizationMethod) {
+        TS tsa = verifyTS(ts, exception, [this](const Digest &digest, string_view canonicalizationMethod) {
             signatures->c14n(digest, canonicalizationMethod, signatureValue());
         });
 
@@ -163,7 +163,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
 
         for(auto sigAndRefsTS = usp/"SigAndRefsTimeStamp"; sigAndRefsTS; sigAndRefsTS++)
         {
-            verifyTS(sigAndRefsTS, exception, [this, usp](Digest *digest, string_view canonicalizationMethod) {
+            verifyTS(sigAndRefsTS, exception, [this, usp](const Digest &digest, string_view canonicalizationMethod) {
                 signatures->c14n(digest, canonicalizationMethod, signatureValue());
                 for(const auto *name: {
                        "SignatureTimeStamp",
@@ -195,7 +195,7 @@ XMLNode SignatureXAdES_T::unsignedSignatureProperties() const
 }
 
 TS SignatureXAdES_T::verifyTS(XMLNode timestamp, digidoc::Exception &exception,
-    std::function<void (Digest *, std::string_view)> &&calcDigest)
+    std::function<void (const Digest &, std::string_view)> &&calcDigest)
 {
     auto ets = timestamp/EncapsulatedTimeStamp;
     if(!ets)
@@ -205,11 +205,11 @@ TS SignatureXAdES_T::verifyTS(XMLNode timestamp, digidoc::Exception &exception,
 
     TS ts(ets);
     Digest calc(ts.digestMethod());
-    calcDigest(&calc, (timestamp/CanonicalizationMethod)["Algorithm"]);
+    calcDigest(calc, (timestamp/CanonicalizationMethod)["Algorithm"]);
     ts.verify(calc.result());
 
-    if(ts.digestMethod() == URI_SHA1 &&
-        !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak))
+    if(!Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
+        Digest::isWeakDigest(ts.digestMethod()))
     {
         Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", ts.digestMethod().c_str()));
         e.setCode(Exception::ReferenceDigestWeak);

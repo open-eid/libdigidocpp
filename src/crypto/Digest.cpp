@@ -25,6 +25,8 @@
 #include <openssl/evp.h>
 #include <openssl/x509.h>
 
+#include <array>
+
 using namespace std;
 using namespace digidoc;
 
@@ -43,11 +45,6 @@ Digest::Digest(string_view uri)
     if(EVP_DigestInit(d.get(), EVP_get_digestbynid(method)) != 1)
         THROW_OPENSSLEXCEPTION("Failed to initialize %.*s digest calculator", int(uri.size()), uri.data());
 }
-
-/**
- * Destroys OpenSSL digest calculator.
- */
-Digest::~Digest() = default;
 
 vector<unsigned char> Digest::addDigestInfo(vector<unsigned char> digest, string_view uri)
 {
@@ -114,6 +111,11 @@ bool Digest::isRsaPssUri(string_view uri)
 #else
         false;
 #endif
+}
+
+bool Digest::isWeakDigest(string_view uri)
+{
+    return toMethod(uri) == NID_sha1;
 }
 
 /**
@@ -224,12 +226,31 @@ std::string Digest::toUri(int nid)
  * @throws Exception throws exception if update failed.
  * @see result()
  */
-void Digest::update(const unsigned char *data, size_t length)
+void Digest::update(const unsigned char *data, size_t length) const
 {
     if(!data)
         THROW("Can not update digest value from NULL pointer.");
     if(EVP_DigestUpdate(d.get(), data, length) != 1)
         THROW_OPENSSLEXCEPTION("Failed to update %s digest value", uri().c_str());
+}
+
+/**
+ * Add data for digest calculation. After calling <code>result()</code> SHA context
+ * is uninitialized and this method should not be called.
+ *
+ * @param is stream to add for digest calculation.
+ * @throws Exception throws exception if update failed.
+ * @see result()
+ */
+void Digest::update(istream &is) const
+{
+    array<unsigned char, 10240> buf{};
+    while(is)
+    {
+        is.read((char*)buf.data(), streamsize(buf.size()));
+        if(is.gcount() > 0)
+            update(buf.data(), size_t(is.gcount()));
+    }
 }
 
 /**

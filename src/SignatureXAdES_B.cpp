@@ -284,7 +284,7 @@ SignatureXAdES_B::SignatureXAdES_B(unsigned int id, ASiContainer *container, Sig
     }
 
     Digest calc(digestMethod);
-    signatures->c14n(&calc, canonMethod, signedProperties);
+    signatures->c14n(calc, canonMethod, signedProperties);
     addReference("#" + nr + "-SignedProperties", calc.uri(), calc.result(), REF_TYPE, canonMethod);
 }
 
@@ -417,9 +417,8 @@ void SignatureXAdES_B::validate(const string &policy) const
     // It'll be only thrown in case we have a reason (cause).
     Exception exception(EXCEPTION_PARAMS("Signature validation"));
 
-    if(auto method = signatureMethod();
-        !Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
-       (method == URI_RSA_SHA1 || method == URI_ECDSA_SHA1))
+    if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
+        Digest::isWeakDigest(signatureMethod()))
     {
         Exception e(EXCEPTION_PARAMS("Signature digest weak"));
         e.setCode(Exception::SignatureDigestWeak);
@@ -496,9 +495,8 @@ void SignatureXAdES_B::validate(const string &policy) const
             continue;
         }
 
-        if(auto algo = (ref/DigestMethod)["Algorithm"];
-            !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
-            (algo == URI_SHA1 || algo == URI_SHA224))
+        if(!Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
+            Digest::isWeakDigest((ref/DigestMethod)["Algorithm"]))
         {
             Exception e(EXCEPTION_PARAMS("Reference '%.*s' digest weak", int(uri.size()), uri.data()));
             e.setCode(Exception::ReferenceDigestWeak);
@@ -566,7 +564,7 @@ vector<unsigned char> SignatureXAdES_B::dataToSign() const
 {
     Digest calc(signatureMethod());
     auto signedInfo = signature/"SignedInfo";
-    signatures->c14n(&calc, (signedInfo/CanonicalizationMethod)["Algorithm"], signedInfo);
+    signatures->c14n(calc, (signedInfo/CanonicalizationMethod)["Algorithm"], signedInfo);
     return calc.result();
 }
 

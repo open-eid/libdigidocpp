@@ -112,7 +112,7 @@ void SignatureSiVa::validate(const string &policy) const
     for(const Exception &exception: _exceptions)
         e.addCause(exception);
     if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
-        (_signatureMethod == URI_RSA_SHA1 || _signatureMethod == URI_ECDSA_SHA1))
+        Digest::isWeakDigest(_signatureMethod))
     {
         Exception ex(EXCEPTION_PARAMS("Signature digest weak"));
         ex.setCode(Exception::SignatureDigestWeak);
@@ -362,7 +362,7 @@ unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
             if(!useHashCode)
                 continue;
             Digest calc(URI_SHA1);
-            doc.c14n(&calc, XMLDocument::C14D_ID_1_0, dataFile);
+            doc.c14n(calc, XMLDocument::C14D_ID_1_0, dataFile);
             dataFile.setProperty("ContentType", "HASHCODE");
             dataFile.setProperty("DigestType", "sha1");
             dataFile.setProperty("DigestValue", to_base64(calc.result()));
