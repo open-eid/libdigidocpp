@@ -149,7 +149,8 @@ public class libdigidocpp {
                 System.out.println();
 
                 System.out.println("Time: " + signature.trustedSigningTime());
-                System.out.println("Cert: " + toX509(signature.signingCertificateDer()).getSubjectDN().toString());
+                System.out.println("Cert: " + signature.signingCertificate().getSubjectDN().toString());
+                System.out.println("TimeStamp Cert: " + signature.TimeStampCertificate().getSubjectDN().toString());
 
                 try
                 {
@@ -171,7 +172,7 @@ public class libdigidocpp {
     }
 
     static void version() {
-        System.out.println("DigiDocJAVA 0.3 libdigidocpp " + digidoc.version());
+        System.out.println("DigiDocJAVA 0.4 libdigidocpp " + digidoc.version());
     }
 
     static X509Certificate toX509(byte[] der) throws CertificateException {

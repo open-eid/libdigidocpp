@@ -154,8 +154,7 @@ namespace DigiDocCSharp
                     b.addDataFile(args[i], "application/octet-stream");
                 }
 
-                X509Certificate cert = new X509Certificate();
-                cert.Import(args[args.Length - 2]);
+                var cert = new X509Certificate(args[args.Length - 2]);
                 Signature c = b.prepareWebSignature(cert.Export(X509ContentType.Cert), "time-stamp");
                 Console.WriteLine("Signature method: " + c.signatureMethod());
                 Console.WriteLine("Digest to sign: " + BitConverter.ToString(c.dataToSign()).Replace("-", string.Empty));
@@ -207,7 +206,8 @@ namespace DigiDocCSharp
                     Console.WriteLine();
 
                     Console.WriteLine("Time: " + s.trustedSigningTime());
-                    Console.WriteLine("Cert: " + new X509Certificate2(s.signingCertificateDer()).Subject);
+                    Console.WriteLine("Cert: " + s.signingCertificate().Subject);
+                    Console.WriteLine("TimeStamp: " + s.TimeStampCertificate().Subject);
 
                     s.validate();
                     Console.WriteLine("Signature is valid");
