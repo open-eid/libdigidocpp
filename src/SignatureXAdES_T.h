@@ -40,7 +40,7 @@ public:
     X509Cert TimeStampCertificate() const override;
     std::string TimeStampTime() const override;
     void validate(const std::string &policy) const override;
-    void extendSignatureProfile(const std::string &profile) override;
+    void extendSignatureProfile(Signer *signer) override;
 
 protected:
     XMLNode unsignedSignatureProperties() const;

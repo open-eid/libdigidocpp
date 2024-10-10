@@ -29,7 +29,6 @@
 
 #include <cstring>
 #include <functional>
-#include <sstream>
 
 using namespace digidoc;
 using namespace std;
@@ -280,7 +279,7 @@ X509Cert::~X509Cert() = default;
  */
 X509Cert::operator std::vector<unsigned char>() const
 {
-    return i2d(cert.get(), i2d_X509);
+    return i2d(cert, i2d_X509);
 }
 
 /**

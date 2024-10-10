@@ -67,6 +67,7 @@ Command sign:
     --rsapss       - Use RSA PSS padding
     --tsurl        - option to change TS URL (default http://demo.sk.ee/tsa)
     --dontValidate - Don't validate container on signature creation
+    --userAgent    - Additional info info that is sent to TSA or OCSP service
 
 All commands:
     --nocolor       - Disable terminal colors

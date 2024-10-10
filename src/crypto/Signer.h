@@ -36,6 +36,7 @@ namespace digidoc
           virtual std::vector<unsigned char> sign(const std::string &method, const std::vector<unsigned char> &digest) const = 0;
           virtual std::string method() const;
           std::string profile() const;
+          std::string userAgent() const;
           bool usingENProfile() const;
 
           std::string city() const;
@@ -46,6 +47,7 @@ namespace digidoc
           std::vector<std::string> signerRoles() const;
           void setMethod(const std::string &method);
           void setProfile(const std::string &profile);
+          void setUserAgent(const std::string &userAgent);
           void setENProfile(bool enable);
           void setSignatureProductionPlace(const std::string &city, const std::string &stateOrProvince,
               const std::string &postalCode, const std::string &countryName);

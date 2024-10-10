@@ -26,8 +26,8 @@
 #include <string>
 #include <vector>
 
-typedef struct bio_st BIO;
-typedef struct ssl_ctx_st SSL_CTX;
+using BIO = struct bio_st;
+using SSL_CTX = struct ssl_ctx_st;
 
 namespace digidoc {
 
@@ -61,7 +61,7 @@ public:
     };
 
     Connect(const std::string &url, std::string method = "POST",
-        int timeout = 0, const std::vector<X509Cert> &certs = {});
+        int timeout = 0, const std::vector<X509Cert> &certs = {}, const std::string &userAgentData = {});
     ~Connect();
     inline Result exec(std::initializer_list<std::pair<std::string_view,std::string_view>> headers,
         const std::vector<unsigned char> &data)

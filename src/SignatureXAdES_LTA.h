@@ -32,7 +32,7 @@ public:
     X509Cert ArchiveTimeStampCertificate() const final;
     std::string ArchiveTimeStampTime() const final;
     void validate(const std::string &policy) const final;
-    void extendSignatureProfile(const std::string &profile) final;
+    void extendSignatureProfile(Signer *signer) final;
 
 private:
     DISABLE_COPY(SignatureXAdES_LTA);
