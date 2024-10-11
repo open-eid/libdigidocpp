@@ -9,6 +9,22 @@ else()
     target_link_libraries(minizip ZLIB::ZLIB)
 endif()
 
+if($ENV{BUILD_NUMBER})
+    set(BUILD_VER $ENV{BUILD_NUMBER})
+elseif(PROJECT_VERSION_TWEAK)
+    set(BUILD_VER ${PROJECT_VERSION_TWEAK})
+else()
+    set(BUILD_VER 0)
+endif()
+
+add_definitions(
+    -DMAJOR_VER=${PROJECT_VERSION_MAJOR}
+    -DMINOR_VER=${PROJECT_VERSION_MINOR}
+    -DRELEASE_VER=${PROJECT_VERSION_PATCH}
+    -DBUILD_VER=${BUILD_VER}
+)
+set(VERSION ${PROJECT_VERSION}.${BUILD_VER})
+
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
 configure_file( ${CMAKE_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf )
 
@@ -130,6 +146,8 @@ set_target_properties(digidocpp PROPERTIES
     FRAMEWORK_VERSION 1
     FRAMEWORK "${FRAMEWORK}"
     MACOSX_FRAMEWORK_IDENTIFIER "ee.ria.digidocpp"
+    MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${PROJECT_VERSION}
+    MACOSX_FRAMEWORK_BUNDLE_VERSION ${BUILD_VER}
     MACOSX_RPATH YES
     COMPILE_DEFINITIONS TARGET_NAME="$<TARGET_NAME:digidocpp>"
     POSITION_INDEPENDENT_CODE YES

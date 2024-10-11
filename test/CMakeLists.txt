@@ -1,4 +1,3 @@
-set_env(RUN_TESTS "" CACHE STRING "Run tests on build")
 set_env(TEST_FORMAT XML CACHE STRING "Test result format (XML/JUNIT)")
 set( CMAKE_SKIP_RPATH OFF )
 add_definitions(

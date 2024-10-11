@@ -18,7 +18,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package Name="Libdigidocpp $(sys.BUILDARCH)" UpgradeCode="$(var.UpgradeCode)"
-      Language="1033" Version="$(var.MSI_VERSION)" Manufacturer="RIA" InstallerVersion="500">
+      Language="1033" Version="!(bind.FileVersion.digidocpp)" Manufacturer="RIA" InstallerVersion="500">
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
     <Icon Id="ID.ico" SourceFile="$(var.ICON)" />
     <Property Id="ARPPRODUCTICON" Value="ID.ico" />
@@ -54,7 +54,7 @@
     </ComponentGroup>
 
     <ComponentGroup Id="Libraries" Source="$(var.libdigidocpp)\bin">
-      <File Name="digidocpp.dll" />
+      <File Id="digidocpp" Name="digidocpp.dll" />
       <File Name="digidoc-tool.exe" />
       <File Source="$(var.libdigidocpp)\etc\digidocpp\digidocpp.conf" />
 <?ifdef var.swig ?>
