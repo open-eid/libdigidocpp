@@ -38,9 +38,10 @@ namespace digidoc
     class ASiContainer: public Container
     {
       public:
-          static const std::string MIMETYPE_ASIC_E;
-          static const std::string MIMETYPE_ASIC_S;
-          static const std::string MIMETYPE_ADOC;
+          static constexpr std::string_view MIMETYPE_ASIC_E = "application/vnd.etsi.asic-e+zip";
+          static constexpr std::string_view MIMETYPE_ASIC_S = "application/vnd.etsi.asic-s+zip";
+          //https://signa.mitsoft.lt/static/signa-web/webResources/docs/ADOC_specification_approved20090907_EN.pdf
+          static constexpr std::string_view MIMETYPE_ADOC = "application/vnd.lt.archyvai.adoc-2008";
 
           ~ASiContainer() override;
           std::string mediaType() const override;
@@ -55,18 +56,17 @@ namespace digidoc
           static std::string readMimetype(const ZipSerialize &z);
 
       protected:
-          ASiContainer(const std::string &mimetype);
+          ASiContainer(std::string_view mimetype);
 
           void addDataFilePrivate(std::unique_ptr<std::istream> is, std::string fileName, std::string mediaType);
           Signature* addSignature(std::unique_ptr<Signature> &&signature);
           std::unique_ptr<std::iostream> dataStream(const std::string &path, const ZipSerialize &z) const;
-          std::unique_ptr<ZipSerialize> load(const std::string &path, bool requireMimetype, const std::set<std::string> &supported);
+          std::unique_ptr<ZipSerialize> load(const std::string &path, bool requireMimetype, const std::set<std::string_view> &supported);
           void deleteSignature(Signature* s);
 
           void zpath(const std::string &file);
           std::string zpath() const;
-          ZipSerialize::Properties zproperty(const std::string &file) const;
-          void zproperty(const std::string &file, ZipSerialize::Properties &&prop);
+          const ZipSerialize::Properties &zproperty(const std::string &file) const;
 
       private:
           DISABLE_COPY(ASiContainer);
