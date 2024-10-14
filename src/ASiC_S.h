@@ -23,7 +23,7 @@
 
 namespace digidoc
 {
-    class ZipSerialize;
+    class Digest;
 
     /**
     * Implements the ASiC-S specification of the timestamped digital document container.
@@ -32,13 +32,14 @@ namespace digidoc
     */
     class ASiC_S : public ASiContainer
     {
-
     public:
-        void save(const std::string &path = {}) override;
+        static constexpr std::string_view ASIC_TST_PROFILE = "TimeStampToken";
 
         void addAdESSignature(std::istream &sigdata) override;
         Signature* prepareSignature(Signer *signer) override;
         Signature* sign(Signer* signer) override;
+
+        Digest fileDigest(const std::string &file, std::string_view method = {}) const;
 
         static std::unique_ptr<Container> createInternal(const std::string &path);
         static std::unique_ptr<Container> openInternal(const std::string &path, ContainerOpenCB *cb);
@@ -48,6 +49,12 @@ namespace digidoc
         ASiC_S(const std::string &path);
         DISABLE_COPY(ASiC_S);
 
+        void addDataFileChecks(const std::string &path, const std::string &mediaType) override;
+        void save(const ZipSerialize &s) final;
+
         static bool isContainerSimpleFormat(const std::string &path);
+
+        struct Data;
+        std::vector<Data> metadata;
     };
 }

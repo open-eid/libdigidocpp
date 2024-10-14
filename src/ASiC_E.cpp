@@ -26,7 +26,6 @@
 #include "crypto/Digest.h"
 #include "crypto/Signer.h"
 #include "util/File.h"
-#include "util/ZipSerialize.h"
 
 #include <algorithm>
 #include <set>
@@ -36,10 +35,6 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-const string_view ASiC_E::ASIC_TM_PROFILE = "time-mark";
-const string_view ASiC_E::ASIC_TS_PROFILE = "time-stamp";
-const string_view ASiC_E::ASIC_TSA_PROFILE = "time-stamp-archive";
-const string_view ASiC_E::ASIC_TMA_PROFILE = "time-mark-archive";
 constexpr string_view MANIFEST_NS {"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"};
 
 class ASiC_E::Private
@@ -65,7 +60,7 @@ ASiC_E::ASiC_E(const string &path)
     , d(make_unique<Private>())
 {
     auto zip = load(path, true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
-    parseManifestAndLoadFiles(*zip);
+    parseManifestAndLoadFiles(zip);
 }
 
 ASiC_E::~ASiC_E()
@@ -86,40 +81,21 @@ vector<DataFile*> ASiC_E::metaFiles() const
  *         document does not exist.
  * @throws Exception is thrown if ASiC_E class is not correctly initialized.
  */
-void ASiC_E::save(const string &path)
+void ASiC_E::save(const ZipSerialize &s)
 {
-    if(dataFiles().empty())
-        THROW("Can not save, container is empty.");
-    if(mediaType() != MIMETYPE_ASIC_E)
-        THROW("'%s' format is not supported", mediaType().c_str());
-
-    if(!path.empty())
-        zpath(path);
-    ZipSerialize s(zpath(), true);
-
-    stringstream mimetype;
-    mimetype << mediaType();
-    s.addFile("mimetype", mimetype, zproperty("mimetype"), ZipSerialize::DontCompress);
-
-    stringstream manifest;
-    createManifest(manifest);
-    s.addFile("META-INF/manifest.xml", manifest, zproperty("META-INF/manifest.xml"));
-
-    for(const DataFile *file: dataFiles())
-        s.addFile(file->fileName(), *(static_cast<const DataFilePrivate*>(file)->m_is), zproperty(file->fileName()));
+    if(!createManifest().save(s.addFile("META-INF/manifest.xml", zproperty("META-INF/manifest.xml"))))
+        THROW("Failed to create manifest XML");
 
     std::set<Signatures*> saved;
     unsigned int i = 0;
     for(Signature *iter: signatures())
     {
-        string file = Log::format("META-INF/signatures%u.xml", i++);
-        auto *signature = static_cast<SignatureXAdES_B*>(iter);
+        auto *signature = dynamic_cast<SignatureXAdES_B*>(iter);
         if(!saved.insert(signature->signatures.get()).second)
             continue;
-        stringstream ofs;
-        if(!signature->signatures->save(ofs))
+        string file = Log::format("META-INF/signatures%u.xml", i++);
+        if(!signature->signatures->save(s.addFile(file, zproperty(file))))
             THROW("Failed to create signature XML file.");
-        s.addFile(file, ofs, zproperty(file));
     }
 }
 
@@ -165,14 +141,10 @@ unique_ptr<Container> ASiC_E::openInternal(const string &path)
 /**
  * Creates BDoc container manifest file and returns its path.
  *
- * Note: If non-ascii characters are present in XML data, we depend on the LANG variable to be set properly
- * (see iconv --list for the list of supported encoding values for libiconv).
- *
- *
  * @return returns created manifest file path.
  * @throws Exception exception is thrown if manifest file creation failed.
  */
-void ASiC_E::createManifest(ostream &os)
+XMLDocument ASiC_E::createManifest()
 {
     DEBUG("ASiC_E::createManifest()");
     auto doc = XMLDocument::create("manifest", MANIFEST_NS, "manifest");
@@ -185,16 +157,12 @@ void ASiC_E::createManifest(ostream &os)
     add("/", mediaType());
     for(const DataFile *file: dataFiles())
         add(file->fileName(), file->mediaType());
-    if(!doc.save(os))
-        THROW("Failed to create manifest XML");
+    return doc;
 }
 
 /**
  * Parses manifest file and checks that files described in manifest exist, also
  * checks that no extra file do exist that are not described in manifest.xml.
- *
- * Note: If non-ascii characters are present in XML data, we depend on the LANG variable to be set properly
- * (see iconv --list for the list of supported encoding values for libiconv).
  *
  * @param path directory on disk of the BDOC container.
  * @throws Exception exception is thrown if the manifest.xml file parsing failed.
@@ -203,22 +171,14 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 {
     DEBUG("ASiC_E::readManifest()");
 
-    const vector<string> &list = z.list();
-    auto mcount = size_t(count(list.cbegin(), list.cend(), "META-INF/manifest.xml"));
-    if(mcount < 1)
-        THROW("Manifest file is missing");
-    if(mcount > 1)
-        THROW("Found multiple manifest files");
-
     try
     {
-        stringstream manifestdata;
-        z.extract("META-INF/manifest.xml", manifestdata);
+        auto manifestdata = z.extract<stringstream>("META-INF/manifest.xml");
+        auto doc = XMLDocument::openStream(manifestdata, {"manifest", MANIFEST_NS});
+        doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
 
         set<string_view> manifestFiles;
         bool mimeFound = false;
-        auto doc = XMLDocument::openStream(manifestdata, {"manifest", MANIFEST_NS});
-        doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
         for(auto file = doc/"file-entry"; file; file++)
         {
             auto full_path = file[{"full-path", MANIFEST_NS}];
@@ -239,24 +199,18 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             if(full_path.back() == '/') // Skip Directory entries
                 continue;
 
-            auto fcount = size_t(count(list.cbegin(), list.cend(), full_path));
-            if(fcount < 1)
-                THROW("File described in manifest '%s' does not exist in container.", full_path.data());
-            if(fcount > 1)
-                THROW("Found multiple references of file '%s' in zip container.", full_path.data());
-
             manifestFiles.insert(full_path);
             if(mediaType() == MIMETYPE_ADOC &&
                (full_path.compare(0, 9, "META-INF/") == 0 ||
                 full_path.compare(0, 9, "metadata/") == 0))
-                d->metadata.push_back(new DataFilePrivate(dataStream(string(full_path), z), string(full_path), string(media_type)));
+                d->metadata.push_back(new DataFilePrivate(dataStream(full_path, z), string(full_path), string(media_type)));
             else
-                addDataFilePrivate(dataStream(string(full_path), z), string(full_path), string(media_type));
+                addDataFilePrivate(dataStream(full_path, z), string(full_path), string(media_type));
         }
         if(!mimeFound)
             THROW("Manifest is missing mediatype file entry.");
 
-        for(const string &file: list)
+        for(const string &file: z.list())
         {
             /**
              * http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
@@ -266,12 +220,9 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             if(file.compare(0, 9, "META-INF/") == 0 &&
                file.find("signatures") != string::npos)
             {
-                if(count(list.begin(), list.end(), file) > 1)
-                    THROW("Multiple signature files with same name found '%s'", file.c_str());
                 try
                 {
-                    stringstream data;
-                    z.extract(file, data);
+                    auto data = z.extract<stringstream>(file);
                     auto signatures = make_shared<Signatures>(data, this);
                     for(auto s = signatures->signature(); s; s++)
                         addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
@@ -285,7 +236,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 
             if(file == "mimetype" || file.compare(0, 8,"META-INF") == 0)
                 continue;
-            if(manifestFiles.find(file) == manifestFiles.end())
+            if(manifestFiles.count(file) == 0)
                 THROW("File '%s' found in container is not described in manifest.", file.c_str());
         }
     }
@@ -312,7 +263,7 @@ Signature* ASiC_E::prepareSignature(Signer *signer)
 
 Signature *ASiC_E::sign(Signer* signer)
 {
-    auto *s = static_cast<SignatureXAdES_LTA*>(prepareSignature(signer));
+    auto *s = dynamic_cast<SignatureXAdES_LTA*>(prepareSignature(signer));
     try
     {
         s->setSignatureValue(signer->sign(s->signatureMethod(), s->dataToSign()));
