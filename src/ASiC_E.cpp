@@ -36,16 +36,19 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-const string_view ASiC_E::ASIC_TM_PROFILE = "time-mark";
-const string_view ASiC_E::ASIC_TS_PROFILE = "time-stamp";
-const string_view ASiC_E::ASIC_TSA_PROFILE = "time-stamp-archive";
-const string_view ASiC_E::ASIC_TMA_PROFILE = "time-mark-archive";
 constexpr string_view MANIFEST_NS {"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"};
 
 class ASiC_E::Private
 {
 public:
+    string unique_name() const
+    {
+        string file;
+        for(unsigned int i = 0; signatures.count(file = Log::format("META-INF/signatures%u.xml", i++)); );
+        return file;
+    }
     vector<DataFile*> metadata;
+    map<string,Signatures*> signatures;
 };
 
 /**
@@ -58,7 +61,7 @@ ASiC_E::ASiC_E()
 }
 
 /**
- * Opens BDOC container from a file
+ * Opens ASiC container from a file
  */
 ASiC_E::ASiC_E(const string &path)
     : ASiContainer(MIMETYPE_ASIC_E)
@@ -102,24 +105,28 @@ void ASiC_E::save(const string &path)
     s.addFile("mimetype", mimetype, zproperty("mimetype"), ZipSerialize::DontCompress);
 
     stringstream manifest;
-    createManifest(manifest);
+    if(!createManifest().save(manifest))
+        THROW("Failed to create manifest XML");
     s.addFile("META-INF/manifest.xml", manifest, zproperty("META-INF/manifest.xml"));
 
     for(const DataFile *file: dataFiles())
         s.addFile(file->fileName(), *(static_cast<const DataFilePrivate*>(file)->m_is), zproperty(file->fileName()));
 
     std::set<Signatures*> saved;
-    unsigned int i = 0;
     for(Signature *iter: signatures())
     {
-        string file = Log::format("META-INF/signatures%u.xml", i++);
-        auto *signature = static_cast<SignatureXAdES_B*>(iter);
-        if(!saved.insert(signature->signatures.get()).second)
+        auto *signatures = static_cast<SignatureXAdES_B*>(iter)->signatures.get();
+        if(!saved.insert(signatures).second)
             continue;
+        auto name = find_if(d->signatures.cbegin(), d->signatures.cend(), [signatures](const auto &k){
+            return k.second == signatures;
+        });
+        if(name == d->signatures.cend())
+            THROW("Unkown signature object");
         stringstream ofs;
-        if(!signature->signatures->save(ofs))
+        if(!signatures->save(ofs))
             THROW("Failed to create signature XML file.");
-        s.addFile(file, ofs, zproperty(file));
+        s.addFile(name->first, ofs, zproperty(name->first));
     }
 }
 
@@ -143,12 +150,9 @@ void ASiC_E::addAdESSignature(istream &data)
         THROW("No documents in container, can not add signature.");
     if(mediaType() != MIMETYPE_ASIC_E)
         THROW("'%s' format is not supported", mediaType().c_str());
-
     try
     {
-        auto signatures = make_shared<Signatures>(data, this);
-        for(auto s = signatures->signature(); s; s++)
-            addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
+        loadSignatures(data, d->unique_name());
     }
     catch(const Exception &e)
     {
@@ -165,14 +169,10 @@ unique_ptr<Container> ASiC_E::openInternal(const string &path)
 /**
  * Creates BDoc container manifest file and returns its path.
  *
- * Note: If non-ascii characters are present in XML data, we depend on the LANG variable to be set properly
- * (see iconv --list for the list of supported encoding values for libiconv).
- *
- *
  * @return returns created manifest file path.
  * @throws Exception exception is thrown if manifest file creation failed.
  */
-void ASiC_E::createManifest(ostream &os)
+XMLDocument ASiC_E::createManifest() const
 {
     DEBUG("ASiC_E::createManifest()");
     auto doc = XMLDocument::create("manifest", MANIFEST_NS, "manifest");
@@ -185,8 +185,15 @@ void ASiC_E::createManifest(ostream &os)
     add("/", mediaType());
     for(const DataFile *file: dataFiles())
         add(file->fileName(), file->mediaType());
-    if(!doc.save(os))
-        THROW("Failed to create manifest XML");
+    return doc;
+}
+
+void ASiC_E::loadSignatures(istream &data, const string &file)
+{
+    auto signatures = make_shared<Signatures>(data, mediaType());
+    d->signatures.emplace(file, signatures.get());
+    for(auto s = signatures->signature(); s; s++)
+        addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
 }
 
 /**
@@ -214,11 +221,11 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
     {
         stringstream manifestdata;
         z.extract("META-INF/manifest.xml", manifestdata);
+        auto doc = XMLDocument::openStream(manifestdata, {"manifest", MANIFEST_NS});
+        doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
 
         set<string_view> manifestFiles;
         bool mimeFound = false;
-        auto doc = XMLDocument::openStream(manifestdata, {"manifest", MANIFEST_NS});
-        doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
         for(auto file = doc/"file-entry"; file; file++)
         {
             auto full_path = file[{"full-path", MANIFEST_NS}];
@@ -272,9 +279,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 {
                     stringstream data;
                     z.extract(file, data);
-                    auto signatures = make_shared<Signatures>(data, this);
-                    for(auto s = signatures->signature(); s; s++)
-                        addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
+                    loadSignatures(data, file);
                 }
                 catch(const Exception &e)
                 {
@@ -307,7 +312,9 @@ Signature* ASiC_E::prepareSignature(Signer *signer)
         THROW("No documents in container, can not sign container.");
     if(!signer)
         THROW("Null pointer in ASiC_E::sign");
-    return addSignature(make_unique<SignatureXAdES_LTA>(newSignatureId(), this, signer));
+    auto signatures = make_shared<Signatures>();
+    d->signatures.emplace(d->unique_name(), signatures.get());
+    return addSignature(make_unique<SignatureXAdES_LTA>(signatures, newSignatureId(), this, signer));
 }
 
 Signature *ASiC_E::sign(Signer* signer)

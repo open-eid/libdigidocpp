@@ -43,7 +43,7 @@ namespace digidoc
     {
     public:
         explicit Signatures();
-        Signatures(std::istream &data, ASiContainer *container);
+        Signatures(std::istream &data, std::string_view mediaType);
 
         constexpr XMLNode signature() const noexcept
         {
@@ -55,7 +55,7 @@ namespace digidoc
     {
 
       public:
-          SignatureXAdES_B(unsigned int id, ASiContainer *bdoc, Signer *signer);
+          SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, unsigned int id, ASiContainer *bdoc, Signer *signer);
           SignatureXAdES_B(const std::shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container);
           ~SignatureXAdES_B();
 

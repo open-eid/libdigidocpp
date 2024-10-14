@@ -35,11 +35,11 @@
 using namespace digidoc;
 using namespace std;
 
-SignatureXAdES_LT::SignatureXAdES_LT(unsigned int id, ASiContainer *bdoc, Signer *signer)
-: SignatureXAdES_T(id, bdoc, signer)
+SignatureXAdES_LT::SignatureXAdES_LT(const shared_ptr<Signatures> &signatures, unsigned int id, ASiContainer *bdoc, Signer *signer)
+: SignatureXAdES_T(signatures, id, bdoc, signer)
 {}
 
-SignatureXAdES_LT::SignatureXAdES_LT(const std::shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container)
+SignatureXAdES_LT::SignatureXAdES_LT(const shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container)
     : SignatureXAdES_T(signatures, s, container)
 {
     try {
