@@ -28,11 +28,11 @@ namespace digidoc
 {
     /**
      * Base class for the ASiC (Associated Signature Container) documents.
-     * Implements the operations and data structures common for more specific ASiC 
+     * Implements the operations and data structures common for more specific ASiC
      * signature containers like ASiC-S and ASiC-E (e.g. Estonian BDoc).
      * See standards ETSI TS 102 918, ETSI TS 103 171, ETSI TS 103 174 for details.
      *
-     * Contains methods for detecting the container type and manipulating the container's 
+     * Contains methods for detecting the container type and manipulating the container's
      * zip archive.
      */
     class ASiContainer: public Container
@@ -51,6 +51,7 @@ namespace digidoc
           std::vector<DataFile*> dataFiles() const override;
           void removeDataFile(unsigned int id) override;
           void removeSignature(unsigned int id) override;
+          void save(const std::string &path) override;
           std::vector<Signature*> signatures() const override;
 
           static std::string readMimetype(const ZipSerialize &z);
@@ -58,20 +59,20 @@ namespace digidoc
       protected:
           ASiContainer(std::string_view mimetype);
 
+          virtual void addDataFileChecks(const std::string &path, const std::string &mediaType);
           void addDataFilePrivate(std::unique_ptr<std::istream> is, std::string fileName, std::string mediaType);
           Signature* addSignature(std::unique_ptr<Signature> &&signature);
-          std::unique_ptr<std::iostream> dataStream(const std::string &path, const ZipSerialize &z) const;
-          std::unique_ptr<ZipSerialize> load(const std::string &path, bool requireMimetype, const std::set<std::string_view> &supported);
+          std::unique_ptr<std::iostream> dataStream(std::string_view path, const ZipSerialize &z) const;
+          ZipSerialize load(const std::string &path, bool requireMimetype, const std::set<std::string_view> &supported);
+          virtual void save(const ZipSerialize &s) = 0;
           void deleteSignature(Signature* s);
 
           void zpath(const std::string &file);
           std::string zpath() const;
-          const ZipSerialize::Properties &zproperty(const std::string &file) const;
+          const ZipSerialize::Properties& zproperty(std::string_view file) const;
 
       private:
           DISABLE_COPY(ASiContainer);
-
-          void addDataFileChecks(const std::string &path, const std::string &mediaType);
 
           class Private;
           std::unique_ptr<Private> d;
