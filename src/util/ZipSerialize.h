@@ -28,25 +28,29 @@
 namespace digidoc
 {
     /**
-     * ZIP file implementation of the ISerialize interface. Saves files to ZIP file
-     * and extracts the ZIP file on demand. Uses ZLib to implement ZIP file operations.
+     * Saves files to ZIP file and extracts the ZIP file on demand. Uses ZLib to implement ZIP file operations.
      */
     class ZipSerialize
     {
       public:
-          struct Properties { std::string comment; time_t time; unsigned long size; };
-          enum Flags { NoFlags = 0, DontCompress = 1 };
-          ZipSerialize(std::string path, bool create);
-          ~ZipSerialize();
+          struct Properties {
+              std::string comment;
+              time_t time;
+              unsigned long size;
+          };
+
+          ZipSerialize(const std::string &path, bool create);
 
           std::vector<std::string> list() const;
-          void extract(const std::string &file, std::ostream &os) const;
-          void addFile(const std::string &containerPath, std::istream &is, const Properties &prop, Flags flags = NoFlags);
+          template<class T>
+          T extract(std::string_view file) const;
+          void addFile(const std::string &containerPath, std::istream &is, const Properties &prop, bool compress = true);
           Properties properties(const std::string &file) const;
 
       private:
-          DISABLE_COPY(ZipSerialize);
-          class Private;
-          std::unique_ptr<Private> d;
+          std::unique_ptr<void, int(*)(void*)> d;
     };
+
+    extern template std::fstream ZipSerialize::extract<std::fstream>(std::string_view file) const;
+    extern template std::stringstream ZipSerialize::extract<std::stringstream>(std::string_view file) const;
 }
