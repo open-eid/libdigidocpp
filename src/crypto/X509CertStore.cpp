@@ -35,15 +35,19 @@
 using namespace digidoc;
 using namespace std;
 
+template<typename C, typename T>
+[[nodiscard]]
+constexpr bool contains(const C &list, const T &value)
+{
+    return find(list.begin(), list.end(), std::forward<decltype(value)>(value)) != list.end();
+};
+
 const X509CertStore::Type X509CertStore::CA {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
 };
 
 const X509CertStore::Type X509CertStore::TSA {
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA",
     "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC",
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES",
 };
 
 const X509CertStore::Type X509CertStore::OCSP {
@@ -240,29 +244,24 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
     const vector<string> policies = cert.certificatePolicies();
     const vector<string> qcstatement = cert.qcStatements();
     const vector<X509Cert::KeyUsage> keyUsage = cert.keyUsage();
-    auto containsPolicy = [&policies](const string &policy) {
-        return find(policies.cbegin(), policies.cend(), policy) != policies.cend();
-    };
-    auto containsQCStatement = [&qcstatement](const string &statement) {
-        return find(qcstatement.cbegin(), qcstatement.cend(), statement) != qcstatement.cend();
-    };
-
-    bool isQCCompliant = containsQCStatement(X509Cert::QC_COMPLIANT);
+    bool isQCCompliant = contains(qcstatement, X509Cert::QC_COMPLIANT);
     bool isQSCD =
-        containsPolicy(X509Cert::QCP_PUBLIC_WITH_SSCD) ||
-        containsPolicy(X509Cert::QCP_LEGAL_QSCD) ||
-        containsPolicy(X509Cert::QCP_NATURAL_QSCD) ||
-        containsQCStatement(X509Cert::QC_SSCD);
+        contains(policies, X509Cert::QCP_PUBLIC_WITH_SSCD) ||
+        contains(policies, X509Cert::QCP_LEGAL_QSCD) ||
+        contains(policies, X509Cert::QCP_NATURAL_QSCD) ||
+        contains(qcstatement, X509Cert::QC_SSCD);
 
-    bool isESeal =  // Special treamtent for E-Seals
-        containsPolicy(X509Cert::QCP_LEGAL) ||
-        containsQCStatement(X509Cert::QCT_ESEAL);
-    auto matchPolicySet = [&containsPolicy](const vector<string> &policySet){
-        return all_of(policySet.cbegin(), policySet.cend(), containsPolicy);
+    bool isESeal = // Special treamtent for E-Seals
+        contains(policies, X509Cert::QCP_LEGAL) ||
+        contains(qcstatement, X509Cert::QCT_ESEAL);
+    auto matchPolicySet = [&policies](const vector<string> &policySet){
+        return all_of(policySet.cbegin(), policySet.cend(), [&policies](const string &policy) {
+            return contains(policies, policy);
+        });
     };
     auto matchKeyUsageSet = [&keyUsage](const map<X509Cert::KeyUsage,bool> &keyUsageSet){
         return all_of(keyUsageSet.cbegin(), keyUsageSet.cend(), [&keyUsage](pair<X509Cert::KeyUsage, bool> keyUsageBit){
-            return (find(keyUsage.cbegin(), keyUsage.cend(), keyUsageBit.first) != keyUsage.cend()) == keyUsageBit.second;
+            return contains(keyUsage, keyUsageBit.first) == keyUsageBit.second;
         });
     };
 

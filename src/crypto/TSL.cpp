@@ -80,17 +80,13 @@ constexpr array SERVICESTATUS_END {
 
 constexpr array SERVICES_SUPPORTED {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
-    //"http://uri.etsi.org/TrstSvc/Svctype/CA/PKC", //???
-    //"http://uri.etsi.org/TrstSvc/Svctype/NationalRootCA-QC", //???
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA",
     "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-QC", //???
-    "http://uri.etsi.org/TrstSvc/Svctype/TSA/TSS-AdESQCandQES", //???
 };
 
 template<typename C, typename T>
+[[nodiscard]]
 constexpr bool contains(const C &list, const T &value)
 {
     return find(list.begin(), list.end(), value) != list.end();

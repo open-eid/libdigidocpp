@@ -66,7 +66,7 @@ jobs:
       with:
         name: ${{ matrix.target }}
         path: |
-          build/macos/libdigidocpp*.*
+          build/*/libdigidocpp*.*
           libdigidocpp*.zip
   fedora:
     name: Build on Fedora ${{ matrix.container }}
@@ -79,7 +79,7 @@ jobs:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
-          ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-21-openjdk-devel rpm-build git
+          ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-21-openjdk-devel rpm-build
     - name: Checkout
       uses: actions/checkout@v4
     - name: Build
@@ -105,7 +105,7 @@ jobs:
       DEBEMAIL: github-actions@github.com
     steps:
     - name: Install dependencies
-      run: apt update -qq && apt install --no-install-recommends -y git lsb-release build-essential devscripts debhelper lintian pkg-config ${UBUNTU_DEPS} doxygen swig openjdk-11-jdk-headless libpython3-dev python3-setuptools libboost-test-dev
+      run: apt update -qq && apt install --no-install-recommends -y lsb-release build-essential devscripts debhelper lintian pkg-config ${UBUNTU_DEPS} doxygen swig openjdk-11-jdk-headless libpython3-dev python3-setuptools libboost-test-dev
     - name: Checkout
       uses: actions/checkout@v4
     - name: Setup changelog
