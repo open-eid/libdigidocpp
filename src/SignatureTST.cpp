@@ -29,19 +29,10 @@
 using namespace digidoc;
 using namespace std;
 
-SignatureTST::SignatureTST(istream &is, ASiC_S *asicSDoc): asicSDoc(asicSDoc)
-{
-    is.seekg(0, istream::end);
-    istream::pos_type pos = is.tellg();
-    const auto size = pos < 0 ? 0 : (unsigned long)pos;
-    is.clear();
-    is.seekg(0, istream::beg);
-
-    vector<unsigned char> buf(size, 0);
-    is.read((char*)buf.data(), streamsize(buf.size()));
-
-    timestampToken = make_unique<TS>(buf.data(), buf.size());
-}
+SignatureTST::SignatureTST(const string &data, ASiC_S *asicSDoc)
+    : asicSDoc(asicSDoc)
+    , timestampToken(make_unique<TS>((const unsigned char*)data.data(), data.size()))
+{}
 
 SignatureTST::~SignatureTST() = default;
 
@@ -93,8 +84,7 @@ void SignatureTST::validate() const
     try
     {
         const string digestMethod = timestampToken->digestMethod();
-        const auto *dataFile = static_cast<const DataFilePrivate*>(asicSDoc->dataFiles().front());
-        timestampToken->verify(dataFile->calcDigest(digestMethod));
+        timestampToken->verify(asicSDoc->dataFiles().front()->calcDigest(digestMethod));
 
         if(!Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
             Digest::isWeakDigest(digestMethod))
