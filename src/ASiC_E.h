@@ -23,8 +23,6 @@
 
 namespace digidoc
 {
-    class ZipSerialize;
-
     /**
      * Implements the BDOC specification of the signed digital document container.
      * Container can contain several files and all these files can be signed using
