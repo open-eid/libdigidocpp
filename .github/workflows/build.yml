@@ -77,18 +77,12 @@ jobs:
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [39, 40, 41]
+        container: [40, 41]
     steps:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
           git gcc-c++ cmake rpm-build libxml2-devel xmlsec1-openssl-devel libtool-ltdl-devel zlib-devel doxygen boost-test swig python3-devel java-17-openjdk-devel minizip-devel
-    - name: Install CMake
-      if: matrix.container == 39
-      run: |
-        dnf install -y --setopt=install_weak_deps=False wget
-        wget -q https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.sh
-        sh cmake-3.28.1-linux-x86_64.sh --skip-license --prefix=/usr/local
     - name: Checkout
       uses: actions/checkout@v4
     - name: Build
