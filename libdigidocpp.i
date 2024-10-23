@@ -101,15 +101,17 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
 %{ $1 = SWIG_JavaArrayToVectorUnsignedChar(jenv, $input); %}
 %typemap(out, fragment="SWIG_VectorUnsignedCharToJavaArray") std::vector<unsigned char>, digidoc::X509Cert
 %{ $result = SWIG_VectorUnsignedCharToJavaArray(jenv, $1); %}
-%typemap(jtype) std::vector<unsigned char>, digidoc::X509Cert "byte[]"
+%typemap(out, fragment="SWIG_VectorUnsignedCharToJavaArray") digidoc::X509Cert *
+%{ $result = SWIG_VectorUnsignedCharToJavaArray(jenv, *$1); %}
+%typemap(jtype) std::vector<unsigned char>, digidoc::X509Cert, digidoc::X509Cert * "byte[]"
 %typemap(jstype) std::vector<unsigned char> "byte[]"
-%typemap(jstype) digidoc::X509Cert "java.security.cert.X509Certificate"
-%typemap(jni) std::vector<unsigned char>, digidoc::X509Cert "jbyteArray"
+%typemap(jstype) digidoc::X509Cert, digidoc::X509Cert* "java.security.cert.X509Certificate"
+%typemap(jni) std::vector<unsigned char>, digidoc::X509Cert, digidoc::X509Cert * "jbyteArray"
 %typemap(javain) std::vector<unsigned char>, digidoc::X509Cert "$javainput"
 %typemap(javaout) std::vector<unsigned char> {
     return $jnicall;
   }
-%typemap(javaout, throws="java.security.cert.CertificateException, java.io.IOException") digidoc::X509Cert {
+%typemap(javaout, throws="java.security.cert.CertificateException, java.io.IOException") digidoc::X509Cert, digidoc::X509Cert * {
     byte[] der = $jnicall;
     java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X509");
     try (java.io.ByteArrayInputStream is = new java.io.ByteArrayInputStream(der)) {
@@ -119,7 +121,7 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
 
 #elif defined(SWIGCSHARP)
 %typemap(cstype) std::vector<unsigned char> "byte[]"
-%typemap(cstype) digidoc::X509Cert "System.Security.Cryptography.X509Certificates.X509Certificate2"
+%typemap(cstype) digidoc::X509Cert, digidoc::X509Cert* "System.Security.Cryptography.X509Certificates.X509Certificate2"
 %typemap(csin, pre= "    global::System.IntPtr cPtr$csinput = digidocPINVOKE.ByteVector_to($csinput, $csinput.Length);
     var handleRef$csinput = new global::System.Runtime.InteropServices.HandleRef(this, cPtr$csinput);"
 ) std::vector<unsigned char> "handleRef$csinput"
@@ -137,6 +139,14 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
     $modulePINVOKE.ByteVector_free(cPtr);
     return new System.Security.Cryptography.X509Certificates.X509Certificate2(der);
   }
+%typemap(csvarout, excode=SWIGEXCODE2) digidoc::X509Cert * %{
+    get {
+      global::System.IntPtr cPtr = $imcall;$excode
+      byte[] der = new byte[$modulePINVOKE.ByteVector_size(cPtr)];
+      global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(cPtr), der, 0, der.Length);
+      $modulePINVOKE.ByteVector_free(cPtr);
+      return new System.Security.Cryptography.X509Certificates.X509Certificate2(der);
+    } %}
 %typemap(out) std::vector<unsigned char> %{  $result = new std::vector<unsigned char>(std::move($1)); %}
 %typemap(out) digidoc::X509Cert %{  $result = new std::vector<unsigned char>($1); %}
 
@@ -157,6 +167,10 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
 %{ $result = PyBytes_FromStringAndSize((const char*)(&result)->data(), (&result)->size()); %}
 %typemap(out) digidoc::X509Cert {
     std::vector<unsigned char> temp = $1;
+    $result = PyBytes_FromStringAndSize((const char*)temp.data(), temp.size());
+}
+%typemap(out) digidoc::X509Cert * {
+    std::vector<unsigned char> temp = *$1;
     $result = PyBytes_FromStringAndSize((const char*)temp.data(), temp.size());
 }
 #endif
@@ -209,6 +223,9 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
 
 %newobject digidoc::Container::open;
 %newobject digidoc::Container::create;
+
+%immutable digidoc::TSAInfo::cert;
+%immutable digidoc::TSAInfo::time;
 
 %feature("director") digidoc::ContainerOpenCB;
 
@@ -267,6 +284,7 @@ def transfer(self):
 %template(StringMap) std::map<std::string,std::string>;
 %template(DataFiles) std::vector<digidoc::DataFile*>;
 %template(Signatures) std::vector<digidoc::Signature*>;
+%template(TSAInfos) std::vector<digidoc::TSAInfo>;
 
 %extend digidoc::Container {
     static digidoc::Container* open(const std::string &path, digidoc::ContainerOpenCB *cb)
