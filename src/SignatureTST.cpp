@@ -24,15 +24,37 @@
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
+#include "util/File.h"
 #include "util/log.h"
 
 using namespace digidoc;
 using namespace std;
 
+constexpr std::string_view DSIG_NS {"http://www.w3.org/2000/09/xmldsig#"};
+constexpr XMLName DigestMethod {"DigestMethod", DSIG_NS};
+constexpr XMLName DigestValue {"DigestValue", DSIG_NS};
+
 SignatureTST::SignatureTST(const string &data, ASiC_S *asicSDoc)
     : asicSDoc(asicSDoc)
     , timestampToken(make_unique<TS>((const unsigned char*)data.data(), data.size()))
 {}
+
+
+SignatureTST::SignatureTST(string current, XMLDocument &&xml, const string &data, ASiC_S *asicSDoc)
+    : SignatureTST(data, asicSDoc)
+{
+    file = std::move(current);
+    doc = std::move(xml);
+}
+
+SignatureTST::SignatureTST(ASiC_S *asicSDoc)
+    : asicSDoc(asicSDoc)
+{
+    auto *dataFile = dynamic_cast<DataFilePrivate*>(asicSDoc->dataFiles().front());
+    Digest digest;
+    dataFile->digest(digest);
+    timestampToken = make_unique<TS>(digest);
+}
 
 SignatureTST::~SignatureTST() = default;
 
@@ -83,15 +105,28 @@ void SignatureTST::validate() const
     }
     try
     {
-        const string digestMethod = timestampToken->digestMethod();
-        timestampToken->verify(asicSDoc->dataFiles().front()->calcDigest(digestMethod));
-
-        if(!Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
+        timestampToken->verify(dataToSign());
+        if(auto digestMethod = signatureMethod();
+            !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
             Digest::isWeakDigest(digestMethod))
         {
             Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", digestMethod.c_str()));
             e.setCode(Exception::ReferenceDigestWeak);
             exception.addCause(e);
+        }
+        if(doc)
+        {
+            DataFile *file = asicSDoc->dataFiles().front();
+            for(auto ref = doc/"DataObjectReference"; ref; ref++)
+            {
+                string_view method = (ref/DigestMethod)["Algorithm"];
+                auto uri = util::File::fromUriPath(ref["URI"]);
+                vector<unsigned char> digest = file->fileName() == uri ?
+                    dynamic_cast<const DataFilePrivate*>(file)->calcDigest(string(method)) :
+                    asicSDoc->fileDigest(uri, method).result();
+                if(vector<unsigned char> digestValue = ref/DigestValue; digest != digestValue)
+                    THROW("Reference %s digest does not match", uri.c_str());
+            }
         }
     }
     catch (const Exception& e)
@@ -105,7 +140,14 @@ void SignatureTST::validate() const
 
 std::vector<unsigned char> SignatureTST::dataToSign() const
 {
-    THROW("Not implemented.");
+    if(!file.empty())
+        return asicSDoc->fileDigest(file, signatureMethod()).result();
+    return asicSDoc->dataFiles().front()->calcDigest(signatureMethod());
+}
+
+vector<unsigned char> SignatureTST::messageImprint() const
+{
+    return timestampToken->messageImprint();
 }
 
 void SignatureTST::setSignatureValue(const std::vector<unsigned char> & /*signatureValue*/)
@@ -116,5 +158,10 @@ void SignatureTST::setSignatureValue(const std::vector<unsigned char> & /*signat
 // Xades properties
 string SignatureTST::profile() const
 {
-    return "TimeStampToken";
+    return string(ASiC_S::ASIC_TST_PROFILE);
+}
+
+std::vector<unsigned char> SignatureTST::save() const
+{
+    return *timestampToken;
 }
