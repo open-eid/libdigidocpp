@@ -20,6 +20,7 @@
 #include "SignatureTST.h"
 
 #include "ASiC_S.h"
+#include "Conf.h"
 #include "DataFile_p.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
@@ -33,6 +34,15 @@ SignatureTST::SignatureTST(const string &data, ASiC_S *asicSDoc)
     : asicSDoc(asicSDoc)
     , timestampToken(make_unique<TS>((const unsigned char*)data.data(), data.size()))
 {}
+
+SignatureTST::SignatureTST(ASiC_S *asicSDoc)
+    : asicSDoc(asicSDoc)
+{
+    auto *dataFile = dynamic_cast<DataFilePrivate*>(asicSDoc->dataFiles().front());
+    Digest digest;
+    dataFile->digest(digest);
+    timestampToken = make_unique<TS>(CONF(TSUrl), digest);
+}
 
 SignatureTST::~SignatureTST() = default;
 
@@ -83,10 +93,9 @@ void SignatureTST::validate() const
     }
     try
     {
-        const string digestMethod = timestampToken->digestMethod();
-        timestampToken->verify(asicSDoc->dataFiles().front()->calcDigest(digestMethod));
-
-        if(!Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
+        timestampToken->verify(dataToSign());
+        if(auto digestMethod = signatureMethod();
+            !Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
             Digest::isWeakDigest(digestMethod))
         {
             Exception e(EXCEPTION_PARAMS("TimeStamp '%s' digest weak", digestMethod.c_str()));
@@ -105,7 +114,12 @@ void SignatureTST::validate() const
 
 std::vector<unsigned char> SignatureTST::dataToSign() const
 {
-    THROW("Not implemented.");
+    return asicSDoc->dataFiles().front()->calcDigest(signatureMethod());
+}
+
+vector<unsigned char> SignatureTST::messageImprint() const
+{
+    return timestampToken->messageImprint();
 }
 
 void SignatureTST::setSignatureValue(const std::vector<unsigned char> & /*signatureValue*/)
@@ -116,5 +130,10 @@ void SignatureTST::setSignatureValue(const std::vector<unsigned char> & /*signat
 // Xades properties
 string SignatureTST::profile() const
 {
-    return "TimeStampToken";
+    return string(ASiC_S::ASIC_TST_PROFILE);
+}
+
+std::vector<unsigned char> SignatureTST::save() const
+{
+    return *timestampToken;
 }

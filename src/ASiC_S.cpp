@@ -21,6 +21,7 @@
 
 #include "SignatureTST.h"
 #include "SignatureXAdES_LTA.h"
+#include "crypto/Signer.h"
 #include "util/File.h"
 #include "util/log.h"
 
@@ -34,47 +35,51 @@ using namespace std;
 /**
  * Initialize ASiCS container.
  */
-ASiC_S::ASiC_S(): ASiContainer(MIMETYPE_ASIC_S)
+ASiC_S::ASiC_S()
+    : ASiContainer(MIMETYPE_ASIC_S)
 {}
 
 /**
  * Opens ASiC-S container from a file
  */
-ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
+ASiC_S::ASiC_S(const string &path)
+    : ASiContainer(MIMETYPE_ASIC_S)
 {
     auto z = load(path, false, {mediaType()});
-    static const string_view metaInf = "META-INF/";
+    auto starts_with = [](string_view str, string_view needle) constexpr {
+        return str.size() >= needle.size() && str.compare(0, needle.size(), needle) == 0;
+    };
 
     for(const string &file: z.list())
     {
-        if(file == "mimetype" ||
-            (metaInf.size() < file.size() && file.compare(0, metaInf.size(), metaInf) == 0))
-        {
-            if(file == "META-INF/timestamp.tst")
-            {
-                if(!signatures().empty())
-                    THROW("Can not add signature to ASiC-S container which already contains a signature.");
-                addSignature(make_unique<SignatureTST>(z.extract<stringstream>(file).str(), this));
-            }
-            if(file == "META-INF/signatures.xml")
-            {
-                if(!signatures().empty())
-                    THROW("Can not add signature to ASiC-S container which already contains a signature.");
-                auto data = z.extract<stringstream>(file);
-                auto signatures = make_shared<Signatures>(data, this);
-                for(auto s = signatures->signature(); s; s++)
-                    addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
-            }
+        if(file == "mimetype")
             continue;
-        }
-
-        const auto directory = File::directory(file);
-        if(directory.empty() || directory == "/" || directory == "./")
+        if(file == "META-INF/timestamp.tst")
         {
-            if(!dataFiles().empty())
-                THROW("Can not add document to ASiC-S container which already contains a document.");
-            addDataFile(dataStream(file, z), file, "application/octet-stream");
+            if(!signatures().empty())
+                THROW("Can not add signature to ASiC-S container which already contains a signature.");
+            addSignature(make_unique<SignatureTST>(z.extract<stringstream>(file).str(), this));
         }
+        else if(file == "META-INF/signatures.xml")
+        {
+            if(!signatures().empty())
+                THROW("Can not add signature to ASiC-S container which already contains a signature.");
+            auto data = z.extract<stringstream>(file);
+            auto signatures = make_shared<Signatures>(data, this);
+            for(auto s = signatures->signature(); s; s++)
+                addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
+        }
+        else if(file == "META-INF/ASiCArchiveManifest.xml")
+            THROW("ASiCArchiveManifest are not supported.");
+        else if(starts_with(file, "META-INF/"))
+            continue;
+        else if(const auto directory = File::directory(file);
+            !directory.empty() && directory != "/" && directory != "./")
+            THROW("Subfolders are not supported %s", directory.c_str());
+        else if(!dataFiles().empty())
+            THROW("Can not add document to ASiC-S container which already contains a document.");
+        else
+            addDataFile(dataStream(file, z), file, "application/octet-stream");
     }
 
     if(dataFiles().empty())
@@ -83,14 +88,21 @@ ASiC_S::ASiC_S(const string &path): ASiContainer(MIMETYPE_ASIC_S)
         THROW("ASiC-S container does not contain any signatures.");
 }
 
-void ASiC_S::save(const string & /*path*/)
+void ASiC_S::addDataFileChecks(const string &fileName, const string &mediaType)
 {
-    THROW("Not implemented.");
+    ASiContainer::addDataFileChecks(fileName, mediaType);
+    if(!dataFiles().empty())
+        THROW("Can not add document to ASiC-S container which already contains a document.");
 }
 
-unique_ptr<Container> ASiC_S::createInternal(const string & /*path*/)
+unique_ptr<Container> ASiC_S::createInternal(const string &path)
 {
-    return {};
+    if(!util::File::fileExtension(path, {"asics", "scs"}))
+        return {};
+    DEBUG("ASiC_S::createInternal(%s)", path.c_str());
+    auto doc = unique_ptr<ASiC_S>(new ASiC_S());
+    doc->zpath(path);
+    return doc;
 }
 
 void ASiC_S::addAdESSignature(istream & /*signature*/)
@@ -111,9 +123,23 @@ Signature* ASiC_S::prepareSignature(Signer * /*signer*/)
     THROW("Not implemented.");
 }
 
-Signature *ASiC_S::sign(Signer * /*signer*/)
+void ASiC_S::save(const ZipSerialize &s)
 {
-    THROW("Not implemented.");
+    auto list = signatures();
+    if(list.empty())
+        return;
+    if(list.front()->profile() != ASIC_TST_PROFILE)
+        THROW("ASiC-S container supports only TimeStampToken signing.");
+    s.addFile("META-INF/timestamp.tst", zproperty("META-INF/timestamp.tst"))(dynamic_cast<SignatureTST*>(list.front())->save());
+}
+
+Signature *ASiC_S::sign(Signer *signer)
+{
+    if(signer->profile() != ASIC_TST_PROFILE)
+        THROW("ASiC-S container supports only TimeStampToken signing.");
+    if(!signatures().empty())
+        THROW("ASiC-S container supports only one TimeStampToken signature.");
+    return addSignature(make_unique<SignatureTST>(this));
 }
 
 /**
