@@ -79,7 +79,7 @@ jobs:
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [39, 40]
+        container: [39, 40, 41]
     steps:
     - name: Install Deps
       run: |
@@ -111,7 +111,7 @@ jobs:
     container: ubuntu:${{ matrix.container }}
     strategy:
       matrix:
-        container: ['20.04', '22.04', '24.04']
+        container: ['20.04', '22.04', '24.04', '24.10']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions
@@ -156,7 +156,6 @@ jobs:
     env:
       VER_SUFFIX: .VS${{ matrix.toolset }}
       CXXFLAGS: '/D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR' # https://github.com/actions/runner-images/issues/10004
-      VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -171,6 +170,7 @@ jobs:
         runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
       env:
         VCPKG_DEFAULT_TRIPLET: ${{ matrix.platform }}-windows
+        VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed_${{ matrix.platform }}
     - name: Install dependencies
       run: choco install doxygen.install -y > $null
     - uses: actions/setup-python@v5
@@ -180,12 +180,11 @@ jobs:
         architecture: x86
     - name: Install WiX
       run: |
-        dotnet tool install -g wix --version 5.0.1
-        wix extension -g add WixToolset.UI.wixext/5.0.1
+        dotnet tool install -g wix --version 5.0.2
+        wix extension -g add WixToolset.UI.wixext/5.0.2
     - name: Build
       run: |
         & .\build.ps1 `
-          -vcpkg_installed ${{ env.VCPKG_INSTALLED_DIR }} `
           -vcvars "${{ matrix.vcvars }}" `
           -platform ${{ matrix.platform }} `
           -swig C:/ProgramData/chocolatey/bin/swig.exe `
@@ -199,7 +198,7 @@ jobs:
   pages:
     name: Deploy pages
     if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'master')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
@@ -222,7 +221,7 @@ jobs:
   coverity:
     name: Run Coverity tests
     if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'coverity_scan')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
       PROJECTNAME: ${{ github.repository }}
@@ -257,7 +256,7 @@ jobs:
   codeql:
     name: Run CodeQL tests
     if: github.repository == 'open-eid/libdigidocpp'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       security-events: write
     steps:

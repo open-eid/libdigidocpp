@@ -164,7 +164,7 @@ void XmlConf::Private::init(const string& path, bool global)
         optional<bool> lock;
         if(auto val = elem["lock"]; !val.empty())
             lock = val == "true";
-        auto setValue = [&](auto &param) {
+        auto setValue = [&](auto &param) constexpr {
             if(paramName != param.name)
                 return false;
             if(global && lock.has_value()) param.locked = lock.value();
@@ -384,9 +384,12 @@ GET1(string, proxyUser)
 GET1(string, proxyPass)
 GET1(bool, proxyForceSSL)
 GET1(bool, proxyTunnelSSL)
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
 GET1EX(string, PKCS12Cert, Conf::PKCS12Cert())
-GET1EX(string, PKCS12Pass, Conf::PKCS12Cert())
+GET1EX(string, PKCS12Pass, Conf::PKCS12Pass())
 GET1EX(bool, PKCS12Disable, Conf::PKCS12Disable())
+DIGIDOCPP_WARNING_POP
 GET1(string, TSUrl)
 GET1(bool, TSLAutoUpdate)
 GET1(string, TSLCache)
