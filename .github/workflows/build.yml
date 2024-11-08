@@ -6,7 +6,7 @@ env:
   BUILD_NUMBER: ${{ github.run_number }}
   CMAKE_BUILD_PARALLEL_LEVEL: 4
   # Required dependencies (does not include packaging and optional dependencies)
-  FEDORA_DEPS: cmake gcc-c++ libtool-ltdl-devel libxml2-devel minizip-ng-devel zlib-devel xmlsec1-openssl-devel
+  FEDORA_DEPS: cmake gcc-c++ libtool-ltdl-devel libxml2-devel minizip-ng-compat-devel zlib-devel xmlsec1-openssl-devel
   UBUNTU_DEPS: cmake libxml2-dev libxmlsec1-dev zlib1g-dev
 jobs:
   macos:

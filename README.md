@@ -18,7 +18,7 @@
         # Ubuntu
         sudo apt install cmake libxml2-dev libxmlsec1-dev zlib1g-dev
         # Fedora
-        sudo dnf install cmake gcc-c++ libtool-ltdl-devel libxml2-devel minizip-ng-devel openssl-devel zlib-devel xmlsec1-openssl-devel
+        sudo dnf install cmake gcc-c++ libtool-ltdl-devel libxml2-devel minizip-ng-compat-devel openssl-devel zlib-devel xmlsec1-openssl-devel
 
 	* doxygen - Optional, for API documentation
 	* libboost-test-dev - Optional, for unittests
