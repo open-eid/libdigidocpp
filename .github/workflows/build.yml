@@ -81,14 +81,7 @@ jobs:
       matrix:
         container: [40, 41, rawhide]
     steps:
-    - name: Install CMake
-      if: matrix.container != 'rawhide'
-      run: |
-        dnf install -y --setopt=install_weak_deps=False \
-          ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-17-openjdk-devel rpm-build git
     - name: Install Deps
-      ## Fedora 42 (currently) rawhide doesn't have Java 17 JDK?
-      if: matrix.container == 'rawhide'
       run: |
         dnf install -y --setopt=install_weak_deps=False \
           ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-21-openjdk-devel rpm-build git
