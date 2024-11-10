@@ -21,7 +21,8 @@
 
 #include "../Exports.h"
 
-#include <memory>
+#include "util/memory.h"
+
 #include <string>
 #include <vector>
 
@@ -73,7 +74,7 @@ namespace digidoc
           Digest(std::string_view uri = {});
           void update(const unsigned char *data, size_t length) const;
           void update(std::istream &is) const;
-          std::vector<unsigned char> result(const std::vector<unsigned char> &data);
+          std::vector<unsigned char> result(const std::vector<unsigned char> &data) const;
           std::vector<unsigned char> result() const;
           std::string uri() const;
 
@@ -89,7 +90,7 @@ namespace digidoc
           static std::string digestInfoUri(const std::vector<unsigned char> &digest);
 
       private:
-          std::unique_ptr<EVP_MD_CTX, void (*)(EVP_MD_CTX*)> d;
+          unique_free_t<EVP_MD_CTX> d;
     };
 
 }

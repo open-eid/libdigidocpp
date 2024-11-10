@@ -38,7 +38,20 @@ struct tm date::gmtime(time_t t)
     return tm;
 }
 
-time_t date::mkgmtime(struct tm &t)
+bool date::is_empty(const tm &t)
+{
+    return t.tm_sec == 0 &&
+        t.tm_min == 0 &&
+        t.tm_hour == 0 &&
+        t.tm_mday == 0 &&
+        t.tm_mon == 0 &&
+        t.tm_year == 0 &&
+        t.tm_wday == 0 &&
+        t.tm_yday == 0 &&
+        t.tm_isdst == 0;
+}
+
+time_t date::mkgmtime(tm &t)
 {
 #ifdef _WIN32
     return _mkgmtime(&t);
@@ -54,11 +67,8 @@ string date::to_string(time_t t)
 
 string date::to_string(const tm &date)
 {
-    static const tm zero{};
-    if(memcmp(&zero, &date, sizeof(zero)) == 0)
-        return {};
     string result(20, 0);
     if(strftime(result.data(), result.size() + 1, "%Y-%m-%dT%H:%M:%SZ", &date) == 0)
-        return {};
+        result.clear();
     return result;
 }

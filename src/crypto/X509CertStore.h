@@ -21,7 +21,8 @@
 
 #include "../Exports.h"
 
-#include <memory>
+#include "util/memory.h"
+
 #include <set>
 #include <string>
 #include <vector>
@@ -47,15 +48,15 @@ namespace digidoc
         std::vector<X509Cert> certs(const Type &type) const;
         X509Cert findIssuer(const X509Cert &cert, const Type &type) const;
         static X509Cert issuerFromAIA(const X509Cert &cert);
-        static X509_STORE* createStore(const Type &type, const time_t *t = nullptr);
-        bool verify(const X509Cert &cert, bool qscd) const;
+        static unique_free_t<X509_STORE> createStore(const Type &type, tm &tm);
+        bool verify(const X509Cert &cert, bool noqscd, tm validation_time = {}) const;
 
     private:
         X509CertStore();
         ~X509CertStore();
         DISABLE_COPY(X509CertStore);
 
-        static int validate(int ok, X509_STORE_CTX *ctx, const Type &type);
+        static int validate(int ok, X509_STORE_CTX *ctx);
         class Private;
         std::unique_ptr<Private> d;
     };

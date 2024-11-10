@@ -46,6 +46,8 @@ using namespace std;
  * Initialize OCSP certificate validator.
  */
 OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &userAgent)
+    : resp(nullptr, OCSP_RESPONSE_free)
+    , basic(nullptr, OCSP_BASICRESP_free)
 {
     if(!cert)
         THROW("Can not check X.509 certificate, certificate is NULL pointer.");
@@ -56,7 +58,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
     if(url.empty())
     {
         STACK_OF(OPENSSL_STRING) *urls = X509_get1_ocsp(cert.handle());
-        if(sk_OPENSSL_STRING_num(urls) > 0)
+        if(urls && sk_OPENSSL_STRING_num(urls) > 0)
             url = sk_OPENSSL_STRING_value(urls, 0);
         X509_email_free(urls);
     }
@@ -90,8 +92,8 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
         THROW("OCSP service responded - Forbidden");
     if(!result)
         THROW("Failed to send OCSP request");
-    const unsigned char *p2 = (const unsigned char*)result.content.c_str();
-    resp.reset(d2i_OCSP_RESPONSE(nullptr, &p2, long(result.content.size())), OCSP_RESPONSE_free);
+    const auto *p2 = (const unsigned char*)result.content.c_str();
+    resp.reset(d2i_OCSP_RESPONSE(nullptr, &p2, long(result.content.size())));
 
     switch(int respStatus = OCSP_response_status(resp.get()))
     {
@@ -106,7 +108,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
         THROW("OCSP request failed, response status: %s", OCSP_response_status_str(respStatus));
     }
 
-    basic.reset(OCSP_response_get1_basic(resp.get()), OCSP_BASICRESP_free);
+    basic.reset(OCSP_response_get1_basic(resp.get()));
     if(!basic)
         THROW("Incorrect OCSP response.");
 
@@ -127,12 +129,14 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
 }
 
 OCSP::OCSP(const unsigned char *data, size_t size)
+    : resp(nullptr, OCSP_RESPONSE_free)
+    , basic(nullptr, OCSP_BASICRESP_free)
 {
     if(size == 0)
         return;
-    resp.reset(d2i_OCSP_RESPONSE(nullptr, &data, long(size)), OCSP_RESPONSE_free);
+    resp.reset(d2i_OCSP_RESPONSE(nullptr, &data, long(size)));
     if(resp)
-        basic.reset(OCSP_response_get1_basic(resp.get()), OCSP_BASICRESP_free);
+        basic.reset(OCSP_response_get1_basic(resp.get()));
 }
 
 bool OCSP::compareResponderCert(const X509Cert &cert) const
@@ -187,17 +191,19 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         THROW("Failed to verify OCSP response.");
 
     tm tm = producedAt();
-    time_t t = util::date::mkgmtime(tm);
-    SCOPE(X509_STORE, store, X509CertStore::createStore(X509CertStore::OCSP, &t));
-    STACK_OF(X509) *stack = sk_X509_new_null();
+    // Some OCSP-s do not have certificates in response and stack is used for finding certificate for this
+    auto stack = make_unique_ptr(sk_X509_new_null(), [](auto *sk) { sk_X509_free(sk); });
     for(const X509Cert &i: X509CertStore::instance()->certs(X509CertStore::OCSP))
     {
         if(compareResponderCert(i))
-            sk_X509_push(stack, i.handle());
+            sk_X509_push(stack.get(), i.handle());
     }
-    int result = OCSP_basic_verify(basic.get(), stack, store.get(), OCSP_NOCHECKS);
-    sk_X509_free(stack);
-    if(result != 1)
+    auto store = X509CertStore::createStore(X509CertStore::OCSP, tm);
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    if(OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS) != 1)
+#else
+    if(OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN) != 1)
+#endif
     {
         unsigned long err = ERR_get_error();
         if(ERR_GET_LIB(err) == ERR_LIB_OCSP &&
@@ -259,17 +265,18 @@ void OCSP::verifyResponse(const X509Cert &cert) const
  */
 vector<unsigned char> OCSP::nonce() const
 {
+    vector<unsigned char> nonce;
     if(!basic)
-        return {};
+        return nonce;
     int resp_idx = OCSP_BASICRESP_get_ext_by_NID(basic.get(), NID_id_pkix_OCSP_Nonce, -1);
     if(resp_idx < 0)
-        return {};
+        return nonce;
     X509_EXTENSION *ext = OCSP_BASICRESP_get_ext(basic.get(), resp_idx);
     if(!ext)
-        return {};
+        return nonce;
 
     ASN1_OCTET_STRING *value = X509_EXTENSION_get_data(ext);
-    vector<unsigned char> nonce(value->data, value->data + value->length);
+    nonce.assign(value->data, std::next(value->data, value->length));
     //OpenSSL OCSP created messages NID_id_pkix_OCSP_Nonce field is DER encoded twice, not a problem with java impl
     //XXX: UglyHackTM check if nonceAsn1 contains ASN1_OCTET_STRING
     //XXX: if first 2 bytes seem to be beginning of DER ASN1_OCTET_STRING then remove them
@@ -281,9 +288,9 @@ vector<unsigned char> OCSP::nonce() const
 
 tm OCSP::producedAt() const
 {
-    if(!basic)
-        return {};
     tm tm {};
+    if(!basic)
+        return tm;
     ASN1_TIME_to_tm(OCSP_resp_get0_produced_at(basic.get()), &tm);
     return tm;
 }

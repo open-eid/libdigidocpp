@@ -26,6 +26,7 @@
 #include <openssl/x509.h>
 
 #include <array>
+#include <istream>
 
 using namespace std;
 using namespace digidoc;
@@ -37,7 +38,7 @@ using namespace digidoc;
  * @throws Exception throws exception if the digest calculator initialization failed.
  */
 Digest::Digest(string_view uri)
-    : d(SCOPE_PTR(EVP_MD_CTX, EVP_MD_CTX_new()))
+    : d(EVP_MD_CTX_new(), EVP_MD_CTX_free)
 {
     if(uri.empty() && Conf::instance()->digestUri() == URI_SHA1)
         THROW("Unsupported digest method %.*s", int(uri.size()), uri.data());
@@ -269,7 +270,7 @@ vector<unsigned char> Digest::result() const
     return result;
 }
 
-vector<unsigned char> Digest::result(const vector<unsigned char> &data)
+vector<unsigned char> Digest::result(const vector<unsigned char> &data) const
 {
     update(data.data(), data.size());
     return result();

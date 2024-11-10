@@ -19,12 +19,16 @@
 
 #pragma once
 
-#include "Digest.h"
+#include "util/memory.h"
+
+#include <string>
+#include <vector>
 
 using PKCS7 = struct pkcs7_st;
 using CMS_ContentInfo = struct CMS_ContentInfo_st;
 namespace digidoc {
 
+class Digest;
 class X509Cert;
 
 class TS
@@ -46,8 +50,8 @@ public:
 
 private:
     auto tstInfo() const;
-    std::shared_ptr<PKCS7> d;
-    std::shared_ptr<CMS_ContentInfo> cms;
+    unique_free_t<PKCS7> d;
+    unique_free_t<CMS_ContentInfo> cms;
 };
 
 }
