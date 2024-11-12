@@ -600,7 +600,7 @@ SET1CONST(string, setProxyPass, proxyPass)
  * @fn void digidoc::XmlConfV5::setPKCS12Cert(const std::string &cert)
  * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
  */
-SET1CONSTEX(string, setPKCS12Cert, {})
+SET1CONSTEX(string, setPKCS12Cert, (void)value)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
@@ -625,7 +625,7 @@ SET1CONSTEX(string, setPKCS12Cert, {})
  * @fn void digidoc::XmlConfV5::setPKCS12Pass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
  */
-SET1CONSTEX(string, setPKCS12Pass, {})
+SET1CONSTEX(string, setPKCS12Pass, (void)value)
 
 /**
  * @fn void digidoc::XmlConf::setTSUrl(const std::string &url)
@@ -700,7 +700,7 @@ SET1CONST(string, setVerifyServiceUri, verifyServiceUri)
  * @fn void digidoc::XmlConfV5::setPKCS12Disable(bool disable)
  * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
  */
-SET1EX(bool, setPKCS12Disable, {})
+SET1EX([[maybe_unused]] bool, setPKCS12Disable, {})
 
 /**
  * @fn void digidoc::XmlConf::setProxyTunnelSSL(bool enable)

@@ -23,12 +23,7 @@
 
 %begin %{
 #ifdef _MSC_VER
-#if 1
 #define SWIG_PYTHON_INTERPRETER_NO_DEBUG
-#include <crtdefs.h>
-#else // Python debug symbols are installed
-#define PY_NO_LINK_LIB
-#endif
 #endif
 %}
 %{

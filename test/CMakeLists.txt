@@ -12,8 +12,6 @@ target_link_libraries(TSLTests digidocpp digidocpp_util Boost::unit_test_framewo
 if(WIN32)
     string(REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
     set_target_properties(unittests TSLTests PROPERTIES COMPILE_FLAGS "/bigobj")
-else()
-    set_target_properties(unittests TSLTests PROPERTIES COMPILE_FLAGS "-Wno-unused-parameter -Wno-unused-variable")
 endif()
 add_test(NAME runtest
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests --build_info=YES --report_level=no --logger=${TEST_FORMAT},all,${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
