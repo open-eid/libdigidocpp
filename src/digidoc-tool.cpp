@@ -1073,8 +1073,12 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
         }
         for(const TSL::Service &s: tp.services())
         {
-            cout << "          Service: " << s.name << endl
-                << "             Type: " << s.type << endl;
+            cout << "          Service: " << s.name << endl;
+            if(!s.validity.empty())
+            {
+                if(const auto &v = s.validity.crbegin()->second; v)
+                    cout << "             Type: " << v->type << endl;
+            }
             for(const X509Cert &x: s.certs)
                 cout << "             Cert: " << x << endl;
         }

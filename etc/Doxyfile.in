@@ -1027,7 +1027,9 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = @PROJECT_SOURCE_DIR@/src \
-                         @PROJECT_SOURCE_DIR@/libdigidocpp.dox
+                         @PROJECT_SOURCE_DIR@/libdigidocpp.dox \
+                         @PROJECT_SOURCE_DIR@/doc/references.md \
+                         @PROJECT_SOURCE_DIR@/doc/terms.md
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
