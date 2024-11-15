@@ -126,6 +126,8 @@ public:
             fs::current_path(boost::unit_test::framework::master_test_suite().argv[argc-1]);
             path = boost::unit_test::framework::master_test_suite().argv[argc-1];
         }
+        if(!fs::is_regular_file(fs::path(tsl)))
+            throw std::runtime_error("TSL file does not exist: " + tsl + " path: " + path);
         boost::unit_test::unit_test_monitor.register_exception_translator<Exception>(&translate_exception);
         Conf::init(new TestConfig(std::move(tsl), std::move(path)));
     }
