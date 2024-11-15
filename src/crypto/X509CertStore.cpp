@@ -35,6 +35,22 @@
 using namespace digidoc;
 using namespace std;
 
+namespace {
+
+int storeTypeIndex()
+{
+    static const int index = X509_STORE_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+    return index;
+}
+
+int storeContextValidityIndex()
+{
+    static const int index = X509_STORE_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+    return index;
+}
+
+}
+
 const X509CertStore::Type X509CertStore::CA {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
 };
@@ -86,7 +102,9 @@ vector<X509Cert> X509CertStore::certs(const Type &type) const
     vector<X509Cert> certs;
     for(const TSL::Service &s: *d)
     {
-        if(type.find(s.type) != type.cend())
+        if(any_of(s.validity, [&type](const auto &v) {
+                return v.second && contains(type, v.second->type);
+            }))
             certs.insert(certs.cend(), s.certs.cbegin(), s.certs.cend());
     }
     return certs;
@@ -97,7 +115,9 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert, const Type &type) const
     activate(cert);
     for(const TSL::Service &s: *d)
     {
-        if(type.find(s.type) == type.cend())
+        if(!any_of(s.validity, [&type](const auto &v) {
+                return v.second && contains(type, v.second->type);
+            }))
             continue;
         for(const X509Cert &i: s.certs)
         {
@@ -136,7 +156,11 @@ unique_free_t<X509_STORE> X509CertStore::createStore(const Type &type, tm &tm)
     if (!store)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
     X509_STORE_set_verify_cb(store.get(), X509CertStore::validate);
-    X509_STORE_set_ex_data(store.get(), 0, const_cast<Type*>(&type));
+    const int typeIndex = storeTypeIndex();
+    const int validityIndex = storeContextValidityIndex();
+    if(typeIndex < 0 || validityIndex < 0 ||
+       X509_STORE_set_ex_data(store.get(), typeIndex, const_cast<Type*>(&type)) != 1)
+        THROW_OPENSSLEXCEPTION("Failed to initialize X509 store application data");
     X509_STORE_set_flags(store.get(), X509_V_FLAG_USE_CHECK_TIME | X509_V_FLAG_PARTIAL_CHAIN);
     X509_VERIFY_PARAM_set_time(X509_STORE_get0_param(store.get()), util::date::mkgmtime(tm));
     return store;
@@ -156,32 +180,40 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
     default: return ok;
     }
 
-    auto *type = static_cast<Type*>(X509_STORE_get_ex_data(X509_STORE_CTX_get0_store(ctx), 0));
+    const int typeIndex = storeTypeIndex();
+    if(typeIndex < 0)
+        return 0;
+    auto *type = static_cast<Type*>(X509_STORE_get_ex_data(X509_STORE_CTX_get0_store(ctx), typeIndex));
+    if(!type)
+        return 0;
     X509 *x509 = X509_STORE_CTX_get0_cert(ctx);
     auto current = util::date::to_string(X509_VERIFY_PARAM_get_time(X509_STORE_CTX_get0_param(ctx)));
     for(const TSL::Service &s: *instance()->d)
     {
-        if(type->find(s.type) == type->cend()) // correct service type
-            continue;
-        if(none_of(s.certs, [&](const X509Cert &issuer) {
-                if(issuer == x509) // certificate is listed by service
-                    return true;
-                if(X509_check_issued(issuer.handle(), x509) != X509_V_OK) // certificate is issued by service (function checks only issuer name)
-                    return false;
-                auto pub = make_unique_ptr<EVP_PKEY_free>(X509_get_pubkey(issuer.handle()));
-                if(X509_verify(x509, pub.get()) == 1) // certificate is signed by service
-                    return true;
-                ERR_clear_error();
-                return false;
-            })) // certificate is trusted by service
-            continue;
         for(auto i = s.validity.crbegin(), end = s.validity.crend(); i != end; ++i)
         {
             if(current < i->first) // Search older status
                 continue;
             if(!i->second.has_value()) // Has revoked
                 break;
-            X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Qualifiers*>(&i->second));
+            if(!contains(*type, i->second->type)) // correct service type
+                break;
+            if(none_of(s.certs, [&](const X509Cert &issuer) {
+                    if(issuer == x509) // certificate is listed by service
+                        return true;
+                    if(X509_check_issued(issuer.handle(), x509) != X509_V_OK) // certificate is issued by service (function checks only issuer name)
+                        return false;
+                    auto pub = make_unique_ptr<EVP_PKEY_free>(X509_get_pubkey(issuer.handle()));
+                    if(X509_verify(x509, pub.get()) == 1) // certificate is signed by service
+                        return true;
+                    ERR_clear_error();
+                    return false;
+                })) // certificate is trusted by service
+                break;
+            const int validityIndex = storeContextValidityIndex();
+            if(validityIndex < 0 || X509_STORE_CTX_set_ex_data(ctx, validityIndex,
+                    const_cast<TSL::Validity*>(&i->second.value())) != 1)
+                return 0;
             return 1;
         }
     }
@@ -224,7 +256,10 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time
     if(noqscd)
         return true;
 
-    const auto *qualifiers = static_cast<const TSL::Qualifiers*>(X509_STORE_CTX_get_ex_data(csc.get(), 0));
+    const auto *v = static_cast<const TSL::Validity*>(
+        X509_STORE_CTX_get_ex_data(csc.get(), storeContextValidityIndex()));
+    if(!v)
+        THROW("Failed to resolve TSL service validity");
     const vector<string> policies = cert.certificatePolicies();
     const vector<string> qcstatement = cert.qcStatements();
     const vector<X509Cert::KeyUsage> keyUsage = cert.keyUsage();
@@ -249,7 +284,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time
         });
     };
 
-    for(const TSL::Qualifier &q: qualifiers->value())
+    for(const TSL::Qualifier &q: v->qualifiers)
     {
         if(q.assert_ == "all")
         {
