@@ -186,8 +186,8 @@ struct XMLElem
 
 struct XMLName
 {
-    std::string_view name;
-    std::string_view ns;
+    std::string_view name {};
+    std::string_view ns {};
 };
 
 struct XMLNode: public XMLElem<xmlNode>
