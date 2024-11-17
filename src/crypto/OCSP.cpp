@@ -132,7 +132,7 @@ OCSP::OCSP(const unsigned char *data, size_t size)
         return;
     resp.reset(d2i_OCSP_RESPONSE(nullptr, &data, long(size)), OCSP_RESPONSE_free);
     if(resp)
-       basic.reset(OCSP_response_get1_basic(resp.get()), OCSP_BASICRESP_free);
+        basic.reset(OCSP_response_get1_basic(resp.get()), OCSP_BASICRESP_free);
 }
 
 bool OCSP::compareResponderCert(const X509Cert &cert) const
@@ -183,7 +183,7 @@ OCSP::operator vector<unsigned char>() const
  */
 void OCSP::verifyResponse(const X509Cert &cert) const
 {
-    if(!resp)
+    if(!basic)
         THROW("Failed to verify OCSP response.");
 
     tm tm = producedAt();
