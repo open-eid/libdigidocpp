@@ -20,6 +20,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 using OCSP_RESPONSE = struct ocsp_response_st;
@@ -36,7 +37,7 @@ namespace digidoc
     {
 
       public:
-          OCSP(const X509Cert &cert, const X509Cert &issuer);
+          OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &userAgent = {});
           inline OCSP(const std::vector<unsigned char> &data): OCSP(data.data(), data.size()) {}
           OCSP(const unsigned char *data = nullptr, size_t size = 0);
 

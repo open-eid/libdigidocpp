@@ -928,7 +928,7 @@ signature->setSignatureValue(signatureValue);
 
 5. Add time-stamp and OCSP data to Signature object, according to the signature's profile (see also section \ref API-sign-profile for more information):
 \code{.cpp}
-signature->extendSignatureProfile(signer->profile());
+signature->extendSignatureProfile(signer);
 \endcode
 
 6. Write the document to output, as specified in section \ref containeropen

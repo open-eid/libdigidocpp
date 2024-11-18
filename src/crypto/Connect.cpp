@@ -58,7 +58,7 @@ using namespace std;
 
 
 
-Connect::Connect(const string &_url, string _method, int _timeout, const vector<X509Cert> &certs)
+Connect::Connect(const string &_url, string _method, int _timeout, const vector<X509Cert> &certs, const string &userAgentData)
     : method(std::move(_method))
     , timeout(_timeout)
 {
@@ -195,8 +195,8 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
         addHeader("Host", host);
     else
         addHeader("Host", host + ':' + port);
-    if(!userAgent().empty())
-        addHeader("User-Agent", "LIB libdigidocpp/" FILE_VER_STR " (" TARGET_ARCH ") APP " + userAgent());
+    if(const auto &agent = userAgentData.empty() ? userAgent() : userAgentData; !agent.empty())
+        addHeader("User-Agent", "LIB libdigidocpp/" FILE_VER_STR " (" TARGET_ARCH ") APP " + agent);
     if(usessl == 0)
         sendProxyAuth();
 }

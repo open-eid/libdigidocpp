@@ -274,17 +274,7 @@ def transfer(self):
                                    const std::string &city = {}, const std::string &state = {},
                                    const std::string &postalCode = {}, const std::string &country = {})
     {
-        class final: public digidoc::Signer
-        {
-        public:
-            digidoc::X509Cert cert() const final { return _cert; }
-            std::vector<unsigned char> sign(const std::string &, const std::vector<unsigned char> &) const final
-            {
-                THROW("Not implemented");
-            }
-            digidoc::X509Cert _cert;
-        } signer;
-        signer._cert = digidoc::X509Cert(cert, digidoc::X509Cert::Der);
+        digidoc::ExternalSigner signer(cert);
         signer.setProfile(profile);
         signer.setSignatureProductionPlace(city, state, postalCode, country);
         signer.setSignerRoles(roles);

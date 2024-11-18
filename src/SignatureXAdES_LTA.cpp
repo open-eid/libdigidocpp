@@ -20,9 +20,9 @@
 #include "SignatureXAdES_LTA.h"
 
 #include "ASiC_E.h"
-#include "Conf.h"
 #include "DataFile_p.h"
 #include "crypto/Digest.h"
+#include "crypto/Signer.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
@@ -101,16 +101,16 @@ void SignatureXAdES_LTA::calcArchiveDigest(const Digest &digest, string_view can
     //ds:Object
 }
 
-void SignatureXAdES_LTA::extendSignatureProfile(const string &profile)
+void SignatureXAdES_LTA::extendSignatureProfile(Signer *signer)
 {
-    SignatureXAdES_LT::extendSignatureProfile(profile);
-    if(profile != ASiC_E::ASIC_TSA_PROFILE)
+    SignatureXAdES_LT::extendSignatureProfile(signer);
+    if(signer->profile() != ASiC_E::ASIC_TSA_PROFILE)
         return;
     Digest calc;
     auto method = canonicalizationMethod();
     calcArchiveDigest(calc, method);
 
-    TS tsa(CONF(TSUrl), calc);
+    TS tsa(calc, signer->userAgent());
     auto ts = unsignedSignatureProperties() + ArchiveTimeStamp;
     ts.setNS(ts.addNS(XADESv141_NS, "xades141"));
     ts.setProperty("Id", id() + "-A0");

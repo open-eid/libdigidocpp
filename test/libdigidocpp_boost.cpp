@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         d = Container::openPtr(Doc::EXT + ".tmp");
         s = d->signatures().back();
         BOOST_CHECK_NO_THROW(s->setSignatureValue(signatureValue));
-        BOOST_CHECK_NO_THROW(s->extendSignatureProfile(signer2.profile()));
+        BOOST_CHECK_NO_THROW(s->extendSignatureProfile(&signer2));
         BOOST_CHECK_NO_THROW(d->save());
         BOOST_CHECK_NO_THROW(s->validate());
 

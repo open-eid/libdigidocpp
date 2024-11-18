@@ -38,7 +38,7 @@ public:
     X509Cert OCSPCertificate() const override;
     std::string OCSPProducedAt() const override;
     void validate(const std::string &policy) const override;
-    void extendSignatureProfile(const std::string &profile) override;
+    void extendSignatureProfile(Signer *signer) override;
 
 private:
     DISABLE_COPY(SignatureXAdES_LT);
