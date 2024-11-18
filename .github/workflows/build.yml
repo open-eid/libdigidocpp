@@ -5,6 +5,8 @@ permissions:
 env:
   BUILD_NUMBER: ${{ github.run_number }}
   CMAKE_BUILD_PARALLEL_LEVEL: 4
+  # Required dependencies (does not include packaging and optional dependencies)
+  FEDORA_DEPS: cmake gcc-c++ libtool-ltdl-devel libxml2-devel minizip-ng-compat-devel zlib-devel xmlsec1-openssl-devel
   UBUNTU_DEPS: cmake libxml2-dev libxmlsec1-dev zlib1g-dev
 jobs:
   macos:
@@ -72,18 +74,12 @@ jobs:
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [39, 40, 41]
+        container: [40, 41, rawhide]
     steps:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
-          git gcc-c++ cmake rpm-build libxml2-devel xmlsec1-openssl-devel libtool-ltdl-devel zlib-devel doxygen boost-test swig python3-devel java-17-openjdk-devel minizip-devel
-    - name: Install CMake
-      if: matrix.container == 39
-      run: |
-        dnf install -y --setopt=install_weak_deps=False wget
-        wget -q https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.sh
-        sh cmake-3.28.1-linux-x86_64.sh --skip-license --prefix=/usr/local
+          ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-21-openjdk-devel rpm-build git
     - name: Checkout
       uses: actions/checkout@v4
     - name: Build
