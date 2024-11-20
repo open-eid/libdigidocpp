@@ -54,8 +54,15 @@ constexpr bool none_of(const C &list, P pred)
 
 template<typename T>
 [[nodiscard]]
-constexpr bool starts_with(T str, T needle) {
+constexpr bool starts_with(T str, std::string_view needle) {
     return str.size() >= needle.size() && str.compare(0, needle.size(), needle) == 0;
+}
+
+[[nodiscard]]
+constexpr auto trim_prefix(std::string_view src)
+{
+    constexpr std::string_view whitespace {" \n\r\f\t\v"};
+    return src.substr(std::min<size_t>(src.find_first_not_of(whitespace), src.size()));
 }
 
 }
