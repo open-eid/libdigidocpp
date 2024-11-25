@@ -35,8 +35,6 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-constexpr string_view MANIFEST_NS {"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"};
-
 class ASiC_E::Private
 {
 public:
@@ -88,28 +86,10 @@ vector<DataFile*> ASiC_E::metaFiles() const
  *         document does not exist.
  * @throws Exception is thrown if ASiC_E class is not correctly initialized.
  */
-void ASiC_E::save(const string &path)
+void ASiC_E::save(const ZipSerialize &s)
 {
-    if(dataFiles().empty())
-        THROW("Can not save, container is empty.");
-    if(mediaType() != MIMETYPE_ASIC_E)
-        THROW("'%s' format is not supported", mediaType().c_str());
-
-    if(!path.empty())
-        zpath(path);
-    ZipSerialize s(zpath(), true);
-
-    stringstream mimetype;
-    mimetype << mediaType();
-    s.addFile("mimetype", mimetype, zproperty("mimetype"), false);
-
-    stringstream manifest;
-    if(!createManifest().save(manifest))
+    if(!createManifest().save(s.addFile("META-INF/manifest.xml", zproperty("META-INF/manifest.xml")), true))
         THROW("Failed to create manifest XML");
-    s.addFile("META-INF/manifest.xml", manifest, zproperty("META-INF/manifest.xml"));
-
-    for(const DataFile *file: dataFiles())
-        s.addFile(file->fileName(), *(static_cast<const DataFilePrivate*>(file)->m_is), zproperty(file->fileName()));
 
     std::set<Signatures*> saved;
     for(Signature *iter: signatures())
@@ -122,10 +102,8 @@ void ASiC_E::save(const string &path)
         });
         if(name == d->signatures.cend())
             THROW("Unkown signature object");
-        stringstream ofs;
-        if(!signatures->save(ofs))
+        if(!signatures->save(s.addFile(name->first, zproperty(name->first))))
             THROW("Failed to create signature XML file.");
-        s.addFile(name->first, ofs, zproperty(name->first));
     }
 }
 
@@ -159,32 +137,16 @@ void ASiC_E::addAdESSignature(istream &data)
     }
 }
 
+void ASiC_E::canSave()
+{
+    if(mediaType() != MIMETYPE_ASIC_E)
+        THROW("'%s' format is not supported", mediaType().c_str());
+}
+
 unique_ptr<Container> ASiC_E::openInternal(const string &path)
 {
     DEBUG("ASiC_E::openInternal(%s)", path.c_str());
     return unique_ptr<Container>(new ASiC_E(path));
-}
-
-/**
- * Creates BDoc container manifest file and returns its path.
- *
- * @return returns created manifest file path.
- * @throws Exception exception is thrown if manifest file creation failed.
- */
-XMLDocument ASiC_E::createManifest() const
-{
-    DEBUG("ASiC_E::createManifest()");
-    auto doc = XMLDocument::create("manifest", MANIFEST_NS, "manifest");
-    doc.setProperty("version", "1.2", MANIFEST_NS);
-    auto add = [&doc](string_view path, string_view mime) {
-        auto file = doc+"file-entry";
-        file.setProperty("full-path", path, MANIFEST_NS);
-        file.setProperty("media-type", mime, MANIFEST_NS);
-    };
-    add("/", mediaType());
-    for(const DataFile *file: dataFiles())
-        add(file->fileName(), file->mediaType());
-    return doc;
 }
 
 void ASiC_E::loadSignatures(istream &data, const string &file)

@@ -34,7 +34,6 @@
 
 #include <memory>
 #include <istream>
-#include <ostream>
 
 namespace digidoc {
 
@@ -398,18 +397,21 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
             THROW("Failed to canonicalizate input");
     }
 
-    bool save(std::string_view path) const noexcept
+    bool save(std::string_view path, bool format = false) const noexcept
     {
-        return xmlSaveFormatFileEnc(path.data(), get(), "UTF-8", 0) > 0;
+        return xmlSaveFormatFileEnc(path.data(), get(), "UTF-8", format) > 0;
     }
 
-    bool save(std::ostream &os) const noexcept
+    template <typename F>
+    std::enable_if_t<std::is_invocable_v<F, const char*, size_t>, bool>
+    save(F &&f, bool format = false) const noexcept
     {
         auto *buf = xmlOutputBufferCreateIO([](void *context, const char *buffer, int len) {
-            auto *os = static_cast<std::ostream *>(context);
-            return os->write(buffer, len) ? len : -1;
-        }, nullptr, &os, nullptr);
-        return xmlSaveFormatFileTo(buf, get(), "UTF-8", 0) > 0;
+            auto *f = static_cast<F*>(context);
+            (*f)(buffer, size_t(len));
+            return len;
+        }, nullptr, &f, nullptr);
+        return xmlSaveFormatFileTo(buf, get(), "UTF-8", format) > 0;
     }
 
     void validateSchema(const std::string &schemaPath) const

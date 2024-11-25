@@ -248,7 +248,7 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, A value)
     }
 
     File::createDirectory(File::directory(USER_CONF_LOC));
-    if(!doc.save(USER_CONF_LOC))
+    if(!doc.save(USER_CONF_LOC, true))
         ERR("Failed to save configuration: %s (%s)", USER_CONF_LOC.c_str(), SCHEMA_LOC.c_str());
 }
 

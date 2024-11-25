@@ -19,9 +19,10 @@
 
 #include "ZipSerialize.h"
 
+#include "Container.h"
 #include "DateTime.h"
 #include "log.h"
-#include "util/File.h"
+#include "File.h"
 
 #include <zlib.h>
 #include <minizip/unzip.h>
@@ -45,7 +46,7 @@ using namespace std;
  * @param path
  */
 ZipSerialize::ZipSerialize(const string &path, bool create)
-    : d{nullptr, create ? [](void *handle) { return zipClose(handle, nullptr); } : &unzClose}
+    : d{nullptr, create ? [](void *handle) { return zipClose(handle, appInfo().c_str()); } : &unzClose}
 {
     zlib_filefunc_def def {};
 #ifdef _WIN32
@@ -166,9 +167,10 @@ template stringstream ZipSerialize::extract<stringstream>(string_view file) cons
  * @param containerPath file path inside ZIP file.
  * @param prop Properties added for file in ZIP file.
  * @param compress File should be compressed in ZIP file.
- * @throws IOException throws exception if there were errors during locating files in zip.
+ * @return Write struct for data input
+ * @throws Exception throws exception if there were errors during locating files in zip.
  */
-void ZipSerialize::addFile(const string& containerPath, istream &is, const Properties &prop, bool compress)
+ZipSerialize::Write ZipSerialize::addFile(string_view containerPath, const Properties &prop, bool compress) const
 {
     if(!d)
         THROW("Zip file is not open");
@@ -190,26 +192,7 @@ void ZipSerialize::addFile(const string& containerPath, istream &is, const Prope
     if(zipResult != ZIP_OK)
         THROW("Failed to create new file inside ZIP container. ZLib error: %d", zipResult);
 
-    is.clear();
-    is.seekg(0);
-    array<char,10240> buf{};
-    while(is)
-    {
-        is.read(buf.data(), buf.size());
-        if(is.gcount() <= 0)
-            break;
-
-        zipResult = zipWriteInFileInZip(d.get(), buf.data(), unsigned(is.gcount()));
-        if(zipResult != ZIP_OK)
-        {
-            zipCloseFileInZip(d.get());
-            THROW("Failed to write bytes to current file inside ZIP container. ZLib error: %d", zipResult);
-        }
-    }
-
-    zipResult = zipCloseFileInZip(d.get());
-    if(zipResult != ZIP_OK)
-        THROW("Failed to close current file inside ZIP container. ZLib error: %d", zipResult);
+    return {{d.get(), zipCloseFileInZip}};
 }
 
 ZipSerialize::Properties ZipSerialize::properties(const string &file) const
@@ -238,4 +221,10 @@ ZipSerialize::Properties ZipSerialize::properties(const string &file) const
         THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
     return prop;
+}
+
+void ZipSerialize::Write::operator()(const void *data, size_t size) const
+{
+    if(auto result = zipWriteInFileInZip(d.get(), data, unsigned(size)); result != ZIP_OK)
+        THROW("Failed to write bytes to current file inside ZIP container. ZLib error: %d", result);
 }

@@ -30,9 +30,8 @@ namespace digidoc
     */
     class ASiC_S : public ASiContainer
     {
-
     public:
-        void save(const std::string &path = {}) override;
+        static constexpr std::string_view ASIC_TST_PROFILE = "TimeStampToken";
 
         void addAdESSignature(std::istream &sigdata) override;
         Signature* prepareSignature(Signer *signer) override;
@@ -45,6 +44,9 @@ namespace digidoc
         ASiC_S();
         ASiC_S(const std::string &path);
         DISABLE_COPY(ASiC_S);
+
+        void canSave() final;
+        void save(const ZipSerialize &s) final;
 
         static bool isContainerSimpleFormat(const std::string &path);
     };
