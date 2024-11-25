@@ -260,15 +260,17 @@ if(WIN32)
     install(FILES $<TARGET_PDB_FILE:digidocpp> $<TARGET_PDB_FILE:digidoc-tool> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
     if(SIGNCERT)
         foreach(TARGET digidocpp digidoc-tool digidoc_java digidoc_csharp digidoc_python)
-            if(CROSSSIGNCERT)
-                target_link_options(${TARGET} PRIVATE "/INTEGRITYCHECK")
+            if (TARGET ${TARGET})
+                if(CROSSSIGNCERT)
+                    target_link_options(${TARGET} PRIVATE "/INTEGRITYCHECK")
+                endif()
+                add_custom_command(TARGET ${TARGET} POST_BUILD
+                    COMMAND signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256 /du http://installer.id.ee
+                        "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>"
+                        /tr http://timestamp.digicert.com /td SHA256 $<TARGET_FILE:${TARGET}>
+                    COMMAND_EXPAND_LISTS
+                )
             endif()
-            add_custom_command(TARGET ${TARGET} POST_BUILD
-                COMMAND signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256 /du http://installer.id.ee
-                    "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>"
-                    /tr http://timestamp.digicert.com /td SHA256 $<TARGET_FILE:${TARGET}>
-                COMMAND_EXPAND_LISTS
-            )
         endforeach()
     endif()
 endif()

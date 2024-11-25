@@ -24,6 +24,8 @@ jobs:
         brew install --formula ninja swig doxygen boost
         brew unlink python@3.11 || true
         brew unlink python@3.12 || true
+        brew unlink python@3.13 || true
+        brew unlink openssl@3 || true
         brew unlink xz
     - name: Cache
       uses: actions/cache@v4
@@ -129,12 +131,19 @@ jobs:
     runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        toolset: [143]
-        platform: [x86, x64]
+        toolset: [143, 142]
+        platform: [x86, x64, arm64]
         include:
         - toolset: 143
           image: windows-2022
-          vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
+        - toolset: 142
+          image: windows-2019
+        - platform: x86
+          setenv: amd64_x86
+        - platform: x64
+          setenv: amd64
+        - platform: arm64
+          setenv: amd64_arm64
     env:
       VER_SUFFIX: .VS${{ matrix.toolset }}
       CXXFLAGS: '/D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR' # https://github.com/actions/runner-images/issues/10004
@@ -161,11 +170,13 @@ jobs:
       with:
         python-version: 3.12
         architecture: x86
+    - name: Setup dev env
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.setenv }}
     - name: Build
       run: |
         & .\build.ps1 `
-          -vcvars "${{ matrix.vcvars }}" `
-          -platform ${{ matrix.platform }} `
           -swig ${{ github.workspace }}/swigwin-4.2.1/swig.exe `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
           -boost
@@ -214,9 +225,12 @@ jobs:
         tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
     - name: Build
       run: |
-        cmake .
+        cmake -B build -S . \
+          -DCMAKE_DISABLE_FIND_PACKAGE_SWIG=YES \
+          -DCMAKE_DISABLE_FIND_PACKAGE_Boost=YES \
+          -DCMAKE_DISABLE_FIND_PACKAGE_Doxygen=YES
         export PATH=$PWD/cov-analysis-linux64/bin:$PATH
-        cov-build --dir cov-int cmake --build .
+        cov-build --dir cov-int cmake --build build
     - name: Submit the result to Coverity Scan
       run: |
         tar czvf upload.tgz cov-int
