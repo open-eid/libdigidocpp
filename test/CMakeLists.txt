@@ -17,64 +17,28 @@ add_test(NAME runtest
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests --build_info=YES --report_level=no --logger=${TEST_FORMAT},all,${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
 )
-add_test(NAME TSLTest_CA-invalid-type
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-invalid-type.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_CA-non-qa
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-non-qa.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_CA-withdrawn
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_CA-withdrawn-granted-before
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn-granted-before.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_CA-withdrawn-granted-later
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-CA-withdrawn-granted-later.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_OCSP-invalid-type
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-invalid-type.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_OCSP-withdrawn
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-withdrawn.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_OCSP-withdrawn-granted-before
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-withdrawn-granted-before.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_OCSP-withdrawn-granted-later
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-OCSP-withdrawn-granted-later.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_TSA-invalid-type
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-TSA-invalid-type.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_TSA-withdrawn
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-TSA-withdrawn.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_TSA-withdrawn-granted-before
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-TSA-withdrawn-granted-before.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_TSA-withdrawn-granted-later
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-TSA-withdrawn-granted-later.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_EE_T-no_QCStatement
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-no_QCStatement.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
-add_test(NAME TSLTest_EE_T-no_QCSD
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-no_QCSD.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-)
+
+# Bad status tests
+foreach(TEST CA-non-qa no_QCStatement no_QCSD
+        CA-invalid-type CA-withdrawn CA-granted-later CA-withdrawn-granted-later CA-noqscd-granted-later
+        OCSP-invalid-type OCSP-withdrawn OCSP-granted-later OCSP-withdrawn-granted-later OCSP-noqscd-granted-later
+        TSA-invalid-type TSA-withdrawn TSA-granted-later TSA-withdrawn-granted-later TSA-noqscd-granted-later
+    )
+    add_test(NAME TSLTest_${TEST}
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-${TEST}.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+    )
+endforeach()
+
+# Good status tests
+foreach(TEST CA-withdrawn-granted-before CA-noqscd-granted-before
+        OCSP-withdrawn-granted-before OCSP-noqscd-granted-before
+        TSA-withdrawn-granted-before TSA-noqscd-granted-before
+    )
+    add_test(NAME TSLTest_${TEST}
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-${TEST}.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+    )
+endforeach()
+
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS unittests TSLTests)

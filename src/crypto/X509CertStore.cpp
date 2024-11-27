@@ -23,6 +23,7 @@
 #include "crypto/Connect.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/TSL.h"
+#include "util/algorithm.h"
 #include "util/DateTime.h"
 #include "util/log.h"
 
@@ -30,17 +31,8 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
-#include <algorithm>
-
 using namespace digidoc;
 using namespace std;
-
-template<typename C, typename T>
-[[nodiscard]]
-constexpr bool contains(const C &list, const T &value)
-{
-    return find(list.begin(), list.end(), std::forward<decltype(value)>(value)) != list.end();
-};
 
 const X509CertStore::Type X509CertStore::CA {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
@@ -52,7 +44,6 @@ const X509CertStore::Type X509CertStore::TSA {
 
 const X509CertStore::Type X509CertStore::OCSP {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
-    "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
 };
 
@@ -181,7 +172,7 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
     {
         if(type.find(s.type) == type.cend())
             continue;
-        if(none_of(s.certs.cbegin(), s.certs.cend(), [&](const X509Cert &issuer){
+        if(none_of(s.certs, [&](const X509Cert &issuer) {
                 if(issuer == x509)
                     return true;
                 if(X509_check_issued(issuer.handle(), x509) != X509_V_OK)
@@ -254,13 +245,13 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
     bool isESeal = // Special treamtent for E-Seals
         contains(policies, X509Cert::QCP_LEGAL) ||
         contains(qcstatement, X509Cert::QCT_ESEAL);
-    auto matchPolicySet = [&policies](const vector<string> &policySet){
-        return all_of(policySet.cbegin(), policySet.cend(), [&policies](const string &policy) {
+    auto matchPolicySet = [&policies](const vector<string> &policySet) {
+        return all_of(policySet, [&policies](const string &policy) {
             return contains(policies, policy);
         });
     };
-    auto matchKeyUsageSet = [&keyUsage](const map<X509Cert::KeyUsage,bool> &keyUsageSet){
-        return all_of(keyUsageSet.cbegin(), keyUsageSet.cend(), [&keyUsage](pair<X509Cert::KeyUsage, bool> keyUsageBit){
+    auto matchKeyUsageSet = [&keyUsage](const map<X509Cert::KeyUsage,bool> &keyUsageSet) {
+        return all_of(keyUsageSet, [&keyUsage](pair<X509Cert::KeyUsage, bool> keyUsageBit) {
             return contains(keyUsage, keyUsageBit.first) == keyUsageBit.second;
         });
     };
@@ -269,14 +260,14 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
     {
         if(q.assert_ == "all")
         {
-            if(!(all_of(q.policySet.cbegin(), q.policySet.cend(), matchPolicySet) &&
-                 all_of(q.keyUsage.cbegin(), q.keyUsage.cend(), matchKeyUsageSet)))
+            if(!(all_of(q.policySet, matchPolicySet) &&
+                 all_of(q.keyUsage, matchKeyUsageSet)))
                 continue;
         }
         else if(q.assert_ == "atLeastOne")
         {
-            if(!(any_of(q.policySet.cbegin(), q.policySet.cend(), matchPolicySet) ||
-                 any_of(q.keyUsage.cbegin(), q.keyUsage.cend(), matchKeyUsageSet)))
+            if(!(any_of(q.policySet, matchPolicySet) ||
+                 any_of(q.keyUsage, matchKeyUsageSet)))
                 continue;
         }
         else

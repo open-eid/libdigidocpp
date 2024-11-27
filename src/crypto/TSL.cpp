@@ -22,10 +22,10 @@
 #include "Conf.h"
 #include "XMLDocument.h"
 #include "crypto/Connect.h"
+#include "util/algorithm.h"
 #include "util/DateTime.h"
 #include "util/File.h"
 
-#include <algorithm>
 #include <array>
 #include <charconv>
 #include <fstream>
@@ -80,17 +80,9 @@ constexpr array SERVICESTATUS_END {
 
 constexpr array SERVICES_SUPPORTED {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
-    "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP",
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
     "http://uri.etsi.org/TrstSvc/Svctype/TSA/QTST",
 };
-
-template<typename C, typename T>
-[[nodiscard]]
-constexpr bool contains(const C &list, const T &value)
-{
-    return find(list.begin(), list.end(), value) != list.end();
-}
 
 }
 
@@ -212,6 +204,7 @@ vector<TSL::Service> TSL::parse()
 vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs,
     const string &cache, const string &territory)
 {
+    vector<Service> list;
     try {
         TSL tsl = parseTSL(url, certs, cache, territory);
         if(tsl.pointers().empty())
@@ -226,20 +219,19 @@ vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs
                 return parse(p.location, p.certs, cache, p.territory + ".xml");
             }));
         }
-        vector<Service> list;
         for(auto &f: futures)
         {
             vector<Service> services = f.get();
             list.insert(list.end(), make_move_iterator(services.begin()), make_move_iterator(services.end()));
         }
-        return list;
     }
     catch(const Exception &e)
     {
         debugException(e);
         ERR("TSL %s Failed to validate list", territory.c_str());
-        return {};
+        list.clear();
     }
+    return list;
 }
 
 TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
