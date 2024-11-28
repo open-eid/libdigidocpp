@@ -132,28 +132,19 @@ X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert)
     return X509Cert((const unsigned char*)result.content.c_str(), result.content.size());
 }
 
-X509_STORE* X509CertStore::createStore(const Type &type, const time_t *t)
+unique_free_t<X509_STORE> X509CertStore::createStore(const Type &type, tm &tm)
 {
     SCOPE(X509_STORE, store, X509_STORE_new());
     if (!store)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
-
-    if(type == CA)
-        X509_STORE_set_verify_cb(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int { return validate(ok, ctx, CA); });
-    else if(type == OCSP)
-        X509_STORE_set_verify_cb(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int { return validate(ok, ctx, OCSP); });
-    else if(type == TSA)
-        X509_STORE_set_verify_cb(store.get(), [](int ok, X509_STORE_CTX *ctx) -> int { return validate(ok, ctx, TSA); });
-
-    if(t)
-    {
-        X509_VERIFY_PARAM_set_time(X509_STORE_get0_param(store.get()), *t);
-        X509_STORE_set_flags(store.get(), X509_V_FLAG_USE_CHECK_TIME);
-    }
-    return store.release();
+    X509_STORE_set_verify_cb(store.get(), X509CertStore::validate);
+    X509_STORE_set_ex_data(store.get(), 0, const_cast<Type*>(&type));
+    X509_STORE_set_flags(store.get(), X509_V_FLAG_USE_CHECK_TIME | X509_V_FLAG_PARTIAL_CHAIN);
+    X509_VERIFY_PARAM_set_time(X509_STORE_get0_param(store.get()), util::date::mkgmtime(tm));
+    return store;
 }
 
-int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
+int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
 {
     switch(X509_STORE_CTX_get_error(ctx))
     {
@@ -167,39 +158,33 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
     default: return ok;
     }
 
+    auto *type = static_cast<Type*>(X509_STORE_get_ex_data(X509_STORE_CTX_get0_store(ctx), 0));
     X509 *x509 = X509_STORE_CTX_get0_cert(ctx);
+    auto current = util::date::to_string(X509_VERIFY_PARAM_get_time(X509_STORE_CTX_get0_param(ctx)));
     for(const TSL::Service &s: *instance()->d)
     {
-        if(type.find(s.type) == type.cend())
+        if(type->find(s.type) == type->cend()) // correct service type
             continue;
         if(none_of(s.certs, [&](const X509Cert &issuer) {
-                if(issuer == x509)
+                if(issuer == x509) // certificate is listed by service
                     return true;
-                if(X509_check_issued(issuer.handle(), x509) != X509_V_OK)
+                if(X509_check_issued(issuer.handle(), x509) != X509_V_OK) // certificate is issued by service
                     return false;
                 SCOPE(EVP_PKEY, pub, X509_get_pubkey(issuer.handle()));
-                if(X509_verify(x509, pub.get()) == 1)
+                if(X509_verify(x509, pub.get()) == 1) // certificate is signed by service
                     return true;
                 ERR_clear_error();
                 return false;
-            }))
+            })) // certificate is trusted by service
             continue;
-        if(s.validity.empty())
-            continue;
-        X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Qualifiers*>(&s.validity.begin()->second));
-        X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
-        if(!(X509_VERIFY_PARAM_get_flags(param) & X509_V_FLAG_USE_CHECK_TIME) || s.validity.empty())
-            return 1;
-        auto current = util::date::to_string(X509_VERIFY_PARAM_get_time(param));
         for(auto i = s.validity.crbegin(), end = s.validity.crend(); i != end; ++i)
         {
-            if(current >= i->first)
-            {
-                if(!i->second.has_value())
-                    break;
-                X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Qualifiers*>(&i->second));
-                return 1;
-            }
+            if(current < i->first) // Search older status
+                continue;
+            if(!i->second.has_value()) // Has revoked
+                break;
+            X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Qualifiers*>(&i->second));
+            return 1;
         }
     }
     return ok;
@@ -209,13 +194,12 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx, const Type &type)
  * Check if X509Cert is signed by trusted issuer
  * @throw Exception if error
  */
-bool X509CertStore::verify(const X509Cert &cert, bool noqscd) const
+bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time) const
 {
     activate(cert);
-    tm tm{};
-    ASN1_TIME_to_tm(X509_get0_notBefore(cert.handle()), &tm);
-    time_t time = util::date::mkgmtime(tm);
-    SCOPE(X509_STORE, store, createStore(X509CertStore::CA, &time));
+    if(util::date::is_empty(validation_time))
+        ASN1_TIME_to_tm(X509_get0_notBefore(cert.handle()), &validation_time);
+    auto store = createStore(X509CertStore::CA, validation_time);
     SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
     if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");

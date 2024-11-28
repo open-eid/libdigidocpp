@@ -23,6 +23,7 @@
 #include "Container.h"
 #include "Exception.h"
 #include "crypto/Connect.h"
+#include "crypto/Digest.h"
 #include "crypto/OpenSSLHelpers.h"
 #include "crypto/X509CertStore.h"
 #include "util/DateTime.h"
@@ -56,15 +57,15 @@ void *OPENSSL_memdup(const void *data, size_t size)
 #endif
 
 TS::TS(const Digest &digest, const std::string &userAgent)
+    : d(nullptr, PKCS7_free)
+    , cms(nullptr, CMS_ContentInfo_free)
 {
     auto req = SCOPE_PTR(TS_REQ, TS_REQ_new());
     TS_REQ_set_version(req.get(), 1);
     TS_REQ_set_cert_req(req.get(), 1);
 
     auto algo = SCOPE_PTR(X509_ALGOR, X509_ALGOR_new());
-    algo->algorithm = OBJ_nid2obj(Digest::toMethod(digest.uri()));
-    algo->parameter = ASN1_TYPE_new();
-    algo->parameter->type = V_ASN1_NULL;
+    X509_ALGOR_set0(algo.get(), OBJ_nid2obj(Digest::toMethod(digest.uri())), V_ASN1_NULL, nullptr);
 
     auto msg_imprint = SCOPE_PTR(TS_MSG_IMPRINT, TS_MSG_IMPRINT_new());
     TS_MSG_IMPRINT_set_algo(msg_imprint.get(), algo.get());
@@ -82,8 +83,7 @@ TS::TS(const Digest &digest, const std::string &userAgent)
 
     auto nonce = SCOPE_PTR(ASN1_INTEGER, ASN1_INTEGER_new());
     ASN1_STRING_set(nonce.get(), nullptr, 20);
-    nonce->data[0] = 0;
-    while(nonce->data[0] == 0) // Make sure that first byte is not 0x00
+    for(nonce->data[0] = 0; nonce->data[0] == 0;) // Make sure that first byte is not 0x00
         RAND_bytes(nonce->data, nonce->length);
     TS_REQ_set_nonce(req.get(), nonce.get());
 
@@ -119,15 +119,20 @@ TS::TS(const Digest &digest, const std::string &userAgent)
     if(TS_RESP_verify_response(ctx.get(), resp.get()) != 1)
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
-    d.reset(PKCS7_dup(TS_RESP_get_token(resp.get())), PKCS7_free);
+    d.reset(PKCS7_dup(TS_RESP_get_token(resp.get())));
     DEBUG("TSA time %s", util::date::to_string(time()).c_str());
 }
 
 TS::TS(const unsigned char *data, size_t size)
+    : d(nullptr, PKCS7_free)
+    , cms(nullptr, [](CMS_ContentInfo *contentInfo) {
+        CMS_ContentInfo_free(contentInfo);
+        ERR_clear_error();
+    })
 {
     if(size == 0)
         return;
-    d.reset(d2i_PKCS7(nullptr, &data, long(size)), PKCS7_free);
+    d.reset(d2i_PKCS7(nullptr, &data, long(size)));
 #ifndef OPENSSL_NO_CMS
     if(d)
         return;
@@ -139,10 +144,7 @@ TS::TS(const unsigned char *data, size_t size)
      *
      * If PKCS7 wrapped TimeStamp parsing fails, try with CMS wrapping
      */
-    cms.reset(d2i_CMS_ContentInfo(nullptr, &data, long(size)), [](CMS_ContentInfo *contentInfo) {
-        CMS_ContentInfo_free(contentInfo);
-        ERR_clear_error();
-    });
+    cms.reset(d2i_CMS_ContentInfo(nullptr, &data, long(size)));
     if(!cms || OBJ_obj2nid(CMS_get0_eContentType(cms.get())) != NID_id_smime_ct_TSTInfo)
         cms.reset();
 
@@ -152,22 +154,18 @@ TS::TS(const unsigned char *data, size_t size)
 
 X509Cert TS::cert() const
 {
-    using sk_X509_free_t = void (*)(STACK_OF(X509) *);
-    unique_ptr<STACK_OF(X509), sk_X509_free_t> signers = [&] {
-        if(d && PKCS7_type_is_signed(d.get()))
-            return unique_ptr<STACK_OF(X509), sk_X509_free_t>(PKCS7_get0_signers(d.get(), nullptr, 0),
-                [](STACK_OF(X509) *stack) { sk_X509_free(stack); });
+    unique_free_t<STACK_OF(X509)> signers(nullptr, nullptr);
+    if(d && PKCS7_type_is_signed(d.get()))
+        signers = {PKCS7_get0_signers(d.get(), nullptr, 0),
+            [](STACK_OF(X509) *stack) { sk_X509_free(stack); }};
 #ifndef OPENSSL_NO_CMS
-        if(cms)
-            return unique_ptr<STACK_OF(X509), sk_X509_free_t>(CMS_get1_certs(cms.get()),
-                [](STACK_OF(X509) *stack) { sk_X509_pop_free(stack, X509_free); });
+    if(!signers && cms)
+        signers = {CMS_get1_certs(cms.get()),
+            [](STACK_OF(X509) *stack) { sk_X509_pop_free(stack, X509_free); }};
 #endif
-        return unique_ptr<STACK_OF(X509), sk_X509_free_t>(nullptr, nullptr);
-    }();
-
-    if(!signers || sk_X509_num(signers.get()) != 1)
-        return X509Cert();
-    return X509Cert(sk_X509_value(signers.get(), 0));
+    if(signers && sk_X509_num(signers.get()) == 1)
+        return X509Cert(sk_X509_value(signers.get(), 0));
+    return X509Cert();
 }
 
 auto TS::tstInfo() const
@@ -177,8 +175,8 @@ auto TS::tstInfo() const
 #ifndef OPENSSL_NO_CMS
     if(cms)
     {
-        auto out = SCOPE_PTR(BIO, CMS_dataInit(cms.get(), nullptr));
-        return SCOPE_PTR(TS_TST_INFO, d2i_TS_TST_INFO_bio(out.get(), nullptr));
+        if(auto out = SCOPE_PTR(BIO, CMS_dataInit(cms.get(), nullptr)))
+            return SCOPE_PTR(TS_TST_INFO, d2i_TS_TST_INFO_bio(out.get(), nullptr));
     }
 #endif
     return SCOPE_PTR(TS_TST_INFO, nullptr);
@@ -216,8 +214,7 @@ string TS::serial() const
 
     if(auto bn = SCOPE_PTR_FREE(BIGNUM, ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), nullptr), BN_free))
     {
-        auto openssl_free = [](char *data) { OPENSSL_free(data); };
-        if(auto str = unique_ptr<char,decltype(openssl_free)>(BN_bn2dec(bn.get()), openssl_free))
+        if(auto str = make_unique_ptr(BN_bn2dec(bn.get()), [](char *data) { OPENSSL_free(data); }))
             return str.get();
     }
     return {};
@@ -234,15 +231,8 @@ tm TS::time() const
 void TS::verify(const vector<unsigned char> &digest)
 {
     tm tm = time();
-    time_t t = util::date::mkgmtime(tm);
-    auto store = SCOPE_PTR(X509_STORE, X509CertStore::createStore(X509CertStore::TSA, &t));
+    auto store = X509CertStore::createStore(X509CertStore::TSA, tm);
     X509CertStore::instance()->activate(cert());
-    auto csc = SCOPE_PTR(X509_STORE_CTX, X509_STORE_CTX_new());
-    if (!csc)
-        THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
-    if(!X509_STORE_CTX_init(csc.get(), store.get(), nullptr, nullptr))
-        THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
-
     if(d)
     {
         auto ctx = SCOPE_PTR(TS_VERIFY_CTX, TS_VERIFY_CTX_new());

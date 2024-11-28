@@ -19,7 +19,8 @@
 
 #pragma once
 
-#include <memory>
+#include "util/memory.h"
+
 #include <string>
 #include <vector>
 
@@ -51,7 +52,7 @@ namespace digidoc
       private:
           bool compareResponderCert(const X509Cert &cert) const;
 
-          std::shared_ptr<OCSP_RESPONSE> resp;
-          std::shared_ptr<OCSP_BASICRESP> basic;
+          unique_free_t<OCSP_RESPONSE> resp;
+          unique_free_t<OCSP_BASICRESP> basic;
     };
 }

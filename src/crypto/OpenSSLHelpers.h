@@ -21,9 +21,7 @@
 
 #include "Exception.h"
 #include "util/log.h"
-
-#include <memory>
-#include <sstream>
+#include "util/memory.h"
 
 #include <openssl/err.h>
 
@@ -34,7 +32,7 @@
 namespace digidoc
 {
 
-#define SCOPE_PTR_FREE(TYPE, DATA, FREE) std::unique_ptr<TYPE,decltype(&FREE)>(static_cast<TYPE*>(DATA), FREE)
+#define SCOPE_PTR_FREE(TYPE, DATA, FREE) make_unique_ptr(DATA, FREE)
 #define SCOPE_PTR(TYPE, DATA) SCOPE_PTR_FREE(TYPE, DATA, TYPE##_free)
 #define SCOPE(TYPE, VAR, DATA) auto VAR = SCOPE_PTR_FREE(TYPE, DATA, TYPE##_free)
 
@@ -42,14 +40,15 @@ template<class T, typename Func>
 [[nodiscard]]
 inline std::vector<unsigned char> i2d(T *obj, Func func)
 {
+    std::vector<unsigned char> result;
     if(!obj)
-        return {};
+        return result;
     int size = func(obj, nullptr);
     if(size <= 0)
-        return {};
-    std::vector<unsigned char> result(size_t(size), 0);
+        return result;
+    result.resize(size_t(size), 0);
     if(unsigned char *p = result.data(); func(obj, &p) != size)
-        return {};
+        result.clear();
     return result;
 }
 

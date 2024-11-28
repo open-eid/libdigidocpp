@@ -30,6 +30,7 @@
 #include <zlib.h>
 
 #include <algorithm>
+#include <sstream>
 #include <thread>
 
 #ifdef _WIN32
@@ -147,13 +148,13 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
         if(!certs.empty())
         {
             SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
-            SSL_CTX_set_cert_verify_callback(ssl.get(), [](X509_STORE_CTX *store, void *data) -> int {
-                X509 *x509 = X509_STORE_CTX_get0_cert(store);
-                auto *certs = (vector<X509Cert>*)data;
-                return any_of(certs->cbegin(), certs->cend(), [x509](const X509Cert &cert) {
-                    return cert && cert == x509;
-                }) ? 1 : 0;
-            }, const_cast<vector<X509Cert>*>(&certs));
+            X509_STORE *store = SSL_CTX_get_cert_store(ssl.get());
+            X509_STORE_set_flags(store, X509_V_FLAG_TRUSTED_FIRST | X509_V_FLAG_PARTIAL_CHAIN);
+            for(const X509Cert &cert: certs)
+            {
+                if(cert.handle())
+                    X509_STORE_add_cert(store, cert.handle());
+            }
         }
         BIO *sbio = BIO_new_ssl(ssl.get(), 1);
         if(!sbio)
@@ -292,7 +293,7 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
     stringstream stream(r.content);
     string line;
     auto to_lower = [](string str) {
-        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        transform(str.begin(), str.end(), str.begin(), ::tolower);
         return str;
     };
     while(getline(stream, line))

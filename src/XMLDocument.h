@@ -21,6 +21,7 @@
 
 #include "crypto/Digest.h"
 #include "util/log.h"
+#include "util/memory.h"
 
 #include <libxml/parser.h>
 #include <libxml/xmlschemas.h>
@@ -32,29 +33,11 @@
 
 #include <openssl/evp.h>
 
-#include <memory>
 #include <istream>
 
 namespace digidoc {
 
 #define VERSION_CHECK(major, minor, patch) (((major)<<16)|((minor)<<8)|(patch))
-
-template<typename> struct unique_xml;
-template<class T>
-struct unique_xml<void(T *)>
-{
-    using type = std::unique_ptr<T,void(*)(T *)>;
-};
-
-template<typename T>
-using unique_xml_t = typename unique_xml<T>::type;
-
-template<class T, typename D>
-[[nodiscard]]
-constexpr std::unique_ptr<T, D> make_unique_ptr(T *p, D d) noexcept
-{
-    return {p, std::forward<D>(d)};
-}
 
 static std::vector<unsigned char> from_base64(std::string_view data)
 {
@@ -297,7 +280,7 @@ struct XMLNode: public XMLElem<xmlNode>
     }
 };
 
-struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
+struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
 {
     static constexpr std::string_view C14D_ID_1_0 {"http://www.w3.org/TR/2001/REC-xml-c14n-20010315"};
     static constexpr std::string_view C14D_ID_1_0_COM {"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"};
@@ -309,7 +292,7 @@ struct XMLDocument: public unique_xml_t<decltype(xmlFreeDoc)>, public XMLNode
     using XMLNode::operator bool;
 
     XMLDocument(element_type *ptr = {}, const XMLName &n = {}) noexcept
-        : std::unique_ptr<element_type, deleter_type>(ptr, xmlFreeDoc)
+        : unique_free_t<xmlDoc>(ptr, xmlFreeDoc)
         , XMLNode{xmlDocGetRootElement(get())}
     {
         if(d && !n.name.empty() && n.name != name() && !n.ns.empty() && n.ns != ns())

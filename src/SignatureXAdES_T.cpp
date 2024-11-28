@@ -25,6 +25,7 @@
 #include "crypto/Signer.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
+#include "crypto/X509CertStore.h"
 #include "util/DateTime.h"
 #include "util/log.h"
 
@@ -113,9 +114,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             signatures->c14n(digest, canonicalizationMethod, signatureValue());
         });
 
-        tm tm = tsa.time();
-        time_t validateTime = util::date::mkgmtime(tm);
-        if(!signingCertificate().isValid(&validateTime))
+        if(!X509CertStore::instance()->verify(signingCertificate(), policy == POLv1, tsa.time()))
             THROW("Signing certificate was not valid on signing time");
 
         auto completeCertRefs = usp/"CompleteCertificateRefs";
