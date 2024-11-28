@@ -28,6 +28,7 @@
 #include "crypto/X509CertStore.h"
 #include "crypto/X509Crypto.h"
 #include "util/DateTime.h"
+#include "util/algorithm.h"
 #include "util/log.h"
 #include "util/File.h"
 
@@ -364,7 +365,7 @@ string SignatureXAdES_B::policy() const
 {
     if(auto id = signedSignatureProperties()/"SignaturePolicyIdentifier"/"SignaturePolicyId"/"SigPolicyId"/"Identifier";
         id && id["Qualifier"] == "OIDAsURN")
-        return string(id);
+        return string(trim_prefix(id));
     return {};
 }
 
@@ -393,8 +394,8 @@ string SignatureXAdES_B::trustedSigningTime() const
 
 string SignatureXAdES_B::SPUri() const
 {
-    return string(signedSignatureProperties()
-        /"SignaturePolicyIdentifier"/"SignaturePolicyId"/"SigPolicyQualifiers"/"SigPolicyQualifier"/"SPURI");
+    return string(trim_prefix(signedSignatureProperties()
+        /"SignaturePolicyIdentifier"/"SignaturePolicyId"/"SigPolicyQualifiers"/"SigPolicyQualifier"/"SPURI"));
 }
 
 void SignatureXAdES_B::validate() const
@@ -633,7 +634,7 @@ void SignatureXAdES_B::checkSigningCertificate(bool noqscd) const
     {
         X509Cert signingCert = signingCertificate();
         vector<X509Cert::KeyUsage> usage = signingCert.keyUsage();
-        if(find(usage.cbegin(), usage.cend(), X509Cert::NonRepudiation) == usage.cend())
+        if(!contains(usage, X509Cert::NonRepudiation))
             THROW("Signing certificate does not contain NonRepudiation key usage flag");
         if(!X509CertStore::instance()->verify(signingCert, noqscd))
             THROW("Unable to verify signing certificate");

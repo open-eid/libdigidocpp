@@ -173,11 +173,8 @@ struct XMLElem
 
     constexpr operator sv() const noexcept
     {
-        constexpr sv whitespace {" \n\r\f\t\v"};
         auto *text = children(&value_type::children, XML_TEXT_NODE);
-        auto result = to_string_view(text, &std::decay_t<decltype(*text)>::content);
-        result.remove_prefix(std::min<size_t>(result.find_first_not_of(whitespace), result.size()));
-        return result;
+        return to_string_view(text, &std::decay_t<decltype(*text)>::content);
     }
 
     pointer d{};
