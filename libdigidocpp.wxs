@@ -105,12 +105,6 @@
       <Files Include="$(var.libdigidocpp)\include\**" />
     </ComponentGroup>
 
-<?ifdef var.docLocation ?>
-    <ComponentGroup Id="Documentation" Directory="INSTALLFOLDER" Subdirectory="documentation">
-      <Files Include="$(var.docLocation)\**" />
-    </ComponentGroup>
-<?endif?>
-
     <Feature Id="InstallLibdigidocpp" Level="1" Title="Libdigidocpp" Display="expand" ConfigurableDirectory="INSTALLFOLDER">
       <ComponentGroupRef Id="Runtime" />
       <ComponentGroupRef Id="Dependencies" />
@@ -124,7 +118,7 @@
       </Feature>
 <?ifdef var.docLocation ?>
       <Feature Id="InstallDocumentation" Level="1" Title="Documentation">
-        <ComponentGroupRef Id="Documentation" />
+        <Files Include="$(var.docLocation)\**" Directory="INSTALLFOLDER" Subdirectory="documentation" />
       </Feature>
 <?endif?>
     </Feature>
