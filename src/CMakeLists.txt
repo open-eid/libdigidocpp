@@ -207,15 +207,11 @@ if(SWIG_FOUND)
         endif()
         #configure_file(setup.py.cmake setup.py)
         #install(CODE "execute_process(COMMAND python3 ${CMAKE_CURRENT_BINARY_DIR}/setup.py install)")
-        if(NOT Python3_SITELIB)
-            execute_process(COMMAND /usr/bin/python3 -c
-                "from distutils import sysconfig;print(sysconfig.get_python_lib(plat_specific=False,standard_lib=False))"
-                OUTPUT_VARIABLE Python3_SITELIB OUTPUT_STRIP_TRAILING_WHITESPACE)
-        endif()
         if(WIN32)
             set(Python3_SITELIB ${CMAKE_INSTALL_BINDIR})
             install(FILES $<TARGET_PDB_FILE:digidoc_python> DESTINATION ${Python3_SITELIB} OPTIONAL)
         else()
+            find_package(Python3 COMPONENTS Interpreter) # for Python3_SITELIB
             set_target_properties(digidoc_python PROPERTIES SUFFIX .so)
         endif()
         set_target_properties(digidoc_python PROPERTIES

@@ -43,13 +43,11 @@ if($doxygen) {
   $cmakeext += "-DDOXYGEN_EXECUTABLE=$doxygen"
   $wixext += "-d", "docLocation=$(Get-Location)/$platform/share/doc/libdigidocpp"
 }
-if($env:VSCMD_ARG_HOST_ARCH -ne "arm64") {
+if($platform -eq "arm64" -and $env:VSCMD_ARG_HOST_ARCH -ne "arm64") {
   $cmakeext += "-DCMAKE_DISABLE_FIND_PACKAGE_Python3=yes"
   $wixext += "-d", "disablePython=1"
-  if($platform -eq "arm64") {
-    $boost = $false
-  }
-} 
+  $boost = $false
+}
 if($boost) {
   $cmakeext += "-DVCPKG_MANIFEST_FEATURES=tests"
   $target += "check"

@@ -22,7 +22,6 @@ jobs:
       run: |
         brew update
         brew install --formula ninja swig doxygen boost
-        brew unlink python@3.11 || true
         brew unlink python@3.12 || true
         brew unlink python@3.13 || true
         brew unlink openssl@3 || true
@@ -136,8 +135,10 @@ jobs:
         include:
         - toolset: 143
           image: windows-2022
+          vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
         - toolset: 142
           image: windows-2019
+          vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
         - platform: x86
           setenv: amd64_x86
         - platform: x64
@@ -166,17 +167,13 @@ jobs:
         Invoke-WebRequest -UserAgent "Wget" "https://sourceforge.net/projects/swig/files/swigwin/swigwin-4.2.1/swigwin-4.2.1.zip/download" -OutFile swig.zip
         tar xf swig.zip
     - uses: actions/setup-python@v5
-      if: matrix.platform == 'x86'
+      if: matrix.platform != 'arm64'
       with:
         python-version: 3.12
-        architecture: x86
-    - name: Setup dev env
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: ${{ matrix.setenv }}
+        architecture: ${{ matrix.platform }}
     - name: Build
       run: |
-        & .\build.ps1 `
+        & "${{ matrix.vcvars }}" ${{ matrix.setenv }} "&&" pwsh build.ps1 `
           -swig ${{ github.workspace }}/swigwin-4.2.1/swig.exe `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
           -boost
