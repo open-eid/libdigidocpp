@@ -57,7 +57,7 @@
 #define URI_ECDSA_SHA384 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384"
 #define URI_ECDSA_SHA512 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512"
 
-#ifdef LIBRESSL_VERSION_NUMBER
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3080200fL
 using EVP_MD_CTX = struct env_md_ctx_st;
 #else
 using EVP_MD_CTX = struct evp_md_ctx_st;
