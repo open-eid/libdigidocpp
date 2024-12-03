@@ -105,7 +105,7 @@ void Log::out(LogType type, const char *file, unsigned int line, const char *for
     va_end(args);
 }
 
-void Log::dbgPrintfMemImpl(const char *msg, const void *ptr, size_t size, const char *file, int line)
+void Log::dbgPrintfMemImpl(const char *msg, const unsigned char *data, size_t size, const char *file, int line)
 {
     Conf *conf = Conf::instance();
     if(!conf || conf->logLevel() < DebugType)
@@ -119,7 +119,6 @@ void Log::dbgPrintfMemImpl(const char *msg, const void *ptr, size_t size, const 
         o = &f;
     }
 
-    const unsigned char *data = (const unsigned char*)ptr;
     *o << "DEBUG [" << File::fileName(file) << ':' << line << "] - " << msg << " { ";
     *o << hex << uppercase << setfill('0');
     for(size_t i = 0; i < size; ++i)

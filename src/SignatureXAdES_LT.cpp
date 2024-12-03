@@ -112,12 +112,12 @@ void SignatureXAdES_LT::validate(const string &policy) const
     try {
         auto revocationValues = unsignedSignatureProperties()/"RevocationValues";
         if(!revocationValues)
-            THROW_MAIN(exception, "RevocationValues object is missing")
+            THROW("RevocationValues object is missing");
         if(revocationValues + 1)
-            THROW_MAIN(exception, "More than one RevocationValues object is not supported")
+            THROW("More than one RevocationValues object is not supported");
         auto ocspValues = revocationValues/"OCSPValues";
         if(!ocspValues)
-            THROW_MAIN(exception, "OCSPValues is missing")
+            THROW("OCSPValues is missing");
 
         /*
          * Find OCSP response that matches with signingCertificate.
