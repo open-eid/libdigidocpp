@@ -21,7 +21,7 @@
 
 #include "Signature.h"
 
-#include <memory>
+#include "XMLDocument.h"
 
 namespace digidoc
 {
@@ -32,6 +32,8 @@ class SignatureTST final: public Signature
 {
 public:
     SignatureTST(const std::string &data, ASiC_S *asicSDoc);
+    SignatureTST(std::string current, XMLDocument &&xml, const std::string &data, ASiC_S *asicSDoc);
+    SignatureTST(ASiC_S *asicSDoc);
     ~SignatureTST();
 
     std::vector<unsigned char> messageImprint() const override;
@@ -57,6 +59,8 @@ public:
 private:
     DISABLE_COPY(SignatureTST);
     ASiC_S *asicSDoc {};
+    std::string file;
+    XMLDocument doc;
     std::unique_ptr<TS> timestampToken;
 };
 
