@@ -35,6 +35,15 @@ SignatureTST::SignatureTST(const string &data, ASiC_S *asicSDoc)
     , timestampToken(make_unique<TS>((const unsigned char*)data.data(), data.size()))
 {}
 
+SignatureTST::SignatureTST(ASiC_S *asicSDoc)
+    : asicSDoc(asicSDoc)
+{
+    auto *dataFile = static_cast<DataFilePrivate*>(asicSDoc->dataFiles().front());
+    Digest digest;
+    dataFile->digest(digest);
+    timestampToken = make_unique<TS>(digest);
+}
+
 SignatureTST::~SignatureTST() = default;
 
 X509Cert SignatureTST::TimeStampCertificate() const
