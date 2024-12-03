@@ -68,7 +68,7 @@ string date::to_string(time_t t)
 string date::to_string(const tm &date)
 {
     string result(20, 0);
-    if(strftime(result.data(), result.size() + 1, "%Y-%m-%dT%H:%M:%SZ", &date) == 0)
+    if(is_empty(date) || strftime(result.data(), result.size() + 1, "%Y-%m-%dT%H:%M:%SZ", &date) == 0)
         result.clear();
     return result;
 }
