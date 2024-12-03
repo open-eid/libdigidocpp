@@ -17,12 +17,6 @@ else()
     set(BUILD_VER 0)
 endif()
 
-add_definitions(
-    -DMAJOR_VER=${PROJECT_VERSION_MAJOR}
-    -DMINOR_VER=${PROJECT_VERSION_MINOR}
-    -DRELEASE_VER=${PROJECT_VERSION_PATCH}
-    -DBUILD_VER=${BUILD_VER}
-)
 set(VERSION ${PROJECT_VERSION}.${BUILD_VER})
 
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
@@ -63,6 +57,12 @@ set( CRYPTO_HEADER
 )
 
 add_library(digidocpp_ver INTERFACE)
+target_compile_definitions(digidocpp_ver INTERFACE
+    VERSION_STR="${VERSION}"
+    $<$<PLATFORM_ID:Windows>:VERSION=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${BUILD_VER}>
+    $<$<PLATFORM_ID:Windows>:TARGET_NAME="$<TARGET_PROPERTY:NAME>">
+    $<$<PLATFORM_ID:Windows>:$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:APP>>
+)
 target_sources(digidocpp_ver INTERFACE libdigidocpp.rc)
 
 add_library(digidocpp_util STATIC
@@ -70,7 +70,7 @@ add_library(digidocpp_util STATIC
     util/log.cpp
 )
 
-target_link_libraries(digidocpp_util PRIVATE $<$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:iOS>>:-framework\ CoreFoundation>)
+target_link_libraries(digidocpp_util PUBLIC digidocpp_ver PRIVATE $<$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:iOS>>:-framework\ CoreFoundation>)
 
 add_library(digidocpp_priv STATIC
     crypto/Connect.cpp
@@ -149,7 +149,6 @@ set_target_properties(digidocpp PROPERTIES
     MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${PROJECT_VERSION}
     MACOSX_FRAMEWORK_BUNDLE_VERSION ${BUILD_VER}
     MACOSX_RPATH YES
-    COMPILE_DEFINITIONS TARGET_NAME="$<TARGET_NAME:digidocpp>"
     POSITION_INDEPENDENT_CODE YES
 )
 
@@ -157,10 +156,10 @@ target_include_directories(digidocpp
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
 )
-target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv digidocpp_ver)
+target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv)
 
 if( BUILD_TOOLS )
-    add_executable(digidoc-tool digidoc-tool.rc digidoc-tool.cpp)
+    add_executable(digidoc-tool digidoc-tool.cpp)
     target_link_libraries(digidoc-tool digidocpp digidocpp_priv Threads::Threads)
     configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
 endif()
@@ -181,8 +180,7 @@ if(SWIG_FOUND)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/java)
         swig_add_library(digidoc_java LANGUAGE java SOURCES ../libdigidocpp.i)
         target_include_directories(digidoc_java PRIVATE ${JAVA_INCLUDE_PATH} $<$<BOOL:${JAVA_INCLUDE_PATH2}>:${JAVA_INCLUDE_PATH2}>)
-        target_compile_definitions(digidoc_java PRIVATE TARGET_NAME="$<TARGET_NAME:digidoc_java>")
-        target_link_libraries(digidoc_java digidocpp digidocpp_util digidocpp_ver)
+        target_link_libraries(digidoc_java digidocpp digidocpp_util)
         set_target_properties(digidoc_java PROPERTIES
             INSTALL_RPATH $<$<PLATFORM_ID:Darwin>:/Library/Frameworks>
             SWIG_COMPILE_DEFINITIONS $<$<PLATFORM_ID:Windows>:SWIGWIN>
@@ -197,8 +195,7 @@ if(SWIG_FOUND)
         set(CMAKE_SWIG_FLAGS -py3)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
         swig_add_library(digidoc_python LANGUAGE python SOURCES ../libdigidocpp.i)
-        target_compile_definitions(digidoc_python PRIVATE TARGET_NAME="$<TARGET_NAME:digidoc_python>")
-        target_link_libraries(digidoc_python digidocpp digidocpp_util digidocpp_ver)
+        target_link_libraries(digidoc_python digidocpp digidocpp_util)
         if(TARGET Python3::SABIModule)
             target_compile_definitions(digidoc_python PRIVATE Py_LIMITED_API=0x03090000)
             target_link_libraries(digidoc_python Python3::SABIModule)
@@ -225,8 +222,7 @@ if(SWIG_FOUND)
     set(CMAKE_SWIG_FLAGS -namespace digidoc)
     set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/csharp)
     swig_add_library(digidoc_csharp LANGUAGE csharp SOURCES ../libdigidocpp.i)
-    target_compile_definitions(digidoc_csharp PRIVATE TARGET_NAME="$<TARGET_NAME:digidoc_csharp>")
-    target_link_libraries(digidoc_csharp digidocpp digidocpp_util digidocpp_ver)
+    target_link_libraries(digidoc_csharp digidocpp digidocpp_util)
     set_target_properties(digidoc_csharp PROPERTIES
         SWIG_COMPILE_DEFINITIONS $<$<PLATFORM_ID:Windows>:SWIGWIN>
         INSTALL_RPATH $<$<PLATFORM_ID:Darwin>:/Library/Frameworks>
