@@ -50,12 +50,10 @@ namespace digidoc
           static std::unique_ptr<Container> openInternal(const std::string &path);
 
       private:
-          ASiC_E();
-          ASiC_E(const std::string &path);
+          ASiC_E(const std::string &path, bool create);
           DISABLE_COPY(ASiC_E);
           void canSave() final;
           void loadSignatures(XMLDocument &&doc, const std::string &file);
-          void parseManifestAndLoadFiles(const ZipSerialize &z);
           void save(const ZipSerialize &s) final;
 
           class Private;

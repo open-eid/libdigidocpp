@@ -764,6 +764,16 @@ static int extend(int argc, char *argv[])
             validateSignature(s);
     }
 
+    if(extendId.empty())
+    {
+        cout << "  Extending " << signatures.size() << " signature(s)\n";
+        if(auto wrapped = Container::extendContainerValidity(*doc, &signer))
+        {
+            doc = std::move(wrapped);
+            cout << "  Wrapped to new container\n";
+        }
+    }
+
     doc->save();
     return EXIT_SUCCESS;
 }
