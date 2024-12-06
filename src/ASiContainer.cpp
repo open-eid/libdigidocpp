@@ -41,7 +41,7 @@ constexpr unsigned long MAX_MEM_FILE = 500UL*1024UL*1024UL;
 class ASiContainer::Private
 {
 public:
-    string mimetype, path;
+    string path, mimetype;
     vector<DataFile*> documents;
     vector<Signature*> signatures;
     map<string, ZipSerialize::Properties, std::less<>> properties;
@@ -50,9 +50,10 @@ public:
 /**
  * Initialize Container.
  */
-ASiContainer::ASiContainer(string_view mimetype)
+ASiContainer::ASiContainer(string_view path, string_view mimetype)
     : d(make_unique<Private>())
 {
+    d->path = string(path);
     d->mimetype = string(mimetype);
 }
 
@@ -80,10 +81,10 @@ XMLDocument ASiContainer::createManifest() const
  * @param supported supported mimetypes.
  * @return returns zip serializer for the container.
  */
-ZipSerialize ASiContainer::load(const string &path, bool mimetypeRequired, const set<string_view> &supported)
+ZipSerialize ASiContainer::load(bool mimetypeRequired, const set<string_view> &supported)
 {
-    DEBUG("ASiContainer::ASiContainer(path = '%s')", path.c_str());
-    ZipSerialize z(d->path = path, false);
+    DEBUG("ASiContainer::ASiContainer(path = '%s')", d->path.c_str());
+    ZipSerialize z(d->path, false);
     vector<string> list = z.list();
 
     // ETSI TS 102 918: mimetype has to be the first in the archive
@@ -266,8 +267,8 @@ void ASiContainer::save(const string &path)
         THROW("Can not save, container is empty.");
     canSave();
     if(!path.empty())
-        zpath(path);
-    ZipSerialize s(zpath(), true);
+        d->path = path;
+    ZipSerialize s(d->path, true);
     s.addFile("mimetype", zproperty("mimetype"), false)(mediaType());
 
     array<char,10240> buf{};
@@ -288,12 +289,7 @@ void ASiContainer::save(const string &path)
     save(s);
 }
 
-void ASiContainer::zpath(const string &file)
-{
-    d->path = file;
-}
-
-string ASiContainer::zpath() const
+const string& ASiContainer::path() const
 {
     return d->path;
 }
