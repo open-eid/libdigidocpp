@@ -58,20 +58,20 @@ namespace digidoc
           void save(const std::string &path) override;
           std::vector<Signature*> signatures() const override;
 
+          const std::string& path() const override;
+
       protected:
-          ASiContainer(std::string_view mimetype);
+          ASiContainer(const std::string &path, std::string_view mimetype);
 
           virtual void addDataFileChecks(const std::string &path, const std::string &mediaType);
           void addDataFilePrivate(DataFile *dataFile);
           Signature* addSignature(std::unique_ptr<Signature> &&signature);
           virtual void canSave() = 0;
           XMLDocument createManifest() const;
-          ZipSerialize load(const std::string &path, bool requireMimetype, const std::set<std::string_view> &supported);
+          ZipSerialize load(bool requireMimetype, const std::set<std::string_view> &supported);
           virtual void save(const ZipSerialize &s) = 0;
           void deleteSignature(Signature* s);
 
-          void zpath(const std::string &file);
-          std::string zpath() const;
           const ZipSerialize::Properties& zproperty(std::string_view file) const;
 
       private:

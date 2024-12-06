@@ -23,17 +23,17 @@
 #include "DataFile_p.h"
 #include "SignatureXAdES_LTA.h"
 #include "XMLDocument.h"
-#include "crypto/Digest.h"
 #include "crypto/Signer.h"
 #include "util/File.h"
 
 #include <algorithm>
 #include <set>
-#include <sstream>
 
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
+
+#define STR_VIEW_FMT(str) int(str.size()), str.data()
 
 class ASiC_E::Private
 {
@@ -51,21 +51,83 @@ public:
 /**
  * Initialize BDOC container.
  */
-ASiC_E::ASiC_E()
-    : ASiContainer(MIMETYPE_ASIC_E)
+ASiC_E::ASiC_E(const string &path, bool create) try
+    : ASiContainer(path, MIMETYPE_ASIC_E)
     , d(make_unique<Private>())
 {
-}
+    if(create)
+        return;
+    auto z = load(true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
+    auto doc = XMLDocument::open(z.read("META-INF/manifest.xml"), {"manifest", MANIFEST_NS});
+    doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
 
-/**
- * Opens ASiC container from a file
- */
-ASiC_E::ASiC_E(const string &path)
-    : ASiContainer(MIMETYPE_ASIC_E)
-    , d(make_unique<Private>())
+    set<string_view> manifestFiles;
+    bool mimeFound = false;
+    for(auto file = doc/"file-entry"; file; file++)
+    {
+        auto full_path = file[{"full-path", MANIFEST_NS}];
+        auto media_type = file[{"media-type", MANIFEST_NS}];
+        DEBUG("full_path = '%.*s', media_type = '%.*s'", STR_VIEW_FMT(full_path), STR_VIEW_FMT(media_type));
+
+        // ODF does not specify that mimetype should be first in manifest
+        if(full_path == "/")
+        {
+            if(mimeFound)
+                THROW("Manifest multiple entries defined for file '/'.");
+            if(mediaType() != media_type)
+                THROW("Manifest has incorrect container media type defined '%.*s', expecting '%s'.", STR_VIEW_FMT(media_type), mediaType().c_str());
+            mimeFound = true;
+            continue;
+        }
+        if(full_path.back() == '/') // Skip Directory entries
+            continue;
+
+        if(const auto &[pos, inserted] = manifestFiles.insert(full_path); !inserted)
+            THROW("Manifest multiple entries defined for file '%.*s'.", STR_VIEW_FMT(full_path));
+        if(mediaType() == MIMETYPE_ADOC &&
+            (full_path.starts_with("META-INF/") || full_path.starts_with("metadata/")))
+            d->metadata.push_back(new DataFilePrivate(z, string(full_path), string(media_type)));
+        else
+            addDataFilePrivate(new DataFilePrivate(z, string(full_path), string(media_type)));
+    }
+    if(!mimeFound)
+        THROW("Manifest is missing mediatype file entry.");
+
+    for(const string &file: z.list())
+    {
+        /**
+         * http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
+         * 6.2.2 Contents of Container
+         * 3) The root element of each "*signatures*.xml" content shall be either:
+         */
+        if(file.starts_with("META-INF/") && file.contains("signatures"))
+        {
+            try
+            {
+                loadSignatures(XMLDocument::open(z.read(file)), file);
+            }
+            catch(const Exception &e)
+            {
+                THROW_CAUSE(e, "Failed to parse signature '%s'.", file.c_str());
+            }
+            continue;
+        }
+
+        if(file == "mimetype" || file.starts_with("META-INF"))
+            continue;
+        if(manifestFiles.erase(file) == 0)
+            THROW("File '%s' found in container is not described in manifest.", file.c_str());
+    }
+    if(!manifestFiles.empty())
+        THROW("Manifest describes files that are not found in container.");
+}
+catch(const Exception &e)
 {
-    auto zip = load(path, true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
-    parseManifestAndLoadFiles(zip);
+    THROW_CAUSE(e, "Failed to parse manifest");
+}
+catch(...)
+{
+    THROW("Failed to parse manifest XML: Unknown exception");
 }
 
 ASiC_E::~ASiC_E()
@@ -110,9 +172,7 @@ void ASiC_E::save(const ZipSerialize &s)
 unique_ptr<Container> ASiC_E::createInternal(const string &path)
 {
     DEBUG("ASiC_E::createInternal(%s)", path.c_str());
-    unique_ptr<ASiC_E> doc = unique_ptr<ASiC_E>(new ASiC_E);
-    doc->zpath(path);
-    return doc;
+    return unique_ptr<Container>(new ASiC_E(path, true));
 }
 
 /**
@@ -146,7 +206,7 @@ void ASiC_E::canSave()
 unique_ptr<Container> ASiC_E::openInternal(const string &path)
 {
     DEBUG("ASiC_E::openInternal(%s)", path.c_str());
-    return unique_ptr<Container>(new ASiC_E(path));
+    return unique_ptr<Container>(new ASiC_E(path, false));
 }
 
 void ASiC_E::loadSignatures(XMLDocument &&doc, const string &file)
@@ -155,92 +215,6 @@ void ASiC_E::loadSignatures(XMLDocument &&doc, const string &file)
     d->signatures.emplace(file, signatures.get());
     for(auto s = signatures->signature(); s; s++)
         addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
-}
-
-/**
- * Parses manifest file and checks that files described in manifest exist, also
- * checks that no extra file do exist that are not described in manifest.xml.
- *
- * @param path directory on disk of the BDOC container.
- * @throws Exception exception is thrown if the manifest.xml file parsing failed.
- */
-void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
-{
-    DEBUG("ASiC_E::readManifest()");
-
-    try
-    {
-        auto doc = XMLDocument::open(z.read("META-INF/manifest.xml"), {"manifest", MANIFEST_NS});
-        doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
-
-        set<string_view> manifestFiles;
-        bool mimeFound = false;
-        for(auto file = doc/"file-entry"; file; file++)
-        {
-            auto full_path = file[{"full-path", MANIFEST_NS}];
-            auto media_type = file[{"media-type", MANIFEST_NS}];
-            DEBUG("full_path = '%s', media_type = '%s'", full_path.data(), media_type.data());
-
-            if(manifestFiles.contains(full_path))
-                THROW("Manifest multiple entries defined for file '%s'.", full_path.data());
-
-            // ODF does not specify that mimetype should be first in manifest
-            if(full_path == "/")
-            {
-                if(mediaType() != media_type)
-                    THROW("Manifest has incorrect container media type defined '%s', expecting '%s'.", media_type.data(), mediaType().c_str());
-                mimeFound = true;
-                continue;
-            }
-            if(full_path.back() == '/') // Skip Directory entries
-                continue;
-
-            manifestFiles.insert(full_path);
-            if(mediaType() == MIMETYPE_ADOC &&
-               (full_path.starts_with("META-INF/") ||
-                full_path.starts_with("metadata/")))
-                d->metadata.push_back(new DataFilePrivate(z, string(full_path), string(media_type)));
-            else
-                addDataFilePrivate(new DataFilePrivate(z, string(full_path), string(media_type)));
-        }
-        if(!mimeFound)
-            THROW("Manifest is missing mediatype file entry.");
-
-        for(const string &file: z.list())
-        {
-            /**
-             * http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
-             * 6.2.2 Contents of Container
-             * 3) The root element of each "*signatures*.xml" content shall be either:
-             */
-            if(file.starts_with("META-INF/") &&
-               file.find("signatures") != string::npos)
-            {
-                try
-                {
-                    loadSignatures(XMLDocument::open(z.read(file)), file);
-                }
-                catch(const Exception &e)
-                {
-                    THROW_CAUSE(e, "Failed to parse signature '%s'.", file.c_str());
-                }
-                continue;
-            }
-
-            if(file == "mimetype" || file.starts_with("META-INF"))
-                continue;
-            if(!manifestFiles.contains(file))
-                THROW("File '%s' found in container is not described in manifest.", file.c_str());
-        }
-    }
-    catch(const Exception &e)
-    {
-        THROW_CAUSE(e, "Failed to parse manifest");
-    }
-    catch(...)
-    {
-        THROW("Failed to parse manifest XML: Unknown exception");
-    }
 }
 
 Signature* ASiC_E::prepareSignature(Signer *signer)
