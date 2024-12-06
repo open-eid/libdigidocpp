@@ -602,6 +602,69 @@ BOOST_AUTO_TEST_CASE(OpenInvalidMimetypeContainer)
 }
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(ExtendValiditySuite)
+
+BOOST_AUTO_TEST_CASE(ThrowsWithNoSignatures)
+{
+    PKCS12Signer signer("signer1.p12", "signer1");
+    auto d = Container::createPtr("extend.tmp.asice");
+    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+    BOOST_CHECK_THROW(Container::extendContainerValidity(*d, &signer), Exception);
+}
+
+BOOST_AUTO_TEST_CASE(ExtendAsiceInPlace)
+{
+    // Sign with TS profile, extend in place to TSA
+    PKCS12Signer signer("signer2.p12", "signer2");
+    signer.setProfile("time-stamp");
+    auto d = Container::createPtr("extend.tmp.asice");
+    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+    BOOST_CHECK_NO_THROW(d->sign(&signer));
+    BOOST_CHECK_NO_THROW(d->save());
+
+    d = Container::openPtr("extend.tmp.asice");
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+
+    unique_ptr<Container> wrapped;
+    BOOST_CHECK_NO_THROW(wrapped = Container::extendContainerValidity(*d, &signer));
+    BOOST_CHECK(!wrapped); // nullptr = extended in place, no new container created
+    BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+    if(!d->signatures().empty())
+        BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
+}
+
+BOOST_AUTO_TEST_CASE(ExtendAsicsInPlace)
+{
+    // ASiC-S timestamp token is always extended in place (re-timestamped)
+    PKCS12Signer signer("signer1.p12", "signer1");
+    auto d = Container::openPtr("test.asics");
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+
+    unique_ptr<Container> wrapped;
+    BOOST_CHECK_NO_THROW(wrapped = Container::extendContainerValidity(*d, &signer));
+    BOOST_CHECK(!wrapped); // TST profile always extends in place
+}
+
+BOOST_AUTO_TEST_CASE(WrapContainerWithExpiredSignatures)
+{
+    // test.asice has signatures with expired certificates, expect wrapping into new ASiC-S
+    PKCS12Signer signer("signer1.p12", "signer1");
+    auto d = Container::openPtr("test.asice");
+    BOOST_REQUIRE(!d->signatures().empty());
+
+    unique_ptr<Container> wrapped;
+    BOOST_CHECK_NO_THROW(wrapped = Container::extendContainerValidity(*d, &signer));
+    BOOST_REQUIRE(wrapped);
+    BOOST_CHECK_EQUAL(wrapped->mediaType(), ASiCS::TYPE);
+    BOOST_REQUIRE_EQUAL(wrapped->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(wrapped->dataFiles().front()->fileName(), "test.asice");
+    BOOST_CHECK_EQUAL(wrapped->signatures().size(), 1U);
+    if(!wrapped->signatures().empty())
+        BOOST_CHECK_NO_THROW(wrapped->signatures().front()->validate());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(XMLTestSuite)
 BOOST_AUTO_TEST_CASE(XMLBomb)
 {

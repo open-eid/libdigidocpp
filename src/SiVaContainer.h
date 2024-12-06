@@ -102,6 +102,7 @@ public:
     static std::unique_ptr<Container> openInternal(const std::string &path, ContainerOpenCB *cb);
 
 private:
+    std::string path() const final;
     SiVaContainer(const std::string &path, ContainerOpenCB *cb, bool useHashCode);
     DISABLE_COPY(SiVaContainer);
 

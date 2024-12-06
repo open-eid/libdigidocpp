@@ -75,7 +75,10 @@ public:
     template<class T>
     static void addContainerImplementation();
 
+    static std::unique_ptr<Container> extendContainerValidity(Container &doc, Signer *signer);
+
 protected:
+    virtual std::string path() const;
     Container();
     unsigned int newSignatureId() const;
 

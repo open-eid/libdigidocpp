@@ -758,6 +758,9 @@ You change the default behaviour in the configuration file with the following pa
 \tableofcontents
 Note that Libdigidocpp uses internal memory buffers in case of all the operations, so that intermediary data is not written to temporary files on the disk. Also, the data files to be added to a DigiDoc container can be read from a data stream and later extracted from the container to a stream so that the data can be kept in memory.
 
+\subsection string-encoding String encoding
+All <tt>std::string</tt> values passed to or returned from the API are UTF-8 encoded. This applies to file paths, media types, and all other string parameters and return values throughout the library.
+
 \subsection initialization Initialization
 Libdigidocpp's initialization method conducts the following operations:
 1. initializes dependent libraries (see also \ref libraries)
