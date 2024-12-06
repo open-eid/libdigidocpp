@@ -27,8 +27,6 @@
 #include "util/File.h"
 #include "util/log.h"
 
-#include <sstream>
-
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
@@ -36,17 +34,12 @@ using namespace std;
 /**
  * Initialize ASiCS container.
  */
-ASiC_S::ASiC_S()
-    : ASiContainer(MIMETYPE_ASIC_S)
-{}
-
-/**
- * Opens ASiC-S container from a file
- */
-ASiC_S::ASiC_S(const string &path)
-    : ASiContainer(MIMETYPE_ASIC_S)
+ASiC_S::ASiC_S(const string &path, bool create)
+    : ASiContainer(path, MIMETYPE_ASIC_S)
 {
-    auto z = load(path, false, {mediaType()});
+    if(create)
+        return;
+    auto z = load(false, {mediaType()});
     bool foundTimestamp = false;
     bool foundManifest = false;
     for(const string &file: z.list())
@@ -108,9 +101,7 @@ unique_ptr<Container> ASiC_S::createInternal(const string &path)
     if(!util::File::fileExtension(path, {"asics", "scs"}))
         return {};
     DEBUG("ASiC_S::createInternal(%s)", path.c_str());
-    auto doc = unique_ptr<ASiC_S>(new ASiC_S());
-    doc->zpath(path);
-    return doc;
+    return unique_ptr<Container>(new ASiC_S(path, true));
 }
 
 void ASiC_S::addAdESSignature(istream & /*signature*/)
@@ -131,7 +122,7 @@ unique_ptr<Container> ASiC_S::openInternal(const string &path, ContainerOpenCB *
     {
         if(util::File::fileExtension(path, {"asice", "sce", "bdoc"}))
             return {};
-        return unique_ptr<Container>(new ASiC_S(path));
+        return unique_ptr<Container>(new ASiC_S(path, false));
     }
     catch(const Exception &)
     {

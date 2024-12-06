@@ -41,8 +41,7 @@ namespace digidoc
         static std::unique_ptr<Container> openInternal(const std::string &path, ContainerOpenCB *cb);
 
     private:
-        ASiC_S();
-        ASiC_S(const std::string &path);
+        ASiC_S(const std::string &path, bool create);
         DISABLE_COPY(ASiC_S);
 
         void addDataFileChecks(const std::string &path, const std::string &mediaType) override;
