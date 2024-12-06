@@ -25,7 +25,9 @@
 #include "PDF.h"
 #include "SiVaContainer.h"
 #include "XmlConf.h"
+#include "crypto/Signer.h"
 #include "crypto/X509CertStore.h"
+#include "util/algorithm.h"
 #include "util/File.h"
 #include "util/log.h"
 
@@ -36,7 +38,7 @@
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/crypto.h>
 
-#include <algorithm>
+#include <functional>
 #include <sstream>
 #include <thread>
 
@@ -266,6 +268,16 @@ void Container::addDataFile(unique_ptr<istream> /*is*/, const string & /*fileNam
 }
 
 /**
+ * Returns the path of the container.
+ * @return path of the container.
+ * @since 4.5.0
+ */
+string Container::path() const
+{
+    THROW("Not implemented.");
+}
+
+/**
  * Adds signature to the container.
  *
  * @param signature signature, which is added to the container.
@@ -310,6 +322,142 @@ unique_ptr<Container> Container::createPtr(const std::string &path)
     return ASiC_E::createInternal(path);
 }
 
+/**
+ * Extends the validity of signatures in the container by adding a new timestamp.
+ *
+ * For ASiC-E and ASiC-S containers, considers only signatures whose signing
+ * certificate has country=EE; non-Estonian signatures are ignored when deciding
+ * whether extension is possible. For ASiC-E containers with valid LT-level EE
+ * signatures, extends eligible non-e-seal signatures in place by adding an
+ * archive timestamp. For ASiC-S containers, re-timestamps the existing EE
+ * timestamp token. If in-place extension is not possible, wraps the original
+ * container as a data file in a new ASiC-S container and adds a timestamp.
+ *
+ * Containers where all considered EE signatures are T-level (time-stamp profile without OCSP)
+ * cannot be extended and will throw. Containers with no Estonian signing certificates will throw.
+ *
+ * @param doc container whose signatures are to be extended.
+ * @param signer signer used to create the new timestamp; its profile will be set automatically.
+ * @param extendedCount set to the number of signatures extended in place; 0 if the container was wrapped.
+ * @return new ASiC-S container if wrapping was necessary; empty unique_ptr if extended in place.
+ * @throws Exception if the container has no signatures, no EE signatures, all signatures are T-level, or extension fails.
+ * @since 4.5.0
+ */
+std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Signer *signer, size_t &extendedCount) try
+{
+    extendedCount = 0;
+    if(doc.signatures().empty())
+        THROW("Container does not contain signatures");
+
+    if(doc.mediaType() == ASiContainer::MIMETYPE_ASIC_S ||
+        doc.mediaType() == ASiContainer::MIMETYPE_ASIC_E)
+    {
+        bool extendInPlace = true;
+        size_t tCount = 0;
+        size_t eeCount = 0;
+        for(Signature *s: doc.signatures())
+        {
+            auto signingCert = s->signingCertificate();
+            if(signingCert.subjectName("C") != "EE" ||
+                contains(signingCert.qcStatements(), digidoc::X509Cert::QCT_ESEAL))
+                continue;
+            ++eeCount;
+
+            const string &prof = s->profile();
+            if(prof.find(ASiC_S::ASIC_TST_PROFILE) != string::npos)
+                break;
+            if(prof.find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
+            {
+                extendInPlace = false;
+                break;
+            }
+
+            if(auto list = s->ArchiveTimeStamps(); !list.empty() && !list.back().cert.isValid())
+            {
+                extendInPlace = false;
+                break;
+            }
+            else if(list.empty() && (!s->TimeStampCertificate().isValid() || !signingCert.isValid()))
+            {
+                extendInPlace = false;
+                break;
+            }
+            // Time-stamp signatures without OCSP cert are considered T-level signatures
+            else if(auto ocspCert = s->OCSPCertificate(); !ocspCert)
+            {
+                ++tCount;
+                continue;
+            }
+            else if(!ocspCert.isValid())
+            {
+                extendInPlace = false;
+                break;
+            }
+
+            try {
+                s->validate();
+            } catch(const Exception &e) {
+                std::function<bool (const Exception &)> isInvalid;
+                isInvalid = [&](const Exception &e) {
+                    for(const Exception &child: e.causes())
+                    {
+                        switch(child.code())
+                        {
+                        case Exception::MimeTypeWarning:
+                            continue;
+                        case Exception::CertificateIssuerMissing:
+                        case Exception::CertificateUnknown:
+                        case Exception::OCSPResponderMissing:
+                        case Exception::OCSPCertMissing:
+                            //break; TODO: should we extend?
+                        default:
+                            break;
+                        }
+                        if(isInvalid(child))
+                            return true;
+                    }
+                    return e.causes().empty();
+                };
+                if(isInvalid(e))
+                {
+                    extendInPlace = false;
+                    break;
+                }
+            }
+        }
+        if(tCount > 0 && tCount == eeCount)
+            THROW("Container contains only T-level signatures, cannot extend validity");
+        if(eeCount == 0)
+            THROW("Container does not contain signatures with Estonian signing certificate, cannot extend validity");
+
+        if(extendInPlace)
+        {
+            for(Signature *s: doc.signatures())
+            {
+                if(auto cert = s->signingCertificate();
+                    cert.subjectName("C") != "EE" ||
+                    contains(cert.qcStatements(), digidoc::X509Cert::QCT_ESEAL) ||
+                    (s->profile().find(ASiC_E::ASIC_TS_PROFILE) != string::npos && !s->OCSPCertificate()))
+                    continue;
+                if(s->profile().find(ASiC_E::ASIC_TS_PROFILE) != string::npos)
+                    signer->setProfile(string(ASiC_E::ASIC_TSA_PROFILE));
+                else
+                    signer->setProfile(string(ASiC_S::ASIC_TST_PROFILE));
+                s->extendSignatureProfile(signer);
+                ++extendedCount;
+            }
+            return {};
+        }
+    }
+
+    signer->setProfile(string(ASiC_S::ASIC_TST_PROFILE));
+    auto asics = ASiC_S::createInternal(doc.path() + ".asics");
+    asics->addDataFile(doc.path(), doc.mediaType());
+    asics->sign(signer);
+    return asics;
+} catch(const Exception &e) {
+    THROW_CAUSE(e, "Failed to extend signature");
+}
 
 /**
  * @fn digidoc::Container::dataFiles
@@ -330,7 +478,7 @@ unsigned int Container::newSignatureId() const
 {
     vector<Signature*> list = signatures();
     for(unsigned int id = 0; ; ++id)
-        if(!any_of(list.cbegin(), list.cend(), [id](Signature *s){ return s->id() == Log::format("S%u", id); }))
+        if(!any_of(list, [id](Signature *s){ return s->id() == Log::format("S%u", id); }))
             return id;
 }
 

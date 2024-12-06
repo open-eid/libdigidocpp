@@ -149,9 +149,6 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
     if (PyBytes_Check($input)) {
         const char *data = PyBytes_AsString($input);
         $1 = new std::vector<unsigned char>(data, data + PyBytes_Size($input));
-    } else if (PyString_Check($input)) {
-        const char *data = PyString_AsString($input);
-        $1 = new std::vector<unsigned char>(data, data + PyString_Size($input));
     } else {
         PyErr_SetString(PyExc_TypeError, "not a bytes");
         SWIG_fail;
@@ -214,9 +211,11 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
 // std::unique_ptr is since swig 4.1
 %ignore digidoc::Container::createPtr;
 %ignore digidoc::Container::openPtr;
+%ignore digidoc::Container::extendContainerValidity;
 
 %newobject digidoc::Container::open;
 %newobject digidoc::Container::create;
+%newobject digidoc::Container::extendContainerValidity;
 
 %immutable digidoc::TSAInfo::cert;
 %immutable digidoc::TSAInfo::time;
@@ -246,9 +245,11 @@ def transfer(self):
 #endif
 
 // Handle standard C++ types
-%include "std_string.i"
-%include "std_vector.i"
-%include "std_map.i"
+%include <std_string.i>
+%include <std_vector.i>
+%include <std_map.i>
+%include <typemaps.i>
+%apply unsigned long long &OUTPUT { size_t &extendedCount };
 #ifdef SWIGCSHARP
 %typemap(imtype,
   inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
@@ -280,7 +281,22 @@ def transfer(self):
 %template(Signatures) std::vector<digidoc::Signature*>;
 %template(TSAInfos) std::vector<digidoc::TSAInfo>;
 
+%rename("%s") digidoc::Container::extendContainerValidity;
+
 %extend digidoc::Container {
+#ifdef SWIGJAVA
+    static Container* extendContainerValidity(Container &doc, Signer *signer)
+    {
+        size_t extendedCount{};
+        return digidoc::Container::extendContainerValidity(doc, signer, extendedCount).release();
+    }
+#else
+    static Container* extendContainerValidity(Container &doc, Signer *signer, size_t &extendedCount)
+    {
+        return digidoc::Container::extendContainerValidity(doc, signer, extendedCount).release();
+    }
+#endif
+
     static digidoc::Container* open(const std::string &path, digidoc::ContainerOpenCB *cb)
     {
         return digidoc::Container::openPtr(path, cb).release();
