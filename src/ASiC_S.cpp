@@ -46,15 +46,20 @@ ASiC_S::ASiC_S(const string &path)
     : ASiContainer(MIMETYPE_ASIC_S)
 {
     auto z = load(path, false, {mediaType()});
+    bool foundManifest = false;
+    bool foundTimestamp = false;
     for(const string &file: z.list())
     {
         if(file == "mimetype")
             continue;
         if(file == "META-INF/timestamp.tst")
+            foundTimestamp = true;
+        if(file == "META-INF/ASiCArchiveManifest.xml")
         {
             if(!signatures().empty())
                 THROW("Can not add signature to ASiC-S container which already contains a signature.");
-            addSignature(make_unique<SignatureTST>(z.extract<stringstream>(file).str(), this));
+            addSignature(make_unique<SignatureTST>(true, z, this));
+            foundManifest = true;
         }
         else if(file == "META-INF/signatures.xml")
         {
@@ -65,8 +70,6 @@ ASiC_S::ASiC_S(const string &path)
             for(auto s = signatures->signature(); s; s++)
                 addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
         }
-        else if(file == "META-INF/ASiCArchiveManifest.xml")
-            THROW("ASiCArchiveManifest are not supported.");
         else if(starts_with(file, "META-INF/"))
             continue;
         else if(const auto directory = File::directory(file);
@@ -76,6 +79,12 @@ ASiC_S::ASiC_S(const string &path)
             THROW("Can not add document to ASiC-S container which already contains a document.");
         else
             addDataFile(dataStream(file, z), file, "application/octet-stream");
+    }
+    if(!foundManifest && foundTimestamp)
+    {
+        if(!signatures().empty())
+            THROW("Can not add signature to ASiC-S container which already contains a signature.");
+        addSignature(make_unique<SignatureTST>(false, z, this));
     }
 
     if(dataFiles().empty())
@@ -129,8 +138,8 @@ void ASiC_S::save(const ZipSerialize &s)
 {
     if(zproperty("META-INF/manifest.xml").size && !createManifest().save(s.addFile("META-INF/manifest.xml", zproperty("META-INF/manifest.xml")), true))
         THROW("Failed to create manifest XML");
-    if(auto list = signatures(); !list.empty())
-        s.addFile("META-INF/timestamp.tst", zproperty("META-INF/timestamp.tst"))(static_cast<SignatureTST*>(list.front())->save());
+    for(Signature *sig: signatures())
+        static_cast<SignatureTST*>(sig)->save(s);
 }
 
 Signature *ASiC_S::sign(Signer *signer)
