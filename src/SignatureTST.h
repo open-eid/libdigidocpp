@@ -50,6 +50,7 @@ public:
     void validate() const final;
     std::vector<unsigned char> dataToSign() const final;
     void setSignatureValue(const std::vector<unsigned char> &signatureValue) final;
+    void extendSignatureProfile(Signer *signer) final;
 
     // Xades properties
     std::string profile() const final;
