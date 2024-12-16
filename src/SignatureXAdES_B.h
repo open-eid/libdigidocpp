@@ -27,10 +27,7 @@
 
 namespace digidoc
 {
-    constexpr std::string_view ASIC_NS {"http://uri.etsi.org/02918/v1.2.1#"};
     constexpr std::string_view OPENDOCUMENT_NS {"urn:oasis:names:tc:opendocument:xmlns:digitalsignature:1.0"};
-    constexpr std::string_view DSIG_NS {"http://www.w3.org/2000/09/xmldsig#"};
-    constexpr std::string_view XADES_NS {"http://uri.etsi.org/01903/v1.3.2#"};
     constexpr std::string_view XADESv141_NS {"http://uri.etsi.org/01903/v1.4.1#"};
     constexpr std::string_view REF_TYPE {"http://uri.etsi.org/01903#SignedProperties"};
 
