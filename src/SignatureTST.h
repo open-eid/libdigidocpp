@@ -27,11 +27,12 @@ namespace digidoc
 {
 class ASiC_S;
 class TS;
+class ZipSerialize;
 
 class SignatureTST final: public Signature
 {
 public:
-    SignatureTST(const std::string &data, ASiC_S *asicSDoc);
+    SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDoc);
     SignatureTST(ASiC_S *asicSDoc, Signer *signer);
     ~SignatureTST();
 
@@ -53,12 +54,17 @@ public:
     // Xades properties
     std::string profile() const final;
 
-    std::vector<unsigned char> save() const;
+    //TSA profile properties
+    std::vector<TSAInfo> ArchiveTimeStamps() const final;
+
+    void save(const ZipSerialize &s) const;
 
 private:
     DISABLE_COPY(SignatureTST);
     ASiC_S *asicSDoc {};
     std::unique_ptr<TS> timestampToken;
+    struct Data;
+    std::vector<Data> metadata;
 };
 
 }

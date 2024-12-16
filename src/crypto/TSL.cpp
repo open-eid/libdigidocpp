@@ -40,8 +40,6 @@ namespace digidoc {
 constexpr string_view TSL_NS {"http://uri.etsi.org/02231/v2#"};
 constexpr string_view ADD_NS {"http://uri.etsi.org/02231/v2/additionaltypes#"};
 constexpr string_view ECC_NS {"http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/#"};
-constexpr string_view DSIG_NS {"http://www.w3.org/2000/09/xmldsig#"};
-constexpr string_view XADES_NS {"http://uri.etsi.org/01903/v1.3.2#"};
 constexpr string_view XML_NS {"http://www.w3.org/XML/1998/namespace"};
 
 constexpr array SCHEMES_URI {

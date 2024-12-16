@@ -50,5 +50,6 @@ namespace digidoc
         void save(const ZipSerialize &s) final;
 
         static bool isContainerSimpleFormat(const std::string &path);
+        friend class SignatureTST;
     };
 }
