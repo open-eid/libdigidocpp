@@ -209,6 +209,11 @@ namespace DigiDocCSharp
                     Console.WriteLine("Time: " + s.trustedSigningTime());
                     Console.WriteLine("Cert: " + s.signingCertificate().Subject);
                     Console.WriteLine("TimeStamp: " + s.TimeStampCertificate().Subject);
+                    foreach (TSAInfo tsaInfo in s.ArchiveTimeStamps())
+                    {
+                        Console.WriteLine("Archive Time: " + tsaInfo.time);
+                        Console.WriteLine("Archive Cert: " + tsaInfo.cert.Subject);
+                    }
 
                     s.validate();
                     Console.WriteLine("Signature is valid");
