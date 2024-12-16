@@ -45,6 +45,7 @@ namespace digidoc
           //https://signa.mitsoft.lt/static/signa-web/webResources/docs/ADOC_specification_approved20090907_EN.pdf
           static constexpr std::string_view MIMETYPE_ADOC = "application/vnd.lt.archyvai.adoc-2008";
           static constexpr std::string_view MANIFEST_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
+          static constexpr std::string_view ASIC_NS = "http://uri.etsi.org/02918/v1.2.1#";
 
           ~ASiContainer() override;
           std::string mediaType() const override;
