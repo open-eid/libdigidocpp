@@ -28,6 +28,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
 import java.util.Objects;
@@ -59,14 +60,14 @@ public class MainActivity extends Activity {
 			try (ZipInputStream zis = new ZipInputStream(getResources().openRawResource(R.raw.schema))) {
 				ZipEntry ze;
 				while ((ze = zis.getNextEntry()) != null) {
-					Files.copy(zis, Paths.get(cache, ze.getName()));
+					Files.copy(zis, Paths.get(cache, ze.getName()), StandardCopyOption.REPLACE_EXISTING);
 				}
 			}
 			try (InputStream in = getResources().openRawResource(R.raw.test)) {
-				Files.copy(in, Paths.get(cache, "test.bdoc"));
+				Files.copy(in, Paths.get(cache, "test.bdoc"), StandardCopyOption.REPLACE_EXISTING);
 			}
 			try (ByteArrayInputStream bin = new ByteArrayInputStream(new byte[] {})) {
-				Files.copy(bin, Paths.get(cache, "EE_T.xml"));
+				Files.copy(bin, Paths.get(cache, "EE_T.xml"), StandardCopyOption.REPLACE_EXISTING);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

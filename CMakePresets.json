@@ -6,34 +6,34 @@
       "displayName": "Default config",
       "description": "Default build using Ninja generator",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}"
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
     },
     {
       "name": "base",
-      "displayName": "macOS base build config",
+      "displayName": "Base build config",
       "hidden": true,
       "inherits": "default",
+      "environment": {
+        "DEST": "/Library/libdigidocpp$env{DEST_SUFFIX}"
+      },
+      "installDir": "$env{DEST}"
+    },
+    {
+      "name": "macos",
+      "description": "This macos build is only available on macOS",
+      "inherits": "base",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Darwin"
       },
-      "environment": {
-        "DEST": "/Library/libdigidocpp$env{DEST_SUFFIX}"
-      },
-      "installDir": "$env{DEST}",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_FIND_ROOT_PATH": "$env{DEST};/usr/local;/opt/homebrew"
-      }
-    },
-    {
-      "name": "macos",
-      "inherits": "base",
-      "description": "This macos build is only available on macOS",
       "cacheVariables": {
         "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "12.0"
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "12.0",
+        "CMAKE_FIND_ROOT_PATH": "$env{DEST}"
       }
     },
     {
@@ -52,12 +52,11 @@
     {
       "name": "ios",
       "hidden": true,
-      "inherits": "mobile",
+      "inherits": ["mobile", "macos"],
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "iOS",
         "CMAKE_OSX_SYSROOT": "${presetName}",
         "CMAKE_OSX_DEPLOYMENT_TARGET": "15.0",
-        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
         "CMAKE_DISABLE_FIND_PACKAGE_SWIG": "YES",
         "FRAMEWORK_DESTINATION": "$env{DEST}/lib"
       }
@@ -91,31 +90,35 @@
         "CMAKE_SYSTEM_NAME": "Android",
         "CMAKE_SYSTEM_VERSION": "30",
         "CMAKE_DISABLE_FIND_PACKAGE_Python3": "YES",
-        "BUILD_SHARED_LIBS": "NO"
+        "BUILD_SHARED_LIBS": "NO",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
       "name": "androidarm",
       "inherits": "android",
-      "description": "androidarm build is only available on macOS",
+      "description": "androidarm build",
       "cacheVariables": {
-        "CMAKE_ANDROID_ARCH_ABI": "armeabi-v7a"
+        "CMAKE_ANDROID_ARCH_ABI": "armeabi-v7a",
+        "VCPKG_TARGET_TRIPLET": "arm-neon-android"
       }
     },
     {
       "name": "androidarm64",
       "inherits": "android",
-      "description": "androidarm64 build is only available on macOS",
+      "description": "androidarm64 build",
       "cacheVariables": {
-        "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a"
+        "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
+        "VCPKG_TARGET_TRIPLET": "arm64-android"
       }
     },
     {
       "name": "androidx86_64",
       "inherits": "android",
-      "description": "androidx86_64 build is only available on macOS",
+      "description": "androidx86_64 build",
       "cacheVariables": {
-        "CMAKE_ANDROID_ARCH_ABI": "x86_64"
+        "CMAKE_ANDROID_ARCH_ABI": "x86_64",
+        "VCPKG_TARGET_TRIPLET": "x64-android"
       }
     }
   ],
