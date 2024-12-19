@@ -73,7 +73,7 @@ string digidoc::userAgent() { return m_userAgent; }
  * Returns libdigidocpp library version
  */
 string digidoc::version() {
-    return FILE_VER_STR;
+    return VERSION_STR;
 }
 
 /**
@@ -121,7 +121,7 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
 
     INFO("Libxml2 version: %s", LIBXML_DOTTED_VERSION);
     INFO("Xmlsec1 version: %s", XMLSEC_VERSION);
-    INFO("digidocpp version: %s", FILE_VER_STR);
+    INFO("digidocpp version: %s", VERSION_STR);
 
     if(!Conf::instance())
         Conf::init(new XmlConfCurrent);

@@ -38,7 +38,7 @@ namespace digidoc
 
         static std::string format(const char *fmt, ...);
         static void out(LogType type, const char *file, unsigned int line, const char *format, ...);
-        static void dbgPrintfMemImpl(const char *msg, const void *ptr, size_t size, const char *file, int line);
+        static void dbgPrintfMemImpl(const char *msg, const unsigned char *data, size_t size, const char *file, int line);
         static std::string formatArgList(const char *fmt, va_list args);
     };
 }
@@ -49,12 +49,7 @@ namespace digidoc
 #define DEBUG(...) digidoc::Log::out(digidoc::Log::DebugType, __FILE__, __LINE__, __VA_ARGS__)
 #define DEBUGMEM(msg, ptr, size) digidoc::Log::dbgPrintfMemImpl(msg, ptr, size, __FILE__, __LINE__)
 
-#define VER_STR_HELPER(x)	#x
-#define VER_STR(x)		VER_STR_HELPER(x)
-#define FILE_VER_STR	VER_STR(MAJOR_VER.MINOR_VER.RELEASE_VER.BUILD_VER)
-
 #define EXCEPTION_PARAMS(...) __FILE__, __LINE__, digidoc::Log::format(__VA_ARGS__)
 #define EXCEPTION_ADD(_main, ...) _main.addCause(digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__)))
 #define THROW(...) throw digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__))
 #define THROW_CAUSE(_cause, ...) throw digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__), _cause)
-#define THROW_MAIN(_main, ...) { EXCEPTION_ADD(_main, __VA_ARGS__); throw _main; }

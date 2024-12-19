@@ -197,7 +197,7 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
     else
         addHeader("Host", host + ':' + port);
     if(const auto &agent = userAgentData.empty() ? userAgent() : userAgentData; !agent.empty())
-        addHeader("User-Agent", "LIB libdigidocpp/" FILE_VER_STR " (" TARGET_ARCH ") APP " + agent);
+        addHeader("User-Agent", "LIB libdigidocpp/" VERSION_STR " (" TARGET_ARCH ") APP " + agent);
     if(usessl == 0)
         sendProxyAuth();
 }
