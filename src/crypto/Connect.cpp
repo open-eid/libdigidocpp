@@ -22,6 +22,7 @@
 #include "Conf.h"
 #include "Container.h"
 #include "crypto/OpenSSLHelpers.h"
+#include "util/algorithm.h"
 
 #include <openssl/bio.h>
 #include <openssl/ocsp.h>
@@ -29,7 +30,6 @@
 
 #include <zlib.h>
 
-#include <algorithm>
 #include <sstream>
 #include <thread>
 
@@ -111,7 +111,7 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
             sendProxyAuth();
             doProxyConnect = true;
             Result r = exec();
-            if(!r.isOK() || r.result.find("established") == string::npos)
+            if(!r.isOK() || (r.result.find("established") == string::npos && r.result.find("ok") == string::npos))
                 THROW_NETWORKEXCEPTION("Failed to create proxy connection with host: '%s'", hostname.c_str())
             doProxyConnect = false;
         }
@@ -260,10 +260,6 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
 
     stringstream stream(r.content);
     string line;
-    auto to_lower = [](string str) {
-        transform(str.begin(), str.end(), str.begin(), ::tolower);
-        return str;
-    };
     while(getline(stream, line))
     {
         line.resize(max<size_t>(line.size() - 1, 0));
@@ -271,12 +267,12 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
             break;
         if(r.result.empty())
         {
-            r.result = line;
+            r.result = to_lower(line);
             continue;
         }
         size_t split = line.find(": ");
         if(split != string::npos)
-            r.headers[to_lower(line.substr(0, split))] = line.substr(split + 2);
+            r.headers[to_lower(line.erase(split))] = line.substr(split + 2);
         else
             r.headers[to_lower(line)] = string();
     }
@@ -320,7 +316,7 @@ void Connect::sendProxyAuth()
         return;
 
     BIO_printf(d, "Proxy-Authorization: Basic ");
-    SCOPE(BIO, b64, BIO_new(BIO_f_base64()));
+    auto b64 = make_unique_ptr<BIO_free>(BIO_new(BIO_f_base64()));
     BIO_set_flags(b64.get(), BIO_FLAGS_BASE64_NO_NL);
     BIO_push(b64.get(), d);
     BIO_printf(b64.get(), "%s:%s", c->proxyUser().c_str(), c->proxyPass().c_str());
