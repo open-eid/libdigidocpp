@@ -58,6 +58,12 @@ constexpr bool starts_with(T str, std::string_view needle) {
     return str.size() >= needle.size() && str.compare(0, needle.size(), needle) == 0;
 }
 
+inline auto to_lower(std::string str)
+{
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return str;
+}
+
 [[nodiscard]]
 constexpr auto trim_prefix(std::string_view src)
 {
