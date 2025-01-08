@@ -9,15 +9,8 @@ else()
     target_link_libraries(minizip ZLIB::ZLIB)
 endif()
 
-if($ENV{BUILD_NUMBER})
-    set(BUILD_VER $ENV{BUILD_NUMBER})
-elseif(PROJECT_VERSION_TWEAK)
-    set(BUILD_VER ${PROJECT_VERSION_TWEAK})
-else()
-    set(BUILD_VER 0)
-endif()
-
-set(VERSION ${PROJECT_VERSION}.${BUILD_VER})
+set_env(BUILD_NUMBER 0)
+set(VERSION ${PROJECT_VERSION}.${BUILD_NUMBER})
 
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
 configure_file( ${CMAKE_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf )
@@ -59,7 +52,7 @@ set( CRYPTO_HEADER
 add_library(digidocpp_ver INTERFACE)
 target_compile_definitions(digidocpp_ver INTERFACE
     VERSION_STR="${VERSION}"
-    $<$<PLATFORM_ID:Windows>:VERSION=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${BUILD_VER}>
+    $<$<PLATFORM_ID:Windows>:VERSION=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${BUILD_NUMBER}>
     $<$<PLATFORM_ID:Windows>:TARGET_NAME="$<TARGET_PROPERTY:NAME>">
     $<$<PLATFORM_ID:Windows>:$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:APP>>
 )
@@ -147,14 +140,15 @@ set_target_properties(digidocpp PROPERTIES
     FRAMEWORK "${FRAMEWORK}"
     MACOSX_FRAMEWORK_IDENTIFIER "ee.ria.digidocpp"
     MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${PROJECT_VERSION}
-    MACOSX_FRAMEWORK_BUNDLE_VERSION ${BUILD_VER}
+    MACOSX_FRAMEWORK_BUNDLE_VERSION ${BUILD_NUMBER}
     MACOSX_RPATH YES
     POSITION_INDEPENDENT_CODE YES
 )
 
-target_include_directories(digidocpp
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
+target_include_directories(digidocpp PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv)
 
@@ -236,6 +230,7 @@ if(SWIG_FOUND)
 endif()
 
 install( TARGETS digidocpp
+    EXPORT libdigidocppExport
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -243,6 +238,22 @@ install( TARGETS digidocpp
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp
     FRAMEWORK DESTINATION ${FRAMEWORK_DESTINATION}
 )
+if(NOT ANDROID)
+    install(EXPORT libdigidocppExport
+        FILE libdigidocpp-config.cmake
+        NAMESPACE digidocpp::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libdigidocpp
+    )
+    include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp-config-version.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY AnyNewerVersion
+    )
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp-config-version.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libdigidocpp
+    )
+endif()
 
 if(WIN32)
     list(APPEND CRYPTO_HEADER crypto/WinSigner.h)

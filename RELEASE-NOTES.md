@@ -1,3 +1,14 @@
+Libdigidocpp library [4.1.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.1.0) release notes
+--------------------------------------
+- Update libraries and platform support
+  (#629, #633, #642, #638, #621, #643, #648, #636)
+- Improve signature and container compatibility
+  (#623, #626, #624, #646, #640, #645, #647, #644)
+- Other fixes and optimizations
+  (#625, #632, #631, #594, #649)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v4.0.0...v4.1.0)
+
 Libdigidocpp library [4.0.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.0.0) release notes
 --------------------------------------
 - Major rewrite of library internals due upstream dependecy xalan-c and xml-security-c package has been retired.
