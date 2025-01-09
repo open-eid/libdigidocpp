@@ -21,7 +21,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package Name="Libdigidocpp $(sys.BUILDARCH)" UpgradeCode="$(var.UpgradeCode)"
-      Language="1033" Version="!(bind.FileVersion.digidocpp)" Manufacturer="RIA" InstallerVersion="500">
+      Language="1033" Version="!(bind.FileVersion.digidocpp)" Manufacturer="RIA">
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
     <Icon Id="ID.ico" SourceFile="$(var.ICON)" />
     <Property Id="ARPPRODUCTICON" Value="ID.ico" />

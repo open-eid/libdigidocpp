@@ -41,7 +41,6 @@ if($swig) {
 }
 if($doxygen) {
   $cmakeext += "-DDOXYGEN_EXECUTABLE=$doxygen"
-  $wixext += "-d", "docLocation=$(Get-Location)/$platform/share/doc/libdigidocpp"
 }
 if($platform -eq "arm64" -and $env:VSCMD_ARG_HOST_ARCH -ne "arm64") {
   $cmakeext += "-DCMAKE_DISABLE_FIND_PACKAGE_Python3=yes"
@@ -72,6 +71,11 @@ if($sign) {
     /tr http://timestamp.digicert.com /td SHA256 `
     $vcpkg_installed_platform/$vcpkg_triplet/bin/*.dll `
     $vcpkg_installed_platform/$vcpkg_triplet/debug/bin/*.dll
+}
+
+$docLocation = "$(Get-Location)/$platform/share/doc/libdigidocpp"
+if (Test-Path -Path $docLocation -PathType Container) {
+  $wixext += "-d", "docLocation=$docLocation"
 }
 
 & wix build -nologo -arch $platform -out $msi_name $wixext `

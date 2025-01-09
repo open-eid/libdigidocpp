@@ -995,13 +995,13 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
 int main(int argc, char *argv[]) try
 {
     printf("Version\n");
-    printf("  digidoc-tool version: %s\n", FILE_VER_STR);
+    printf("  digidoc-tool version: %s\n", VERSION_STR);
     printf("  libdigidocpp version: %s\n", version().c_str());
 
     ToolConfig *conf = nullptr;
     Conf::init(conf = new ToolConfig(argc, argv));
     stringstream info;
-    info << "digidoc-tool/" << FILE_VER_STR << " (";
+    info << "digidoc-tool/" << VERSION_STR << " (";
 #ifdef _WIN32
     info << "Windows";
 #elif __APPLE__
