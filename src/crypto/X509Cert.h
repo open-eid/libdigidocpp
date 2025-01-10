@@ -109,8 +109,8 @@ namespace digidoc
 
       private:
           static std::string toOID(ASN1_OBJECT *obj);
-          template<typename Func>
-          std::string toString(Func func, const std::string &obj) const;
+          template<auto Func>
+          std::string toString(const std::string &obj) const;
           std::shared_ptr<X509> cert;
     };
 }

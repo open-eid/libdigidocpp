@@ -33,10 +33,6 @@
 #include <sstream>
 #include <thread>
 
-#ifdef _WIN32
-#include <Winsock2.h>
-#endif
-
 #if defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
 #define TARGET_ARCH "arm64"
 #elif defined(__arm__) || defined(_M_ARM)
@@ -101,24 +97,10 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
 
     BIO_set_nbio(d, _timeout > 0);
     auto start = chrono::high_resolution_clock::now();
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-    while(BIO_do_connect(d) != 1)
-    {
-        if(_timeout == 0)
-            THROW_NETWORKEXCEPTION("Failed to connect to host: '%s'", hostname.c_str())
-        if(!BIO_should_retry(d))
-            THROW_NETWORKEXCEPTION("Failed to connect to host: '%s'", hostname.c_str())
-        auto end = chrono::high_resolution_clock::now();
-        if(chrono::duration_cast<chrono::seconds>(end - start).count() >= _timeout)
-            THROW_NETWORKEXCEPTION("Failed to create connection with host timeout: '%s'", hostname.c_str())
-        this_thread::sleep_for(chrono::milliseconds(50));
-    }
-#else
     if(timeout > 0 && BIO_do_connect_retry(d, timeout, -1) < 1)
         THROW_NETWORKEXCEPTION("Failed to create connection with host timeout: '%s'", hostname.c_str())
     if(timeout == 0 && BIO_do_connect(d) < 1)
         THROW_NETWORKEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str())
-#endif
 
     if(usessl > 0)
     {
@@ -175,20 +157,6 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
             this_thread::sleep_for(chrono::milliseconds(50));
         }
     }
-
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-    if(_timeout > 0)
-    {
-        int fd = BIO_get_fd(d, nullptr);
-        fd_set confds;
-        FD_ZERO(&confds);
-        FD_SET(fd, &confds);
-        timeval tv { timeout, 0 };
-        int read = BIO_should_read(d);
-        if(select(fd + 1, read ? &confds : nullptr, read ? nullptr : &confds, nullptr, &tv) == -1)
-            DEBUG("select failed");
-    }
-#endif
 
     BIO_printf(d, "%s %s HTTP/1.1\r\n", method.c_str(), path.c_str());
     addHeader("Connection", "close");

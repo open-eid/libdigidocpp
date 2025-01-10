@@ -27,7 +27,6 @@
 #include <openssl/pem.h>
 #include <openssl/x509v3.h>
 
-#include <cstring>
 #include <functional>
 
 using namespace digidoc;
@@ -279,7 +278,7 @@ X509Cert::~X509Cert() = default;
  */
 X509Cert::operator std::vector<unsigned char>() const
 {
-    return i2d(cert, i2d_X509);
+    return i2d<i2d_X509>(cert);
 }
 
 /**
@@ -299,7 +298,7 @@ string X509Cert::serial() const
 {
     if(!cert)
         return {};
-    if(auto bn = SCOPE_PTR_FREE(BIGNUM, ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), nullptr), BN_free))
+    if(auto bn = make_unique_ptr(ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), nullptr), BN_free))
     {
         auto openssl_free = [](char *data) { OPENSSL_free(data); };
         if(auto str = unique_ptr<char,decltype(openssl_free)>(BN_bn2dec(bn.get()), openssl_free))
@@ -317,7 +316,7 @@ string X509Cert::serial() const
  */
 string X509Cert::issuerName(const string &obj) const
 {
-    return toString(X509_get_issuer_name, obj);
+    return toString<X509_get_issuer_name>(obj);
 }
 
 /**
@@ -421,7 +420,7 @@ vector<string> X509Cert::qcStatements() const
  */
 string X509Cert::subjectName(const string &obj) const
 {
-    return toString(X509_get_subject_name, obj);
+    return toString<X509_get_subject_name>(obj);
 }
 
 string X509Cert::toOID(ASN1_OBJECT *obj)
@@ -434,18 +433,17 @@ string X509Cert::toOID(ASN1_OBJECT *obj)
 /**
  * Converts X509_NAME struct to string.
  *
- * @param func X509_NAME struct that is converted to string.
  * @param obj Optional parameter to get from X509_NAME (default CN).
  * @return converted value of X509_NAME.
  * @throws Exception throws exception if conversion failed.
  */
-template<typename Func>
-string X509Cert::toString(Func func, const string &obj) const
+template<auto Func>
+string X509Cert::toString(const string &obj) const
 {
     string str;
     if(!cert)
         return str;
-    X509_NAME* name = func(cert.get());
+    X509_NAME* name = Func(cert.get());
     if(!name)
         THROW_OPENSSLEXCEPTION("Failed to convert X.509 certificate subject");
 
@@ -551,9 +549,7 @@ bool X509Cert::operator ==(const X509Cert &other) const
         return true;
     if(!cert || !other.cert)
         return false;
-    // Workaround OpenSSL 1.1.1f issues
-    return vector<unsigned char>(*this) == vector<unsigned char>(other);
-    //return X509_cmp(cert.get(), other.cert.get()) == 0
+    return X509_cmp(cert.get(), other.cert.get()) == 0;
 }
 
 /**

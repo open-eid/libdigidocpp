@@ -1,6 +1,5 @@
 if(TARGET PkgConfig::MINIZIP)
-    add_library(minizip INTERFACE)
-    target_link_libraries(minizip INTERFACE PkgConfig::MINIZIP)
+    add_library(minizip ALIAS PkgConfig::MINIZIP)
 else()
     message(STATUS "MiniZip not found; using bundled copy.")
     add_library(minizip STATIC minizip/zip.c minizip/unzip.c minizip/ioapi.c $<$<C_COMPILER_ID:MSVC>:minizip/iowin32.c>)
