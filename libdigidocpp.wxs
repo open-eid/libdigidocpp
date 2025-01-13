@@ -63,6 +63,7 @@
 <?ifdef var.swig ?>
       <File Name="digidoc_csharp.dll" />
       <File Name="digidoc_java.dll" />
+      <File Source="$(var.libdigidocpp)\share\digidocpp\digidocpp.jar" />
 <?ifndef var.disablePython ?>
       <File Name="_digidoc_python.pyd" />
       <File Name="digidoc.py" />
