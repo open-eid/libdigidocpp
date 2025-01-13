@@ -187,6 +187,23 @@ if(SWIG_FOUND)
         if(WIN32)
             install(FILES $<TARGET_PDB_FILE:digidoc_java> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
         endif()
+        if(Java_Development_FOUND)
+            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/glob_java_files.cmake "
+            file(GLOB_RECURSE JAVA_COMPILE_FILELISTS \${JAVA_DIR}/*.java)
+            file(WRITE \${CMAKE_CURRENT_BINARY_DIR}/java_file_list \"\")
+            foreach(JAVA_FILE \${JAVA_COMPILE_FILELISTS})
+                file(APPEND \${CMAKE_CURRENT_BINARY_DIR}/java_file_list \"\${JAVA_FILE}\n\")
+            endforeach()
+            ")
+            add_custom_command(TARGET digidoc_java POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -D JAVA_DIR=${CMAKE_CURRENT_BINARY_DIR}/java -P ${CMAKE_CURRENT_BINARY_DIR}/glob_java_files.cmake
+                BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/java_file_list
+            )
+            include(UseJava)
+            set(CMAKE_JAVA_COMPILE_FLAGS --release 11)
+            add_jar(digidocpp_jar SOURCES @${CMAKE_CURRENT_BINARY_DIR}/java_file_list OUTPUT_NAME digidocpp)
+            install_jar(digidocpp_jar DESTINATION $<IF:$<PLATFORM_ID:Darwin>,/Library/Java/Extensions,${CMAKE_INSTALL_DATADIR}/digidocpp>)
+        endif()
     endif()
     if(Python3_FOUND)
         set(CMAKE_SWIG_FLAGS -py3)
