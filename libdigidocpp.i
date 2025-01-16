@@ -75,6 +75,12 @@ extern "C"
   [global::System.Runtime.InteropServices.DllImport("$dllimport", EntryPoint="ByteVector_to")]
   public static extern global::System.IntPtr ByteVector_to(
   [global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPArray)]byte[] data, int size);
+  public static byte[] To_ByteArray(global::System.IntPtr cPtr) {
+    byte[] result = new byte[$modulePINVOKE.ByteVector_size(cPtr)];
+    global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(cPtr), result, 0, result.Length);
+    $modulePINVOKE.ByteVector_free(cPtr);
+    return result;
+  }
 %}
 
 #ifdef SWIGJAVA
@@ -116,21 +122,15 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
 %typemap(cstype) std::vector<unsigned char> "byte[]"
 %typemap(cstype) digidoc::X509Cert "System.Security.Cryptography.X509Certificates.X509Certificate2"
 %typemap(csin, pre= "    global::System.IntPtr cPtr$csinput = digidocPINVOKE.ByteVector_to($csinput, $csinput.Length);
-    var handleRef$csinput = new global::System.Runtime.InteropServices.HandleRef(this, cPtr$csinput);"
+    var handleRef$csinput = new global::System.Runtime.InteropServices.HandleRef($csinput, cPtr$csinput);"
 ) std::vector<unsigned char> "handleRef$csinput"
 %typemap(csout, excode=SWIGEXCODE) std::vector<unsigned char> {
     global::System.IntPtr cPtr = $imcall;$excode
-    byte[] result = new byte[$modulePINVOKE.ByteVector_size(cPtr)];
-    global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(cPtr), result, 0, result.Length);
-    $modulePINVOKE.ByteVector_free(cPtr);
-    return result;
+    return $modulePINVOKE.To_ByteArray(cPtr);
   }
 %typemap(csout, excode=SWIGEXCODE) digidoc::X509Cert {
     global::System.IntPtr cPtr = $imcall;$excode
-    byte[] der = new byte[$modulePINVOKE.ByteVector_size(cPtr)];
-    global::System.Runtime.InteropServices.Marshal.Copy($modulePINVOKE.ByteVector_data(cPtr), der, 0, der.Length);
-    $modulePINVOKE.ByteVector_free(cPtr);
-    return new System.Security.Cryptography.X509Certificates.X509Certificate2(der);
+    return new System.Security.Cryptography.X509Certificates.X509Certificate2($modulePINVOKE.To_ByteArray(cPtr));
   }
 %typemap(out) std::vector<unsigned char> %{  $result = new std::vector<unsigned char>(std::move($1)); %}
 %typemap(out) digidoc::X509Cert %{  $result = new std::vector<unsigned char>($1); %}

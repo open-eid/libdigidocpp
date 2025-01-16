@@ -30,6 +30,7 @@
 
 #include <zlib.h>
 
+#include <chrono>
 #include <sstream>
 #include <thread>
 
