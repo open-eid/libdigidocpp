@@ -1,1 +1,2 @@
 libdigidocpp-java: sharedobject-in-library-directory-missing-soname
+libdigidocpp-java: package-has-unnecessary-activation-of-ldconfig-trigger

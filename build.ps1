@@ -1,9 +1,9 @@
 #powershell -ExecutionPolicy ByPass -File build.ps1
 param(
   [string]$libdigidocpp = $PSScriptRoot,
-  [string]$platform = $env:VSCMD_ARG_TGT_ARCH,
+  [string]$platform = $env:PLATFORM,
   [string]$build_number = $(if ($null -eq $env:BUILD_NUMBER) {"0"} else {$env:BUILD_NUMBER}),
-  [string]$msiversion = "4.1.0.$build_number",
+  [string]$msiversion = "4.2.0.$build_number",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.$platform.msi",
   [string]$git = "git.exe",
   [string]$vcpkg = "vcpkg\vcpkg.exe",
@@ -57,7 +57,8 @@ foreach($type in @("Debug", "RelWithDebInfo")) {
   & $cmake --fresh -B $buildpath -S $libdigidocpp "-G$generator" $cmakeext `
     "-DCMAKE_BUILD_TYPE=$type" `
     "-DCMAKE_INSTALL_PREFIX=$platform" `
-    "-DCMAKE_INSTALL_LIBDIR=bin" `
+    "-DCMAKE_INSTALL_BINDIR=." `
+    "-DCMAKE_INSTALL_LIBDIR=." `
     "-DCMAKE_TOOLCHAIN_FILE=$vcpkg_dir/scripts/buildsystems/vcpkg.cmake" `
     "-DVCPKG_INSTALLED_DIR=$vcpkg_installed_platform" `
     "-DVCPKG_TARGET_TRIPLET=$vcpkg_triplet" `
