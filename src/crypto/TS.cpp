@@ -92,7 +92,7 @@ TS::TS(const Digest &digest, const std::string &userAgent)
         {"Accept", "application/timestamp-reply"},
         {"Connection", "Close"},
         {"Cache-Control", "no-cache"}
-    }, i2d(req, i2d_TS_REQ));
+    }, i2d<i2d_TS_REQ>(req));
 
     if(result.isForbidden())
     {
@@ -195,14 +195,14 @@ string TS::digestMethod() const
 vector<unsigned char> TS::digestValue() const
 {
     if(auto info = tstInfo())
-        return i2d(TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get())), i2d_ASN1_OCTET_STRING);
+        return i2d<i2d_ASN1_OCTET_STRING>(TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get())));
     return {};
 }
 
 vector<unsigned char> TS::messageImprint() const
 {
     if(auto info = tstInfo())
-        return i2d(TS_TST_INFO_get_msg_imprint(info.get()), i2d_TS_MSG_IMPRINT);
+        return i2d<i2d_TS_MSG_IMPRINT>(TS_TST_INFO_get_msg_imprint(info.get()));
     return {};
 }
 
@@ -212,7 +212,7 @@ string TS::serial() const
     if(!info)
         return {};
 
-    if(auto bn = SCOPE_PTR_FREE(BIGNUM, ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), nullptr), BN_free))
+    if(auto bn = make_unique_ptr(ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), nullptr), BN_free))
     {
         if(auto str = make_unique_ptr(BN_bn2dec(bn.get()), [](char *data) { OPENSSL_free(data); }))
             return str.get();
@@ -281,7 +281,7 @@ TS::operator vector<unsigned char>() const
 {
 #ifndef OPENSSL_NO_CMS
     if(cms)
-        return i2d(cms, i2d_CMS_ContentInfo);
+        return i2d<i2d_CMS_ContentInfo>(cms);
 #endif
-    return i2d(d, i2d_PKCS7);
+    return i2d<i2d_PKCS7>(d);
 }

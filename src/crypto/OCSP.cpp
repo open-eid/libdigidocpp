@@ -86,7 +86,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
         {"Accept", "application/ocsp-response"},
         {"Connection", "Close"},
         {"Cache-Control", "no-cache"}
-    }, i2d(req, i2d_OCSP_REQUEST));
+    }, i2d<i2d_OCSP_REQUEST>(req));
 
     if(result.isForbidden())
         THROW("OCSP service responded - Forbidden");
@@ -179,7 +179,7 @@ X509Cert OCSP::responderCert() const
 
 OCSP::operator vector<unsigned char>() const
 {
-    return i2d(resp, i2d_OCSP_RESPONSE);
+    return i2d<i2d_OCSP_RESPONSE>(resp);
 }
 
 /**
@@ -199,11 +199,7 @@ void OCSP::verifyResponse(const X509Cert &cert) const
             sk_X509_push(stack.get(), i.handle());
     }
     auto store = X509CertStore::createStore(X509CertStore::OCSP, tm);
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-    if(OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS) != 1)
-#else
     if(OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN) != 1)
-#endif
     {
         unsigned long err = ERR_get_error();
         if(ERR_GET_LIB(err) == ERR_LIB_OCSP &&

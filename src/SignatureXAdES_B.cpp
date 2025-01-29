@@ -23,7 +23,6 @@
 #include "Conf.h"
 #include "DataFile_p.h"
 #include "crypto/Digest.h"
-#include "crypto/OpenSSLHelpers.h"
 #include "crypto/Signer.h"
 #include "crypto/X509CertStore.h"
 #include "crypto/X509Crypto.h"
@@ -117,11 +116,7 @@ int initXmlSecCallback()
             {
                 Exception e(orUnknown(file), line, Log::format("%s:obj=%s:subj=%s:reason=%d - %s",
                     func, orUnknown(errorObject), orUnknown(errorSubject), reason, error_msg));
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-                while(unsigned long error = ERR_get_error_line(&ofile, &oline))
-#else
                 while(unsigned long error = ERR_get_error_all(&ofile, &oline, &ofunc, nullptr, nullptr))
-#endif
                 {
                     Exception err(ofile, oline, ERR_error_string(error, nullptr));
 #ifndef LIBRESSL_VERSION_NUMBER
@@ -142,11 +137,7 @@ int initXmlSecCallback()
                 func, orUnknown(errorObject), orUnknown(errorSubject), reason, error_msg, msg);
             if(reason == XMLSEC_ERRORS_R_CRYPTO_FAILED)
             {
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-                while(unsigned long error = ERR_get_error_line(&ofile, &oline))
-#else
                 while(unsigned long error = ERR_get_error_all(&ofile, &oline, &ofunc, nullptr, nullptr))
-#endif
                     Log::out(Log::WarnType, ofile, unsigned(oline), "%s: %s",
                         ofunc, ERR_error_string(error, nullptr));
             }
@@ -185,7 +176,7 @@ int initXmlSecCallback()
                 return {};
             }
 
-            auto *is = dynamic_cast<const DataFilePrivate*>(file)->m_is.get();
+            auto *is = static_cast<const DataFilePrivate*>(file)->m_is.get();
             is->clear();
             is->seekg(0);
             return is;
