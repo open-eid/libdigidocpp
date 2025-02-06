@@ -21,6 +21,19 @@
 
 #include <memory>
 
+namespace digidoc
+{
+
+template<auto D>
+struct free_deleter
+{
+    template<class T>
+    void operator()(T *p) const noexcept
+    {
+        if (p) D(p);
+    }
+};
+
 template <class T>
 using unique_free_t = std::unique_ptr<T, void(*)(T*)>;
 
@@ -33,9 +46,9 @@ constexpr unique_free_t<T> make_unique_ptr(U *p, void (*d)(T*)) noexcept
 
 template<class T>
 [[nodiscard]]
-constexpr auto make_unique_ptr(nullptr_t, void (*d)(T*)) noexcept
+constexpr unique_free_t<T> make_unique_ptr(nullptr_t, void (*d)(T*)) noexcept
 {
-    return make_unique_ptr<T, T>(nullptr, d);
+    return {nullptr, d};
 }
 
 template<class T, typename D>
@@ -43,4 +56,13 @@ template<class T, typename D>
 constexpr std::unique_ptr<T, D> make_unique_ptr(T *p, D d) noexcept
 {
     return {p, std::forward<D>(d)};
+}
+
+template<auto D, class T>
+[[nodiscard]]
+constexpr auto make_unique_ptr(T *p) noexcept
+{
+    return std::unique_ptr<T, free_deleter<D>>(p);
+}
+
 }
