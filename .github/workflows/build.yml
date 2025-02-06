@@ -50,7 +50,8 @@ jobs:
       run: |
         cmake --preset ${{ matrix.target }} -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build --preset ${{ matrix.target }}
-        cmake --build --preset ${{ matrix.target }} --target test pkcs11sign zipdebug embedlibs pkgbuild
+        cmake --build --preset ${{ matrix.target }} --target test pkcs11sign embedlibs 
+        cmake --build --preset ${{ matrix.target }} --target zipdebug pkgbuild
     - name: Build ${{ matrix.target }}
       if: matrix.target != 'macos'
       run: |
@@ -126,12 +127,13 @@ jobs:
         name: fedora_${{ matrix.container }}
         path: build/libdigidocpp*.rpm
   ubuntu:
-    name: Build on Ubuntu ${{ matrix.container }}
-    runs-on: ubuntu-latest
+    name: Build on Ubuntu ${{ matrix.container }} ${{ matrix.arch }}
+    runs-on: ubuntu-24.04${{ matrix.arch == 'arm64' && '-arm' || '' }}
     container: ubuntu:${{ matrix.container }}
     strategy:
       matrix:
         container: ['22.04', '24.04', '24.10']
+        arch: ['amd64', 'arm64']
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions
@@ -148,14 +150,14 @@ jobs:
         dch --distribution $(lsb_release -cs) -v ${VERSIONEX} "Release ${VERSIONEX}."
     - name: Build packages
       run: |
-        JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 dpkg-buildpackage -us -uc
+        JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${{ matrix.arch }} dpkg-buildpackage -us -uc
         mv ../libdigidocpp*.* .
     - name: Lintian
       run: lintian *.deb;
     - name: Archive artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ubuntu_${{ matrix.container }}
+        name: ubuntu_${{ matrix.container }}_${{ matrix.arch }}
         path: libdigidocpp*.*
   windows:
     name: Build on Windows
