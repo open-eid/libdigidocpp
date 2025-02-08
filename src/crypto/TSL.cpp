@@ -104,10 +104,12 @@ TSL::TSL(string file)
         WARN("Failed to parse configuration: %s", path.c_str());
 }
 
-bool TSL::activate(const string &territory)
+bool TSL::activate(string territory)
 {
     if(territory.size() != 2)
         return false;
+    if(territory == "GR")
+        territory = "EL"; // Greece is EL in EU  TL
     string cache = CONF(TSLCache);
     string path = cache + '/' + territory + ".xml";
     if(File::fileExists(path))
