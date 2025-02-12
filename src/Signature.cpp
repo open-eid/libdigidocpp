@@ -230,6 +230,11 @@ X509Cert Signature::ArchiveTimeStampCertificate() const { return X509Cert(); }
  */
 string Signature::ArchiveTimeStampTime() const { return {}; }
 
+/**
+ * Returns signature Archive TimeStampTokens.
+ */
+vector<TSAInfo> Signature::ArchiveTimeStamps() const { return {}; }
+
 struct Signature::Validator::Private
 {
     Status result = Valid;
