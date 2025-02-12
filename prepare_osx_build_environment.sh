@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-OPENSSL_DIR=openssl-3.0.15
-XMLSEC_DIR=xmlsec1-1.3.6
+OPENSSL_DIR=openssl-3.0.16
+XMLSEC_DIR=xmlsec1-1.3.7
 ARGS="$@"
 
 case "$@" in
