@@ -1,6 +1,5 @@
 {
     "name": "libdigidocpp",
-    "version": "4.2.0",
     "dependencies": [
       {
         "name": "libxml2",
@@ -12,7 +11,7 @@
     "features": {
       "tests": { "description": "Build tests", "dependencies": ["boost-test"] }
     },
-    "builtin-baseline": "e4644bd15436d406bba71928d086c809e5c9ca45",
+    "builtin-baseline": "5ee5eee0d3e9c6098b24d263e9099edcdcef6631",
     "vcpkg-configuration": {
         "overlay-triplets": ["./vcpkg-triplets"],
         "overlay-ports": [
