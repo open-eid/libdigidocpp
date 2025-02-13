@@ -55,7 +55,7 @@ public:
     std::vector<Pointer> pointers() const;
     std::vector<Service> services() const;
 
-    static bool activate(const std::string &territory);
+    static bool activate(std::string territory);
     static std::vector<Service> parse();
 
 private:
