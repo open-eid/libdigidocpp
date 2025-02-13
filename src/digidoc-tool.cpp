@@ -252,10 +252,30 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
     return result;
 }
 
+struct value: public string_view {
+    using string_view::string_view;
+    using string_view::operator=;
+
+    constexpr value(string_view arg, string_view param) noexcept
+        : string_view(arg.size() > param.size() && arg.starts_with(param) ?
+                          arg.substr(param.size()) : string_view{})
+    {}
+
+    operator string() const
+    {
+        return {begin(), end()};
+    }
+
+    constexpr operator bool() const noexcept
+    {
+        return !empty();
+    }
+};
+
 class ToolConfig final: public XmlConfCurrent
 {
 public:
-    enum Warning {
+    enum Warning : uint8_t {
         WError,
         WWarning,
         WIgnore
@@ -272,10 +292,6 @@ public:
     string TSLUrl() const final { return tslurl.value_or(XmlConfCurrent::TSLUrl()); }
 
     unique_ptr<Signer> getSigner(bool getwebsigner = false) const;
-    static string toUTF8(string_view param)
-    {
-        return fs::path(param).u8string();
-    }
 
     // Config
     optional<int> _logLevel;
@@ -288,19 +304,19 @@ public:
     optional<string> siguri;
 
     // Signer
-    string profile, city, street, state, postalCode, country, userAgent;
+    value profile, city, street, state, postalCode, country, userAgent;
     vector<string> roles;
     bool XAdESEN = false;
 
     // Token
     optional<bool> rsaPss;
-    string pkcs11, pkcs12, pin, cert;
+    value pkcs11, pkcs12, pin, cert;
     vector<unsigned char> thumbprint;
     bool cng = true, selectFirst = false;
 
     // Params
-    string path;
-    unordered_map<string,string> files;
+    value path;
+    unordered_map<value,value,std::hash<string_view>> files;
     bool doSign = true, dontValidate = false;
     static string_view RED, GREEN, YELLOW, RESET;
 };
@@ -391,40 +407,39 @@ ToolConfig::ToolConfig(int argc, char *argv[])
     for(int i = 2; i < argc; i++)
     {
         string_view arg(argv[i]);
-        if(arg.find("--profile=") == 0)
-            profile = arg.substr(10);
-        else if(arg.find("--file=") == 0)
+        if(value v{arg, "--profile="}) profile = v;
+        else if(value v{arg, "--file="})
         {
-            string_view arg2(i+1 < argc ? argv[i+1] : string_view());
-            files.emplace(arg.substr(7),
-                arg2.find("--mime=") == 0 ? toUTF8(arg2.substr(7)) : "application/octet-stream");
+            value mime(i+1 < argc ? argv[i+1] : string_view(), "--mime=");
+            files.emplace(v, mime ? mime : "application/octet-stream");
         }
 #ifdef _WIN32
         else if(arg == "--cng") cng = true;
         else if(arg == "--selectFirst") selectFirst = true;
-        else if(arg.find("--thumbprint=") == 0) thumbprint = File::hexToBin(arg.substr(arg.find('=') + 1));
+        else if(value v{arg, "--thumbprint="}) thumbprint = File::hexToBin(v);
 #endif
-        else if(arg.find("--pkcs11") == 0)
+        else if(arg == "--pkcs11")
+            cng = false;
+        else if(value v{arg, "--pkcs11="})
         {
             cng = false;
-            if(arg.find('=') != string::npos)
-                pkcs11 = toUTF8(arg.substr(arg.find('=') + 1));
+            pkcs11 = v;
         }
-        else if(arg.find("--pkcs12=") == 0)
+        else if(value v{arg, "--pkcs12="})
         {
             cng = false;
-            pkcs12 = toUTF8(arg.substr(9));
+            pkcs12 = v;
         }
         else if(arg == "--dontValidate") dontValidate = true;
         else if(arg == "--XAdESEN") XAdESEN = true;
-        else if(arg.find("--pin=") == 0) pin = arg.substr(6);
-        else if(arg.find("--cert=") == 0) cert = toUTF8(arg.substr(7));
-        else if(arg.find("--city=") == 0) city = toUTF8(arg.substr(7));
-        else if(arg.find("--street=") == 0) street = toUTF8(arg.substr(9));
-        else if(arg.find("--state=") == 0) state = toUTF8(arg.substr(8));
-        else if(arg.find("--postalCode=") == 0) postalCode = toUTF8(arg.substr(13));
-        else if(arg.find("--country=") == 0) country = toUTF8(arg.substr(10));
-        else if(arg.find("--role=") == 0) roles.push_back(toUTF8(arg.substr(7)));
+        else if(value v{arg, "--pin="}) pin = v;
+        else if(value v{arg, "--cert="}) cert = v;
+        else if(value v{arg, "--city="}) city = v;
+        else if(value v{arg, "--street="}) street = v;
+        else if(value v{arg, "--state="}) state = v;
+        else if(value v{arg, "--postalCode="}) postalCode = v;
+        else if(value v{arg, "--country="}) country = v;
+        else if(value v{arg, "--role="}) roles.emplace_back(v);
         else if(arg == "--sha224") uri = URI_SHA224;
         else if(arg == "--sha256") uri = URI_SHA256;
         else if(arg == "--sha384") uri = URI_SHA384;
@@ -439,15 +454,15 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg == "--sigpsssha512") { siguri = URI_SHA512; rsaPss = true; }
         else if(arg == "--rsapkcs15") rsaPss = false;
         else if(arg == "--rsapss") rsaPss = true;
-        else if(arg.find("--tsurl") == 0) tsurl = arg.substr(8);
-        else if(arg.find("--tslurl=") == 0) tslurl = arg.substr(9);
-        else if(arg.find("--tslcert=") == 0) tslcerts = vector<X509Cert>{ X509Cert(toUTF8(arg.substr(10))) };
+        else if(value v{arg, "--tsurl"}) tsurl = v;
+        else if(value v{arg, "--tslurl="}) tslurl = v;
+        else if(value v{arg, "--tslcert="}) tslcerts = vector<X509Cert>{ X509Cert(v) };
         else if(arg == "--TSLAllowExpired") expired = true;
         else if(arg == "--dontsign") doSign = false;
         else if(arg == "--nocolor") RED = GREEN = YELLOW = RESET = {};
-        else if(arg.find("--loglevel=") == 0) _logLevel = atoi(arg.substr(11).data());
-        else if(arg.find("--logfile=") == 0) _logFile = toUTF8(arg.substr(10));
-        else path = toUTF8(arg);
+        else if(value v{arg, "--loglevel="}) _logLevel = atoi(v.data());
+        else if(value v{arg, "--logfile="}) _logFile = v;
+        else path = arg;
     }
 }
 
@@ -478,7 +493,7 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
 #ifdef _WIN32
     else if(cng)
     {
-        unique_ptr<WinSigner> win = make_unique<WinSigner>(pin, selectFirst);
+        auto win = make_unique<WinSigner>(pin, selectFirst);
         win->setThumbprint(thumbprint);
         signer = std::move(win);
     }
@@ -544,7 +559,7 @@ static int validateSignature(const Signature *s, ToolConfig::Warning warning = T
 static int open(int argc, char* argv[])
 {
     ToolConfig::Warning reportwarnings = ToolConfig::WWarning;
-    string path;
+    value path;
     fs::path extractPath;
     bool validateOnExtract = false;
     int returnCode = EXIT_SUCCESS;
@@ -557,31 +572,28 @@ static int open(int argc, char* argv[])
     // Parse command line arguments.
     for(int i = 2; i < argc; i++)
     {
-        string arg(ToolConfig::toUTF8(argv[i]));
+        string_view arg(argv[i]);
         if(arg == "--list")
             continue;
-        if(arg.find("--warnings=") == 0)
+        if(value v{arg, "--warnings="})
         {
-            if(arg.substr(11, 6) == "ignore") reportwarnings = ToolConfig::WIgnore;
-            if(arg.substr(11, 5) == "error") reportwarnings = ToolConfig::WError;
+            if(v == "ignore") reportwarnings = ToolConfig::WIgnore;
+            if(v == "error") reportwarnings = ToolConfig::WError;
         }
-        else if(arg.find("--extractAll") == 0)
-        {
+        else if(arg == "--extractAll")
             extractPath = fs::current_path();
-            if(auto pos = arg.find('='); pos != string::npos)
-            {
-                fs::path newPath = fs::u8path(arg.substr(pos + 1));
-                extractPath = newPath.is_relative() ? extractPath / newPath : std::move(newPath);
-            }
+        else if(value v{arg, "--extractAll="})
+        {
+            extractPath = fs::absolute(fs::path(v.begin(), v.end()));
             if(!fs::is_directory(extractPath))
                 THROW("Path is not directory");
         }
         else if(arg == "--validateOnExtract")
             validateOnExtract = true;
-        else if(arg.find("--offline") == 0)
+        else if(arg == "--offline")
             cb.online = false;
         else
-            path = std::move(arg);
+            path = arg;
     }
 
     if(path.empty())
@@ -601,8 +613,8 @@ static int open(int argc, char* argv[])
         for(const DataFile *file: doc->dataFiles())
         {
             try {
-                string dst = (extractPath / fs::u8path(file->fileName()).filename()).u8string();
-                file->saveAs(dst);
+                auto dst = (extractPath / fs::path(file->fileName()).filename());
+                file->saveAs(dst.string());
                 cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
             } catch(const Exception &e) {
                 cout << "  Document " << file->fileName() << " extraction: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
@@ -689,16 +701,16 @@ static int open(int argc, char* argv[])
 static int remove(int argc, char *argv[])
 {
     vector<unsigned int> documents, signatures;
-    string path;
+    value path;
     for(int i = 2; i < argc; i++)
     {
-        string arg(ToolConfig::toUTF8(argv[i]));
-        if(arg.find("--document=") == 0)
-            documents.push_back(unsigned(stoi(arg.substr(11))));
-        else if(arg.find("--signature=") == 0)
-            signatures.push_back(unsigned(stoi(arg.substr(12))));
+        string_view arg(argv[i]);
+        if(value v{arg, "--document="})
+            documents.push_back(unsigned(atoi(v.data())));
+        else if(value v{arg, "--signature="})
+            signatures.push_back(unsigned(atoi(v.data())));
         else
-            path = std::move(arg);
+            path = arg;
     }
 
     if(path.empty())
@@ -831,11 +843,11 @@ static int createBatch(const ToolConfig &p, const char *program)
     unique_ptr<Signer> signer = p.getSigner();
     error_code ec;
     int returnCode = EXIT_SUCCESS;
-    for(const auto &file: fs::directory_iterator(fs::u8path(p.path), ec))
+    for(const auto &file: fs::directory_iterator(string_view(p.path), ec))
     {
         if(!fs::is_regular_file(file.status()) || file.path().extension() == ".asice")
             continue;
-        const auto path = file.path().u8string();
+        const auto path = file.path().string();
         cout << "Signing file: " << path << endl;
         try {
             unique_ptr<Container> doc = Container::createPtr(path + ".asice");
@@ -952,7 +964,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
         for(const X509Cert &cert: p.certs)
             cout << "     Signer: " << cert << endl;
         string path = cache + "/" + p.territory + ".xml";
-        if(error_code ec; !fs::exists(fs::u8path(path), ec))
+        if(error_code ec; !fs::exists(fs::path(path), ec))
         {
             cout << "              TSL: missing" << endl;
             continue;
@@ -994,6 +1006,14 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
  */
 int main(int argc, char *argv[]) try
 {
+#ifdef _WIN32
+    struct codepage_scope {
+        ~codepage_scope() noexcept { SetConsoleOutputCP(oldOutputCP); }
+        UINT oldOutputCP;
+    };
+    codepage_scope scope{GetConsoleOutputCP()};
+    SetConsoleOutputCP(CP_UTF8);
+#endif
     printf("Version\n");
     printf("  digidoc-tool version: %s\n", VERSION_STR);
     printf("  libdigidocpp version: %s\n", version().c_str());

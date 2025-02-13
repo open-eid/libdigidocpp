@@ -153,7 +153,11 @@ target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv)
 
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.cpp)
+    target_compile_features(digidoc-tool PUBLIC cxx_std_20)
     target_link_libraries(digidoc-tool digidocpp digidocpp_priv Threads::Threads)
+    target_link_options(digidoc-tool PRIVATE
+        $<$<PLATFORM_ID:Windows>: /MANIFEST:NO /MANIFEST:EMBED /MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/digidoc-tool.manifest>
+    )
     configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
 endif()
 
