@@ -2,7 +2,6 @@ plugins {
     id 'java'
 }
 group 'ee.ria'
-sourceSets.main.java.srcDirs += ['/Library/libdigidocpp/include', '/usr/include']
 java {
     targetCompatibility JavaVersion.VERSION_17
     sourceCompatibility JavaVersion.VERSION_17
@@ -14,4 +13,10 @@ jar {
     manifest {
         attributes 'Main-Class': 'ee.ria.libdigidocpp.libdigidocpp'
     }
+}
+def digidocppJarPath = file('/usr/share/digidocpp/digidocpp.jar').exists() ?
+    '/usr/share/digidocpp/digidocpp.jar' :
+    '/Library/Java/Extensions/digidocpp.jar'
+dependencies {
+    implementation files(digidocppJarPath)
 }
