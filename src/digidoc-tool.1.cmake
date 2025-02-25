@@ -49,7 +49,7 @@ Command websign:
 Command sign:
   Example: digidoc-tool sign demo-container.asice
   Available options:
-    --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive
+    --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive, TimeStampToken, time-stamp-token
     --XAdESEN      - use XAdES EN profile
     --city=        - city of production place
     --street=      - streetAddress of production place in XAdES EN profile
