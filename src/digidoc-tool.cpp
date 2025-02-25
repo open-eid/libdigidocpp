@@ -252,6 +252,30 @@ string ConsolePinSigner::pin(const X509Cert &certificate) const
     return result;
 }
 
+struct value: string_view {
+    constexpr value(string_view arg, string_view param) noexcept
+        : string_view(arg.size() > param.size() && arg.compare(0, param.size(), param) == 0 ?
+                               arg.substr(param.size()) : string_view{})
+    {}
+
+    constexpr operator bool() const noexcept
+    {
+        return !empty();
+    }
+};
+
+class NullSigner final: public Signer
+{
+public:
+    explicit NullSigner(X509Cert cert): _cert(std::move(cert)) {}
+    X509Cert cert() const final { return _cert; }
+    vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const final
+    {
+        THROW("Not implemented");
+    }
+    X509Cert _cert;
+};
+
 class ToolConfig final: public XmlConfCurrent
 {
 public:
@@ -350,7 +374,7 @@ static int printUsage(const char *executable)
     << "  Command sign:" << endl
     << "    Example: " << executable << " sign demo-container.asice" << endl
     << "    Available options:" << endl
-    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive" << endl
+    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive, TimeStampToken, time-stamp-token" << endl
     << "      --XAdESEN      - use XAdES EN profile" << endl
     << "      --city=        - city of production place" << endl
     << "      --street=      - streetAddress of production place in XAdES EN profile" << endl
@@ -374,6 +398,12 @@ static int printUsage(const char *executable)
     << "      --tsurl        - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
     << "      --dontValidate - Don't validate container on signature creation" << endl << endl
     << "      --userAgent    - Additional info info that is sent to TSA or OCSP service" << endl << endl
+    << "  Command extend:" << endl
+    << "    Example: " << executable << " extend --signature=0 demo-container.asice" << endl
+    << "    Available options:" << endl
+    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive" << endl
+    << "      --signature=   - signature to extend" << endl
+    << "      --dontValidate - Don't validate container on signature creation" << endl << endl
     << "  All commands:" << endl
     << "      --nocolor      - Disable terminal colors" << endl
     << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
@@ -391,40 +421,39 @@ ToolConfig::ToolConfig(int argc, char *argv[])
     for(int i = 2; i < argc; i++)
     {
         string_view arg(argv[i]);
-        if(arg.find("--profile=") == 0)
-            profile = arg.substr(10);
-        else if(arg.find("--file=") == 0)
+        if(value v{arg, "--profile="}) profile = v;
+        else if(value v{arg, "--file="})
         {
-            string_view arg2(i+1 < argc ? argv[i+1] : string_view());
-            files.emplace(arg.substr(7),
-                arg2.find("--mime=") == 0 ? toUTF8(arg2.substr(7)) : "application/octet-stream");
+            value mime(i+1 < argc ? argv[i+1] : string_view(), "--mime=");
+            files.emplace(v,
+                mime ? toUTF8(mime) : "application/octet-stream");
         }
 #ifdef _WIN32
         else if(arg == "--cng") cng = true;
         else if(arg == "--selectFirst") selectFirst = true;
-        else if(arg.find("--thumbprint=") == 0) thumbprint = File::hexToBin(arg.substr(arg.find('=') + 1));
+        else if(value v{arg, "--thumbprint="}) thumbprint = File::hexToBin(v);
 #endif
         else if(arg.find("--pkcs11") == 0)
         {
             cng = false;
-            if(arg.find('=') != string::npos)
-                pkcs11 = toUTF8(arg.substr(arg.find('=') + 1));
+            if(value v{arg, "--pkcs11="})
+                pkcs11 = toUTF8(v);
         }
-        else if(arg.find("--pkcs12=") == 0)
+        else if(value v{arg, "--pkcs12="})
         {
             cng = false;
-            pkcs12 = toUTF8(arg.substr(9));
+            pkcs12 = toUTF8(v);
         }
         else if(arg == "--dontValidate") dontValidate = true;
         else if(arg == "--XAdESEN") XAdESEN = true;
-        else if(arg.find("--pin=") == 0) pin = arg.substr(6);
-        else if(arg.find("--cert=") == 0) cert = toUTF8(arg.substr(7));
-        else if(arg.find("--city=") == 0) city = toUTF8(arg.substr(7));
-        else if(arg.find("--street=") == 0) street = toUTF8(arg.substr(9));
-        else if(arg.find("--state=") == 0) state = toUTF8(arg.substr(8));
-        else if(arg.find("--postalCode=") == 0) postalCode = toUTF8(arg.substr(13));
-        else if(arg.find("--country=") == 0) country = toUTF8(arg.substr(10));
-        else if(arg.find("--role=") == 0) roles.push_back(toUTF8(arg.substr(7)));
+        else if(value v{arg, "--pin="}) pin = v;
+        else if(value v{arg, "--cert="}) cert = toUTF8(v);
+        else if(value v{arg, "--city="}) city = toUTF8(v);
+        else if(value v{arg, "--street="}) street = toUTF8(v);
+        else if(value v{arg, "--state="}) state = toUTF8(v);
+        else if(value v{arg, "--postalCode="}) postalCode = toUTF8(v);
+        else if(value v{arg, "--country="}) country = toUTF8(v);
+        else if(value v{arg, "--role="}) roles.push_back(toUTF8(v));
         else if(arg == "--sha224") uri = URI_SHA224;
         else if(arg == "--sha256") uri = URI_SHA256;
         else if(arg == "--sha384") uri = URI_SHA384;
@@ -439,14 +468,14 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg == "--sigpsssha512") { siguri = URI_SHA512; rsaPss = true; }
         else if(arg == "--rsapkcs15") rsaPss = false;
         else if(arg == "--rsapss") rsaPss = true;
-        else if(arg.find("--tsurl") == 0) tsurl = arg.substr(8);
-        else if(arg.find("--tslurl=") == 0) tslurl = arg.substr(9);
-        else if(arg.find("--tslcert=") == 0) tslcerts = vector<X509Cert>{ X509Cert(toUTF8(arg.substr(10))) };
+        else if(value v{arg, "--tsurl="}) tsurl = v;
+        else if(value v{arg, "--tslurl="}) tslurl = v;
+        else if(value v{arg, "--tslcert="}) tslcerts = vector<X509Cert>{ X509Cert(toUTF8(v)) };
         else if(arg == "--TSLAllowExpired") expired = true;
         else if(arg == "--dontsign") doSign = false;
         else if(arg == "--nocolor") RED = GREEN = YELLOW = RESET = {};
-        else if(arg.find("--loglevel=") == 0) _logLevel = atoi(arg.substr(11).data());
-        else if(arg.find("--logfile=") == 0) _logFile = toUTF8(arg.substr(10));
+        else if(value v{arg, "--loglevel="}) _logLevel = atoi(v.data());
+        else if(value v{arg, "--logfile="}) _logFile = toUTF8(v);
         else path = toUTF8(arg);
     }
 }
@@ -461,24 +490,11 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
 {
     unique_ptr<Signer> signer;
     if(getwebsigner)
-    {
-        class WebSigner final: public Signer
-        {
-        public:
-            explicit WebSigner(X509Cert cert): _cert(std::move(cert)) {}
-            X509Cert cert() const final { return _cert; }
-            vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const final
-            {
-                THROW("Not implemented");
-            }
-            X509Cert _cert;
-        };
-        signer = make_unique<WebSigner>(X509Cert(cert, X509Cert::Pem));
-    }
+        signer = make_unique<NullSigner>(X509Cert(cert, X509Cert::Pem));
 #ifdef _WIN32
     else if(cng)
     {
-        unique_ptr<WinSigner> win = make_unique<WinSigner>(pin, selectFirst);
+        auto win = make_unique<WinSigner>(pin, selectFirst);
         win->setThumbprint(thumbprint);
         signer = std::move(win);
     }
@@ -497,6 +513,12 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
     return signer;
 }
 
+/**
+ * Validate signature.
+ *
+ * @param signature Signature to validated
+ * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
+ */
 static int validateSignature(const Signature *s, ToolConfig::Warning warning = ToolConfig::WWarning)
 {
     int returnCode = EXIT_SUCCESS;
@@ -557,20 +579,20 @@ static int open(int argc, char* argv[])
     // Parse command line arguments.
     for(int i = 2; i < argc; i++)
     {
-        string arg(ToolConfig::toUTF8(argv[i]));
+        string_view arg(argv[i]);
         if(arg == "--list")
             continue;
-        if(arg.find("--warnings=") == 0)
+        if(value v{arg, "--warnings="})
         {
-            if(arg.substr(11, 6) == "ignore") reportwarnings = ToolConfig::WIgnore;
-            if(arg.substr(11, 5) == "error") reportwarnings = ToolConfig::WError;
+            if(v == "ignore") reportwarnings = ToolConfig::WIgnore;
+            if(v == "error") reportwarnings = ToolConfig::WError;
         }
         else if(arg.find("--extractAll") == 0)
         {
             extractPath = fs::current_path();
             if(auto pos = arg.find('='); pos != string::npos)
             {
-                fs::path newPath = fs::u8path(arg.substr(pos + 1));
+                fs::path newPath = fs::path(arg.substr(pos + 1));
                 extractPath = newPath.is_relative() ? extractPath / newPath : std::move(newPath);
             }
             if(!fs::is_directory(extractPath))
@@ -578,10 +600,10 @@ static int open(int argc, char* argv[])
         }
         else if(arg == "--validateOnExtract")
             validateOnExtract = true;
-        else if(arg.find("--offline") == 0)
+        else if(arg == "--offline")
             cb.online = false;
         else
-            path = std::move(arg);
+            path = ToolConfig::toUTF8(arg);
     }
 
     if(path.empty())
@@ -670,13 +692,86 @@ static int open(int argc, char* argv[])
             << "    OCSP Responder: " << s->OCSPCertificate() << endl
             << "    Message imprint (" << msgImprint.size() << "): " << msgImprint << endl
             << "    TS: " << s->TimeStampCertificate() << endl
-            << "    TS time: " << s->TimeStampTime() << endl
-            << "    TSA: " << s->ArchiveTimeStampCertificate() << endl
-            << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
+            << "    TS time: " << s->TimeStampTime() << endl;
+        for(const auto &tsaInfo: s->ArchiveTimeStamps())
+        {
+            cout
+                << "    TSA: " << tsaInfo.cert << '\n'
+                << "    TSA time: " << tsaInfo.time << '\n';
+        }
     }
     if(returnCode == EXIT_SUCCESS && !extractPath.empty())
         return extractFiles();
     return returnCode;
+}
+
+/**
+ * Extend signatures in container.
+ *
+ * @param argc number of command line arguments.
+ * @param argv command line arguments.
+ * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
+ */
+static int extend(int argc, char *argv[])
+{
+    vector<unsigned int> extendId;
+    bool dontValidate = false;
+    string path;
+    NullSigner signer{X509Cert()};
+    for(int i = 2; i < argc; i++)
+    {
+        string_view arg(argv[i]);
+        if(value v{arg, "--profile="})
+            signer.setProfile(string(v));
+        else if(value v{arg, "--signature="})
+            extendId.push_back(unsigned(atoi(v.data())));
+        else if(arg == "--dontValidate")
+            dontValidate = true;
+        else
+            path = ToolConfig::toUTF8(arg);
+    }
+
+    if(path.empty())
+        return printUsage(argv[0]);
+
+    unique_ptr<Container> doc;
+    try {
+        doc = Container::openPtr(path);
+    } catch(const Exception &e) {
+        cout << "Failed to parse container" << endl;
+        cout << "  Exception:" << endl << e;
+        return EXIT_FAILURE;
+    }
+
+    auto signatures = doc->signatures();
+    if(signatures.empty())
+    {
+        cout << "  Container does not contain signatures\n";
+        return EXIT_SUCCESS;
+    }
+
+    for(unsigned int i : extendId)
+    {
+        if(i >= signatures.size())
+            THROW("Incorrect signature id %u, there are only %zu signatures in container.", i, signatures.size());
+        cout << "  Extending signature " << i << " to " << signer.profile() << endl;
+        signatures[i]->extendSignatureProfile(&signer);
+        if(!dontValidate)
+            validateSignature(signatures[i]);
+    }
+
+    if(extendId.empty())
+    {
+        cout << "  Extending " << signatures.size() << " signature(s)\n";
+        if(auto wrapped = Container::extendContainerValidity(*doc, &signer))
+        {
+            doc = std::move(wrapped);
+            cout << "  Wrapped to new container\n";
+        }
+    }
+
+    doc->save();
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -692,13 +787,13 @@ static int remove(int argc, char *argv[])
     string path;
     for(int i = 2; i < argc; i++)
     {
-        string arg(ToolConfig::toUTF8(argv[i]));
-        if(arg.find("--document=") == 0)
-            documents.push_back(unsigned(stoi(arg.substr(11))));
-        else if(arg.find("--signature=") == 0)
-            signatures.push_back(unsigned(stoi(arg.substr(12))));
+        string_view arg(argv[i]);
+        if(value v{arg, "--document="})
+            documents.push_back(unsigned(atoi(v.data())));
+        else if(value v{arg, "--signature="})
+            signatures.push_back(unsigned(atoi(v.data())));
         else
-            path = std::move(arg);
+            path = ToolConfig::toUTF8(arg);
     }
 
     if(path.empty())
@@ -770,18 +865,7 @@ static int add(const ToolConfig &p, const char *program)
 static int signContainer(Container *doc, const unique_ptr<Signer> &signer, bool dontValidate = false)
 {
     if(Signature *signature = doc->sign(signer.get()))
-    {
-        if(dontValidate)
-            return EXIT_SUCCESS;
-        try {
-            signature->validate();
-            cout << "    Validation: " << ToolConfig::GREEN << "OK" << ToolConfig::RESET << endl;
-            return EXIT_SUCCESS;
-        } catch(const Exception &e) {
-            cout << "    Validation: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
-            cout << "     Exception:" << endl << e;
-        }
-    }
+        return dontValidate ? EXIT_SUCCESS : validateSignature(signature);
     return EXIT_FAILURE;
 }
 
@@ -1032,6 +1116,8 @@ int main(int argc, char *argv[]) try
         return remove(argc, argv);
     if(command == "sign")
         return sign(*conf, argv[0]);
+    if(command == "extend")
+        return extend(argc, argv);
     if(command == "websign")
         return websign(*conf, argv[0]);
     if(command == "tsl")
