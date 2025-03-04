@@ -454,7 +454,7 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg == "--sigpsssha512") { siguri = URI_SHA512; rsaPss = true; }
         else if(arg == "--rsapkcs15") rsaPss = false;
         else if(arg == "--rsapss") rsaPss = true;
-        else if(value v{arg, "--tsurl"}) tsurl = v;
+        else if(value v{arg, "--tsurl="}) tsurl = v;
         else if(value v{arg, "--tslurl="}) tslurl = v;
         else if(value v{arg, "--tslcert="}) tslcerts = vector<X509Cert>{ X509Cert(v) };
         else if(arg == "--TSLAllowExpired") expired = true;
@@ -512,6 +512,12 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
     return signer;
 }
 
+/**
+ * Validate signature.
+ *
+ * @param signature Signature to validated
+ * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
+ */
 static int validateSignature(const Signature *s, ToolConfig::Warning warning = ToolConfig::WWarning)
 {
     int returnCode = EXIT_SUCCESS;
@@ -782,18 +788,7 @@ static int add(const ToolConfig &p, const char *program)
 static int signContainer(Container *doc, const unique_ptr<Signer> &signer, bool dontValidate = false)
 {
     if(Signature *signature = doc->sign(signer.get()))
-    {
-        if(dontValidate)
-            return EXIT_SUCCESS;
-        try {
-            signature->validate();
-            cout << "    Validation: " << ToolConfig::GREEN << "OK" << ToolConfig::RESET << endl;
-            return EXIT_SUCCESS;
-        } catch(const Exception &e) {
-            cout << "    Validation: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
-            cout << "     Exception:" << endl << e;
-        }
-    }
+        return dontValidate ? EXIT_SUCCESS : validateSignature(signature);
     return EXIT_FAILURE;
 }
 
