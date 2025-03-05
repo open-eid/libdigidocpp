@@ -28,7 +28,7 @@
 namespace digidoc
 {
 
-#define SCOPE_PTR(TYPE, DATA) make_unique_ptr<TYPE>(DATA, TYPE##_free)
+#define SCOPE_PTR(TYPE, DATA) make_unique_ptr<TYPE##_free>(DATA)
 #define SCOPE(TYPE, VAR, DATA) auto VAR = make_unique_ptr<TYPE>(DATA, TYPE##_free)
 
 template<auto F, class T>
