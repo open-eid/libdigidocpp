@@ -97,8 +97,11 @@ TSL::TSL(string file)
         return;
     if(get())
     {
-        static array<const xmlChar*,2> ids { pcxmlChar("Id"), nullptr };
-        xmlSecAddIDs(get(), nullptr, ids.data());
+        try {
+            validateSchema(File::path(Conf::instance()->xsdPath(), "ts_119612v020201_201601xsd.xsd"));
+        } catch(const Exception &e) {
+            WARN("Failed to parse configuration: %s, %s", file.c_str(), e.msg().c_str());
+        }
     }
     else
         WARN("Failed to parse configuration: %s", path.c_str());
