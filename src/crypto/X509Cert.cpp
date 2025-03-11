@@ -20,14 +20,11 @@
 #include "X509Cert.h"
 
 #include "crypto/OpenSSLHelpers.h"
-#include "crypto/X509Crypto.h"
 #include "util/log.h"
 
 #include <openssl/asn1t.h>
 #include <openssl/pem.h>
 #include <openssl/x509v3.h>
-
-#include <functional>
 
 using namespace digidoc;
 using namespace std;
@@ -229,7 +226,7 @@ X509Cert::X509Cert(const unsigned char *bytes, size_t size, Format format)
     }
     else
     {
-        SCOPE(BIO, bio, BIO_new_mem_buf((void*)bytes, int(size)));
+        auto bio = make_unique_ptr<BIO_free>(BIO_new_mem_buf((void*)bytes, int(size)));
         cert.reset(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr), X509_free);
     }
     if(!cert)
@@ -247,7 +244,7 @@ X509Cert::X509Cert(const string &path, Format format)
 {
     if(path.empty())
         THROW("No path given to parse X509.");
-    SCOPE(BIO, bio, BIO_new_file(path.c_str(), "rb"));
+    auto bio = make_unique_ptr<BIO_free>(BIO_new_file(path.c_str(), "rb"));
     if(!bio)
         THROW_OPENSSLEXCEPTION("Failed to open X.509 certificate file '%s'", path.c_str());
     if(format == Der)
@@ -298,7 +295,7 @@ string X509Cert::serial() const
 {
     if(!cert)
         return {};
-    if(auto bn = make_unique_ptr(ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), nullptr), BN_free))
+    if(auto bn = make_unique_ptr<BN_free>(ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), nullptr)))
     {
         auto openssl_free = [](char *data) { OPENSSL_free(data); };
         if(auto str = unique_ptr<char,decltype(openssl_free)>(BN_bn2dec(bn.get()), openssl_free))
@@ -327,7 +324,7 @@ vector<X509Cert::KeyUsage> X509Cert::keyUsage() const
     vector<KeyUsage> usage;
     if(!cert)
         return usage;
-    SCOPE(ASN1_BIT_STRING, keyusage, X509_get_ext_d2i(cert.get(), NID_key_usage, nullptr, nullptr));
+    auto keyusage = make_unique_cast<ASN1_BIT_STRING_free>(X509_get_ext_d2i(cert.get(), NID_key_usage, nullptr, nullptr));
     if(!keyusage)
         return usage;
 
@@ -347,7 +344,7 @@ vector<string> X509Cert::certificatePolicies() const
     vector<string> pol;
     if(!cert)
         return pol;
-    SCOPE(CERTIFICATEPOLICIES, cp, X509_get_ext_d2i(cert.get(), NID_certificate_policies, nullptr, nullptr));
+    auto cp = make_unique_cast<CERTIFICATEPOLICIES_free>(X509_get_ext_d2i(cert.get(), NID_certificate_policies, nullptr, nullptr));
     if(!cp)
         return pol;
     for(int i = 0; i < sk_POLICYINFO_num(cp.get()); ++i)
@@ -367,7 +364,7 @@ vector<string> X509Cert::qcStatements() const
     if(pos == -1)
         return result;
     X509_EXTENSION *ext = X509_get_ext(cert.get(), pos);
-    SCOPE(QCStatements, qc, ASN1_item_unpack(X509_EXTENSION_get_data(ext), ASN1_ITEM_rptr(QCStatements)));
+    auto qc = make_unique_cast<QCStatements_free>(ASN1_item_unpack(X509_EXTENSION_get_data(ext), ASN1_ITEM_rptr(QCStatements)));
     if(!qc)
         return result;
 
@@ -380,33 +377,31 @@ vector<string> X509Cert::qcStatements() const
 #ifndef TEMPLATE
             if(!s->statementInfo)
                 continue;
-            SCOPE(SemanticsInformation, si, ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(SemanticsInformation)));
+            auto si = make_unique_cast<SemanticsInformation_free>(ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(SemanticsInformation)));
             if(!si)
                 continue;
-            oid = toOID(si->semanticsIdentifier);
+            result.push_back(toOID(si->semanticsIdentifier));
 #else
-            oid = toOID(s->statementInfo.semanticsInformation->semanticsIdentifier);
+            result.push_back(toOID(s->statementInfo.semanticsInformation->semanticsIdentifier));
 #endif
-            result.push_back(oid);
         }
         else if(oid == QC_QCT)
         {
 #ifndef TEMPLATE
             if(!s->statementInfo)
                 continue;
-            SCOPE(QcType, qct, ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(QcType)));
+            auto qct = make_unique_cast<QcType_free>(ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(QcType)));
             if(!qct)
                 continue;
             for(int j = 0; j < sk_ASN1_OBJECT_num(qct.get()); ++j)
             {
-                oid = toOID(sk_ASN1_OBJECT_value(qct.get(), j));
+                result.push_back(toOID(sk_ASN1_OBJECT_value(qct.get(), j)));
 #else
 #endif
-                result.push_back(oid);
             }
         }
         else
-            result.push_back(oid);
+            result.push_back(std::move(oid));
     }
     return result;
 }
@@ -463,7 +458,7 @@ string X509Cert::toString(const string &obj) const
     }
     else
     {
-        SCOPE(BIO, mem, BIO_new(BIO_s_mem()));
+        auto mem = make_unique_ptr<BIO_free>(BIO_new(BIO_s_mem()));
         if(!mem)
             THROW_OPENSSLEXCEPTION("Failed to allocate memory for X509_NAME conversion");
 
@@ -494,7 +489,7 @@ bool X509Cert::isCA() const
 {
     if(!cert)
         return false;
-    SCOPE(BASIC_CONSTRAINTS, cons, X509_get_ext_d2i(cert.get(), NID_basic_constraints, nullptr, nullptr));
+    auto cons = make_unique_cast<BASIC_CONSTRAINTS_free>(X509_get_ext_d2i(cert.get(), NID_basic_constraints, nullptr, nullptr));
     return cons && cons->ca > 0;
 }
 

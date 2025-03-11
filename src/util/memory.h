@@ -30,8 +30,20 @@ struct free_deleter
     template<class T>
     void operator()(T *p) const noexcept
     {
-        if (p) D(p);
+        D(p);
     }
+};
+
+template<typename> struct free_argument;
+template<class T, class R>
+struct free_argument<R (*)(T *)>
+{
+    using type = T;
+};
+template<class T, class R>
+struct free_argument<R (&)(T *)>
+{
+    using type = T;
 };
 
 template <class T>
@@ -42,13 +54,6 @@ template<class T, class U>
 constexpr unique_free_t<T> make_unique_ptr(U *p, void (*d)(T*)) noexcept
 {
     return {static_cast<T*>(p), d};
-}
-
-template<class T>
-[[nodiscard]]
-constexpr unique_free_t<T> make_unique_ptr(nullptr_t, void (*d)(T*)) noexcept
-{
-    return {nullptr, d};
 }
 
 template<class T, typename D>
@@ -63,6 +68,22 @@ template<auto D, class T>
 constexpr auto make_unique_ptr(T *p) noexcept
 {
     return std::unique_ptr<T, free_deleter<D>>(p);
+}
+
+template<auto D>
+[[nodiscard]]
+constexpr auto make_unique_ptr(nullptr_t) noexcept
+{
+    using T = typename free_argument<decltype(D)>::type;
+    return make_unique_ptr<D, T>(nullptr);
+}
+
+template<auto D>
+[[nodiscard]]
+constexpr auto make_unique_cast(void *p) noexcept
+{
+    using T = typename free_argument<decltype(D)>::type;
+    return make_unique_ptr<D>(static_cast<T*>(p));
 }
 
 }
