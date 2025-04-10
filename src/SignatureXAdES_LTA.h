@@ -31,14 +31,14 @@ public:
 
     X509Cert ArchiveTimeStampCertificate() const final;
     std::string ArchiveTimeStampTime() const final;
+    std::vector<TSAInfo> ArchiveTimeStamps() const final;
     void validate(const std::string &policy) const final;
     void extendSignatureProfile(Signer *signer) final;
 
 private:
     DISABLE_COPY(SignatureXAdES_LTA);
 
-    void calcArchiveDigest(const Digest &digest, std::string_view canonicalizationMethod) const;
-    TS tsaFromBase64() const;
+    void calcArchiveDigest(const Digest &digest, std::string_view canonicalizationMethod, XMLNode node) const;
 };
 
 }

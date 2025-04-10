@@ -49,7 +49,7 @@ Command websign:
 Command sign:
   Example: digidoc-tool sign demo-container.asice
   Available options:
-    --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive
+    --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive, TimeStampToken, time-stamp-token
     --XAdESEN      - use XAdES EN profile
     --city=        - city of production place
     --street=      - streetAddress of production place in XAdES EN profile
@@ -68,6 +68,13 @@ Command sign:
     --tsurl        - option to change TS URL (default http://demo.sk.ee/tsa)
     --dontValidate - Don't validate container on signature creation
     --userAgent    - Additional info info that is sent to TSA or OCSP service
+
+Command extend:
+  Example: " << executable << " extend --signature=0 demo-container.asice
+  Available options:
+    --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive
+    --signature=   - signature to extend
+    --dontValidate - Don't validate container on signature creation
 
 All commands:
     --nocolor       - Disable terminal colors
