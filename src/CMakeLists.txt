@@ -49,12 +49,15 @@ set( CRYPTO_HEADER
 )
 
 add_library(digidocpp_ver INTERFACE)
-target_compile_definitions(digidocpp_ver INTERFACE
-    VERSION_STR="${VERSION}"
-    $<$<PLATFORM_ID:Windows>:VERSION=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${BUILD_NUMBER}>
-    $<$<PLATFORM_ID:Windows>:TARGET_NAME="$<TARGET_PROPERTY:NAME>">
-    $<$<PLATFORM_ID:Windows>:$<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:APP>>
-)
+target_compile_definitions(digidocpp_ver INTERFACE VERSION_STR="${VERSION}")
+if(WIN32)
+    target_compile_definitions(digidocpp_ver INTERFACE
+        UNICODE _CRT_SECURE_NO_WARNINGS _SCL_SECURE_NO_WARNINGS WIN32_LEAN_AND_MEAN
+        VERSION=${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${BUILD_NUMBER}
+        TARGET_NAME="$<TARGET_PROPERTY:NAME>"
+        $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:APP>
+    )
+endif()
 target_sources(digidocpp_ver INTERFACE libdigidocpp.rc)
 
 add_library(digidocpp_util STATIC

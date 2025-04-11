@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         brew update
-        brew install --formula ninja swig doxygen boost
+        brew install --formula swig doxygen boost
         brew unlink python@3.12 || true
         brew unlink python@3.13 || true
         brew unlink openssl@3 || true
@@ -108,7 +108,7 @@ jobs:
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [40, 41, 42, rawhide]
+        container: [41, 42, rawhide]
     steps:
     - name: Install Deps
       run: |
@@ -132,7 +132,7 @@ jobs:
     container: ubuntu:${{ matrix.container }}
     strategy:
       matrix:
-        container: ['22.04', '24.04', '24.10']
+        container: ['22.04', '24.04', '24.10', '25.04']
         arch: ['amd64', 'arm64']
     env:
       DEBIAN_FRONTEND: noninteractive
