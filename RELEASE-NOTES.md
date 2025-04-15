@@ -1,3 +1,14 @@
+Libdigidocpp library [4.2.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.2.0) release notes
+--------------------------------------
+- Update libraries and platform support
+  (#620, #651, #654, #655, #662, #659, #667)
+- Improve signature and container compatibility
+  (#660)
+- Other fixes and optimizations
+  (#653, #664, #657, #666, #663, #661)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v4.1.0...v4.2.0)
+
 Libdigidocpp library [4.1.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.1.0) release notes
 --------------------------------------
 - Update libraries and platform support

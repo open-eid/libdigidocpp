@@ -51,7 +51,7 @@ esac
 function xmlsec {
     echo Building ${XMLSEC_DIR}
     if [ ! -f ${XMLSEC_DIR}.tar.gz ]; then
-        curl -O -L http://www.aleksey.com/xmlsec/download/${XMLSEC_DIR}.tar.gz
+        curl -O -L https://www.aleksey.com/xmlsec/download/${XMLSEC_DIR}.tar.gz
     fi
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz

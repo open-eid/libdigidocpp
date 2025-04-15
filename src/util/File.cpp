@@ -261,7 +261,7 @@ void File::createDirectory(string path)
 #endif
     if(result == 0 || errno == EEXIST)
     {
-        DEBUG("Created directory or direcotry exists '%s'", path.c_str());
+        DEBUG("Created directory or directory exists '%s'", path.c_str());
         return;
     }
     if(errno != ENOENT)

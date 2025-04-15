@@ -100,10 +100,6 @@ if(TARGET Doxygen::doxygen)
     install( DIRECTORY doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} )
 endif()
 
-if( WIN32 )
-    add_definitions( -DUNICODE -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -DWIN32_LEAN_AND_MEAN )
-endif()
-
 enable_testing()
 add_subdirectory(src)
 add_subdirectory(examples)
