@@ -232,7 +232,7 @@ struct XMLNode: public XMLElem<xmlNode>
     {
         if(!d)
             return *this;
-        xmlNodeSetContent(d, pcxmlChar(text.data()));
+        xmlNodeAddContentLen(d, pcxmlChar(text.data()), int(text.length()));
         return *this;
     }
 
