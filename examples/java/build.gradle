@@ -14,9 +14,20 @@ jar {
         attributes 'Main-Class': 'ee.ria.libdigidocpp.libdigidocpp'
     }
 }
-def digidocppJarPath = file('/usr/share/digidocpp/digidocpp.jar').exists() ?
-    '/usr/share/digidocpp/digidocpp.jar' :
-    '/Library/Java/Extensions/digidocpp.jar'
+def digidocppJarPath = '/usr/share/digidocpp/digidocpp.jar'
+def nativeLibDir = null
+if (System.properties['os.name'].toLowerCase().contains('windows')) {
+    digidocppJarPath = 'C:\\Program Files\\libdigidocpp\\digidocpp.jar'
+    nativeLibDir = 'C:\\Program Files\\libdigidocpp'
+} else if (System.properties['os.name'].toLowerCase().contains('mac')) {
+    digidocppJarPath = '/Library/Java/Extensions/digidocpp.jar'
+}
 dependencies {
     implementation files(digidocppJarPath)
+}
+tasks.withType(JavaExec).configureEach {
+    if (nativeLibDir != null) {
+        environment 'PATH', "${nativeLibDir};" + System.getenv('PATH')
+        jvmArgs "-Djava.library.path=${nativeLibDir}"
+    }
 }
