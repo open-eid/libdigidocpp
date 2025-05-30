@@ -57,10 +57,9 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
     string url = Conf::instance()->ocsp(cert.issuerName("CN"));
     if(url.empty())
     {
-        STACK_OF(OPENSSL_STRING) *urls = X509_get1_ocsp(cert.handle());
-        if(urls && sk_OPENSSL_STRING_num(urls) > 0)
-            url = sk_OPENSSL_STRING_value(urls, 0);
-        X509_email_free(urls);
+        auto urls = make_unique_ptr<X509_email_free>(X509_get1_ocsp(cert.handle()));
+        if(urls && sk_OPENSSL_STRING_num(urls.get()) > 0)
+            url = sk_OPENSSL_STRING_value(urls.get(), 0);
     }
     DEBUG("OCSP url %s", url.c_str());
     if(url.empty())
@@ -70,11 +69,11 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
         throw e;
     }
 
-    OCSP_CERTID *certId = OCSP_cert_to_id(nullptr, cert.handle(), issuer.handle());
-    SCOPE(OCSP_REQUEST, req, OCSP_REQUEST_new());
+    auto req = make_unique_ptr<OCSP_REQUEST_free>(OCSP_REQUEST_new());
     if(!req)
         THROW_OPENSSLEXCEPTION("Failed to create new OCSP request, out of memory?");
 
+    OCSP_CERTID *certId = OCSP_cert_to_id(nullptr, cert.handle(), issuer.handle());
     if(!OCSP_request_add0_id(req.get(), certId))
         THROW_OPENSSLEXCEPTION("Failed to add certificate ID to OCSP request.");
 
@@ -143,19 +142,27 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
 {
     if(!basic || !cert)
         return false;
+
     const ASN1_OCTET_STRING *hash {};
     const X509_NAME *name {};
-    OCSP_resp_get0_id(basic.get(), &hash, &name);
-    if(name)
-        return X509_NAME_cmp(X509_get_subject_name(cert.handle()), name) == 0;
+    if(OCSP_resp_get0_id(basic.get(), &hash, &name) != 1)
+        return false;
     if(hash)
     {
         std::array<unsigned char,SHA_DIGEST_LENGTH> sha1{};
         ASN1_BIT_STRING *key = X509_get0_pubkey_bitstr(cert.handle());
         SHA1(key->data, size_t(key->length), sha1.data());
-        return equal(sha1.cbegin(), sha1.cend(), hash->data, std::next(hash->data, hash->length));
+        if(!equal(sha1.cbegin(), sha1.cend(), hash->data, std::next(hash->data, hash->length)))
+            return false;
     }
-    return false;
+    else if(X509_NAME_cmp(X509_get_subject_name(cert.handle()), name) != 0)
+        return false;
+
+    const ASN1_OBJECT *sigalg {};
+    X509_ALGOR_get0(&sigalg, nullptr, nullptr, OCSP_resp_get0_tbs_sigalg(basic.get()));
+    int pknid = 0;
+    return OBJ_find_sigid_algs(OBJ_obj2nid(sigalg), nullptr, &pknid) == 1 &&
+        EVP_PKEY_is_a(X509_get0_pubkey(cert.handle()), OBJ_nid2sn(pknid)) == 1;
 }
 
 X509Cert OCSP::responderCert() const
@@ -230,7 +237,7 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         ASN1_OBJECT *md {};
         if(OCSP_id_get0_info(nullptr, &md, nullptr, nullptr, const_cast<OCSP_CERTID*>(certID)) == 1)
             evp_md = EVP_get_digestbyobj(md);
-        SCOPE(OCSP_CERTID, certId, OCSP_cert_to_id(evp_md, cert.handle(), issuer.handle()));
+        auto certId = make_unique_ptr<OCSP_CERTID_free>(OCSP_cert_to_id(evp_md, cert.handle(), issuer.handle()));
         if(OCSP_resp_find_status(basic.get(), certId.get(), &status, nullptr, nullptr, nullptr, nullptr) == 1)
             break;
     }
