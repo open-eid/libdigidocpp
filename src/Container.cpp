@@ -120,6 +120,7 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
         THROW("Error during initialisation of xmlsec. Failed to register custom callbacks.");
 
     INFO("Libxml2 version: %s", LIBXML_DOTTED_VERSION);
+    INFO("OpenSSL version: %s", OpenSSL_version(OPENSSL_VERSION_STRING));
     INFO("Xmlsec1 version: %s", XMLSEC_VERSION);
     INFO("digidocpp version: %s", VERSION_STR);
 
