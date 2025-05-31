@@ -272,6 +272,18 @@ struct value: public string_view {
     }
 };
 
+class NullSigner final: public Signer
+{
+public:
+    explicit NullSigner(X509Cert cert): _cert(std::move(cert)) {}
+    X509Cert cert() const final { return _cert; }
+    vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const final
+    {
+        THROW("Not implemented");
+    }
+    X509Cert _cert;
+};
+
 class ToolConfig final: public XmlConfCurrent
 {
 public:
@@ -366,7 +378,7 @@ static int printUsage(const char *executable)
     << "  Command sign:" << endl
     << "    Example: " << executable << " sign demo-container.asice" << endl
     << "    Available options:" << endl
-    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive" << endl
+    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive, TimeStampToken, time-stamp-token" << endl
     << "      --XAdESEN      - use XAdES EN profile" << endl
     << "      --city=        - city of production place" << endl
     << "      --street=      - streetAddress of production place in XAdES EN profile" << endl
@@ -390,6 +402,12 @@ static int printUsage(const char *executable)
     << "      --tsurl        - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
     << "      --dontValidate - Don't validate container on signature creation" << endl << endl
     << "      --userAgent    - Additional info info that is sent to TSA or OCSP service" << endl << endl
+    << "  Command extend:" << endl
+    << "    Example: " << executable << " extend --signature=0 demo-container.asice" << endl
+    << "    Available options:" << endl
+    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive" << endl
+    << "      --signature=   - signature to extend" << endl
+    << "      --dontValidate - Don't validate container on signature creation" << endl << endl
     << "  All commands:" << endl
     << "      --nocolor      - Disable terminal colors" << endl
     << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
@@ -476,20 +494,7 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
 {
     unique_ptr<Signer> signer;
     if(getwebsigner)
-    {
-        class WebSigner final: public Signer
-        {
-        public:
-            explicit WebSigner(X509Cert cert): _cert(std::move(cert)) {}
-            X509Cert cert() const final { return _cert; }
-            vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const final
-            {
-                THROW("Not implemented");
-            }
-            X509Cert _cert;
-        };
-        signer = make_unique<WebSigner>(X509Cert(cert, X509Cert::Pem));
-    }
+        signer = make_unique<NullSigner>(X509Cert(cert, X509Cert::Pem));
 #ifdef _WIN32
     else if(cng)
     {
@@ -688,13 +693,86 @@ static int open(int argc, char* argv[])
             << "    OCSP Responder: " << s->OCSPCertificate() << endl
             << "    Message imprint (" << msgImprint.size() << "): " << msgImprint << endl
             << "    TS: " << s->TimeStampCertificate() << endl
-            << "    TS time: " << s->TimeStampTime() << endl
-            << "    TSA: " << s->ArchiveTimeStampCertificate() << endl
-            << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
+            << "    TS time: " << s->TimeStampTime() << endl;
+        for(const auto &tsaInfo: s->ArchiveTimeStamps())
+        {
+            cout
+                << "    TSA: " << tsaInfo.cert << '\n'
+                << "    TSA time: " << tsaInfo.time << '\n';
+        }
     }
     if(returnCode == EXIT_SUCCESS && !extractPath.empty())
         return extractFiles();
     return returnCode;
+}
+
+/**
+ * Extend signatures in container.
+ *
+ * @param argc number of command line arguments.
+ * @param argv command line arguments.
+ * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
+ */
+static int extend(int argc, char *argv[])
+{
+    vector<unsigned int> extendId;
+    bool dontValidate = false;
+    value path;
+    NullSigner signer{X509Cert()};
+    for(int i = 2; i < argc; i++)
+    {
+        string_view arg(argv[i]);
+        if(value v{arg, "--profile="})
+            signer.setProfile(string(v));
+        else if(value v{arg, "--signature="})
+            extendId.push_back(unsigned(atoi(v.data())));
+        else if(arg == "--dontValidate")
+            dontValidate = true;
+        else
+            path = arg;
+    }
+
+    if(path.empty())
+        return printUsage(argv[0]);
+
+    unique_ptr<Container> doc;
+    try {
+        doc = Container::openPtr(path);
+    } catch(const Exception &e) {
+        cout << "Failed to parse container" << endl;
+        cout << "  Exception:" << endl << e;
+        return EXIT_FAILURE;
+    }
+
+    auto signatures = doc->signatures();
+    if(signatures.empty())
+    {
+        cout << "  Container does not contain signatures\n";
+        return EXIT_SUCCESS;
+    }
+
+    for(unsigned int i : extendId)
+    {
+        if(i >= signatures.size())
+            THROW("Incorrect signature id %u, there are only %zu signatures in container.", i, signatures.size());
+        cout << "  Extending signature " << i << " to " << signer.profile() << endl;
+        signatures[i]->extendSignatureProfile(&signer);
+        if(!dontValidate)
+            validateSignature(signatures[i]);
+    }
+
+    if(extendId.empty())
+    {
+        cout << "  Extending " << signatures.size() << " signature(s)\n";
+        if(auto wrapped = Container::extendContainerValidity(*doc, &signer))
+        {
+            doc = std::move(wrapped);
+            cout << "  Wrapped to new container\n";
+        }
+    }
+
+    doc->save();
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -1047,6 +1125,8 @@ int main(int argc, char *argv[]) try
         return remove(argc, argv);
     if(command == "sign")
         return sign(*conf, argv[0]);
+    if(command == "extend")
+        return extend(argc, argv);
     if(command == "websign")
         return websign(*conf, argv[0]);
     if(command == "tsl")
