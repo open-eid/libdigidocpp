@@ -132,7 +132,7 @@ jobs:
     container: ubuntu:${{ matrix.container }}
     strategy:
       matrix:
-        container: ['22.04', '24.04', '24.10', '25.04']
+        container: ['22.04', '24.04', '25.04']
         arch: ['amd64', 'arm64']
     env:
       DEBIAN_FRONTEND: noninteractive
@@ -164,15 +164,12 @@ jobs:
     runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        toolset: [143, 142]
+        toolset: [143]
         platform: [x86, x64, arm64]
         include:
         - toolset: 143
           image: windows-2022
           vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
-        - toolset: 142
-          image: windows-2019
-          vcvars: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
         - platform: x86
           setenv: amd64_x86
         - platform: x64
