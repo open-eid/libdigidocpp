@@ -3,20 +3,21 @@
     "dependencies": [
       {
         "name": "libxml2",
-        "default-features": false
+        "default-features": false,
+        "platform": "!osx & !ios"
       },
       "xmlsec",
-      "zlib"
+      {
+        "name": "zlib",
+        "platform": "!osx & !ios"
+      }
     ],
     "features": {
       "tests": { "description": "Build tests", "dependencies": ["boost-test"] }
     },
-    "builtin-baseline": "5ee5eee0d3e9c6098b24d263e9099edcdcef6631",
+    "builtin-baseline": "031ad89ce6c575df35a8e58707ad2c898446c63e",
     "vcpkg-configuration": {
         "overlay-triplets": ["./vcpkg-triplets"],
-        "overlay-ports": [
-          "vcpkg-ports/openssl",
-          "vcpkg-ports/xmlsec"
-        ]
+        "overlay-ports": ["vcpkg-ports/xmlsec"]
     }
 }

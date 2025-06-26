@@ -12,35 +12,31 @@
       }
     },
     {
-      "name": "base",
-      "displayName": "Base build config",
-      "hidden": true,
-      "inherits": "default",
-      "environment": {
-        "DEST": "/Library/libdigidocpp$env{DEST_SUFFIX}"
-      },
-      "installDir": "$env{DEST}"
-    },
-    {
       "name": "macos",
       "description": "This macos build is only available on macOS",
-      "inherits": "base",
+      "inherits": "default",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Darwin"
       },
+      "installDir": "$env{DEST}",
+      "environment": {
+        "DEST": "/Library/libdigidocpp$env{DEST_SUFFIX}"
+      },
       "cacheVariables": {
         "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "12.0",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "13.0",
         "CMAKE_FIND_ROOT_PATH": "$env{DEST}"
       }
     },
     {
       "name": "mobile",
       "hidden": true,
-      "inherits": "base",
+      "inherits": "default",
+      "installDir": "$env{DEST}",
       "environment": {
+        "DEST": "libdigidocpp$env{DEST_SUFFIX}",
         "DEST_SUFFIX": ".${presetName}"
       },
       "cacheVariables": {
@@ -52,7 +48,7 @@
     {
       "name": "ios",
       "hidden": true,
-      "inherits": ["mobile", "macos"],
+      "inherits": ["macos", "mobile"],
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "iOS",
         "CMAKE_OSX_SYSROOT": "${presetName}",

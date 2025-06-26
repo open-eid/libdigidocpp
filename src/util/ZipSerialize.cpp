@@ -33,7 +33,6 @@
 
 #include <algorithm>
 #include <array>
-#include <filesystem>
 #include <fstream>
 #include <sstream>
 
@@ -57,14 +56,14 @@ ZipSerialize::ZipSerialize(const string &path, bool create)
     if(create)
     {
         DEBUG("ZipSerialize::create(%s)", path.c_str());
-        d.reset(zipOpen2((const char*)filesystem::u8path(path).c_str(), APPEND_STATUS_CREATE, nullptr, &def));
+        d.reset(zipOpen2((const char*)util::File::encodeName(path).c_str(), APPEND_STATUS_CREATE, nullptr, &def));
         if(!d)
             THROW("Failed to create ZIP file '%s'.", path.c_str());
     }
     else
     {
         DEBUG("ZipSerialize::open(%s)", path.c_str());
-        d.reset(unzOpen2((const char*)filesystem::u8path(path).c_str(), &def));
+        d.reset(unzOpen2((const char*)util::File::encodeName(path).c_str(), &def));
         if(!d)
             THROW("Failed to open ZIP file '%s'.", path.c_str());
     }

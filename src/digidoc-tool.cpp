@@ -928,6 +928,9 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
 {
     int returnCode = EXIT_SUCCESS;
     string cache = CONF(TSLCache);
+    auto certs = CONF(TSLCerts);
+    for(const X509Cert &cert: certs)
+        cout << "Signer: " << cert << endl;
     TSL t(File::path(cache, File::fileName(CONF(TSLUrl))));
     cout << "TSL: " << t.url() << endl
         << "         Type: " << t.type() << endl
@@ -935,11 +938,10 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
         << "     Operator: " << t.operatorName() << endl
         << "     Sequence: " << t.sequenceNumber() << endl
         << "       Issued: " << t.issueDate() << endl
-        << "  Next update: " << t.nextUpdate() << endl
-        << "Pointers:" << endl;
+        << "  Next update: " << t.nextUpdate() << endl;
     try {
         cout << "  Signature: ";
-        t.validate(CONF(TSLCerts));
+        t.validate(certs);
         cout << ToolConfig::GREEN << "VALID" << ToolConfig::RESET << endl;
     } catch(const Exception &e) {
         cout << ToolConfig::RED << "INVALID" << ToolConfig::RESET << endl;
@@ -952,6 +954,7 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
         for(const X509Cert &x: s.certs)
             cout << "    Cert: " << x << endl;
     }
+    cout << "Pointers: " << endl;
     for(const TSL::Pointer &p: t.pointers())
     {
         cout << "    Pointer: " << p.territory << endl

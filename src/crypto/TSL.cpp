@@ -277,7 +277,7 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
         ofstream(File::encodeName(path), ofstream::binary|fstream::trunc)
             << ifstream(File::encodeName(valid.path), fstream::binary).rdbuf();
         error_code ec;
-        filesystem::remove(filesystem::u8path(valid.path), ec);
+        filesystem::remove(File::encodeName(valid.path), ec);
 
         ofstream(File::encodeName(path + ".etag"), ofstream::trunc) << etag;
 

@@ -133,7 +133,7 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
     return new System.Security.Cryptography.X509Certificates.X509Certificate2($modulePINVOKE.To_ByteArray(cPtr));
   }
 %typemap(out) std::vector<unsigned char> %{  $result = new std::vector<unsigned char>(std::move($1)); %}
-%typemap(out) digidoc::X509Cert %{  $result = new std::vector<unsigned char>($1); %}
+%typemap(out) digidoc::X509Cert %{  $result = new std::vector<unsigned char>($1.operator std::vector<unsigned char>()); %}
 
 #elif defined(SWIGPYTHON)
 %typemap(in) std::vector<unsigned char> %{

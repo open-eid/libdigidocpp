@@ -64,6 +64,12 @@ using f_utimbuf = struct utimbuf;
 
 stack<fs::path> File::tempFiles;
 
+static string decodeName(fs::path path)
+{
+    auto name = path.u8string();
+    return {reinterpret_cast<const char*>(name.data()), name.size()};
+}
+
 string File::confPath()
 {
 #if defined(__APPLE__)
@@ -76,7 +82,7 @@ string File::confPath()
     fs::path result;
     if(char *var = getenv("SNAP"))
         result = fs::path(var);
-    return (result / DIGIDOCPP_CONFIG_DIR "/").u8string();
+    return decodeName(result / DIGIDOCPP_CONFIG_DIR "/");
 #endif
 }
 
@@ -87,7 +93,7 @@ string File::confPath()
  */
 fs::path File::encodeName(string_view fileName)
 {
-    return fs::u8path(fileName);
+    return u8string_view(reinterpret_cast<const char8_t*>(fileName.data()), fileName.size());
 }
 
 /**
@@ -98,17 +104,17 @@ fs::path File::encodeName(string_view fileName)
  */
 bool File::fileExists(const string& path)
 {
-    return fs::is_regular_file(fs::u8path(path));
+    return fs::is_regular_file(encodeName(path));
 }
 
 #ifdef _WIN32
 string File::dllPath(string_view dll)
 {
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    HMODULE handle = GetModuleHandleW(fs::u8path(dll).c_str());
+    HMODULE handle = GetModuleHandleW(encodeName(dll).c_str());
     wstring path(MAX_PATH, 0);
     path.resize(GetModuleFileNameW(handle, path.data(), DWORD(path.size())));
-    return fs::path(path).parent_path().u8string();
+    return decodeName(fs::path(path).parent_path());
 #else
     return {};
 #endif
@@ -124,13 +130,13 @@ string File::dllPath(string_view dll)
 time_t File::modifiedTime(const string &path)
 {
     f_statbuf fileInfo;
-    return f_stat(fs::u8path(path).c_str(), &fileInfo) ? time(nullptr) : fileInfo.st_mtime;
+    return f_stat(encodeName(path).c_str(), &fileInfo) ? time(nullptr) : fileInfo.st_mtime;
 }
 
 void File::updateModifiedTime(const string &path, time_t time)
 {
     f_utimbuf u_time { time, time };
-    if(f_utime(fs::u8path(path).c_str(), &u_time))
+    if(f_utime(encodeName(path).c_str(), &u_time))
         THROW("Failed to update file modified time.");
 }
 
@@ -153,7 +159,7 @@ bool File::fileExtension(string_view path, initializer_list<string_view> list)
 unsigned long File::fileSize(string_view path) noexcept
 {
     error_code ec;
-    auto result = fs::file_size(fs::u8path(path), ec);
+    auto result = fs::file_size(encodeName(path), ec);
     return ec ? 0 : result;
 }
 
@@ -253,7 +259,7 @@ void File::createDirectory(string path)
         THROW("Can not create directory with no name.");
     if(path.back() == '/' || path.back() == '\\')
         path.pop_back();
-    auto _path = fs::u8path(path);
+    auto _path = encodeName(path);
 #ifdef _WIN32
     int result = _wmkdir(_path.c_str());
 #else
@@ -276,12 +282,12 @@ string File::digidocppPath()
     PWSTR knownFolder {};
     if(SHGetKnownFolderPath(FOLDERID_RoamingAppData, KF_FLAG_DONT_VERIFY, nullptr, &knownFolder) != S_OK)
         THROW("Failed to get home directory");
-    string appData = (fs::path(knownFolder) / "digidocpp").u8string();
+    auto appData = (fs::path(knownFolder) / "digidocpp");
     CoTaskMemFree(knownFolder);
-    return appData;
+    return decodeName(appData);
 #elif defined(ANDROID) || TARGET_OS_SIMULATOR
     if(char *var = getenv("HOME"))
-        return (fs::path(var) / ".digidocpp").u8string();
+        return decodeName(fs::path(var) / ".digidocpp");
     return {};
 #else
     string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
@@ -303,7 +309,7 @@ void File::deleteTempFiles()
     while(!tempFiles.empty())
     {
         if(!fs::remove(tempFiles.top(), ec) || ec)
-            WARN("Tried to remove the temporary file or directory '%s', but failed.", tempFiles.top().u8string().c_str());
+            WARN("Tried to remove the temporary file or directory '%s', but failed.", decodeName(tempFiles.top()).c_str());
         tempFiles.pop();
     }
 }
