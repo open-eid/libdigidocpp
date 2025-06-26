@@ -85,14 +85,14 @@ jobs:
     - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 5ee5eee0d3e9c6098b24d263e9099edcdcef6631
+        vcpkgGitCommitId: 031ad89ce6c575df35a8e58707ad2c898446c63e
         vcpkgJsonGlob: ./vcpkg.json
         runVcpkgInstall: true
       env:
         VCPKG_DEFAULT_TRIPLET: ${{ matrix.triplet }}
     - name: Build
       run: |
-        cmake --preset ${{ matrix.target }} "-GUnix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=libdigidocpp.${{ matrix.target }}
+        cmake --preset ${{ matrix.target }} "-GUnix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build --preset ${{ matrix.target }}
         cmake --build --preset ${{ matrix.target }} --target install/strip
         zip -q -r libdigidocpp.${{ matrix.target }}.zip libdigidocpp.${{ matrix.target }}
@@ -161,15 +161,12 @@ jobs:
         path: libdigidocpp*.*
   windows:
     name: Build on Windows
-    runs-on: ${{ matrix.image }}
+    runs-on: windows-2025
     strategy:
       matrix:
         toolset: [143]
         platform: [x86, x64, arm64]
         include:
-        - toolset: 143
-          image: windows-2022
-          vcvars: "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat"
         - platform: x86
           setenv: amd64_x86
         - platform: x64
@@ -185,7 +182,7 @@ jobs:
     - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 5ee5eee0d3e9c6098b24d263e9099edcdcef6631
+        vcpkgGitCommitId: 031ad89ce6c575df35a8e58707ad2c898446c63e
         vcpkgJsonGlob: ./vcpkg.json
         runVcpkgInstall: true
         runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
@@ -193,10 +190,7 @@ jobs:
         VCPKG_DEFAULT_TRIPLET: ${{ matrix.platform }}-windows
         VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed_${{ matrix.platform }}
     - name: Install dependencies
-      run: |
-        choco install doxygen.install -y > $null
-        Invoke-WebRequest -UserAgent "Wget" "https://sourceforge.net/projects/swig/files/swigwin/swigwin-4.2.1/swigwin-4.2.1.zip/download" -OutFile swig.zip
-        tar xf swig.zip
+      run: winget install --silent --accept-source-agreements --accept-package-agreements swig doxygen
     - uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
@@ -208,8 +202,9 @@ jobs:
         architecture: ${{ matrix.platform }}
     - name: Build
       run: |
-        & "${{ matrix.vcvars }}" ${{ matrix.setenv }} "&&" pwsh build.ps1 `
-          -swig ${{ github.workspace }}/swigwin-4.2.1/swig.exe `
+        $swig = (Get-Item "$env:LOCALAPPDATA\Microsoft\WinGet\Links\swig.exe").Target
+        & "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat" ${{ matrix.setenv }} "&&" pwsh build.ps1 `
+          -swig $swig `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
           -boost
     - name: Archive artifacts

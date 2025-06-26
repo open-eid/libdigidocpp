@@ -26,13 +26,13 @@
 #include "crypto/X509Cert.h"
 #include "crypto/X509Crypto.h"
 #include "util/log.h"
+#include "util/File.h"
 
 #include <openssl/evp.h>
 
 #include <algorithm>
 #ifdef _WIN32
 #include <Windows.h>
-#include <filesystem>
 #else
 #include <dlfcn.h>
 #endif
@@ -50,7 +50,7 @@ public:
     bool load(const string &driver)
     {
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-        return (h = LoadLibraryW(filesystem::u8path(driver).c_str())) != 0;
+        return (h = LoadLibraryW(util::File::encodeName(driver).c_str())) != 0;
 #else
         return false;
 #endif

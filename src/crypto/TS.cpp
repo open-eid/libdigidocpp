@@ -36,12 +36,13 @@
 #include <openssl/ts.h>
 
 #include <algorithm>
-#include <cstring>
 
 using namespace digidoc;
 using namespace std;
 
 #if defined(LIBRESSL_VERSION_NUMBER)
+#include <cstring>
+
 void *OPENSSL_memdup(const void *data, size_t size)
 {
     void *copy;
@@ -49,25 +50,29 @@ void *OPENSSL_memdup(const void *data, size_t size)
     if (data == NULL || size == 0 || size >= INT_MAX)
         return NULL;
 
-    if ((copy = malloc(size)) == NULL)
+    if ((copy = OPENSSL_malloc(size)) == NULL)
         return NULL;
 
     return memcpy(copy, data, size);
 }
+#endif
+#if OPENSSL_VERSION_NUMBER < 0x30400000L
+#define TS_VERIFY_CTX_set0_imprint TS_VERIFY_CTX_set_imprint
+#define TS_VERIFY_CTX_set0_store TS_VERIFY_CTX_set_store
 #endif
 
 TS::TS(const Digest &digest, const std::string &userAgent)
     : d(nullptr, PKCS7_free)
     , cms(nullptr, CMS_ContentInfo_free)
 {
-    auto req = SCOPE_PTR(TS_REQ, TS_REQ_new());
+    auto req = make_unique_ptr<TS_REQ_free>(TS_REQ_new());
     TS_REQ_set_version(req.get(), 1);
     TS_REQ_set_cert_req(req.get(), 1);
 
-    auto algo = SCOPE_PTR(X509_ALGOR, X509_ALGOR_new());
+    auto algo = make_unique_ptr<X509_ALGOR_free>(X509_ALGOR_new());
     X509_ALGOR_set0(algo.get(), OBJ_nid2obj(Digest::toMethod(digest.uri())), V_ASN1_NULL, nullptr);
 
-    auto msg_imprint = SCOPE_PTR(TS_MSG_IMPRINT, TS_MSG_IMPRINT_new());
+    auto msg_imprint = make_unique_ptr<TS_MSG_IMPRINT_free>(TS_MSG_IMPRINT_new());
     TS_MSG_IMPRINT_set_algo(msg_imprint.get(), algo.get());
     vector<unsigned char> digestdata = digest.result();
     TS_MSG_IMPRINT_set_msg(msg_imprint.get(), digestdata.data(), int(digestdata.size()));
@@ -76,12 +81,12 @@ TS::TS(const Digest &digest, const std::string &userAgent)
 #if 0
     if(!policy.empty())
     {
-        auto obj = SCOPE_PTR(ASN1_OBJECT, OBJ_txt2obj(policy.c_str(), 0));
+        auto obj = make_unique_ptr<ASN1_OBJECT_free>(OBJ_txt2obj(policy.c_str(), 0));
         TS_REQ_set_policy_id(req.get(), obj.get());
     }
 #endif
 
-    auto nonce = SCOPE_PTR(ASN1_INTEGER, ASN1_INTEGER_new());
+    auto nonce = make_unique_ptr<ASN1_INTEGER_free>(ASN1_INTEGER_new());
     ASN1_STRING_set(nonce.get(), nullptr, 20);
     for(nonce->data[0] = 0; nonce->data[0] == 0;) // Make sure that first byte is not 0x00
         RAND_bytes(nonce->data, nonce->length);
@@ -110,11 +115,11 @@ TS::TS(const Digest &digest, const std::string &userAgent)
         THROW("Failed to send Time-stamp request");
 
     const unsigned char *p2 = (const unsigned char*)result.content.c_str();
-    auto resp = SCOPE_PTR(TS_RESP, d2i_TS_RESP(nullptr, &p2, long(result.content.size())));
+    auto resp = make_unique_ptr<TS_RESP_free>(d2i_TS_RESP(nullptr, &p2, long(result.content.size())));
     if(!resp)
         THROW_OPENSSLEXCEPTION("Failed to parse TS response.");
 
-    auto ctx = SCOPE_PTR(TS_VERIFY_CTX, TS_REQ_to_TS_VERIFY_CTX(req.get(), nullptr));
+    auto ctx = make_unique_ptr<TS_VERIFY_CTX_free>(TS_REQ_to_TS_VERIFY_CTX(req.get(), nullptr));
     TS_VERIFY_CTX_set_flags(ctx.get(), TS_VFY_VERSION|TS_VFY_NONCE);
     if(TS_RESP_verify_response(ctx.get(), resp.get()) != 1)
         THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
@@ -171,15 +176,15 @@ X509Cert TS::cert() const
 auto TS::tstInfo() const
 {
     if(d)
-        return SCOPE_PTR(TS_TST_INFO, PKCS7_to_TS_TST_INFO(d.get()));
+        return make_unique_ptr<TS_TST_INFO_free>(PKCS7_to_TS_TST_INFO(d.get()));
 #ifndef OPENSSL_NO_CMS
     if(cms)
     {
-        if(auto out = SCOPE_PTR(BIO, CMS_dataInit(cms.get(), nullptr)))
-            return SCOPE_PTR(TS_TST_INFO, d2i_TS_TST_INFO_bio(out.get(), nullptr));
+        if(auto out = make_unique_ptr<BIO_free>(CMS_dataInit(cms.get(), nullptr)))
+            return make_unique_ptr<TS_TST_INFO_free>(d2i_TS_TST_INFO_bio(out.get(), nullptr));
     }
 #endif
-    return SCOPE_PTR(TS_TST_INFO, nullptr);
+    return make_unique_ptr<TS_TST_INFO_free>(nullptr);
 }
 
 string TS::digestMethod() const
@@ -212,7 +217,7 @@ string TS::serial() const
     if(!info)
         return {};
 
-    if(auto bn = make_unique_ptr(ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), nullptr), BN_free))
+    if(auto bn = make_unique_ptr<BN_free>(ASN1_INTEGER_to_BN(TS_TST_INFO_get_serial(info.get()), nullptr)))
     {
         if(auto str = make_unique_ptr(BN_bn2dec(bn.get()), [](char *data) { OPENSSL_free(data); }))
             return str.get();
@@ -235,11 +240,11 @@ void TS::verify(const vector<unsigned char> &digest)
     X509CertStore::instance()->activate(cert());
     if(d)
     {
-        auto ctx = SCOPE_PTR(TS_VERIFY_CTX, TS_VERIFY_CTX_new());
+        auto ctx = make_unique_ptr<TS_VERIFY_CTX_free>(TS_VERIFY_CTX_new());
         TS_VERIFY_CTX_set_flags(ctx.get(), TS_VFY_IMPRINT|TS_VFY_VERSION|TS_VFY_SIGNATURE);
-        TS_VERIFY_CTX_set_imprint(ctx.get(),
+        TS_VERIFY_CTX_set0_imprint(ctx.get(),
             (unsigned char*)OPENSSL_memdup(digest.data(), digest.size()), long(digest.size()));
-        TS_VERIFY_CTX_set_store(ctx.get(), store.release());
+        TS_VERIFY_CTX_set0_store(ctx.get(), store.release());
         if(TS_RESP_verify_token(ctx.get(), d.get()) != 1)
         {
             unsigned long err = ERR_get_error();
@@ -255,7 +260,7 @@ void TS::verify(const vector<unsigned char> &digest)
 #ifndef OPENSSL_NO_CMS
     else if(cms)
     {
-        auto out = SCOPE_PTR(BIO, BIO_new(BIO_s_mem()));
+        auto out = make_unique_ptr<BIO_free>(BIO_new(BIO_s_mem()));
         // Override smime_sign purpose bit because it is actually timestamp
         X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
         X509_VERIFY_PARAM_set1_name(param, "smime_sign");
@@ -266,10 +271,10 @@ void TS::verify(const vector<unsigned char> &digest)
         if(err != 1)
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
-        auto info = SCOPE_PTR(TS_TST_INFO, d2i_TS_TST_INFO_bio(out.get(), nullptr));
-        ASN1_OCTET_STRING *msg = TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get()));
-        if(digest.size() != size_t(ASN1_STRING_length(msg)) ||
-            memcmp(digest.data(), ASN1_STRING_get0_data(msg), digest.size()) != 0)
+        auto info = make_unique_ptr<TS_TST_INFO_free>(d2i_TS_TST_INFO_bio(out.get(), nullptr));
+        if(ASN1_OCTET_STRING *msg = TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get()));
+            std::equal(digest.cbegin(), digest.cend(),
+                ASN1_STRING_get0_data(msg), std::next(ASN1_STRING_get0_data(msg), ASN1_STRING_length(msg))))
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
     }
 #endif

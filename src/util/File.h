@@ -52,11 +52,11 @@ namespace digidoc
               static std::string toUriPath(const std::string &path);
               static std::string fromUriPath(std::string_view path);
               static std::vector<unsigned char> hexToBin(std::string_view in);
+
+        private:
 #ifdef _WIN32
               static std::string dllPath(std::string_view dll);
 #endif
-
-        private:
 #ifdef __APPLE__
               static std::string frameworkResourcesPath(std::string_view name);
 #endif

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-OPENSSL_DIR=openssl-3.0.16
+OPENSSL_DIR=openssl-3.5.1
 XMLSEC_DIR=xmlsec1-1.3.7
 ARGS="$@"
 
@@ -42,7 +42,7 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="12.0"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="13.0"}
   export MACOSX_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } "
   ;;
@@ -51,7 +51,8 @@ esac
 function xmlsec {
     echo Building ${XMLSEC_DIR}
     if [ ! -f ${XMLSEC_DIR}.tar.gz ]; then
-        curl -O -L https://www.aleksey.com/xmlsec/download/${XMLSEC_DIR}.tar.gz
+        XMLSEC_VERSION="${XMLSEC_DIR##*-}"
+        curl -O -L https://github.com/lsh123/xmlsec/releases/download/${XMLSEC_VERSION}/${XMLSEC_DIR}.tar.gz
     fi
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
@@ -89,10 +90,10 @@ function openssl {
     for ARCH in ${ARCHS}
     do
         case "${ARGS}" in
-        *simulator*) CC="" CFLAGS="-arch ${ARCH}" ./Configure iossimulator-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-        *catalyst*) CC="" CFLAGS="-target ${ARCH}-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-macabi" ./Configure darwin64-${ARCH} --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-        *iphone*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
-        *) CC="" CFLAGS="" ./Configure darwin64-${ARCH} --prefix=${TARGET_PATH} shared no-module no-tests enable-ec_nistp_64_gcc_128
+        *simulator*) CC="" CFLAGS="" ./Configure iossimulator-${ARCH}-xcrun --prefix=${TARGET_PATH} no-apps no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+        *catalyst*) CC="" CFLAGS="-target ${ARCH}-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-macabi" ./Configure darwin64-${ARCH} --prefix=${TARGET_PATH} no-apps no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+        *iphone*) CC="" CFLAGS="" ./Configure ios64-xcrun --prefix=${TARGET_PATH} no-apps no-shared no-dso no-module no-engine no-tests no-ui-console enable-ec_nistp_64_gcc_128 ;;
+        *) CC="" CFLAGS="" ./Configure darwin64-${ARCH} --prefix=${TARGET_PATH} no-apps shared no-module no-tests enable-ec_nistp_64_gcc_128
         esac
         make -s > /dev/null
         if [[ ${ARCHS} == ${ARCH}* ]]; then
@@ -126,7 +127,7 @@ case "$@" in
     echo "  tasks: openssl, xmlsec, all, help"
     echo "To control builds set environment variables:"
     echo " minimum deployment target"
-    echo " - MACOSX_DEPLOYMENT_TARGET=12.0"
+    echo " - MACOSX_DEPLOYMENT_TARGET=13.0"
     echo " - IPHONEOS_DEPLOYMENT_TARGET=15.0"
     echo " archs to build on macOS/iOS"
     echo " - ARCHS=\"arm64 x86_64\" (macOS)"
