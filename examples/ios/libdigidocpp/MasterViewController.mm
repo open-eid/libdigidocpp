@@ -42,16 +42,15 @@
 @implementation URLTableViewCell
 @end
 
-@interface MasterViewController : UITableViewController {
-#if TESTING
-    NSMutableArray *result;
-#endif
-}
+@interface MasterViewController : UITableViewController
 @end
 
 @implementation MasterViewController
-
 #if TESTING
+{
+    NSMutableArray *result;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.tableView.contentInset = UIEdgeInsetsMake(20, 0, 0, 0);
@@ -238,14 +237,14 @@
                     cell.textLabel.text = [NSString stdstring:signature->signedBy()];
                     break;
                 case 1:
-                    using Validator = digidoc::Signature::Validator;
-                    switch (Validator(signature).status()) {
-                    case Validator::Valid: cell.textLabel.text = @"Valid"; break;
-                    case Validator::Warning: cell.textLabel.text = @"Warning"; break;
-                    case Validator::NonQSCD: cell.textLabel.text = @"NonQSCD"; break;
-                    case Validator::Test: cell.textLabel.text = @"Test"; break;
-                    case Validator::Unknown: cell.textLabel.text = @"Unknown"; break;
-                    case Validator::Invalid: cell.textLabel.text = @"Invalid"; break;
+                    switch (digidoc::Signature::Validator(signature).status()) {
+                        using enum digidoc::Signature::Validator::Status;
+                    case Valid: cell.textLabel.text = @"Valid"; break;
+                    case Warning: cell.textLabel.text = @"Warning"; break;
+                    case NonQSCD: cell.textLabel.text = @"NonQSCD"; break;
+                    case Test: cell.textLabel.text = @"Test"; break;
+                    case Unknown: cell.textLabel.text = @"Unknown"; break;
+                    case Invalid: cell.textLabel.text = @"Invalid"; break;
                     }
                     break;
                 case 2:
