@@ -22,6 +22,7 @@
 #include "ASiC_S.h"
 #include "DataFile_p.h"
 #include "crypto/Digest.h"
+#include "crypto/Signer.h"
 #include "crypto/TS.h"
 #include "crypto/X509Cert.h"
 #include "util/DateTime.h"
@@ -34,6 +35,15 @@ SignatureTST::SignatureTST(const string &data, ASiC_S *asicSDoc)
     : asicSDoc(asicSDoc)
     , timestampToken(make_unique<TS>((const unsigned char*)data.data(), data.size()))
 {}
+
+SignatureTST::SignatureTST(ASiC_S *asicSDoc, Signer *signer)
+    : asicSDoc(asicSDoc)
+{
+    auto *dataFile = static_cast<DataFilePrivate*>(asicSDoc->dataFiles().front());
+    Digest digest;
+    dataFile->digest(digest);
+    timestampToken = make_unique<TS>(digest, signer->userAgent());
+}
 
 SignatureTST::~SignatureTST() = default;
 

@@ -20,6 +20,7 @@
 #include "Signer.h"
 
 #include "ASiC_E.h"
+#include "ASiC_S.h"
 #include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/X509Cert.h"
@@ -38,7 +39,7 @@ class Signer::Private
 {
 public:
     optional<string> method;
-    string profile = "time-stamp";
+    string profile{ASiC_E::ASIC_TS_PROFILE};
     string userAgent;
     string city, streetAddress, stateOrProvince, postalCode, countryName;
     vector<string> signerRoles;
@@ -181,9 +182,10 @@ void Signer::setProfile(const string &profile)
         {"TSA", ASiC_E::ASIC_TSA_PROFILE},
         {ASiC_E::ASIC_TS_PROFILE, ASiC_E::ASIC_TS_PROFILE},
         {ASiC_E::ASIC_TSA_PROFILE, ASiC_E::ASIC_TSA_PROFILE},
+        {ASiC_S::ASIC_TST_PROFILE, ASiC_S::ASIC_TST_PROFILE},
+        {"time-stamp-token", ASiC_S::ASIC_TST_PROFILE}
     };
-    if(auto it = std::find_if(profiles.cbegin(), profiles.cend(), [&profile](const auto &elem) { return elem.first == profile; });
-        it != profiles.cend())
+    if(auto it = profiles.find(profile); it != profiles.cend())
         d->profile = it->second;
     else
         THROW("Unsupported profile: %s", profile.c_str());
