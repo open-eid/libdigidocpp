@@ -409,144 +409,150 @@ void SignatureXAdES_B::validate(const string &policy) const
     // It'll be only thrown in case we have a reason (cause).
     Exception exception(EXCEPTION_PARAMS("Signature validation"));
 
-    if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
-        Digest::isWeakDigest(signatureMethod()))
-    {
-        Exception e(EXCEPTION_PARAMS("Signature digest weak"));
-        e.setCode(Exception::SignatureDigestWeak);
-        exception.addCause(e);
-    }
-
-    if(profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos)
-    {
-        if(SPUri().empty())
-            EXCEPTION_ADD(exception, "Signature SPUri is missing");
-        if(auto p = policylist.find(SignatureXAdES_B::policy()); p == policylist.cend())
-            EXCEPTION_ADD(exception, "Signature policy does not match BDOC 2.1 policy");
-        else if(auto identifier = signedSignatureProperties()/"SignaturePolicyIdentifier"; !identifier)
-            EXCEPTION_ADD(exception, "Signature policy digest is missing");
-        else if(auto id = identifier/"SignaturePolicyId"; !id)
-            EXCEPTION_ADD(exception, "Signature policy digest is missing");
-        else
+    try {
+        if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
+            Digest::isWeakDigest(signatureMethod()))
         {
-#if 0 //Disabled IB-3684
-            auto hash = id/"SigPolicyHash";
-            auto algo = (hash/DigestMethod)["Algorithm"];
-            vector<unsigned char> digest = hash/DigestValue;
-
-            bool valid = false;
-            if(algo == URI_SHA1) valid = digest == p->second.SHA1;
-            else if(algo == URI_SHA224) valid = digest == p->second.SHA224;
-            else if(algo == URI_SHA256) valid = digest == p->second.SHA256;
-            else if(algo == URI_SHA384) valid = digest == p->second.SHA384;
-            else if(algo == URI_SHA512) valid = digest == p->second.SHA512;
-            else
-                EXCEPTION_ADD(exception, "Signature policy unknwon digest method");
-
-            if(!valid)
-                EXCEPTION_ADD(exception, "Signature policy digest does not match");
-#endif
-        }
-    }
-
-    cb_doc = bdoc;
-    cb_exception = &exception;
-    bool result = XMLDocument::verifySignature(signature, &exception);
-    cb_doc = {};
-    cb_exception = {};
-    if(!result)
-        EXCEPTION_ADD(exception, "Failed to validate signature");
-
-    auto sp = qualifyingProperties()/"SignedProperties";
-    auto sdop = sp/"SignedDataObjectProperties";
-    map<string,string> mimeinfo;
-    if(sdop)
-    {
-        for(auto data = sdop/"DataObjectFormat"; data; data++)
-        {
-            if(auto mime = data/"MimeType")
-                mimeinfo.emplace(data["ObjectReference"], mime);
-        }
-    }
-    else
-    {
-        // ADoc 1.0 does not add DataObjectProperties>DataObjectFormat elements
-        if(bdoc->mediaType() != ASiC_E::MIMETYPE_ADOC)
-            EXCEPTION_ADD(exception, "DataObjectFormat element is missing");
-    }
-
-    map<string,string> signatureref;
-    string_view signedPropertiesId = sp["Id"];
-    bool signedInfoFound = false;
-    for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
-    {
-        auto uri = ref["URI"];
-        if(uri.empty())
-        {
-            EXCEPTION_ADD(exception, "Reference URI missing");
-            continue;
-        }
-
-        if(!Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
-            Digest::isWeakDigest((ref/DigestMethod)["Algorithm"]))
-        {
-            Exception e(EXCEPTION_PARAMS("Reference '%.*s' digest weak", int(uri.size()), uri.data()));
-            e.setCode(Exception::ReferenceDigestWeak);
+            Exception e(EXCEPTION_PARAMS("Signature digest weak"));
+            e.setCode(Exception::SignatureDigestWeak);
             exception.addCause(e);
         }
 
-        if(uri.front() == '#' && uri.substr(1) == signedPropertiesId && ref["Type"] == REF_TYPE)
-            signedInfoFound = true;
-        else if(!sdop)
-            continue; // DataObjectProperties is missing, no need to match later MediaTypes
-        else if(ref["Id"].empty())
-            EXCEPTION_ADD(exception, "Reference '%.*s' ID  missing", int(uri.size()), uri.data());
+        if(profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos)
+        {
+            if(SPUri().empty())
+                EXCEPTION_ADD(exception, "Signature SPUri is missing");
+            if(auto p = policylist.find(SignatureXAdES_B::policy()); p == policylist.cend())
+                EXCEPTION_ADD(exception, "Signature policy does not match BDOC 2.1 policy");
+            else if(auto identifier = signedSignatureProperties()/"SignaturePolicyIdentifier"; !identifier)
+                EXCEPTION_ADD(exception, "Signature policy digest is missing");
+            else if(auto id = identifier/"SignaturePolicyId"; !id)
+                EXCEPTION_ADD(exception, "Signature policy digest is missing");
+            else
+            {
+#if 0 //Disabled IB-3684
+                auto hash = id/"SigPolicyHash";
+                auto algo = (hash/DigestMethod)["Algorithm"];
+                vector<unsigned char> digest = hash/DigestValue;
+
+                bool valid = false;
+                if(algo == URI_SHA1) valid = digest == p->second.SHA1;
+                else if(algo == URI_SHA224) valid = digest == p->second.SHA224;
+                else if(algo == URI_SHA256) valid = digest == p->second.SHA256;
+                else if(algo == URI_SHA384) valid = digest == p->second.SHA384;
+                else if(algo == URI_SHA512) valid = digest == p->second.SHA512;
+                else
+                    EXCEPTION_ADD(exception, "Signature policy unknwon digest method");
+
+                if(!valid)
+                    EXCEPTION_ADD(exception, "Signature policy digest does not match");
+#endif
+            }
+        }
+
+        cb_doc = bdoc;
+        cb_exception = &exception;
+        bool result = XMLDocument::verifySignature(signature, &exception);
+        cb_doc = {};
+        cb_exception = {};
+        if(!result)
+            EXCEPTION_ADD(exception, "Failed to validate signature");
+
+        auto sp = qualifyingProperties()/"SignedProperties";
+        auto sdop = sp/"SignedDataObjectProperties";
+        map<string,string> mimeinfo;
+        if(sdop)
+        {
+            for(auto data = sdop/"DataObjectFormat"; data; data++)
+            {
+                if(auto mime = data/"MimeType")
+                    mimeinfo.emplace(data["ObjectReference"], mime);
+            }
+        }
         else
         {
-            string uriPath = File::fromUriPath(uri);
-            if(uriPath.front() == '/')
-                uriPath.erase(0);
-            signatureref.emplace(uriPath, mimeinfo[string("#").append(ref["Id"])]);
+            // ADoc 1.0 does not add DataObjectProperties>DataObjectFormat elements
+            if(bdoc->mediaType() != ASiC_E::MIMETYPE_ADOC)
+                EXCEPTION_ADD(exception, "DataObjectFormat element is missing");
         }
-    }
-    if(!signedInfoFound)
-        EXCEPTION_ADD(exception, "SignedProperties not found");
 
-    // Match DataObjectFormat element MediaTypes with Manifest
-    if(!signatureref.empty())
-    {
-        for(const DataFile *file: bdoc->dataFiles())
+        map<string,string> signatureref;
+        string_view signedPropertiesId = sp["Id"];
+        bool signedInfoFound = false;
+        for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
         {
-            if(auto i = signatureref.find(file->fileName()); i != signatureref.end())
+            auto uri = ref["URI"];
+            if(uri.empty())
             {
-                if(bdoc->mediaType() != ASiContainer::MIMETYPE_ASIC_S && i->second != file->mediaType())
-                    EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
-                        file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
-                static const regex reg(R"(([\w])*/([\w\-\+\.])*)");
-                if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
-                {
-                    Exception w(EXCEPTION_PARAMS("'%s' is not conformant mime-type string!", file->mediaType().c_str()));
-                    w.setCode(Exception::MimeTypeWarning);
-                    exception.addCause(w);
-                }
-                signatureref.erase(i);
+                EXCEPTION_ADD(exception, "Reference URI missing");
+                continue;
             }
+
+            if(!Exception::hasWarningIgnore(Exception::ReferenceDigestWeak) &&
+                Digest::isWeakDigest((ref/DigestMethod)["Algorithm"]))
+            {
+                Exception e(EXCEPTION_PARAMS("Reference '%.*s' digest weak", int(uri.size()), uri.data()));
+                e.setCode(Exception::ReferenceDigestWeak);
+                exception.addCause(e);
+            }
+
+            if(uri.front() == '#' && uri.substr(1) == signedPropertiesId && ref["Type"] == REF_TYPE)
+                signedInfoFound = true;
+            else if(!sdop)
+                continue; // DataObjectProperties is missing, no need to match later MediaTypes
+            else if(ref["Id"].empty())
+                EXCEPTION_ADD(exception, "Reference '%.*s' ID  missing", int(uri.size()), uri.data());
             else
-                EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
+            {
+                string uriPath = File::fromUriPath(uri);
+                if(uriPath.front() == '/')
+                    uriPath.erase(0);
+                signatureref.emplace(uriPath, mimeinfo[string("#").append(ref["Id"])]);
+            }
         }
+        if(!signedInfoFound)
+            EXCEPTION_ADD(exception, "SignedProperties not found");
+
+        // Match DataObjectFormat element MediaTypes with Manifest
+        if(!signatureref.empty())
+        {
+            for(const DataFile *file: bdoc->dataFiles())
+            {
+                if(auto i = signatureref.find(file->fileName()); i != signatureref.end())
+                {
+                    if(bdoc->mediaType() != ASiContainer::MIMETYPE_ASIC_S && i->second != file->mediaType())
+                        EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
+                            file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
+                    static const regex reg(R"(([\w])*/([\w\-\+\.])*)");
+                    if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
+                    {
+                        Exception w(EXCEPTION_PARAMS("'%s' is not conformant mime-type string!", file->mediaType().c_str()));
+                        w.setCode(Exception::MimeTypeWarning);
+                        exception.addCause(w);
+                    }
+                    signatureref.erase(i);
+                }
+                else
+                    EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
+            }
+        }
+
+        if(bdoc->dataFiles().empty())
+            EXCEPTION_ADD(exception, "No DataFiles signed");
+
+        if(!signatureref.empty())
+            EXCEPTION_ADD(exception, "Manifest references and signature references do not match");
+
+        try { checkKeyInfo(); }
+        catch(const Exception& e) { exception.addCause(e); }
+
+        try { checkSigningCertificate(policy == POLv1); }
+        catch(const Exception& e) { exception.addCause(e); }
+    } catch(const Exception &e) {
+        exception.addCause(e);
+    } catch(...) {
+        EXCEPTION_ADD(exception, "Failed to validate signature");
     }
-
-    if(bdoc->dataFiles().empty())
-        EXCEPTION_ADD(exception, "No DataFiles signed");
-
-    if(!signatureref.empty())
-        EXCEPTION_ADD(exception, "Manifest references and signature references do not match");
-
-    try { checkKeyInfo(); }
-    catch(const Exception& e) { exception.addCause(e); }
-
-    try { checkSigningCertificate(policy == POLv1); }
-    catch(const Exception& e) { exception.addCause(e); }
 
     if(!exception.causes().empty())
         throw exception;

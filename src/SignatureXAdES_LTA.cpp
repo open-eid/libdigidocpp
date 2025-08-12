@@ -162,6 +162,8 @@ void SignatureXAdES_LTA::validate(const string &policy) const
         });
     } catch(const Exception &e) {
         exception.addCause(e);
+    } catch(...) {
+        EXCEPTION_ADD(exception, "Failed to validate signature");
     }
     if(!exception.causes().empty())
         throw exception;
