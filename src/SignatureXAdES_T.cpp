@@ -178,6 +178,8 @@ void SignatureXAdES_T::validate(const std::string &policy) const
         }
     } catch(const Exception &e) {
         exception.addCause(e);
+    } catch(...) {
+        EXCEPTION_ADD(exception, "Failed to validate signature");
     }
     if(!exception.causes().empty())
         throw exception;
