@@ -30,6 +30,7 @@
 #include <xmlsec/xmltree.h>
 #include <xmlsec/xmldsig.h>
 #include <xmlsec/crypto.h>
+#include <xmlsec/parser.h>
 
 #include <openssl/evp.h>
 
@@ -45,7 +46,7 @@ static std::vector<unsigned char> from_base64(std::string_view data)
     std::vector<unsigned char> result(EVP_DECODE_LENGTH(data.size()), 0);
     size_t dataPos = 0;
     int size = 0;
-    auto ctx = make_unique_ptr(EVP_ENCODE_CTX_new(), EVP_ENCODE_CTX_free);
+    auto ctx = make_unique_ptr<EVP_ENCODE_CTX_free>(EVP_ENCODE_CTX_new());
     EVP_DecodeInit(ctx.get());
 
     for(auto pos = data.find_first_of(whitespace);
@@ -71,7 +72,7 @@ static std::vector<unsigned char> from_base64(std::string_view data)
 static std::string to_base64(const std::vector<unsigned char> &data)
 {
     std::string result(EVP_ENCODE_LENGTH(data.size()), 0);
-    auto ctx = make_unique_ptr(EVP_ENCODE_CTX_new(), EVP_ENCODE_CTX_free);
+    auto ctx = make_unique_ptr<EVP_ENCODE_CTX_free>(EVP_ENCODE_CTX_new());
     EVP_EncodeInit(ctx.get());
     int size{};
     if(EVP_EncodeUpdate(ctx.get(), (unsigned char*)result.data(), &size, data.data(), int(data.size())) < 1)
@@ -305,19 +306,27 @@ struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
 
     static XMLDocument openStream(std::istream &is, const XMLName &name = {}, bool hugeFile = false)
     {
-        auto ctxt = make_unique_ptr(xmlCreateIOParserCtxt(nullptr, nullptr, [](void *context, char *buffer, int len) -> int {
+        auto ctxt = make_unique_ptr<xmlFreeParserCtxt>(xmlCreateIOParserCtxt(nullptr, nullptr, [](void *context, char *buffer, int len) -> int {
             auto *is = static_cast<std::istream *>(context);
             is->read(buffer, len);
             return is->good() || is->eof() ? int(is->gcount()) : -1;
-        }, nullptr, &is, XML_CHAR_ENCODING_NONE), xmlFreeParserCtxt);
-        ctxt->linenumbers = 1;
+        }, nullptr, &is, XML_CHAR_ENCODING_NONE));
+#if VERSION_CHECK(XMLSEC_VERSION_MAJOR, XMLSEC_VERSION_MINOR, XMLSEC_VERSION_SUBMINOR) >= VERSION_CHECK(1, 3, 0)
+        ctxt->options |= xmlSecParserGetDefaultOptions();
+#else
         ctxt->options |= XML_PARSE_NOENT|XML_PARSE_DTDLOAD|XML_PARSE_DTDATTR|XML_PARSE_NONET;
+#endif
         ctxt->loadsubset |= XML_DETECT_IDS|XML_COMPLETE_ATTRS;
         if(hugeFile)
             ctxt->options |= XML_PARSE_HUGE;
         auto result = xmlParseDocument(ctxt.get());
         if(result != 0 || !ctxt->wellFormed)
-            THROW("%s", ctxt->lastError.message);
+        {
+            if(const xmlError *lastError = xmlCtxtGetLastError(ctxt.get()))
+                THROW("%s", lastError->message);
+            else
+                THROW("Failed to parse XML document from stream");
+        }
         return {ctxt->myDoc, name};
     }
 
@@ -358,11 +367,11 @@ struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
         }
         else if(!algo.empty())
             THROW("Unsupported canonicalization method '%.*s'", int(algo.size()), algo.data());
-        auto buf = make_unique_ptr(xmlOutputBufferCreateIO([](void *context, const char *buffer, int len) {
+        auto buf = make_unique_ptr<xmlOutputBufferClose>(xmlOutputBufferCreateIO([](void *context, const char *buffer, int len) {
             auto *digest = static_cast<Digest *>(context);
             digest->update(pcxmlChar(buffer), size_t(len));
             return len;
-        }, nullptr, const_cast<Digest*>(&digest), nullptr), xmlOutputBufferClose);
+        }, nullptr, const_cast<Digest*>(&digest), nullptr));
         int size = xmlC14NExecute(get(), [](void *root, xmlNodePtr node, xmlNodePtr parent) constexpr noexcept {
             if(root == node)
                 return 1;
@@ -396,14 +405,14 @@ struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
 
     void validateSchema(const std::string &schemaPath) const
     {
-        auto parser = make_unique_ptr(xmlSchemaNewParserCtxt(schemaPath.c_str()), xmlSchemaFreeParserCtxt);
+        auto parser = make_unique_ptr<xmlSchemaFreeParserCtxt>(xmlSchemaNewParserCtxt(schemaPath.c_str()));
         if(!parser)
             THROW("Failed to create schema parser context %s", schemaPath.c_str());
         xmlSchemaSetParserErrors(parser.get(), schemaValidationError, schemaValidationWarning, nullptr);
-        auto schema = make_unique_ptr(xmlSchemaParse(parser.get()), xmlSchemaFree);
+        auto schema = make_unique_ptr<xmlSchemaFree>(xmlSchemaParse(parser.get()));
         if(!schema)
             THROW("Failed to parse schema %s", schemaPath.c_str());
-        auto validate = make_unique_ptr(xmlSchemaNewValidCtxt(schema.get()), xmlSchemaFreeValidCtxt);
+        auto validate = make_unique_ptr<xmlSchemaFreeValidCtxt>(xmlSchemaNewValidCtxt(schema.get()));
         if(!validate)
             THROW("Failed to create schema validation context %s", schemaPath.c_str());
         Exception e(EXCEPTION_PARAMS("Failed to XML with schema"));
@@ -414,12 +423,12 @@ struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
 
     static bool verifySignature(XMLNode signature, [[maybe_unused]] Exception *e = {}) noexcept
     {
-        auto mngr = make_unique_ptr(xmlSecKeysMngrCreate(), xmlSecKeysMngrDestroy);
+        auto mngr = make_unique_ptr<xmlSecKeysMngrDestroy>(xmlSecKeysMngrCreate());
         if(!mngr)
             return false;
         if(xmlSecCryptoAppDefaultKeysMngrInit(mngr.get()) < 0)
             return false;
-        auto ctx = make_unique_ptr(xmlSecDSigCtxCreate(mngr.get()), xmlSecDSigCtxDestroy);
+        auto ctx = make_unique_ptr<xmlSecDSigCtxDestroy>(xmlSecDSigCtxCreate(mngr.get()));
         if(!ctx)
             return false;
         ctx->keyInfoReadCtx.flags |= XMLSEC_KEYINFO_FLAGS_X509DATA_DONT_VERIFY_CERTS;

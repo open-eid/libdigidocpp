@@ -111,6 +111,8 @@ namespace digidoc
           static std::string toOID(ASN1_OBJECT *obj);
           template<auto Func>
           std::string toString(const std::string &obj) const;
+          template<auto Func>
+          constexpr auto extension(int nid) const noexcept;
           std::shared_ptr<X509> cert;
     };
 }

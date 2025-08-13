@@ -11,6 +11,7 @@ vcpkg_from_github(
         pkgconfig_fixes.patch
         xmlsec1-1.3.5.legacy.patch
         xmlsec1-1.3.7.rsapss.patch
+        xmlsec1-1.3.7.ecdsa-sig.patch
 )
 
 file(COPY "${CMAKE_CURRENT_LIST_DIR}/CMakeLists.txt" DESTINATION "${SOURCE_PATH}")

@@ -80,10 +80,6 @@
 <?endif?>
     </ComponentGroup>
 
-    <ComponentGroup Id="DependenciesDev" Source="$(var.vcpkg)\debug\bin">
-      <File Name="zlibd1.dll" />
-    </ComponentGroup>
-
     <ComponentGroup Id="LibrariesDev" Source="$(var.libdigidocpp)">
       <Files Include="*.pdb" />
       <File Name="digidocpp.lib" />
@@ -105,7 +101,7 @@
       <Files Directory="INSTALLFOLDER" Subdirectory="schema" Include="$(var.libdigidocpp)\etc\digidocpp\schema\*.xsd" />
       <Feature Id="InstallDevel" Level="1" Title="Development">
         <ComponentGroupRef Id="RuntimeDev" />
-        <ComponentGroupRef Id="DependenciesDev" />
+        <File Directory="INSTALLFOLDER" Source="$(var.vcpkg)\debug\bin\zlibd1.dll" />
         <ComponentGroupRef Id="LibrariesDev" />
         <Files Directory="INSTALLFOLDER" Subdirectory="include" Include="$(var.libdigidocpp)\include\**" />
         <Files Directory="INSTALLFOLDER" Subdirectory="cmake\libdigidocpp" Include="$(var.libdigidocpp)\cmake\libdigidocpp\**"  />

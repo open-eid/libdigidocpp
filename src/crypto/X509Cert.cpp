@@ -29,15 +29,18 @@
 using namespace digidoc;
 using namespace std;
 
+// RFC 3739: NameRegistrationAuthorities is SEQUENCE OF GeneralName
+using NameRegistrationAuthorities = STACK_OF(GENERAL_NAME);
+
 /**
  * SemanticsInformation ::= SEQUENCE {
  *        semanticsIdentifier         OBJECT IDENTIFIER OPTIONAL,
  *        nameRegistrationAuthorities NameRegistrationAuthorities OPTIONAL
  *        }
  */
-using SemanticsInformation = struct SemanticsInformation_st {
+struct SemanticsInformation {
     ASN1_OBJECT *semanticsIdentifier;
-    //NameRegistrationAuthorities nameRegistrationAuthorities
+    NameRegistrationAuthorities *nameRegistrationAuthorities;
 };
 DECLARE_ASN1_FUNCTIONS(SemanticsInformation)
 
@@ -52,7 +55,7 @@ DECLARE_ASN1_FUNCTIONS(QcType)
  *     statementId        OBJECT IDENTIFIER,
  *     statementInfo      ANY DEFINED BY statementId OPTIONAL}
  */
-using QCStatement = struct QCStatement_st {
+struct QCStatement {
     ASN1_OBJECT *statementId;
 #ifndef TEMPLATE
     ASN1_TYPE *statementInfo;
@@ -297,8 +300,7 @@ string X509Cert::serial() const
         return {};
     if(auto bn = make_unique_ptr<BN_free>(ASN1_INTEGER_to_BN(X509_get_serialNumber(cert.get()), nullptr)))
     {
-        auto openssl_free = [](char *data) { OPENSSL_free(data); };
-        if(auto str = unique_ptr<char,decltype(openssl_free)>(BN_bn2dec(bn.get()), openssl_free))
+        if(auto str = make_unique_ptr(BN_bn2dec(bn.get()), [](char *data) { OPENSSL_free(data); }))
             return str.get();
     }
     return {};
@@ -316,15 +318,19 @@ string X509Cert::issuerName(const string &obj) const
     return toString<X509_get_issuer_name>(obj);
 }
 
+template<auto Func>
+constexpr auto X509Cert::extension(int nid) const noexcept
+{
+    return make_unique_cast<Func>(cert ? X509_get_ext_d2i(cert.get(), nid, nullptr, nullptr) : nullptr);
+}
+
 /**
  * Returns current certificate key usage bits
  */
 vector<X509Cert::KeyUsage> X509Cert::keyUsage() const
 {
     vector<KeyUsage> usage;
-    if(!cert)
-        return usage;
-    auto keyusage = make_unique_cast<ASN1_BIT_STRING_free>(X509_get_ext_d2i(cert.get(), NID_key_usage, nullptr, nullptr));
+    auto keyusage = extension<ASN1_BIT_STRING_free>(NID_key_usage);
     if(!keyusage)
         return usage;
 
@@ -342,9 +348,7 @@ vector<X509Cert::KeyUsage> X509Cert::keyUsage() const
 vector<string> X509Cert::certificatePolicies() const
 {
     vector<string> pol;
-    if(!cert)
-        return pol;
-    auto cp = make_unique_cast<CERTIFICATEPOLICIES_free>(X509_get_ext_d2i(cert.get(), NID_certificate_policies, nullptr, nullptr));
+    auto cp = extension<CERTIFICATEPOLICIES_free>(NID_certificate_policies);
     if(!cp)
         return pol;
     for(int i = 0; i < sk_POLICYINFO_num(cp.get()); ++i)
@@ -375,12 +379,8 @@ vector<string> X509Cert::qcStatements() const
         if(oid == QC_SYNTAX2)
         {
 #ifndef TEMPLATE
-            if(!s->statementInfo)
-                continue;
-            auto si = make_unique_cast<SemanticsInformation_free>(ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(SemanticsInformation)));
-            if(!si)
-                continue;
-            result.push_back(toOID(si->semanticsIdentifier));
+            if(auto si = make_unique_cast<SemanticsInformation_free>(ASN1_TYPE_unpack_sequence(ASN1_ITEM_rptr(SemanticsInformation), s->statementInfo)))
+                result.push_back(toOID(si->semanticsIdentifier));
 #else
             result.push_back(toOID(s->statementInfo.semanticsInformation->semanticsIdentifier));
 #endif
@@ -388,17 +388,13 @@ vector<string> X509Cert::qcStatements() const
         else if(oid == QC_QCT)
         {
 #ifndef TEMPLATE
-            if(!s->statementInfo)
-                continue;
-            auto qct = make_unique_cast<QcType_free>(ASN1_item_unpack(s->statementInfo->value.sequence, ASN1_ITEM_rptr(QcType)));
+            auto qct = make_unique_cast<QcType_free>(ASN1_TYPE_unpack_sequence(ASN1_ITEM_rptr(QcType), s->statementInfo));
             if(!qct)
                 continue;
             for(int j = 0; j < sk_ASN1_OBJECT_num(qct.get()); ++j)
-            {
                 result.push_back(toOID(sk_ASN1_OBJECT_value(qct.get(), j)));
 #else
 #endif
-            }
         }
         else
             result.push_back(std::move(oid));
@@ -487,9 +483,7 @@ X509* X509Cert::handle() const
  */
 bool X509Cert::isCA() const
 {
-    if(!cert)
-        return false;
-    auto cons = make_unique_cast<BASIC_CONSTRAINTS_free>(X509_get_ext_d2i(cert.get(), NID_basic_constraints, nullptr, nullptr));
+    auto cons = extension<BASIC_CONSTRAINTS_free>(NID_basic_constraints);
     return cons && cons->ca > 0;
 }
 
@@ -532,7 +526,11 @@ X509Cert& X509Cert::operator =(X509Cert &&other) noexcept = default;
  */
 bool X509Cert::operator ==(X509 *other) const
 {
-    return operator==(X509Cert(other));
+    if(cert.get() == other)
+        return true;
+    if(!cert || !other)
+        return false;
+    return X509_cmp(cert.get(), other) == 0;
 }
 
 /**
@@ -540,11 +538,7 @@ bool X509Cert::operator ==(X509 *other) const
  */
 bool X509Cert::operator ==(const X509Cert &other) const
 {
-    if(cert == other.cert)
-        return true;
-    if(!cert || !other.cert)
-        return false;
-    return X509_cmp(cert.get(), other.cert.get()) == 0;
+    return operator==(other.cert.get());
 }
 
 /**
@@ -556,8 +550,8 @@ bool X509Cert::operator !=(const X509Cert &other) const
 }
 
 ASN1_SEQUENCE(SemanticsInformation) = {
-    ASN1_OPT(SemanticsInformation, semanticsIdentifier, ASN1_OBJECT)
-    //ASN1_OPT(SemanticsInformation, nameRegistrationAuthorities, NameRegistrationAuthorities)
+    ASN1_OPT(SemanticsInformation, semanticsIdentifier, ASN1_OBJECT),
+    ASN1_SEQUENCE_OF_OPT(SemanticsInformation, nameRegistrationAuthorities, GENERAL_NAME)
 } ASN1_SEQUENCE_END(SemanticsInformation)
 IMPLEMENT_ASN1_FUNCTIONS(SemanticsInformation)
 
