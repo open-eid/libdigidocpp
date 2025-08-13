@@ -42,7 +42,7 @@ case "$@" in
   TARGET_PATH=/Library/libdigidocpp
   SYSROOT=$(xcrun -sdk macosx --show-sdk-path)
   : ${ARCHS:="arm64 x86_64"}
-  : ${MACOSX_DEPLOYMENT_TARGET:="12.0"}
+  : ${MACOSX_DEPLOYMENT_TARGET:="13.0"}
   export MACOSX_DEPLOYMENT_TARGET
   export CFLAGS="-arch ${ARCHS// / -arch } "
   ;;
@@ -51,7 +51,8 @@ esac
 function xmlsec {
     echo Building ${XMLSEC_DIR}
     if [ ! -f ${XMLSEC_DIR}.tar.gz ]; then
-        curl -O -L https://www.aleksey.com/xmlsec/download/${XMLSEC_DIR}.tar.gz
+        XMLSEC_VERSION="${XMLSEC_DIR##*-}"
+        curl -O -L https://github.com/lsh123/xmlsec/releases/download/${XMLSEC_VERSION}/${XMLSEC_DIR}.tar.gz
     fi
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
@@ -126,7 +127,7 @@ case "$@" in
     echo "  tasks: openssl, xmlsec, all, help"
     echo "To control builds set environment variables:"
     echo " minimum deployment target"
-    echo " - MACOSX_DEPLOYMENT_TARGET=12.0"
+    echo " - MACOSX_DEPLOYMENT_TARGET=13.0"
     echo " - IPHONEOS_DEPLOYMENT_TARGET=15.0"
     echo " archs to build on macOS/iOS"
     echo " - ARCHS=\"arm64 x86_64\" (macOS)"

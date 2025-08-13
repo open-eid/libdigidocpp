@@ -8,7 +8,8 @@
   "dependencies": [
     {
       "name": "libxml2",
-      "default-features": false
+      "default-features": false,
+      "platform": "!osx & !ios"
     },
     "openssl",
     {

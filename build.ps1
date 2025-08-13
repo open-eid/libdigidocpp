@@ -3,7 +3,7 @@ param(
   [string]$libdigidocpp = $PSScriptRoot,
   [string]$platform = $env:PLATFORM,
   [string]$build_number = $(if ($null -eq $env:BUILD_NUMBER) {"0"} else {$env:BUILD_NUMBER}),
-  [string]$msiversion = "4.2.0.$build_number",
+  [string]$msiversion = "4.2.1.$build_number",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.$platform.msi",
   [string]$git = "git.exe",
   [string]$vcpkg = "vcpkg\vcpkg.exe",
@@ -23,8 +23,8 @@ Try {
   & wix > $null
 }
 Catch {
-  & dotnet tool install -g --version 5.0.2 wix
-  & wix extension add -g WixToolset.UI.wixext/5.0.2
+  & dotnet tool install -g --version 6.0.1 wix
+  & wix extension add -g WixToolset.UI.wixext/6.0.1
 }
 
 if(!(Test-Path -Path $vcpkg)) {

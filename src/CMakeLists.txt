@@ -352,6 +352,7 @@ if( FRAMEWORK )
                 -change '${LIBPATH}/libssl.3.dylib' '@executable_path/../Libraries/libssl.3.dylib'
                 -change '${LIBPATH}/libxmlsec1.1.dylib' '@executable_path/../Libraries/libxmlsec1.1.dylib'
                 -change '${LIBPATH}/libxmlsec1-openssl.1.dylib' '@executable_path/../Libraries/libxmlsec1-openssl.1.dylib'
+                -rpath '${CMAKE_CURRENT_BINARY_DIR}' '@executable_path/../../../..'
                 $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
             COMMAND touch $<TARGET_FILE:digidoc-tool>
         )
@@ -360,13 +361,15 @@ if( FRAMEWORK )
         add_custom_command(TARGET digidocpp POST_BUILD
             COMMAND /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string ${CMAKE_OSX_DEPLOYMENT_TARGET}" $<TARGET_FILE_DIR:digidocpp>/Info.plist)
     endif()
-    add_custom_target(codesign DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
-        COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}"
-            $<TARGET_FILE_DIR:digidocpp>/Libraries/*
-            $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool>
-            $<TARGET_BUNDLE_DIR:digidocpp>
-        COMMAND touch $<TARGET_FILE:digidocpp> $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE:digidoc-tool>>
-    )
+    if(SIGNCERT)
+        add_custom_command(TARGET embedlibs POST_BUILD
+            COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}"
+                $<TARGET_FILE_DIR:digidocpp>/Libraries/*
+                $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool>
+                $<TARGET_BUNDLE_DIR:digidocpp>
+            COMMAND touch $<TARGET_FILE:digidocpp> $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE:digidoc-tool>>
+        )
+    endif()
     add_custom_target(pkgbuild DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
         COMMAND DESTDIR=install ${CMAKE_COMMAND} --install .
         COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>"
