@@ -1,0 +1,326 @@
+From 5a4eb6c10cb27718bc3bbe59998efaca83294cd9 Mon Sep 17 00:00:00 2001
+From: lsh123 <aleksey@aleksey.com>
+Date: Thu, 14 Aug 2025 08:21:43 -0700
+Subject: [PATCH] (xmlsec-openssl, xmlsec-gnutls, xmlsec-mscng) Added support
+ for longer than expected DSA and ECDSA sigantures to support broken Java
+ implementations. (#943)
+
+diff --git a/src/gnutls/signatures.c b/src/gnutls/signatures.c
+index 107ce5e7..d0b8a55e 100644
+--- a/src/gnutls/signatures.c
++++ b/src/gnutls/signatures.c
+@@ -591,11 +591,18 @@ xmlSecGnuTLSToDer(const gnutls_datum_t* src, gnutls_datum_t* dst, xmlSecSize siz
+ 
+ 
+     /* check size: we expect the r and s to be the same size and match the size of
+-     * the key (RFC 6931); however some  implementations (e.g. Java) cut leading zeros:
+-     * https://github.com/lsh123/xmlsec/issues/228 */
+-    if((src->size < 2 * size) && (src->size % 2 == 0)) {
++     * the key (RFC 6931) */
++    if(src->size == 2 * size) {
++        /* good, do nothing */
++    } else if((src->size < 2 * size) && (src->size % 2 == 0)) {
++        /* however some implementations (e.g. Java) cut leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/228 */
+         size = src->size / 2;
+-    } else if(src->size != 2 * size) {
++    } else if((src->size > 2 * size) && (src->size % 2 == 0)) {
++        /* however some implementations (e.g. Java) add leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/941*/
++        size = src->size / 2;
++    } else {
+         xmlSecInternalError3("Invalid signature size", NULL,
+             "actual=%u; expected=" XMLSEC_SIZE_FMT, src->size, 2 * size);
+         return(-1);
+diff --git a/src/mscng/signatures.c b/src/mscng/signatures.c
+index 16253b93..d4c03d12 100644
+--- a/src/mscng/signatures.c
++++ b/src/mscng/signatures.c
+@@ -424,7 +424,7 @@ static int xmlSecMSCngSignatureSetKeyReq(xmlSecTransformPtr transform,  xmlSecKe
+ 
+ /*
+ * https://www.w3.org/TR/xmldsig-core1/#sec-ECDSA
+-* 
++*
+ * The output of the ECDSA algorithm consists of a pair of integers usually
+ * referred by the pair(r, s).The signature value consists of the base64
+ * encoding of the concatenation of two octet - streams that respectively result
+@@ -464,32 +464,60 @@ xmlSecMSCngSignatureFixBrokenJava(xmlSecMSCngSignatureCtxPtr ctx,
+         return(0);
+     }
+ 
+-    /* check the size */
++    /* check the size: we expect the DSA/ECDSA r and s to be the same size and either have
++     * fixed size (DSA) or match the size of the key (ECDSA) */
+     if (2 * halfSize == dataSize) {
+         return(0);
+     }
+-    else if ((dataSize > 2 * halfSize) || (dataSize % 2 != 0)) {
+-        xmlSecInternalError3("xmlSecOpenSSLEvpSignatureEcdsaHalfLen", NULL,
+-            "expectedSignLen=" XMLSEC_SIZE_FMT "; actualSignLen=" XMLSEC_SIZE_FMT, 2 * halfSize, dataSize);
+-        return(-1);
+-    }
+ 
+-    /* let's fix it! */
+-    res = (xmlSecByte*)xmlMalloc(2 * halfSize);
+-    if (res == NULL) {
+-        xmlSecMallocError(2 * halfSize, NULL);
++    if ((dataSize < 2 * halfSize) && (dataSize % 2 == 0)) {
++        /* however some implementations (e.g. Java) cut leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/228 */
++
++        /* let's fix it! */
++        res = (xmlSecByte*)xmlMalloc(2 * halfSize);
++        if (res == NULL) {
++            xmlSecMallocError(2 * halfSize, NULL);
++            return(-1);
++        }
++        memset(res, 0, 2 * halfSize);
++
++        /* add zeros at the beggining of both r and s */
++        offset = (2 * halfSize - dataSize) / 2;
++        memcpy(res + offset, data, dataSize / 2);
++        memcpy(res + halfSize + offset, data + dataSize / 2, dataSize / 2);
++
++        /* success */
++        (*out) = res;
++        (*outSize) = 2 * halfSize;
++    } else if ((dataSize > 2 * halfSize) && (dataSize % 2 == 0)) {
++        /* however some implementations (e.g. Java) add leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/941 */
++
++        /* let's fix it! */
++        res = (xmlSecByte*)xmlMalloc(2 * halfSize);
++        if (res == NULL) {
++            xmlSecMallocError(2 * halfSize, NULL);
++            return(-1);
++        }
++        memset(res, 0, 2 * halfSize);
++
++        /* remove zeros at the beggining of both r and s (note: we don't check if those
++         * are actually zeros, just hope for the best) */
++        offset = (dataSize - 2 * halfSize) / 2;
++        memcpy(res, data + offset, halfSize);
++        memcpy(res + halfSize, data + dataSize / 2 + offset, halfSize);
++
++        /* success */
++        (*out) = res;
++        (*outSize) = 2 * halfSize;
++    } else {
++        xmlSecInternalError3("xmlSecMSCngSignatureFixBrokenJava", NULL,
++            "expectedSignLen=" XMLSEC_SIZE_FMT "; actualSignLen=" XMLSEC_SIZE_FMT, 2 * halfSize, dataSize);
+         return(-1);
+     }
+-    memset(res, 0, 2 * halfSize);
+-
+-    /* add zeros at the beggining of both r and s */
+-    offset = (2 * halfSize - dataSize) / 2;
+-    memcpy(res + offset, data, dataSize / 2);
+-    memcpy(res + halfSize + offset, data + dataSize / 2, dataSize / 2);
+ 
+-    /* success */
+-    (*out) = res;
+-    (*outSize) = 2 * halfSize;
++    /* done */
+     return(0);
+ }
+ 
+@@ -538,8 +566,7 @@ xmlSecMSCngSignatureVerify(xmlSecTransformPtr transform,
+         pPaddingInfo = &pssPadingInfo;
+     } else {
+         /* we expect the DSA/ECDSA r and s to be the same size and either have fixed size (DSA) or match
+-         * the size of the key (ECDSA); however some implementations (e.g. Java) cut leading zeros:
+-         * https://github.com/lsh123/xmlsec/issues/228 */
++         * the size of the key (ECDSA); however some implementations (e.g. Java) cut or add leading zeros */
+         ret = xmlSecMSCngSignatureFixBrokenJava(ctx, data, dataSize, (const xmlSecByte**)&fixedData, &fixedDataSize);
+         if (ret < 0) {
+             xmlSecInternalError("xmlSecMSCngSignatureFixBrokenJava", xmlSecTransformGetName(transform));
+diff --git a/src/openssl/signatures.c b/src/openssl/signatures.c
+index 0c661470..bc8f7b57 100644
+--- a/src/openssl/signatures.c
++++ b/src/openssl/signatures.c
+@@ -1635,12 +1635,19 @@ xmlSecOpenSSLEvpSignatureDsa_XmlDSig2OpenSSL(const xmlSecTransformId transformId
+     }
+ 
+     /* check size: we expect the r and s to be the same size and match the size of
+-     * the key (RFC 6931); however some  implementations (e.g. Java) cut leading zeros:
+-     * https://github.com/lsh123/xmlsec/issues/228 */
++     * the key (RFC 6931) */
+     XMLSEC_SAFE_CAST_SIZE_TO_INT(dataSize, signLen, goto done, NULL);
+-    if((signLen < 2 * signHalfLen) && (signLen % 2 == 0)) {
++    if(signLen == 2 * signHalfLen) {
++        /* good, do nothing */
++    } else if((signLen < 2 * signHalfLen) && (signLen % 2 == 0)) {
++        /* however some implementations (e.g. Java) cut leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/228 */
+         signHalfLen = signLen / 2;
+-    } else if(signLen != 2 * signHalfLen) {
++    } else if((signLen > 2 * signHalfLen) && (signLen % 2 == 0)) {
++        /* however some implementations (e.g. Java) add leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/941 */
++        signHalfLen = signLen / 2;
++    } else {
+         xmlSecInternalError3("xmlSecOpenSSLEvpSignatureDsaHalfLen", NULL,
+             "signLen=%d; signHalfLen=%d", signLen, signHalfLen);
+         goto done;
+@@ -1858,12 +1865,19 @@ xmlSecOpenSSLEvpSignatureEcdsa_XmlDSig2OpenSSL(xmlSecSize keySizeBits, const xml
+     XMLSEC_SAFE_CAST_SIZE_TO_INT((keySizeBits + 7) / 8, signHalfLen, goto done, NULL);
+ 
+     /* check size: we expect the r and s to be the same size and match the size of
+-     * the key (RFC 6931); however some  implementations (e.g. Java) cut leading zeros:
+-     * https://github.com/lsh123/xmlsec/issues/228 */
++     * the key (RFC 6931) */
+     XMLSEC_SAFE_CAST_SIZE_TO_INT(dataSize, signLen, goto done, NULL);
+-    if((signLen < 2 * signHalfLen) && (signLen % 2 == 0)) {
+-        signHalfLen = signLen / 2;
+-    } else if(signLen != 2 * signHalfLen) {
++    if(signLen == 2 * signHalfLen) {
++        /* good, do nothing */
++    } else if((signLen < 2 * signHalfLen) && (signLen % 2 == 0)) {
++        /* however some implementations (e.g. Java) cut leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/228 */
++         signHalfLen = signLen / 2;
++    } else if((signLen > 2 * signHalfLen) && (signLen % 2 == 0)) {
++        /* however some implementations (e.g. Java) add leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/941 */
++         signHalfLen = signLen / 2;
++    } else {
+         xmlSecInternalError3("xmlSecOpenSSLEvpSignatureEcdsaHalfLen", NULL,
+             "signLen=%d; signHalfLen=%d", signLen, signHalfLen);
+         goto done;
+diff --git a/src/openssl/signatures_legacy.c b/src/openssl/signatures_legacy.c
+index c7f53071..a57fd535 100644
+--- a/src/openssl/signatures_legacy.c
++++ b/src/openssl/signatures_legacy.c
+@@ -759,12 +759,19 @@ xmlSecOpenSSLSignatureLegacyEcdsaVerify(xmlSecOpenSSLSignatureLegacyCtxPtr ctx,
+     }
+ 
+     /* check size: we expect the r and s to be the same size and match the size of
+-     * the key (RFC 6931); however some  implementations (e.g. Java) cut leading zeros:
+-     * https://github.com/lsh123/xmlsec/issues/228 */
++     * the key (RFC 6931) */
+      XMLSEC_OPENSSL_SAFE_CAST_SIZE_TO_SIZE_T(signSize, signLen, goto done, NULL);
+-    if((signLen < 2 * signHalfLen) && (signLen % 2 == 0)) {
++    if(signLen == 2 * signHalfLen) {
++        /* good, do nothing */
++    } else if((signLen < 2 * signHalfLen) && (signLen % 2 == 0)) {
++        /* however some implementations (e.g. Java) cut leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/228 */
+         signHalfLen = signLen / 2;
+-    } else if(signLen != 2 * signHalfLen) {
++    } else if((signLen > 2 * signHalfLen) && (signLen % 2 == 0)) {
++        /* however some implementations (e.g. Java) add leading zeros:
++         * https://github.com/lsh123/xmlsec/issues/941*/
++        signHalfLen = signLen / 2;
++    } else {
+         xmlSecInvalidDataError("Signature length doesn't match key size", NULL);
+         goto done;
+     }
+diff --git a/tests/aleksey-xmldsig-01/enveloping-sha256-ecdsa-sha256_padded.xml b/tests/aleksey-xmldsig-01/enveloping-sha256-ecdsa-sha256_padded.xml
+new file mode 100644
+index 00000000..9ccd9f09
+--- /dev/null
++++ b/tests/aleksey-xmldsig-01/enveloping-sha256-ecdsa-sha256_padded.xml
+@@ -0,0 +1,80 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
++  <SignedInfo>
++    <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
++    <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"/>
++    <Reference URI="#object">
++      <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
++      <DigestValue>iDhYt78o294fA6pzQ7k44+eejrQMi+WX3l3UrUdtL1Q=</DigestValue>
++    </Reference>
++  </SignedInfo>
++  <SignatureValue>AHqXLYwxGqMPCXTruP6QrFfFsWAbX3lhi2A+dQkVXrlIAONNoCh2v61el13WO9ih
++LG9iOELiGYlOAfS0SZhYQ9hm</SignatureValue>
++  <KeyInfo>
++    <X509Data>
++<X509Certificate>MIID9zCCA2CgAwIBAgIJAK+ii7kzrdqsMA0GCSqGSIb3DQEBBQUAMIGuMQswCQYD
++VQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTE9MDsGA1UEChM0WE1MIFNlY3Vy
++aXR5IExpYnJhcnkgKGh0dHA6Ly93d3cuYWxla3NleS5jb20veG1sc2VjKTEQMA4G
++A1UECxMHUm9vdCBDQTEWMBQGA1UEAxMNQWxla3NleSBTYW5pbjEhMB8GCSqGSIb3
++DQEJARYSeG1sc2VjQGFsZWtzZXkuY29tMCAXDTE0MDUyMzE3NTA1OVoYDzIxMTQw
++NDI5MTc1MDU5WjCBrjELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWEx
++PTA7BgNVBAoTNFhNTCBTZWN1cml0eSBMaWJyYXJ5IChodHRwOi8vd3d3LmFsZWtz
++ZXkuY29tL3htbHNlYykxEDAOBgNVBAsTB1Jvb3QgQ0ExFjAUBgNVBAMTDUFsZWtz
++ZXkgU2FuaW4xITAfBgkqhkiG9w0BCQEWEnhtbHNlY0BhbGVrc2V5LmNvbTCBnzAN
++BgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAtY4MCNj/qrOzVuex1BD/PuCYTDDOLLVj
++tpKXQteQPqy0kgMwuQgRwdNnICIHQbnFKL40XoyACJVWKM7b0LkvWJNeyVzXPqEE
++9ZPmNxWGUjVcr7powT7v8V7S2QflUnr8ZvR4XWwkZJ9EYKNhenijgJ5yYDrXCWdv
++C+fnjBjv2LcCAwEAAaOCARcwggETMB0GA1UdDgQWBBQGtaSsp6p1ROoVnE/fBYNP
++ah7+CzCB4wYDVR0jBIHbMIHYgBQGtaSsp6p1ROoVnE/fBYNPah7+C6GBtKSBsTCB
++rjELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExPTA7BgNVBAoTNFhN
++TCBTZWN1cml0eSBMaWJyYXJ5IChodHRwOi8vd3d3LmFsZWtzZXkuY29tL3htbHNl
++YykxEDAOBgNVBAsTB1Jvb3QgQ0ExFjAUBgNVBAMTDUFsZWtzZXkgU2FuaW4xITAf
++BgkqhkiG9w0BCQEWEnhtbHNlY0BhbGVrc2V5LmNvbYIJAK+ii7kzrdqsMAwGA1Ud
++EwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEARpb86RP/ck55X+NunXeIX81i763b
++j7Z1VJwFbA/QfupzxnqJ2IP/lxC8YxJ3Bp2IJMI7rC9r0poa41ZxI5rGHip97Dpg
++sxPF9lkRUmKBBQjkICOq1w/4d2DRInBoqXttD+0WsqDfNDVK+7kSE07ytn3RzHCj
++j0gv0PdxmuCsR/E=</X509Certificate>
++
++<X509Certificate>MIIDzzCCAzigAwIBAgIJAK+ii7kzrdqtMA0GCSqGSIb3DQEBBQUAMIGuMQswCQYD
++VQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTE9MDsGA1UEChM0WE1MIFNlY3Vy
++aXR5IExpYnJhcnkgKGh0dHA6Ly93d3cuYWxla3NleS5jb20veG1sc2VjKTEQMA4G
++A1UECxMHUm9vdCBDQTEWMBQGA1UEAxMNQWxla3NleSBTYW5pbjEhMB8GCSqGSIb3
++DQEJARYSeG1sc2VjQGFsZWtzZXkuY29tMCAXDTE0MDUyMzE3NTIzOFoYDzIxMTQw
++NDI5MTc1MjM4WjCBnDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWEx
++PTA7BgNVBAoTNFhNTCBTZWN1cml0eSBMaWJyYXJ5IChodHRwOi8vd3d3LmFsZWtz
++ZXkuY29tL3htbHNlYykxFjAUBgNVBAMTDUFsZWtzZXkgU2FuaW4xITAfBgkqhkiG
++9w0BCQEWEnhtbHNlY0BhbGVrc2V5LmNvbTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgC
++QQCyuvKJ2CuUPD33ghPt4Q8MilesHxVbbpyKfmabrYVpDGVDmOKKp337qJUZZ95K
++fwlXbR2j0zyKWJmvRxUx+PsTAgMBAAGjggFFMIIBQTAMBgNVHRMEBTADAQH/MCwG
++CWCGSAGG+EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZpY2F0ZTAdBgNV
++HQ4EFgQU/uTsUyTwlZXHELXhRLVdOWVa434wgeMGA1UdIwSB2zCB2IAUBrWkrKeq
++dUTqFZxP3wWDT2oe/guhgbSkgbEwga4xCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpD
++YWxpZm9ybmlhMT0wOwYDVQQKEzRYTUwgU2VjdXJpdHkgTGlicmFyeSAoaHR0cDov
++L3d3dy5hbGVrc2V5LmNvbS94bWxzZWMpMRAwDgYDVQQLEwdSb290IENBMRYwFAYD
++VQQDEw1BbGVrc2V5IFNhbmluMSEwHwYJKoZIhvcNAQkBFhJ4bWxzZWNAYWxla3Nl
++eS5jb22CCQCvoou5M63arDANBgkqhkiG9w0BAQUFAAOBgQBuTAW63AgWqqUDPGi8
++BiXbdKHhFP4J8qgkdv5WMa6SpSWVgNgOYXkK/BSg1aSmQtGv8/8UvBRPoJnO4y0N
++jWUFf1ubOgUNmedYNLq7YbTp8yTGWeogCyM2xdWELMP8BMgQL0sP+MDAFMKO3itY
++mEWnCEsP15HKSTms54RNj7oJ+A==</X509Certificate>
++<X509Certificate>MIIDfzCCAymgAwIBAgIJAK+ii7kzrdq1MA0GCSqGSIb3DQEBBQUAMIGcMQswCQYD
++VQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTE9MDsGA1UEChM0WE1MIFNlY3Vy
++aXR5IExpYnJhcnkgKGh0dHA6Ly93d3cuYWxla3NleS5jb20veG1sc2VjKTEWMBQG
++A1UEAxMNQWxla3NleSBTYW5pbjEhMB8GCSqGSIb3DQEJARYSeG1sc2VjQGFsZWtz
++ZXkuY29tMCAXDTE3MDIxNTIyMDgyMVoYDzIxMTcwMTIyMjIwODIxWjCBojELMAkG
++A1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExPTA7BgNVBAoTNFhNTCBTZWN1
++cml0eSBMaWJyYXJ5IChodHRwOi8vd3d3LmFsZWtzZXkuY29tL3htbHNlYykxHDAa
++BgNVBAMTE0VDRFNBIHNlY3AyNTZyMSBLZXkxITAfBgkqhkiG9w0BCQEWEnhtbHNl
++Y0BhbGVrc2V5LmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABG0uzqp1mHfR
++9zEMsYiIXkNPttZyj0aP8iE9wlKNp9x73kJnNmll8l47MZDWVjtrcyFn1XUzxH7q
++WVJYjPBGptSjggFFMIIBQTAMBgNVHRMEBTADAQH/MCwGCWCGSAGG+EIBDQQfFh1P
++cGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZpY2F0ZTAdBgNVHQ4EFgQUeiw8r3+wiHw0
++5T+3qRhjfhAZu9kwgeMGA1UdIwSB2zCB2IAU/uTsUyTwlZXHELXhRLVdOWVa436h
++gbSkgbEwga4xCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMT0wOwYD
++VQQKEzRYTUwgU2VjdXJpdHkgTGlicmFyeSAoaHR0cDovL3d3dy5hbGVrc2V5LmNv
++bS94bWxzZWMpMRAwDgYDVQQLEwdSb290IENBMRYwFAYDVQQDEw1BbGVrc2V5IFNh
++bmluMSEwHwYJKoZIhvcNAQkBFhJ4bWxzZWNAYWxla3NleS5jb22CCQCvoou5M63a
++rTANBgkqhkiG9w0BAQUFAANBABs4Ie691BR30Ki9MM5jzGhWlnWs8SaGJkAlJxck
++hhVmvV/5cntLvuQNGPpZJtkY8cVIw2/G4XmBBad7lZcuOag=</X509Certificate></X509Data>
++  </KeyInfo>
++  <Object Id="object">some text</Object>
++</Signature>
+diff --git a/tests/testDSig.sh b/tests/testDSig.sh
+index 3d653346..863b1d2f 100755
+--- a/tests/testDSig.sh
++++ b/tests/testDSig.sh
+@@ -1119,6 +1119,14 @@ execDSigTest $res_success \
+     "ec x509" \
+     "--trusted-$cert_format $topfolder/keys/enveloped-ecdsa-java-bug-cert.$cert_format --enabled-key-data x509 --verification-gmt-time 2019-01-01+00:00:00"
+ 
++# see issue https://github.com/lsh123/xmlsec/issues/941 (another java bug)
++execDSigTest $res_success \
++    "" \
++    "aleksey-xmldsig-01/enveloping-sha256-ecdsa-sha256_padded" \
++    "sha256 ecdsa-sha256" \
++    "ec x509" \
++    "--insecure --enabled-key-data x509"
++
+ execDSigTest $res_success \
+     "" \
+     "aleksey-xmldsig-01/x509data-test" \
+-- 
+2.46.0
+
