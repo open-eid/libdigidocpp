@@ -95,7 +95,6 @@ jobs:
     - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 98e7cd3a7ba579efc543f8854af800d033031eae
         vcpkgJsonGlob: ./vcpkg.json
         runVcpkgInstall: true
       env:
@@ -198,7 +197,6 @@ jobs:
     - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 98e7cd3a7ba579efc543f8854af800d033031eae
         vcpkgJsonGlob: ./vcpkg.json
         runVcpkgInstall: true
         runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
