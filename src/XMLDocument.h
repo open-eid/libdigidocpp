@@ -233,7 +233,9 @@ struct XMLNode: public XMLElem<xmlNode>
     {
         if(!d)
             return *this;
-        xmlNodeAddContentLen(d, pcxmlChar(text.data()), int(text.length()));
+        xmlNodeSetContentLen(d, nullptr, 0);
+        if(!text.empty())
+            xmlNodeAddContentLen(d, pcxmlChar(text.data()), int(text.length()));
         return *this;
     }
 
@@ -281,7 +283,7 @@ struct XMLNode: public XMLElem<xmlNode>
     }
 };
 
-struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
+struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
 {
     static constexpr std::string_view C14D_ID_1_0 {"http://www.w3.org/TR/2001/REC-xml-c14n-20010315"};
     static constexpr std::string_view C14D_ID_1_0_COM {"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"};
@@ -293,7 +295,7 @@ struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
     using XMLNode::operator bool;
 
     XMLDocument(element_type *ptr = {}, const XMLName &n = {}) noexcept
-        : unique_free_t<xmlDoc>(ptr, xmlFreeDoc)
+        : unique_free_d<xmlFreeDoc>(ptr)
         , XMLNode{xmlDocGetRootElement(get())}
     {
         if(d && !n.name.empty() && n.name != name() && !n.ns.empty() && n.ns != ns())
@@ -438,8 +440,8 @@ struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
         {
             for(xmlSecSize i = 0; i < xmlSecPtrListGetSize(&(ctx->signedInfoReferences)); ++i)
             {
-                auto *ref = xmlSecDSigReferenceCtxPtr(xmlSecPtrListGetItem(&(ctx->signedInfoReferences), i));
-                if(ref->status != xmlSecDSigStatusSucceeded)
+                if(auto *ref = xmlSecDSigReferenceCtxPtr(xmlSecPtrListGetItem(&(ctx->signedInfoReferences), i));
+                    ref && ref->status != xmlSecDSigStatusSucceeded)
                 {
                     if(e)
                         e->addCause(Exception(EXCEPTION_PARAMS("Failed to validate Reference '%s'", ref->uri)));
