@@ -236,7 +236,7 @@ if(SWIG_FOUND)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/digidoc.py DESTINATION ${Python3_SITELIB})
     endif()
 
-    set(CMAKE_SWIG_FLAGS -namespace digidoc)
+    set(CMAKE_SWIG_FLAGS -namespace digidoc -dllimport ${CMAKE_SHARED_LIBRARY_PREFIX}digidoc_csharp)
     set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/csharp)
     swig_add_library(digidoc_csharp LANGUAGE csharp SOURCES ../libdigidocpp.i)
     target_link_libraries(digidoc_csharp digidocpp digidocpp_util)
