@@ -96,6 +96,7 @@ namespace digidoc
           std::vector<std::string> qcStatements() const;
           bool isCA() const;
           bool isValid(time_t *t = nullptr) const;
+          bool verify(bool noqscd, tm validation_time = {}) const;
 
           X509* handle() const;
           operator std::vector<unsigned char>() const;

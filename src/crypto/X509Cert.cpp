@@ -18,6 +18,7 @@
  */
 
 #include "X509Cert.h"
+#include "X509CertStore.h"
 
 #include "crypto/OpenSSLHelpers.h"
 #include "util/log.h"
@@ -501,6 +502,15 @@ bool X509Cert::isValid(time_t *t) const
     if(notBefore == 0 || notAfter == 0)
         THROW_OPENSSLEXCEPTION("Failed to validate cert");
     return notBefore < 0 && notAfter > 0;
+}
+
+/**
+ * Returns true if certificate is signed by trusted issuer
+ * @throws Exception if error
+ */
+bool X509Cert::verify(bool noqscd, tm validation_time) const
+{
+    return X509CertStore::instance()->verify(*this, noqscd, validation_time);
 }
 
 /**

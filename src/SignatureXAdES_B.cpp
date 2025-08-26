@@ -631,7 +631,7 @@ void SignatureXAdES_B::checkSigningCertificate(bool noqscd) const
         vector<X509Cert::KeyUsage> usage = signingCert.keyUsage();
         if(!contains(usage, X509Cert::NonRepudiation))
             THROW("Signing certificate does not contain NonRepudiation key usage flag");
-        if(!X509CertStore::instance()->verify(signingCert, noqscd))
+        if(!signingCertificate().verify(noqscd))
             THROW("Unable to verify signing certificate");
     }
     catch(const Exception &e)
