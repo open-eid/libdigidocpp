@@ -86,8 +86,6 @@ const map<string_view,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist{
 namespace digidoc
 {
 
-constexpr XMLName DigestMethod {"DigestMethod", DSIG_NS};
-constexpr XMLName DigestValue {"DigestValue", DSIG_NS};
 constexpr XMLName X509IssuerName {"X509IssuerName", DSIG_NS};
 constexpr XMLName X509SerialNumber {"X509SerialNumber", DSIG_NS};
 
@@ -193,7 +191,7 @@ int initXmlSecCallback()
 }
 
 Signatures::Signatures()
-    : XMLDocument(create("XAdESSignatures", ASIC_NS, "asic"))
+    : XMLDocument(create("XAdESSignatures", ASiContainer::ASIC_NS, "asic"))
 {
     addNS(DSIG_NS, "ds");
     addNS(XADES_NS, "xades");
@@ -334,6 +332,9 @@ SignatureXAdES_B::SignatureXAdES_B(const shared_ptr<Signatures> &signatures, XML
             for(const char *elem: {"CounterSignature", "AttributeCertificateRefs", "AttributeRevocationRefs", "RefsOnlyTimeStamp",
                     "AttrAuthoritiesCertValues", "AttributeRevocationValues", "ArchiveTimeStamp"})
                 if(usp/elem)
+                    THROW("%s is not supported", elem);
+            for(const char *elem: {"CompleteCertificateRefsV2", "AttributeCertificateRefsV2", "SigAndRefsTimeStampV2", "RefsOnlyTimeStampV2"})
+                if(usp/XMLName{elem, XADESv141_NS})
                     THROW("%s is not supported", elem);
             for(const char *elem: {"CompleteCertificateRefs", "CompleteRevocationRefs", "SigAndRefsTimeStamp", "TimeStampValidationData"})
                 if(usp/elem)
