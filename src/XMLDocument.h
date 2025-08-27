@@ -280,6 +280,7 @@ struct XMLNode: public XMLElem<xmlNode>
     }
 };
 
+struct XMLSchema;
 struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
 {
     static constexpr std::string_view C14D_ID_1_0 {"http://www.w3.org/TR/2001/REC-xml-c14n-20010315"};
@@ -394,23 +395,7 @@ struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
         return xmlSaveFormatFileTo(buf, get(), "UTF-8", format) > 0;
     }
 
-    void validateSchema(const std::string &schemaPath) const
-    {
-        auto parser = make_unique_ptr(xmlSchemaNewParserCtxt(schemaPath.c_str()), xmlSchemaFreeParserCtxt);
-        if(!parser)
-            THROW("Failed to create schema parser context %s", schemaPath.c_str());
-        xmlSchemaSetParserErrors(parser.get(), schemaValidationError, schemaValidationWarning, nullptr);
-        auto schema = make_unique_ptr(xmlSchemaParse(parser.get()), xmlSchemaFree);
-        if(!schema)
-            THROW("Failed to parse schema %s", schemaPath.c_str());
-        auto validate = make_unique_ptr(xmlSchemaNewValidCtxt(schema.get()), xmlSchemaFreeValidCtxt);
-        if(!validate)
-            THROW("Failed to create schema validation context %s", schemaPath.c_str());
-        Exception e(EXCEPTION_PARAMS("Failed to XML with schema"));
-        xmlSchemaSetValidErrors(validate.get(), schemaValidationError, schemaValidationWarning, &e);
-        if(xmlSchemaValidateDoc(validate.get(), get()) != 0)
-            throw e;
-    }
+    inline void validateSchema(const XMLSchema &schema) const;
 
     static bool verifySignature(XMLNode signature, [[maybe_unused]] Exception *e = {}) noexcept
     {
@@ -444,6 +429,36 @@ struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
             return false;
         return ctx->status == xmlSecDSigStatusSucceeded;
     }
+};
+
+struct XMLSchema
+{
+    auto parser(const std::string &path)
+    {
+        auto parser = make_unique_ptr(xmlSchemaNewParserCtxt(path.c_str()), xmlSchemaFreeParserCtxt);
+        if(!parser)
+            THROW("Failed to create schema parser context %s", path.c_str());
+        xmlSchemaSetParserErrors(parser.get(), schemaValidationError, schemaValidationWarning, nullptr);
+        return parser;
+    }
+
+    XMLSchema(const std::string &path)
+        : d(make_unique_ptr(xmlSchemaParse(parser(path).get()), xmlSchemaFree))
+    {
+        if(!d)
+            THROW("Failed to parse schema %s", path.c_str());
+    }
+
+    void validate(const XMLDocument &doc) const
+    {
+        auto validate = make_unique_ptr(xmlSchemaNewValidCtxt(d.get()), xmlSchemaFreeValidCtxt);
+        if(!validate)
+            THROW("Failed to create schema validation context");
+        Exception e(EXCEPTION_PARAMS("Failed to XML with schema"));
+        xmlSchemaSetValidErrors(validate.get(), schemaValidationError, schemaValidationWarning, &e);
+        if(xmlSchemaValidateDoc(validate.get(), doc.get()) != 0)
+            throw e;
+    }
 
     static void schemaValidationError(void *ctx, const char *msg, ...) noexcept
     {
@@ -468,6 +483,18 @@ struct XMLDocument: public unique_free_t<xmlDoc>, public XMLNode
         va_end(args);
         WARN("Schema validation warning: %s", m.c_str());
     }
+
+    unique_free_t<xmlSchema> d;
 };
+
+inline void XMLDocument::validateSchema(const XMLSchema &schema) const
+{
+    schema.validate(*this);
+}
+
+constexpr std::string_view DSIG_NS {"http://www.w3.org/2000/09/xmldsig#"};
+constexpr std::string_view XADES_NS {"http://uri.etsi.org/01903/v1.3.2#"};
+constexpr XMLName DigestMethod {"DigestMethod", DSIG_NS};
+constexpr XMLName DigestValue {"DigestValue", DSIG_NS};
 
 }
