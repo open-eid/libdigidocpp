@@ -7,7 +7,7 @@ add_definitions(
 )
 add_executable(unittests libdigidocpp_boost.cpp)
 add_executable(TSLTests TSLTests.cpp)
-target_link_libraries(unittests digidocpp digidocpp_priv Boost::unit_test_framework)
+target_link_libraries(unittests digidocpp digidocpp_tsl Boost::unit_test_framework)
 target_link_libraries(TSLTests digidocpp digidocpp_util Boost::unit_test_framework)
 if(WIN32)
     string(REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
