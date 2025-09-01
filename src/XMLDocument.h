@@ -303,8 +303,8 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
             d = {};
     }
 
-    XMLDocument(std::string_view path, const XMLName &n = {}) noexcept
-        : XMLDocument(path.empty() ? nullptr : xmlParseFile(path.data()), n)
+    XMLDocument(const std::string &path, const XMLName &n = {}) noexcept
+        : XMLDocument(path.empty() ? nullptr : xmlParseFile(path.c_str()), n)
     {}
 
     static XMLDocument openStream(std::istream &is, const XMLName &name = {}, bool hugeFile = false)
@@ -314,18 +314,18 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
             is->read(buffer, len);
             return is->good() || is->eof() ? int(is->gcount()) : -1;
         }, nullptr, &is, XML_CHAR_ENCODING_NONE));
-#if VERSION_CHECK(XMLSEC_VERSION_MAJOR, XMLSEC_VERSION_MINOR, XMLSEC_VERSION_SUBMINOR) >= VERSION_CHECK(1, 3, 0)
-        ctxt->options |= xmlSecParserGetDefaultOptions() & ~XML_PARSE_HUGE;
-#else
         ctxt->options |= XML_PARSE_NOENT|XML_PARSE_DTDLOAD|XML_PARSE_DTDATTR|XML_PARSE_NONET|XML_PARSE_NODICT;
-#endif
+#if LIBXML_VERSION >= 21300
+        ctxt->options |= XML_PARSE_NO_XXE;
+#else
         ctxt->loadsubset |= XML_DETECT_IDS|XML_COMPLETE_ATTRS;
+#endif
         if(hugeFile)
         {
             ctxt->options |= XML_PARSE_HUGE;
 #if LIBXML_VERSION < 21300
             if(ctxt->sax)
-                ctxt->sax->entityDecl = 0;
+                ctxt->sax->entityDecl = nullptr;
 #endif
         }
         auto result = xmlParseDocument(ctxt.get());
@@ -333,8 +333,7 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
         {
             if(const xmlError *lastError = xmlCtxtGetLastError(ctxt.get()))
                 THROW("%s", lastError->message);
-            else
-                THROW("Failed to parse XML document from stream");
+            THROW("Failed to parse XML document from stream");
         }
         return {ctxt->myDoc, name};
     }

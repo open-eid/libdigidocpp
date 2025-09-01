@@ -93,7 +93,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/vcpkg_cache
-        key: vcpkg-${{ matrix.target }}-${{ hashFiles('.github/workflows/*', 'vcpkg.json', 'vcpkg-ports/**', 'CMakeLists.txt', '**/CMakeLists.txt', 'CMakePresets.json') }}
+        key: vcpkg-${{ matrix.target }}-${{ hashFiles('vcpkg.json', 'vcpkg-ports/**') }}
     - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v11
       with:
@@ -139,20 +139,30 @@ jobs:
         name: fedora_${{ matrix.container }}
         path: build/libdigidocpp*.rpm
   ubuntu:
-    name: Build on Ubuntu ${{ matrix.container }} ${{ matrix.arch }}
+    name: Build on ${{ matrix.dist }} ${{ matrix.ver }} ${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch == 'arm64' && '-arm' || '' }}
-    container: ubuntu:${{ matrix.container }}
+    container: ${{ matrix.dist }}:${{ matrix.ver }}
     strategy:
       matrix:
-        container: ['22.04', '24.04', '25.04', '25.10']
-        arch: ['amd64', 'arm64']
+        dist: [ubuntu]
+        ver: ['22.04', '24.04', '25.04', '25.10']
+        arch: [amd64, arm64]
+        java: [17]
+        include: [
+          { dist: debian, ver: 'bookworm', arch: amd64, java: 17 },
+          { dist: debian, ver: 'trixie', arch: amd64, java: 21 },
+        ]
     env:
       DEBIAN_FRONTEND: noninteractive
       DEBFULLNAME: github-actions
       DEBEMAIL: github-actions@github.com
     steps:
     - name: Install dependencies
-      run: apt update -qq && apt install --no-install-recommends -y lsb-release build-essential devscripts debhelper lintian pkg-config ${UBUNTU_DEPS} doxygen swig openjdk-17-jdk-headless libpython3-dev python3-setuptools libboost-test-dev
+      run: |
+        echo 'path-exclude=/usr/share/man/*'      >  /etc/dpkg/dpkg.cfg.d/99-nodocs
+        echo 'path-exclude=/usr/share/doc/*'      >> /etc/dpkg/dpkg.cfg.d/99-nodocs
+        echo 'path-exclude=/usr/share/doc-base/*' >> /etc/dpkg/dpkg.cfg.d/99-nodocs
+        apt update -qq && apt install --no-install-recommends -y lsb-release build-essential devscripts debhelper lintian pkg-config ${UBUNTU_DEPS} doxygen swig openjdk-${{ matrix.java }}-jdk-headless libpython3-dev python3-setuptools libboost-test-dev
     - name: Checkout
       uses: actions/checkout@v5
     - name: Setup changelog
@@ -162,14 +172,14 @@ jobs:
         dch --distribution $(lsb_release -cs) -v ${VERSIONEX} "Release ${VERSIONEX}."
     - name: Build packages
       run: |
-        JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${{ matrix.arch }} dpkg-buildpackage -us -uc
+        JAVA_HOME=/usr/lib/jvm/java-${{ matrix.java }}-openjdk-${{ matrix.arch }} dpkg-buildpackage -us -uc
         mv ../libdigidocpp*.* .
     - name: Lintian
       run: lintian *.deb;
     - name: Archive artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ubuntu_${{ matrix.container }}_${{ matrix.arch }}
+        name: ${{ matrix.dist }}_${{ matrix.ver }}_${{ matrix.arch }}
         path: libdigidocpp*.*
   windows:
     name: Build on Windows
@@ -195,7 +205,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/vcpkg_cache
-        key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('.github/workflows/*', 'vcpkg.json', 'vcpkg-ports/**', 'CMakeLists.txt', '**/CMakeLists.txt', 'CMakePresets.json') }}
+        key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json', 'vcpkg-ports/**') }}
     - name: Prepare vcpkg
       uses: lukka/run-vcpkg@v11
       with:
@@ -298,7 +308,7 @@ jobs:
     - name: Install dependencies
       run: sudo apt update -qq && sudo apt install --no-install-recommends -y ${UBUNTU_DEPS}
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: cpp
         queries: +security-and-quality
@@ -311,12 +321,12 @@ jobs:
           -DBUILD_TOOLS=NO
         cmake --build build
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
       with:
         upload: False
         output: sarif-results
     - name: Filter results
-      uses: advanced-security/filter-sarif@develop
+      uses: advanced-security/filter-sarif@v1
       with:
         patterns: |
           -src/json.hpp
@@ -326,6 +336,6 @@ jobs:
         input: sarif-results/cpp.sarif
         output: sarif-results/cpp.sarif
     - name: Upload results
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       with:
         sarif_file: sarif-results/cpp.sarif

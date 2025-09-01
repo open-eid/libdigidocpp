@@ -5,7 +5,10 @@ endif()
 if(POLICY CMP0177)
     cmake_policy(SET CMP0177 NEW)
 endif()
-project(libdigidocpp VERSION 4.3.0)
+project(libdigidocpp VERSION 4.4.0
+    DESCRIPTION "C++ library for digital signatures and validation of digitally signed documents"
+    HOMEPAGE_URL https://github.com/open-eid/libdigidocpp
+)
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
 
@@ -35,7 +38,7 @@ set( BUILD_TOOLS YES CACHE BOOL "Build digidoc-tool" )
 set( BUILD_SHARED_LIBS YES CACHE BOOL "Build library as SHARED or STATIC" )
 set( SIGNCERT "" CACHE STRING "Common name of certificate to used sign binaries, empty skip signing" )
 set( CROSSSIGNCERT "" CACHE STRING "Common name of certificate to used cross sign binaries, empty skip signing" )
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
