@@ -126,6 +126,20 @@ private:
     DISABLE_COPY(ConfV5);
 };
 
-using ConfCurrent = ConfV5;
+class DIGIDOCPP_EXPORT ConfV6: public ConfV5
+{
+public:
+    ConfV6();
+    ~ConfV6() override;
+    static ConfV6* instance();
+
+    virtual bool validateSigningCert() const;
+
+private:
+    DISABLE_COPY(ConfV6);
+};
+
+using ConfCurrent = ConfV6;
 #define CONF(method) (ConfCurrent::instance() ? ConfCurrent::instance()->method() : ConfCurrent().method())
 }
+

@@ -546,8 +546,11 @@ void SignatureXAdES_B::validate(const string &policy) const
         try { checkKeyInfo(); }
         catch(const Exception& e) { exception.addCause(e); }
 
-        try { checkSigningCertificate(policy == POLv1); }
-        catch(const Exception& e) { exception.addCause(e); }
+        if(CONF(validateSigningCert))
+        {
+            try { checkSigningCertificate(policy == POLv1); }
+            catch(const Exception& e) { exception.addCause(e); }
+        }
     } catch(const Exception &e) {
         exception.addCause(e);
     } catch(...) {
