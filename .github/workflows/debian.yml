@@ -1,0 +1,66 @@
+name: Debian
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  BUILD_NUMBER: ${{github.run_number}}
+  CMAKE_BUILD_PARALLEL_LEVEL: 4
+jobs:
+  debian:
+    name: ${{matrix.rel}} ${{matrix.arch}}
+    runs-on: ubuntu-24.04${{matrix.arch == 'arm64' && '-arm' || ''}}
+    container: debian:${{matrix.rel}}
+    strategy:
+      matrix:
+        rel: [sid, forky, trixie, bookworm]
+        arch: [amd64, arm64]
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      DEBFULLNAME: github-actions
+      DEBEMAIL: github-actions@github.com
+    steps:
+      - name: Dependencies
+        run: |
+          apt-get -qq update
+          apt-get -y install --no-install-recommends \
+            build-essential \
+            cmake \
+            debhelper \
+            default-jdk-headless \
+            devscripts \
+            doxygen \
+            libboost-test-dev \
+            libpython3-dev \
+            libxml2-dev \
+            libxmlsec1-dev \
+            lintian \
+            lsb-release \
+            pkg-config \
+            python3-setuptools \
+            swig \
+            zlib1g-dev \
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup
+        run: |
+          export VERSION=$(grep project CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}")
+          export VERSIONEX=${VERSION}+${{matrix.rel}}.${BUILD_NUMBER}
+          dch --distribution ${{matrix.rel}} -v ${VERSIONEX} "Release ${VERSIONEX}."
+      - name: Build
+        run: |
+          JAVA_HOME=/usr/lib/jvm/default-java dpkg-buildpackage -us -uc
+          mv ../libdigidocpp*.* .
+      - name: Check
+        run: |
+          lintian *.deb
+      - name: Publish
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian_${{matrix.rel}}_${{matrix.arch}}
+          path: libdigidocpp*.*
