@@ -140,7 +140,7 @@ jobs:
       DEBEMAIL: github-actions@github.com
     steps:
     - name: Install dependencies
-      run: apt update -qq && apt install --no-install-recommends -y lsb-release build-essential devscripts debhelper lintian pkg-config ${UBUNTU_DEPS} doxygen swig openjdk-17-jdk-headless libpython3-dev python3-setuptools libboost-test-dev
+      run: apt update -qq && apt install --no-install-recommends -y lsb-release build-essential devscripts debhelper lintian pkg-config ${UBUNTU_DEPS} doxygen swig default-jdk-headless libpython3-dev python3-setuptools libboost-test-dev
     - name: Checkout
       uses: actions/checkout@v4
     - name: Setup changelog
@@ -150,7 +150,7 @@ jobs:
         dch --distribution $(lsb_release -cs) -v ${VERSIONEX} "Release ${VERSIONEX}."
     - name: Build packages
       run: |
-        JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${{ matrix.arch }} dpkg-buildpackage -us -uc
+        JAVA_HOME=/usr/lib/jvm/default-java dpkg-buildpackage -us -uc
         mv ../libdigidocpp*.* .
     - name: Lintian
       run: lintian *.deb;
