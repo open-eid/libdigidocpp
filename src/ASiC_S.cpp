@@ -98,7 +98,7 @@ ASiC_S::ASiC_S(const string &path)
                 string tst = z.extract<stringstream>(uri).str();
                 addSignature(make_unique<SignatureTST>(file, ::move(doc), tst, this));
                 metadata.push_back({file, string(mime), xml.str()});
-                metadata.push_back({uri, string(ref["MimeType"]), std::move(tst)});
+                metadata.push_back({std::move(uri), string(ref["MimeType"]), std::move(tst)});
             };
             add(file, "text/xml");
         }

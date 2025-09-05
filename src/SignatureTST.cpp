@@ -123,7 +123,7 @@ void SignatureTST::validate() const
                 string_view method = (ref/DigestMethod)["Algorithm"];
                 auto uri = util::File::fromUriPath(ref["URI"]);
                 vector<unsigned char> digest = file->fileName() == uri ?
-                    dynamic_cast<const DataFilePrivate*>(file)->calcDigest(string(method)) :
+                    static_cast<const DataFilePrivate*>(file)->calcDigest(string(method)) :
                     asicSDoc->fileDigest(uri, method).result();
                 if(vector<unsigned char> digestValue = ref/DigestValue; digest != digestValue)
                     THROW("Reference %s digest does not match", uri.c_str());

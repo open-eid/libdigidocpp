@@ -156,10 +156,10 @@ bool File::fileExtension(string_view path, initializer_list<string_view> list)
 /**
  * Returns file size
  */
-unsigned long File::fileSize(string_view path) noexcept
+unsigned long File::fileSize(const std::filesystem::path &path) noexcept
 {
     error_code ec;
-    auto result = fs::file_size(encodeName(path), ec);
+    auto result = fs::file_size(path, ec);
     return ec ? 0 : result;
 }
 
