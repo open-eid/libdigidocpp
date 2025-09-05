@@ -23,8 +23,8 @@ Try {
   & wix > $null
 }
 Catch {
-  & dotnet tool install -g --version 6.0.1 wix
-  & wix extension add -g WixToolset.UI.wixext/6.0.1
+  & dotnet tool install -g --version 6.0.2 wix
+  & wix extension add -g WixToolset.UI.wixext/6.0.2
 }
 
 if(!(Test-Path -Path $vcpkg)) {

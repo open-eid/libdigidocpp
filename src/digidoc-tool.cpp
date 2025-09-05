@@ -1060,4 +1060,7 @@ int main(int argc, char *argv[]) try
 } catch(const Exception &e) {
     cout << "Caught Exception:" << endl << e;
     return EXIT_FAILURE;
+} catch(const std::exception &e) {
+    cout << "Caught Exception:" << endl << e.what();
+    return EXIT_FAILURE;
 }

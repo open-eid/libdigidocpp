@@ -456,7 +456,7 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
         return ctx->status == xmlSecDSigStatusSucceeded;
     }
 
-    static void schemaValidationError(void *ctx, const char *msg, ...) noexcept
+    static void schemaValidationError(void *ctx, const char *msg, ...) noexcept try
     {
         va_list args{};
         va_start(args, msg);
@@ -469,15 +469,19 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
         }
         else
             ERR("Schema validation error: %s", m.c_str());
+    } catch(const std::exception &e) {
+        std::printf("Unexpected error: %s", e.what());
     }
 
-    static void schemaValidationWarning(void */*ctx*/, const char *msg, ...) noexcept
+    static void schemaValidationWarning(void */*ctx*/, const char *msg, ...) noexcept try
     {
         va_list args{};
         va_start(args, msg);
         std::string m = Log::formatArgList(msg, args);
         va_end(args);
         WARN("Schema validation warning: %s", m.c_str());
+    } catch(const std::exception &e) {
+        std::printf("Unexpected error: %s", e.what());
     }
 };
 
