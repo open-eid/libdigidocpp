@@ -170,11 +170,12 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
 {
     string fileName = File::fileName(path);
     addDataFileChecks(fileName, mediaType);
-    auto size = File::fileSize(path);
+    auto nativePath = File::encodeName(path);
+    auto size = File::fileSize(nativePath);
     if(size == 0)
         THROW("Document file '%s' does not exist or is empty.", path.c_str());
 
-    unique_ptr<istream> is = make_unique<ifstream>(File::encodeName(path), ifstream::binary);
+    unique_ptr<istream> is = make_unique<ifstream>(nativePath, ifstream::binary);
     if(!*is)
         THROW("Failed to open file for reading: %s.", path.c_str());
     if(size <= MAX_MEM_FILE)

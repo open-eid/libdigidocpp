@@ -146,7 +146,7 @@ auto XmlConf::Private::loadDoc(const string &path) const
 void XmlConf::Private::init(const string& path, bool global)
 {
     DEBUG("XmlConfPrivate::init(%s, %u)", path.c_str(), global);
-    if(File::fileSize(path) == 0)
+    if(File::fileSize(File::encodeName(path)) == 0)
         return;
 
     auto doc = loadDoc(path);
