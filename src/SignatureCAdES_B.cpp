@@ -20,6 +20,8 @@
 #include <SignatureCAdES_B.h>
 #include <SignatureCAdES_p.h>
 
+#include "Conf.h"
+
 #include <crypto/Digest.h>
 #include <crypto/OpenSSLHelpers.h>
 #include <crypto/Signer.h>
@@ -178,8 +180,11 @@ void SignatureCAdES_B::validate(const string &policy) const
         string time = trustedSigningTime();
         if(time.empty())
             THROW("SigningTime missing");
-        if(!X509CertStore::instance()->verify(signingCertificate(), policy == POLv1))
-            THROW("Unable to verify signing certificate");
+        if(CONF(validateSigningCert))
+        {
+            if(!X509CertStore::instance()->verify(signingCertificate(), policy == POLv1))
+                THROW("Unable to verify signing certificate");
+        }
     } catch(const Exception &e) {
         exception.addCause(e);
     }

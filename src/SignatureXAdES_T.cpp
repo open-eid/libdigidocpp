@@ -20,6 +20,7 @@
 #include "SignatureXAdES_T.h"
 
 #include "ASiC_E.h"
+#include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/OCSP.h"
 #include "crypto/Signer.h"
@@ -114,8 +115,11 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             signatures->c14n(digest, canonicalizationMethod, signatureValue());
         });
 
-        if(!X509CertStore::instance()->verify(signingCertificate(), policy == POLv1, tsa.time()))
-            THROW("Signing certificate was not valid on signing time");
+        if(CONF(validateSigningCert))
+        {
+            if(!X509CertStore::instance()->verify(signingCertificate(), policy == POLv1, tsa.time()))
+                THROW("Signing certificate was not valid on signing time");
+        }
 
         auto completeCertRefs = usp/"CompleteCertificateRefs";
         if(completeCertRefs + 1)

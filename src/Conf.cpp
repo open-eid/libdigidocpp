@@ -352,3 +352,30 @@ vector<X509Cert> ConfV5::TSCerts() const
 {
     return {};
 }
+
+/**
+ * @class digidoc::ConfV6
+ * @brief Verison 6 of configuration class to add additonial parameters.
+ *
+ * Conf contains virtual members and is not leaf class we need create
+ * subclasses to keep binary compatibility
+ * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
+ * @see digidoc::ConfV5
+ * @see @ref parameters
+ */
+/**
+ * Version 6 config with new parameters
+ */
+ConfV6::ConfV6() = default;
+
+ConfV6::~ConfV6() = default;
+
+/**
+ * @copydoc digidoc::Conf::instance()
+ */
+ConfV6* ConfV6::instance() { return dynamic_cast<ConfV6*>(Conf::instance()); }
+
+/**
+ * Gets signing certificate ignoring parameter
+ */
+bool ConfV6::validateSigningCert() const { return true; }
