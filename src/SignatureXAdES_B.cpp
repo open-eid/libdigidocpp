@@ -86,8 +86,6 @@ const map<string_view,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist{
 namespace digidoc
 {
 
-constexpr XMLName DigestMethod {"DigestMethod", DSIG_NS};
-constexpr XMLName DigestValue {"DigestValue", DSIG_NS};
 constexpr XMLName X509IssuerName {"X509IssuerName", DSIG_NS};
 constexpr XMLName X509SerialNumber {"X509SerialNumber", DSIG_NS};
 
@@ -193,7 +191,7 @@ int initXmlSecCallback()
 }
 
 Signatures::Signatures()
-    : XMLDocument(create("XAdESSignatures", ASIC_NS, "asic"))
+    : XMLDocument(create("XAdESSignatures", ASiContainer::ASIC_NS, "asic"))
 {
     addNS(DSIG_NS, "ds");
     addNS(XADES_NS, "xades");

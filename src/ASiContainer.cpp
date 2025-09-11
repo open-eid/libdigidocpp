@@ -22,10 +22,10 @@
 #include "DataFile_p.h"
 #include "Signature.h"
 #include "XMLDocument.h"
+#include "util/algorithm.h"
 #include "util/File.h"
 #include "util/log.h"
 
-#include <algorithm>
 #include <array>
 #include <ctime>
 #include <fstream>
@@ -93,7 +93,7 @@ ZipSerialize ASiContainer::load(const string &path, bool mimetypeRequired, const
     if(list.front() == "mimetype")
     {
         d->mimetype = readMimetype(z);
-        if(supported.find(d->mimetype) == supported.cend())
+        if(!contains(supported, d->mimetype))
             THROW("Incorrect mimetype '%s'", d->mimetype.c_str());
     }
     DEBUG("mimetype = '%s'", d->mimetype.c_str());
