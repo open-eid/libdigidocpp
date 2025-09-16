@@ -69,6 +69,13 @@ Command sign:
     --dontValidate - Don't validate container on signature creation
     --userAgent    - Additional info info that is sent to TSA or OCSP service
 
+Command extend:
+  Example: " << executable << " extend --signature=0 demo-container.asice
+  Available options:
+    --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive
+    --signature=   - signature to extend
+    --dontValidate - Don't validate container on signature creation
+
 All commands:
     --nocolor       - Disable terminal colors
     --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug
