@@ -223,12 +223,22 @@ string Signature::TimeStampTime() const { return {}; }
 /**
  * Returns signature Archive TimeStampToken certificate.
  */
-X509Cert Signature::ArchiveTimeStampCertificate() const { return X509Cert(); }
+X509Cert Signature::ArchiveTimeStampCertificate() const
+{
+    if(auto list = ArchiveTimeStamps(); !list.empty())
+        return list.back().cert;
+    return X509Cert();
+}
 
 /**
  * Returns signature Archive TimeStampToken time.
  */
-string Signature::ArchiveTimeStampTime() const { return {}; }
+string Signature::ArchiveTimeStampTime() const
+{
+    if(auto list = ArchiveTimeStamps(); !list.empty())
+        return list.back().time;
+    return {};
+}
 
 /**
  * Returns signature Archive TimeStampTokens.
