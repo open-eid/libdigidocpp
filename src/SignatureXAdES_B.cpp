@@ -333,6 +333,9 @@ SignatureXAdES_B::SignatureXAdES_B(const shared_ptr<Signatures> &signatures, XML
                     "AttrAuthoritiesCertValues", "AttributeRevocationValues", "ArchiveTimeStamp"})
                 if(usp/elem)
                     THROW("%s is not supported", elem);
+            for(const char *elem: {"CompleteCertificateRefsV2", "AttributeCertificateRefsV2", "SigAndRefsTimeStampV2", "RefsOnlyTimeStampV2"})
+                if(usp/XMLName{elem, XADESv141_NS})
+                    THROW("%s is not supported", elem);
             for(const char *elem: {"CompleteCertificateRefs", "CompleteRevocationRefs", "SigAndRefsTimeStamp", "TimeStampValidationData"})
                 if(usp/elem)
                     WARN("%s are not supported", elem);
