@@ -39,7 +39,7 @@ namespace digidoc
 constexpr XMLName ArchiveTimeStamp {"ArchiveTimeStamp", XADESv141_NS};
 }
 
-void SignatureXAdES_LTA::calcArchiveDigest(const Digest &digest, string_view canonicalizationMethod) const
+void SignatureXAdES_LTA::calcArchiveDigest(const Digest &digest, string_view canonicalizationMethod, XMLNode ts) const
 {
     for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
     {
@@ -75,65 +75,46 @@ void SignatureXAdES_LTA::calcArchiveDigest(const Digest &digest, string_view can
             DEBUG("Element %s not found", name);
     }
 
-    auto usp = unsignedSignatureProperties();
-    for(const auto *name: {
-        "SignatureTimeStamp",
-        "CounterSignature",
-        "CompleteCertificateRefs",
-        "CompleteRevocationRefs",
-        "AttributeCertificateRefs",
-        "AttributeRevocationRefs",
-        "CertificateValues",
-        "RevocationValues",
-        "SigAndRefsTimeStamp",
-        "RefsOnlyTimeStamp" })
+    for(auto elem: unsignedSignatureProperties())
     {
-        if(auto elem = usp/name)
-            signatures->c14n(digest, canonicalizationMethod, elem);
-        else
-            DEBUG("Element %s not found", name);
-    }
-
-    if(auto elem = usp/XMLName{"TimeStampValidationData", XADESv141_NS})
+        if(elem == ts)
+            break;
         signatures->c14n(digest, canonicalizationMethod, elem);
-    else
-        DEBUG("Element TimeStampValidationData not found");
+    }
     //ds:Object
 }
 
 void SignatureXAdES_LTA::extendSignatureProfile(Signer *signer)
 {
-    SignatureXAdES_LT::extendSignatureProfile(signer);
+    if(SignatureXAdES_LTA::profile().find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
+        SignatureXAdES_LT::extendSignatureProfile(signer);
     if(signer->profile() != ASiC_E::ASIC_TSA_PROFILE)
         return;
+
+    int i = 0;
+    for(auto ts = unsignedSignatureProperties()/ArchiveTimeStamp; ts; ts++, ++i);
+
     Digest calc;
     auto method = canonicalizationMethod();
-    calcArchiveDigest(calc, method);
+    calcArchiveDigest(calc, method, {});
 
     TS tsa(calc, signer->userAgent());
     auto ts = unsignedSignatureProperties() + ArchiveTimeStamp;
     ts.setNS(ts.addNS(XADESv141_NS, "xades141"));
-    ts.setProperty("Id", id() + "-A0");
+    ts.setProperty("Id", id() + "-A" + to_string(i));
     (ts + CanonicalizationMethod).setProperty("Algorithm", method);
     ts + EncapsulatedTimeStamp = tsa;
 }
 
-TS SignatureXAdES_LTA::tsaFromBase64() const
+vector<TSAInfo> SignatureXAdES_LTA::ArchiveTimeStamps() const
 {
-    try {
-        return {unsignedSignatureProperties()/ArchiveTimeStamp/EncapsulatedTimeStamp};
-    } catch(const Exception &) {}
-    return {};
-}
-
-X509Cert SignatureXAdES_LTA::ArchiveTimeStampCertificate() const
-{
-    return tsaFromBase64().cert();
-}
-
-string SignatureXAdES_LTA::ArchiveTimeStampTime() const
-{
-    return date::to_string(tsaFromBase64().time());
+    vector<TSAInfo> result;
+    for(auto ts = unsignedSignatureProperties()/ArchiveTimeStamp; ts; ts++)
+    {
+        TS t(ts/EncapsulatedTimeStamp);
+        result.push_back({t.cert(), util::date::to_string(t.time())});
+    }
+    return result;
 }
 
 void SignatureXAdES_LTA::validate(const string &policy) const
@@ -154,12 +135,12 @@ void SignatureXAdES_LTA::validate(const string &policy) const
     }
 
     try {
-        auto ts = unsignedSignatureProperties()/ArchiveTimeStamp;
-        if(!ts)
-            THROW("Missing ArchiveTimeStamp element");
-        verifyTS(ts, exception, [this](const Digest &digest, string_view canonicalizationMethod) {
-            calcArchiveDigest(digest, canonicalizationMethod);
-        });
+        for(auto ts = unsignedSignatureProperties()/ArchiveTimeStamp; ts; ts++)
+        {
+            verifyTS(ts, exception, [this, ts](const Digest &digest, string_view canonicalizationMethod) {
+                calcArchiveDigest(digest, canonicalizationMethod, ts);
+            });
+        }
     } catch(const Exception &e) {
         exception.addCause(e);
     } catch(...) {

@@ -346,22 +346,25 @@ string File::toUriPath(const string &path)
     return dst.str();
 }
 
+constexpr bool fromHexChar(auto pos, auto end, auto &value)
+{
+    return distance(pos, end) >= 2 && from_chars(&*pos, &*(pos + 2), value, 16).ec == std::errc{};
+}
+
 string File::fromUriPath(string_view path)
 {
     string ret;
     ret.reserve(path.size());
-    char data[] = "00";
+    uint8_t value = 0;
     for(auto i = path.begin(); i != path.end(); ++i)
     {
-        if(*i == '%' && (distance(i, path.end()) > 2) && isxdigit(*(i+1)) && isxdigit(*(i+2)))
+        if(*i == '%' && fromHexChar(i + 1, path.end(), value))
         {
-            data[0] = *(++i);
-            data[1] = *(++i);
-            ret += static_cast<char>(strtoul(data, nullptr, 16));
+            ret += static_cast<char>(value);
+            i += 2;
         }
-        else {
+        else
             ret += *i;
-        }
     }
     return ret;
 }
@@ -370,11 +373,8 @@ vector<unsigned char> File::hexToBin(string_view in)
 {
     vector<unsigned char> out;
     out.reserve(in.size() / 2);
-    uint8_t result{};
-    for(size_t pos{}; pos + 1 < in.size(); pos += 2)
-    {
-        if(auto i = next(in.data(), pos); from_chars(i, i + 2, result, 16).ec == std::errc{})
-            out.push_back(result);
-    }
+    uint8_t value = 0;
+    for(auto i = in.begin(); fromHexChar(i,  in.end(), value); i += 2)
+        out.emplace_back(value);
     return out;
 }

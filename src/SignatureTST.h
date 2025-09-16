@@ -56,8 +56,6 @@ public:
     std::string profile() const final;
 
     //TSA profile properties
-    X509Cert ArchiveTimeStampCertificate() const final;
-    std::string ArchiveTimeStampTime() const final;
     std::vector<TSAInfo> ArchiveTimeStamps() const final;
 
     void save(const ZipSerialize &s) const;

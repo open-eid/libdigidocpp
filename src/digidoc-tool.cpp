@@ -401,6 +401,12 @@ static int printUsage(const char *executable)
     << "      --tsurl        - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
     << "      --dontValidate - Don't validate container on signature creation" << endl << endl
     << "      --userAgent    - Additional info info that is sent to TSA or OCSP service" << endl << endl
+    << "  Command extend:" << endl
+    << "    Example: " << executable << " extend --signature=0 demo-container.asice" << endl
+    << "    Available options:" << endl
+    << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive" << endl
+    << "      --signature=   - signature to extend" << endl
+    << "      --dontValidate - Don't validate container on signature creation" << endl << endl
     << "  All commands:" << endl
     << "      --nocolor      - Disable terminal colors" << endl
     << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
@@ -711,7 +717,7 @@ static int open(int argc, char* argv[])
  */
 static int extend(int argc, char *argv[])
 {
-    vector<unsigned int> signatures;
+    vector<unsigned int> extendId;
     bool dontValidate = false;
     CertSigner signer(X509Cert{});
     value path;
@@ -721,7 +727,7 @@ static int extend(int argc, char *argv[])
         if(value v{arg, "--profile="})
             signer.setProfile(v);
         else if(value v{arg, "--signature="})
-            signatures.push_back(unsigned(atoi(v.data())));
+            extendId.push_back(unsigned(atoi(v.data())));
         else if(arg == "--dontValidate")
             dontValidate = true;
         else
@@ -740,8 +746,17 @@ static int extend(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    for(unsigned int i : signatures)
+    auto signatures = doc->signatures();
+    if(signatures.empty())
     {
+        cout << "  Container does not contain signatures\n";
+        return EXIT_SUCCESS;
+    }
+
+    for(unsigned int i : extendId)
+    {
+        if(i >= signatures.size())
+            THROW("Incorrect signature id %u, there are only %zu signatures in container.", i, signatures.size());
         cout << "  Extending signature " << i << " to " << signer.profile() << endl;
         Signature *s = doc->signatures().at(i);
         s->extendSignatureProfile(&signer);
