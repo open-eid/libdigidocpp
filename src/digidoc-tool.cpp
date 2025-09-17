@@ -688,13 +688,67 @@ static int open(int argc, char* argv[])
             << "    OCSP Responder: " << s->OCSPCertificate() << endl
             << "    Message imprint (" << msgImprint.size() << "): " << msgImprint << endl
             << "    TS: " << s->TimeStampCertificate() << endl
-            << "    TS time: " << s->TimeStampTime() << endl
-            << "    TSA: " << s->ArchiveTimeStampCertificate() << endl
-            << "    TSA time: " << s->ArchiveTimeStampTime() << endl;
+            << "    TS time: " << s->TimeStampTime() << endl;
+        for(const auto &tsaInfo: s->ArchiveTimeStamps())
+        {
+            cout
+                << "    TSA: " << tsaInfo.cert << '\n'
+                << "    TSA time: " << tsaInfo.time << '\n';
+        }
     }
     if(returnCode == EXIT_SUCCESS && !extractPath.empty())
         return extractFiles();
     return returnCode;
+}
+
+/**
+ * Extend signatures in container.
+ *
+ * @param argc number of command line arguments.
+ * @param argv command line arguments.
+ * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
+ */
+static int extend(int argc, char *argv[])
+{
+    vector<unsigned int> signatures;
+    bool dontValidate = false;
+    value path, profile;
+    for(int i = 2; i < argc; i++)
+    {
+        string_view arg(argv[i]);
+        if(value v{arg, "--profile="})
+            profile = v;
+        else if(value v{arg, "--signature="})
+            signatures.push_back(unsigned(atoi(v.data())));
+        else if(arg == "--dontValidate")
+            dontValidate = true;
+        else
+            path = arg;
+    }
+
+    if(path.empty())
+        return printUsage(argv[0]);
+
+    unique_ptr<Container> doc;
+    try {
+        doc = Container::openPtr(path);
+    } catch(const Exception &e) {
+        cout << "Failed to parse container" << endl;
+        cout << "  Exception:" << endl << e;
+        return EXIT_FAILURE;
+    }
+
+    for(unsigned int i : signatures)
+    {
+        cout << "  Extending signature " << i << " to " << profile << endl;
+        Signature *s = doc->signatures().at(i);
+        s->extendSignatureProfile(profile);
+        if(!dontValidate)
+            validateSignature(s);
+    }
+
+    doc->save();
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -1050,6 +1104,8 @@ int main(int argc, char *argv[]) try
         return remove(argc, argv);
     if(command == "sign")
         return sign(*conf, argv[0]);
+    if(command == "extend")
+        return extend(argc, argv);
     if(command == "websign")
         return websign(*conf, argv[0]);
     if(command == "tsl")

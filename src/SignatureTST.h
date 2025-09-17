@@ -50,9 +50,15 @@ public:
     void validate() const final;
     std::vector<unsigned char> dataToSign() const final;
     void setSignatureValue(const std::vector<unsigned char> &signatureValue) final;
+    void extendSignatureProfile(Signer *signer) final;
 
     // Xades properties
     std::string profile() const final;
+
+    //TSA profile properties
+    X509Cert ArchiveTimeStampCertificate() const final;
+    std::string ArchiveTimeStampTime() const final;
+    std::vector<TSAInfo> ArchiveTimeStamps() const final;
 
     void save(const ZipSerialize &s) const;
 

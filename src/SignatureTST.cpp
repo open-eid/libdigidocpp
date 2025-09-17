@@ -91,6 +91,88 @@ SignatureTST::SignatureTST(ASiC_S *asicSDoc, Signer *signer)
 
 SignatureTST::~SignatureTST() = default;
 
+X509Cert SignatureTST::ArchiveTimeStampCertificate() const
+{
+    if(auto list = ArchiveTimeStamps(); !list.empty())
+        return list.front().cert;
+    return X509Cert();
+}
+
+string SignatureTST::ArchiveTimeStampTime() const
+{
+    if(auto list = ArchiveTimeStamps(); !list.empty())
+        return list.front().time;
+    return {};
+}
+
+std::vector<TSAInfo> SignatureTST::ArchiveTimeStamps() const
+{
+    std::vector<TSAInfo> result;
+    for(auto i = metadata.cbegin() + 1; i != metadata.cend(); ++i)
+    {
+        if(i->mime != "application/vnd.etsi.timestamp-token")
+            continue;
+        TS ts((const unsigned char*)i->data.data(), i->data.size());
+        result.push_back({ts.cert(), util::date::to_string(ts.time())});
+    }
+    return result;
+}
+
+void SignatureTST::extendSignatureProfile(Signer *signer)
+{
+
+    string tstName = "META-INF/timestamp001.tst";
+    for(size_t i = 1;
+         any_of(metadata, [&tstName](const auto &f) { return f.name == tstName; });
+         tstName = Log::format("META-INF/timestamp%03zu.tst", ++i));
+
+    auto doc = XMLDocument::create("ASiCManifest", ASiContainer::ASIC_NS, "asic");
+    auto ref = doc + "SigReference";
+    ref.setProperty("MimeType", "application/vnd.etsi.timestamp-token");
+    ref.setProperty("URI", tstName);
+
+    auto addRef = [&doc](const string &name, string_view mime, bool root, const Digest &digest) {
+        auto ref = doc + "DataObjectReference";
+        ref.setProperty("MimeType", mime);
+        ref.setProperty("URI", util::File::toUriPath(name));
+        if(root)
+            ref.setProperty("Rootfile", "true");
+        auto method = ref + DigestMethod;
+        method.setNS(method.addNS(DSIG_NS, "ds"));
+        method.setProperty("Algorithm", digest.uri());
+        auto value = ref + DigestValue;
+        value.setNS(value.addNS(DSIG_NS, "ds"));
+        value = digest.result();
+    };
+
+    DataFile *file = asicSDoc->dataFiles().front();
+    Digest digest;
+    static_cast<DataFilePrivate*>(file)->digest(digest);
+    addRef(file->fileName(), file->mediaType(), false, digest);
+    for(auto &data: metadata)
+    {
+        if(data.name == "META-INF/ASiCArchiveManifest.xml")
+        {
+            string mfsName = "META-INF/ASiCArchiveManifest001.xml";
+            for(size_t i = 0;
+                 any_of(metadata, [&mfsName](const auto &f) { return f.name == mfsName; });
+                 mfsName = Log::format("META-INF/ASiCArchiveManifest%03zu.xml", ++i));
+            data.name = mfsName;
+            data.root = true;
+        }
+        addRef(data.name, data.mime, data.root, data.digest());
+    }
+
+    string data;
+    doc.save([&data](const char *buf, size_t size) {
+        data.append(buf, size);
+        return size;
+    }, true);
+    metadata.push_back({"META-INF/ASiCArchiveManifest.xml", "text/xml", std::move(data)});
+    vector<unsigned char> der = TS(metadata.back().digest(), signer->userAgent());
+    metadata.push_back({tstName, "application/vnd.etsi.timestamp-token", {der.cbegin(), der.cend()}});
+}
+
 X509Cert SignatureTST::TimeStampCertificate() const
 {
     return timestampToken->cert();
