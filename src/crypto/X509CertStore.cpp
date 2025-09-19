@@ -115,7 +115,7 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert, const Type &type) const
 
 X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert)
 {
-    SCOPE(AUTHORITY_INFO_ACCESS, aia, X509_get_ext_d2i(cert.handle(), NID_info_access, nullptr, nullptr));
+    auto aia = make_unique_cast<AUTHORITY_INFO_ACCESS_free>(X509_get_ext_d2i(cert.handle(), NID_info_access, nullptr, nullptr));
     if(!aia)
         return X509Cert();
     string url;
@@ -134,7 +134,7 @@ X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert)
 
 unique_free_t<X509_STORE> X509CertStore::createStore(const Type &type, tm &tm)
 {
-    SCOPE(X509_STORE, store, X509_STORE_new());
+    auto store = make_unique_ptr(X509_STORE_new(), X509_STORE_free);
     if (!store)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
     X509_STORE_set_verify_cb(store.get(), X509CertStore::validate);
@@ -168,9 +168,9 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
         if(none_of(s.certs, [&](const X509Cert &issuer) {
                 if(issuer == x509) // certificate is listed by service
                     return true;
-                if(X509_check_issued(issuer.handle(), x509) != X509_V_OK) // certificate is issued by service
+                if(X509_check_issued(issuer.handle(), x509) != X509_V_OK) // certificate is issued by service (function checks only issuer name)
                     return false;
-                SCOPE(EVP_PKEY, pub, X509_get_pubkey(issuer.handle()));
+                auto pub = make_unique_ptr<EVP_PKEY_free>(X509_get_pubkey(issuer.handle()));
                 if(X509_verify(x509, pub.get()) == 1) // certificate is signed by service
                     return true;
                 ERR_clear_error();
@@ -200,7 +200,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time
     if(util::date::is_empty(validation_time))
         ASN1_TIME_to_tm(X509_get0_notBefore(cert.handle()), &validation_time);
     auto store = createStore(X509CertStore::CA, validation_time);
-    SCOPE(X509_STORE_CTX, csc, X509_STORE_CTX_new());
+    auto csc = make_unique_ptr<X509_STORE_CTX_free>(X509_STORE_CTX_new());
     if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
     if(X509_verify_cert(csc.get()) <= 0)
