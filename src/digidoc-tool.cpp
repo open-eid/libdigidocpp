@@ -126,6 +126,17 @@ static ostream &endl(ostream &os)
 }
 }
 
+struct CertSigner final: public Signer
+{
+    explicit CertSigner(X509Cert cert): _cert(std::move(cert)) {}
+    X509Cert cert() const final { return _cert; }
+    vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const final
+    {
+        THROW("Not implemented");
+    }
+    X509Cert _cert;
+};
+
 /**
  * For demonstration purpose overwrites certificate selection to print out all
  * the certificates available on ID-Card.
@@ -476,20 +487,7 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
 {
     unique_ptr<Signer> signer;
     if(getwebsigner)
-    {
-        class WebSigner final: public Signer
-        {
-        public:
-            explicit WebSigner(X509Cert cert): _cert(std::move(cert)) {}
-            X509Cert cert() const final { return _cert; }
-            vector<unsigned char> sign(const string & /*method*/, const vector<unsigned char> & /*digest*/) const final
-            {
-                THROW("Not implemented");
-            }
-            X509Cert _cert;
-        };
-        signer = make_unique<WebSigner>(X509Cert(cert, X509Cert::Pem));
-    }
+        signer = make_unique<CertSigner>(X509Cert(cert, X509Cert::Pem));
 #ifdef _WIN32
     else if(cng)
     {
@@ -696,6 +694,9 @@ static int open(int argc, char* argv[])
                 << "    TSA time: " << tsaInfo.time << '\n';
         }
     }
+    cout << "Container is "
+        << (returnCode == EXIT_SUCCESS ? ToolConfig::GREEN : ToolConfig::RED)
+        << (returnCode == EXIT_SUCCESS ? "valid" : "invalid") << ToolConfig::RESET << endl;
     if(returnCode == EXIT_SUCCESS && !extractPath.empty())
         return extractFiles();
     return returnCode;
@@ -712,12 +713,13 @@ static int extend(int argc, char *argv[])
 {
     vector<unsigned int> signatures;
     bool dontValidate = false;
-    value path, profile;
+    CertSigner signer(X509Cert{});
+    value path;
     for(int i = 2; i < argc; i++)
     {
         string_view arg(argv[i]);
         if(value v{arg, "--profile="})
-            profile = v;
+            signer.setProfile(v);
         else if(value v{arg, "--signature="})
             signatures.push_back(unsigned(atoi(v.data())));
         else if(arg == "--dontValidate")
@@ -740,9 +742,9 @@ static int extend(int argc, char *argv[])
 
     for(unsigned int i : signatures)
     {
-        cout << "  Extending signature " << i << " to " << profile << endl;
+        cout << "  Extending signature " << i << " to " << signer.profile() << endl;
         Signature *s = doc->signatures().at(i);
-        s->extendSignatureProfile(profile);
+        s->extendSignatureProfile(&signer);
         if(!dontValidate)
             validateSignature(s);
     }
