@@ -726,14 +726,14 @@ void SignatureXAdES_B::setSignatureProductionPlace(string_view name,
     auto signatureProductionPlace = signedSignatureProperties() + name.data();
     if(!city.empty())
         signatureProductionPlace + "City" = city;
+    if(name == "SignatureProductionPlaceV2" && !streetAddress.empty())
+        signatureProductionPlace + "StreetAddress" = streetAddress;
     if(!stateOrProvince.empty())
         signatureProductionPlace + "StateOrProvince" = stateOrProvince;
     if(!postalCode.empty())
         signatureProductionPlace + "PostalCode" = postalCode;
     if(!countryName.empty())
         signatureProductionPlace + "CountryName" = countryName;
-    if(name == "SignatureProductionPlaceV2" && !streetAddress.empty())
-        signatureProductionPlace + "StreetAddress" = streetAddress;
 }
 
 /**
