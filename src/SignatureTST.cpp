@@ -39,6 +39,8 @@
 using namespace digidoc;
 using namespace std;
 
+constexpr const char* TST_MIMETYPE {"application/vnd.etsi.timestamp-token"};
+
 struct SignatureTST::Data {
     string name, mime, data;
     unique_ptr<map<string, vector<unsigned char>>> cache = make_unique<map<string, vector<unsigned char>>>();
@@ -59,7 +61,7 @@ struct SignatureTST::Data {
         if (auto it = cache->find(method); it != cache->cend()) {
             return it->second;
         }
-        return (*cache)[std::move(method)] = digest({method}).result();
+        return (*cache)[std::move(method)] = digest(Digest(method)).result();
     }
 };
 
@@ -94,7 +96,7 @@ SignatureTST::SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDo
             }
         }
     }
-    metadata.emplace_back("META-INF/timestamp.tst", "application/vnd.etsi.timestamp-token", std::move(data));
+    metadata.emplace_back("META-INF/timestamp.tst", TST_MIMETYPE, std::move(data));
 }
 
 SignatureTST::SignatureTST(ASiC_S *asicSDoc, Signer *signer)
@@ -105,7 +107,7 @@ SignatureTST::SignatureTST(ASiC_S *asicSDoc, Signer *signer)
     dataFile->digest(digest);
     timestampToken = make_unique<TS>(digest, signer->userAgent());
     vector<unsigned char> der = *timestampToken;
-    metadata.emplace_back("META-INF/timestamp.tst", "application/vnd.etsi.timestamp-token", string{der.cbegin(), der.cend()});
+    metadata.emplace_back("META-INF/timestamp.tst", TST_MIMETYPE, string{der.cbegin(), der.cend()});
 }
 
 SignatureTST::~SignatureTST() = default;
@@ -127,9 +129,9 @@ string SignatureTST::ArchiveTimeStampTime() const
 vector<TSAInfo> SignatureTST::ArchiveTimeStamps() const
 {
     vector<TSAInfo> result;
-    for(auto i = metadata.crbegin(), end = next(metadata.crend(), 1); i != end; ++i)
+    for(auto i = next(metadata.crbegin()), end = metadata.crend(); i != end; ++i)
     {
-        if(i->mime != "application/vnd.etsi.timestamp-token")
+        if(i->mime != TST_MIMETYPE)
             continue;
         TS ts((const unsigned char*)i->data.data(), i->data.size());
         result.push_back({ts.cert(), util::date::to_string(ts.time())});
@@ -149,7 +151,7 @@ void SignatureTST::extendSignatureProfile(Signer *signer)
     string tstName = nextName("META-INF/timestamp%03zu.tst");
     auto doc = XMLDocument::create("ASiCManifest", ASiContainer::ASIC_NS, "asic");
     auto ref = doc + "SigReference";
-    ref.setProperty("MimeType", "application/vnd.etsi.timestamp-token");
+    ref.setProperty("MimeType", TST_MIMETYPE);
     ref.setProperty("URI", tstName);
 
     auto addRef = [&doc](const string &name, string_view mime, bool root, const Digest &digest) {
@@ -185,7 +187,7 @@ void SignatureTST::extendSignatureProfile(Signer *signer)
     }, true);
     auto i = metadata.insert(metadata.cbegin(), {"META-INF/ASiCArchiveManifest.xml", "text/xml", std::move(data)});
     vector<unsigned char> der = TS(i->digest(), signer->userAgent());
-    metadata.insert(next(i), {tstName, "application/vnd.etsi.timestamp-token", string{der.cbegin(), der.cend()}});
+    metadata.insert(next(i), {tstName, TST_MIMETYPE, string{der.cbegin(), der.cend()}});
 }
 
 X509Cert SignatureTST::TimeStampCertificate() const
@@ -278,6 +280,17 @@ void SignatureTST::validate() const
                 if(vector<unsigned char> digestValue = ref/DigestValue; digest != digestValue)
                     THROW("Reference '%s' digest does not match", uri.c_str());
             }
+            if(auto sigRef = doc/"SigReference"; sigRef["MimeType"] == TST_MIMETYPE)
+            {
+                const auto &uri = add.emplace_back(util::File::fromUriPath(sigRef["URI"]));
+                auto j = find_if(metadata.cbegin(), metadata.cend(), [uri](const auto &d) { return d.name == uri; });
+                if(j == metadata.cend())
+                    THROW("SigReference %s is missing", uri.c_str());
+                TS ts((const unsigned char*)j->data.data(), j->data.size());
+                ts.verify(i->digestCache(ts.digestMethod()));
+            }
+            else
+                THROW("SigReference is missing");
             // Check if all files in previous scope are present
             for(const string &uri: list)
             {
