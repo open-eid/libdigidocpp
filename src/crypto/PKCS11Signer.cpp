@@ -254,8 +254,7 @@ X509Cert PKCS11Signer::cert() const
             CK_OBJECT_HANDLE obj: session.findObject(CKO_CERTIFICATE))
         {
             X509Cert x509(session.attribute(obj, CKA_VALUE));
-            vector<X509Cert::KeyUsage> usage = x509.keyUsage();
-            if(!x509.isValid() || !contains(usage, X509Cert::NonRepudiation) || x509.isCA())
+            if(x509.isCA() || !x509.isValid() || !contains(x509.keyUsage(), X509Cert::NonRepudiation))
                 continue;
             vector<CK_BYTE> id = session.attribute(obj, CKA_ID);
             if(session.findObject(CKO_PUBLIC_KEY, id).empty())
@@ -292,8 +291,7 @@ string PKCS11Signer::method() const
     if(!d->sign.certificate || !X509Crypto(d->sign.certificate).isRSAKey() ||
         parent != CONF(signatureDigestUri))
         return parent;
-    if(auto mech = PKCS11List<&CK_FUNCTION_LIST::C_GetMechanismList>(d->f, d->sign.slot);
-        contains(mech, CKM_RSA_PKCS_PSS))
+    if(contains(PKCS11List<&CK_FUNCTION_LIST::C_GetMechanismList>(d->f, d->sign.slot), CKM_RSA_PKCS_PSS))
         return Digest::toRsaPssUri(std::move(parent));
     return parent;
 }
@@ -362,6 +360,8 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
     if(d->f->C_GetTokenInfo(d->sign.slot, &token) != CKR_OK)
         THROW("Failed to get token info.");
 
+    if(token.flags & CKF_USER_PIN_TO_BE_CHANGED)
+        THROW("PIN must be changed");
     if(token.flags & CKF_USER_PIN_LOCKED)
     {
         Exception e(EXCEPTION_PARAMS("PIN Locked"));
@@ -373,9 +373,9 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
     if(!session)
         THROW("Failed to open session.");
 
-    CK_RV rv = CKR_OK;
     if(token.flags & CKF_LOGIN_REQUIRED)
     {
+        CK_RV rv = CKR_OK;
         if(token.flags & CKF_PROTECTED_AUTHENTICATION_PATH)
             rv = d->f->C_Login(session.handle, CKU_USER, nullptr, 0);
         else
@@ -422,32 +422,43 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
     CK_ATTRIBUTE attribute { CKA_KEY_TYPE, &keyType, sizeof(keyType) };
     d->f->C_GetAttributeValue(session.handle, key.front(), &attribute, 1);
 
-    CK_RSA_PKCS_PSS_PARAMS pssParams { CKM_SHA_1, CKG_MGF1_SHA1, 0 };
+    CK_RSA_PKCS_PSS_PARAMS pssParams { CKM_SHA256, CKG_MGF1_SHA256, 0 };
     CK_MECHANISM mech { keyType == CKK_ECDSA ? CKM_ECDSA : CKM_RSA_PKCS, nullptr, 0 };
     vector<CK_BYTE> data = digest;
     if(Digest::isRsaPssUri(method)) {
         int nid = Digest::toMethod(method);
         switch(nid)
         {
-        case NID_sha224:
-            pssParams = { CKM_SHA224, CKG_MGF1_SHA224, 0 };
-            break;
-        case NID_sha256:
-            pssParams = { CKM_SHA256, CKG_MGF1_SHA256, 0 };
-            break;
-        case NID_sha384:
-            pssParams = { CKM_SHA384, CKG_MGF1_SHA384, 0 };
-            break;
-        case NID_sha512:
-            pssParams = { CKM_SHA512, CKG_MGF1_SHA512, 0 };
-            break;
+        case NID_sha224: pssParams = { CKM_SHA224, CKG_MGF1_SHA224, 0 }; break;
+        case NID_sha256: pssParams = { CKM_SHA256, CKG_MGF1_SHA256, 0 }; break;
+        case NID_sha384: pssParams = { CKM_SHA384, CKG_MGF1_SHA384, 0 }; break;
+        case NID_sha512: pssParams = { CKM_SHA512, CKG_MGF1_SHA512, 0 }; break;
+        case NID_sha3_224: pssParams = { CKM_SHA3_224, CKG_MGF1_SHA3_224, 0 }; break;
+        case NID_sha3_256: pssParams = { CKM_SHA3_256, CKG_MGF1_SHA3_256, 0 }; break;
+        case NID_sha3_384: pssParams = { CKM_SHA3_384, CKG_MGF1_SHA3_384, 0 }; break;
+        case NID_sha3_512: pssParams = { CKM_SHA3_512, CKG_MGF1_SHA3_512, 0 }; break;
         default: break;
         }
         pssParams.sLen = CK_ULONG(EVP_MD_size(EVP_get_digestbynid(nid)));
         mech = { CKM_RSA_PKCS_PSS, &pssParams, sizeof(CK_RSA_PKCS_PSS_PARAMS) };
     }
     else if(keyType == CKK_RSA)
-        data = Digest::addDigestInfo(std::move(data), method);
+    {
+        switch(Digest::toMethod(method))
+        {
+        case NID_sha1: data.insert(data.cbegin(),
+            {0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14}); break;
+        case NID_sha224: data.insert(data.cbegin(),
+            {0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1c}); break;
+        case NID_sha256: data.insert(data.cbegin(),
+            {0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20}); break;
+        case NID_sha384: data.insert(data.begin(),
+            {0x30, 0x41, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30}); break;
+        case NID_sha512: data.insert(data.cbegin(),
+            {0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40}); break;
+        default: break;
+        }
+    }
     if(d->f->C_SignInit(session.handle, &mech, key.front()) != CKR_OK)
         THROW("Failed to sign digest");
 
