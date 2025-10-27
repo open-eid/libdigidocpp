@@ -28,9 +28,6 @@
 namespace digidoc
 {
 
-#define SCOPE_PTR(TYPE, DATA) make_unique_ptr<TYPE##_free>(DATA)
-#define SCOPE(TYPE, VAR, DATA) auto VAR = make_unique_ptr<TYPE>(DATA, TYPE##_free)
-
 template<auto F, class T>
 [[nodiscard]]
 inline std::vector<unsigned char> i2d(T *obj)
@@ -52,6 +49,13 @@ template<auto F, class T>
 inline std::vector<unsigned char> i2d(const T &obj)
 {
     return i2d<F>(obj.get());
+}
+
+template<auto F, auto D, class C>
+constexpr auto d2i(const C &c)
+{
+    const unsigned char *p = c.data();
+    return make_unique_ptr<D>(F(nullptr, &p, long(c.size())));
 }
 
 /**

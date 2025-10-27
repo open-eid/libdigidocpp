@@ -54,8 +54,7 @@ X509Crypto::X509Crypto(X509Cert cert)
 bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
 {
     // DER-encoded instance of type IssuerSerial type defined in IETF RFC 5035 [17].
-    const unsigned char *p = data.data();
-    SCOPE(ESS_ISSUER_SERIAL, is, d2i_ESS_ISSUER_SERIAL(nullptr, &p, long(data.size())));
+    auto is = d2i<d2i_ESS_ISSUER_SERIAL, ESS_ISSUER_SERIAL_free>(data);
     if(!is || sk_GENERAL_NAME_num(is->issuer) != 1)
         return false;
 

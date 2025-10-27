@@ -117,7 +117,7 @@ jobs:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
-          ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-21-openjdk-devel rpm-build
+          ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-25-openjdk-devel rpm-build
     - name: Checkout
       uses: actions/checkout@v5
     - name: Build
@@ -137,7 +137,7 @@ jobs:
     strategy:
       matrix:
         dist: [ubuntu]
-        ver: ['22.04', '24.04', '25.04', '25.10']
+        ver: ['22.04', '24.04', '25.10']
         arch: [amd64, arm64]
         java: [17]
         include: [
