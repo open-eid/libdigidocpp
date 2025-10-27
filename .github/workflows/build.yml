@@ -22,10 +22,12 @@ jobs:
       run: |
         brew update
         brew install --formula swig doxygen boost
-        brew unlink python@3.12 || true
         brew unlink python@3.13 || true
+        brew unlink python@3.14 || true
         brew unlink openssl@3 || true
         brew unlink xz
+        sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.13
+        sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.14
     - name: Cache
       uses: actions/cache@v4
       id: cache
