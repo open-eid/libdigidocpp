@@ -231,13 +231,16 @@ SignatureXAdES_B::SignatureXAdES_B(const shared_ptr<Signatures> &signatures, uns
     X509Cert c = signer->cert();
     string nr = "S" + to_string(id);
     auto canonMethod = XMLDocument::C14D_ID_1_1;
+    string method = signer->method();
+    string signatureUri = X509Crypto(c).isRSAKey() ? Digest::toRsaUri(method) : Digest::toEcUri(method);
+    if(signatureUri.empty())
+        THROW("Signature method '%s' is not supported for this key.", method.c_str());
 
     signature = *signatures + XMLName{"Signature", DSIG_NS};
     signature.setProperty("Id", nr);
     auto signedInfo = signature + "SignedInfo";
     (signedInfo + CanonicalizationMethod).setProperty("Algorithm", canonMethod);
-    (signedInfo + "SignatureMethod").setProperty("Algorithm", X509Crypto(c).isRSAKey() ?
-            Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()));
+    (signedInfo + "SignatureMethod").setProperty("Algorithm", signatureUri);
 
     (signature + "SignatureValue").setProperty("Id", nr + "-SIG");
     signature + "KeyInfo" + "X509Data" + "X509Certificate" = c;

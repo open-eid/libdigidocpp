@@ -2,7 +2,8 @@
 
 The command line utility program digidoc-tool which is included in the Libdigidocpp distribution can be used to test the library or simply use it directly to handle digitally signed documents.
 
-\note The utility program is intended for testing and presentation of sample implementation of the library’s API. The interface of the utility program is not fixed and its long-term stability is not guaranteed.
+> [!NOTE]
+> The utility program is intended for testing and presentation of sample implementation of the library’s API. The interface of the utility program is not fixed and its long-term stability is not guaranteed.
 
 The general format for executing the program is:
 ```
@@ -35,9 +36,11 @@ Available options:
 
 `--mime=` must be written right after the `--file` parameter it applies to. If left unspecified then the default mime-type value "application/octet-stream" is used.
 
-\note Data file names are stored percent-encoded (\ref RFC3986 "RFC 3986") in signature references, so special characters in otherwise valid names can be used. Directory separators and reserved names such as `mimetype` are not accepted. Names that use only "unreserved" characters (letters, digits, `-`, `.`, `_`, `~`) are the most portable across other implementations.
+> [!NOTE]
+> Data file names are stored percent-encoded (\ref RFC3986 "RFC 3986") in signature references, so special characters in otherwise valid names can be used. Directory separators and reserved names such as `mimetype` are not accepted. Names that use only "unreserved" characters (letters, digits, `-`, `.`, `_`, `~`) are the most portable across other implementations.
 
-\warning Data file’s mime-type value must be formatted as specified in \ref RFC2045 "RFC 2045", section 5.1, i.e. the "type" and "subtype" values must be separated with a forward slash character.
+> [!WARNING]
+> Data file’s mime-type value must be formatted as specified in \ref RFC2045 "RFC 2045", section 5.1, i.e. the "type" and "subtype" values must be separated with a forward slash character.
 
 Additional options for the "create" command are the same as for "sign" command (see \ref Adding).
 
@@ -195,7 +198,8 @@ Output of the default command contains the following data of the container:
       Warnings: <possible validation related warnings (see explanation below)>
 ```
 
-\note By default, if the signature validation process discovered errors that are regarded as minor technical errors in digidoc-tool.cpp utility program then the document is considered as VALID WITH WARNINGS, the errors are printed out as warnings to the end user. See also chapter \ref validation-status.
+> [!NOTE]
+> By default, if the signature validation process discovered errors that are regarded as minor technical errors in digidoc-tool.cpp utility program then the document is considered as VALID WITH WARNINGS, the errors are printed out as warnings to the end user. See also chapter \ref validation-status.
 
 Sample commands for validating signatures and extracting data files:
 ```
@@ -319,7 +323,11 @@ If PIN is not provided with `--pin=` and (the default) PKCS#11 module is used fo
 - TSA or time-stamp-archive - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data, followed by an archive time-stamp over the certificate and revocation information.
 - TimeStampToken or time-stamp-token - create the \ref RFC3161 "RFC 3161" token signature used by a new ASiC-S container.
 
-The hash options are used for testing purposes. `--sha*` specifies the hash function that is used when calculating digest values, `--sigsha*` the hash function that is used for calculating the hash that is being signed, and `--sigpsssha*` does the same and uses RSA-PSS padding with RSA keys. If not specified then SHA-256 is used by default.
+The hash options are used for testing purposes. `--sha*` specifies the hash function that is used when calculating digest values, `--sigsha*` the hash function that is used for calculating the hash that is being signed, and `--sigpsssha*` does the same and uses RSA-PSS padding with RSA keys.
+
+By default, reference digests use `signer.digestUri` and RSA signatures use `signer.signatureDigestUri`, both configured as SHA-256 by default. For ECDSA signatures, the default signature hash is selected by the EC key size: SHA-224 for 224-bit keys, SHA-256 for 256-bit keys, SHA-384 for 384-bit keys, and SHA-512 for other key sizes (including 521-bit keys).
+
+ECDSA with SHA3-256, SHA3-384 and SHA3-512 can be selected through digidoc::Signer::setMethod() using the algorithm URI. The command-line hash switches listed above select SHA-2 algorithms only.
 
 Options for specifying module used for accessing the signing token - possible alternatives are PKCS#11, CryptoAPI/CNG and PKCS#12 (for testing purposes). When signing module is not specified then PKCS#11 module is used by default.
 

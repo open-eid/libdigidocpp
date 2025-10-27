@@ -56,6 +56,10 @@
 #define URI_ECDSA_SHA256 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
 #define URI_ECDSA_SHA384 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384"
 #define URI_ECDSA_SHA512 "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512"
+// https://www.rfc-editor.org/rfc/rfc9231.html#name-ecdsa-sha-ecdsa-ripemd160-e
+#define URI_ECDSA_SHA3_256 "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-256"
+#define URI_ECDSA_SHA3_384 "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-384"
+#define URI_ECDSA_SHA3_512 "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-512"
 
 #if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3080200fL
 using EVP_MD_CTX = struct env_md_ctx_st;
@@ -80,7 +84,7 @@ namespace digidoc
 
           static bool isRsaPssUri(std::string_view uri);
           static bool isWeakDigest(std::string_view uri);
-          static std::string toRsaUri(const std::string &uri);
+          static std::string toRsaUri(std::string uri);
           static std::string toRsaPssUri(std::string uri);
           static std::string toEcUri(const std::string &uri);
           static int toMethod(std::string_view uri);

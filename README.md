@@ -48,6 +48,52 @@
 
         /usr/local/bin/digidoc-tool
 
+### Ubuntu release packages
+
+The Ubuntu packages published by RIA do not use the distribution's xmlsec.
+They link a patched xmlsec 1.3 statically into libdigidocpp:
+
+* xmlsec 1.2, shipped by Ubuntu 22.04 and 24.04, does not support SHA-3.
+* [xmlsec1-1.3.12.legacy.patch](xmlsec1-1.3.12.legacy.patch) lets older RSA
+  signatures validate when their PKCS#1 DigestInfo omits the NULL algorithm
+  parameter.
+* Static linking leaves the distribution's `libxmlsec1` package untouched for
+  other software.
+
+To build the same way:
+
+1. Build and install xmlsec next to the libdigidocpp checkout
+
+        sudo apt install build-essential
+        curl -LO https://github.com/lsh123/xmlsec/releases/download/1.3.12/xmlsec1-1.3.12.tar.gz
+        tar xf xmlsec1-1.3.12.tar.gz
+        cd xmlsec1-1.3.12
+        patch -Np1 -i ../libdigidocpp/xmlsec1-1.3.12.legacy.patch
+        ./configure --prefix=/opt/xmlsec1-static \
+          --disable-dependency-tracking \
+          --disable-shared \
+          --with-pic \
+          --disable-crypto-dl \
+          --disable-apps-crypto-dl \
+          --without-gnutls \
+          --without-gcrypt \
+          --without-nss \
+          --enable-openssl3-engines \
+          --without-libltdl \
+          --without-libxslt \
+          --disable-apps \
+          --enable-static-linking
+        make
+        sudo make install
+        cd ..
+
+2. Point pkg-config at it when configuring libdigidocpp, or when running
+   `dpkg-buildpackage`
+
+        cd libdigidocpp
+        export PKG_CONFIG_PATH=/opt/xmlsec1-static/lib/pkgconfig
+        cmake --preset default
+
 ### macOS
 
 1. Install dependencies from
