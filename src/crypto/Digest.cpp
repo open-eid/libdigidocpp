@@ -47,29 +47,10 @@ Digest::Digest(string_view uri)
         THROW_OPENSSLEXCEPTION("Failed to initialize %.*s digest calculator", int(uri.size()), uri.data());
 }
 
-vector<unsigned char> Digest::addDigestInfo(vector<unsigned char> digest, string_view uri)
-{
-    switch(toMethod(uri))
-    {
-    case NID_sha1: digest.insert(digest.cbegin(),
-        {0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14}); break;
-    case NID_sha224: digest.insert(digest.cbegin(),
-        {0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1c}); break;
-    case NID_sha256: digest.insert(digest.cbegin(),
-        {0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20}); break;
-    case NID_sha384: digest.insert(digest.begin(),
-        {0x30, 0x41, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30}); break;
-    case NID_sha512: digest.insert(digest.cbegin(),
-        {0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40}); break;
-    default: break;
-    }
-    return digest;
-}
-
 vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> &digest)
 {
     const unsigned char *p = digest.data();
-    SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(digest.size())));
+    auto sig = make_unique_ptr<X509_SIG_free>(d2i_X509_SIG(nullptr, &p, long(digest.size())));
     if(!sig)
         return {};
     const ASN1_OCTET_STRING *value {};
@@ -80,7 +61,7 @@ vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> 
 string Digest::digestInfoUri(const std::vector<unsigned char> &digest)
 {
     const unsigned char *p = digest.data();
-    SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(digest.size())));
+    auto sig = make_unique_ptr<X509_SIG_free>(d2i_X509_SIG(nullptr, &p, long(digest.size())));
     if(!sig)
         return {};
     const X509_ALGOR *algor {};
