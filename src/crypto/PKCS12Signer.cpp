@@ -54,10 +54,10 @@ public:
 PKCS12Signer::PKCS12Signer(const string &path, const string &pass)
     : d(make_unique<Private>())
 {
-    auto bio = SCOPE_PTR(BIO, BIO_new_file(path.c_str(), "rb"));
+    auto bio = make_unique_ptr<BIO_free>(BIO_new_file(path.c_str(), "rb"));
     if(!bio)
         THROW_OPENSSLEXCEPTION("Failed to open PKCS12 certificate: %s.", path.c_str());
-    auto p12 = SCOPE_PTR(PKCS12, d2i_PKCS12_bio(bio.get(), nullptr));
+    auto p12 = make_unique_ptr<PKCS12_free>(d2i_PKCS12_bio(bio.get(), nullptr));
     if(!p12)
         THROW_OPENSSLEXCEPTION("Failed to read PKCS12 certificate: %s.", path.c_str());
     if(!PKCS12_parse(p12.get(), pass.c_str(), &d->key, &d->cert, nullptr))
@@ -82,7 +82,7 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
     int result = 0;
     vector<unsigned char> signature;
     size_t size = 0;
-    SCOPE(EVP_PKEY_CTX, ctx, EVP_PKEY_CTX_new(d->key, nullptr));
+    auto ctx = make_unique_ptr<EVP_PKEY_CTX_free>(EVP_PKEY_CTX_new(d->key, nullptr));
     if(!ctx || EVP_PKEY_sign_init(ctx.get()) <= 0)
         THROW_OPENSSLEXCEPTION("Failed to sign the digest");
     switch(EVP_PKEY_base_id(d->key))
@@ -111,8 +111,7 @@ vector<unsigned char> PKCS12Signer::sign(const string &method, const vector<unsi
         result = EVP_PKEY_sign(ctx.get(), asn1.data(), &size, digest.data(), digest.size());
         if(result <= 0)
             break;
-        const unsigned char *p = asn1.data();
-        SCOPE(ECDSA_SIG, sig, d2i_ECDSA_SIG(nullptr, &p, long(asn1.size())));
+        auto sig = d2i<d2i_ECDSA_SIG, ECDSA_SIG_free>(asn1);
         const BIGNUM *r = nullptr, *s = nullptr;
         ECDSA_SIG_get0(sig.get(), &r, &s);
         auto r_len = size_t(BN_num_bytes(r));
