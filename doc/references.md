@@ -126,6 +126,10 @@ ETSI TS 119 612 V2.2.1 (2016-04) – Electronic Signatures and Infrastructures (
 
 https://www.etsi.org/deliver/etsi_ts/119600_119699/119612/02.04.01_60/ts_119612v020401p.pdf<br />
 https://www.etsi.org/deliver/etsi_ts/119600_119699/119612/02.02.01_60/ts_119612v020201p.pdf
+</td></tr><tr><td>\anchor CryptoSuites Cryptographic Suites</td><td>
+ETSI TS 119 312 V2.1.1 (2026-06) – Electronic Signatures and Trust Infrastructures (ESI); Cryptographic Suites
+
+https://www.etsi.org/deliver/etsi_ts/119300_119399/119312/02.01.01_60/ts_119312v020101p.pdf
 </td></tr><tr><td>\anchor SiVa SiVa</td><td>
 Digital signature validation web service that provides SOAP and JSON API to validate files
 
