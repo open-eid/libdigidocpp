@@ -120,10 +120,10 @@ int Digest::toMethod(string_view uri)
     if(uri == URI_SHA384 || uri == URI_RSA_SHA384 || uri == URI_RSA_PSS_SHA384 || uri == URI_ECDSA_SHA384) return NID_sha384;
     if(uri == URI_SHA512 || uri == URI_RSA_SHA512 || uri == URI_RSA_PSS_SHA512 || uri == URI_ECDSA_SHA512) return NID_sha512;
 #ifndef LIBRESSL_VERSION_NUMBER
-    if(uri == URI_SHA3_224 || uri == URI_RSA_PSS_SHA3_224) return NID_sha3_224;
-    if(uri == URI_SHA3_256 || uri == URI_RSA_PSS_SHA3_256) return NID_sha3_256;
-    if(uri == URI_SHA3_384 || uri == URI_RSA_PSS_SHA3_384) return NID_sha3_384;
-    if(uri == URI_SHA3_512 || uri == URI_RSA_PSS_SHA3_512) return NID_sha3_512;
+    if(uri == URI_SHA3_224 || uri == URI_RSA_PSS_SHA3_224 || uri == URI_ECDSA_SHA3_224) return NID_sha3_224;
+    if(uri == URI_SHA3_256 || uri == URI_RSA_PSS_SHA3_256 || uri == URI_ECDSA_SHA3_256) return NID_sha3_256;
+    if(uri == URI_SHA3_384 || uri == URI_RSA_PSS_SHA3_384 || uri == URI_ECDSA_SHA3_384) return NID_sha3_384;
+    if(uri == URI_SHA3_512 || uri == URI_RSA_PSS_SHA3_512 || uri == URI_ECDSA_SHA3_512) return NID_sha3_512;
 #endif
     THROW("Digest method URI '%.*s' is not supported.", int(uri.size()), uri.data());
 }
@@ -169,11 +169,19 @@ string Digest::toEcUri(const string &uri)
     if(uri == URI_SHA256) return URI_ECDSA_SHA256;
     if(uri == URI_SHA384) return URI_ECDSA_SHA384;
     if(uri == URI_SHA512) return URI_ECDSA_SHA512;
+    if(uri == URI_SHA3_224) return URI_ECDSA_SHA3_224;
+    if(uri == URI_SHA3_256) return URI_ECDSA_SHA3_256;
+    if(uri == URI_SHA3_384) return URI_ECDSA_SHA3_384;
+    if(uri == URI_SHA3_512) return URI_ECDSA_SHA3_512;
     if(uri == URI_ECDSA_SHA1 ||
         uri == URI_ECDSA_SHA224 ||
         uri == URI_ECDSA_SHA256 ||
         uri == URI_ECDSA_SHA384 ||
-        uri == URI_ECDSA_SHA512)
+        uri == URI_ECDSA_SHA512 ||
+        uri == URI_ECDSA_SHA3_224 ||
+        uri == URI_ECDSA_SHA3_256 ||
+        uri == URI_ECDSA_SHA3_384 ||
+        uri == URI_ECDSA_SHA3_512)
         return uri;
     return {};
 }
