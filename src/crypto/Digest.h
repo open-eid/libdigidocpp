@@ -85,7 +85,6 @@ namespace digidoc
           static std::string toEcUri(const std::string &uri);
           static int toMethod(std::string_view uri);
           static std::string toUri(int nid);
-          static std::vector<unsigned char> addDigestInfo(std::vector<unsigned char> digest, std::string_view uri);
           static std::vector<unsigned char> digestInfoDigest(const std::vector<unsigned char> &digest);
           static std::string digestInfoUri(const std::vector<unsigned char> &digest);
 
