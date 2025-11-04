@@ -25,17 +25,11 @@
 #include <DataFile.h>
 #include <Signature.h>
 #include <XmlConf.h>
+#include <XMLDocument.h>
 #include <crypto/Digest.h>
 #include <crypto/PKCS12Signer.h>
 #include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
-
-#include <xmlsec/xmlsec.h>
-
-constexpr auto VERSION_CHECK(int major, int minor, int patch)
-{
-    return (major<<16)|(minor<<8)|patch;
-}
 
 namespace digidoc
 {
@@ -588,5 +582,21 @@ BOOST_AUTO_TEST_CASE(TeRaEmptyASiCSContainer)
 BOOST_AUTO_TEST_CASE(OpenInvalidMimetypeContainer)
 {
     BOOST_CHECK_THROW(Container::openPtr("test-invalid.asics"), Exception);
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(XMLTestSuite)
+BOOST_AUTO_TEST_CASE(XMLBomb)
+{
+    BOOST_CHECK_EQUAL(XMLDocument("xml-bomb-attr.xml"), false);
+    BOOST_CHECK_EQUAL(XMLDocument("xml-bomb-cont.xml"), false);
+    if(std::fstream f{"xml-bomb-attr.xml"})
+        BOOST_CHECK_THROW(XMLDocument::openStream(f), Exception);
+    if(std::fstream f{"xml-bomb-cont.xml"})
+        BOOST_CHECK_THROW(XMLDocument::openStream(f), Exception);
+    if(std::fstream f{"xml-bomb-attr.xml"})
+        BOOST_CHECK_THROW(XMLDocument::openStream(f, {}, true), Exception);
+    if(std::fstream f{"xml-bomb-cont.xml"})
+        BOOST_CHECK_THROW(XMLDocument::openStream(f, {}, true), Exception);
 }
 BOOST_AUTO_TEST_SUITE_END()

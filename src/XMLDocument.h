@@ -315,13 +315,19 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
             return is->good() || is->eof() ? int(is->gcount()) : -1;
         }, nullptr, &is, XML_CHAR_ENCODING_NONE));
 #if VERSION_CHECK(XMLSEC_VERSION_MAJOR, XMLSEC_VERSION_MINOR, XMLSEC_VERSION_SUBMINOR) >= VERSION_CHECK(1, 3, 0)
-        ctxt->options |= xmlSecParserGetDefaultOptions();
+        ctxt->options |= xmlSecParserGetDefaultOptions() & ~XML_PARSE_HUGE;
 #else
-        ctxt->options |= XML_PARSE_NOENT|XML_PARSE_DTDLOAD|XML_PARSE_DTDATTR|XML_PARSE_NONET;
+        ctxt->options |= XML_PARSE_NOENT|XML_PARSE_DTDLOAD|XML_PARSE_DTDATTR|XML_PARSE_NONET|XML_PARSE_NODICT;
 #endif
         ctxt->loadsubset |= XML_DETECT_IDS|XML_COMPLETE_ATTRS;
         if(hugeFile)
+        {
             ctxt->options |= XML_PARSE_HUGE;
+#if LIBXML_VERSION < 21300
+            if(ctxt->sax)
+                ctxt->sax->entityDecl = 0;
+#endif
+        }
         auto result = xmlParseDocument(ctxt.get());
         if(result != 0 || !ctxt->wellFormed)
         {

