@@ -315,7 +315,7 @@ const ZipSerialize::Properties& ASiContainer::zproperty(string_view file) const
 string ASiContainer::readMimetype(const ZipSerialize &z)
 {
     DEBUG("ASiContainer::readMimetype()");
-    string text = z.extract<stringstream>("mimetype").str();
+    string text = z.read("mimetype");
     text.erase(text.find_last_not_of(" \n\r\f\t\v") + 1);
     if(text.empty())
         THROW("Failed to read mimetype.");

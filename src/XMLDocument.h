@@ -307,13 +307,19 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
         : XMLDocument(path.empty() ? nullptr : xmlParseFile(path.c_str()), n)
     {}
 
-    static XMLDocument openStream(std::istream &is, const XMLName &name = {}, bool hugeFile = false)
+    template <typename F>
+    static XMLDocument open(F &&f, const XMLName &name = {}, bool hugeFile = false)
+    requires (std::is_invocable_r_v<size_t, F, char*, size_t>)
     {
-        auto ctxt = make_unique_ptr<xmlFreeParserCtxt>(xmlCreateIOParserCtxt(nullptr, nullptr, [](void *context, char *buffer, int len) -> int {
-            auto *is = static_cast<std::istream *>(context);
-            is->read(buffer, len);
-            return is->good() || is->eof() ? int(is->gcount()) : -1;
-        }, nullptr, &is, XML_CHAR_ENCODING_NONE));
+        auto ctxt = make_unique_ptr<xmlFreeParserCtxt>(xmlCreateIOParserCtxt(nullptr, nullptr, [](void *context, char *buffer, int len) noexcept -> int {
+            try {
+                auto *f = static_cast<F*>(context);
+                return (*f)(buffer, size_t(len));
+            } catch(...) {
+                ERR("Failed to read from stream");
+                return -1;
+            }
+        }, nullptr, &f, XML_CHAR_ENCODING_NONE));
         ctxt->options |= XML_PARSE_NOENT|XML_PARSE_DTDLOAD|XML_PARSE_DTDATTR|XML_PARSE_NONET|XML_PARSE_NODICT;
 #if LIBXML_VERSION >= 21300
         ctxt->options |= XML_PARSE_NO_XXE;
@@ -336,6 +342,14 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
             THROW("Failed to parse XML document from stream");
         }
         return {ctxt->myDoc, name};
+    }
+
+    static XMLDocument openStream(std::istream &is, const XMLName &name = {}, bool hugeFile = false)
+    {
+        return open([&is](char *data, size_t size) {
+            is.read(data, size);
+            return is.good() || is.eof() ? int(is.gcount()) : -1;
+        }, name, hugeFile);
     }
 
     static XMLDocument create(std::string_view name = {}, std::string_view href = {}, std::string_view prefix = {}) noexcept
@@ -400,13 +414,18 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
     }
 
     template <typename F>
-    std::enable_if_t<std::is_invocable_v<F, const char*, size_t>, bool>
-    save(F &&f, bool format = false) const noexcept
+    bool save(F &&f, bool format = false) const noexcept
+    requires (std::is_invocable_v<F, const char*, size_t>)
     {
-        auto *buf = xmlOutputBufferCreateIO([](void *context, const char *buffer, int len) {
-            auto *f = static_cast<F*>(context);
-            (*f)(buffer, size_t(len));
-            return len;
+        auto *buf = xmlOutputBufferCreateIO([](void *context, const char *buffer, int len) noexcept {
+            try {
+                auto *f = static_cast<F*>(context);
+                (*f)(buffer, size_t(len));
+                return len;
+            } catch(...) {
+                ERR("Failed to write XML file to stream");
+                return -1;
+            }
         }, nullptr, &f, nullptr);
         return xmlSaveFormatFileTo(buf, get(), "UTF-8", format) > 0;
     }

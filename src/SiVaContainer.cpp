@@ -175,7 +175,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
                 continue;
             if(const auto directory = File::directory(file);
                 directory.empty() || directory == "/" || directory == "./")
-                d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(z.extract<stringstream>(file)), file, "application/octet-stream"));
+                d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(z.read(file).operator string()), file, "application/octet-stream"));
         }
     }
     else
