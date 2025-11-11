@@ -24,6 +24,7 @@
 #include "util/log.h"
 #include "util/ZipSerialize.h"
 
+#include <array>
 #include <fstream>
 #include <sstream>
 
@@ -102,12 +103,24 @@ DataFilePrivate::DataFilePrivate(const ZipSerialize &z, string filename, string 
     , m_filename(std::move(filename))
     , m_mediatype(std::move(mediatype))
 {
-    auto prop = z.properties(m_filename);
-    d->size.emplace(prop.size);
-    if(d->size.value() > MAX_MEM_FILE)
-        m_is = make_unique<fstream>(z.extract<fstream>(m_filename));
+    auto r = z.read(m_filename);
+    d->size.emplace(r.size);
+    if(r.size > MAX_MEM_FILE)
+    {
+        auto fs = make_unique<fstream>(util::File::tempFileName(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
+        if(!fs->is_open())
+            THROW("Failed to open destination file");
+        array<char,10240> buf{};
+        for(size_t size = 0, currentStreamSize = 0;
+             (size = r(buf.data(), buf.size())) > 0; currentStreamSize += size)
+        {
+            if(!fs->write(buf.data(), size))
+                THROW("Failed to write '%s' data to stream. Stream size: %d", m_filename.c_str(), currentStreamSize);
+        }
+        m_is = std::move(fs);
+    }
     else
-        m_is = make_unique<stringstream>(z.extract<stringstream>(m_filename));
+        m_is = make_unique<stringstream>(r.operator string());
 }
 
 void DataFilePrivate::digest(const Digest &digest) const

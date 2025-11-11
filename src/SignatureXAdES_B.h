@@ -40,7 +40,7 @@ namespace digidoc
     {
     public:
         explicit Signatures();
-        Signatures(std::istream &data, std::string_view mediaType);
+        Signatures(XMLDocument &&doc, std::string_view mediaType);
 
         constexpr XMLNode signature() const noexcept
         {

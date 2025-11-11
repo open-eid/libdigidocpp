@@ -197,8 +197,8 @@ Signatures::Signatures()
     addNS(XADES_NS, "xades");
 }
 
-Signatures::Signatures(istream &data, string_view mediaType)
-    : XMLDocument(openStream(data))
+Signatures::Signatures(XMLDocument &&doc, string_view mediaType)
+    : XMLDocument(std::move(doc))
 {
     /* http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
      * 6.2.2

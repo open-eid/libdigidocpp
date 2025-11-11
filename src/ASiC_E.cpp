@@ -129,7 +129,7 @@ void ASiC_E::addAdESSignature(istream &data)
         THROW("'%s' format is not supported", mediaType().c_str());
     try
     {
-        loadSignatures(data, d->unique_name());
+        loadSignatures(XMLDocument::openStream(data), d->unique_name());
     }
     catch(const Exception &e)
     {
@@ -149,9 +149,9 @@ unique_ptr<Container> ASiC_E::openInternal(const string &path)
     return unique_ptr<Container>(new ASiC_E(path));
 }
 
-void ASiC_E::loadSignatures(istream &data, const string &file)
+void ASiC_E::loadSignatures(XMLDocument &&doc, const string &file)
 {
-    auto signatures = make_shared<Signatures>(data, mediaType());
+    auto signatures = make_shared<Signatures>(std::move(doc), mediaType());
     d->signatures.emplace(file, signatures.get());
     for(auto s = signatures->signature(); s; s++)
         addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
@@ -170,8 +170,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 
     try
     {
-        auto manifestdata = z.extract<stringstream>("META-INF/manifest.xml");
-        auto doc = XMLDocument::openStream(manifestdata, {"manifest", MANIFEST_NS});
+        auto doc = XMLDocument::open(z.read("META-INF/manifest.xml"), {"manifest", MANIFEST_NS});
         doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
 
         set<string_view> manifestFiles;
@@ -219,8 +218,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             {
                 try
                 {
-                    auto data = z.extract<stringstream>(file);
-                    loadSignatures(data, file);
+                    loadSignatures(XMLDocument::open(z.read(file)), file);
                 }
                 catch(const Exception &e)
                 {

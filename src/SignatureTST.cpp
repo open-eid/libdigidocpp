@@ -68,7 +68,7 @@ struct SignatureTST::Data {
 SignatureTST::SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDoc)
     : asicSDoc(asicSDoc)
 {
-    auto data = z.extract<stringstream>("META-INF/timestamp.tst").str();
+    string data = z.read("META-INF/timestamp.tst");
     timestampToken = make_unique<TS>((const unsigned char*)data.data(), data.size());
     if(manifest)
     {
@@ -76,14 +76,13 @@ SignatureTST::SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDo
         string file = "META-INF/ASiCArchiveManifest.xml";
         string mime = "text/xml";
         while(!file.empty()) {
-            auto xml = z.extract<stringstream>(file);
+            stringstream xml(z.read(file).operator string());
             XMLDocument doc = XMLDocument::openStream(xml, {"ASiCManifest", ASiContainer::ASIC_NS});
             schema.validate(doc);
             auto ref = doc/"SigReference";
             string uri = util::File::fromUriPath(ref["URI"]);
-            string tst = z.extract<stringstream>(uri).str();
             metadata.emplace_back(std::move(file), std::move(mime), xml.str());
-            metadata.emplace_back(std::move(uri), string(ref["MimeType"]), std::move(tst));
+            metadata.emplace_back(std::move(uri), string(ref["MimeType"]), z.read(uri));
             file.clear();
 
             for(auto ref = doc/"DataObjectReference"; ref; ref++)

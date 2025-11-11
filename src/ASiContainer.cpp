@@ -90,7 +90,7 @@ ZipSerialize ASiContainer::load(const string &path, bool mimetypeRequired, const
 
     if(list.front() == "mimetype")
     {
-        d->mimetype = readMimetype(z);
+        d->mimetype = z.mimetype();
         if(!contains(supported, d->mimetype))
             THROW("Incorrect mimetype '%s'", d->mimetype.c_str());
     }
@@ -284,27 +284,4 @@ const ZipSerialize::Properties& ASiContainer::zproperty(string_view file) const
     if(auto i = d->properties.find(file); i != d->properties.cend())
         return i->second;
     return d->properties[string(file)] = { appInfo(), time(nullptr), 0 };
-}
-
-/**
- * Reads and parses container mimetype. Checks that the mimetype is supported.
- *
- * @param path path to container directory.
- * @throws IOException exception is thrown if there was error reading mimetype file from disk.
- * @throws ContainerException exception is thrown if the parsed mimetype is incorrect.
- */
-string ASiContainer::readMimetype(const ZipSerialize &z)
-{
-    DEBUG("ASiContainer::readMimetype()");
-    string text = z.extract<stringstream>("mimetype").str();
-    text.erase(text.find_last_not_of(" \n\r\f\t\v") + 1);
-    if(text.empty())
-        THROW("Failed to read mimetype.");
-    // Contains UTF-16 BOM
-    if(text.find("\xFF\xEF") == 0 || text.find("\xEF\xFF") == 0)
-        THROW("Mimetype file must be UTF-8 format.");
-    // contains UTF-8 BOM, remove
-    if(text.find("\xEF\xBB\xBF") == 0)
-        text.erase(text.cbegin(), text.cbegin() + 3);
-    return text;
 }
