@@ -68,8 +68,7 @@ vector<unsigned char> Digest::addDigestInfo(vector<unsigned char> digest, string
 
 vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> &digest)
 {
-    const unsigned char *p = digest.data();
-    SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(digest.size())));
+    auto sig = d2i<d2i_X509_SIG, X509_SIG_free>(digest);
     if(!sig)
         return {};
     const ASN1_OCTET_STRING *value {};
@@ -79,8 +78,7 @@ vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> 
 
 string Digest::digestInfoUri(const std::vector<unsigned char> &digest)
 {
-    const unsigned char *p = digest.data();
-    SCOPE(X509_SIG, sig, d2i_X509_SIG(nullptr, &p, long(digest.size())));
+    auto sig = d2i<d2i_X509_SIG, X509_SIG_free>(digest);
     if(!sig)
         return {};
     const X509_ALGOR *algor {};
