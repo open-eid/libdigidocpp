@@ -66,8 +66,7 @@ ASiC_S::ASiC_S(const string &path)
         {
             if(!signatures().empty())
                 THROW("Can not add signature to ASiC-S container which already contains a signature.");
-            auto data = z.extract<stringstream>(file);
-            auto signatures = make_shared<Signatures>(data, mediaType());
+            auto signatures = make_shared<Signatures>(XMLDocument::open(z.read(file)), mediaType());
             for(auto s = signatures->signature(); s; s++)
                 addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
         }

@@ -54,7 +54,7 @@ namespace digidoc
           ASiC_E(const std::string &path);
           DISABLE_COPY(ASiC_E);
           void canSave() final;
-          void loadSignatures(std::istream &data, const std::string &file);
+          void loadSignatures(XMLDocument &&doc, const std::string &file);
           void parseManifestAndLoadFiles(const ZipSerialize &z);
           void save(const ZipSerialize &s) final;
 

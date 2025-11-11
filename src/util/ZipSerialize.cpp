@@ -32,9 +32,6 @@
 #endif
 
 #include <algorithm>
-#include <array>
-#include <fstream>
-#include <sstream>
 
 using namespace digidoc;
 using namespace std;
@@ -107,19 +104,19 @@ vector<string> ZipSerialize::list() const
 }
 
 /**
- * Extracts current file from ZIP file to stream.
+ * Reads current file from ZIP file.
  *
  * @param file path to opened ZIP in file.
- * @throws Exception throws exception if the extraction of the current file fails from ZIP
- *         file or creating new file to disk failed.
+ * @throws Exception throws exception if the extraction of the current file fails from ZIP file
  */
-template<class T>
-T ZipSerialize::extract(string_view file) const
+ZipSerialize::Read ZipSerialize::read(string_view file) const
 {
-    DEBUG("ZipSerializePrivate::extract(%.*s)", int(file.size()), file.data());
-    T os;
+    if(!d)
+        THROW("Zip file is not open");
+
+    DEBUG("ZipSerialize::read(%.*s)", int(file.size()), file.data());
     if(file.empty() || file.back() == '/')
-        return os;
+        return {{nullptr, unzCloseCurrentFile}, 0};
 
     int unzResult = unzLocateFile(d.get(), file.data(), 1);
     if(unzResult != UNZ_OK)
@@ -129,36 +126,11 @@ T ZipSerialize::extract(string_view file) const
     if(unzResult != UNZ_OK)
         THROW("Failed to open '%.*s' inside ZIP container. ZLib error: %d", int(file.size()), file.data(), unzResult);
 
-    if constexpr(std::is_same_v<T, fstream>)
-    {
-        os.open(util::File::tempFileName(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
-        if(!os.is_open())
-            THROW("Failed to open destination file");
-    }
-    array<char,10240> buf{};
-    for(int currentStreamSize = 0;
-         (unzResult = unzReadCurrentFile(d.get(), buf.data(), buf.size())) > UNZ_EOF; currentStreamSize += unzResult)
-    {
-        if(!os.write(buf.data(), unzResult))
-        {
-            unzCloseCurrentFile(d.get());
-            THROW("Failed to write '%.*s' data to stream. Stream size: %d", int(file.size()), file.data(), currentStreamSize);
-        }
-    }
-    if(unzResult < UNZ_EOF)
-    {
-        unzCloseCurrentFile(d.get());
-        THROW("Failed to read bytes from '%.*s' inside ZIP container. ZLib error: %d", int(file.size()), file.data(), unzResult);
-    }
+    unz_file_info info {};
+    unzGetCurrentFileInfo(d.get(), &info, nullptr, 0, nullptr, 0, nullptr, 0);
 
-    unzResult = unzCloseCurrentFile(d.get());
-    if(unzResult != UNZ_OK)
-        THROW("Failed to close '%.*s' inside ZIP container. ZLib error: %d", int(file.size()), file.data(), unzResult);
-    return os;
+    return {{d.get(), unzCloseCurrentFile}, size_t(info.uncompressed_size)};
 }
-
-template fstream ZipSerialize::extract<fstream>(string_view file) const;
-template stringstream ZipSerialize::extract<stringstream>(string_view file) const;
 
 /**
  * Add new file to ZIP container.
@@ -194,6 +166,27 @@ ZipSerialize::Write ZipSerialize::addFile(string_view containerPath, const Prope
     return {{d.get(), zipCloseFileInZip}};
 }
 
+/**
+ * Reads mimetype.
+ *
+ * @throws IOException exception is thrown if there was error reading mimetype file.
+ */
+string ZipSerialize::mimetype() const
+{
+    DEBUG("ZipSerialize::mimetype()");
+    string text = read("mimetype");
+    text.erase(text.find_last_not_of(" \n\r\f\t\v") + 1);
+    if(text.empty())
+        THROW("Failed to read mimetype.");
+    // Contains UTF-16 BOM
+    if(text.find("\xFF\xEF") == 0 || text.find("\xEF\xFF") == 0)
+        THROW("Mimetype file must be UTF-8 format.");
+    // contains UTF-8 BOM, remove
+    if(text.find("\xEF\xBB\xBF") == 0)
+        text.erase(text.cbegin(), text.cbegin() + 3);
+    return text;
+}
+
 ZipSerialize::Properties ZipSerialize::properties(const string &file) const
 {
     int unzResult = unzLocateFile(d.get(), file.c_str(), 1);
@@ -220,6 +213,14 @@ ZipSerialize::Properties ZipSerialize::properties(const string &file) const
         THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
 
     return prop;
+}
+
+size_t ZipSerialize::Read::operator()(void *data, size_t size) const
+{
+    auto result = unzReadCurrentFile(d.get(), data, size);
+    if(result >= UNZ_EOF)
+        return size_t(result);
+    THROW("Failed to read bytes from ZIP container. ZLib error: %d", result);
 }
 
 void ZipSerialize::Write::operator()(const void *data, size_t size) const

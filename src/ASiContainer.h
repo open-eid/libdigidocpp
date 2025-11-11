@@ -58,8 +58,6 @@ namespace digidoc
           void save(const std::string &path) override;
           std::vector<Signature*> signatures() const override;
 
-          static std::string readMimetype(const ZipSerialize &z);
-
       protected:
           ASiContainer(std::string_view mimetype);
 

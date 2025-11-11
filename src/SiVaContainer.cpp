@@ -164,12 +164,10 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     else if(File::fileExtension(path, {"asice", "sce", "asics", "scs"}))
     {
         ZipSerialize z(path, false);
-        vector<string> list = z.list();
-        if(list.front() != "mimetype")
-            THROW("Missing mimetype");
-        if(d->mediaType = ASiContainer::readMimetype(z);
+        if(d->mediaType = z.mimetype();
             d->mediaType != ASiContainer::MIMETYPE_ASIC_E && d->mediaType != ASiContainer::MIMETYPE_ASIC_S)
             THROW("Unknown file");
+        vector<string> list = z.list();
         if(none_of(list.cbegin(), list.cend(), [](const string &file) {
                 return file.starts_with("META-INF/") && util::File::fileExtension(file, {"p7s"});
             }))
