@@ -178,7 +178,7 @@ void SignatureCAdES_B::validate(const string &policy) const
         string time = trustedSigningTime();
         if(time.empty())
             THROW("SigningTime missing");
-        if(!X509CertStore::instance()->verify(signingCertificate(), policy == POLv1))
+        if(!signingCertificate().verify(policy == POLv1))
             THROW("Unable to verify signing certificate");
     } catch(const Exception &e) {
         exception.addCause(e);
