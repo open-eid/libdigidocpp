@@ -3,7 +3,7 @@ param(
   [string]$libdigidocpp = $PSScriptRoot,
   [string]$platform = $env:PLATFORM,
   [string]$build_number = $(if ($null -eq $env:BUILD_NUMBER) {"0"} else {$env:BUILD_NUMBER}),
-  [string]$msiversion = "4.3.0.$build_number",
+  [string]$msiversion = "4.4.0.$build_number",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.$platform.msi",
   [string]$git = "git.exe",
   [string]$vcpkg = "vcpkg\vcpkg.exe",
