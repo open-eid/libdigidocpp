@@ -83,16 +83,17 @@ using namespace std;
 DataFile::DataFile() = default;
 DataFile::~DataFile() = default;
 
+struct DataFilePrivate::Private {
+    optional<unsigned long> size;
+};
 
 DataFilePrivate::DataFilePrivate(unique_ptr<istream> &&is, string filename, string mediatype, string id)
-    : m_is(std::move(is))
+    : d(make_unique<Private>())
+    , m_is(std::move(is))
     , m_id(std::move(id))
     , m_filename(std::move(filename))
     , m_mediatype(std::move(mediatype))
 {
-    m_is->seekg(0, istream::end);
-    istream::pos_type pos = m_is->tellg();
-    m_size = pos < 0 ? 0 : (unsigned long)pos;
 }
 
 void DataFilePrivate::digest(const Digest &digest) const
@@ -107,6 +108,17 @@ vector<unsigned char> DataFilePrivate::calcDigest(const string &method) const
     Digest d(method);
     digest(d);
     return d.result();
+}
+
+unsigned long DataFilePrivate::fileSize() const
+{
+    if(d->size.has_value())
+        return d->size.value();
+    m_is->clear();
+    m_is->seekg(0, istream::end);
+    istream::pos_type pos = m_is->tellg();
+    d->size.emplace(pos < 0 ? 0 : (unsigned long)pos);
+    return d->size.value();
 }
 
 void DataFilePrivate::saveAs(const string& path) const

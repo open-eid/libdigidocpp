@@ -23,6 +23,7 @@
 
 #include <istream>
 #include <memory>
+#include <optional>
 
 namespace digidoc
 {
@@ -31,20 +32,21 @@ class Digest;
 class DataFilePrivate final: public DataFile
 {
 public:
-	DataFilePrivate(std::unique_ptr<std::istream> &&is, std::string filename, std::string mediatype, std::string id = {});
+    DataFilePrivate(std::unique_ptr<std::istream> &&is, std::string filename, std::string mediatype, std::string id = {});
 
-	std::string id() const final { return m_id.empty() ? m_filename : m_id; }
-	std::string fileName() const final { return m_filename; }
-	unsigned long fileSize() const final { return m_size; }
-	std::string mediaType() const final { return m_mediatype; }
+    std::string id() const final { return m_id.empty() ? m_filename : m_id; }
+    std::string fileName() const final { return m_filename; }
+    unsigned long fileSize() const final;
+    std::string mediaType() const final { return m_mediatype; }
 
-	void digest(const Digest &method) const;
-	std::vector<unsigned char> calcDigest(const std::string &method) const final;
-	void saveAs(std::ostream &os) const final;
-	void saveAs(const std::string& path) const final;
+    void digest(const Digest &method) const;
+    std::vector<unsigned char> calcDigest(const std::string &method) const final;
+    void saveAs(std::ostream &os) const final;
+    void saveAs(const std::string& path) const final;
 
-	std::unique_ptr<std::istream> m_is;
-	std::string m_id, m_filename, m_mediatype;
-	unsigned long m_size;
+    struct Private;
+    std::unique_ptr<Private> d;
+    std::unique_ptr<std::istream> m_is;
+    std::string m_id, m_filename, m_mediatype;
 };
 }

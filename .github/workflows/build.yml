@@ -63,7 +63,7 @@ jobs:
         cd /Library
         zip -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
     - name: Archive artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.target }}
         path: |
@@ -84,32 +84,24 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v5
-    - name: Expose Android NDK env
-      shell: bash
-      run: |
-        echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
-        echo "ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
     - name: Cache vcpkg
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/vcpkg_cache
         key: vcpkg-${{ matrix.target }}-${{ hashFiles('vcpkg.json', 'vcpkg-ports/**') }}
-    - name: Prepare vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgJsonGlob: ./vcpkg.json
-        runVcpkgInstall: true
+    - name: Build
       env:
         VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
-        VCPKG_DEFAULT_TRIPLET: ${{ matrix.triplet }}
-    - name: Build
       run: |
+        export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
+        export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
+        export ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME
         cmake --preset ${{ matrix.target }} "-GUnix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build --preset ${{ matrix.target }}
         cmake --build --preset ${{ matrix.target }} --target install/strip
         zip -q -r libdigidocpp.${{ matrix.target }}.zip libdigidocpp.${{ matrix.target }}
     - name: Archive artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.target }}
         path: |
@@ -120,7 +112,7 @@ jobs:
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [41, 42, 43, rawhide]
+        container: [42, 43, rawhide]
     steps:
     - name: Install Deps
       run: |
@@ -134,7 +126,7 @@ jobs:
         cmake --build build
         cmake --build build --target package
     - name: Archive artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: fedora_${{ matrix.container }}
         path: build/libdigidocpp*.rpm
@@ -177,7 +169,7 @@ jobs:
     - name: Lintian
       run: lintian *.deb;
     - name: Archive artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.dist }}_${{ matrix.ver }}_${{ matrix.arch }}
         path: libdigidocpp*.*
@@ -206,16 +198,6 @@ jobs:
       with:
         path: ${{ github.workspace }}/vcpkg_cache
         key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json', 'vcpkg-ports/**') }}
-    - name: Prepare vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgJsonGlob: ./vcpkg.json
-        runVcpkgInstall: true
-        runVcpkgFormatString: "[`install`, `--recurse`, `--clean-after-build`, `--x-install-root`, `$[env.VCPKG_INSTALLED_DIR]`, `--triplet`, `$[env.VCPKG_DEFAULT_TRIPLET]`, `--x-feature`, `tests`]"
-      env:
-        VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
-        VCPKG_DEFAULT_TRIPLET: ${{ matrix.platform }}-windows
-        VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed_${{ matrix.platform }}
     - name: Install dependencies
       run: winget install --silent --accept-source-agreements --accept-package-agreements swig doxygen
     - uses: actions/setup-java@v4
@@ -228,14 +210,17 @@ jobs:
         python-version: 3.12
         architecture: ${{ matrix.platform }}
     - name: Build
+      env:
+        VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
       run: |
         $swig = (Get-Item "$env:LOCALAPPDATA\Microsoft\WinGet\Links\swig.exe").Target
         & "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat" ${{ matrix.setenv }} "&&" pwsh build.ps1 `
+          -vcpkg "C:/vcpkg/vcpkg.exe" `
           -swig $swig `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
           -boost
     - name: Archive artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: msi_${{ matrix.toolset }}_${{ matrix.platform }}
         path: ./*.msi
