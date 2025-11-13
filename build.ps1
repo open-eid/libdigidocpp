@@ -16,7 +16,8 @@ param(
   [string]$swig = $null,
   [string]$doxygen = $null,
   [switch]$boost = $false,
-  [string]$sign = $null
+  [string]$sign = $null,
+  [string]$python = $null
 )
 
 Try {
@@ -43,13 +44,15 @@ if($doxygen) {
   $cmakeext += "-DDOXYGEN_EXECUTABLE=$doxygen"
 }
 if($platform -eq "arm64" -and $env:VSCMD_ARG_HOST_ARCH -ne "arm64") {
-  $cmakeext += "-DCMAKE_DISABLE_FIND_PACKAGE_Python3=yes"
-  $wixext += "-d", "disablePython=1"
   $boost = $false
 }
 if($boost) {
   $cmakeext += "-DVCPKG_MANIFEST_FEATURES=tests"
   $target += "check"
+}
+if($python) {
+  $cmakeext += "-DPython3_ROOT_DIR=$python/$platform"
+  $wixext += "-d", "python=1"
 }
 
 foreach($type in @("Debug", "RelWithDebInfo")) {

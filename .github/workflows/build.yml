@@ -183,10 +183,13 @@ jobs:
         include:
         - platform: x86
           setenv: amd64_x86
+          python: 32
         - platform: x64
           setenv: amd64
+          python: 64
         - platform: arm64
           setenv: amd64_arm64
+          python: arm64
     env:
       VER_SUFFIX: .VS${{ matrix.toolset }}
       CXXFLAGS: '/D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR' # https://github.com/actions/runner-images/issues/10004
@@ -199,26 +202,23 @@ jobs:
         path: ${{ github.workspace }}/vcpkg_cache
         key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json', 'vcpkg-ports/**') }}
     - name: Install dependencies
-      run: winget install --silent --accept-source-agreements --accept-package-agreements swig doxygen
+      run: winget install --silent --accept-source-agreements --accept-package-agreements swig doxygen 9NQ7512CXL7T
     - uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
-    - uses: actions/setup-python@v5
-      if: matrix.platform != 'arm64'
-      with:
-        python-version: 3.12
-        architecture: ${{ matrix.platform }}
     - name: Build
       env:
         VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
       run: |
+        & "$env:LOCALAPPDATA\Microsoft\WindowsApps\py.exe" install --target=.\python\${{ matrix.platform }} 3.12-${{ matrix.python }}
         $swig = (Get-Item "$env:LOCALAPPDATA\Microsoft\WinGet\Links\swig.exe").Target
         & "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat" ${{ matrix.setenv }} "&&" pwsh build.ps1 `
           -vcpkg "C:/vcpkg/vcpkg.exe" `
           -swig $swig `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
-          -boost
+          -boost `
+          -python ${{ github.workspace }}/python
     - name: Archive artifacts
       uses: actions/upload-artifact@v5
       with:
