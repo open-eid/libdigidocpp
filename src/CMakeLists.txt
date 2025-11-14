@@ -68,7 +68,7 @@ add_library(digidocpp_util STATIC
 
 target_link_libraries(digidocpp_util PUBLIC digidocpp_ver PRIVATE $<$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:iOS>>:-framework\ CoreFoundation>)
 
-add_library(digidocpp_priv STATIC
+add_library(digidocpp_tsl STATIC
     crypto/Connect.cpp
     crypto/Digest.cpp
     crypto/TSL.cpp
@@ -77,14 +77,14 @@ add_library(digidocpp_priv STATIC
     XMLDocument.h
 )
 
-set_target_properties(digidocpp_util digidocpp_priv PROPERTIES
+set_target_properties(digidocpp_util digidocpp_tsl PROPERTIES
     COMPILE_DEFINITIONS digidocpp_EXPORTS
     POSITION_INDEPENDENT_CODE YES
 )
 
-target_include_directories(digidocpp_priv PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(digidocpp_tsl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(digidocpp_priv
+target_link_libraries(digidocpp_tsl
     digidocpp_util
     ZLIB::ZLIB
     LibXml2::LibXml2
@@ -153,11 +153,11 @@ target_include_directories(digidocpp PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_priv)
+target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_tsl)
 
 if( BUILD_TOOLS )
     add_executable(digidoc-tool digidoc-tool.cpp)
-    target_link_libraries(digidoc-tool digidocpp digidocpp_priv Threads::Threads)
+    target_link_libraries(digidoc-tool digidocpp digidocpp_tsl Threads::Threads)
     target_link_options(digidoc-tool PRIVATE
         $<$<PLATFORM_ID:Windows>: /MANIFEST:NO /MANIFEST:EMBED /MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/digidoc-tool.manifest>
     )
@@ -382,7 +382,7 @@ if( FRAMEWORK )
     )
 else()
     if(NOT ${BUILD_SHARED_LIBS})
-        install( TARGETS minizip digidocpp_priv digidocpp_util DESTINATION ${CMAKE_INSTALL_LIBDIR} )
+        install( TARGETS minizip digidocpp_tsl digidocpp_util DESTINATION ${CMAKE_INSTALL_LIBDIR} )
     endif()
     if( BUILD_TOOLS )
         install( TARGETS digidoc-tool DESTINATION ${CMAKE_INSTALL_BINDIR} )

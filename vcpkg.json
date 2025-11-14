@@ -15,9 +15,9 @@
     "features": {
       "tests": { "description": "Build tests", "dependencies": ["boost-test"] }
     },
-    "builtin-baseline": "98e7cd3a7ba579efc543f8854af800d033031eae",
+    "builtin-baseline": "bc38a15b0bee8bc48a49ea267cc32fbb49aedfc4",
     "vcpkg-configuration": {
         "overlay-triplets": ["./vcpkg-triplets"],
-        "overlay-ports": ["vcpkg-ports/xmlsec"]
+        "overlay-ports": ["vcpkg-ports/libxml2", "vcpkg-ports/xmlsec"]
     }
 }
