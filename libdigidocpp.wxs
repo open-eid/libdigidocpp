@@ -64,7 +64,7 @@
       <File Name="digidoc_csharp.dll" />
       <File Name="digidoc_java.dll" />
       <File Source="$(var.libdigidocpp)\share\digidocpp\digidocpp.jar" />
-<?ifndef var.disablePython ?>
+<?ifdef var.python ?>
       <File Name="_digidoc_python.pyd" />
       <File Name="digidoc.py" />
 <?endif?>
@@ -88,7 +88,7 @@
 <?ifdef var.swig ?>
       <File Name="digidoc_csharpd.dll" />
       <File Name="digidoc_javad.dll" />
-<?ifndef var.disablePython ?>
+<?ifdef var.python ?>
       <File Name="_digidoc_pythond.pyd" />
 <?endif?>
 <?endif?>
