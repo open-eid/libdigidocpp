@@ -335,6 +335,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
         // Reload from file and validate
         d = Container::openPtr(Doc::EXT + ".tmp");
         BOOST_CHECK_EQUAL(d->signatures().size(), 2U);
+        if(d->signatures().empty())
+            return;
         if(s3 = d->signatures().back(); s3)
         {
             BOOST_CHECK_EQUAL(s3->signingCertificate(), signer3.cert());
@@ -401,6 +403,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
         d->save(data + Doc::EXT + ".tmp");
         d = Container::openPtr(data + Doc::EXT + ".tmp");
         BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+        if(d->signatures().empty())
+            return;
         s1 = d->signatures().front();
         s1->validate();
     }

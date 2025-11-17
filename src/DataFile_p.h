@@ -27,12 +27,17 @@
 
 namespace digidoc
 {
+
+constexpr unsigned long MAX_MEM_FILE = 500UL*1024UL*1024UL;
+
 class Digest;
+class ZipSerialize;
 
 class DataFilePrivate final: public DataFile
 {
 public:
     DataFilePrivate(std::unique_ptr<std::istream> &&is, std::string filename, std::string mediatype, std::string id = {});
+    DataFilePrivate(const ZipSerialize &z, std::string filename, std::string mediatype);
 
     std::string id() const final { return m_id.empty() ? m_filename : m_id; }
     std::string fileName() const final { return m_filename; }

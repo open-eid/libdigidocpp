@@ -198,7 +198,7 @@ ZipSerialize::Properties ZipSerialize::properties(const string &file) const
 {
     int unzResult = unzLocateFile(d.get(), file.c_str(), 1);
     if(unzResult != UNZ_OK)
-        THROW("Failed to open file inside ZIP container. ZLib error: %d", unzResult);
+        THROW("Failed to locate '%s' inside ZIP container. ZLib error: %d", file.c_str(), unzResult);
 
     unz_file_info info;
     unzResult = unzGetCurrentFileInfo(d.get(), &info, nullptr, 0, nullptr, 0, nullptr, 0);
