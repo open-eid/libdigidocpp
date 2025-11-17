@@ -105,7 +105,7 @@ private:
     SiVaContainer(const std::string &path, ContainerOpenCB *cb, bool useHashCode);
     DISABLE_COPY(SiVaContainer);
 
-    std::unique_ptr<std::istream> parseDDoc(bool useHashCode);
+    std::unique_ptr<std::istream> parseDDoc(const std::unique_ptr<std::istream> &ddoc, bool useHashCode);
 
     class Private;
     std::unique_ptr<Private> d;

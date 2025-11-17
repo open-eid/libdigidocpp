@@ -64,11 +64,10 @@ namespace digidoc
           ASiContainer(std::string_view mimetype);
 
           virtual void addDataFileChecks(const std::string &path, const std::string &mediaType);
-          void addDataFilePrivate(std::unique_ptr<std::istream> is, std::string fileName, std::string mediaType);
+          void addDataFilePrivate(DataFile *dataFile);
           Signature* addSignature(std::unique_ptr<Signature> &&signature);
           virtual void canSave() = 0;
           XMLDocument createManifest() const;
-          std::unique_ptr<std::iostream> dataStream(std::string_view path, const ZipSerialize &z) const;
           ZipSerialize load(const std::string &path, bool requireMimetype, const std::set<std::string_view> &supported);
           virtual void save(const ZipSerialize &s) = 0;
           void deleteSignature(Signature* s);

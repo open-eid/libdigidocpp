@@ -22,13 +22,14 @@
 #include "crypto/Digest.h"
 #include "util/File.h"
 #include "util/log.h"
+#include "util/ZipSerialize.h"
 
 #include <fstream>
+#include <sstream>
 
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
-
 
 /**
  * @class digidoc::DataFile
@@ -94,6 +95,19 @@ DataFilePrivate::DataFilePrivate(unique_ptr<istream> &&is, string filename, stri
     , m_filename(std::move(filename))
     , m_mediatype(std::move(mediatype))
 {
+}
+
+DataFilePrivate::DataFilePrivate(const ZipSerialize &z, string filename, string mediatype)
+    : d(make_unique<Private>())
+    , m_filename(std::move(filename))
+    , m_mediatype(std::move(mediatype))
+{
+    auto prop = z.properties(m_filename);
+    d->size.emplace(prop.size);
+    if(d->size.value() > MAX_MEM_FILE)
+        m_is = make_unique<fstream>(z.extract<fstream>(m_filename));
+    else
+        m_is = make_unique<stringstream>(z.extract<stringstream>(m_filename));
 }
 
 void DataFilePrivate::digest(const Digest &digest) const

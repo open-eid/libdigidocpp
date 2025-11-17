@@ -36,8 +36,6 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 
-constexpr unsigned long MAX_MEM_FILE = 500UL*1024UL*1024UL;
-
 class ASiContainer::Private
 {
 public:
@@ -140,23 +138,6 @@ vector<Signature *> ASiContainer::signatures() const
 }
 
 /**
- * <p>
- * Read a datafile from container.
- * </p>
- * If expected size of the data is too big, then stream is written to temp file.
- *
- * @param path name of the file in zip container stream is used to read from.
- * @param z Zip container.
- * @return returns data as a stream.
- */
-unique_ptr<iostream> ASiContainer::dataStream(string_view path, const ZipSerialize &z) const
-{
-    if(auto i = d->properties.find(path); i != d->properties.cend() && i->second.size > MAX_MEM_FILE)
-        return make_unique<fstream>(z.extract<fstream>(path));
-    return make_unique<stringstream>(z.extract<stringstream>(path));
-}
-
-/**
  * Adds document to the container. Documents can be removed from container only
  * after all signatures are removed.
  *
@@ -208,9 +189,9 @@ void ASiContainer::addDataFileChecks(const string &fileName, const string &media
         THROW("MediaType does not meet format requirements (RFC2045, section 5.1) '%s'.", mediaType.c_str());
 }
 
-void ASiContainer::addDataFilePrivate(unique_ptr<istream> is, string fileName, string mediaType)
+void ASiContainer::addDataFilePrivate(DataFile *dataFile)
 {
-    d->documents.push_back(new DataFilePrivate(std::move(is), std::move(fileName), std::move(mediaType)));
+    d->documents.push_back(dataFile);
 }
 
 /**

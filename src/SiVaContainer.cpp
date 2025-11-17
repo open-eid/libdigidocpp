@@ -59,12 +59,14 @@ static auto base64_decode(string_view data) {
         0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x64, 0x64, 0x64, 0x64, 0x64
     };
 
-    auto out = make_unique<stringstream>();
+    string buf;
+    buf.reserve(base64_enc_size(data.size()));
+    auto out = make_unique<stringstream>(std::move(buf));
     int value = 0;
     int bits = -8;
     for(auto c: data)
     {
-        if(c == '\r' || c == '\n' || c == ' ')
+        if(c == '\r' || c == '\n' || c == ' ' || static_cast<uint8_t>(c) > 128)
             continue;
         uint8_t check = T[c];
         if(check == 0x64)
@@ -83,8 +85,8 @@ static auto base64_decode(string_view data) {
 class SiVaContainer::Private
 {
 public:
-    string path, mediaType;
-    unique_ptr<istream> ddoc;
+    std::filesystem::path path;
+    string  mediaType;
     vector<DataFile*> dataFiles;
     vector<Signature*> signatures;
 };
@@ -109,26 +111,32 @@ void SignatureSiVa::validate(const string &policy) const
     static const set<string_view> QES = { "QESIG", "QES", "QESEAL",
         "ADESEAL_QC", "ADESEAL" }; // Special treamtent for E-Seals
     Exception e(EXCEPTION_PARAMS("Signature validation"));
-    for(const Exception &exception: _exceptions)
-        e.addCause(exception);
-    if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
-        Digest::isWeakDigest(_signatureMethod))
-    {
-        Exception ex(EXCEPTION_PARAMS("Signature digest weak"));
-        ex.setCode(Exception::SignatureDigestWeak);
-        e.addCause(ex);
-    }
-    if(_indication == "TOTAL-PASSED")
-    {
-        if(QES.count(_signatureLevel) || _signatureLevel.empty() || policy == POLv1)
+    try {
+        for(const Exception &exception: _exceptions)
+            e.addCause(exception);
+        if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
+            Digest::isWeakDigest(_signatureMethod))
         {
-            if(!e.causes().empty())
-                throw e;
-            return;
+            Exception ex(EXCEPTION_PARAMS("Signature digest weak"));
+            ex.setCode(Exception::SignatureDigestWeak);
+            e.addCause(ex);
         }
-        Exception ex(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
-        ex.setCode(Exception::CertificateIssuerMissing);
+        if(_indication == "TOTAL-PASSED")
+        {
+            if(QES.contains(_signatureLevel) || _signatureLevel.empty() || policy == POLv1)
+            {
+                if(!e.causes().empty())
+                    throw e;
+                return;
+            }
+            Exception ex(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
+            ex.setCode(Exception::CertificateIssuerMissing);
+            e.addCause(ex);
+        }
+    } catch(const Exception &ex) {
         e.addCause(ex);
+    } catch(...) {
+        EXCEPTION_ADD(e, "Failed to validate signature");
     }
     if(!e.causes().empty())
         throw e;
@@ -139,14 +147,13 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     : d(make_unique<Private>())
 {
     DEBUG("SiVaContainer::SiVaContainer(%s, %d)", path.c_str(), useHashCode);
-    unique_ptr<istream> ifs = make_unique<ifstream>(File::encodeName(d->path = path), ifstream::binary);
+    unique_ptr<istream> ifs = make_unique<ifstream>(d->path = File::encodeName(path), ifstream::binary);
     auto fileName = File::fileName(path);
     istream *is = ifs.get();
     if(File::fileExtension(path, {"ddoc"}))
     {
         d->mediaType = "application/x-ddoc";
-        d->ddoc = std::move(ifs);
-        ifs = parseDDoc(useHashCode);
+        ifs = parseDDoc(ifs, useHashCode);
         is = ifs.get();
     }
     else if(File::fileExtension(path, {"pdf"}))
@@ -156,7 +163,6 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     }
     else if(File::fileExtension(path, {"asice", "sce", "asics", "scs"}))
     {
-        static const string_view metaInf = "META-INF/";
         ZipSerialize z(path, false);
         vector<string> list = z.list();
         if(list.front() != "mimetype")
@@ -165,17 +171,17 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
             d->mediaType != ASiContainer::MIMETYPE_ASIC_E && d->mediaType != ASiContainer::MIMETYPE_ASIC_S)
             THROW("Unknown file");
         if(none_of(list.cbegin(), list.cend(), [](const string &file) {
-                return file.rfind(metaInf, 0) == 0 && util::File::fileExtension(file, {"p7s"});
+                return file.starts_with("META-INF/") && util::File::fileExtension(file, {"p7s"});
             }))
             THROW("Unknown file");
 
         for(const string &file: list)
         {
-            if(file == "mimetype" || file.rfind(metaInf, 0) == 0)
+            if(file == "mimetype" || file.starts_with("META-INF/"))
                 continue;
             if(const auto directory = File::directory(file);
                 directory.empty() || directory == "/" || directory == "./")
-                d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(z.extract<stringstream>(file)), file, "application/octet-stream"));
+                d->dataFiles.push_back(new DataFilePrivate(z, file, "application/octet-stream"));
         }
     }
     else
@@ -339,11 +345,11 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path, ContainerO
     }
 }
 
-unique_ptr<istream> SiVaContainer::parseDDoc(bool useHashCode)
+unique_ptr<istream> SiVaContainer::parseDDoc(const unique_ptr<istream> &ddoc, bool useHashCode)
 {
     try
     {
-        auto doc = XMLDocument::openStream(*d->ddoc, {}, true);
+        auto doc = XMLDocument::openStream(*ddoc, {}, true);
         for(auto dataFile = doc/"DataFile"; dataFile; dataFile++)
         {
             auto contentType = dataFile["ContentType"];
@@ -401,16 +407,13 @@ void SiVaContainer::removeSignature(unsigned int /*index*/)
 
 void SiVaContainer::save(const string &path)
 {
-    string to = path.empty() ? d->path : path;
-    if(d->ddoc)
-    {
-        d->ddoc->clear();
-        d->ddoc->seekg(0);
-        if(ofstream out{File::encodeName(to), ofstream::binary})
-            out << d->ddoc->rdbuf();
-    }
-    else
-        d->dataFiles[0]->saveAs(to);
+    if(d->path.empty() || path.empty())
+        return; // This is readonly container
+    auto dest = File::encodeName(path);
+    if(std::error_code ec;
+        !std::filesystem::copy_file(d->path, dest, ec))
+        THROW("Failed to save container");
+    d->path = std::move(dest);
 }
 
 Signature *SiVaContainer::sign(Signer * /*signer*/)

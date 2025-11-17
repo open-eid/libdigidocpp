@@ -182,7 +182,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
             auto media_type = file[{"media-type", MANIFEST_NS}];
             DEBUG("full_path = '%s', media_type = '%s'", full_path.data(), media_type.data());
 
-            if(manifestFiles.find(full_path) != manifestFiles.end())
+            if(manifestFiles.contains(full_path))
                 THROW("Manifest multiple entries defined for file '%s'.", full_path.data());
 
             // ODF does not specify that mimetype should be first in manifest
@@ -198,11 +198,11 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
 
             manifestFiles.insert(full_path);
             if(mediaType() == MIMETYPE_ADOC &&
-               (full_path.compare(0, 9, "META-INF/") == 0 ||
-                full_path.compare(0, 9, "metadata/") == 0))
-                d->metadata.push_back(new DataFilePrivate(dataStream(full_path, z), string(full_path), string(media_type)));
+               (full_path.starts_with("META-INF/") ||
+                full_path.starts_with("metadata/")))
+                d->metadata.push_back(new DataFilePrivate(z, string(full_path), string(media_type)));
             else
-                addDataFilePrivate(dataStream(full_path, z), string(full_path), string(media_type));
+                addDataFilePrivate(new DataFilePrivate(z, string(full_path), string(media_type)));
         }
         if(!mimeFound)
             THROW("Manifest is missing mediatype file entry.");
@@ -214,7 +214,7 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
              * 6.2.2 Contents of Container
              * 3) The root element of each "*signatures*.xml" content shall be either:
              */
-            if(file.compare(0, 9, "META-INF/") == 0 &&
+            if(file.starts_with("META-INF/") &&
                file.find("signatures") != string::npos)
             {
                 try
@@ -229,9 +229,9 @@ void ASiC_E::parseManifestAndLoadFiles(const ZipSerialize &z)
                 continue;
             }
 
-            if(file == "mimetype" || file.compare(0, 8,"META-INF") == 0)
+            if(file == "mimetype" || file.starts_with("META-INF"))
                 continue;
-            if(manifestFiles.count(file) == 0)
+            if(!manifestFiles.contains(file))
                 THROW("File '%s' found in container is not described in manifest.", file.c_str());
         }
     }
