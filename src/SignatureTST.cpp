@@ -111,20 +111,6 @@ SignatureTST::SignatureTST(ASiC_S *asicSDoc, Signer *signer)
 
 SignatureTST::~SignatureTST() = default;
 
-X509Cert SignatureTST::ArchiveTimeStampCertificate() const
-{
-    if(auto list = ArchiveTimeStamps(); !list.empty())
-        return list.front().cert;
-    return X509Cert();
-}
-
-string SignatureTST::ArchiveTimeStampTime() const
-{
-    if(auto list = ArchiveTimeStamps(); !list.empty())
-        return list.front().time;
-    return {};
-}
-
 vector<TSAInfo> SignatureTST::ArchiveTimeStamps() const
 {
     vector<TSAInfo> result;
