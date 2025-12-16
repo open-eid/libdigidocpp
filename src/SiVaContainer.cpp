@@ -123,15 +123,13 @@ void SignatureSiVa::validate(const string &policy) const
         }
         if(_indication == "TOTAL-PASSED")
         {
-            if(QES.contains(_signatureLevel) || _signatureLevel.empty() || policy == POLv1)
+            // DDoc returns _signatureLevel empty
+            if(policy == POLv2 && !_signatureLevel.empty() && !QES.contains(_signatureLevel))
             {
-                if(!e.causes().empty())
-                    throw e;
-                return;
+                Exception ex(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
+                ex.setCode(Exception::CertificateIssuerMissing);
+                e.addCause(ex);
             }
-            Exception ex(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
-            ex.setCode(Exception::CertificateIssuerMissing);
-            e.addCause(ex);
         }
     } catch(const Exception &ex) {
         e.addCause(ex);
@@ -215,7 +213,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     }, (const unsigned char*)req.c_str(), req.size());
     req.clear();
 
-    if(!r.isOK() && !r.isStatusCode("400"))
+    if(!r && !r.isStatusCode("400"))
         THROW("Failed to send request to SiVa");
 
     json result = json::parse(r.content, nullptr, false);
@@ -241,7 +239,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
         s->_signedBy = signature["signedBy"];
         s->_signatureMethod = signature.value<string>("signatureMethod", {});
         s->_signatureLevel = signature.value<string>("signatureLevel", {});
-        if(json info = signature.value<json>("info", {}); !info.is_null())
+        if(auto info = signature.value<json>("info", {}); !info.is_null())
         {
             s->_bestTime = info.value<string>("bestSignatureTime", {});
             s->_tsTime = info.value<string>("timestampCreationTime", {});
