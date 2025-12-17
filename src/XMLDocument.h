@@ -229,10 +229,21 @@ struct XMLNode: public XMLElem<xmlNode>
         return from_base64(operator sv());
     }
 
-    XMLNode& operator=(sv text) noexcept
+    XMLNode& operator=(sv text)
     {
         if(!d)
             return *this;
+        const char *utf = text.cbegin();
+        int len = int(text.size());
+        while (utf < text.cend()) {
+            int uc = xmlGetUTF8Char((const unsigned char *) utf, &len);
+            if (len < 1) {
+                THROW("Invalid utf8 string");
+            } else if ((uc < 0x20) && (uc != 0x9) && (uc != 0xa) && (uc != 0xd)) {
+                THROW("Invalid character");
+            }
+            utf += len;
+        }
         xmlNodeSetContentLen(d, nullptr, 0);
         if(!text.empty())
             xmlNodeAddContentLen(d, pcxmlChar(text.data()), int(text.length()));

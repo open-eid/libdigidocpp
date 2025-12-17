@@ -73,6 +73,7 @@ Signer::~Signer() = default;
  * @param stateOrProvince
  * @param postalCode
  * @param countryName
+ * The strings have to be utf8 encoded and not contain any control values (any char < 0x20 except 0x9, 0xa and 0xd)
  */
 void Signer::setSignatureProductionPlace(const string &city,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
@@ -90,6 +91,7 @@ void Signer::setSignatureProductionPlace(const string &city,
  * @param stateOrProvince
  * @param postalCode
  * @param countryName
+ * The strings have to be utf8 encoded and not contain any control values (any char < 0x20 except 0x9, 0xa and 0xd)
  */
 void Signer::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
@@ -194,6 +196,7 @@ void Signer::setProfile(const string &profile)
 /**
  * Sets signature roles according XAdES standard. The parameter may contain the signer’s role and optionally the signer’s resolution. Note that only one  signer role value (i.e. one &lt;ClaimedRole&gt; XML element) should be used. 
  * If the signer role contains both role and resolution then they must be separated with a slash mark, e.g. “role / resolution”. 
+ * The strings have to be utf8 encoded and not contain any control values (any char < 0x20 except 0x9, 0xa and 0xd)
  */
 void Signer::setSignerRoles(const vector<string> &signerRoles)
 {
