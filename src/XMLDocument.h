@@ -238,9 +238,9 @@ struct XMLNode: public XMLElem<xmlNode>
         while (utf < text.cend()) {
             int uc = xmlGetUTF8Char((const unsigned char *) utf, &len);
             if (len < 1) {
-                THROW("Invalid utf8 string");
-            } else if ((uc < 0x20) && (uc != 0x9) && (uc != 0xa) && (uc != 0xd)) {
-                THROW("Invalid character");
+                THROW("Invalid utf8 string in XML content");
+            } else if (((uc < 0x20) && (uc != 0x9) && (uc != 0xa) && (uc != 0xd)) || (uc == 0xfffe) || (uc == 0xffff)) {
+                THROW("Invalid character '0x%2x' in XML content", uc);
             }
             utf += len;
         }
