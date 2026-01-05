@@ -112,7 +112,7 @@ namespace digidoc
           void setSignatureProductionPlace(std::string_view name, const std::string &city,
               const std::string &streetAddress, const std::string &stateOrProvince,
               const std::string &postalCode, const std::string &countryName) noexcept;
-          void setSignerRoles(std::string_view name, const std::vector<std::string> &signerRoles) noexcept;
+          void setSignerRoles(std::string_view name, const std::vector<std::string> &signerRoles);
           constexpr XMLNode V1orV2(std::string_view v1, std::string_view v2) const noexcept;
 
           // offline checks
