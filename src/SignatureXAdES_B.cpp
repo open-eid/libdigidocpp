@@ -742,7 +742,7 @@ void SignatureXAdES_B::setSignatureProductionPlace(string_view name,
  *
  * @param roles signer roles.
  */
-void SignatureXAdES_B::setSignerRoles(string_view name, const vector<string> &roles) noexcept
+void SignatureXAdES_B::setSignerRoles(string_view name, const vector<string> &roles)
 {
     if(roles.empty())
         return;
