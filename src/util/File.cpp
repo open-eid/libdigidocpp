@@ -348,7 +348,10 @@ string File::toUriPath(const string &path)
 
 constexpr bool fromHexChar(auto pos, auto end, auto &value)
 {
-    return distance(pos, end) >= 2 && from_chars(&*pos, &*(pos + 2), value, 16).ec == std::errc{};
+    if(distance(pos, end) < 2)
+        return false;
+    auto *p = &*pos;
+    return from_chars(p, p + 2, value, 16).ec == std::errc{};
 }
 
 string File::fromUriPath(string_view path)

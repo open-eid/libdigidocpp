@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-OPENSSL_DIR=openssl-3.5.4
+OPENSSL_DIR=openssl-3.5.5
 XMLSEC_DIR=xmlsec1-1.3.9
 ARGS="$@"
 
