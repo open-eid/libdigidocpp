@@ -30,7 +30,6 @@ set_env( TSL_CERTS
     ${CMAKE_SOURCE_DIR}/etc/tl-mp4.crt
     ${CMAKE_SOURCE_DIR}/etc/tl-mp5.crt
     ${CMAKE_SOURCE_DIR}/etc/tl-mp6.crt
-    ${CMAKE_SOURCE_DIR}/etc/tl-mp7.crt
     CACHE FILEPATH "TSL trust list signing certificates" )
 set_env(TSA_URL "https://eid-dd.ria.ee/ts" CACHE STRING "Default TSA URL")
 set_env( SIVA_URL "https://siva.eesti.ee/V3/validate" CACHE STRING "Default SiVa validation service URL" )
