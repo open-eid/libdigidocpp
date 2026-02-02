@@ -112,12 +112,16 @@ jobs:
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [42, 43, rawhide]
+        container: [42, 43]
+        java: [21]
+        include:
+          - container: rawhide
+            java: 25
     steps:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
-          ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-21-openjdk-devel rpm-build
+          ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-${{ matrix.java }}-openjdk-devel rpm-build
     - name: Checkout
       uses: actions/checkout@v5
     - name: Build
