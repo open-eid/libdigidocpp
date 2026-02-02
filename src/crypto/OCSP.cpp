@@ -80,7 +80,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
     if(!OCSP_request_add1_nonce(req.get(), nullptr, 32)) // rfc8954: SIZE(1..32)
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 
-    Connect::Result result = Connect(url, "POST", 0, {}, userAgent).exec({
+    Connect::Result result = Connect(url, "POST", 0, {}, userAgent, "1.0").exec({
         {"Content-Type", "application/ocsp-request"},
         {"Accept", "application/ocsp-response"},
         {"Connection", "Close"},

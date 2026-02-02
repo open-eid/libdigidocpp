@@ -56,7 +56,7 @@ using namespace std;
 
 
 
-Connect::Connect(const string &_url, string _method, int _timeout, const vector<X509Cert> &certs, const string &userAgentData)
+Connect::Connect(const string &_url, string _method, int _timeout, const vector<X509Cert> &certs, const string &userAgentData, const string &version)
     : method(std::move(_method))
     , timeout(_timeout)
 {
@@ -159,7 +159,7 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
         }
     }
 
-    BIO_printf(d, "%s %s HTTP/1.1\r\n", method.c_str(), path.c_str());
+    BIO_printf(d, "%s %s HTTP/%s\r\n", method.c_str(), path.c_str(), version.c_str());
     addHeader("Connection", "close");
     if(port == "80" || port == "443")
         addHeader("Host", host);
