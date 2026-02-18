@@ -57,7 +57,7 @@ function xmlsec {
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
-    patch -Np1 -i ../vcpkg-ports/xmlsec/xmlsec1-1.3.5.legacy.patch
+    patch -Np1 -i ../xmlsec1-1.3.5.legacy.patch
     case "${ARGS}" in
     *iphone*) CONFIGURE="--host=aarch64-apple-darwin --enable-static --disable-shared --without-libxslt" ;;
     *) CONFIGURE="--disable-static --enable-shared" ;;

@@ -342,6 +342,7 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
         auto result = xmlParseDocument(ctxt.get());
         if(result != 0 || !ctxt->wellFormed)
         {
+            xmlFreeDoc(ctxt->myDoc);
             if(const xmlError *lastError = xmlCtxtGetLastError(ctxt.get()))
                 THROW("%s", lastError->message);
             THROW("Failed to parse XML document from stream");

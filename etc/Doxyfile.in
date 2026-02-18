@@ -61,7 +61,7 @@ PROJECT_BRIEF          =
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = @CMAKE_SOURCE_DIR@/ID.ico
+PROJECT_LOGO           = @PROJECT_SOURCE_DIR@/ID.ico
 
 # With the PROJECT_ICON tag one can specify an icon that is included in the tabs
 # when the HTML document is shown. Doxygen will copy the logo to the output
@@ -74,7 +74,7 @@ PROJECT_ICON           =
 # entered, it will be relative to the location where Doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = @CMAKE_BINARY_DIR@/doc/
+OUTPUT_DIRECTORY       = @PROJECT_BINARY_DIR@/doc/
 
 # If the CREATE_SUBDIRS tag is set to YES then Doxygen will create up to 4096
 # sub-directories (in 2 levels) under the output directory of each output format
@@ -965,8 +965,8 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = @CMAKE_SOURCE_DIR@/src \
-                         @CMAKE_SOURCE_DIR@/libdigidocpp.dox
+INPUT                  = @PROJECT_SOURCE_DIR@/src \
+                         @PROJECT_SOURCE_DIR@/libdigidocpp.dox
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1076,8 +1076,8 @@ EXCLUDE_SYMBOLS        = digidoc::*Private \
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           = @CMAKE_SOURCE_DIR@/ \
-                         @CMAKE_BINARY_DIR@/
+EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/ \
+                         @PROJECT_BINARY_DIR@/
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
@@ -1097,7 +1097,7 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = @CMAKE_SOURCE_DIR@/doc/images/
+IMAGE_PATH             = @PROJECT_SOURCE_DIR@/doc/images/
 
 # The INPUT_FILTER tag can be used to specify a program that Doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -1358,7 +1358,7 @@ HTML_STYLESHEET        =
 # documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = @CMAKE_SOURCE_DIR@/etc/Doxyfile.css
+HTML_EXTRA_STYLESHEET  = @PROJECT_SOURCE_DIR@/etc/Doxyfile.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
