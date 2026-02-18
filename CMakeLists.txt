@@ -9,7 +9,7 @@ project(libdigidocpp VERSION 4.4.0
     DESCRIPTION "C++ library for digital signatures and validation of digitally signed documents"
     HOMEPAGE_URL https://github.com/open-eid/libdigidocpp
 )
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
 
 macro(SET_ENV NAME DEF)
@@ -24,12 +24,12 @@ include(GNUInstallDirs)
 
 set_env( TSL_URL "https://ec.europa.eu/tools/lotl/eu-lotl.xml" CACHE STRING "TSL trust list primary URL" )
 set_env( TSL_CERTS
-    ${CMAKE_SOURCE_DIR}/etc/tl-mp1.crt
-    ${CMAKE_SOURCE_DIR}/etc/tl-mp2.crt
-    ${CMAKE_SOURCE_DIR}/etc/tl-mp3.crt
-    ${CMAKE_SOURCE_DIR}/etc/tl-mp4.crt
-    ${CMAKE_SOURCE_DIR}/etc/tl-mp5.crt
-    ${CMAKE_SOURCE_DIR}/etc/tl-mp6.crt
+    ${PROJECT_SOURCE_DIR}/etc/tl-mp1.crt
+    ${PROJECT_SOURCE_DIR}/etc/tl-mp2.crt
+    ${PROJECT_SOURCE_DIR}/etc/tl-mp3.crt
+    ${PROJECT_SOURCE_DIR}/etc/tl-mp4.crt
+    ${PROJECT_SOURCE_DIR}/etc/tl-mp5.crt
+    ${PROJECT_SOURCE_DIR}/etc/tl-mp6.crt
     CACHE FILEPATH "TSL trust list signing certificates" )
 set_env(TSA_URL "https://eid-dd.ria.ee/ts" CACHE STRING "Default TSA URL")
 set_env( SIVA_URL "https://siva.eesti.ee/V3/validate" CACHE STRING "Default SiVa validation service URL" )
@@ -92,13 +92,13 @@ endif()
 
 find_package(Doxygen)
 if(TARGET Doxygen::doxygen)
-    configure_file( ${CMAKE_SOURCE_DIR}/etc/Doxyfile.in Doxyfile @ONLY )
+    configure_file(${PROJECT_SOURCE_DIR}/etc/Doxyfile.in Doxyfile @ONLY)
     add_custom_target( docs ALL
         Doxygen::doxygen Doxyfile
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen" VERBATIM
     )
-    install( DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} )
+    install(DIRECTORY ${PROJECT_BINARY_DIR}/doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR})
     install( DIRECTORY doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} )
 endif()
 
