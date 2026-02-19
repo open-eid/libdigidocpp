@@ -139,16 +139,17 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
     {
         thread([callBack]{
             try {
-                X509CertStore::instance();
+                X509CertStore::instance()->update();
                 callBack(nullptr);
             }
             catch(const Exception &e) {
+                ERR("Failed to load TSL lists: %s", e.msg().c_str());
                 callBack(&e);
             }
         }).detach();
     }
     else
-        X509CertStore::instance();
+        X509CertStore::instance()->update();
 }
 
 /**
