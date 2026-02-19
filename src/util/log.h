@@ -49,6 +49,7 @@ namespace digidoc
 #define DEBUG(...) digidoc::Log::out(digidoc::Log::DebugType, __FILE__, __LINE__, __VA_ARGS__)
 #define DEBUGMEM(msg, ptr, size) digidoc::Log::dbgPrintfMemImpl(msg, ptr, size, __FILE__, __LINE__)
 
+#define STR_VIEW_FMT(str) int(str.size()), str.data()
 #define EXCEPTION_PARAMS(...) __FILE__, __LINE__, digidoc::Log::format(__VA_ARGS__)
 #define EXCEPTION_ADD(_main, ...) _main.addCause(digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__)))
 #define THROW(...) throw digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__))

@@ -137,7 +137,7 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
     {
         thread([callBack]{
             try {
-                X509CertStore::instance();
+                X509CertStore::instance()->update();
                 callBack(nullptr);
             }
             catch(const Exception &e) {
@@ -146,7 +146,7 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
         }).detach();
     }
     else
-        X509CertStore::instance();
+        X509CertStore::instance()->update();
 }
 
 /**
