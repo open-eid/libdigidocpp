@@ -49,15 +49,16 @@ namespace digidoc
         X509Cert findIssuer(const X509Cert &cert, const Type &type) const;
         static X509Cert issuerFromAIA(const X509Cert &cert);
         static unique_free_t<X509_STORE> createStore(const Type &type, tm &tm);
+        void update() const;
         bool verify(const X509Cert &cert, bool noqscd, tm validation_time = {}) const;
 
     private:
         X509CertStore();
-        ~X509CertStore();
+        ~X509CertStore() noexcept;
         DISABLE_COPY(X509CertStore);
 
         static int validate(int ok, X509_STORE_CTX *ctx);
-        class Private;
+        struct Private;
         std::unique_ptr<Private> d;
     };
 }
