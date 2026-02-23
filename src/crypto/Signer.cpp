@@ -28,7 +28,6 @@
 
 #include <openssl/x509.h>
 
-#include <algorithm>
 #include <map>
 #include <optional>
 
