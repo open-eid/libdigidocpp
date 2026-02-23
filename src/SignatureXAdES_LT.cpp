@@ -127,6 +127,7 @@ void SignatureXAdES_LT::validate(const string &policy) const
          * Find OCSP response that matches with signingCertificate.
          * If none is found throw all OCSP validation exceptions.
          */
+        vector<X509Cert> untrusted = certificateValues(revocationValues);
         bool foundSignerOCSP = false;
         vector<Exception> ocspExceptions;
         for(auto resp = ocspValues/"EncapsulatedOCSPValue"; resp; resp++)
@@ -134,7 +135,7 @@ void SignatureXAdES_LT::validate(const string &policy) const
             optional<OCSP> ocsp;
             try {
                 ocsp.emplace(resp);
-                ocsp->verifyResponse(signingCertificate());
+                ocsp->verifyResponse(signingCertificate(), untrusted);
             } catch(const Exception &e) {
                 ocspExceptions.push_back(e);
                 continue;
@@ -226,7 +227,7 @@ void SignatureXAdES_LT::extendSignatureProfile(Signer *signer)
             cert.issuerName().c_str());
 
     OCSP ocsp(cert, issuer, signer->userAgent());
-    ocsp.verifyResponse(cert);
+    ocsp.verifyResponse(cert, {});
 
     addCertificateValue(id() + "-CA-CERT", issuer);
     addOCSPValue(id().replace(0, 1, "N"), ocsp);
@@ -260,6 +261,41 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
     enc = ocsp;
 }
 
+vector<X509Cert> SignatureXAdES_LT::certificateValues(XMLNode until) const
+{
+    vector<X509Cert> certs;
+    auto addCert = [&certs](XMLNode cert) {
+        try {
+            certs.emplace_back(cert);
+        } catch(const Exception &e) {
+            WARN("Failed to parse certificate from EncapsulatedX509Certificate: %s", e.msg().c_str());
+        }
+    };
+
+    // KeyInfo intermediate certificates (skip first = signing cert)
+    bool first = true;
+    for(auto x509Data = signature/"KeyInfo"/"X509Data"; x509Data; x509Data++)
+    {
+        for(auto x509Cert = x509Data/"X509Certificate"; x509Cert; x509Cert++)
+        {
+            if(first) { first = false; continue; }
+            addCert(x509Cert);
+        }
+    }
+
+    // CertificateValues certificates that are available before the guarded node.
+    for(auto elem: unsignedSignatureProperties())
+    {
+        if(until && elem == until)
+            break;
+        if(elem.name() != "CertificateValues" || elem.ns() != XADES_NS)
+            continue;
+        for(auto cert = elem/"EncapsulatedX509Certificate"; cert; cert++)
+            addCert(cert);
+    };
+    return certs;
+}
+
 /**
  * Get value of UnsignedProperties\UnsignedSignatureProperties\RevocationValues\OCSPValues\EncapsulatedOCSPValue
  * which contains whole OCSP response
@@ -267,12 +303,14 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
  */
 OCSP SignatureXAdES_LT::getOCSPResponseValue() const
 {
-    auto ocspValues = unsignedSignatureProperties()/"RevocationValues"/"OCSPValues";
+    auto revocationValues = unsignedSignatureProperties()/"RevocationValues";
+    vector<X509Cert> untrusted = certificateValues(revocationValues);
+    auto ocspValues = revocationValues/"OCSPValues";
     for(auto resp = ocspValues/"EncapsulatedOCSPValue"; resp; resp++)
     {
         try {
             OCSP ocsp(resp);
-            ocsp.verifyResponse(signingCertificate());
+            ocsp.verifyResponse(signingCertificate(), untrusted);
             return ocsp;
         } catch(const Exception &) {
         }
