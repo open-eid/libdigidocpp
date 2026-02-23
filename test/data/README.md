@@ -2,6 +2,11 @@
 
 ## Container tests
 * [47101010033.cer](47101010033.cer) - Used in X509Crypto test suite
+* `keyinfo-empty-cert.asice`, `certvalues-empty-cert.asice`, and
+  `keyinfo-whitespace-cert.asice` - LT signatures with empty or whitespace-only supplemental
+  certificate elements in KeyInfo or CertificateValues. The empty elements must
+  be ignored without introducing signer or OCSP validation failures. These samples
+  use a TSA not trusted by the test TSL, which the regression test allows separately.
 
 ## TSL tests
 Validates [tsl.asice](tsl.asice) (signing time 2016-11-28T13:46:41Z) file with given TSL-s.

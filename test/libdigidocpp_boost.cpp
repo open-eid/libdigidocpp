@@ -595,6 +595,30 @@ BOOST_AUTO_TEST_CASE(HexToBinConvertsHexEncodedStringToBinaryData)
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(ASiCETestSuite)
+BOOST_AUTO_TEST_CASE(empty_supplemental_certificates_do_not_break_validation)
+{
+    for(const char *file: {"keyinfo-empty-cert.asice",
+            "certvalues-empty-cert.asice",
+            "keyinfo-whitespace-cert.asice"})
+    {
+        BOOST_TEST_CONTEXT(file)
+        {
+            auto d = Container::openPtr(file);
+            BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+            try {
+                d->signatures().front()->validate();
+            } catch(const Exception &e) {
+                // These fixtures use a TSA not trusted by the test TSL. No signer
+                // or OCSP validation failures may accompany that independent error.
+                BOOST_REQUIRE_EQUAL(e.causes().size(), 1U);
+                BOOST_CHECK_EQUAL(e.causes().front().code(), Exception::CertificateUnknown);
+                BOOST_CHECK_EQUAL(fs::path(e.causes().front().file()).filename().string(), "TS.cpp");
+            }
+            BOOST_CHECK(d->signatures().front()->OCSPCertificate());
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(key_substitution_detected)
 {
     auto d = Container::openPtr("forged_lt.asice");
