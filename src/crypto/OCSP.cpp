@@ -186,7 +186,7 @@ OCSP::operator vector<unsigned char>() const
 /**
  * Check that response was signed with trusted OCSP certificate
  */
-void OCSP::verifyResponse(const X509Cert &cert) const
+void OCSP::verifyResponse(const X509Cert &cert, const vector<X509Cert> &untrusted) const
 {
     if(!basic)
         THROW("Failed to verify OCSP response.");
@@ -202,7 +202,10 @@ void OCSP::verifyResponse(const X509Cert &cert) const
                 sk_X509_push(stack.get(), i.handle());
         }
     }
+    for(const X509Cert &i: untrusted)
+        sk_X509_push(stack.get(), i.handle());
     auto store = X509CertStore::createStore(X509CertStore::OCSP, tm);
+    ERR_clear_error();
     if(OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN) != 1)
     {
         unsigned long err = ERR_get_error();
@@ -217,8 +220,19 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         throw OpenSSLException(EXCEPTION_PARAMS("Failed to verify OCSP response."), err);
     }
 
-    // Find issuer before OCSP validation to activate region TSL
+    // Find issuer from TSL or from untrusted CertificateValues
     X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
+    if(!issuer)
+    {
+        for(const X509Cert &i: untrusted)
+        {
+            if(X509_check_issued(i.handle(), cert.handle()) == X509_V_OK)
+            {
+                issuer = i;
+                break;
+            }
+        }
+    }
     if(!issuer)
     {
         Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));

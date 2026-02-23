@@ -154,34 +154,41 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
     }
 
     auto *type = static_cast<Type*>(X509_STORE_get_ex_data(X509_STORE_CTX_get0_store(ctx), 0));
-    X509 *x509 = X509_STORE_CTX_get0_cert(ctx);
     auto current = util::date::to_string(X509_VERIFY_PARAM_get_time(X509_STORE_CTX_get0_param(ctx)));
-    for(const TSL::Service &s: *instance()->d)
-    {
-        if(type->find(s.type) == type->cend()) // correct service type
-            continue;
-        if(none_of(s.certs, [&](const X509Cert &issuer) {
-                if(issuer == x509) // certificate is listed by service
-                    return true;
-                if(X509_check_issued(issuer.handle(), x509) != X509_V_OK) // certificate is issued by service (function checks only issuer name)
-                    return false;
-                auto pub = make_unique_ptr<EVP_PKEY_free>(X509_get_pubkey(issuer.handle()));
-                if(X509_verify(x509, pub.get()) == 1) // certificate is signed by service
-                    return true;
-                ERR_clear_error();
-                return false;
-            })) // certificate is trusted by service
-            continue;
-        for(auto i = s.validity.crbegin(), end = s.validity.crend(); i != end; ++i)
+    auto trusted = [&](X509 *x509) {
+        for(const TSL::Service &s: *instance()->d)
         {
-            if(current < i->first) // Search older status
+            if(type->find(s.type) == type->cend()) // correct service type
                 continue;
-            if(!i->second.has_value()) // Has revoked
-                break;
-            X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Qualifiers*>(&i->second));
-            return 1;
+            if(none_of(s.certs, [&](const X509Cert &issuer) {
+                    if(issuer == x509) // certificate is listed by service
+                        return true;
+                    if(X509_check_issued(issuer.handle(), x509) != X509_V_OK) // certificate is issued by service (function checks only issuer name)
+                        return false;
+                    auto pub = make_unique_ptr<EVP_PKEY_free>(X509_get_pubkey(issuer.handle()));
+                    if(X509_verify(x509, pub.get()) == 1) // certificate is signed by service
+                        return true;
+                    ERR_clear_error();
+                    return false;
+                })) // certificate is trusted by service
+                continue;
+            for(auto i = s.validity.crbegin(), end = s.validity.crend(); i != end; ++i)
+            {
+                if(current < i->first) // Search older status
+                    continue;
+                if(!i->second.has_value()) // Has revoked
+                    break;
+                X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Qualifiers*>(&i->second));
+                return true;
+            }
         }
-    }
+        return false;
+    };
+    X509 *current_cert = X509_STORE_CTX_get_current_cert(ctx);
+    X509 *target_cert = X509_STORE_CTX_get0_cert(ctx);
+    if((current_cert && trusted(current_cert)) ||
+       (target_cert && target_cert != current_cert && trusted(target_cert)))
+        return 1;
     return ok;
 }
 
@@ -200,14 +207,17 @@ void X509CertStore::update() const
  * Check if X509Cert is signed by trusted issuer
  * @throw Exception if error
  */
-bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time) const
+bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time, const vector<X509Cert> &untrusted) const
 {
     activate(cert);
     if(util::date::is_empty(validation_time))
         ASN1_TIME_to_tm(X509_get0_notBefore(cert.handle()), &validation_time);
     auto store = createStore(X509CertStore::CA, validation_time);
     auto csc = make_unique_ptr<X509_STORE_CTX_free>(X509_STORE_CTX_new());
-    if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))
+    auto stack = make_unique_ptr(sk_X509_new_null(), [](auto *sk) { sk_X509_free(sk); });
+    for(const X509Cert &i: untrusted)
+        sk_X509_push(stack.get(), i.handle());
+    if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), stack.get()))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
     if(X509_verify_cert(csc.get()) <= 0)
     {
