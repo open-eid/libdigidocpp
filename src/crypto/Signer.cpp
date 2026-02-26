@@ -85,6 +85,7 @@ void Signer::setSignatureProductionPlace(const string &city,
 
 /**
  * Sets signature production place according XAdES EN standard. Note that setting the signature production place is optional.
+ * @since 3.13.0
  * @param city
  * @param streetAddress
  * @param stateOrProvince
@@ -105,6 +106,7 @@ void Signer::setSignatureProductionPlaceV2(const string &city, const string &str
 
 /**
  * Sets additional User-Agent info that is sent to TSA or OCSP service
+ * @since 4.1.0
  * @param userAgent
  */
 void Signer::setUserAgent(const string &userAgent)
@@ -128,6 +130,7 @@ string Signer::city() const
 
 /**
  * Returns streetAddress from signature production place
+ * @since 3.13.0
  */
 string Signer::streetAddress() const
 {
@@ -231,6 +234,7 @@ void Signer::setMethod(const string &method)
 
 /**
  * Toggle XAdES EN profile usage on signing
+ * @since 3.13.0
  */
 void Signer::setENProfile(bool enable)
 {
@@ -266,6 +270,7 @@ string Signer::userAgent() const
 
 /**
  * Use XAdES EN profile
+ * @since 3.13.0
  */
 bool Signer::usingENProfile() const
 {

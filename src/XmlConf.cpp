@@ -261,7 +261,7 @@ void XmlConf::Private::setUserConf(XmlConfParam<A> &param, A value)
 /**
  * @class digidoc::XmlConf
  * @brief XML Configuration class
- * @deprecated Use digidoc::XmlConfV5
+ * @deprecated Since 3.12.2, use digidoc::XmlConfV5
  * @see digidoc::Conf
  */
 XmlConf::XmlConf(const string &path, const string &schema)
@@ -277,7 +277,8 @@ XmlConf* XmlConf::instance() { return dynamic_cast<XmlConf*>(Conf::instance()); 
 /**
  * @class digidoc::XmlConfV2
  * @brief Version 2 of XML Configuration class
- * @deprecated Use digidoc::XmlConfV5
+ * @since 3.12.2
+ * @deprecated Since 3.13.8, use digidoc::XmlConfV5
  * @see digidoc::ConfV2
  */
 XmlConfV2::XmlConfV2(const string &path, const string &schema)
@@ -293,7 +294,8 @@ XmlConfV2* XmlConfV2::instance() { return dynamic_cast<XmlConfV2*>(Conf::instanc
 /**
  * @class digidoc::XmlConfV3
  * @brief Version 3 of XML Configuration class
- * @deprecated Use digidoc::XmlConfV5
+ * @since 3.13.8
+ * @deprecated Since 3.14.7, use digidoc::XmlConfV5
  * @see digidoc::ConfV3
  */
 XmlConfV3::XmlConfV3(const string &path, const string &schema)
@@ -309,7 +311,8 @@ XmlConfV3* XmlConfV3::instance() { return dynamic_cast<XmlConfV3*>(Conf::instanc
 /**
  * @class digidoc::XmlConfV4
  * @brief Version 4 of XML Configuration class
- * @deprecated Use digidoc::XmlConfV5
+ * @since 3.14.7
+ * @deprecated Since 3.15.0, use digidoc::XmlConfV5
  * @see digidoc::ConfV4
  */
 /**
@@ -328,6 +331,7 @@ XmlConfV4* XmlConfV4::instance() { return dynamic_cast<XmlConfV4*>(Conf::instanc
 /**
  * @class digidoc::XmlConfV5
  * @brief Version 5 of XML Configuration class
+ * @since 3.15.0
  * @see digidoc::ConfV5
  */
 /**
@@ -405,24 +409,36 @@ string XmlConf::ocsp(const string &issuer) const
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
 }
 
+/**
+ * @since 3.12.2
+ */
 string XmlConfV2::ocsp(const string &issuer) const
 {
     auto i = d->ocsp.find(issuer);
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
 }
 
+/**
+ * @since 3.13.8
+ */
 string XmlConfV3::ocsp(const string &issuer) const
 {
     auto i = d->ocsp.find(issuer);
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
 }
 
+/**
+ * @since 3.14.7
+ */
 string XmlConfV4::ocsp(const string &issuer) const
 {
     auto i = d->ocsp.find(issuer);
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
 }
 
+/**
+ * @since 3.15.0
+ */
 string XmlConfV5::ocsp(const string &issuer) const
 {
     auto i = d->ocsp.find(issuer);
@@ -437,18 +453,22 @@ string XmlConfV5::ocsp(const string &issuer) const
 /**
  * @fn void digidoc::XmlConfV2::setTSLOnlineDigest(bool enable)
  * @copydoc digidoc::XmlConf::setTSLOnlineDigest(bool enable)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setTSLOnlineDigest(bool enable)
  * @copydoc digidoc::XmlConf::setTSLOnlineDigest(bool enable)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setTSLOnlineDigest(bool enable)
  * @copydoc digidoc::XmlConf::setTSLOnlineDigest(bool enable)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setTSLOnlineDigest(bool enable)
  * @copydoc digidoc::XmlConf::setTSLOnlineDigest(bool enable)
+ * @since 3.15.0
  */
 SET1(bool, setTSLOnlineDigest, TSLOnlineDigest)
 
@@ -461,18 +481,22 @@ SET1(bool, setTSLOnlineDigest, TSLOnlineDigest)
 /**
  * @fn void digidoc::XmlConfV2::setTSLTimeOut(int timeOut)
  * @copydoc digidoc::XmlConf::setTSLTimeOut(int timeOut)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setTSLTimeOut(int timeOut)
  * @copydoc digidoc::XmlConf::setTSLTimeOut(int timeOut)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setTSLTimeOut(int timeOut)
  * @copydoc digidoc::XmlConf::setTSLTimeOut(int timeOut)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setTSLTimeOut(int timeOut)
  * @copydoc digidoc::XmlConf::setTSLTimeOut(int timeOut)
+ * @since 3.15.0
  */
 SET1(int, setTSLTimeOut, TSLTimeOut)
 
@@ -486,18 +510,22 @@ SET1(int, setTSLTimeOut, TSLTimeOut)
 /**
  * @fn void digidoc::XmlConfV2::setProxyHost(const std::string &host)
  * @copydoc digidoc::XmlConf::setProxyHost(const std::string &host)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setProxyHost(const std::string &host)
  * @copydoc digidoc::XmlConf::setProxyHost(const std::string &host)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setProxyHost(const std::string &host)
  * @copydoc digidoc::XmlConf::setProxyHost(const std::string &host)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setProxyHost(const std::string &host)
  * @copydoc digidoc::XmlConf::setProxyHost(const std::string &host)
+ * @since 3.15.0
  */
 SET1CONST(string, setProxyHost, proxyHost)
 
@@ -511,18 +539,22 @@ SET1CONST(string, setProxyHost, proxyHost)
 /**
  * @fn void digidoc::XmlConfV2::setProxyPort(const std::string &port)
  * @copydoc digidoc::XmlConf::setProxyPort(const std::string &port)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setProxyPort(const std::string &port)
  * @copydoc digidoc::XmlConf::setProxyPort(const std::string &port)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setProxyPort(const std::string &port)
  * @copydoc digidoc::XmlConf::setProxyPort(const std::string &port)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setProxyPort(const std::string &port)
  * @copydoc digidoc::XmlConf::setProxyPort(const std::string &port)
+ * @since 3.15.0
  */
 SET1CONST(string, setProxyPort, proxyPort)
 
@@ -536,18 +568,22 @@ SET1CONST(string, setProxyPort, proxyPort)
 /**
  * @fn void digidoc::XmlConfV2::setProxyUser(const std::string &user)
  * @copydoc digidoc::XmlConf::setProxyUser(const std::string &user)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setProxyUser(const std::string &user)
  * @copydoc digidoc::XmlConf::setProxyUser(const std::string &user)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setProxyUser(const std::string &user)
  * @copydoc digidoc::XmlConf::setProxyUser(const std::string &user)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setProxyUser(const std::string &user)
  * @copydoc digidoc::XmlConf::setProxyUser(const std::string &user)
+ * @since 3.15.0
  */
 SET1CONST(string, setProxyUser, proxyUser)
 
@@ -561,18 +597,22 @@ SET1CONST(string, setProxyUser, proxyUser)
 /**
  * @fn void digidoc::XmlConfV2::setProxyPass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setProxyPass(const std::string &pass)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setProxyPass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setProxyPass(const std::string &pass)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setProxyPass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setProxyPass(const std::string &pass)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setProxyPass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setProxyPass(const std::string &pass)
+ * @since 3.15.0
  */
 SET1CONST(string, setProxyPass, proxyPass)
 
@@ -581,24 +621,29 @@ SET1CONST(string, setProxyPass, proxyPass)
  * Sets a PKCS#12 certficate path. Also adds or replaces PKCS#12 certificate path in the user configuration file.
  * By default the PKCS#12 certificate file should be located at default path, given by getUserConfDir() function.
  *
+ * @deprecated Since 3.16.0
  * @param cert PKCS#12 certificate location path.
  * @throws Exception exception is thrown if saving a PKCS#12 certificate path into a user configuration file fails.
  */
 /**
  * @fn void digidoc::XmlConfV2::setPKCS12Cert(const std::string &cert)
  * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setPKCS12Cert(const std::string &cert)
  * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setPKCS12Cert(const std::string &cert)
  * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setPKCS12Cert(const std::string &cert)
  * @copydoc digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
+ * @since 3.15.0
  */
 SET1CONSTEX(string, setPKCS12Cert, (void)value)
 
@@ -606,24 +651,29 @@ SET1CONSTEX(string, setPKCS12Cert, (void)value)
  * @fn void digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
  * Sets a PKCS#12 certificate password. Also adds or replaces PKCS#12 certificate password in the user configuration file.
  *
+ * @deprecated Since 3.16.0
  * @param pass PKCS#12 certificate password.
  * @throws Exception exception is thrown if saving a PKCS#12 certificate password into a user configuration file fails.
  */
 /**
  * @fn void digidoc::XmlConfV2::setPKCS12Pass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setPKCS12Pass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setPKCS12Pass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setPKCS12Pass(const std::string &pass)
  * @copydoc digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
+ * @since 3.15.0
  */
 SET1CONSTEX(string, setPKCS12Pass, (void)value)
 
@@ -637,18 +687,22 @@ SET1CONSTEX(string, setPKCS12Pass, (void)value)
 /**
  * @fn void digidoc::XmlConfV2::setTSUrl(const std::string &url)
  * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setTSUrl(const std::string &url)
  * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setTSUrl(const std::string &url)
  * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setTSUrl(const std::string &url)
  * @copydoc digidoc::XmlConf::setTSUrl(const std::string &url)
+ * @since 3.15.0
  */
 SET1CONST(string, setTSUrl, TSUrl)
 
@@ -662,18 +716,22 @@ SET1CONST(string, setTSUrl, TSUrl)
 /**
  * @fn void digidoc::XmlConfV2::setVerifyServiceUri(const std::string &url)
  * @copydoc digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setVerifyServiceUri(const std::string &url)
  * @copydoc digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setVerifyServiceUri(const std::string &url)
  * @copydoc digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setVerifyServiceUri(const std::string &url)
  * @copydoc digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
+ * @since 3.15.0
  */
 SET1CONST(string, setVerifyServiceUri, verifyServiceUri)
 
@@ -681,24 +739,29 @@ SET1CONST(string, setVerifyServiceUri, verifyServiceUri)
  * @fn void digidoc::XmlConf::setPKCS12Disable(bool disable)
  * Sets a PKCS#12 certificate usage. Also adds or replaces PKCS#12 certificate usage in the user configuration file.
  *
+ * @deprecated Since 3.16.0
  * @param disable PKCS#12 certificate usage.
  * @throws Exception exception is thrown if saving a PKCS#12 certificate usage into a user configuration file fails.
  */
 /**
  * @fn void digidoc::XmlConfV2::setPKCS12Disable(bool disable)
  * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setPKCS12Disable(bool disable)
  * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setPKCS12Disable(bool disable)
  * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setPKCS12Disable(bool disable)
  * @copydoc digidoc::XmlConf::setPKCS12Disable(bool disable)
+ * @since 3.15.0
  */
 SET1EX([[maybe_unused]] bool, setPKCS12Disable, {})
 
@@ -711,67 +774,101 @@ SET1EX([[maybe_unused]] bool, setPKCS12Disable, {})
 /**
  * @fn void digidoc::XmlConfV2::setProxyTunnelSSL(bool enable)
  * @copydoc digidoc::XmlConf::setProxyTunnelSSL(bool enable)
+ * @since 3.12.2
  */
 /**
  * @fn void digidoc::XmlConfV3::setProxyTunnelSSL(bool enable)
  * @copydoc digidoc::XmlConf::setProxyTunnelSSL(bool enable)
+ * @since 3.13.8
  */
 /**
  * @fn void digidoc::XmlConfV4::setProxyTunnelSSL(bool enable)
  * @copydoc digidoc::XmlConf::setProxyTunnelSSL(bool enable)
+ * @since 3.14.7
  */
 /**
  * @fn void digidoc::XmlConfV5::setProxyTunnelSSL(bool enable)
  * @copydoc digidoc::XmlConf::setProxyTunnelSSL(bool enable)
+ * @since 3.15.0
  */
 SET1(bool, setProxyTunnelSSL, proxyTunnelSSL)
 
 
+/**
+ * @since 3.12.2
+ */
 X509Cert XmlConfV2::verifyServiceCert() const
 {
     return ConfV2::verifyServiceCert();
 }
 
+/**
+ * @since 3.13.8
+ */
 X509Cert XmlConfV3::verifyServiceCert() const
 {
     return ConfV3::verifyServiceCert();
 }
 
+/**
+ * @since 3.14.7
+ */
 X509Cert XmlConfV4::verifyServiceCert() const
 {
     return ConfV4::verifyServiceCert();
 }
 
+/**
+ * @since 3.15.0
+ */
 X509Cert XmlConfV5::verifyServiceCert() const
 {
     return ConfV5::verifyServiceCert();
 }
 
+/**
+ * @since 3.13.8
+ */
 set<string> XmlConfV3::OCSPTMProfiles() const
 {
     return d->ocspTMProfiles.empty() ? ConfV3::OCSPTMProfiles() : d->ocspTMProfiles;
 }
 
+/**
+ * @since 3.14.7
+ */
 set<string> XmlConfV4::OCSPTMProfiles() const
 {
     return d->ocspTMProfiles.empty() ? ConfV3::OCSPTMProfiles() : d->ocspTMProfiles;
 }
 
+/**
+ * @since 3.15.0
+ */
 set<string> XmlConfV5::OCSPTMProfiles() const
 {
     return d->ocspTMProfiles.empty() ? ConfV3::OCSPTMProfiles() : d->ocspTMProfiles;
 }
 
+/**
+ * @since 3.14.7
+ */
 vector<X509Cert> XmlConfV4::verifyServiceCerts() const
 {
     return ConfV4::verifyServiceCerts();
 }
 
+/**
+ * @since 3.15.0
+ */
 vector<X509Cert> XmlConfV5::verifyServiceCerts() const
 {
     return ConfV5::verifyServiceCerts();
 }
 
+/**
+ * @since 3.15.0
+ */
 vector<X509Cert> XmlConfV5::TSCerts() const
 {
     return ConfV5::TSCerts();
