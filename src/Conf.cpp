@@ -42,7 +42,7 @@ Conf* Conf::INSTANCE = nullptr;
  * @class digidoc::Conf
  * @brief Configuration class which can reimplemented and virtual methods overloaded.
  *
- * @deprecated Use digidoc::ConfV5
+ * @deprecated Since 3.12.2, use digidoc::ConfV5
  * @see @ref parameters
  */
 /**
@@ -68,7 +68,7 @@ void Conf::init(Conf *conf)
 
 /**
  * Returns libdigidoc library configuration file's (digidoc.ini) file location
- * @deprecated Unused
+ * @deprecated Since 3.12.0, Unused
  */
 string Conf::libdigidocConf() const { return {}; }
 
@@ -118,7 +118,7 @@ string Conf::ocsp(const string &/*issuer*/) const
 
 /**
  * Gets Certificate store location.
- * @deprecated Unused
+ * @deprecated Since 3.10.0, Unused
  */
 string Conf::certsPath() const { return {}; }
 
@@ -146,17 +146,20 @@ string Conf::proxyPass() const { return {}; }
  * Gets PKCS12 certificate file location.
  *
  * Used for signing OCSP request
+ * @deprecated Since 3.16.0
  */
 string Conf::PKCS12Cert() const { return {}; }
 
 /**
  * Gets PKCS12 password.
+ * @deprecated Since 3.16.0
  * @see digidoc::Conf::PKCS12Cert
  */
 string Conf::PKCS12Pass() const { return {}; }
 
 /**
  * Gets PKCS12 usage.
+ * @deprecated Since 3.16.0
  * @see digidoc::Conf::PKCS12Cert
  */
 bool Conf::PKCS12Disable() const { return false; }
@@ -235,8 +238,9 @@ string Conf::verifyServiceUri() const { return SIVA_URL; }
  * Conf contains virtual members and is not leaf class we need create
  * subclasses to keep binary compatibility
  * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
+ * @since 3.12.2
  * @see digidoc::Conf
- * @deprecated Use digidoc::ConfV5
+ * @deprecated Since 3.13.8, use digidoc::ConfV5
  * @see @ref parameters
  */
 /**
@@ -253,6 +257,7 @@ ConfV2* ConfV2::instance() { return dynamic_cast<ConfV2*>(Conf::instance()); }
 
 /**
  * Gets verify service Cert
+ * @since 3.12.2
  */
 X509Cert ConfV2::verifyServiceCert() const { return X509Cert(); }
 
@@ -265,8 +270,9 @@ X509Cert ConfV2::verifyServiceCert() const { return X509Cert(); }
  * Conf contains virtual members and is not leaf class we need create
  * subclasses to keep binary compatibility
  * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
+ * @since 3.13.8
  * @see digidoc::ConfV2
- * @deprecated Use digidoc::ConfV5
+ * @deprecated Since 3.14.7, use digidoc::ConfV5
  * @see @ref parameters
  */
 /**
@@ -285,6 +291,7 @@ ConfV3* ConfV3::instance() { return dynamic_cast<ConfV3*>(Conf::instance()); }
  * Gets OCSP TM Profile OID-s
  *
  * OCSP responder certificate policies that are used to identify if OCSP response is given with TM profile
+ * @since 3.13.8
  */
 set<string> ConfV3::OCSPTMProfiles() const { return { "1.3.6.1.4.1.10015.4.1.2" }; }
 
@@ -297,8 +304,9 @@ set<string> ConfV3::OCSPTMProfiles() const { return { "1.3.6.1.4.1.10015.4.1.2" 
  * Conf contains virtual members and is not leaf class we need create
  * subclasses to keep binary compatibility
  * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
+ * @since 3.14.7
  * @see digidoc::ConfV3
- * @deprecated Use digidoc::ConfV5
+ * @deprecated Since 3.15.0, use digidoc::ConfV5
  * @see @ref parameters
  */
 /**
@@ -315,6 +323,7 @@ ConfV4* ConfV4::instance() { return dynamic_cast<ConfV4*>(Conf::instance()); }
 
 /**
  * Gets verify service Certs
+ * @since 3.14.7
  */
 vector<X509Cert> ConfV4::verifyServiceCerts() const
 {
@@ -330,6 +339,7 @@ vector<X509Cert> ConfV4::verifyServiceCerts() const
  * Conf contains virtual members and is not leaf class we need create
  * subclasses to keep binary compatibility
  * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
+ * @since 3.15.0
  * @see digidoc::ConfV4
  * @see @ref parameters
  */
@@ -347,6 +357,7 @@ ConfV5* ConfV5::instance() { return dynamic_cast<ConfV5*>(Conf::instance()); }
 
 /**
  * Gets verify service Certs
+ * @since 3.15.0
  */
 vector<X509Cert> ConfV5::TSCerts() const
 {

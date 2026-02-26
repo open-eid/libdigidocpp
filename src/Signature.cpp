@@ -29,6 +29,17 @@ using namespace digidoc;
 using namespace std;
 
 /**
+ * @struct digidoc::TSAInfo
+ * @brief Time-stamp information.
+ * @since 4.3.0
+ *
+ * @var digidoc::TSAInfo::cert
+ * Time-stamp token certificate.
+ * @var digidoc::TSAInfo::time
+ * Time-stamp token time.
+ */
+
+/**
  * @class digidoc::Signature
  *
  * @brief <code>Signature</code> interface. Provides interface for handling a signature and the corresponding OCSP response properties.
@@ -37,6 +48,7 @@ using namespace std;
 /**
  * http://open-eid.github.io/SiVa/siva/appendix/validation_policy/#POLv1
  *
+ * @since 3.13.0
  * @see validate(const std::string &policy) const
  */
 const string Signature::POLv1 = "POLv1";
@@ -44,6 +56,7 @@ const string Signature::POLv1 = "POLv1";
 /**
  * http://open-eid.github.io/SiVa/siva/appendix/validation_policy/#POLv2
  *
+ * @since 3.13.0
  * @see validate(const std::string &policy) const
  */
 const string Signature::POLv2 = "POLv2";
@@ -76,6 +89,7 @@ string Signature::countryName() const { return {}; }
 
 /**
  * Returns signed signature hash message imprint value (TM - OCSP Nonce, TS - TimeStamp value)
+ * @since 3.13.7
  */
 vector<unsigned char> Signature::messageImprint() const { return {}; }
 
@@ -91,6 +105,7 @@ string Signature::stateOrProvince() const { return {}; }
 
 /**
  * Returns signature production street address.
+ * @since 3.13.0
  */
 string Signature::streetAddress() const { return {}; }
 
@@ -101,6 +116,7 @@ vector<string> Signature::signerRoles() const { return {}; }
 
 /**
  * Return signer's certificate common name
+ * @since 3.13.0
  */
 string Signature::signedBy() const { return signingCertificate().subjectName("CN"); }
 
@@ -144,6 +160,7 @@ string Signature::signedBy() const { return signingCertificate().subjectName("CN
 
 /**
  * Validates signature
+ * @since 3.13.0
  * @see POLv1
  * @see POLv2
  */
@@ -165,6 +182,7 @@ void Signature::validate(const std::string & /*policy*/) const { validate(); }
 /**
  * Extends signature to selected profile
  *
+ * @deprecated Since 4.1.0, use extendSignatureProfile(Signer *signer)
  * @param profile Target profile
  */
 void Signature::extendSignatureProfile(const string &profile) {
@@ -180,6 +198,7 @@ void Signature::extendSignatureProfile(const string &profile) {
 /**
  * Extends signature to selected profile
  *
+ * @since 4.1.0
  * @param signer Signer parameters
  */
 void Signature::extendSignatureProfile(Signer * /*signer*/) {}
@@ -206,7 +225,7 @@ X509Cert Signature::OCSPCertificate() const { return X509Cert(); }
 
 /**
  * Returns signed signature message imprint in OCSP response nonce.
- * @deprecated Use messageImprint()
+ * @deprecated Since 3.13.7, use messageImprint()
  */
 vector<unsigned char> Signature::OCSPNonce() const { return messageImprint(); }
 
@@ -222,6 +241,7 @@ string Signature::TimeStampTime() const { return {}; }
 
 /**
  * Returns signature Archive TimeStampToken certificate.
+ * @deprecated Since 4.3.0, use ArchiveTimeStamps()
  */
 X509Cert Signature::ArchiveTimeStampCertificate() const
 {
@@ -232,6 +252,7 @@ X509Cert Signature::ArchiveTimeStampCertificate() const
 
 /**
  * Returns signature Archive TimeStampToken time.
+ * @deprecated Since 4.3.0, use ArchiveTimeStamps()
  */
 string Signature::ArchiveTimeStampTime() const
 {
@@ -242,6 +263,7 @@ string Signature::ArchiveTimeStampTime() const
 
 /**
  * Returns signature Archive TimeStampTokens.
+ * @since 4.3.0
  */
 vector<TSAInfo> Signature::ArchiveTimeStamps() const {
     if(auto cert = ArchiveTimeStampCertificate())
@@ -256,6 +278,34 @@ struct Signature::Validator::Private
     std::vector<Exception::ExceptionCode> warnings;
 };
 
+/**
+ * @class digidoc::Signature::Validator
+ * @since 3.13.8
+ * @brief Signature validation helper class.
+ */
+
+/**
+ * @enum digidoc::Signature::Validator::Status
+ * @brief Signature validation status.
+ *
+ * @var digidoc::Signature::Validator::Valid
+ * Signature is valid and uses qualified certificates.
+ * @var digidoc::Signature::Validator::Warning
+ * Signature is valid but has some warnings.
+ * @var digidoc::Signature::Validator::NonQSCD
+ * Signature is valid but does not use qualified certificates.
+ * @var digidoc::Signature::Validator::Test
+ * @deprecated Since 3.14.7, Unused
+ * @var digidoc::Signature::Validator::Invalid
+ * Signature is invalid.
+ * @var digidoc::Signature::Validator::Unknown
+ * Signature validity is unknown (e.g. missing certificates).
+ */
+
+/**
+ * Validates signature and initializes Validator object.
+ * @param s Signature to validate.
+ */
 Signature::Validator::Validator(const Signature *s)
     : d(new Private)
 {
@@ -281,11 +331,17 @@ Signature::Validator::Validator(const Signature *s)
     }
 }
 
+/**
+ * Releases resources.
+ */
 Signature::Validator::~Validator()
 {
     delete d;
 }
 
+/**
+ * Returns validation diagnostics.
+ */
 std::string Signature::Validator::diagnostics() const
 {
     return d->diagnostics;
@@ -320,11 +376,17 @@ void Signature::Validator::parseException(const Exception &e)
     }
 }
 
+/**
+ * Returns validation status.
+ */
 Signature::Validator::Status Signature::Validator::status() const
 {
     return d->result;
 }
 
+/**
+ * Returns validation warnings.
+ */
 std::vector<Exception::ExceptionCode> Signature::Validator::warnings() const
 {
     return d->warnings;

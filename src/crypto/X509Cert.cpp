@@ -100,99 +100,142 @@ DECLARE_ASN1_FUNCTIONS(QCStatements)
  */
 
 /**
+ * @class digidoc::X509Cert
+ *
+ * @brief Wrapper for OpenSSL X509 certificate structure.
+ */
+
+/**
+ * @enum digidoc::X509Cert::Format
+ * Binary encoding format
+ *
+ * @var digidoc::X509Cert::Der
+ * ASN.1 syntax
+ *
+ * @var digidoc::X509Cert::Pem
+ * Base64 encoded ASN.1 syntax
+ */
+
+/**
  * @enum digidoc::X509Cert::KeyUsage
  * Key usage bits defined in certificate
  *
  * @var digidoc::X509Cert::DigitalSignature
+ * Key used for verifying digital signatures, other than signatures on certificates and CRLs.
  * @var digidoc::X509Cert::NonRepudiation
- * Used for signing certificate selection in the current library
- *
+ * Key used to provide a non-repudiation service which protects against the signing entity falsely denying some action.
+ * Used for signing certificate selection in the current library.
  * @var digidoc::X509Cert::KeyEncipherment
+ * Key used for enciphering private or shortcut keys.
  * @var digidoc::X509Cert::DataEncipherment
+ * Key used for directly enciphering raw user data without the use of an intermediate symmetric cipher.
  * @var digidoc::X509Cert::KeyAgreement
+ * Key used for key agreement.
  * @var digidoc::X509Cert::KeyCertificateSign
+ * Key used for verifying signatures on public key certificates.
  * @var digidoc::X509Cert::CRLSign
+ * Key used for verifying signatures on certificate revocation lists (e.g., CRLs).
  * @var digidoc::X509Cert::EncipherOnly
+ * In conjunction with KeyAgreement, key used only for enciphering data while performing key agreement.
  * @var digidoc::X509Cert::DecipherOnly
+ * In conjunction with KeyAgreement, key used only for deciphering data while performing key agreement.
  */
 
 /**
  * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcCompliance
+ * @since 3.13.0
  */
 const string X509Cert::QC_COMPLIANT = "0.4.0.1862.1.1";
 /**
  * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcSSCD
+ * @since 3.13.0
  */
 const string X509Cert::QC_SSCD = "0.4.0.1862.1.4";
 /**
  * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcPDS
+ * @since 3.13.0
  */
 const string X509Cert::QC_QCP = "0.4.0.1862.1.5";
 /**
  * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcType
+ * @since 3.13.0
  */
 const string X509Cert::QC_QCT = "0.4.0.1862.1.6";
 /**
  * https://www.ietf.org/rfc/rfc3739.txt - id-qcs-pkixQCSyntax-v1
+ * @since 3.13.0
  */
 const string X509Cert::QC_SYNTAX1 = "1.3.6.1.5.5.7.11.1";
 /**
  * https://www.ietf.org/rfc/rfc3739.txt - id-qcs-pkixQCSyntax-v2
+ * @since 3.13.0
  */
 const string X509Cert::QC_SYNTAX2 = "1.3.6.1.5.5.7.11.2";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.01.01_60/en_31941201v010101p.pdf - id-etsi-qcs-semanticsId-natural
+ * @since 3.13.0
  */
 const string X509Cert::QCS_NATURAL = "0.4.0.194121.1.1";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.01.01_60/en_31941201v010101p.pdf - id-etsi-qcs-semanticsId-legal
+ * @since 3.13.0
  */
 const string X509Cert::QCS_LEGAL = "0.4.0.194121.1.2";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.01.01_60/en_31941205v020101p.pdf - id-etsi-qct-esign
+ * @since 3.13.0
  */
 const string X509Cert::QCT_ESIGN = "0.4.0.1862.1.6.1";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.01.01_60/en_31941205v020101p.pdf - id-etsi-qct-eseal
+ * @since 3.13.0
  */
 const string X509Cert::QCT_ESEAL = "0.4.0.1862.1.6.2";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.01.01_60/en_31941205v020101p.pdf - id-etsi-qct-web
+ * @since 3.13.0
  */
 const string X509Cert::QCT_WEB = "0.4.0.1862.1.6.3";
 /**
  * http://www.etsi.org/deliver/etsi_ts/101400_101499/101456/01.04.03_60/ts_101456v010403p.pdf
+ * @since 3.13.0
  */
 const string X509Cert::QCP_PUBLIC_WITH_SSCD = "0.4.0.1456.1.1";
 /**
  * http://www.etsi.org/deliver/etsi_ts/101400_101499/101456/01.04.03_60/ts_101456v010403p.pdf
+ * @since 3.13.0
  */
 const string X509Cert::QCP_PUBLIC = "0.4.0.1456.1.2";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * @since 3.13.0
  */
 const string X509Cert::QCP_NATURAL = "0.4.0.194112.1.0";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * @since 3.13.0
  */
 const string X509Cert::QCP_LEGAL = "0.4.0.194112.1.1";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * @since 3.13.0
  */
 const string X509Cert::QCP_NATURAL_QSCD = "0.4.0.194112.1.2";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * @since 3.13.0
  */
 const string X509Cert::QCP_LEGAL_QSCD = "0.4.0.194112.1.3";
 /**
  * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * @since 3.13.0
  */
 const string X509Cert::QCP_WEB = "0.4.0.194112.1.4";
 
 /**
  * Creates copy of the OpenSSL X509 certificate.
  *
- * @param cert X509 certificate structure to be wrapped.
+ * @param cert OpenSSL X509 certificate structure to be wrapped.
  */
 X509Cert::X509Cert(X509* cert)
     : cert(X509_dup(cert), X509_free)
@@ -200,11 +243,11 @@ X509Cert::X509Cert(X509* cert)
 }
 
 /**
- * Creates X509 certificate from bytes.
+ * Creates X509 certificate from a vector of bytes.
  *
- * @param bytes X509 certificate in bytes.
- * @param format <code>Format</code> input bytes format
- * @throws Exception throws exception if X509 certificate parsing failed.
+ * @param bytes X509 certificate data.
+ * @param format <code>Format</code> input bytes format (Der or Pem).
+ * @throws Exception if X509 certificate parsing failed.
  */
 X509Cert::X509Cert(const vector<unsigned char> &bytes, Format format)
     : X509Cert(bytes.data(), bytes.size(), format)
@@ -212,12 +255,12 @@ X509Cert::X509Cert(const vector<unsigned char> &bytes, Format format)
 }
 
 /**
- * Creates X509 certificate from bytes.
+ * Creates X509 certificate from raw bytes.
  *
- * @param bytes X509 certificate in bytes.
- * @param size of X509 certificate in bytes.
- * @param format <code>Format</code> input bytes format
- * @throws Exception throws exception if X509 certificate parsing failed.
+ * @param bytes Pointer to X509 certificate data.
+ * @param size Size of the data in bytes.
+ * @param format <code>Format</code> input bytes format (Der or Pem).
+ * @throws Exception if X509 certificate parsing failed.
  */
 X509Cert::X509Cert(const unsigned char *bytes, size_t size, Format format)
 {
@@ -238,11 +281,11 @@ X509Cert::X509Cert(const unsigned char *bytes, size_t size, Format format)
 }
 
 /**
- * Creates X509 certificate from path.
+ * Creates X509 certificate from a file.
  *
- * @param path X509 certificate path.
- * @param format <code>Format</code> input bytes format
- * @throws Exception throws exception if X509 certificate parsing failed.
+ * @param path Path to the X509 certificate file.
+ * @param format <code>Format</code> input file format (Der or Pem).
+ * @throws Exception if the file cannot be opened or parsing failed.
  */
 X509Cert::X509Cert(const string &path, Format format)
 {
@@ -270,12 +313,14 @@ X509Cert::X509Cert(const X509Cert &other) = default;
 X509Cert::X509Cert(X509Cert &&other) noexcept = default;
 
 /**
- * Clean up underlying X509 data.
+ * Clean up underlying OpenSSL X509 data.
  */
 X509Cert::~X509Cert() = default;
 
 /**
  * Encodes the X509 certificate using DER encoding.
+ *
+ * @return DER encoded certificate bytes.
  */
 X509Cert::operator std::vector<unsigned char>() const
 {
@@ -283,7 +328,9 @@ X509Cert::operator std::vector<unsigned char>() const
 }
 
 /**
- * Returns true if handle is valid
+ * Checks if the certificate object holds a valid OpenSSL handle.
+ *
+ * @return true if handle is valid.
  */
 X509Cert::operator bool() const
 {
@@ -291,9 +338,10 @@ X509Cert::operator bool() const
 }
 
 /**
- * Returns X.509 certificate serial number.
+ * Returns X.509 certificate serial number in decimal string format.
  *
- * @throws Exception exception is thrown if the serial is incorrect.
+ * @return Decimal serial number string.
+ * @throws Exception if the serial number cannot be retrieved.
  */
 string X509Cert::serial() const
 {
@@ -308,11 +356,12 @@ string X509Cert::serial() const
 }
 
 /**
- * Returns issuer name as string.
+ * Returns issuer name as an RFC 2253 string.
  *
- * @param obj if set to empty string then returns whole issuer name. Otherwise, for example, if set to 
- * CN then returns Common name part from issuer name.
- * @throws Exception exception is throws if the conversion failed.
+ * @param obj If empty, returns the full issuer DN. If a short name (e.g., "CN", "O", "C") is provided,
+ * returns only that component of the issuer name.
+ * @return Issuer name string.
+ * @throws Exception if the conversion failed.
  */
 string X509Cert::issuerName(const string &obj) const
 {
@@ -326,7 +375,9 @@ constexpr auto X509Cert::extension(int nid) const noexcept
 }
 
 /**
- * Returns current certificate key usage bits
+ * Returns the certificate's key usage bits.
+ *
+ * @return Vector of <code>KeyUsage</code> enums.
  */
 vector<X509Cert::KeyUsage> X509Cert::keyUsage() const
 {
@@ -344,7 +395,9 @@ vector<X509Cert::KeyUsage> X509Cert::keyUsage() const
 }
 
 /**
- * Returns current certificate policies
+ * Returns the certificate's policy OIDs.
+ *
+ * @return Vector of policy OID strings.
  */
 vector<string> X509Cert::certificatePolicies() const
 {
@@ -358,7 +411,10 @@ vector<string> X509Cert::certificatePolicies() const
 }
 
 /**
- * Return QCStatements info https://www.ietf.org/rfc/rfc3739.txt
+ * Returns Qualified Certificate (QC) statements as defined in RFC 3739 and ETSI EN 319 412-5.
+ *
+ * @since 3.13.0
+ * @return Vector of OID strings representing QC statements.
  */
 vector<string> X509Cert::qcStatements() const
 {
@@ -404,11 +460,12 @@ vector<string> X509Cert::qcStatements() const
 }
 
 /**
- * Return subject name as string.
+ * Returns subject name as an RFC 2253 string.
  *
- * @param obj empty string then returns whole issuer name. Otherwise, for example, if set to 
- * CN then returns Common name part from issuer name.
- * @throws Exception exception is throws if the conversion failed.
+ * @param obj If empty, returns the full subject DN. If a short name (e.g., "CN", "SN", "GN") is provided,
+ * returns only that component of the subject name.
+ * @return Subject name string.
+ * @throws Exception if the conversion failed.
  */
 string X509Cert::subjectName(const string &obj) const
 {
@@ -423,11 +480,11 @@ string X509Cert::toOID(ASN1_OBJECT *obj)
 };
 
 /**
- * Converts X509_NAME struct to string.
+ * Converts OpenSSL X509_NAME struct to string.
  *
- * @param obj Optional parameter to get from X509_NAME (default CN).
- * @return converted value of X509_NAME.
- * @throws Exception throws exception if conversion failed.
+ * @param obj Optional parameter to extract a specific component (e.g., "CN").
+ * @return String representation of the name.
+ * @throws Exception if conversion failed.
  */
 template<auto Func>
 string X509Cert::toString(const string &obj) const
@@ -437,7 +494,7 @@ string X509Cert::toString(const string &obj) const
         return str;
     X509_NAME* name = Func(cert.get());
     if(!name)
-        THROW_OPENSSLEXCEPTION("Failed to convert X.509 certificate subject");
+        THROW_OPENSSLEXCEPTION("Failed to convert X.509 certificate name");
 
     if(!obj.empty())
     {
@@ -472,7 +529,9 @@ string X509Cert::toString(const string &obj) const
 }
 
 /**
- * Returns certificate internal handle (OpenSSL X509 struct)
+ * Returns the internal OpenSSL X509 structure handle.
+ *
+ * @return Pointer to OpenSSL X509 structure.
  */
 X509* X509Cert::handle() const
 {
@@ -480,7 +539,9 @@ X509* X509Cert::handle() const
 }
 
 /**
- * Rerturns true if certificate is CA
+ * Checks if the certificate is a Certificate Authority (CA).
+ *
+ * @return true if the certificate is a CA.
  */
 bool X509Cert::isCA() const
 {
@@ -489,9 +550,11 @@ bool X509Cert::isCA() const
 }
 
 /**
- * Validates if certificate is in valid time slot
+ * Validates if the certificate is within its valid time period.
  *
- * @param t If param is 0 then current time is used, else defined time
+ * @param t Pointer to time_t. If <code>nullptr</code>, the current system time is used.
+ * @return true if the certificate is valid at time <code>t</code>.
+ * @throws Exception if validation fails.
  */
 bool X509Cert::isValid(time_t *t) const
 {
@@ -505,8 +568,13 @@ bool X509Cert::isValid(time_t *t) const
 }
 
 /**
- * Returns true if certificate is signed by trusted issuer
- * @throws Exception if error
+ * Verifies if the certificate is signed by a trusted issuer.
+ *
+ * @since 4.4.0
+ * @param noqscd If true, QSCD (Qualified Signature Creation Device) requirements are not checked.
+ * @param validation_time Time at which the validation is performed.
+ * @return true if the certificate is verified as trusted.
+ * @throws Exception if verification error occurs.
  */
 bool X509Cert::verify(bool noqscd, tm validation_time) const
 {
@@ -514,7 +582,9 @@ bool X509Cert::verify(bool noqscd, tm validation_time) const
 }
 
 /**
- * Negative operator to check if object is valid
+ * Checks if the certificate object is invalid (holds no handle).
+ *
+ * @return true if the certificate is invalid.
  */
 bool X509Cert::operator !() const
 {
@@ -522,17 +592,20 @@ bool X509Cert::operator !() const
 }
 
 /**
- * Assign operator
+ * Assignment operator.
  */
 X509Cert& X509Cert::operator =(const X509Cert &other) = default;
 
 /**
- * Move operator
+ * Move assignment operator.
  */
 X509Cert& X509Cert::operator =(X509Cert &&other) noexcept = default;
 
 /**
- * Equal operator to compare two objects
+ * Compares the certificate with an OpenSSL X509 pointer.
+ *
+ * @param other Pointer to OpenSSL X509 structure.
+ * @return true if both refer to the same certificate.
  */
 bool X509Cert::operator ==(X509 *other) const
 {
@@ -544,7 +617,10 @@ bool X509Cert::operator ==(X509 *other) const
 }
 
 /**
- * Equal operator to compare two objects
+ * Compares two <code>X509Cert</code> objects.
+ *
+ * @param other Another <code>X509Cert</code> object.
+ * @return true if both refer to the same certificate.
  */
 bool X509Cert::operator ==(const X509Cert &other) const
 {
@@ -552,7 +628,10 @@ bool X509Cert::operator ==(const X509Cert &other) const
 }
 
 /**
- * Not equal operator to compare two objects
+ * Compares two <code>X509Cert</code> objects for inequality.
+ *
+ * @param other Another <code>X509Cert</code> object.
+ * @return true if the certificates are different.
  */
 bool X509Cert::operator !=(const X509Cert &other) const
 {
