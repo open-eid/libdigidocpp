@@ -98,6 +98,8 @@ public:
     void removeSignature(unsigned int id) final;
     Signature* sign(Signer* signer) final;
 
+    const std::string& path() const final;
+
     static std::unique_ptr<Container> createInternal(const std::string &path);
     static std::unique_ptr<Container> openInternal(const std::string &path, ContainerOpenCB *cb);
 
