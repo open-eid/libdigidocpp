@@ -39,7 +39,6 @@ namespace digidoc
               static std::string digidocppPath();
               static std::filesystem::path encodeName(std::string_view fileName);
               static time_t modifiedTime(const std::string &path);
-              static void updateModifiedTime(const std::string &path, time_t time);
               static bool fileExists(const std::string& path);
               static bool fileExtension(std::string_view path, std::initializer_list<std::string_view> list);
               static unsigned long fileSize(const std::filesystem::path &path) noexcept;

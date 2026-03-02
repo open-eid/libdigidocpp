@@ -133,13 +133,6 @@ time_t File::modifiedTime(const string &path)
     return f_stat(encodeName(path).c_str(), &fileInfo) ? time(nullptr) : fileInfo.st_mtime;
 }
 
-void File::updateModifiedTime(const string &path, time_t time)
-{
-    f_utimbuf u_time { time, time };
-    if(f_utime(encodeName(path).c_str(), &u_time))
-        THROW("Failed to update file modified time.");
-}
-
 bool File::fileExtension(string_view path, initializer_list<string_view> list)
 {
     size_t pos = path.find_last_of('.');

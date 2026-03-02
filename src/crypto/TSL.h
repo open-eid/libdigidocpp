@@ -55,8 +55,9 @@ public:
     std::vector<Pointer> pointers() const;
     std::vector<Service> services() const;
 
-    static bool activate(std::string territory);
-    static std::vector<Service> parse();
+    static bool activate(std::string_view territory);
+    static std::vector<Service> parse(const std::string &url, const std::vector<X509Cert> &certs,
+        const std::string &cache, std::string_view territory);
 
 private:
     std::vector<std::string> pivotURLs() const;
@@ -67,10 +68,8 @@ private:
 
     static std::string fetch(const std::string &url, const std::string &path);
     static void debugException(const Exception &e);
-    static std::vector<Service> parse(const std::string &url, const std::vector<X509Cert> &certs,
-        const std::string &cache, const std::string &territory);
     static TSL parseTSL(const std::string &url, const std::vector<X509Cert> &certs,
-        const std::string &cache, const std::string &territory) ;
+        const std::string &cache, std::string_view territory) ;
     static bool parseInfo(XMLNode info, Service &s);
     static std::vector<X509Cert> serviceDigitalIdentity(XMLNode other, std::string_view ctx);
     static std::vector<X509Cert> serviceDigitalIdentities(XMLNode other, std::string_view ctx);

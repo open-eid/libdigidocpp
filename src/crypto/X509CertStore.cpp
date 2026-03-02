@@ -25,6 +25,7 @@
 #include "crypto/TSL.h"
 #include "util/algorithm.h"
 #include "util/DateTime.h"
+#include "util/File.h"
 #include "util/log.h"
 
 #include <openssl/conf.h>
@@ -47,34 +48,28 @@ const X509CertStore::Type X509CertStore::OCSP {
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
 };
 
-class X509CertStore::Private: public vector<TSL::Service> {
-public:
-    void update()
-    {
-        vector<TSL::Service> list = TSL::parse();
-        swap(list);
-        INFO("Loaded %zu certificates into TSL certificate store.", size());
-    }
-};
+struct X509CertStore::Private: public vector<TSL::Service> {};
 
 /**
  * X509CertStore constructor.
  */
 X509CertStore::X509CertStore()
     : d(make_unique<Private>())
-{
-    d->update();
-}
+{}
 
 /**
  * Release all certificates.
  */
-X509CertStore::~X509CertStore() = default;
+X509CertStore::~X509CertStore() noexcept = default;
 
-void X509CertStore::activate(const X509Cert &cert) const
+void X509CertStore::activate(const X509Cert &cert) const try
 {
     if(std::max<bool>(TSL::activate(cert.issuerName("C")), TSL::activate(cert.subjectName("C"))))
-        d->update();
+        update();
+}
+catch(const Exception &e)
+{
+    ERR("Failed to activate TSL: %s", e.msg().c_str()); 
 }
 
 /**
@@ -188,6 +183,17 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
         }
     }
     return ok;
+}
+
+void X509CertStore::update() const
+{
+    string url = CONF(TSLUrl);
+    string cache = CONF(TSLCache);
+    vector<X509Cert> cert = CONF(TSLCerts);
+    util::File::createDirectory(cache);
+    vector<TSL::Service> list = TSL::parse(url, cert, cache, util::File::fileName(url));
+    d->swap(list);
+    INFO("Loaded %zu certificates into TSL certificate store.", d->size());
 }
 
 /**

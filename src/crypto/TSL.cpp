@@ -28,12 +28,14 @@
 
 #include <array>
 #include <charconv>
+#include <chrono>
 #include <fstream>
 #include <future>
 
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
+using namespace chrono_literals;
 
 namespace digidoc {
 
@@ -102,14 +104,14 @@ TSL::TSL(string file)
         WARN("Failed to parse configuration: %s", path.c_str());
 }
 
-bool TSL::activate(string territory)
+bool TSL::activate(string_view territory)
 {
     if(territory.size() != 2)
         return false;
     if(territory == "GR")
-        territory = "EL"; // Greece is EL in EU  TL
+        territory = "EL"; // Greece is EL in EU TL
     string cache = CONF(TSLCache);
-    string path = cache + '/' + territory + ".xml";
+    string path = cache + '/' + territory.data() + ".xml";
     if(File::fileExists(path))
         return false;
     ofstream(File::encodeName(path), ofstream::binary) << ' ';
@@ -192,50 +194,42 @@ string_view TSL::operatorName() const noexcept
     return toString(schemeInformation/"SchemeOperatorName");
 }
 
-vector<TSL::Service> TSL::parse()
-{
-    string url = CONF(TSLUrl);
-    string cache = CONF(TSLCache);
-    vector<X509Cert> cert = CONF(TSLCerts);
-    File::createDirectory(cache);
-    return parse(url, cert, cache, string(File::fileName(url)));
-}
-
 vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs,
-    const string &cache, const string &territory)
+    const string &cache, string_view territory)
 {
-    vector<Service> list;
-    try {
-        TSL tsl = parseTSL(url, certs, cache, territory);
-        if(tsl.pointers().empty())
-            return tsl.services();
+    TSL tsl = parseTSL(url, certs, cache, territory);
+    auto pointers = tsl.pointers();
+    if(pointers.empty())
+        return tsl.services();
 
-        vector< future< vector<TSL::Service> > > futures;
-        for(const TSL::Pointer &p: tsl.pointers())
-        {
-            if(!File::fileExists(cache + "/" + p.territory + ".xml"))
-                continue;
-            futures.push_back(async(launch::async, [p, cache]{
-                return parse(p.location, p.certs, cache, p.territory + ".xml");
-            }));
-        }
-        for(auto &f: futures)
-        {
-            vector<Service> services = f.get();
-            list.insert(list.end(), make_move_iterator(services.begin()), make_move_iterator(services.end()));
-        }
-    }
-    catch(const Exception &e)
+    vector< future< vector<TSL::Service> > > futures;
+    for(const TSL::Pointer &p: pointers)
     {
-        debugException(e);
-        ERR("TSL %s Failed to validate list", territory.c_str());
-        list.clear();
+        if(!File::fileExists(cache + "/" + p.territory + ".xml"))
+            continue;
+        futures.push_back(async(launch::async, [p, cache] noexcept -> vector<TSL::Service> {
+            try {
+                return parse(p.location, p.certs, cache, p.territory + ".xml");
+            }
+            catch(const Exception &e)
+            {
+                debugException(e);
+                ERR("TSL %s Failed to validate list", p.territory.c_str());
+                return {};
+            }
+        }));
+    }
+    vector<Service> list;
+    for(auto &f: futures)
+    {
+        vector<Service> services = f.get();
+        list.insert(list.end(), make_move_iterator(services.begin()), make_move_iterator(services.end()));
     }
     return list;
 }
 
 TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
-    const string &cache, const string &territory)
+    const string &cache, string_view territory)
 {
     string path = File::path(cache, territory);
     TSL valid;
@@ -243,24 +237,27 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
         TSL tsl(path);
         tsl.validate(certs);
         valid = std::move(tsl);
-        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), valid.sequenceNumber());
+        DEBUG("TSL %.*s (%llu) signature is valid", STR_VIEW_FMT(territory), valid.sequenceNumber());
 
         if(valid.isExpired())
         {
             if(!CONF(TSLAutoUpdate) && CONF(TSLAllowExpired))
                 return valid;
-            THROW("TSL %s (%llu) is expired", territory.c_str(), valid.sequenceNumber());
+            THROW("TSL %.*s (%llu) is expired", STR_VIEW_FMT(territory), valid.sequenceNumber());
         }
 
-        if(CONF(TSLOnlineDigest) && (File::modifiedTime(valid.path) < (time(nullptr) - (60 * 60 * 24))))
+        if(CONF(TSLOnlineDigest))
         {
-            if(valid.validateETag(url))
-                File::updateModifiedTime(valid.path, time(nullptr));
+            auto encPath = File::encodeName(valid.path);
+            auto now = chrono::file_clock::now();
+            error_code ec;
+            if(filesystem::last_write_time(encPath, ec) < now - 24h && valid.validateETag(url))
+                filesystem::last_write_time(encPath, now, ec);
         }
 
         return valid;
     } catch(const Exception &) {
-        ERR("TSL %s signature is invalid", territory.c_str());
+        ERR("TSL %.*s signature is invalid", STR_VIEW_FMT(territory));
         if(!CONF(TSLAutoUpdate))
             throw;
     }
@@ -272,22 +269,22 @@ TSL TSL::parseTSL(const string &url, const vector<X509Cert> &certs,
         tsl.validate(certs);
         valid = std::move(tsl);
 
-        ofstream(File::encodeName(path), ofstream::binary|fstream::trunc)
-            << ifstream(File::encodeName(valid.path), fstream::binary).rdbuf();
         error_code ec;
-        filesystem::remove(File::encodeName(valid.path), ec);
+        filesystem::copy_file(File::encodeName(valid.path), File::encodeName(path), filesystem::copy_options::overwrite_existing, ec);
+        if(ec == errc{})
+            filesystem::remove(File::encodeName(valid.path), ec);
 
         ofstream(File::encodeName(path + ".etag"), ofstream::trunc) << etag;
 
-        DEBUG("TSL %s (%llu) signature is valid", territory.c_str(), valid.sequenceNumber());
+        DEBUG("TSL %.*s (%llu) signature is valid", STR_VIEW_FMT(territory), valid.sequenceNumber());
     } catch(const Exception &) {
-        ERR("TSL %s signature is invalid", territory.c_str());
+        ERR("TSL %.*s signature is invalid", STR_VIEW_FMT(territory));
         if(!valid)
             throw;
     }
 
     if(valid.isExpired() && !CONF(TSLAllowExpired))
-        THROW("TSL %s (%llu) is expired", territory.c_str(), valid.sequenceNumber());
+        THROW("TSL %.*s (%llu) is expired", STR_VIEW_FMT(territory), valid.sequenceNumber());
 
     return valid;
 }
@@ -393,9 +390,9 @@ vector<string> TSL::pivotURLs() const
 
 vector<TSL::Pointer> TSL::pointers() const
 {
-    if(!contains(SCHEMES_URI, type()))
-        return {};
     vector<Pointer> pointer;
+    if(!contains(SCHEMES_URI, type()))
+        return pointer;
     for(auto other = schemeInformation/"PointersToOtherTSL"/"OtherTSLPointer"; other; other++)
     {
         Pointer p;
@@ -439,12 +436,12 @@ vector<X509Cert> TSL::serviceDigitalIdentity(XMLNode service, string_view ctx)
                 result.emplace_back(cert);
                 continue;
             } catch(const Exception &e) {
-                DEBUG("Failed to parse %.*s certificate, Testing also parse as PEM: %s", int(ctx.size()), ctx.data(), e.msg().c_str());
+                DEBUG("Failed to parse %.*s certificate, Testing also parse as PEM: %s", STR_VIEW_FMT(ctx), e.msg().c_str());
             }
             try {
                 result.emplace_back(cert, X509Cert::Pem);
             } catch(const Exception &e) {
-                DEBUG("Failed to parse %.*s certificate as PEM: %s", int(ctx.size()), ctx.data(), e.msg().c_str());
+                DEBUG("Failed to parse %.*s certificate as PEM: %s", STR_VIEW_FMT(ctx), e.msg().c_str());
             }
         }
     }
@@ -502,9 +499,9 @@ void TSL::validate() const
         THROW("Failed to parse XML");
     auto signature = (*this)/XMLName{"Signature", DSIG_NS};
     if(!signature)
-        THROW("TSL %s Failed to verify signature", territory().data());
+        THROW("TSL %.*s Failed to verify signature", STR_VIEW_FMT(territory()));
     if(!XMLDocument::verifySignature(signature))
-        THROW("TSL %s Signature is invalid", territory().data());
+        THROW("TSL %.*s Signature is invalid", STR_VIEW_FMT(territory()));
 }
 
 void TSL::validate(const vector<X509Cert> &certs, int recursion) const
@@ -521,7 +518,7 @@ void TSL::validate(const vector<X509Cert> &certs, int recursion) const
 
     vector<string> urls = pivotURLs();
     if(urls.empty())
-        THROW("TSL %s Signature is signed with untrusted certificate", territory().data());
+        THROW("TSL %.*s Signature is signed with untrusted certificate", STR_VIEW_FMT(territory()));
 
     // https://ec.europa.eu/tools/lotl/pivot-lotl-explanation.html
     string path = File::path(CONF(TSLCache), File::fileName(urls[0]));
@@ -604,6 +601,6 @@ bool TSL::validateRemoteDigest(const string &url)
     sha.update(is);
 
     if(!digest.empty() && digest != sha.result())
-        THROW("TSL %s remote digest does not match local. TSL might be outdated", territory().data());
+        THROW("TSL %.*s remote digest does not match local. TSL might be outdated", STR_VIEW_FMT(territory()));
     return true;
 }
