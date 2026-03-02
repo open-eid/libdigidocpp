@@ -544,11 +544,8 @@ void SignatureXAdES_B::validate(const string &policy) const
         if(!signatureref.empty())
             EXCEPTION_ADD(exception, "Manifest references and signature references do not match");
 
-        try { checkKeyInfo(); }
-        catch(const Exception& e) { exception.addCause(e); }
-
-        try { checkSigningCertificate(policy == POLv1); }
-        catch(const Exception& e) { exception.addCause(e); }
+        auto signingCertificate = checkSigningCertificate(policy == POLv1);
+        checkKeyInfo(signingCertificate);
     } catch(const Exception &e) {
         exception.addCause(e);
     } catch(...) {
@@ -595,9 +592,8 @@ void SignatureXAdES_B::checkDigest(XMLNode digest, const vector<unsigned char> &
  * Verify if SigningCertificate matches with
  * XAdES::SigningCertificate/SigningCertificateV2 Digest and IssuerSerial info
  */
-void SignatureXAdES_B::checkKeyInfo() const
+void SignatureXAdES_B::checkKeyInfo(const X509Cert &x509) const
 {
-    X509Cert x509 = signingCertificate();
     if(auto sigCert = signedSignatureProperties()/"SigningCertificate")
     {
         if(auto certs = sigCert/"Cert"; certs || !(certs + 1))
@@ -626,21 +622,30 @@ void SignatureXAdES_B::checkKeyInfo() const
  * Check if signing certificate was issued by trusted party.
  * @throws Exception on a problem with signing certificate
  */
-void SignatureXAdES_B::checkSigningCertificate(bool noqscd) const
+X509Cert SignatureXAdES_B::checkSigningCertificate(bool noqscd, tm validation_time) const
 {
-    try
+    X509Cert signingCertificate;
+    vector<X509Cert> untrusted;
+    for(auto x509Data = signature/"KeyInfo"/"X509Data"; x509Data; x509Data++)
     {
-        X509Cert signingCert = signingCertificate();
-        vector<X509Cert::KeyUsage> usage = signingCert.keyUsage();
-        if(!contains(usage, X509Cert::NonRepudiation))
-            THROW("Signing certificate does not contain NonRepudiation key usage flag");
-        if(!signingCertificate().verify(noqscd))
-            THROW("Unable to verify signing certificate");
+        for(auto x509Cert = x509Data/"X509Certificate"; x509Cert; x509Cert++)
+        {
+            vector<unsigned char> cert = x509Cert;
+            if(cert.empty())
+                continue;
+            if(!signingCertificate)
+                signingCertificate = X509Cert(cert);
+            else
+                untrusted.emplace_back(cert);
+        }
     }
-    catch(const Exception &e)
-    {
-        THROW_CAUSE( e, "Unable to verify signing certificate" );
-    }
+    if(!signingCertificate)
+        THROW("Signature does not contain signer certificate");
+    if(!contains(signingCertificate.keyUsage(), X509Cert::NonRepudiation))
+        THROW("Signing certificate does not contain NonRepudiation key usage flag");
+    if(!signingCertificate.verify(noqscd, validation_time, untrusted))
+        THROW("Unable to verify signing certificate");
+    return signingCertificate;
 }
 
 void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime)

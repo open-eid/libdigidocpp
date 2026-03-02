@@ -69,7 +69,7 @@ X509CertStore::X509CertStore()
 /**
  * Release all certificates.
  */
-X509CertStore::~X509CertStore() = default;
+X509CertStore::~X509CertStore() noexcept = default;
 
 void X509CertStore::activate(const X509Cert &cert) const
 {
@@ -194,14 +194,17 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
  * Check if X509Cert is signed by trusted issuer
  * @throw Exception if error
  */
-bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time) const
+bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time, const vector<X509Cert> &untrusted) const
 {
     activate(cert);
     if(util::date::is_empty(validation_time))
         ASN1_TIME_to_tm(X509_get0_notBefore(cert.handle()), &validation_time);
     auto store = createStore(X509CertStore::CA, validation_time);
     auto csc = make_unique_ptr<X509_STORE_CTX_free>(X509_STORE_CTX_new());
-    if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))
+    auto stack = make_unique_ptr(sk_X509_new_null(), [](auto *sk) { sk_X509_free(sk); });
+    for(const X509Cert &i: untrusted)
+        sk_X509_push(stack.get(), i.handle());
+    if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), stack.get()))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
     if(X509_verify_cert(csc.get()) <= 0)
     {
