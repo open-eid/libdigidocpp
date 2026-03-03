@@ -381,6 +381,11 @@ unique_ptr<istream> SiVaContainer::parseDDoc(const unique_ptr<istream> &ddoc, bo
     }
 }
 
+const string& SiVaContainer::path() const
+{
+    return d->path;
+}
+
 Signature* SiVaContainer::prepareSignature(Signer * /*signer*/)
 {
     THROW("Not implemented.");
