@@ -1,3 +1,22 @@
+Libdigidocpp library [4.3.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.3.0) release notes
+--------------------------------------
+- Update libraries and platform support
+ (#681, #687)
+- Improve signature and container compatibility
+ (#672, #627, #699, #676, #690, #683, #650, #674, #699)
+- Other fixes and optimizations
+ (#689, #688, #693, #696, #703)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v4.2.0...v4.3.0)
+
+Libdigidocpp library [4.2.1](https://github.com/open-eid/libdigidocpp/releases/tag/v4.2.1) release notes
+--------------------------------------
+- Critical fix (#690)
+- Update libraries and platform support (#672, #676)
+- Improve signature and container compatibility (#681)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v4.2.0...v4.2.1)
+
 Libdigidocpp library [4.2.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.2.0) release notes
 --------------------------------------
 - Update libraries and platform support

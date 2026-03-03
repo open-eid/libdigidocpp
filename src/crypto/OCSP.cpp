@@ -30,10 +30,6 @@
 #include <algorithm>
 #include <array>
 
-#ifdef WIN32 //hack for win32 build
-#undef OCSP_REQUEST
-#undef OCSP_RESPONSE
-#endif
 #include <openssl/ocsp.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
@@ -73,7 +69,10 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
     if(!req)
         THROW_OPENSSLEXCEPTION("Failed to create new OCSP request, out of memory?");
 
-    OCSP_CERTID *certId = OCSP_cert_to_id(nullptr, cert.handle(), issuer.handle());
+    const EVP_MD *evp_md {};
+    if(url.find("eidpki.ee") != std::string::npos)
+        evp_md = EVP_get_digestbynid(NID_sha256);
+    OCSP_CERTID *certId = OCSP_cert_to_id(evp_md, cert.handle(), issuer.handle());
     if(!OCSP_request_add0_id(req.get(), certId))
         THROW_OPENSSLEXCEPTION("Failed to add certificate ID to OCSP request.");
 
@@ -236,6 +235,8 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         if(OCSP_id_get0_info(nullptr, &md, nullptr, nullptr, const_cast<OCSP_CERTID*>(certID)) == 1)
             evp_md = EVP_get_digestbyobj(md);
         auto certId = make_unique_ptr<OCSP_CERTID_free>(OCSP_cert_to_id(evp_md, cert.handle(), issuer.handle()));
+        if(OCSP_id_cmp(certID, certId.get()) != 0)
+            continue;
         if(OCSP_resp_find_status(basic.get(), certId.get(), &status, nullptr, nullptr, nullptr, nullptr) == 1)
             break;
     }

@@ -44,10 +44,13 @@ std::vector<Exception::ExceptionCode> Exception::ignores {};
  * General error, no specific code
  * @var digidoc::Exception::NetworkError
  * Network error, network connection errors
+ * @since 3.14.3
  * @var digidoc::Exception::HostNotFound
  * Network error, host not found
+ * @since 3.14.8
  * @var digidoc::Exception::InvalidUrl
  * Network error, invalid URL
+ * @since 3.14.8
  *
  * @var digidoc::Exception::CertificateIssuerMissing
  * Signer's certificate's issuer certificate is missing
@@ -57,6 +60,7 @@ std::vector<Exception::ExceptionCode> Exception::ignores {};
  * Certificate status is unknown in OCSP response
  * @var digidoc::Exception::OCSPBeforeTimeStamp
  * OCSP producedAt time is before TimeStamp time
+ * @since 3.14.2
  * @var digidoc::Exception::OCSPResponderMissing
  * OCSP Responder is missing
  * @var digidoc::Exception::OCSPCertMissing
@@ -67,8 +71,10 @@ std::vector<Exception::ExceptionCode> Exception::ignores {};
  * OCSP Responder requires the OCSP request to be signed
  * @var digidoc::Exception::TSForbidden
  * TSA service responds forbidden
+ * @since 3.14.4
  * @var digidoc::Exception::TSTooManyRequests
  * TSA service requests have reached limit
+ * @since 3.13.8
  *
  * @var digidoc::Exception::PINCanceled
  * PIN cancelled exception
@@ -91,10 +97,11 @@ std::vector<Exception::ExceptionCode> Exception::ignores {};
  * TimeStamp and OCSP time difference is more than 15 minutes
  * @var digidoc::Exception::MimeTypeWarning
  * Mime type is not conformant mime-type strings
+ * @since 3.13.2
  *
  * @var digidoc::Exception::DDocError
  * DDoc libdigidoc error codes bit masked
- * @deprecated Unused
+ * @deprecated Since 3.14.7, libdigidoc support removed
  */
 
 /**

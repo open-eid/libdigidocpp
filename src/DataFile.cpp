@@ -95,8 +95,7 @@ DataFilePrivate::DataFilePrivate(unique_ptr<istream> &&is, string filename, stri
     , m_id(std::move(id))
     , m_filename(std::move(filename))
     , m_mediatype(std::move(mediatype))
-{
-}
+{}
 
 DataFilePrivate::DataFilePrivate(const ZipSerialize &z, string filename, string mediatype)
     : d(make_unique<Private>())
@@ -104,7 +103,7 @@ DataFilePrivate::DataFilePrivate(const ZipSerialize &z, string filename, string 
     , m_mediatype(std::move(mediatype))
 {
     auto r = z.read(m_filename);
-    d->size.emplace(r.size);
+    d->size.emplace((unsigned long)r.size);
     if(r.size > MAX_MEM_FILE)
     {
         auto fs = make_unique<fstream>(util::File::tempFileName(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
@@ -122,6 +121,8 @@ DataFilePrivate::DataFilePrivate(const ZipSerialize &z, string filename, string 
     else
         m_is = make_unique<stringstream>(r.operator string());
 }
+
+DataFilePrivate::~DataFilePrivate() noexcept = default;
 
 void DataFilePrivate::digest(const Digest &digest) const
 {

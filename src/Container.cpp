@@ -66,6 +66,7 @@ string digidoc::appInfo() { return m_appName; }
 
 /**
  * Returns user-agent info
+ * @since 3.14.3
  */
 string digidoc::userAgent() { return m_userAgent; }
 
@@ -94,6 +95,7 @@ void digidoc::initialize(const string &appInfo, initCallBack callBack)
  * loads configuration settings from default configuration files (see \ref conf) and initializes
  * certificate store using TSL lists
  *
+ * @since 3.14.3
  * @param appInfo Application name for container comments
  * @param userAgent Application info for user agent string
  * @param callBack Callback when background thread TSL loading is completed
@@ -231,7 +233,7 @@ Container::~Container() = default;
  * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer).
  *
  * Takes ownership std::istream *is object.
- * @deprecated Use digidoc::Container::addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType)
+ * @deprecated Since 3.14.4, use digidoc::Container::addDataFile(std::unique_ptr<std::istream> is, const std::string &fileName, const std::string &mediaType)
  * @param is input stream from where data is read
  * @param fileName data file name in the container
  * @param mediaType MIME type of the data file, for example “text/plain” or “application/msword”
@@ -248,6 +250,7 @@ void Container::addDataFile(istream *is, const string &fileName, const string &m
 /**
  * Adds the data from an input stream (i.e. the data file contents can be read from internal memory buffer).
  *
+ * @since 3.14.4
  * @param is input stream from where data is read
  * @param fileName data file name in the container
  * @param mediaType MIME type of the data file, for example “text/plain” or “application/msword”
@@ -284,7 +287,7 @@ void Container::addAdESSignature(const std::vector<unsigned char> &signature)
 /**
  * Create a new container object and specify the DigiDoc container type
  *
- * @deprecated Use Container::createPtr
+ * @deprecated Since 3.14.4, use Container::createPtr
  * This method gives ownership of object to caller
  */
 Container* Container::create(const std::string &path)
@@ -294,6 +297,7 @@ Container* Container::create(const std::string &path)
 
 /**
  * Create a new container object and specify the DigiDoc container type
+ * @since 3.14.4
  */
 unique_ptr<Container> Container::createPtr(const std::string &path)
 {
@@ -334,7 +338,7 @@ unsigned int Container::newSignatureId() const
  *
  * This method gives ownership of object to caller
  *
- * @deprecated Use Container::openPtr
+ * @deprecated Since 3.14.4, use Container::openPtr
  * @param path
  * @throws Exception
  */
@@ -346,6 +350,7 @@ Container* Container::open(const string &path)
 /**
  * Opens container from a file
  *
+ * @since 3.14.4
  * @param path
  * @throws Exception
  */
@@ -357,6 +362,7 @@ unique_ptr<Container> Container::openPtr(const string &path)
 /**
  * Opens container from a file
  *
+ * @since 3.17.0
  * @param path
  * @param cb Callback called when additional info is requested (digidoc::ContainerOpenCB::validateOnline)
  * @throws Exception

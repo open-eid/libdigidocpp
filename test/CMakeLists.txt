@@ -1,7 +1,7 @@
 set_env(TEST_FORMAT XML CACHE STRING "Test result format (XML/JUNIT)")
 set( CMAKE_SKIP_RPATH OFF )
 add_definitions(
-    -DDIGIDOCPPCONF="${CMAKE_SOURCE_DIR}/etc/schema"
+    -DDIGIDOCPPCONF="${PROJECT_SOURCE_DIR}/etc/schema"
     -DPKCS11_MODULE="${PKCS11_MODULE}"
     -DSIVA_URL="${SIVA_URL}"
 )
@@ -15,7 +15,7 @@ if(WIN32)
 endif()
 add_test(NAME runtest
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittests --build_info=YES --report_level=no --logger=${TEST_FORMAT},all,${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src
 )
 
 # Bad status tests
@@ -26,7 +26,7 @@ foreach(TEST CA-non-qa no_QCStatement no_QCSD
     )
     add_test(NAME TSLTest_${TEST}
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-${TEST}.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src
     )
 endforeach()
 
@@ -37,7 +37,7 @@ foreach(TEST CA-withdrawn-granted-before CA-noqscd-granted-before
     )
     add_test(NAME TSLTest_${TEST}
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/TSLTests -- EE_T-${TEST}.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src
     )
 endforeach()
 

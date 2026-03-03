@@ -13,7 +13,7 @@ set_env(BUILD_NUMBER 0)
 set(VERSION ${PROJECT_VERSION}.${BUILD_NUMBER})
 
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
-configure_file( ${CMAKE_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf )
+configure_file(${PROJECT_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf)
 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "namespace digidoc {\nstatic const std::vector<X509Cert> tslcerts {\n")
 foreach(TSL_CERT ${TSL_CERTS})
@@ -23,7 +23,7 @@ foreach(TSL_CERT ${TSL_CERTS})
 endforeach()
 file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/tslcerts.h "};\n}")
 
-set(SCHEMA_DIR ${CMAKE_SOURCE_DIR}/etc/schema)
+set(SCHEMA_DIR ${PROJECT_SOURCE_DIR}/etc/schema)
 set( SCHEMA_FILES
     ${SCHEMA_DIR}/conf.xsd
     ${SCHEMA_DIR}/OpenDocument_manifest_v1_2.xsd
@@ -66,7 +66,10 @@ add_library(digidocpp_util STATIC
     util/log.cpp
 )
 
-target_link_libraries(digidocpp_util PUBLIC digidocpp_ver PRIVATE $<$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:iOS>>:-framework\ CoreFoundation>)
+target_link_libraries(digidocpp_util
+    PUBLIC $<BUILD_INTERFACE:digidocpp_ver>
+    PRIVATE $<$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:iOS>>:-framework\ CoreFoundation>
+)
 
 add_library(digidocpp_tsl STATIC
     crypto/Connect.cpp
@@ -82,7 +85,7 @@ set_target_properties(digidocpp_util digidocpp_tsl PROPERTIES
     POSITION_INDEPENDENT_CODE YES
 )
 
-target_include_directories(digidocpp_tsl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(digidocpp_tsl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 target_link_libraries(digidocpp_tsl
     digidocpp_util
@@ -252,7 +255,11 @@ if(SWIG_FOUND)
     endif()
 endif()
 
-install( TARGETS digidocpp
+if(NOT ${BUILD_SHARED_LIBS})
+    set(STATIC_TARGETS minizip digidocpp_tsl digidocpp_util)
+endif()
+
+install(TARGETS digidocpp ${STATIC_TARGETS}
     EXPORT libdigidocppExport
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -261,29 +268,31 @@ install( TARGETS digidocpp
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp
     FRAMEWORK DESTINATION ${FRAMEWORK_DESTINATION}
 )
-if(NOT ANDROID)
-    install(EXPORT libdigidocppExport
-        FILE libdigidocpp-config.cmake
-        NAMESPACE digidocpp::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libdigidocpp
-    )
-    include(CMakePackageConfigHelpers)
-    write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp-config-version.cmake"
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY AnyNewerVersion
-    )
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp-config-version.cmake"
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libdigidocpp
-    )
-endif()
+
+install(EXPORT libdigidocppExport
+    FILE libdigidocpp-config.cmake
+    NAMESPACE digidocpp::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libdigidocpp
+)
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp-config-version.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp-config-version.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libdigidocpp
+)
 
 if(WIN32)
     list(APPEND CRYPTO_HEADER crypto/WinSigner.h)
     target_compile_options(digidocpp_util PUBLIC "/guard:cf")
     target_link_options(digidocpp PUBLIC "/guard:cf")
     target_link_libraries(digidocpp PRIVATE Crypt32 cryptui ncrypt)
-    install(FILES $<TARGET_PDB_FILE:digidocpp> $<TARGET_PDB_FILE:digidoc-tool> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+    install(FILES $<TARGET_PDB_FILE:digidocpp> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+    if(TARGET digidoc-tool)
+        install(FILES $<TARGET_PDB_FILE:digidoc-tool> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
+    endif()
     if(SIGNCERT)
         foreach(TARGET digidocpp digidoc-tool digidoc_java digidoc_csharp digidoc_python)
             if (TARGET ${TARGET})
@@ -310,7 +319,7 @@ if( FRAMEWORK )
     set_source_files_properties( ${CRYPTO_HEADER} PROPERTIES MACOSX_PACKAGE_LOCATION Headers/crypto )
     list(GET OPENSSL_LIBRARIES 0 LIBPATH)
     get_filename_component( LIBPATH ${LIBPATH} PATH )
-    set(COPY_LIBRARIES_SCRIPT ${CMAKE_BINARY_DIR}/copy_libraries.cmake)
+    set(COPY_LIBRARIES_SCRIPT ${PROJECT_BINARY_DIR}/copy_libraries.cmake)
     file(WRITE ${COPY_LIBRARIES_SCRIPT} "
     message(\"Copy dependencies: \$ENV{LIBRARY} \$ENV{BUNDLE_DIR}\")
     file(GET_RUNTIME_DEPENDENCIES LIBRARIES \$ENV{LIBRARY} RESOLVED_DEPENDENCIES_VAR OUT)
@@ -372,13 +381,13 @@ if( FRAMEWORK )
     add_custom_target(pkgbuild DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
         COMMAND DESTDIR=install ${CMAKE_COMMAND} --install .
         COMMAND pkgbuild --root install "$<$<BOOL:${SIGNCERT}>:--sign;${SIGNCERT}>"
-            ${CMAKE_BINARY_DIR}/libdigidocpp_${VERSION}$ENV{VER_SUFFIX}.pkg
+            ${PROJECT_BINARY_DIR}/libdigidocpp_${VERSION}$ENV{VER_SUFFIX}.pkg
         COMMAND_EXPAND_LISTS
     )
     add_custom_target(zipdebug DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
         COMMAND dsymutil -o libdigidocpp.dSYM $<TARGET_FILE:digidocpp>
             $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE:digidoc-tool>>
-        COMMAND zip -r ${CMAKE_BINARY_DIR}/libdigidocpp-dbg_${VERSION}$ENV{VER_SUFFIX}.zip libdigidocpp.dSYM
+        COMMAND zip -r ${PROJECT_BINARY_DIR}/libdigidocpp-dbg_${VERSION}$ENV{VER_SUFFIX}.zip libdigidocpp.dSYM
     )
 else()
     if(NOT ${BUILD_SHARED_LIBS})

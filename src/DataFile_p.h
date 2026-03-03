@@ -38,6 +38,7 @@ class DataFilePrivate final: public DataFile
 public:
     DataFilePrivate(std::unique_ptr<std::istream> &&is, std::string filename, std::string mediatype, std::string id = {});
     DataFilePrivate(const ZipSerialize &z, std::string filename, std::string mediatype);
+    ~DataFilePrivate() noexcept final;
 
     std::string id() const final { return m_id.empty() ? m_filename : m_id; }
     std::string fileName() const final { return m_filename; }
