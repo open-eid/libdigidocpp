@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include "../Exception.h"
+#include "../Exports.h"
 
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace digidoc
 {

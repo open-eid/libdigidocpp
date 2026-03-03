@@ -114,7 +114,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             signatures->c14n(digest, canonicalizationMethod, signatureValue());
         });
 
-        if(!signingCertificate().verify(policy == POLv1, tsa.time()))
+        if(!checkSigningCertificate(policy == POLv1, tsa.time()))
             THROW("Signing certificate was not valid on signing time");
 
         auto completeCertRefs = usp/"CompleteCertificateRefs";

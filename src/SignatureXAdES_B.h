@@ -92,6 +92,7 @@ namespace digidoc
           constexpr XMLNode signedSignatureProperties() const noexcept;
           static void checkCertID(XMLNode certID, const X509Cert &cert);
           static void checkDigest(XMLNode digest, const std::vector<unsigned char> &data);
+          X509Cert checkSigningCertificate(bool noqscd, tm validation_time = {}) const;
 
           XMLNode signature;
           ASiContainer *bdoc {};
@@ -116,7 +117,6 @@ namespace digidoc
           constexpr XMLNode V1orV2(std::string_view v1, std::string_view v2) const noexcept;
 
           // offline checks
-          void checkSigningCertificate(bool noqscd) const;
-          void checkKeyInfo() const;
+          void checkKeyInfo(const X509Cert &x509) const;
     };
 }
