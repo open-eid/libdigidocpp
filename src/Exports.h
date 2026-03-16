@@ -21,7 +21,9 @@
 
 #ifdef WIN32
   #include <winapifamily.h>
-  #ifdef digidocpp_EXPORTS
+  #ifdef digidocpp_STATIC
+    #define DIGIDOCPP_EXPORT
+  #elifdef digidocpp_EXPORTS
     #define DIGIDOCPP_EXPORT __declspec(dllexport)
   #else
     #define DIGIDOCPP_EXPORT __declspec(dllimport)
