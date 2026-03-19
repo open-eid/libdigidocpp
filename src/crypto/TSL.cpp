@@ -397,14 +397,19 @@ vector<TSL::Pointer> TSL::pointers() const
     {
         Pointer p;
         string_view mimeType;
+        string_view tslType;
         for(auto info = other/"AdditionalInformation"/"OtherInformation"; info; info++)
         {
             if(auto mime = info/XMLName{"MimeType", ADD_NS})
                 mimeType = mime;
             if(auto territory = info/"SchemeTerritory")
                 p.territory = territory;
+            if(auto type = info/"TSLType")
+                tslType = type;
         }
         if(mimeType != "application/vnd.etsi.tsl+xml")
+            continue;
+        if(contains(SCHEMES_URI, tslType))
             continue;
         p.location = other/"TSLLocation";
         p.certs = serviceDigitalIdentities(other, p.territory);
