@@ -81,9 +81,10 @@ add_library(digidocpp_tsl STATIC
 )
 
 set_target_properties(digidocpp_util digidocpp_tsl PROPERTIES
-    COMPILE_DEFINITIONS digidocpp_EXPORTS
     POSITION_INDEPENDENT_CODE YES
 )
+target_compile_definitions(digidocpp_tsl PUBLIC $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,digidocpp_EXPORTS,digidocpp_STATIC>)
+target_compile_definitions(digidocpp_util PUBLIC $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,digidocpp_EXPORTS,digidocpp_STATIC>)
 
 target_include_directories(digidocpp_tsl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
@@ -258,8 +259,6 @@ endif()
 if(NOT BUILD_SHARED_LIBS)
     set(STATIC_TARGETS minizip digidocpp_tsl digidocpp_util)
     target_compile_definitions(digidocpp PUBLIC digidocpp_STATIC)
-    target_compile_definitions(digidocpp_tsl PUBLIC digidocpp_STATIC)
-    target_compile_definitions(digidocpp_util PUBLIC digidocpp_STATIC)
 endif()
 
 install(TARGETS digidocpp ${STATIC_TARGETS}
