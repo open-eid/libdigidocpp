@@ -233,9 +233,10 @@ struct XMLNode: public XMLElem<xmlNode>
     {
         if(!d)
             return *this;
-        const char *utf = text.cbegin();
-        int len = int(text.size());
-        while (utf < text.cend()) {
+        const char *utf = std::to_address(text.cbegin());
+        const char *end = utf + text.size();
+        while (utf < end) {
+            int len = int(end - utf);  // remaining bytes
             int uc = xmlGetUTF8Char((const unsigned char *) utf, &len);
             if (len < 1) {
                 THROW("Invalid utf8 string in XML content");

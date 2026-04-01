@@ -137,7 +137,7 @@ jobs:
     strategy:
       matrix:
         dist: [ubuntu]
-        ver: ['22.04', '24.04', '25.04', '25.10']
+        ver: ['22.04', '24.04', '25.04', '25.10', '26.04']
         arch: [amd64, arm64]
         java: [17]
         include: [
