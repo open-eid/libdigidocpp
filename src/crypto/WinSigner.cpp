@@ -233,6 +233,7 @@ void WinSigner::setSelectFirst(bool first)
 
 /**
  * Sets property select certificate with specified thumbprint
+ * @since 3.13.9
  * @see WinSigner::WinSigner
  */
 void WinSigner::setThumbprint(const vector<unsigned char> &thumbprint)

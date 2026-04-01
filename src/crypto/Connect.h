@@ -61,7 +61,8 @@ public:
     };
 
     Connect(const std::string &url, std::string method = "POST",
-        int timeout = 0, const std::vector<X509Cert> &certs = {}, const std::string &userAgentData = {});
+        int timeout = 0, const std::vector<X509Cert> &certs = {}, const std::string &userAgentData = {},
+        const std::string &version = "1.1");
     ~Connect();
     inline Result exec(std::initializer_list<std::pair<std::string_view,std::string_view>> headers,
         const std::vector<unsigned char> &data)
