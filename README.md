@@ -24,7 +24,7 @@
 	* libboost-test-dev - Optional, for unittests
 	* swig - Optional, for C#, Java and python bindings
 	* libpython3-dev, python3-setuptools - Optional, for python bindings
-	* openjdk-17-jdk-headless - Optional, for Java bindings
+	* openjdk-21-jdk-headless - Optional, for Java bindings
 
 2. Fetch the source
 
@@ -87,7 +87,7 @@
 ### Windows
 
 1. Install dependencies and necessary tools from
-	* [Visual Studio Community 2019/2022](https://www.visualstudio.com/downloads/)
+	* [Visual Studio Community 2022](https://www.visualstudio.com/downloads/)
 	* [CMake](http://www.cmake.org)
 	* [vcpkg](https://vcpkg.io/)
 	* [Swig](http://swig.org/download.html) - Optional, for C#, Python and Java bindings
@@ -116,7 +116,7 @@
 
     Optional CMake parameters:
 
-        -DSWIG_EXECUTABLE=C:/swigwin-4.2.1/swig.exe
+        -DSWIG_EXECUTABLE=C:/swigwin-4.4.1/swig.exe
         -DDOXYGEN_EXECUTABLE=C:/Program files/doxygen/bin/doxygen.exe
 
     After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
@@ -132,7 +132,7 @@
 
     Optional build.ps1 parameters:
 
-        -swig C:/swigwin-4.2.1/swig.exe
+        -swig C:/swigwin-4.4.1/swig.exe
         -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
         -boost
 
