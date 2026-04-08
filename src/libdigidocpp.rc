@@ -25,7 +25,7 @@ BEGIN
 			VALUE "FileDescription", TARGET_NAME
 			VALUE "FileVersion", VERSION_STR
 			VALUE "InternalName", TARGET_NAME
-			VALUE "LegalCopyright", "(C) 2009-2024 Estonian Information System Authority"
+			VALUE "LegalCopyright", "(C) 2009-2026 Estonian Information System Authority"
 #ifdef APP
 			VALUE "OriginalFilename", TARGET_NAME ".exe"
 #else
