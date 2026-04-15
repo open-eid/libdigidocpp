@@ -321,8 +321,8 @@ Signature::Validator::Validator(const Signature *s)
     {
         try
         {
-            s->validate(POLv1);
             d->result = NonQSCD;
+            s->validate(POLv1);
         }
         catch(const Exception &e)
         {
