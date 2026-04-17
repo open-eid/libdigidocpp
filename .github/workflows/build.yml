@@ -14,7 +14,12 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        target: [macos, iphoneos, iphonesimulator]
+        include:
+        - target: macos
+        - target: iphoneos
+          triplet: arm64-ios
+        - target: iphonesimulator
+          triplet: arm64-x64-ios-simulator
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -29,41 +34,52 @@ jobs:
         sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.13
         sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.14
     - name: Cache
+      if: matrix.target == 'macos'
       uses: actions/cache@v5
       id: cache
       with:
         path: cache
         key: ${{ matrix.target }}-${{ hashFiles('prepare_osx_build_environment.sh') }}
+    - name: Cache vcpkg
+      if: matrix.target != 'macos'
+      uses: actions/cache@v5
+      with:
+        path: ${{ github.workspace }}/vcpkg_cache
+        key: vcpkg-${{ matrix.target }}-${{ hashFiles('vcpkg.json') }}
     - name: Build openssl
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: matrix.target == 'macos' && steps.cache.outputs.cache-hit != 'true'
       run: ./prepare_osx_build_environment.sh openssl ${{ matrix.target }}
     - name: Build xmlsec
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: matrix.target == 'macos' && steps.cache.outputs.cache-hit != 'true'
       run: ./prepare_osx_build_environment.sh xmlsec ${{ matrix.target }}
     - name: Move to cache
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: matrix.target == 'macos' && steps.cache.outputs.cache-hit != 'true'
       run: |
         mkdir cache
         sudo mv /Library/libdigidocpp* cache
-    - name: Setup cache
-      run: sudo ln -s $PWD/cache/* /Library/
     - name: Build macOS
       if: matrix.target == 'macos'
       run: |
+        sudo ln -s $PWD/cache/* /Library/
         cmake --preset ${{ matrix.target }} -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build --preset ${{ matrix.target }}
-        cmake --build --preset ${{ matrix.target }} --target test pkcs11sign embedlibs 
+        cmake --build --preset ${{ matrix.target }} --target test pkcs11sign embedlibs
         cmake --build --preset ${{ matrix.target }} --target zipdebug pkgbuild
     - name: Build ${{ matrix.target }}
       if: matrix.target != 'macos'
+      env:
+        VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
       run: |
+        export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
         cmake --preset ${{ matrix.target }} -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build --preset ${{ matrix.target }}
-        sudo cmake --build --preset ${{ matrix.target }} --target install/strip
-        cd /Library
-        zip -q -r ${OLDPWD}/libdigidocpp.${{ matrix.target }}.zip libdigidocpp.*
+        cmake --build --preset ${{ matrix.target }} --target install/strip
+        mkdir -p libdigidocpp.${{ matrix.target }}/include
+        cp build/${{ matrix.target }}/vcpkg_installed/${{ matrix.triplet }}/lib/{libcrypto,libssl}.a libdigidocpp.${{ matrix.target }}/lib/
+        cp -r build/${{ matrix.target }}/vcpkg_installed/${{ matrix.triplet }}/include/openssl libdigidocpp.${{ matrix.target }}/include/
+        zip -q -r libdigidocpp.${{ matrix.target }}.zip libdigidocpp.${{ matrix.target }}
     - name: Archive artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.target }}
         path: |
@@ -88,7 +104,7 @@ jobs:
       uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/vcpkg_cache
-        key: vcpkg-${{ matrix.target }}-${{ hashFiles('vcpkg.json', 'vcpkg-ports/**') }}
+        key: vcpkg-${{ matrix.target }}-${{ hashFiles('vcpkg.json') }}
     - name: Build
       env:
         VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
@@ -96,12 +112,14 @@ jobs:
         export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
         export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
         export ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME
+        git -C $VCPKG_INSTALLATION_ROOT fetch origin f77737496dabd44c63ecc599dc0f4d6cff30d0d5
+        git -C $VCPKG_INSTALLATION_ROOT reset --hard f77737496dabd44c63ecc599dc0f4d6cff30d0d5
         cmake --preset ${{ matrix.target }} "-GUnix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build --preset ${{ matrix.target }}
         cmake --build --preset ${{ matrix.target }} --target install/strip
         zip -q -r libdigidocpp.${{ matrix.target }}.zip libdigidocpp.${{ matrix.target }}
     - name: Archive artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.target }}
         path: |
@@ -112,7 +130,7 @@ jobs:
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [42, 43, 44, rawhide]
+        container: [43, 44, rawhide]
     steps:
     - name: Install Deps
       run: |
@@ -126,7 +144,7 @@ jobs:
         cmake --build build
         cmake --build build --target package
     - name: Archive artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: fedora_${{ matrix.container }}
         path: build/libdigidocpp*.rpm
@@ -151,6 +169,9 @@ jobs:
     steps:
     - name: Install dependencies
       run: |
+        for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+          [ -f "$f" ] && sed -i 's|http://archive.ubuntu.com|http://azure.archive.ubuntu.com|g; s|http://security.ubuntu.com|http://azure.archive.ubuntu.com|g' "$f"
+        done
         echo 'path-exclude=/usr/share/man/*'      >  /etc/dpkg/dpkg.cfg.d/99-nodocs
         echo 'path-exclude=/usr/share/doc/*'      >> /etc/dpkg/dpkg.cfg.d/99-nodocs
         echo 'path-exclude=/usr/share/doc-base/*' >> /etc/dpkg/dpkg.cfg.d/99-nodocs
@@ -169,16 +190,32 @@ jobs:
     - name: Lintian
       run: lintian *.deb;
     - name: Archive artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.dist }}_${{ matrix.ver }}_${{ matrix.arch }}
         path: libdigidocpp*.*
+  python:
+    name: Setup Python for Windows
+    runs-on: windows-2025-vs2026
+    steps:
+    - name: Install Python
+      run: |
+        winget install --silent --accept-source-agreements --accept-package-agreements 9NQ7512CXL7T
+        & "$env:LOCALAPPDATA\Microsoft\WindowsApps\py.exe" install --target=.\python\x86 3.13-32
+        & "$env:LOCALAPPDATA\Microsoft\WindowsApps\py.exe" install --target=.\python\x64 3.13-64
+        & "$env:LOCALAPPDATA\Microsoft\WindowsApps\py.exe" install --target=.\python\arm64 3.13-arm64
+    - name: Upload Python
+      uses: actions/upload-artifact@v7
+      with:
+        name: python
+        path: python/
   windows:
     name: Build on Windows
-    runs-on: windows-2025
+    needs: python
+    runs-on: ${{ matrix.toolset == '143' && 'windows-2022' || 'windows-2025-vs2026' }}
     strategy:
       matrix:
-        toolset: [143]
+        toolset: [143, 145]
         platform: [x86, x64, arm64]
         include:
         - platform: x86
@@ -200,9 +237,25 @@ jobs:
       uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/vcpkg_cache
-        key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json', 'vcpkg-ports/**') }}
+        key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json') }}
+    - name: Setup winget
+      if: matrix.toolset == '143'
+      shell: powershell
+      run: |
+        Invoke-WebRequest -Uri https://raw.githubusercontent.com/asheroto/winget-install/refs/tags/5.3.6/winget-install.ps1 -OutFile winget-install.ps1
+        .\winget-install.ps1 -Force
+        $winget = (Get-Command winget -ErrorAction SilentlyContinue).Source
+        if (-not $winget) {
+            $winget = Get-Item "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*\winget.exe" | Select-Object -Last 1
+        }
+        Add-Content $env:GITHUB_PATH (Split-Path $winget)
     - name: Install dependencies
-      run: winget install --silent --accept-source-agreements --accept-package-agreements swig doxygen 9NQ7512CXL7T
+      run: winget install --silent --accept-source-agreements --accept-package-agreements swig doxygen
+    - name: Download Python
+      uses: actions/download-artifact@v8
+      with:
+        name: python
+        path: python/
     - uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
@@ -211,16 +264,16 @@ jobs:
       env:
         VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
       run: |
-        & "$env:LOCALAPPDATA\Microsoft\WindowsApps\py.exe" install --target=.\python\${{ matrix.platform }} 3.13-${{ matrix.python }}
         $swig = (Get-Item "$env:LOCALAPPDATA\Microsoft\WinGet\Links\swig.exe").Target
-        & "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvarsall.bat" ${{ matrix.setenv }} "&&" pwsh build.ps1 `
-          -vcpkg "C:/vcpkg/vcpkg.exe" `
+        $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+        & "$vsPath\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.setenv }} "&&" pwsh build.ps1 `
+          -vcpkg "C:/vcpkg" `
           -swig $swig `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
           -boost `
           -python ${{ github.workspace }}/python
     - name: Archive artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: msi_${{ matrix.toolset }}_${{ matrix.platform }}
         path: ./*.msi

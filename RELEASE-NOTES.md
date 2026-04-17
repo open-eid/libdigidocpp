@@ -3,7 +3,7 @@ Libdigidocpp library [4.4.0](https://github.com/open-eid/libdigidocpp/releases/t
 - Update libraries and platform support
  (#702, #705, #713, #721)
 - Improve signature and container compatibility
- (#698, #708, #701, #650, #711)
+ (#698, #708, #701, #650, #711, #724)
 - Other fixes and optimizations
  (#691, #700, #704, #706, #707, #718, #719)
 

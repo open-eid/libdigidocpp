@@ -12,7 +12,9 @@
   <?define Suffix = "" ?>
 <?endif?>
 
-<?if $(env.VisualStudioVersion) = "17.0" ?>
+<?if $(env.VisualStudioVersion) = "18.0" ?>
+<?define VCVER = "145" ?>
+<?elseif $(env.VisualStudioVersion) = "17.0" ?>
 <?define VCVER = "143" ?>
 <?elseif $(env.VisualStudioVersion) = "16.0" ?>
 <?define VCVER = "142" ?>
@@ -50,7 +52,7 @@
       <File Name="libcrypto-3$(var.OpenSSLSuffix).dll" />
       <File Name="libssl-3$(var.OpenSSLSuffix).dll" />
       <File Name="legacy.dll" />
-      <File Name="zlib1.dll" />
+      <File Name="z.dll" />
       <File Name="libxml2.dll" />
       <File Name="libxmlsec1.dll" />
       <File Name="libxmlsec1-openssl.dll" />
@@ -101,7 +103,7 @@
       <Files Directory="INSTALLFOLDER" Subdirectory="schema" Include="$(var.libdigidocpp)\etc\digidocpp\schema\*.xsd" />
       <Feature Id="InstallDevel" Level="1" Title="Development">
         <ComponentGroupRef Id="RuntimeDev" />
-        <File Directory="INSTALLFOLDER" Source="$(var.vcpkg)\debug\bin\zlibd1.dll" />
+        <File Directory="INSTALLFOLDER" Source="$(var.vcpkg)\debug\bin\zd.dll" />
         <ComponentGroupRef Id="LibrariesDev" />
         <Files Directory="INSTALLFOLDER" Subdirectory="include" Include="$(var.libdigidocpp)\include\**" />
         <Files Directory="INSTALLFOLDER" Subdirectory="cmake\libdigidocpp" Include="$(var.libdigidocpp)\cmake\libdigidocpp\**"  />

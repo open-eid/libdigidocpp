@@ -5,7 +5,7 @@ endif()
 if(POLICY CMP0177)
     cmake_policy(SET CMP0177 NEW)
 endif()
-project(libdigidocpp VERSION 4.4.0
+project(libdigidocpp VERSION 4.5.0
     DESCRIPTION "C++ library for digital signatures and validation of digitally signed documents"
     HOMEPAGE_URL https://github.com/open-eid/libdigidocpp
 )
