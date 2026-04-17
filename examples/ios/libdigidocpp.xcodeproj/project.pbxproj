@@ -122,6 +122,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4E7663BE1B5A37AC00672ACF /* Build configuration list for PBXNativeTarget "libdigidocpp" */;
 			buildPhases = (
+				4E34C8432AE9292A00DD78B0 /* Build libdigidocpp */,
 				4E7663941B5A37AC00672ACF /* Sources */,
 				4E7663951B5A37AC00672ACF /* Frameworks */,
 				4E7663961B5A37AC00672ACF /* Resources */,
@@ -143,7 +144,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2640;
 				ORGANIZATIONNAME = RIA;
 				TargetAttributes = {
 					4E7663971B5A37AC00672ACF = {
@@ -183,6 +184,31 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		4E34C8432AE9292A00DD78B0 /* Build libdigidocpp */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(PROJECT_DIR)/../../CMakePresets.json",
+				"$(PROJECT_DIR)/../../CMakeLists.txt",
+				"$(PROJECT_DIR)/../../vcpkg.json",
+			);
+			name = "Build libdigidocpp";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/lib/digidocpp.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nPROJECT_ROOT=\"${SRCROOT}/../..\"\n\ncase \"$PLATFORM_NAME\" in\n    iphoneos)        PRESET=iphoneos ;;\n    iphonesimulator) PRESET=iphonesimulator ;;\n    macosx)          PRESET=iphonecatalyst ;;\n    *)\n        echo \"error: Unknown platform: $PLATFORM_NAME\"\n        exit 1\n        ;;\nesac\n\nif ! CMAKE=$(which cmake 2>/dev/null); then\n    CMAKE=/opt/homebrew/bin/cmake\nfi\n\ncd \"$PROJECT_ROOT\"\n\"$CMAKE\" --preset \"$PRESET\" -DCMAKE_BUILD_TYPE=RelWithDebInfo \"-DCMAKE_INSTALL_PREFIX=${DERIVED_FILE_DIR}\" \"-DFRAMEWORK_DESTINATION=${DERIVED_FILE_DIR}/lib\"\n\"$CMAKE\" --build --preset \"$PRESET\" --target install\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		4E7663941B5A37AC00672ACF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -215,7 +241,7 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++23";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
@@ -247,7 +273,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_C_LANGUAGE_STANDARD = gnu23;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -261,9 +287,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -275,7 +302,7 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++23";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
@@ -306,7 +333,7 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_C_LANGUAGE_STANDARD = gnu23;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
@@ -314,8 +341,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -331,6 +359,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(SDKPATH)/lib";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -357,8 +386,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ee.ria.libdigidocpp.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKPATH = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.$(PLATFORM_NAME)";
-				"SDKPATH[sdk=macosx*]" = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.iphonecatalyst";
+				SDKPATH = "$(DERIVED_FILE_DIR)";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TESTING = 0;
@@ -375,6 +403,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(BUILD_NUMBER)";
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(SDKPATH)/lib";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -401,8 +430,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ee.ria.libdigidocpp.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKPATH = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.$(PLATFORM_NAME)";
-				"SDKPATH[sdk=macosx*]" = "$(LOCAL_LIBRARY_DIR)/libdigidocpp.iphonecatalyst";
+				SDKPATH = "$(DERIVED_FILE_DIR)";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TESTING = 0;
