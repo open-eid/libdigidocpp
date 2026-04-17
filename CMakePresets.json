@@ -36,23 +36,24 @@
       "inherits": "default",
       "installDir": "$env{DEST}",
       "environment": {
-        "DEST": "libdigidocpp$env{DEST_SUFFIX}",
+        "DEST": "${sourceDir}/libdigidocpp$env{DEST_SUFFIX}",
         "DEST_SUFFIX": ".${presetName}"
       },
       "cacheVariables": {
         "CMAKE_DISABLE_FIND_PACKAGE_Boost": "YES",
         "CMAKE_DISABLE_FIND_PACKAGE_Doxygen": "YES",
-        "BUILD_TOOLS": "NO"
+        "BUILD_TOOLS": "NO",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
       "name": "ios",
       "hidden": true,
-      "inherits": ["macos", "mobile"],
+      "inherits": ["mobile","macos"],
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "iOS",
         "CMAKE_OSX_SYSROOT": "${presetName}",
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "15.0",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "16.0",
         "CMAKE_DISABLE_FIND_PACKAGE_SWIG": "YES",
         "FRAMEWORK_DESTINATION": "$env{DEST}/lib"
       }
@@ -62,20 +63,25 @@
       "inherits": "ios",
       "description": "This iphoneos build is only available on macOS",
       "cacheVariables": {
-        "CMAKE_OSX_ARCHITECTURES": "arm64"
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "VCPKG_TARGET_TRIPLET": "arm64-ios"
       }
     },
     {
       "name": "iphonesimulator",
       "inherits": "ios",
-      "description": "This iphonesimulator build is only available on macOS"
+      "description": "This iphonesimulator build is only available on macOS",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm64-x64-ios-simulator"
+      }
     },
     {
       "name": "iphonecatalyst",
       "inherits": "ios",
       "description": "This iphonecatalyst build is only available on macOS",
       "cacheVariables": {
-        "CMAKE_OSX_SYSROOT": "macosx"
+        "CMAKE_OSX_SYSROOT": "macosx",
+        "VCPKG_TARGET_TRIPLET": "arm64-x64-ios-catalyst"
       }
     },
     {
@@ -86,8 +92,7 @@
         "CMAKE_SYSTEM_NAME": "Android",
         "CMAKE_SYSTEM_VERSION": "30",
         "CMAKE_DISABLE_FIND_PACKAGE_Python3": "YES",
-        "BUILD_SHARED_LIBS": "NO",
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        "BUILD_SHARED_LIBS": "NO"
       }
     },
     {
@@ -115,6 +120,17 @@
       "cacheVariables": {
         "CMAKE_ANDROID_ARCH_ABI": "x86_64",
         "VCPKG_TARGET_TRIPLET": "x64-android"
+      }
+    },
+    {
+      "name": "windows",
+      "displayName": "Windows",
+      "binaryDir": "${sourceDir}/build/windows-$env{PLATFORM}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_BINDIR": ".",
+        "CMAKE_INSTALL_LIBDIR": ".",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "$env{PLATFORM}-windows"
       }
     }
   ],
@@ -147,6 +163,10 @@
     {
       "name": "androidx86_64",
       "configurePreset": "androidx86_64"
+    },
+    {
+      "name": "windows",
+      "configurePreset": "windows"
     }
   ]
 }
