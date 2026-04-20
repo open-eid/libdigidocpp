@@ -234,10 +234,22 @@ struct XMLNode: public XMLElem<xmlNode>
         return from_base64(operator sv());
     }
 
-    XMLNode& operator=(sv text) noexcept
+    XMLNode& operator=(sv text)
     {
         if(!d)
             return *this;
+        const char *utf = std::to_address(text.cbegin());
+        const char *end = utf + text.size();
+        while (utf < end) {
+            int len = int(end - utf);  // remaining bytes
+            int uc = xmlGetUTF8Char((const unsigned char *) utf, &len);
+            if (len < 1) {
+                THROW("Invalid utf8 string in XML content");
+            } else if (((uc < 0x20) && (uc != 0x9) && (uc != 0xa) && (uc != 0xd)) || (uc == 0xfffe) || (uc == 0xffff)) {
+                THROW("Invalid character '0x%2x' in XML content", uc);
+            }
+            utf += len;
+        }
         xmlNodeSetContentLen(d, nullptr, 0);
         if(!text.empty())
             xmlNodeAddContentLen(d, pcxmlChar(text.data()), int(text.length()));
