@@ -81,9 +81,10 @@ add_library(digidocpp_tsl STATIC
 )
 
 set_target_properties(digidocpp_util digidocpp_tsl PROPERTIES
-    COMPILE_DEFINITIONS digidocpp_EXPORTS
     POSITION_INDEPENDENT_CODE YES
 )
+target_compile_definitions(digidocpp_tsl PUBLIC $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,digidocpp_EXPORTS,digidocpp_STATIC>)
+target_compile_definitions(digidocpp_util PUBLIC $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,digidocpp_EXPORTS,digidocpp_STATIC>)
 
 target_include_directories(digidocpp_tsl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
@@ -255,8 +256,9 @@ if(SWIG_FOUND)
     endif()
 endif()
 
-if(NOT ${BUILD_SHARED_LIBS})
+if(NOT BUILD_SHARED_LIBS)
     set(STATIC_TARGETS minizip digidocpp_tsl digidocpp_util)
+    target_compile_definitions(digidocpp PUBLIC digidocpp_STATIC)
 endif()
 
 install(TARGETS digidocpp ${STATIC_TARGETS}
@@ -390,9 +392,6 @@ if( FRAMEWORK )
         COMMAND zip -r ${PROJECT_BINARY_DIR}/libdigidocpp-dbg_${VERSION}$ENV{VER_SUFFIX}.zip libdigidocpp.dSYM
     )
 else()
-    if(NOT ${BUILD_SHARED_LIBS})
-        install( TARGETS minizip digidocpp_tsl digidocpp_util DESTINATION ${CMAKE_INSTALL_LIBDIR} )
-    endif()
     if( BUILD_TOOLS )
         install( TARGETS digidoc-tool DESTINATION ${CMAKE_INSTALL_BINDIR} )
         install( FILES ${CMAKE_CURRENT_BINARY_DIR}/digidoc-tool.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 )
