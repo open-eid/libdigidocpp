@@ -146,7 +146,7 @@ vector<Signature *> ASiContainer::signatures() const
  */
 void ASiContainer::addDataFile(const string &path, const string &mediaType)
 {
-    string fileName = File::fileName(path);
+    auto fileName = File::fileName(path);
     addDataFileChecks(fileName, mediaType);
     auto nativePath = File::encodeName(path);
     auto size = File::fileSize(nativePath);
@@ -162,8 +162,8 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
         *data << is->rdbuf();
         is = std::move(data);
     }
-    d->properties[fileName] = { appInfo(), File::modifiedTime(path), size };
-    d->documents.push_back(new DataFilePrivate(std::move(is), std::move(fileName), mediaType));
+    d->properties[string(fileName)] = { appInfo(), File::modifiedTime(path), size };
+    d->documents.push_back(new DataFilePrivate(std::move(is), string(fileName), mediaType));
 }
 
 void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
@@ -197,7 +197,7 @@ void ASiContainer::validateDataFilePath(string_view fileName)
     }
 }
 
-void ASiContainer::addDataFileChecks(const string &fileName, const string &mediaType)
+void ASiContainer::addDataFileChecks(string_view fileName, const string &mediaType)
 {
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
@@ -205,7 +205,7 @@ void ASiContainer::addDataFileChecks(const string &fileName, const string &media
         THROW("mimetype is reserved file.");
     validateDataFileName(fileName);
     if(any_of(d->documents.cbegin(), d->documents.cend(), [&](DataFile *file) { return fileName == file->fileName(); }))
-        THROW("Document with same file name '%s' already exists.", fileName.c_str());
+        THROW("Document with same file name '%.*s' already exists.", STR_VIEW_FMT(fileName));
     if(mediaType.find('/') == string::npos)
         THROW("MediaType does not meet format requirements (RFC2045, section 5.1) '%s'.", mediaType.c_str());
 }
