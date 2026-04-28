@@ -69,19 +69,35 @@ string Log::formatArgList(const char* fmt, va_list args)
     return result;
 }
 
+static ostream &logStream(Conf *conf) noexcept
+{
+    static fstream f;
+    static string lastPath;
+    try {
+        const auto &path = conf->logFile();
+        if(path != lastPath)
+        {
+            lastPath = path;
+            f.close();
+            if(!path.empty())
+                f.open(File::encodeName(path), fstream::out|fstream::app);
+        }
+    }
+    catch(const exception &e)
+    {
+        f.close();
+        cerr << "Failed to open log file '" << lastPath << "': " << e.what() << '\n';
+    }
+    return f.is_open() ? static_cast<ostream &>(f) : cout;
+}
+
 void Log::out(LogType type, const char *file, unsigned int line, const char *format, ...)
 {
     Conf *conf = Conf::instance();
     if(!conf || conf->logLevel() < type)
         return;
 
-    ostream *o = &cout;
-    fstream f;
-    if(!conf->logFile().empty())
-    {
-        f.open(File::encodeName(conf->logFile()), fstream::out|fstream::app);
-        o = &f;
-    }
+    ostream &o = logStream(conf);
     time_t t = time(nullptr);
     tm tm {};
 #ifdef _WIN32
@@ -89,19 +105,29 @@ void Log::out(LogType type, const char *file, unsigned int line, const char *for
 #else
     gmtime_r(&t, &tm);
 #endif
-    *o << put_time(&tm, "%Y-%m-%dT%TZ") << ' ';
+    o << put_time(&tm, "%Y-%m-%dT%TZ") << ' ';
     switch(type)
     {
-    case ErrorType: *o << 'E'; break;
-    case WarnType: *o << 'W'; break;
-    case InfoType: *o << 'I'; break;
-    case DebugType: *o << 'D'; break;
+    case ErrorType: o << 'E'; break;
+    case WarnType: o << 'W'; break;
+    case InfoType: o << 'I'; break;
+    case DebugType: o << 'D'; break;
     }
-    *o << " [" << File::fileName(file) << ':' << line << "] - ";
+    o << " [" << File::fileName(file) << ':' << line << "] - ";
 
     va_list args{};
     va_start(args, format);
-    *o << formatArgList(format, args) << '\n';
+    try {
+        if(string_view(format).contains('%'))
+            o << formatArgList(format, args) << '\n';
+        else
+            o << format << '\n';
+    }
+    catch(const exception &e)
+    {
+        cerr << "Failed to format log message: " << e.what() << '\n';
+        o << format << '\n';
+    }
     va_end(args);
 }
 
@@ -111,17 +137,10 @@ void Log::dbgPrintfMemImpl(const char *msg, const unsigned char *data, size_t si
     if(!conf || conf->logLevel() < DebugType)
         return;
 
-    ostream *o = &cout;
-    fstream f;
-    if(!conf->logFile().empty())
-    {
-        f.open(File::encodeName(conf->logFile()), fstream::out|fstream::app);
-        o = &f;
-    }
-
-    *o << "DEBUG [" << File::fileName(file) << ':' << line << "] - " << msg << " { ";
-    *o << hex << uppercase << setfill('0');
+    ostream &o = logStream(conf);
+    o << "DEBUG [" << File::fileName(file) << ':' << line << "] - " << msg << " { ";
+    o << hex << uppercase << setfill('0');
     for(size_t i = 0; i < size; ++i)
-        *o << setw(2) << static_cast<int>(data[i]) << ' ';
-    *o << dec << nouppercase << setfill(' ') << "}:" << size << '\n';
+        o << setw(2) << static_cast<int>(data[i]) << ' ';
+    o << dec << nouppercase << setfill(' ') << "}:" << size << '\n';
 }

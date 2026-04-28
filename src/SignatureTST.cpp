@@ -61,7 +61,8 @@ struct SignatureTST::Data {
         if (auto it = cache->find(method); it != cache->cend()) {
             return it->second;
         }
-        return (*cache)[std::move(method)] = digest(Digest(method)).result();
+        auto result = digest(Digest(method)).result();
+        return (*cache)[std::move(method)] = std::move(result);
     }
 };
 
@@ -82,7 +83,8 @@ SignatureTST::SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDo
             auto ref = doc/"SigReference";
             string uri = util::File::fromUriPath(ref["URI"]);
             metadata.emplace_back(std::move(file), std::move(mime), xml.str());
-            metadata.emplace_back(std::move(uri), string(ref["MimeType"]), z.read(uri));
+            auto refData = z.read(uri);
+            metadata.emplace_back(std::move(uri), string(ref["MimeType"]), std::move(refData));
             file.clear();
 
             for(auto ref = doc/"DataObjectReference"; ref; ref++)
@@ -172,7 +174,7 @@ void SignatureTST::extendSignatureProfile(Signer *signer)
     }, true);
     auto i = metadata.insert(metadata.cbegin(), {"META-INF/ASiCArchiveManifest.xml", "text/xml", std::move(data)});
     vector<unsigned char> der = TS(i->digest(), signer->userAgent());
-    metadata.insert(next(i), {tstName, TST_MIMETYPE, string{der.cbegin(), der.cend()}});
+    metadata.insert(next(i), {std::move(tstName), TST_MIMETYPE, string{der.cbegin(), der.cend()}});
 }
 
 X509Cert SignatureTST::TimeStampCertificate() const
