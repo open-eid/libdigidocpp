@@ -157,7 +157,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     else if(File::fileExtension(path, {"pdf"}))
     {
         d->mediaType = "application/pdf";
-        d->dataFiles.push_back(new DataFilePrivate(std::move(ifs), fileName, "application/pdf"));
+        d->dataFiles.push_back(new DataFilePrivate(std::move(ifs), string(fileName), "application/pdf"));
     }
     else if(File::fileExtension(path, {"asice", "sce", "asics", "scs"}))
     {

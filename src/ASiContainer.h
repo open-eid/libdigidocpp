@@ -61,7 +61,7 @@ namespace digidoc
       protected:
           ASiContainer(std::string_view mimetype);
 
-          virtual void addDataFileChecks(const std::string &path, const std::string &mediaType);
+          virtual void addDataFileChecks(std::string_view path, const std::string &mediaType);
           void addDataFilePrivate(DataFile *dataFile);
           Signature* addSignature(std::unique_ptr<Signature> &&signature);
           virtual void canSave() = 0;

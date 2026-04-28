@@ -64,7 +64,7 @@ using f_utimbuf = struct utimbuf;
 
 stack<fs::path> File::tempFiles;
 
-static string decodeName(fs::path path)
+static string decodeName(const fs::path &path)
 {
     auto name = path.u8string();
     return {reinterpret_cast<const char*>(name.data()), name.size()};
@@ -149,7 +149,7 @@ bool File::fileExtension(string_view path, initializer_list<string_view> list)
 /**
  * Returns file size
  */
-unsigned long File::fileSize(const std::filesystem::path &path) noexcept
+unsigned long File::fileSize(const fs::path &path) noexcept
 {
     error_code ec;
     auto result = fs::file_size(path, ec);
@@ -162,7 +162,7 @@ unsigned long File::fileSize(const std::filesystem::path &path) noexcept
  * @param path full path of the file.
  * @return returns file name from the file full path in UTF-8.
  */
-string File::fileName(const string& path)
+string_view File::fileName(string_view path) noexcept
 {
     size_t pos = path.find_last_of("/\\");
     return pos == string::npos ? path : path.substr(pos + 1);
@@ -343,8 +343,8 @@ constexpr bool fromHexChar(auto pos, auto end, auto &value)
 {
     if(distance(pos, end) < 2)
         return false;
-    auto *p = &*pos;
-    return from_chars(p, p + 2, value, 16).ec == std::errc{};
+    auto *p = to_address(pos);
+    return from_chars(p, p + 2, value, 16).ec == errc{};
 }
 
 string File::fromUriPath(string_view path)
