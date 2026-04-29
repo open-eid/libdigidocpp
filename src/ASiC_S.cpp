@@ -96,7 +96,7 @@ ASiC_S::ASiC_S(const string &path)
         THROW("ASiC-S container does not contain any signatures.");
 }
 
-void ASiC_S::addDataFileChecks(const string &fileName, const string &mediaType)
+void ASiC_S::addDataFileChecks(string_view fileName, const string &mediaType)
 {
     ASiContainer::addDataFileChecks(fileName, mediaType);
     if(!dataFiles().empty())
