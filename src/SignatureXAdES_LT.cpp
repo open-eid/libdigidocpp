@@ -110,7 +110,10 @@ void SignatureXAdES_LT::validate(const string &policy) const
     }
 
     try {
-        auto revocationValues = unsignedSignatureProperties()/"RevocationValues";
+        auto usp = unsignedSignatureProperties();
+        if(!usp)
+            THROW("UnsignedProperties block 'UnsignedSignatureProperties' is missing.");
+        auto revocationValues = usp/"RevocationValues";
         if(!revocationValues)
             THROW("RevocationValues object is missing");
         if(revocationValues + 1)
@@ -262,22 +265,16 @@ void SignatureXAdES_LT::addOCSPValue(const string &id, const OCSP &ocsp)
  */
 OCSP SignatureXAdES_LT::getOCSPResponseValue() const
 {
-    try
+    auto ocspValues = unsignedSignatureProperties()/"RevocationValues"/"OCSPValues";
+    for(auto resp = ocspValues/"EncapsulatedOCSPValue"; resp; resp++)
     {
-        auto ocspValues = unsignedSignatureProperties()/"RevocationValues"/"OCSPValues";
-        for(auto resp = ocspValues/"EncapsulatedOCSPValue"; resp; resp++)
-        {
-            try {
-                OCSP ocsp(resp);
-                ocsp.verifyResponse(signingCertificate());
-                return ocsp;
-            } catch(const Exception &) {
-            }
+        try {
+            OCSP ocsp(resp);
+            ocsp.verifyResponse(signingCertificate());
+            return ocsp;
+        } catch(const Exception &) {
         }
-        // Return first OCSP response when chains are not complete and validation fails
-        return {ocspValues/"EncapsulatedOCSPValue"};
     }
-    catch(const Exception &)
-    {}
-    return {};
+    // Return first OCSP response when chains are not complete and validation fails
+    return {ocspValues/"EncapsulatedOCSPValue"};
 }

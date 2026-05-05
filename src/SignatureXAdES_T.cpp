@@ -82,10 +82,7 @@ void SignatureXAdES_T::extendSignatureProfile(Signer *signer)
 
 TS SignatureXAdES_T::TimeStamp() const
 {
-    try {
-        return {unsignedSignatureProperties()/"SignatureTimeStamp"/"EncapsulatedTimeStamp"};
-    } catch(const Exception &) {}
-    return {};
+    return {unsignedSignatureProperties()/"SignatureTimeStamp"/"EncapsulatedTimeStamp"};
 }
 
 void SignatureXAdES_T::validate(const std::string &policy) const
@@ -104,6 +101,8 @@ void SignatureXAdES_T::validate(const std::string &policy) const
 
     try {
         auto usp = unsignedSignatureProperties();
+        if(!usp)
+            THROW("UnsignedProperties block 'UnsignedSignatureProperties' is missing.");
         auto ts = usp/"SignatureTimeStamp";
         if(!ts)
             THROW("Missing SignatureTimeStamp");
@@ -185,14 +184,9 @@ void SignatureXAdES_T::validate(const std::string &policy) const
         throw exception;
 }
 
-XMLNode SignatureXAdES_T::unsignedSignatureProperties() const
+XMLNode SignatureXAdES_T::unsignedSignatureProperties() const noexcept
 {
-    auto up = qualifyingProperties()/"UnsignedProperties";
-    if(!up)
-        THROW("QualifyingProperties block 'UnsignedProperties' is missing.");
-    if(auto usp = up/"UnsignedSignatureProperties")
-        return usp;
-    THROW("UnsignedProperties block 'UnsignedSignatureProperties' is missing.");
+    return qualifyingProperties()/"UnsignedProperties"/"UnsignedSignatureProperties";
 }
 
 TS SignatureXAdES_T::verifyTS(XMLNode timestamp, digidoc::Exception &exception,

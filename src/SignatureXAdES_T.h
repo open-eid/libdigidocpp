@@ -43,7 +43,7 @@ public:
     void extendSignatureProfile(Signer *signer) override;
 
 protected:
-    XMLNode unsignedSignatureProperties() const;
+    XMLNode unsignedSignatureProperties() const noexcept;
     TS TimeStamp() const;
 
     static TS verifyTS(XMLNode timestamp, Exception &exception,
