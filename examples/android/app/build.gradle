@@ -1,6 +1,15 @@
 apply plugin: 'com.android.application'
 
-def libsPath = '/Library/libdigidocpp'
+def projectRoot = rootDir.parentFile.parentFile.absolutePath
+def cmakeInstall = "${projectDir}/build/cmake"
+
+def localProps = new Properties()
+def localPropsFile = rootDir.toPath().resolve('local.properties').toFile()
+if (localPropsFile.exists()) localProps.load(localPropsFile.newDataInputStream())
+def cmake = localProps.getProperty('cmake') ?: {
+    def sdkCmake = new File(localProps.getProperty('sdk.dir', ''), 'cmake')
+    sdkCmake.listFiles()?.collect { new File(it, 'bin/cmake') }?.find { it.exists() }?.absolutePath ?: 'cmake'
+}()
 
 android {
     compileSdk = 36
@@ -14,7 +23,6 @@ android {
             versionCode Integer.parseInt(System.getenv("BUILD_NUMBER"))
             versionName "1.0." + System.getenv("BUILD_NUMBER")
         }
-        setProperty("archivesBaseName", "libdigidocpp-android-$versionName")
     }
     buildTypes {
         release {
@@ -26,13 +34,51 @@ android {
         targetCompatibility JavaVersion.VERSION_17
         sourceCompatibility JavaVersion.VERSION_17
     }
-    sourceSets.main.java.srcDirs += [libsPath + '.androidarm64/include']
+    sourceSets.main.java.srcDirs += ["${cmakeInstall}/androidarm64/include"]
     namespace 'ee.ria.libdigidocpp'
 }
 
+def versionNameValue = System.getenv("BUILD_NUMBER") ? "1.0.${System.getenv('BUILD_NUMBER')}" : "1.0"
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("libdigidocpp-android-${versionNameValue}.apk")
+        }
+    }
+}
+
+[[preset: 'androidarm', jniDir: 'armeabi-v7a'],
+ [preset: 'androidarm64', jniDir: 'arm64-v8a'],
+ [preset: 'androidx86_64', jniDir: 'x86_64']].each { cfg ->
+
+    def configureTask = tasks.register("cmakeConfigure_${cfg.preset}", Exec) {
+        inputs.files("${projectRoot}/CMakePresets.json", "${projectRoot}/CMakeLists.txt", "${projectRoot}/vcpkg.json")
+        outputs.dir("${projectRoot}/build/${cfg.preset}")
+        workingDir projectRoot
+        commandLine cmake, '--preset', cfg.preset,
+            '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
+            "-DCMAKE_INSTALL_PREFIX=${cmakeInstall}/${cfg.preset}"
+    }
+
+    tasks.register("cmakeBuild_${cfg.preset}", Exec) {
+        dependsOn configureTask
+        inputs.dir("${projectRoot}/build/${cfg.preset}")
+        outputs.dir("${cmakeInstall}/${cfg.preset}")
+        workingDir projectRoot
+        commandLine cmake, '--build', '--preset', cfg.preset, '--target', 'install'
+    }
+
+    tasks.register("copyLib_${cfg.preset}", Copy) {
+        dependsOn "cmakeBuild_${cfg.preset}"
+        from "${cmakeInstall}/${cfg.preset}/lib/libdigidoc_java.so"
+        into "src/main/jniLibs/${cfg.jniDir}"
+    }
+}
+
 tasks.register('schemaZip', Zip) {
-    println "Create schema zip"
-    from(libsPath + '.androidarm/etc/digidocpp/schema/') {
+    dependsOn 'cmakeBuild_androidarm'
+    from("${cmakeInstall}/androidarm/etc/digidocpp/schema/") {
         include '*'
     }
     destinationDirectory = file('src/main/res/raw/')
@@ -40,19 +86,7 @@ tasks.register('schemaZip', Zip) {
 }
 
 tasks.register('copyLibs') {
-    println "Copy jniLibs"
-    copy {
-        from libsPath + '.androidarm/lib/libdigidoc_java.so'
-        into 'src/main/jniLibs/armeabi-v7a'
-    }
-    copy {
-        from libsPath + '.androidarm64/lib/libdigidoc_java.so'
-        into 'src/main/jniLibs/arm64-v8a'
-    }
-    copy {
-        from libsPath + '.androidx86_64/lib/libdigidoc_java.so'
-        into 'src/main/jniLibs/x86_64'
-    }
+    dependsOn 'copyLib_androidarm', 'copyLib_androidarm64', 'copyLib_androidx86_64'
 }
 
 preBuild.dependsOn schemaZip, copyLibs

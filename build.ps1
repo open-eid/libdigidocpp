@@ -3,16 +3,15 @@ param(
   [string]$libdigidocpp = $PSScriptRoot,
   [string]$platform = $env:PLATFORM,
   [string]$build_number = $(if ($null -eq $env:BUILD_NUMBER) {"0"} else {$env:BUILD_NUMBER}),
-  [string]$msiversion = "4.4.0.$build_number",
+  [string]$msiversion = (Select-String -Path "$libdigidocpp/CMakeLists.txt" -Pattern 'project\(\w+ VERSION (\S+)').Matches[0].Groups[1].Value + ".$build_number",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.$platform.msi",
   [string]$git = "git.exe",
-  [string]$vcpkg = "vcpkg\vcpkg.exe",
-  [string]$vcpkg_dir = (split-path -parent $vcpkg),
-  [string]$vcpkg_installed = $libdigidocpp,
-  [string]$vcpkg_installed_platform = "$vcpkg_installed\vcpkg_installed_$platform",
+  [string]$vcpkg = $env:VCPKG_ROOT,
+  [string]$vcpkg_installed = $null,
+  [string]$vcpkg_installed_platform = $(if($vcpkg_installed) { "$vcpkg_installed\vcpkg_installed_$platform" } else { "$libdigidocpp\build\windows-$platform\vcpkg_installed" }),
   [string]$vcpkg_triplet = "$platform-windows",
+  [string]$installdir = "$libdigidocpp\build\windows-$platform\install",
   [string]$cmake = "cmake.exe",
-  [string]$generator = "NMake Makefiles",
   [string]$swig = $null,
   [string]$doxygen = $null,
   [switch]$boost = $false,
@@ -29,8 +28,9 @@ Catch {
 }
 
 if(!(Test-Path -Path $vcpkg)) {
-  & $git clone https://github.com/microsoft/vcpkg $vcpkg_dir
-  & $vcpkg_dir\bootstrap-vcpkg.bat
+  $vcpkg = "$libdigidocpp\vcpkg"
+  & $git clone https://github.com/microsoft/vcpkg $vcpkg
+  & $vcpkg\bootstrap-vcpkg.bat
 }
 
 $cmakeext = @()
@@ -54,21 +54,19 @@ if($python) {
   $cmakeext += "-DPython3_ROOT_DIR=$python/$platform"
   $wixext += "-d", "python=1"
 }
-
-foreach($type in @("Debug", "RelWithDebInfo")) {
-  $buildpath = $platform+$type
-  & $cmake --fresh -B $buildpath -S $libdigidocpp "-G$generator" $cmakeext `
-    "-DCMAKE_BUILD_TYPE=$type" `
-    "-DCMAKE_INSTALL_PREFIX=$platform" `
-    "-DCMAKE_INSTALL_BINDIR=." `
-    "-DCMAKE_INSTALL_LIBDIR=." `
-    "-DCMAKE_TOOLCHAIN_FILE=$vcpkg_dir/scripts/buildsystems/vcpkg.cmake" `
-    "-DVCPKG_INSTALLED_DIR=$vcpkg_installed_platform" `
-    "-DVCPKG_TARGET_TRIPLET=$vcpkg_triplet" `
-    "-DSIGNCERT=$sign"
-  & $cmake --build $buildpath --target $target
-  & $cmake --install $buildpath
+if($vcpkg_installed) {
+  $cmakeext += "-DVCPKG_INSTALLED_DIR=$vcpkg_installed_platform"
 }
+$env:PLATFORM = $platform
+$env:VCPKG_ROOT = $vcpkg
+
+Push-Location $libdigidocpp
+& $cmake --fresh --preset windows "-GNinja Multi-Config" $cmakeext "-DCMAKE_INSTALL_PREFIX=$installdir" "-DSIGNCERT=$sign"
+foreach($type in @("Debug", "RelWithDebInfo")) {
+  & $cmake --build --preset windows --config $type --target $target
+  & $cmake --build --preset windows --config $type --target install
+}
+Pop-Location
 
 if($sign) {
   & signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
@@ -77,7 +75,7 @@ if($sign) {
     $vcpkg_installed_platform/$vcpkg_triplet/debug/bin/*.dll
 }
 
-$docLocation = "$(Get-Location)/$platform/share/doc/libdigidocpp"
+$docLocation = "$installdir/share/doc/libdigidocpp"
 if (Test-Path -Path $docLocation -PathType Container) {
   $wixext += "-d", "docLocation=$docLocation"
 }
@@ -88,7 +86,7 @@ if (Test-Path -Path $docLocation -PathType Container) {
   -bv "WixUIDialogBmp=$libdigidocpp/dlgbmp.bmp" `
   -d "ICON=$libdigidocpp/ID.ico" `
   -d "vcpkg=$vcpkg_installed_platform/$vcpkg_triplet" `
-  -d "libdigidocpp=$(Get-Location)/$platform" `
+  -d "libdigidocpp=$installdir" `
   $libdigidocpp\libdigidocpp.wxs
 
 if($sign) {
