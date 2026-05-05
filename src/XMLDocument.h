@@ -32,40 +32,45 @@
 #include <xmlsec/crypto.h>
 #include <xmlsec/parser.h>
 
-#include <openssl/evp.h>
-
+#include <array>
 #include <istream>
 
 namespace digidoc {
 
 #define VERSION_CHECK(major, minor, patch) (((major)<<16)|((minor)<<8)|(patch))
 
-static std::vector<unsigned char> from_base64(std::string_view data)
+template<class R = std::vector<unsigned char>>
+static constexpr R from_base64(std::string_view data)
 {
-    static constexpr std::string_view whitespace {" \n\r\f\t\v"};
-    std::vector<unsigned char> result(EVP_DECODE_LENGTH(data.size()), 0);
-    size_t dataPos = 0;
-    int size = 0;
-    auto ctx = make_unique_ptr<EVP_ENCODE_CTX_free>(EVP_ENCODE_CTX_new());
-    EVP_DecodeInit(ctx.get());
-
-    for(auto pos = data.find_first_of(whitespace);
-         !data.empty();
-         pos = data.find_first_of(whitespace), dataPos += size_t(size))
+    constexpr auto T = std::to_array<uint8_t>({
+        0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
+        0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
+        0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x3E, 0x64, 0x64, 0x64, 0x3F,
+        0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
+        0x64, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E,
+        0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x64, 0x64, 0x64, 0x64, 0x64,
+        0x64, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+        0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x64, 0x64, 0x64, 0x64, 0x64
+    });
+    R result(data.size() * 3 / 4 + 2, 0);
+    auto it = result.begin();
+    uint32_t value = 0;
+    int bits = -8;
+    for(auto c: data)
     {
-        auto sub = data.substr(0, pos);
-        if(pos == std::string_view::npos)
-            data = {};
-        else
-            data.remove_prefix(pos + 1);
-        if(EVP_DecodeUpdate(ctx.get(), &result[dataPos], &size, (const unsigned char*)sub.data(), int(sub.size())) == -1)
-            THROW("Invalid Base64 Binary");
+        constexpr std::string_view whitespace{" \t\n\r\f\v"};
+        if(static_cast<uint8_t>(c) > 127 || whitespace.contains(c))
+            continue;
+        uint8_t check = T[static_cast<uint8_t>(c)];
+        if(check == 0x64)
+            break;
+        value = (value << 6) + check;
+        if(bits += 6; bits < 0)
+            continue;
+        *it++ = typename R::value_type((value >> bits) & 0xFF);
+        bits -= 8;
     }
-
-    if(EVP_DecodeFinal(ctx.get(), &result[dataPos], &size) == 1)
-        result.resize(dataPos + size_t(size));
-    else
-        result.clear();
+    result.erase(it, result.end());
     return result;
 }
 
