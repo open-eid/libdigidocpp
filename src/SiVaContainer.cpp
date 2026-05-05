@@ -29,6 +29,8 @@
 #include "DataFile_p.h"
 #include "XMLDocument.h"
 #include "crypto/Connect.h"
+#include "crypto/TS.h"
+#include "util/DateTime.h"
 #include "util/File.h"
 
 #include "json.hpp"
@@ -40,47 +42,6 @@ using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
 using json = nlohmann::json;
-
-template <class T>
-constexpr T base64_enc_size(T n) noexcept
-{
-    return ((n + 2) / 3) << 2;
-}
-
-static auto base64_decode(string_view data) {
-    static constexpr array<uint8_t, 128> T{
-        0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
-        0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
-        0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x3E, 0x64, 0x64, 0x64, 0x3F,
-        0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64,
-        0x64, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E,
-        0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x64, 0x64, 0x64, 0x64, 0x64,
-        0x64, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
-        0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x64, 0x64, 0x64, 0x64, 0x64
-    };
-
-    string buf;
-    buf.reserve(base64_enc_size(data.size()));
-    auto out = make_unique<stringstream>(std::move(buf));
-    int value = 0;
-    int bits = -8;
-    for(auto c: data)
-    {
-        if(c == '\r' || c == '\n' || c == ' ' || static_cast<uint8_t>(c) > 128)
-            continue;
-        uint8_t check = T[c];
-        if(check == 0x64)
-            break;
-        value = (value << 6) + check;
-        if(bits += 6; bits < 0)
-            continue;
-        out->put(char((value >> bits) & 0xFF));
-        bits -= 8;
-    }
-    return out;
-}
-
-
 
 class SiVaContainer::Private
 {
@@ -197,7 +158,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
             break;
 
         size_t pos = b64.size();
-        b64.resize(b64.size() + base64_enc_size(buf.size()));
+        b64.resize(b64.size() + ((buf.size() + 2) / 3) * 4);
         int size = EVP_EncodeBlock((unsigned char*)&b64[pos], buf.data(), int(is->gcount()));
         b64.resize(pos + size);
     }
@@ -255,6 +216,11 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
                 s->_postalCode = signatureProductionPlace.value<string>("postalCode", {});
                 s->_country = signatureProductionPlace.value<string>("countryName", {});
             }
+            for(const json &tsa: info.value<json>("archiveTimeStamps", {}))
+            {
+                TS ts(from_base64(tsa.value<string_view>("content", {})));
+                s->_archiveTimeStamps.push_back({ts.cert(), util::date::to_string(ts.time())});
+            }
         }
         for(const json &certificate: signature.value<json>("certificates", {}))
         {
@@ -265,8 +231,8 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
                 s->_ocspCertificate = X509Cert(der, X509Cert::Der);
             if(certificate["type"] == "SIGNATURE_TIMESTAMP")
                 s->_tsCertificate = X509Cert(der, X509Cert::Der);
-            if(certificate["type"] == "ARCHIVE_TIMESTAMP")
-                s->_tsaCertificate = X509Cert(der, X509Cert::Der);
+            if(certificate["type"] == "ARCHIVE_TIMESTAMP" && s->_archiveTimeStamps.empty())
+                s->_archiveTimeStamps.push_back({X509Cert(der, X509Cert::Der), {}});
         }
         for(const json &error: signature.value<json>("errors", {}))
         {
@@ -353,7 +319,7 @@ unique_ptr<istream> SiVaContainer::parseDDoc(const unique_ptr<istream> &ddoc, bo
                 THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
             if(contentType != "EMBEDDED_BASE64")
                 continue;
-            d->dataFiles.push_back(new DataFilePrivate(base64_decode(dataFile),
+            d->dataFiles.push_back(new DataFilePrivate(make_unique<stringstream>(from_base64<string>(dataFile)),
                 string(dataFile["Filename"]),
                 string(dataFile["MimeType"]),
                 string(dataFile["Id"])));

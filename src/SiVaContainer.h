@@ -59,7 +59,7 @@ public:
     std::string TimeStampTime() const final { return _tsTime; }
 
     //TSA profile properties
-    X509Cert ArchiveTimeStampCertificate() const final { return _tsaCertificate; }
+    std::vector<TSAInfo> ArchiveTimeStamps() const final { return _archiveTimeStamps; }
 
     // Other
     std::vector<unsigned char> messageImprint() const final { return  _messageImprint; }
@@ -68,7 +68,8 @@ private:
     SignatureSiVa() = default;
     DISABLE_COPY(SignatureSiVa);
 
-    X509Cert _signingCertificate, _ocspCertificate, _tsCertificate, _tsaCertificate;
+    X509Cert _signingCertificate, _ocspCertificate, _tsCertificate;
+    std::vector<TSAInfo> _archiveTimeStamps;
     std::string _id, _profile, _signedBy, _signatureMethod, _signingTime, _indication, _subIndication, _signatureLevel;
     std::string _bestTime, _tsTime, _ocspTime;
     std::string _city, _stateOrProvince, _postalCode, _country;
