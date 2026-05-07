@@ -69,6 +69,8 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
     if(!req)
         THROW_OPENSSLEXCEPTION("Failed to create new OCSP request, out of memory?");
 
+    // SHA-1 is the default for CertID: some OCSP responders reject requests using other digest
+    // algorithms. SHA-256 is used selectively for responders known to support it.
     const EVP_MD *evp_md {};
     if(url.find("eidpki.ee") != std::string::npos)
         evp_md = EVP_get_digestbynid(NID_sha256);
@@ -92,6 +94,8 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
         THROW("Failed to send OCSP request");
     const auto *p2 = (const unsigned char*)result.content.c_str();
     resp.reset(d2i_OCSP_RESPONSE(nullptr, &p2, long(result.content.size())));
+    if(!resp)
+        THROW_OPENSSLEXCEPTION("Failed to parse OCSP response.");
 
     switch(int respStatus = OCSP_response_status(resp.get()))
     {
