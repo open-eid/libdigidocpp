@@ -154,10 +154,11 @@ int initXmlSecCallback()
                 return {};
             }
 
-            auto find = [name](auto files) -> const DataFile* {
+            string uriName = File::fromUriPath(name);
+            auto find = [&uriName](auto files) -> const DataFile* {
                 for(const DataFile *file: files)
                 {
-                    if(file->fileName() == name)
+                    if(file->fileName() == uriName)
                         return file;
                 }
                 return {};
@@ -505,10 +506,7 @@ void SignatureXAdES_B::validate(const string &policy) const
                 EXCEPTION_ADD(exception, "Reference '%.*s' ID  missing", int(uri.size()), uri.data());
             else
             {
-                string uriPath = File::fromUriPath(uri);
-                if(uriPath.front() == '/')
-                    uriPath.erase(0);
-                signatureref.emplace(uriPath, mimeinfo[string("#").append(ref["Id"])]);
+                signatureref.emplace(File::fromUriPath(uri), mimeinfo[string("#").append(ref["Id"])]);
             }
         }
         if(!signedInfoFound)

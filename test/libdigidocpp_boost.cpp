@@ -515,6 +515,20 @@ BOOST_AUTO_TEST_CASE(HexToBinConvertsHexEncodedStringToBinaryData)
 }
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(ASiCETestSuite)
+BOOST_AUTO_TEST_CASE(LeadingSlashReferenceURI)
+{
+    // Container signed with URI="/test1.txt" (leading slash).
+    // Without the erase(0,1) fix the reference path is erased to "",
+    // failing to match the DataFile and throwing during validate().
+    auto d = Container::openPtr("test-leading-slash-uri.asice");
+    BOOST_REQUIRE_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->dataFiles().front()->fileName(), "test1.txt");
+    BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
+}
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(ASiCSTestSuite)
 BOOST_AUTO_TEST_CASE(OpenValidASiCSContainer)
 {
