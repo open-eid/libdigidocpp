@@ -609,6 +609,26 @@ BOOST_AUTO_TEST_CASE(OpenValidASiCSContainerWithOtherMeta)
     BOOST_CHECK_NO_THROW(ts->validate());
 }
 
+BOOST_AUTO_TEST_CASE(OpenCMSTimeStampASiCSContainer)
+{
+    // The token is pkcs7-signedData carrying id-smime-ct-TSTInfo, which d2i_PKCS7
+    // rejects, so TS falls back to the CMS path where the message imprint is
+    // compared by hand rather than by TS_RESP_verify_token. The same token over
+    // matching and forged content pins both directions of that comparison.
+    auto d = Container::openPtr("ASICS-test-match.asics");
+    BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
+    BOOST_CHECK_EQUAL(d->dataFiles().front()->fileName(), "valid-bdoc-tm.bdoc");
+    BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
+
+    auto forged = Container::openPtr("CMS-imprint-mismatch.asics");
+    BOOST_CHECK_EQUAL(forged->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(forged->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(forged->dataFiles().front()->fileName(), "forged-document.txt");
+    BOOST_CHECK_THROW(forged->signatures().front()->validate(), Exception);
+}
+
 BOOST_AUTO_TEST_CASE(OpenInvalidTsASiCSContainer)
 {
     auto d = Container::openPtr("test-invalidts.asics");
