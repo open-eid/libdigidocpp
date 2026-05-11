@@ -697,4 +697,54 @@ BOOST_AUTO_TEST_CASE(XMLBomb)
     if(std::fstream f{"xml-bomb-cont.xml"})
         BOOST_CHECK_THROW(XMLDocument::openStream(f, {}, true), Exception);
 }
+BOOST_AUTO_TEST_CASE(XMLXXE)
+{
+    BOOST_REQUIRE(fs::exists("xxe-sentinel.txt"));
+    BOOST_REQUIRE(fs::exists("xxe-sentinel-dtd.dtd"));
+
+    // Absolute file:// URIs so the entity loader can resolve them even from a
+    // stream context (which has no base URL). Without protection these files
+    // would be loaded and XXESENTINEL would appear in the document; with
+    // protection they are blocked before any file access occurs.
+    auto fileUri = [](const char *name) {
+        auto s = fs::absolute(name).generic_string();
+        return s.front() == '/' ? "file://" + s : "file:///" + s;
+    };
+    const auto sentinelUri = fileUri("xxe-sentinel.txt");
+    const auto dtdUri      = fileUri("xxe-sentinel-dtd.dtd");
+
+    // Each payload would leak XXESENTINEL into <root> if the relevant XXE
+    // vector is not blocked.
+    const std::string payloads[] = {
+        // General entity via local file
+        "<?xml version=\"1.0\"?>"
+        "<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"" + sentinelUri + "\">]>"
+        "<root>&xxe;</root>",
+        // General entity via network (blocked by XML_PARSE_NONET)
+        "<?xml version=\"1.0\"?>"
+        "<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"http://evil.example.com/secret\">]>"
+        "<root>&xxe;</root>",
+        // External DTD subset that defines &sentinel; as XXESENTINEL
+        "<?xml version=\"1.0\"?>"
+        "<!DOCTYPE root SYSTEM \"" + dtdUri + "\">"
+        "<root>&sentinel;</root>",
+        // Parameter entity that injects the DTD to define &sentinel;
+        "<?xml version=\"1.0\"?>"
+        "<!DOCTYPE root ["
+        "<!ENTITY % sentinel SYSTEM \"" + dtdUri + "\">"
+        "%sentinel;"
+        "]><root>&sentinel;</root>",
+    };
+
+    for(const auto &payload : payloads) {
+        for(bool huge : {false, true}) {
+            std::istringstream is{std::string(payload)};
+            auto doc = XMLDocument::openStream(is, {}, huge);
+            xmlChar *raw = xmlNodeGetContent(doc.d);
+            std::string_view text = raw ? (const char*)raw : "";
+            BOOST_CHECK(!text.contains("XXESENTINEL"));
+            xmlFree(raw);
+        }
+    }
+}
 BOOST_AUTO_TEST_SUITE_END()
