@@ -491,11 +491,8 @@ void SignatureXAdES_B::validate(const string &policy) const
                 EXCEPTION_ADD(exception, "Reference '%.*s' ID  missing", int(uri.size()), uri.data());
             else
             {
-                string uriPath = File::fromUriPath(uri);
-                if(uriPath.front() == '/')
-                    uriPath.erase(0);
                 // ADoc 1.0 has no DataObjectFormat elements, so there is no MediaType to match
-                signatureref.emplace(uriPath, sdop ? mimeinfo[string("#").append(ref["Id"])] : string());
+                signatureref.emplace(File::fromUriPath(uri), sdop ? mimeinfo[string("#").append(ref["Id"])] : string());
             }
         }
         if(signedInfoFound != 1)

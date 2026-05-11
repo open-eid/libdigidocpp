@@ -1027,7 +1027,7 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = @PROJECT_SOURCE_DIR@/src \
-                         @PROJECT_SOURCE_DIR@/libdigidocpp.dox \
+                         @PROJECT_SOURCE_DIR@/doc/README.md \
                          @PROJECT_SOURCE_DIR@/doc/programmer-guide.md \
                          @PROJECT_SOURCE_DIR@/doc/formats.md \
                          @PROJECT_SOURCE_DIR@/doc/configuration.md \
@@ -1233,7 +1233,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the Doxygen output.
 
-USE_MDFILE_AS_MAINPAGE =
+USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/doc/README.md
 
 # If the IMPLICIT_DIR_DOCS tag is set to YES, any README.md file found in sub-
 # directories of the project's root, is used as the documentation for that sub-
