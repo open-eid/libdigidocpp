@@ -54,9 +54,6 @@ void SignatureXAdES_LTA::calcArchiveDigest(const Digest &digest, string_view can
         }
 
         string uriPath = File::fromUriPath(uri);
-        if(uriPath.front() == '/')
-            uriPath.erase(0);
-
         auto files = bdoc->dataFiles();
         auto file = find_if(files.cbegin(), files.cend(), [&uriPath](DataFile *file) {
             return file->fileName() == uriPath;
