@@ -382,19 +382,52 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
             }
         }, nullptr, &f, XML_CHAR_ENCODING_NONE));
         ctxt->options |= XML_PARSE_NOENT|XML_PARSE_DTDLOAD|XML_PARSE_DTDATTR|XML_PARSE_NONET|XML_PARSE_NODICT;
+        if(hugeFile)
+            ctxt->options |= XML_PARSE_HUGE;
 #if LIBXML_VERSION >= 21300
         ctxt->options |= XML_PARSE_NO_XXE;
 #else
         ctxt->loadsubset |= XML_DETECT_IDS|XML_COMPLETE_ATTRS;
-#endif
-        if(hugeFile)
-        {
-            ctxt->options |= XML_PARSE_HUGE;
-#if LIBXML_VERSION < 21300
-            if(ctxt->sax)
-                ctxt->sax->entityDecl = nullptr;
-#endif
+        if(ctxt->sax) {
+            ctxt->sax->entityDecl = [](void *ctx, const xmlChar *name, int type,
+                                        const xmlChar *publicId, const xmlChar *systemId,
+                                        xmlChar *content) noexcept {
+                auto *ctxt = static_cast<xmlParserCtxtPtr>(ctx);
+                if(!ctxt)
+                    return;
+                if(type == XML_EXTERNAL_GENERAL_PARSED_ENTITY)
+                    return;
+                if((ctxt->options & XML_PARSE_HUGE) &&
+                   (type == XML_INTERNAL_GENERAL_ENTITY || type == XML_INTERNAL_PARAMETER_ENTITY)) {
+                    ctxt->wellFormed = 0;
+                    xmlStopParser(ctxt);
+                    return;
+                }
+                auto *doc = ctxt->myDoc;
+                if(!doc)
+                    return;
+                xmlAddDocEntity(doc, name, type, publicId, systemId, content);
+            };
+            ctxt->sax->resolveEntity = [](void*, const xmlChar*, const xmlChar*) noexcept -> xmlParserInputPtr {
+                return nullptr;
+            };
+            ctxt->sax->getEntity = [](void *ctx, const xmlChar *name) noexcept -> xmlEntityPtr {
+                auto *ctxt = static_cast<xmlParserCtxtPtr>(ctx);
+                if(!ctxt || !ctxt->myDoc)
+                    return nullptr;
+                auto *ent = xmlGetDocEntity(ctxt->myDoc, name);
+                if(!ent) {
+                    if(ctxt->instate == XML_PARSER_ATTRIBUTE_VALUE) {
+                        ctxt->wellFormed = 0;
+                        xmlStopParser(ctxt);
+                        return nullptr;
+                    }
+                    ent = xmlAddDocEntity(ctxt->myDoc, name, XML_INTERNAL_GENERAL_ENTITY, nullptr, nullptr, (const xmlChar*)"");
+                }
+                return ent;
+            };
         }
+#endif
         auto result = xmlParseDocument(ctxt.get());
         if(result != 0 || !ctxt->wellFormed)
         {
