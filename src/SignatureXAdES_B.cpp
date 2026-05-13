@@ -479,7 +479,7 @@ void SignatureXAdES_B::validate(const string &policy) const
 
         map<string,string> signatureref;
         string_view signedPropertiesId = sp["Id"];
-        bool signedInfoFound = false;
+        int signedInfoFound = 0;
         for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
         {
             auto uri = ref["URI"];
@@ -498,7 +498,7 @@ void SignatureXAdES_B::validate(const string &policy) const
             }
 
             if(uri.front() == '#' && uri.substr(1) == signedPropertiesId && ref["Type"] == REF_TYPE)
-                signedInfoFound = true;
+                ++signedInfoFound;
             else if(!sdop)
                 continue; // DataObjectProperties is missing, no need to match later MediaTypes
             else if(ref["Id"].empty())
@@ -511,8 +511,8 @@ void SignatureXAdES_B::validate(const string &policy) const
                 signatureref.emplace(uriPath, mimeinfo[string("#").append(ref["Id"])]);
             }
         }
-        if(!signedInfoFound)
-            EXCEPTION_ADD(exception, "SignedProperties not found");
+        if(signedInfoFound != 1)
+            EXCEPTION_ADD(exception, "Exactly one SignedProperties Reference required, found %d", signedInfoFound);
 
         // Match DataObjectFormat element MediaTypes with Manifest
         if(!signatureref.empty())
