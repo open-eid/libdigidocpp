@@ -77,6 +77,8 @@ public:
     static BOOL WINAPI CertFilter(PCCERT_CONTEXT cert_context,
         PBOOL is_initial_selected_cert, PVOID callback_data);
 
+    ~Private() { SecureZeroMemory(pin.data(), pin.size()); }
+
     X509Cert cert;
     HCRYPTPROV_OR_NCRYPT_KEY_HANDLE key {};
     DWORD spec {};
@@ -219,6 +221,7 @@ string WinSigner::method() const
  */
 void WinSigner::setPin(const string &pin)
 {
+    SecureZeroMemory(d->pin.data(), d->pin.size());
     d->pin = pin;
 }
 
@@ -273,6 +276,7 @@ vector<unsigned char> WinSigner::sign(const string &method, const vector<unsigne
         {
             wstring pin = util::File::encodeName(d->pin);
             err = NCryptSetProperty(d->key, NCRYPT_PIN_PROPERTY, PBYTE(pin.c_str()), DWORD(pin.size()), 0);
+            SecureZeroMemory(pin.data(), pin.size() * sizeof(wchar_t));
             if(err != ERROR_SUCCESS)
                 break;
         }
