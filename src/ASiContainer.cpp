@@ -169,9 +169,32 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
 void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
 {
     addDataFileChecks(fileName, mediaType);
-    if(fileName.find_last_of("/\\") != string::npos)
-        THROW("Document file '%s' cannot contain directory path.", fileName.c_str());
     d->documents.push_back(new DataFilePrivate(std::move(is), fileName, mediaType));
+}
+
+void ASiContainer::validateDataFileName(string_view fileName)
+{
+    if(fileName.empty() || fileName == "." || fileName == ".." ||
+       fileName.find_first_of("/\\") != string_view::npos)
+        THROW("Document file '%.*s' cannot contain directory path.", STR_VIEW_FMT(fileName));
+}
+
+void ASiContainer::validateDataFilePath(string_view fileName)
+{
+    if(fileName.empty() || fileName.front() == '/' || fileName.back() == '/' ||
+       fileName.find('\\') != string_view::npos)
+        THROW("Document file '%.*s' contains invalid path.", STR_VIEW_FMT(fileName));
+
+    for(size_t pos = 0; pos < fileName.size();)
+    {
+        size_t next = fileName.find('/', pos);
+        string_view segment = fileName.substr(pos, next == string_view::npos ? next : next - pos);
+        if(segment.empty() || segment == "." || segment == "..")
+            THROW("Document file '%.*s' contains invalid path.", STR_VIEW_FMT(fileName));
+        if(next == string_view::npos)
+            break;
+        pos = next + 1;
+    }
 }
 
 void ASiContainer::addDataFileChecks(const string &fileName, const string &mediaType)
@@ -180,15 +203,17 @@ void ASiContainer::addDataFileChecks(const string &fileName, const string &media
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
     if(fileName == "mimetype")
         THROW("mimetype is reserved file.");
+    validateDataFileName(fileName);
     if(any_of(d->documents.cbegin(), d->documents.cend(), [&](DataFile *file) { return fileName == file->fileName(); }))
         THROW("Document with same file name '%s' already exists.", fileName.c_str());
     if(mediaType.find('/') == string::npos)
         THROW("MediaType does not meet format requirements (RFC2045, section 5.1) '%s'.", mediaType.c_str());
 }
 
-void ASiContainer::addDataFilePrivate(DataFile *dataFile)
+void ASiContainer::addDataFilePrivate(const ZipSerialize &z, string_view filename, string_view mediatype)
 {
-    d->documents.push_back(dataFile);
+    validateDataFilePath(filename);
+    d->documents.push_back(new DataFilePrivate(z, string(filename), string(mediatype)));
 }
 
 /**

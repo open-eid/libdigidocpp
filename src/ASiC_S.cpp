@@ -19,7 +19,6 @@
 
 #include "ASiC_S.h"
 
-#include "DataFile_p.h"
 #include "SignatureTST.h"
 #include "SignatureXAdES_LTA.h"
 #include "crypto/Signer.h"
@@ -71,10 +70,7 @@ ASiC_S::ASiC_S(const string &path, bool create)
         else if(!dataFiles().empty())
             THROW("Can not add document to ASiC-S container which already contains a document.");
         else
-        {
-            addDataFileChecks(file, "application/octet-stream");
-            addDataFilePrivate(new DataFilePrivate(z, file, "application/octet-stream"));
-        }
+            addDataFilePrivate(z, file, "application/octet-stream");
     }
     if(foundTimestamp && !foundManifest)
     {
