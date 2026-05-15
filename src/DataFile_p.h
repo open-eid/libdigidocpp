@@ -21,6 +21,7 @@
 
 #include "DataFile.h"
 
+#include <filesystem>
 #include <istream>
 #include <memory>
 #include <optional>
@@ -52,6 +53,7 @@ public:
 
     struct Private;
     std::unique_ptr<Private> d;
+    std::filesystem::path m_tempFile;
     std::unique_ptr<std::istream> m_is;
     std::string m_id, m_filename, m_mediatype;
 };

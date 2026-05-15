@@ -25,6 +25,7 @@
 #include "util/ZipSerialize.h"
 
 #include <array>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 
@@ -106,25 +107,48 @@ DataFilePrivate::DataFilePrivate(const ZipSerialize &z, string filename, string 
     d->size.emplace((unsigned long)r.size);
     if(r.size > MAX_MEM_FILE)
     {
-        auto fs = make_unique<fstream>(util::File::tempFileName(), fstream::in|fstream::out|fstream::binary|fstream::trunc);
-        if(!fs->is_open())
-            THROW("Failed to open destination file");
-        array<char,10240> buf{};
-        for(size_t size = 0, currentStreamSize = 0;
-             (size = r(buf.data(), buf.size())) > 0; currentStreamSize += size)
-        {
-            if(currentStreamSize + size > r.size)
-                THROW("ZIP entry actual size exceeds uncompressed_size %zu", r.size);
-            if(!fs->write(buf.data(), size))
-                THROW("Failed to write '%s' data to stream. Stream size: %d", m_filename.c_str(), currentStreamSize);
+        try {
+            m_tempFile = util::File::tempFileName();
+            auto fs = make_unique<fstream>(m_tempFile, fstream::in|fstream::out|fstream::binary|fstream::trunc);
+            if(!fs->is_open())
+                THROW("Failed to open destination file");
+            array<char,10240> buf{};
+            for(size_t size = 0, currentStreamSize = 0;
+                (size = r(buf.data(), buf.size())) > 0; currentStreamSize += size)
+            {
+                if(currentStreamSize + size > r.size)
+                    THROW("ZIP entry actual size exceeds uncompressed_size %zu", r.size);
+                if(!fs->write(buf.data(), size))
+                    THROW("Failed to write '%s' data to stream. Stream size: %d", m_filename.c_str(), currentStreamSize);
+            }
+            if(!fs->flush())
+                THROW("Failed to flush '%s' data to temporary file.", m_filename.c_str());
+            fs->clear();
+            if(!fs->seekg(0, istream::beg))
+                THROW("Failed to rewind '%s' temporary file.", m_filename.c_str());
+            m_is = std::move(fs);
+        } catch(...) {
+            if(!m_tempFile.empty())
+            {
+                error_code ec;
+                filesystem::remove(m_tempFile, ec);
+            }
+            throw;
         }
-        m_is = std::move(fs);
     }
     else
         m_is = make_unique<stringstream>(r(MAX_MEM_FILE));
 }
 
-DataFilePrivate::~DataFilePrivate() noexcept = default;
+DataFilePrivate::~DataFilePrivate() noexcept
+{
+    m_is.reset();
+    if(!m_tempFile.empty())
+    {
+        error_code ec;
+        filesystem::remove(m_tempFile, ec);
+    }
+}
 
 void DataFilePrivate::digest(const Digest &digest) const
 {
