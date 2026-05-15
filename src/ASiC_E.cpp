@@ -57,7 +57,8 @@ ASiC_E::ASiC_E(const string &path, bool create) try
         return;
     auto z = load(true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
     auto doc = XMLDocument::open(z.read("META-INF/manifest.xml"), {"manifest", MANIFEST_NS});
-    doc.validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
+    static const XMLSchema schema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
+    doc.validateSchema(schema);
 
     set<string_view> manifestFiles;
     bool mimeFound = false;
@@ -67,6 +68,8 @@ ASiC_E::ASiC_E(const string &path, bool create) try
         auto media_type = file[{"media-type", MANIFEST_NS}];
         DEBUG("full_path = '%.*s', media_type = '%.*s'", STR_VIEW_FMT(full_path), STR_VIEW_FMT(media_type));
 
+        if(full_path.empty())
+            THROW("Manifest file entry full-path is empty.");
         // ODF does not specify that mimetype should be first in manifest
         if(full_path == "/")
         {
@@ -80,13 +83,14 @@ ASiC_E::ASiC_E(const string &path, bool create) try
         if(full_path.back() == '/') // Skip Directory entries
             continue;
 
-        if(const auto &[pos, inserted] = manifestFiles.insert(full_path); !inserted)
+        if(const auto &[_, inserted] = manifestFiles.insert(full_path); !inserted)
             THROW("Manifest multiple entries defined for file '%.*s'.", STR_VIEW_FMT(full_path));
+        validateDataFilePath(full_path);
         if(mediaType() == MIMETYPE_ADOC &&
             (full_path.starts_with("META-INF/") || full_path.starts_with("metadata/")))
             d->metadata.push_back(new DataFilePrivate(z, string(full_path), string(media_type)));
         else
-            addDataFilePrivate(new DataFilePrivate(z, string(full_path), string(media_type)));
+            addDataFilePrivate(z, full_path, media_type);
     }
     if(!mimeFound)
         THROW("Manifest is missing mediatype file entry.");
@@ -98,7 +102,7 @@ ASiC_E::ASiC_E(const string &path, bool create) try
          * 6.2.2 Contents of Container
          * 3) The root element of each "*signatures*.xml" content shall be either:
          */
-        if(file.starts_with("META-INF/") && file.contains("signatures"))
+        if(file.starts_with("META-INF/") && file.contains("signatures") && file.ends_with(".xml"))
         {
             manifestFiles.erase(file);
             try

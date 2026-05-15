@@ -59,7 +59,6 @@ const string ASiCS::TYPE = "application/vnd.etsi.asic-s+zip";
 const string ASiCS::EXT = "asics";
 }
 
-
 BOOST_GLOBAL_FIXTURE(TestFixture);
 
 BOOST_AUTO_TEST_SUITE(SignerSuite)
@@ -524,6 +523,24 @@ BOOST_AUTO_TEST_CASE(key_substitution_detected)
     BOOST_CHECK_EQUAL(d->signatures().at(0)->signingCertificate().subjectName("CN"), "MÖLDER,HUGO MARTIN,38910239121");
     BOOST_CHECK_THROW(d->signatures().at(0)->validate(), Exception);
 }
+
+BOOST_AUTO_TEST_CASE(manifest_data_file_paths_are_supported)
+{
+    auto d = Container::openPtr("asice-path.asice");
+    BOOST_REQUIRE_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(d->dataFiles().front()->fileName(), "folder/test1.txt");
+}
+
+BOOST_AUTO_TEST_CASE(manifest_data_file_relative_paths_are_rejected)
+{
+    BOOST_CHECK_THROW(Container::openPtr("asice-relative.asice"), Exception);
+}
+
+BOOST_AUTO_TEST_CASE(manifest_data_file_dot_and_empty_paths_are_rejected)
+{
+    BOOST_CHECK_THROW(Container::openPtr("dot.asice"), Exception);
+    BOOST_CHECK_THROW(Container::openPtr("pt-empty.asice"), Exception);
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(ASiCSTestSuite)
@@ -610,6 +627,11 @@ BOOST_AUTO_TEST_CASE(TeRaEmptyASiCSContainer)
 BOOST_AUTO_TEST_CASE(OpenInvalidMimetypeContainer)
 {
     BOOST_CHECK_THROW(Container::openPtr("test-invalid.asics"), Exception);
+}
+
+BOOST_AUTO_TEST_CASE(OpenASiCSContainerWithSubfolderDataObject)
+{
+    BOOST_CHECK_THROW(Container::openPtr("asics-subfolder.asics"), Exception);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
