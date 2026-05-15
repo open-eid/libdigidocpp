@@ -163,7 +163,6 @@ void digidoc::terminate()
 {
     try {
         Conf::init(nullptr);
-        util::File::deleteTempFiles();
     } catch (...) {
         // Don't throw on terminate
     }

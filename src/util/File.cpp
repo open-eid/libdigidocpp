@@ -62,7 +62,6 @@ using f_statbuf = struct stat;
 using f_utimbuf = struct utimbuf;
 #endif
 
-stack<fs::path> File::tempFiles;
 
 static string decodeName(fs::path path)
 {
@@ -224,20 +223,23 @@ string File::path(string dir, string_view relativePath)
  */
 fs::path File::tempFileName()
 {
+    fs::path result;
 #ifdef _WIN32
     // requires TMP environment variable to be set
     wchar_t *fileName = _wtempnam(nullptr, nullptr); // TODO: static buffer, not thread-safe
     if(!fileName)
         THROW("Failed to create a temporary file name.");
-    tempFiles.emplace(fileName);
+    result = fileName;
     free(fileName);
 #else
-    string tmp = "XXXXXX";
-    if(mkstemp(tmp.data()) == -1)
+    auto result_str = (fs::temp_directory_path() / "XXXXXX").string();
+    int fd = mkstemp(result_str.data());
+    if(fd == -1)
         THROW("Failed to create a temporary file name.");
-    tempFiles.push(fs::temp_directory_path() / tmp);
+    ::close(fd);
+    result = result_str;
 #endif
-    return tempFiles.top();
+    return result;
 }
 
 /**
@@ -290,21 +292,6 @@ string File::digidocppPath()
         THROW("Failed to get home directory");
     return path(pw->pw_dir, ".digidocpp");
 #endif
-}
-
-/**
- * Tries to delete all temporary files and directories whose names were handled out with tempFileName, tempDirectory and createTempDirectory.
- * The deletion of directories is recursive.
- */
-void File::deleteTempFiles()
-{
-    error_code ec;
-    while(!tempFiles.empty())
-    {
-        if(!fs::remove(tempFiles.top(), ec) || ec)
-            WARN("Tried to remove the temporary file or directory '%s', but failed.", decodeName(tempFiles.top()).c_str());
-        tempFiles.pop();
-    }
 }
 
 /**

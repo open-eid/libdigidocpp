@@ -22,7 +22,6 @@
 #include "../Exception.h"
 
 #include <filesystem>
-#include <stack>
 
 namespace digidoc
 {
@@ -47,7 +46,6 @@ namespace digidoc
               static std::string path(std::string dir, std::string_view relativePath);
               static std::filesystem::path tempFileName();
               static void createDirectory(std::string path);
-              static void deleteTempFiles();
               static std::string toUriPath(const std::string &path);
               static std::string fromUriPath(std::string_view path);
               static std::vector<unsigned char> hexToBin(std::string_view in);
@@ -59,7 +57,6 @@ namespace digidoc
 #ifdef __APPLE__
               static std::string frameworkResourcesPath(std::string_view name);
 #endif
-              static std::stack<std::filesystem::path> tempFiles;
         };
 
     }
