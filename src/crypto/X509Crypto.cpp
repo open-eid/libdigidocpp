@@ -135,7 +135,7 @@ int X509Crypto::compareIssuerToString(string_view name) const
 
         if(*obj == "STREET"sv)
             obj++;
-        ASN1_OBJECT *obja = OBJ_txt2obj(*obj, 0);
+        auto obja = make_unique_ptr<ASN1_OBJECT_free>(OBJ_txt2obj(*obj, 0));
         if(!obja)
             return -1;
 
@@ -158,7 +158,7 @@ int X509Crypto::compareIssuerToString(string_view name) const
         for(int i = 0; i < X509_NAME_entry_count(issuer); ++i)
         {
             X509_NAME_ENTRY *entb = X509_NAME_get_entry(issuer, i);
-            if(OBJ_cmp(obja, X509_NAME_ENTRY_get_object(entb)) != 0)
+            if(OBJ_cmp(obja.get(), X509_NAME_ENTRY_get_object(entb)) != 0)
                 continue;
 
             char *val = nullptr;
