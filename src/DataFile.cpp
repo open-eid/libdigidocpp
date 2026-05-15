@@ -113,13 +113,15 @@ DataFilePrivate::DataFilePrivate(const ZipSerialize &z, string filename, string 
         for(size_t size = 0, currentStreamSize = 0;
              (size = r(buf.data(), buf.size())) > 0; currentStreamSize += size)
         {
+            if(currentStreamSize + size > r.size)
+                THROW("ZIP entry actual size exceeds uncompressed_size %zu", r.size);
             if(!fs->write(buf.data(), size))
                 THROW("Failed to write '%s' data to stream. Stream size: %d", m_filename.c_str(), currentStreamSize);
         }
         m_is = std::move(fs);
     }
     else
-        m_is = make_unique<stringstream>(r.operator string());
+        m_is = make_unique<stringstream>(r(MAX_MEM_FILE));
 }
 
 DataFilePrivate::~DataFilePrivate() noexcept = default;

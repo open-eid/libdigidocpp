@@ -20,6 +20,7 @@
 #pragma once
 
 #include "Exports.h"
+#include "log.h"
 
 #include <memory>
 #include <string>
@@ -34,14 +35,22 @@ class ZipSerialize
 {
 public:
     struct Read {
+        static constexpr size_t maxSize = 10UL*1024*1024;
         size_t operator ()(void *data, size_t size) const;
-        template<class T>
-        constexpr operator T() const
+        template<class T = std::string>
+        T operator ()(size_t maxAlloc = maxSize) const
         {
+            if(size > maxAlloc)
+                THROW("ZIP entry uncompressed size %zu exceeds limit", size);
             T t(size, 0);
             t.resize(operator ()(t.data(), t.size()));
+            char extra{};
+            if(operator ()(&extra, 1) > 0)
+                THROW("ZIP entry actual size exceeds uncompressed_size %zu", size);
             return t;
         }
+        template<class T>
+        constexpr operator T() const { return operator()<T>(); }
         std::unique_ptr<void, int (*)(void*)> d;
         size_t size;
     };
