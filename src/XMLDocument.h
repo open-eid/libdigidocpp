@@ -20,6 +20,7 @@
 #pragma once
 
 #include "crypto/Digest.h"
+#include "crypto/X509Cert.h"
 #include "util/log.h"
 #include "util/memory.h"
 
@@ -33,6 +34,8 @@
 #include <xmlsec/parser.h>
 
 #include <openssl/evp.h>
+#include <openssl/x509.h>
+#include <xmlsec/openssl/evp.h>
 
 #include <istream>
 
@@ -438,8 +441,10 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
 
     inline void validateSchema(const XMLSchema &schema) const;
 
-    static bool verifySignature(XMLNode signature, [[maybe_unused]] Exception *e = {}) noexcept
+    static bool verifySignature(XMLNode signature, const X509Cert &cert, [[maybe_unused]] Exception *e = {}) noexcept
     {
+        if(!cert)
+            return false;
         auto mngr = make_unique_ptr<xmlSecKeysMngrDestroy>(xmlSecKeysMngrCreate());
         if(!mngr)
             return false;
@@ -449,6 +454,16 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
         if(!ctx)
             return false;
         ctx->keyInfoReadCtx.flags |= XMLSEC_KEYINFO_FLAGS_X509DATA_DONT_VERIFY_CERTS;
+        auto pkey = make_unique_ptr<EVP_PKEY_free>(X509_get_pubkey(cert.handle()));
+        if(!pkey) return false;
+        auto data = make_unique_ptr<xmlSecKeyDataDestroy>(xmlSecOpenSSLEvpKeyAdopt(pkey.get()));
+        if(!data) return false;
+        pkey.release(); // adopted — data owns pkey now
+        auto key = make_unique_ptr<xmlSecKeyDestroy>(xmlSecKeyCreate());
+        if(!key) return false;
+        if(xmlSecKeySetValue(key.get(), data.get()) < 0) return false;
+        data.release(); // key owns data now
+        ctx->signKey = key.release(); // ctx owns key, freed by xmlSecDSigCtxDestroy
         int result = xmlSecDSigCtxVerify(ctx.get(), signature.d);
 #if VERSION_CHECK(XMLSEC_VERSION_MAJOR, XMLSEC_VERSION_MINOR, XMLSEC_VERSION_SUBMINOR) >= VERSION_CHECK(1, 3, 0)
         if(ctx->failureReason == xmlSecDSigFailureReasonReference)
