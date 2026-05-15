@@ -451,9 +451,10 @@ void SignatureXAdES_B::validate(const string &policy) const
             }
         }
 
+        X509Cert cert = signingCertificate();
         cb_doc = bdoc;
         cb_exception = &exception;
-        bool result = XMLDocument::verifySignature(signature, &exception);
+        bool result = XMLDocument::verifySignature(signature, cert, &exception);
         cb_doc = {};
         cb_exception = {};
         if(!result)

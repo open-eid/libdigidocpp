@@ -515,6 +515,17 @@ BOOST_AUTO_TEST_CASE(HexToBinConvertsHexEncodedStringToBinaryData)
 }
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(ASiCETestSuite)
+BOOST_AUTO_TEST_CASE(key_substitution_detected)
+{
+    auto d = Container::openPtr("forged_lt.asice");
+    BOOST_REQUIRE(d && !d->signatures().empty());
+    // signingCertificate() must still return signer2 (the "impersonated" cert)
+    BOOST_CHECK_EQUAL(d->signatures().at(0)->signingCertificate().subjectName("CN"), "MÖLDER,HUGO MARTIN,38910239121");
+    BOOST_CHECK_THROW(d->signatures().at(0)->validate(), Exception);
+}
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(ASiCSTestSuite)
 BOOST_AUTO_TEST_CASE(OpenValidASiCSContainer)
 {

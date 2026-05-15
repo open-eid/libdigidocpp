@@ -511,7 +511,7 @@ void TSL::validate() const
     auto signature = (*this)/XMLName{"Signature", DSIG_NS};
     if(!signature)
         THROW("TSL %.*s Failed to verify signature", STR_VIEW_FMT(territory()));
-    if(!XMLDocument::verifySignature(signature))
+    if(!XMLDocument::verifySignature(signature, signingCert()))
         THROW("TSL %.*s Signature is invalid", STR_VIEW_FMT(territory()));
 }
 
