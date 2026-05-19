@@ -686,8 +686,8 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(XMLTestSuite)
 BOOST_AUTO_TEST_CASE(XMLBomb)
 {
-    BOOST_CHECK_EQUAL(XMLDocument("xml-bomb-attr.xml"), false);
-    BOOST_CHECK_EQUAL(XMLDocument("xml-bomb-cont.xml"), false);
+    BOOST_CHECK_THROW(XMLDocument("xml-bomb-attr.xml"), Exception);
+    BOOST_CHECK_THROW(XMLDocument("xml-bomb-cont.xml"), Exception);
     if(std::fstream f{"xml-bomb-attr.xml"})
         BOOST_CHECK_THROW(XMLDocument::openStream(f), Exception);
     if(std::fstream f{"xml-bomb-cont.xml"})
@@ -736,6 +736,7 @@ BOOST_AUTO_TEST_CASE(XMLXXE)
         "]><root>&sentinel;</root>",
     };
 
+    size_t payloadIndex = 0;
     for(const auto &payload : payloads) {
         for(bool huge : {false, true}) {
             std::istringstream is{std::string(payload)};
@@ -745,6 +746,21 @@ BOOST_AUTO_TEST_CASE(XMLXXE)
             BOOST_CHECK(!text.contains("XXESENTINEL"));
             xmlFree(raw);
         }
+
+        const auto path = (fs::temp_directory_path() /
+            ("libdigidocpp-xxe-payload-" + std::to_string(payloadIndex++) + ".xml")).string();
+        std::ofstream out{path, std::ofstream::binary};
+        BOOST_REQUIRE(out.is_open());
+        out << payload;
+        out.close();
+        BOOST_REQUIRE(out.good());
+
+        auto doc = XMLDocument(path);
+        xmlChar *raw = xmlNodeGetContent(doc.d);
+        std::string_view text = raw ? (const char*)raw : "";
+        BOOST_CHECK(!text.contains("XXESENTINEL"));
+        xmlFree(raw);
+        fs::remove(path);
     }
 }
 BOOST_AUTO_TEST_SUITE_END()

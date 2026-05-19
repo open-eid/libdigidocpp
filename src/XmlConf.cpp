@@ -124,7 +124,9 @@ XmlConf::Private::Private(Conf *self, const string &path, string schema)
 auto XmlConf::Private::loadDoc(const string &path) const
 {
     LIBXML_TEST_VERSION
-    auto doc = XMLDocument(path, {"configuration"});
+    XMLDocument doc;
+    try { doc = XMLDocument(path, {"configuration"}); }
+    catch(const Exception &) {}
     if(!doc)
     {
         WARN("Failed to parse configuration: %s", path.c_str());

@@ -38,7 +38,7 @@
 #include <xmlsec/openssl/evp.h>
 
 #include <array>
-#include <istream>
+#include <fstream>
 
 namespace digidoc {
 
@@ -364,9 +364,13 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
             d = {};
     }
 
-    XMLDocument(const std::string &path, const XMLName &n = {}) noexcept
-        : XMLDocument(path.empty() ? nullptr : xmlParseFile(path.c_str()), n)
-    {}
+    XMLDocument(const std::string &path, const XMLName &n = {})
+    {
+        if(path.empty())
+            return;
+        if(std::ifstream f{path})
+            *this = openStream(f, n);
+    }
 
     template <typename F>
     static XMLDocument open(F &&f, const XMLName &name = {}, bool hugeFile = false)
