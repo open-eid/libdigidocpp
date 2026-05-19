@@ -126,7 +126,7 @@ int X509Crypto::compareIssuerToString(string_view name) const
         }
     }
 
-    X509_NAME *issuer = X509_get_issuer_name(cert.handle());
+    const X509_NAME *issuer = X509_get_issuer_name(cert.handle());
     for(const auto &[key, val]: data)
     {
         auto obj = find(list.cbegin(), list.cend(), key);
