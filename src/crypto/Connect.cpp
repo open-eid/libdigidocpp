@@ -54,6 +54,8 @@ using namespace std;
     throw ex; \
 }
 
+static constexpr size_t MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
+
 
 
 Connect::Connect(const string &_url, string _method, int _timeout, const vector<X509Cert> &certs, const string &userAgentData, const string &version)
@@ -207,8 +209,11 @@ string Connect::decompress(const string &encoding, const string &data)
 
     string out(2048, 0);
     do {
-        if(s.total_out >= out.size())
+        if(s.total_out >= out.size()) {
+            if(out.size() >= MAX_RESPONSE_SIZE)
+                THROW_NETWORKEXCEPTION("HTTP decompressed response exceeds maximum allowed size of %zu bytes", MAX_RESPONSE_SIZE)
             out.resize(out.size() * 2);
+        }
         s.next_out = (Bytef*)&out[s.total_out];
         s.avail_out = uInt(uLong(out.size()) - s.total_out);
         switch(inflate(&s, Z_NO_FLUSH))
@@ -244,8 +249,13 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
     r.content.resize(1024);
     chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
     do {
-        if(rc > 0 && (pos += size_t(rc)) >= r.content.size())
-            r.content.resize(r.content.size()*2);
+        if(rc > 0) {
+            pos += size_t(rc);
+            if(pos > MAX_RESPONSE_SIZE)
+                THROW_NETWORKEXCEPTION("HTTP response exceeds maximum allowed size of %zu bytes", MAX_RESPONSE_SIZE)
+            if(pos >= r.content.size())
+                r.content.resize(r.content.size() * 2);
+        }
         rc = BIO_read(d, &r.content[pos], int(r.content.size() - pos));
         if(rc == -1 && BIO_should_read(d) != 1)
             break;
