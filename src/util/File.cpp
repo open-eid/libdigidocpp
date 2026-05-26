@@ -349,6 +349,8 @@ constexpr bool fromHexChar(auto pos, auto end, auto &value)
 
 string File::fromUriPath(string_view path)
 {
+    if(!path.empty() && path.front() == '/')
+        path.remove_prefix(1);
     string ret;
     ret.reserve(path.size());
     uint8_t value = 0;
