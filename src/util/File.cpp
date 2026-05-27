@@ -72,7 +72,17 @@ string File::decodeName(const fs::path &path)
 string File::confPath()
 {
 #ifdef __APPLE__
-    return frameworkResourcesPath("ee.ria.digidocpp");
+    string result(PATH_MAX, 0);
+    if(CFBundleRef bundle = CFBundleGetBundleWithIdentifier(CFSTR("ee.ria.digidocpp")))
+    {
+        if(CFURLRef url = CFBundleCopyResourcesDirectoryURL(bundle))
+        {
+            CFURLGetFileSystemRepresentation(url, TRUE, (UInt8 *)result.data(), CFIndex(result.size()));
+            CFRelease(url);
+        }
+    }
+    result.resize(char_traits<char>::length(result.c_str()));
+    return result;
 #elifdef _WIN32
     if(HMODULE handle {};
         GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
@@ -142,58 +152,12 @@ bool File::fileExtension(string_view path, initializer_list<string_view> list)
 }
 
 /**
- * Returns file size
- */
-unsigned long File::fileSize(const fs::path &path) noexcept
-{
-    error_code ec;
-    auto result = fs::file_size(path, ec);
-    return ec ? 0 : result;
-}
-
-/**
- * Parses file path and returns file name from file full path.
- *
- * @param path full path of the file.
- * @return returns file name from the file full path in UTF-8.
- */
-string_view File::fileName(string_view path) noexcept
-{
-    size_t pos = path.find_last_of("/\\");
-    return pos == string::npos ? path : path.substr(pos + 1);
-}
-
-#ifdef __APPLE__
-string File::frameworkResourcesPath(string_view name)
-{
-    string result(PATH_MAX, 0);
-    CFStringRef identifier = CFStringCreateWithCString(nullptr, name.data(), kCFStringEncodingUTF8);
-    if(CFBundleRef bundle = CFBundleGetBundleWithIdentifier(identifier))
-    {
-        if(CFURLRef url = CFBundleCopyResourcesDirectoryURL(bundle))
-        {
-            CFURLGetFileSystemRepresentation(url, TRUE, (UInt8 *)result.data(), CFIndex(result.size()));
-            CFRelease(url);
-        }
-    }
-    CFRelease(identifier);
-    result.resize(strlen(result.c_str()));
-    return result;
-}
-#endif
-
-/**
+ * @fn constexpr std::string_view digidoc::util::File::directory(std::string_view path) noexcept
  * Parses file path and returns directory from file full path.
  *
  * @param path full path of the file.
  * @return returns directory part of the file full path.
  */
-string_view File::directory(string_view path)
-{
-    size_t pos = path.find_last_of("/\\");
-    return pos == string::npos ? string_view() : path.substr(0, pos);
-}
-
 /**
  * Creates full path from directory name and relative path.
  *

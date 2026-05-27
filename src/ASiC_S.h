@@ -47,13 +47,14 @@ namespace digidoc
         static std::unique_ptr<Container> openInternal(const std::string &path, ContainerOpenCB *cb);
 
     private:
-        ASiC_S(const std::string &path, bool create, ContainerOpenCB *cb = nullptr);
+        explicit ASiC_S(const std::string &path);
         DISABLE_COPY(ASiC_S);
 
         void addDataFileChecks(std::string_view path, const std::string &mediaType) override;
         void canSave() final;
         std::vector<DataFile*> containerDataFiles() const;
         std::vector<Signature*> containerSignatures() const;
+        void open(const ZipSerialize &z, ContainerOpenCB *cb);
         void save(const ZipSerialize &s) final;
 
         std::unique_ptr<Container> enclosedDDoc;

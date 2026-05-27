@@ -149,7 +149,11 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
                 continue;
             if(const auto directory = File::directory(file);
                 directory.empty() || directory == "/" || directory == "./")
+            {
+                if(d->dataFiles.size() >= ASiContainer::MAX_DATA_FILES)
+                    THROW("Container exceeds maximum data file count of %zu", ASiContainer::MAX_DATA_FILES);
                 d->dataFiles.push_back(new DataFilePrivate(z, file, "application/octet-stream"));
+            }
         }
     }
     else

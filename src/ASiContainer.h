@@ -40,6 +40,7 @@ namespace digidoc
     class ASiContainer: public Container
     {
       public:
+          static constexpr size_t MAX_DATA_FILES = 1000;
           static constexpr std::string_view MIMETYPE_ASIC_E = "application/vnd.etsi.asic-e+zip";
           static constexpr std::string_view MIMETYPE_ASIC_S = "application/vnd.etsi.asic-s+zip";
           //https://signa.mitsoft.lt/static/signa-web/webResources/docs/ADOC_specification_approved20090907_EN.pdf
