@@ -922,7 +922,7 @@ The stream overload's fileName is the name stored inside the container. It must 
 
 \note By default, it is recommended to use data file mime-type value "application/octet-stream" for all file types.
 
-\note For resource-exhaustion protection, structural and other non-data ZIP entries, such as manifests and signature XML, are limited to 10 MiB when read into memory. HTTP service responses are also limited to 10 MiB after decompression. Data files use a separate streaming and temporary-file strategy and are not subject to the 10 MiB metadata limit.
+\note For resource-exhaustion protection, structural and other non-data ZIP entries, such as manifests and signature XML, are limited to 10 MiB when read into memory. ZIP containers are limited to 1000 entries, 1 GiB uncompressed per entry, 2 GiB uncompressed in total, and a maximum compression ratio of 100:1. When the container's total uncompressed size exceeds 500 MiB, all data files are extracted to temporary storage instead of memory. Before a data file is extracted there, the available space on that filesystem is checked against its declared uncompressed size. HTTP service responses are also limited to 10 MiB after decompression. Data files are not subject to the 10 MiB metadata limit.
 
 
 

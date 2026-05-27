@@ -22,6 +22,7 @@
 #include "Exports.h"
 #include "log.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -77,8 +78,11 @@ public:
     std::string mimetype() const;
     Read read(std::string_view file) const;
     Properties properties(const std::string &file) const;
+    uint64_t totalUncompressedSize() const noexcept { return uncompressedSize; }
 
 private:
     std::unique_ptr<void, int(*)(void*)> d;
+    std::vector<std::string> entries;
+    uint64_t uncompressedSize = 0;
 };
 }
