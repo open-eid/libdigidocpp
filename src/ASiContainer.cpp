@@ -53,35 +53,14 @@ XMLDocument ASiContainer::createManifest() const
 }
 
 /**
- * Loads Container from a file.
+ * Sets the container media type.
  *
- * @param path name of the container file.
- * @param mimetypeRequired flag indicating if the mimetype must be present and checked.
- * @param supported supported mimetypes.
- * @return returns zip serializer for the container.
+ * @param mimetype validated container media type.
  */
-ZipSerialize ASiContainer::load(bool mimetypeRequired, const set<string_view> &supported)
+void ASiContainer::mediaType(string mimetype)
 {
-    DEBUG("ASiContainer::ASiContainer(path = '%s')", d->path.c_str());
-    ZipSerialize z(d->path, false);
-    vector<string> list = z.list();
-
-    // ETSI TS 102 918: mimetype has to be the first in the archive
-    if(mimetypeRequired && list.front() != "mimetype")
-        THROW("required mimetype not found");
-
-    if(list.front() == "mimetype")
-    {
-        d->mimetype = z.mimetype();
-        if(!contains(supported, d->mimetype))
-            THROW("Incorrect mimetype '%s'", d->mimetype.c_str());
-    }
+    d->mimetype = std::move(mimetype);
     DEBUG("mimetype = '%s'", d->mimetype.c_str());
-
-    for(const string &file: list)
-        d->properties[file] = z.properties(file);
-
-    return z;
 }
 
 string ASiContainer::mediaType() const
@@ -137,6 +116,7 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
     auto size = File::fileSize(nativePath);
     if(size == 0)
         THROW("Document file '%s' does not exist or is empty.", path.c_str());
+    addDataFileSizeChecks(fileName, size);
 
     unique_ptr<istream> is = make_unique<ifstream>(nativePath, ifstream::binary);
     if(!*is)
@@ -147,13 +127,17 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
         *data << is->rdbuf();
         is = std::move(data);
     }
-    d->properties[string(fileName)] = { appInfo(), File::modifiedTime(path), size };
+    d->properties[string(fileName)] = { appInfo(), File::modifiedTime(path), static_cast<unsigned long>(size) };
     d->documents.push_back(new DataFilePrivate(std::move(is), string(fileName), mediaType));
 }
 
 void ASiContainer::addDataFile(unique_ptr<istream> is, const string &fileName, const string &mediaType)
 {
+    if(!is || !is->rdbuf())
+        THROW("Document input stream or stream buffer is null.");
     addDataFileChecks(fileName, mediaType);
+    const auto size = is->rdbuf()->pubseekoff(0, ios::end, ios::in);
+    addDataFileSizeChecks(fileName, size < 0 ? 0 : uint64_t(size));
     d->documents.push_back(new DataFilePrivate(std::move(is), fileName, mediaType));
 }
 
@@ -184,6 +168,8 @@ void ASiContainer::validateDataFilePath(string_view fileName)
 
 void ASiContainer::addDataFileChecks(string_view fileName, const string &mediaType)
 {
+    if(d->documents.size() >= MAX_DATA_FILES)
+        THROW("Container exceeds maximum data file count of %zu", MAX_DATA_FILES);
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
     requireXMLText(fileName, "document file name");
@@ -197,8 +183,22 @@ void ASiContainer::addDataFileChecks(string_view fileName, const string &mediaTy
         THROW("MediaType does not meet format requirements (RFC2045, section 5.1) '%s'.", mediaType.c_str());
 }
 
+void ASiContainer::addDataFileSizeChecks(string_view fileName, uint64_t size) const
+{
+    if(size > ZipSerialize::MAX_ENTRY_SIZE)
+        THROW("Document file '%.*s' exceeds maximum size of 1 GiB.", STR_VIEW_FMT(fileName));
+    for(const DataFile *file: d->documents)
+    {
+        size += file->fileSize();
+        if(size > ZipSerialize::MAX_DATA_SIZE)
+            THROW("Container data files exceed maximum total size of 2032 MiB (16 MiB reserved for metadata).");
+    }
+}
+
 void ASiContainer::addDataFilePrivate(const ZipSerialize &z, string_view filename, string_view mediatype)
 {
+    if(d->documents.size() >= MAX_DATA_FILES)
+        THROW("Container exceeds maximum data file count of %zu", MAX_DATA_FILES);
     validateDataFilePath(filename);
     d->documents.push_back(new DataFilePrivate(z, string(filename), string(mediatype)));
 }
@@ -283,7 +283,7 @@ string ASiContainer::path() const
     return d->path;
 }
 
-const ZipSerialize::Properties& ASiContainer::zproperty(string_view file) const
+ZipSerialize::Properties& ASiContainer::zproperty(string_view file)
 {
     if(auto i = d->properties.find(file); i != d->properties.cend())
         return i->second;

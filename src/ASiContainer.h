@@ -6,8 +6,6 @@
 #include "Container.h"
 #include "util/ZipSerialize.h"
 
-#include <set>
-
 namespace digidoc
 {
     struct XMLDocument;
@@ -24,6 +22,7 @@ namespace digidoc
     class ASiContainer: public Container
     {
       public:
+          static constexpr size_t MAX_DATA_FILES = 1000;
           static constexpr std::string_view MIMETYPE_ASIC_E = "application/vnd.etsi.asic-e+zip";
           static constexpr std::string_view MIMETYPE_ASIC_S = "application/vnd.etsi.asic-s+zip";
           //https://signa.mitsoft.lt/static/signa-web/webResources/docs/ADOC_specification_approved20090907_EN.pdf
@@ -47,17 +46,18 @@ namespace digidoc
           ASiContainer(const std::string &path, std::string_view mimetype);
 
           virtual void addDataFileChecks(std::string_view path, const std::string &mediaType);
+          void addDataFileSizeChecks(std::string_view fileName, uint64_t size) const;
           void addDataFilePrivate(const ZipSerialize &z, std::string_view filename, std::string_view mediatype);
           Signature* addSignature(std::unique_ptr<Signature> &&signature);
           virtual void canSave() = 0;
           XMLDocument createManifest() const;
-          ZipSerialize load(bool requireMimetype, const std::set<std::string_view> &supported);
+          void mediaType(std::string mimetype);
           virtual void save(const ZipSerialize &s) = 0;
           void deleteSignature(Signature* s);
           static void validateDataFilePath(std::string_view fileName);
           static void validateDataFileName(std::string_view fileName);
 
-          const ZipSerialize::Properties& zproperty(std::string_view file) const;
+          ZipSerialize::Properties& zproperty(std::string_view file);
 
       private:
           DISABLE_COPY(ASiContainer);

@@ -82,6 +82,8 @@ Note that in order to add a data file to a container, the container has to be un
 
 Both overloads reject stored file names and MIME types that are not valid UTF-8 or contain characters disallowed by XML 1.0, such as ESC (U+001B) or NUL (U+0000). The check runs before the data file is added and does not modify the supplied metadata. It does not change how existing containers are opened.
 
+ASiC containers reject data files larger than 1 GiB or a combined data-file size above 2032 MiB when added from the filesystem or seekable streams. See \ref container-entry-limits for the scope of the size limits.
+
 The stream overload's fileName is the name stored inside the container. It must be a single non-empty path component: ".", "..", forward slashes, and backslashes are rejected. The file-system overload accepts a source path and stores only its base name. When an existing ASiC-E container is opened, safe relative subdirectories separated by forward slashes are accepted, but absolute paths, backslashes, trailing slashes, and empty, ".", or ".." path segments are rejected. ASiC-S data files must be at the container root.
 
 > [!WARNING]

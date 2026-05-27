@@ -371,7 +371,7 @@ static int printUsage(const char *executable)
     << "  Command create:" << endl
     << "    Example: " << executable << " create --file=file1.txt --file=file2.txt demo-container.asice" << endl
     << "    Available options:" << endl
-    << "      --file=        - File(s) to be signed. The option can occur multiple times." << endl
+    << "      --file=        - File(s) to be signed, max 1 GiB each, 2032 MiB combined. The option can occur multiple times." << endl
     << "      --mime=        - Specifies the file's mime-type value. When used then must be written right " << endl
     << "                       after the \"--file\" parameter. Default value is application/octet-stream" << endl
     << "                       File names and mime-types must be valid UTF-8 without characters" << endl

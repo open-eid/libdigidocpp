@@ -13,6 +13,8 @@
 #include "util/File.h"
 #include "util/log.h"
 
+#include <optional>
+
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
@@ -20,16 +22,18 @@ using namespace std;
 /**
  * Initialize ASiCS container.
  */
-ASiC_S::ASiC_S(const string &path, bool create, ContainerOpenCB *cb)
+ASiC_S::ASiC_S(const string &path)
+    : ASiContainer(path, MIMETYPE_ASIC_S)
+{}
+
+ASiC_S::ASiC_S(const string &path, const ZipSerialize &z, ContainerOpenCB *cb)
     : ASiContainer(path, MIMETYPE_ASIC_S)
 {
-    if(create)
-        return;
-    auto z = load(false, {mediaType()});
     bool foundTimestamp = false;
     bool foundManifest = false;
     for(const string &file: z.list())
     {
+        zproperty(file) = z.properties(file);
         if(file == "mimetype")
             continue;
         if(file == "META-INF/timestamp.tst")
@@ -131,7 +135,7 @@ unique_ptr<Container> ASiC_S::createInternal(const string &path)
     if(!util::File::fileExtension(path, {"asics", "scs"}))
         return {};
     DEBUG("ASiC_S::createInternal(%s)", path.c_str());
-    return unique_ptr<Container>(new ASiC_S(path, true));
+    return unique_ptr<Container>(new ASiC_S(path));
 }
 
 void ASiC_S::addAdESSignature(istream & /*signature*/)
@@ -148,17 +152,27 @@ void ASiC_S::canSave()
 unique_ptr<Container> ASiC_S::openInternal(const string &path, ContainerOpenCB *cb)
 {
     DEBUG("ASiC_S::openInternal(%s)", path.c_str());
+    if(util::File::fileExtension(path, {"asice", "sce", "bdoc"}))
+        return {};
+
+    optional<ZipSerialize> z;
     try
     {
-        if(util::File::fileExtension(path, {"asice", "sce", "bdoc"}))
+        z.emplace(path, false);
+        if(z->list().front() == "mimetype")
+        {
+            if(z->mimetype() != MIMETYPE_ASIC_S)
+                return {};
+        }
+        else if(!util::File::fileExtension(path, {"asics", "scs"}))
             return {};
-        return unique_ptr<Container>(new ASiC_S(path, false, cb));
     }
     catch(const Exception &)
     {
         // Ignore the exception: not ASiC/zip document
+        return {};
     }
-    return {};
+    return unique_ptr<Container>(new ASiC_S(path, *z, cb));
 }
 
 Signature* ASiC_S::prepareSignature(Signer * /*signer*/)

@@ -28,11 +28,11 @@ General form of the command is:
 
 Available options:
 
-| Option       | Usage    | Description                                      |
-|--------------|----------|--------------------------------------------------|
-| `--file=`    | Required | Data file to be signed, can occur multiple times |
-| `--mime=`    | Optional | Mime-type of the preceding `--file`              |
-| `--dontsign` | Optional | Don't sign the newly created container           |
+| Option       | Usage    | Description                                                         |
+|--------------|----------|---------------------------------------------------------------------|
+| `--file=`    | Required | Data file to sign (up to 1 GiB each, 2032 MiB combined); repeatable |
+| `--mime=`    | Optional | Mime-type of the preceding `--file`                                 |
+| `--dontsign` | Optional | Don't sign the newly created container                              |
 
 `--mime=` must be written right after the `--file` parameter it applies to. If left unspecified then the default mime-type value "application/octet-stream" is used.
 
@@ -43,10 +43,8 @@ Available options:
 > accepted. File names and `--mime=` values must be valid UTF-8 and must not
 > contain characters disallowed by XML 1.0, such as control characters. Names
 > that use only "unreserved" characters (letters, digits, `-`, `.`, `_`, `~`)
-> are the most portable across other implementations.
-
-> [!WARNING]
-> Data file’s mime-type value must be formatted as specified in \ref RFC2045 "RFC 2045", section 5.1, i.e. the "type" and "subtype" values must be separated with a forward slash character.
+> are the most portable across other implementations. `--mime=` must contain a
+> type and subtype separated by `/` (\ref RFC2045 "RFC 2045", section 5.1).
 
 Additional options for the "create" command are the same as for "sign" command (see \ref Adding).
 
