@@ -2,11 +2,16 @@
   "version": 6,
   "configurePresets": [
     {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}$env{BUILD_SUFFIX}"
+    },
+    {
       "name": "default",
       "displayName": "Default config",
       "description": "Default build using Ninja generator",
+      "inherits": "base",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
@@ -125,12 +130,25 @@
     {
       "name": "windows",
       "displayName": "Windows",
-      "binaryDir": "${sourceDir}/build/windows-$env{PLATFORM}",
+      "inherits": "base",
+      "environment": {
+        "BUILD_SUFFIX": "-$env{PLATFORM}"
+      },
       "cacheVariables": {
         "CMAKE_INSTALL_BINDIR": ".",
         "CMAKE_INSTALL_LIBDIR": ".",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "$env{PLATFORM}-windows"
+      }
+    },
+    {
+      "name": "windows-static",
+      "displayName": "Windows static",
+      "inherits": "windows",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "VCPKG_TARGET_TRIPLET": "$env{PLATFORM}-windows-static-md",
+        "VCPKG_MANIFEST_FEATURES": "tests"
       }
     }
   ],
@@ -167,6 +185,25 @@
     {
       "name": "windows",
       "configurePreset": "windows"
+    },
+    {
+      "name": "windows-static",
+      "configurePreset": "windows-static",
+      "configuration": "RelWithDebInfo"
+    }
+  ],
+  "testPresets":
+  [
+    {
+      "name": "windows-static",
+      "configurePreset": "windows-static",
+      "configuration": "RelWithDebInfo",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
     }
   ]
 }

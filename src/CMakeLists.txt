@@ -84,11 +84,9 @@ add_library(digidocpp_tsl STATIC
     XMLDocument.h
 )
 
-set_target_properties(digidocpp_util digidocpp_tsl PROPERTIES
-    POSITION_INDEPENDENT_CODE YES
-)
 target_compile_definitions(digidocpp_tsl PRIVATE $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,digidocpp_EXPORTS,digidocpp_STATIC>)
 target_compile_definitions(digidocpp_util PRIVATE $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,digidocpp_EXPORTS,digidocpp_STATIC>)
+set_target_properties(digidocpp_util digidocpp_tsl PROPERTIES POSITION_INDEPENDENT_CODE YES)
 
 target_include_directories(digidocpp_tsl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 

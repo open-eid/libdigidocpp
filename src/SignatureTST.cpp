@@ -73,13 +73,13 @@ SignatureTST::SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDo
     timestampToken = make_unique<TS>((const unsigned char*)data.data(), data.size());
     if(manifest)
     {
-        XMLSchema schema(util::File::path(Conf::instance()->xsdPath(), "en_31916201v010101.xsd"));
+        auto schema = util::File::path(Conf::instance()->xsdPath(), "en_31916201v010101.xsd");
         string file = "META-INF/ASiCArchiveManifest.xml";
         string mime = "text/xml";
         while(!file.empty()) {
             stringstream xml(z.read(file).operator string());
             XMLDocument doc = XMLDocument::openStream(xml, {"ASiCManifest", ASiContainer::ASIC_NS});
-            schema.validate(doc);
+            XMLSchema::validate(schema, doc);
             auto ref = doc/"SigReference";
             string uri = util::File::fromUriPath(ref["URI"]);
             metadata.emplace_back(std::move(file), std::move(mime), xml.str());
