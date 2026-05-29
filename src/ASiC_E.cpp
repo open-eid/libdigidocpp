@@ -62,8 +62,7 @@ ASiC_E::ASiC_E(const string &path, bool create) try
      * META-INF/manifest.xml shall be present (cardinality 1) in ASiC-E XAdES baseline containers.
      */
     auto doc = XMLDocument::open(z.read("META-INF/manifest.xml"), {"manifest", MANIFEST_NS});
-    static const XMLSchema schema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
-    doc.validateSchema(schema);
+    XMLSchema::validate(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"), doc);
 
     set<string_view> manifestFiles;
     bool mimeFound = false;

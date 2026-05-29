@@ -133,7 +133,7 @@ auto XmlConf::Private::loadDoc(const string &path) const
         return doc;
     }
     try {
-        doc.validateSchema(SCHEMA_LOC);
+        XMLSchema::validate(SCHEMA_LOC, doc);
     } catch(const Exception & /*e*/) {
         WARN("Failed to validate configuration: %s (%s)", path.c_str(), SCHEMA_LOC.c_str());
         doc.reset();

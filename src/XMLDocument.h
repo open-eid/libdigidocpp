@@ -41,6 +41,8 @@
 #include <algorithm>
 #include <array>
 #include <fstream>
+#include <map>
+#include <mutex>
 
 namespace digidoc {
 
@@ -346,7 +348,6 @@ struct XMLNode: public XMLElem<xmlNode>
     }
 };
 
-struct XMLSchema;
 struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
 {
     static constexpr std::string_view C14D_ID_1_0 {"http://www.w3.org/TR/2001/REC-xml-c14n-20010315"};
@@ -531,8 +532,6 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
         return xmlSaveFormatFileTo(buf, get(), "UTF-8", format) > 0;
     }
 
-    inline void validateSchema(const XMLSchema &schema) const;
-
     static bool verifySignature(XMLNode signature, const X509Cert &cert, [[maybe_unused]] Exception *e = {}) noexcept
     {
         if(!cert)
@@ -579,11 +578,38 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
     }
 };
 
-struct XMLSchema
+class XMLSchema
 {
-    auto parser(std::string &&path)
+public:
+    static void validate(std::string path, const XMLDocument &doc)
     {
-        std::replace(path.begin(), path.end(), '\\', '/');
+        auto validate = make_unique_ptr<xmlSchemaFreeValidCtxt>(xmlSchemaNewValidCtxt(cached(std::move(path))));
+        if(!validate)
+            THROW("Failed to create schema validation context");
+        Exception e(EXCEPTION_PARAMS("Failed to validate XML with schema"));
+        xmlSchemaSetValidErrors(validate.get(), schemaValidationError, schemaValidationWarning, &e);
+        if(xmlSchemaValidateDoc(validate.get(), doc.get()) != 0)
+            throw e;
+    }
+
+    static void clearCache() noexcept
+    {
+        auto &c = cache();
+        const std::lock_guard lock(c.mutex);
+        c.schemas.clear();
+    }
+
+private:
+    using Schema = unique_free_d<xmlSchemaFree>;
+
+    struct Cache
+    {
+        std::mutex mutex;
+        std::map<std::string, Schema> schemas;
+    };
+
+    static Schema parser(const std::string &path)
+    {
         auto parser = make_unique_ptr<xmlSchemaFreeParserCtxt>(xmlSchemaNewParserCtxt(path.c_str()));
         if(!parser)
             THROW("Failed to create schema parser context %s", path.c_str());
@@ -594,20 +620,21 @@ struct XMLSchema
         return schema;
     }
 
-    XMLSchema(std::string path)
-        : d(parser(std::move(path)))
+    static xmlSchemaPtr cached(std::string path)
     {
+        std::replace(path.begin(), path.end(), '\\', '/');
+        auto &c = cache();
+        const std::lock_guard lock(c.mutex);
+        if(auto i = c.schemas.find(path); i != c.schemas.cend())
+            return i->second.get();
+        auto schema = parser(path);
+        return c.schemas.emplace(std::move(path), std::move(schema)).first->second.get();
     }
 
-    void validate(const XMLDocument &doc) const
+    static Cache& cache()
     {
-        auto validate = make_unique_ptr<xmlSchemaFreeValidCtxt>(xmlSchemaNewValidCtxt(d.get()));
-        if(!validate)
-            THROW("Failed to create schema validation context");
-        Exception e(EXCEPTION_PARAMS("Failed to validate XML with schema"));
-        xmlSchemaSetValidErrors(validate.get(), schemaValidationError, schemaValidationWarning, &e);
-        if(xmlSchemaValidateDoc(validate.get(), doc.get()) != 0)
-            throw e;
+        static Cache value;
+        return value;
     }
 
     static void schemaValidationError(void *ctx, const char *msg, ...) noexcept try
@@ -637,14 +664,7 @@ struct XMLSchema
     } catch(const std::exception &e) {
         std::printf("Unexpected error: %s", e.what());
     }
-
-    unique_free_d<xmlSchemaFree> d;
 };
-
-inline void XMLDocument::validateSchema(const XMLSchema &schema) const
-{
-    schema.validate(*this);
-}
 
 constexpr std::string_view DSIG_NS {"http://www.w3.org/2000/09/xmldsig#"};
 constexpr std::string_view XADES_NS {"http://uri.etsi.org/01903/v1.3.2#"};

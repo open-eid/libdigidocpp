@@ -210,9 +210,9 @@ Signatures::Signatures(XMLDocument &&doc, string_view mediaType)
      */
     try {
         if(mediaType == ASiC_E::MIMETYPE_ADOC && name() == "document-signatures" && ns() == OPENDOCUMENT_NS)
-            validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_dsig.xsd"));
+            XMLSchema::validate(File::path(Conf::instance()->xsdPath(), "OpenDocument_dsig.xsd"), *this);
         else
-            validateSchema(File::path(Conf::instance()->xsdPath(), "en_31916201v010101.xsd"));
+            XMLSchema::validate(File::path(Conf::instance()->xsdPath(), "en_31916201v010101.xsd"), *this);
     }
     catch(const Exception &e) {
         THROW_CAUSE(e, "Failed to validate signature XML");

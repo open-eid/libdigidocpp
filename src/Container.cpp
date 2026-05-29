@@ -24,6 +24,7 @@
 #include "Exception.h"
 #include "PDF.h"
 #include "SiVaContainer.h"
+#include "XMLDocument.h"
 #include "XmlConf.h"
 #include "crypto/Signer.h"
 #include "crypto/X509CertStore.h"
@@ -166,6 +167,8 @@ void digidoc::terminate()
     } catch (...) {
         // Don't throw on terminate
     }
+
+    XMLSchema::clearCache();
 
     xmlSecCryptoShutdown();
     xmlSecCryptoAppShutdown();
