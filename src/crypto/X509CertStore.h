@@ -50,7 +50,7 @@ namespace digidoc
         static X509Cert issuerFromAIA(const X509Cert &cert);
         static unique_free_t<X509_STORE> createStore(const Type &type, tm &tm);
         void update() const;
-        bool verify(const X509Cert &cert, bool noqscd, tm validation_time = {}) const;
+        bool verify(const X509Cert &cert, bool noqscd, tm validation_time, const std::vector<X509Cert> &untrusted) const;
 
     private:
         X509CertStore();
