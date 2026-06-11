@@ -119,7 +119,10 @@ X509Cert X509CertStore::issuerFromAIA(const X509Cert &cert)
         if(ACCESS_DESCRIPTION *ad = sk_ACCESS_DESCRIPTION_value(aia.get(), i);
             ad->location->type == GEN_URI &&
             OBJ_obj2nid(ad->method) == NID_ad_ca_issuers)
-            url.assign((const char*)ad->location->d.uniformResourceIdentifier->data, ad->location->d.uniformResourceIdentifier->length);
+        {
+            const unsigned char *data = ASN1_STRING_get0_data(ad->location->d.uniformResourceIdentifier);
+            url.assign((const char*)data, ASN1_STRING_length(ad->location->d.uniformResourceIdentifier));
+        }
     }
     if(url.empty())
         return X509Cert();
