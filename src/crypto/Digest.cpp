@@ -54,7 +54,8 @@ vector<unsigned char> Digest::digestInfoDigest(const std::vector<unsigned char> 
         return {};
     const ASN1_OCTET_STRING *value {};
     X509_SIG_get0(sig.get(), nullptr, &value);
-    return { value->data, std::next(value->data, value->length) };
+    const unsigned char *data = ASN1_STRING_get0_data(value);
+    return { data, std::next(data, ASN1_STRING_length(value)) };
 }
 
 string Digest::digestInfoUri(const std::vector<unsigned char> &digest)

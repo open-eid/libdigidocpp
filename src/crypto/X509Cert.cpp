@@ -424,7 +424,7 @@ vector<string> X509Cert::qcStatements() const
     int pos = X509_get_ext_by_NID(cert.get(), NID_qcStatements, -1);
     if(pos == -1)
         return result;
-    X509_EXTENSION *ext = X509_get_ext(cert.get(), pos);
+    auto *ext = X509_get_ext(cert.get(), pos);
     auto qc = make_unique_cast<QCStatements_free>(ASN1_item_unpack(X509_EXTENSION_get_data(ext), ASN1_ITEM_rptr(QCStatements)));
     if(!qc)
         return result;
@@ -492,7 +492,7 @@ string X509Cert::toString(const string &obj) const
     string str;
     if(!cert)
         return str;
-    X509_NAME* name = Func(cert.get());
+    auto *name = Func(cert.get());
     if(!name)
         THROW_OPENSSLEXCEPTION("Failed to convert X.509 certificate name");
 
@@ -500,7 +500,7 @@ string X509Cert::toString(const string &obj) const
     {
         for(int i = 0; i < X509_NAME_entry_count(name); ++i)
         {
-            X509_NAME_ENTRY *e = X509_NAME_get_entry(name, i);
+            auto *e = X509_NAME_get_entry(name, i);
             if(obj != OBJ_nid2sn(OBJ_obj2nid(X509_NAME_ENTRY_get_object(e))))
                 continue;
 
