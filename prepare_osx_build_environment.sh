@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-OPENSSL_DIR=openssl-3.5.6
-XMLSEC_DIR=xmlsec1-1.3.11
+OPENSSL_DIR=openssl-3.5.7
+XMLSEC_DIR=xmlsec1-1.3.12
 
 case "$@" in
 *android*|*iphone*|*simulator*)
@@ -26,7 +26,7 @@ function xmlsec {
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
-    patch -Np1 -i ../xmlsec1-1.3.10.legacy.patch
+    patch -Np1 -i ../xmlsec1-1.3.12.legacy.patch
     sed -i '' 's/XMLSEC_VERSION_INFO=.*/XMLSEC_VERSION_INFO="1:0:0"/' configure
     ./configure CFLAGS="-arch ${ARCHS// / -arch }" --prefix=${TARGET_PATH} --disable-static --enable-shared \
         --disable-dependency-tracking \
@@ -36,9 +36,7 @@ function xmlsec {
         --without-gcrypt \
         --without-nss \
         --with-openssl=${TARGET_PATH} \
-        --disable-apps \
-        --disable-docs \
-        --disable-mans
+        --disable-apps
     make -s
     sudo make install
     cd -

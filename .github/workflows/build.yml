@@ -112,8 +112,6 @@ jobs:
         export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
         export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
         export ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME
-        git -C $VCPKG_INSTALLATION_ROOT fetch origin f77737496dabd44c63ecc599dc0f4d6cff30d0d5
-        git -C $VCPKG_INSTALLATION_ROOT reset --hard f77737496dabd44c63ecc599dc0f4d6cff30d0d5
         cmake --preset ${{ matrix.target }} "-GUnix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build --preset ${{ matrix.target }}
         cmake --build --preset ${{ matrix.target }} --target install/strip
@@ -130,7 +128,7 @@ jobs:
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [43, 44]
+        container: [43, 44, rawhide]
     steps:
     - name: Install Deps
       run: |
@@ -349,6 +347,7 @@ jobs:
       uses: github/codeql-action/init@v4
       with:
         languages: cpp
+        build-mode: none
         queries: +security-and-quality
     - name: Build
       run: |
