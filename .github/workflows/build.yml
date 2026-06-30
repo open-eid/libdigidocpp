@@ -277,6 +277,45 @@ jobs:
       with:
         name: msi_${{ matrix.toolset }}_${{ matrix.platform }}
         path: ./*.msi
+  static:
+    name: Static build on Windows
+    needs: python
+    runs-on: windows-2025-vs2026
+    env:
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
+      CXXFLAGS: '/D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Cache vcpkg
+      uses: actions/cache@v5
+      with:
+        path: ${{ github.workspace }}/vcpkg_cache
+        key: vcpkg-static-x64-${{ hashFiles('vcpkg.json') }}
+    - name: Install dependencies
+      run: winget install --silent --accept-source-agreements --accept-package-agreements swig
+    - name: Download Python
+      uses: actions/download-artifact@v8
+      with:
+        name: python
+        path: python/
+    - uses: actions/setup-java@v5
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    - name: Build
+      run: |
+        $swig = (Get-Item "$env:LOCALAPPDATA\Microsoft\WinGet\Links\swig.exe").Target
+        cmake -B build -S . `
+          -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" `
+          -DVCPKG_TARGET_TRIPLET=x64-windows-static-md `
+          -DVCPKG_MANIFEST_FEATURES=tests `
+          -DBUILD_SHARED_LIBS=OFF `
+          -DSWIG_EXECUTABLE="$swig" `
+          -DPython3_ROOT_DIR="${{ github.workspace }}/python/x64" `
+          -DCMAKE_DISABLE_FIND_PACKAGE_Doxygen=YES
+        cmake --build build --config RelWithDebInfo
+        cmake --build build --config RelWithDebInfo --target check
   pages:
     name: Deploy pages
     if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'master')
