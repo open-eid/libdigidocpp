@@ -56,8 +56,11 @@ using namespace std;
 
 
 
-Connect::Connect(const string &_url, string _method, int _timeout, const vector<X509Cert> &certs, const string &userAgentData, const string &version)
-    : method(std::move(_method))
+Connect::Connect(const string &_url, string_view _method, int _timeout, vector<X509Cert> _certs, string _userAgentData, string_view _version)
+    : method(_method)
+    , userAgentData(std::move(_userAgentData))
+    , version(_version)
+    , certs(std::move(_certs))
     , timeout(_timeout)
 {
     DEBUG("Connecting to URL: %s", _url.c_str());
@@ -128,6 +131,9 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
         SSL_CTX_set_options(ssl.get(), options);
 #endif
         SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
+        // TLS peer verification is performed only when pinned certificates are provided.
+        // Without pinning, content-level crypto covers integrity: OCSP responses are signed
+        // by the responder cert, TSA responses are CMS-signed, and TSL uses known public keys.
         if(!certs.empty())
         {
             SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
@@ -159,7 +165,7 @@ Connect::Connect(const string &_url, string _method, int _timeout, const vector<
         }
     }
 
-    BIO_printf(d, "%s %s HTTP/%s\r\n", method.c_str(), path.c_str(), version.c_str());
+    BIO_printf(d, "%.*s %s HTTP/%.*s\r\n", STR_VIEW_FMT(method), path.c_str(), STR_VIEW_FMT(version));
     addHeader("Connection", "close");
     if(port == "80" || port == "443")
         addHeader("Host", host);
@@ -305,7 +311,7 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
         return r;
     string &location = r.headers["location"];
     string url = location.find("://") != string::npos ? std::move(location) : baseurl + location;
-    Connect c(url, method, timeout);
+    Connect c(url, method, timeout, std::move(certs), std::move(userAgentData), version);
     c.recursive = recursive + 1;
     return c.exec(headers);
 }
