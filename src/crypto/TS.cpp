@@ -236,6 +236,8 @@ tm TS::time() const
 void TS::verify(const vector<unsigned char> &digest)
 {
     tm tm = time();
+    // Full chain validation against the TSA trust store (populated from TSL) is performed
+    // by TS_RESP_verify_token (PKCS#7 path) and CMS_verify (CMS path) below.
     auto store = X509CertStore::createStore(X509CertStore::TSA, tm);
     X509CertStore::instance()->activate(cert());
     if(d)
@@ -273,7 +275,7 @@ void TS::verify(const vector<unsigned char> &digest)
 
         auto info = make_unique_ptr<TS_TST_INFO_free>(d2i_TS_TST_INFO_bio(out.get(), nullptr));
         if(ASN1_OCTET_STRING *msg = TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get()));
-            std::equal(digest.cbegin(), digest.cend(),
+            !std::equal(digest.cbegin(), digest.cend(),
                 ASN1_STRING_get0_data(msg), std::next(ASN1_STRING_get0_data(msg), ASN1_STRING_length(msg))))
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
     }
