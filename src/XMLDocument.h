@@ -37,6 +37,7 @@
 #include <openssl/x509.h>
 #include <xmlsec/openssl/evp.h>
 
+#include <algorithm>
 #include <array>
 #include <fstream>
 
@@ -579,20 +580,22 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
 
 struct XMLSchema
 {
-    auto parser(const std::string &path)
+    auto parser(std::string &&path)
     {
+        std::replace(path.begin(), path.end(), '\\', '/');
         auto parser = make_unique_ptr<xmlSchemaFreeParserCtxt>(xmlSchemaNewParserCtxt(path.c_str()));
         if(!parser)
             THROW("Failed to create schema parser context %s", path.c_str());
         xmlSchemaSetParserErrors(parser.get(), schemaValidationError, schemaValidationWarning, nullptr);
-        return parser;
+        auto schema = make_unique_ptr<xmlSchemaFree>(xmlSchemaParse(parser.get()));
+        if(!schema)
+            THROW("Failed to parse schema %s", path.c_str());
+        return schema;
     }
 
-    XMLSchema(const std::string &path)
-        : d(make_unique_ptr<xmlSchemaFree>(xmlSchemaParse(parser(path).get())))
+    XMLSchema(std::string path)
+        : d(parser(std::move(path)))
     {
-        if(!d)
-            THROW("Failed to parse schema %s", path.c_str());
     }
 
     void validate(const XMLDocument &doc) const
@@ -600,7 +603,7 @@ struct XMLSchema
         auto validate = make_unique_ptr<xmlSchemaFreeValidCtxt>(xmlSchemaNewValidCtxt(d.get()));
         if(!validate)
             THROW("Failed to create schema validation context");
-        Exception e(EXCEPTION_PARAMS("Failed to XML with schema"));
+        Exception e(EXCEPTION_PARAMS("Failed to validate XML with schema"));
         xmlSchemaSetValidErrors(validate.get(), schemaValidationError, schemaValidationWarning, &e);
         if(xmlSchemaValidateDoc(validate.get(), doc.get()) != 0)
             throw e;

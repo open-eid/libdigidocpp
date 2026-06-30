@@ -98,7 +98,8 @@ TSL::TSL(string file)
     if(get())
     {
         try {
-            validateSchema(File::path(Conf::instance()->xsdPath(), "ts_119612v020201_201601xsd.xsd"));
+            static const XMLSchema schema(File::path(Conf::instance()->xsdPath(), "ts_119612v020201_201601xsd.xsd"));
+            validateSchema(schema);
         } catch(const Exception &e) {
             ERR("Failed to validate TSL schema: %s, %s", path.c_str(), e.msg().c_str());
             reset();
