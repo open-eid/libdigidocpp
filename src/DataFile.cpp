@@ -116,7 +116,7 @@ DataFilePrivate::DataFilePrivate(const ZipSerialize &z, string filename, string 
             if(currentStreamSize + size > r.size)
                 THROW("ZIP entry actual size exceeds uncompressed_size %zu", r.size);
             if(!fs->write(buf.data(), size))
-                THROW("Failed to write '%s' data to stream. Stream size: %d", m_filename.c_str(), currentStreamSize);
+                THROW("Failed to write '%s' data to stream. Stream size: %zu", m_filename.c_str(), currentStreamSize);
         }
         m_is = std::move(fs);
     }

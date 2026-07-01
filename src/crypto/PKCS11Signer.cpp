@@ -99,10 +99,10 @@ static auto PKCS11List(CK_FUNCTION_LIST *f, Args&&... args)
     using T = std::remove_pointer_t<std::tuple_element_t<Traits::nargs - 2, typename Traits::arg_types>>;
     std::vector<T> result;
     CK_ULONG count = 0;
-    if((f->*Getter)(std::forward<Args>(args)..., static_cast<T*>(nullptr), &count) != CKR_OK || count == 0)
+    if((f->*Getter)(args..., static_cast<T*>(nullptr), &count) != CKR_OK || count == 0)
         return result;
     result.resize(size_t(count));
-    if((f->*Getter)(std::forward<Args>(args)..., result.data(), &count) != CKR_OK)
+    if((f->*Getter)(args..., result.data(), &count) != CKR_OK)
         result.clear();
     return result;
 }

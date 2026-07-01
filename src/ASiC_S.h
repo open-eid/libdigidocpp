@@ -44,7 +44,7 @@ namespace digidoc
         ASiC_S(const std::string &path, bool create);
         DISABLE_COPY(ASiC_S);
 
-        void addDataFileChecks(const std::string &path, const std::string &mediaType) override;
+        void addDataFileChecks(std::string_view path, const std::string &mediaType) override;
         void canSave() final;
         void save(const ZipSerialize &s) final;
 
