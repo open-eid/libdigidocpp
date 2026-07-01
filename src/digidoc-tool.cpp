@@ -1113,7 +1113,10 @@ int main(int argc, char *argv[]) try
 #endif
     info << ")";
     digidoc::initialize("digidoc-tool", info.str());
-    atexit(&digidoc::terminate);
+    atexit([] {
+        digidoc::terminate();
+        cout.flush();
+    });
 
     if(argc < 2)
     {
