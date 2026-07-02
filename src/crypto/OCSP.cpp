@@ -153,9 +153,10 @@ bool OCSP::compareResponderCert(const X509Cert &cert) const
     if(hash)
     {
         std::array<unsigned char,SHA_DIGEST_LENGTH> sha1{};
-        ASN1_BIT_STRING *key = X509_get0_pubkey_bitstr(cert.handle());
-        SHA1(key->data, size_t(key->length), sha1.data());
-        if(!equal(sha1.cbegin(), sha1.cend(), hash->data, std::next(hash->data, hash->length)))
+        auto *key = X509_get0_pubkey_bitstr(cert.handle());
+        SHA1(ASN1_STRING_get0_data(key), size_t(ASN1_STRING_length(key)), sha1.data());
+        const unsigned char *data = ASN1_STRING_get0_data(hash);
+        if(!equal(sha1.cbegin(), sha1.cend(), data, std::next(data, ASN1_STRING_length(hash))))
             return false;
     }
     else if(X509_NAME_cmp(X509_get_subject_name(cert.handle()), name) != 0)
@@ -277,12 +278,13 @@ vector<unsigned char> OCSP::nonce() const
     int resp_idx = OCSP_BASICRESP_get_ext_by_NID(basic.get(), NID_id_pkix_OCSP_Nonce, -1);
     if(resp_idx < 0)
         return nonce;
-    X509_EXTENSION *ext = OCSP_BASICRESP_get_ext(basic.get(), resp_idx);
+    auto *ext = OCSP_BASICRESP_get_ext(basic.get(), resp_idx);
     if(!ext)
         return nonce;
 
-    ASN1_OCTET_STRING *value = X509_EXTENSION_get_data(ext);
-    nonce.assign(value->data, std::next(value->data, value->length));
+    auto *value = X509_EXTENSION_get_data(ext);
+    const unsigned char *data = ASN1_STRING_get0_data(value);
+    nonce.assign(data, std::next(data, ASN1_STRING_length(value)));
     //OpenSSL OCSP created messages NID_id_pkix_OCSP_Nonce field is DER encoded twice, not a problem with java impl
     //XXX: UglyHackTM check if nonceAsn1 contains ASN1_OCTET_STRING
     //XXX: if first 2 bytes seem to be beginning of DER ASN1_OCTET_STRING then remove them

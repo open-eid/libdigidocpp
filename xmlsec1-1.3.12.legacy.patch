@@ -1,15 +1,15 @@
---- a/src/openssl/signatures.c	2026-04-20 08:56:41
-+++ b/src/openssl/signatures.c	2026-04-20 08:56:41
-@@ -38,6 +38,8 @@
+--- a/src/openssl/signatures.c
++++ b/src/openssl/signatures.c
+@@ -35,6 +35,8 @@
  #endif /* XMLSEC_OPENSSL_API_300 */
-
+ 
  #include "../cast_helpers.h"
 +#include <openssl/x509.h>
 +
  #include "../transform_helpers.h"
  #include "openssl_compat.h"
-
-@@ -1068,7 +1070,11 @@
+ #include "private.h"
+@@ -1066,7 +1068,11 @@
                  goto error;
              }
          } else {
@@ -22,10 +22,10 @@
              if(ret <= 0) {
                  xmlSecOpenSSLError2("EVP_PKEY_verify_init", xmlSecTransformGetName(transform),
                      "ret=%d", ret);
-@@ -1076,11 +1082,13 @@
+@@ -1074,11 +1080,13 @@
              }
          }
-
+ 
 -        ret = EVP_PKEY_CTX_set_signature_md(pKeyCtx, ctx->digest);
 -        if(ret <= 0) {
 -            xmlSecOpenSSLError2("EVP_PKEY_CTX_set_signature_md", xmlSecTransformGetName(transform),
@@ -101,5 +101,5 @@
 +            X509_SIG_free(sig);
 +        }
          break;
-
+ 
      case xmlSecOpenSSLEvpSignatureFormat_Dsa:

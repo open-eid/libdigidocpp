@@ -157,7 +157,7 @@ int X509Crypto::compareIssuerToString(string_view name) const
         bool found = false;
         for(int i = 0; i < X509_NAME_entry_count(issuer); ++i)
         {
-            X509_NAME_ENTRY *entb = X509_NAME_get_entry(issuer, i);
+            auto *entb = X509_NAME_get_entry(issuer, i);
             if(OBJ_cmp(obja.get(), X509_NAME_ENTRY_get_object(entb)) != 0)
                 continue;
 

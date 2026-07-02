@@ -36,6 +36,7 @@
 #include <openssl/ts.h>
 
 #include <algorithm>
+#include <array>
 
 using namespace digidoc;
 using namespace std;
@@ -86,10 +87,11 @@ TS::TS(const Digest &digest, const std::string &userAgent)
     }
 #endif
 
+    std::array<unsigned char, 20> nonce_bytes{};
+    for(; nonce_bytes[0] == 0;) // Make sure that first byte is not 0x00
+        RAND_bytes(nonce_bytes.data(), nonce_bytes.size());
     auto nonce = make_unique_ptr<ASN1_INTEGER_free>(ASN1_INTEGER_new());
-    ASN1_STRING_set(nonce.get(), nullptr, 20);
-    for(nonce->data[0] = 0; nonce->data[0] == 0;) // Make sure that first byte is not 0x00
-        RAND_bytes(nonce->data, nonce->length);
+    ASN1_STRING_set(nonce.get(), nonce_bytes.data(), nonce_bytes.size());
     TS_REQ_set_nonce(req.get(), nonce.get());
 
     Connect::Result result = Connect(CONF(TSUrl), "POST", 0, CONF(TSCerts), userAgent).exec({
