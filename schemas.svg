@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="633" height="381" viewBox="0 0 10985 6615" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-13016.4,-13102.4)">
+        <g id="Dependencies-between-XML-Schemas" serif:id="Dependencies between XML Schemas" transform="matrix(0.861111,0,0,0.518519,-20474.1,13102.4)">
+            <rect x="38892.2" y="0" width="12755.9" height="12755.9" style="fill:none;"/>
+            <g transform="matrix(1.16129,0,0,1.92857,-7625.02,-3920.66)">
+                <g transform="matrix(1,0,0,1,14091.9,-6314.71)">
+                    <g transform="matrix(0.830605,0,0,0.665521,3579.74,6540.11)">
+                        <g transform="matrix(1,0,0,1,0.238845,0)">
+                            <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:rgb(198,217,241);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                        <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                            <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(113,176,255);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,19757.7,7541.97)">
+                        <text x="19650.1px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">ASiC Schema</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,21696.9,-6470.56)">
+                    <g transform="matrix(0.830605,0,0,0.665521,3579.74,6695.95)">
+                        <g transform="matrix(1,0,0,1,0.238845,0)">
+                            <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:rgb(198,217,241);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                        <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                            <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(113,176,255);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,19757.7,7541.97)">
+                        <text x="19327.3px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">OpenDocument</text>
+                        <text x="20708.7px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">Schema</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,14091.9,-4330.14)">
+                    <g transform="matrix(0.830605,0,0,0.665521,3579.74,6540.11)">
+                        <g transform="matrix(1,0,0,1,0.238845,0)">
+                            <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:rgb(198,217,241);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                        <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                            <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(113,176,255);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,19757.7,7541.97)">
+                        <text x="19258.4px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">XAdES Schema</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,21696.9,-4486.06)">
+                    <g transform="matrix(0.830605,0,0,0.665521,3579.74,6696.03)">
+                        <g transform="matrix(1,0,0,1,0.238845,0)">
+                            <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:rgb(198,217,241);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                        <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                            <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(113,176,255);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,19757.7,7541.97)">
+                        <text x="19994.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">XAdESv141</text>
+                        <text x="20708.7px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">Schema</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,14091.9,-2501.49)">
+                    <g transform="matrix(0.830605,0,0,0.665521,3579.74,6696.03)">
+                        <g transform="matrix(1,0,0,1,0.238845,0)">
+                            <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:rgb(198,217,241);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                        <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                            <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(113,176,255);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,19757.7,7541.97)">
+                        <text x="20340.8px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">XML-DSig</text>
+                        <text x="20708.7px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">Schema</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,21696.9,-2345.57)">
+                    <g transform="matrix(0.830605,0,0,0.665521,3579.74,6540.11)">
+                        <g transform="matrix(1,0,0,1,0.238845,0)">
+                            <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:rgb(198,217,241);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                        <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                            <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(113,176,255);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,19757.7,7541.97)">
+                        <text x="19849.5px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">TSL<tspan x="21337.7px 21567.9px " y="7795.58px 7795.58px "> S</tspan>chema</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,25875.8,-13102.4)">
+                    <g transform="matrix(1,-0,-0,1,14180.7,15135.4)">
+                        <path d="M321.457,5819.52L471.457,5894.52L321.457,5969.52L396.457,5894.52L321.457,5819.52Z" style="fill:rgb(0,49,104);"/>
+                        <path d="M498.087,1910.17L81.667,1910.17L81.667,5894.52L396.457,5894.52" style="fill:none;stroke:rgb(0,49,104);stroke-width:16.67px;"/>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,25875.8,-13102.4)">
+                    <g transform="matrix(1,-0,-0,1,14180.7,15135.4)">
+                        <path d="M7898.86,1813.31L8048.86,1888.31L7898.86,1963.31L7973.86,1888.31L7898.86,1813.31Z" style="fill:rgb(0,49,104);"/>
+                        <path d="M3326.54,1888.31L7973.86,1888.31" style="fill:none;stroke:rgb(0,49,104);stroke-width:16.67px;"/>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,25875.8,-13102.4)">
+                    <g transform="matrix(1,-0,-0,1,14180.7,15135.4)">
+                        <path d="M3526.87,3699.52L3376.87,3624.52L3526.87,3549.52L3451.87,3624.52L3526.87,3699.52Z" style="fill:rgb(0,49,104);"/>
+                        <path d="M8079.8,3624.52L3451.87,3624.52" style="fill:none;stroke:rgb(0,49,104);stroke-width:16.67px;"/>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,25875.8,-13102.4)">
+                    <g transform="matrix(1,-0,-0,1,14180.7,15135.4)">
+                        <path d="M3556.71,4075.56L3406.71,4000.56L3556.71,3925.56L3481.71,4000.56L3556.71,4075.56Z" style="fill:rgb(0,49,104);"/>
+                        <path d="M8086.26,5924.16L5922.75,5924.16L5922.75,4000.56L3481.71,4000.56" style="fill:none;stroke:rgb(0,49,104);stroke-width:16.67px;"/>
+                    </g>
+                </g>
+                <g transform="matrix(0.364572,0,0,0.364572,38294.9,2722.6)">
+                    <text x="16714.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">(Archive time-stamp)</text>
+                </g>
+                <g transform="matrix(0.364572,0,0,0.364572,40605.5,5034.95)">
+                    <text x="16714.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">(TSL)</text>
+                </g>
+                <g transform="matrix(1,0,0,1,-3078.37,-1863.81)">
+                    <g transform="matrix(1.09214,0,0,0.459948,37781.7,-3410.56)">
+                        <rect x="8544.99" y="16092.8" width="3277.92" height="2544.05" style="fill:rgb(233,225,246);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                    </g>
+                    <g transform="matrix(0.3353,0,0,0.3353,41503.9,1918.64)">
+                        <text x="20340.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">BDOC 2.1</text>
+                        <text x="20409.2px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">document</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,0.475149,25875.8,-4524.42)">
+                    <g transform="matrix(1,-0,-0,2.1046,14180.7,13800.6)">
+                        <path d="M2084.72,1090.93L2026.01,1208.36L1967.29,1090.93L2026.01,1149.64L2084.72,1090.93Z" style="fill:rgb(0,49,104);"/>
+                        <path d="M3940.37,614.609L2026.01,614.609L2026.01,1149.64" style="fill:none;stroke:rgb(0,49,104);stroke-width:13.05px;"/>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

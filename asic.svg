@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="646" height="522" viewBox="0 0 12284 9922" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-25928,0)">
+        <g id="BDOC-2.1-container-s-contents" serif:id="BDOC 2.1 container&apos;s contents" transform="matrix(0.962963,0,0,0.777778,960.066,0)">
+            <rect x="25928.2" y="0" width="12755.9" height="12755.9" style="fill:none;"/>
+            <g transform="matrix(1.03846,0,0,1.28571,-1285.43,-885.59)">
+                <g transform="matrix(1,0,0,1,0,-713.048)">
+                    <g transform="matrix(1,0,0,0.90994,0.238845,614.124)">
+                        <path d="M38380.9,1629.13C38380.9,1348.81 38173.8,1121.22 37918.8,1121.22L26775.7,1121.22C26520.7,1121.22 26313.6,1348.81 26313.6,1629.13L26313.6,11005.4C26313.6,11285.8 26520.7,11513.3 26775.7,11513.3L37918.8,11513.3C38173.8,11513.3 38380.9,11285.8 38380.9,11005.4L38380.9,1629.13Z" style="fill:rgb(242,242,242);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,1,-851.255,-587.444)">
+                        <g transform="matrix(0.830605,0,0,0.665521,4619.8,3777.46)">
+                            <g transform="matrix(1,0,0,1,0.238845,0)">
+                                <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:white;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                            </g>
+                            <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                                <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(222,222,222);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                            </g>
+                        </g>
+                        <g transform="matrix(0.364572,0,0,0.364572,20797.7,4623.48)">
+                            <text x="20188.2px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">MET<tspan x="21875px 22427.5px " y="7795.58px 7795.58px ">A-</tspan>INF/</text>
+                            <text x="19903.7px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">manifest.xml</text>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,23854.3,3851.88)">
+                        <text x="16714.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;manifest:manifest&gt;</text>
+                        <text x="17404.9px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;manifest:ﬁle-entry manifest:media-type=&quot;</text>
+                        <text x="32890.4px" y="8650.94px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:828.263px;">text/plain</text>
+                        <text x="36526.1px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&quot;</text>
+                        <text x="17865.1px" y="9506.3px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">manifest:full-path=&quot;</text>
+                        <text x="24949.9px" y="9506.3px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:828.263px;">ﬁle1.txt</text>
+                        <text x="27849.6px" y="9506.3px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&quot; /&gt;</text>
+                    </g>
+                </g>
+                <g>
+                    <g transform="matrix(1,0,0,1,188.803,-1763.1)">
+                        <g transform="matrix(0.830605,0,0,0.665521,3579.74,6695.95)">
+                            <g transform="matrix(1,0,0,1,0.238845,0)">
+                                <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:white;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                            </g>
+                            <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                                <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(222,222,222);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                            </g>
+                        </g>
+                        <g transform="matrix(0.364572,0,0,0.364572,19757.7,7541.97)">
+                            <text x="20188.2px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">MET<tspan x="21875px 22427.5px " y="7795.58px 7795.58px ">A-</tspan>INF/</text>
+                            <text x="19903.7px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">manifest.xml</text>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,23854.3,4813.34)">
+                        <text x="16714.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;asic:XAdESSignatures&gt;</text>
+                        <text x="17404.9px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;ds:Signature Id=&quot;S0&quot;&gt;</text>
+                        <text x="18095.3px" y="9506.3px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;ds:SignedInfo&gt;</text>
+                        <text x="18785.6px" y="10361.7px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;ds:Reference Id=&quot;S0-ref-0&quot; URI=&quot;</text>
+                        <text x="31614.4px" y="10361.7px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:828.263px;">ﬁle1.txt</text>
+                        <text x="34514.1px" y="10361.7px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&quot;&gt;</text>
+                        <text x="16714.6px" y="11217px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">...</text>
+                        <text x="17404.9px" y="12072.4px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;xades:SignedDataObjectProperties&gt;</text>
+                        <text x="18095.3px" y="12927.7px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;xades:DataObjectFormat ObjectReference=&quot;#S0-ref-0&quot;&gt;</text>
+                        <text x="18785.6px" y="13783.1px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;xades:MimeT<tspan x="24194.4px 24608.5px " y="13783.1px 13783.1px ">yp</tspan>e&gt;</text>
+                        <text x="26013.5px" y="13783.1px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:828.263px;">text/plain</text>
+                        <text x="29649.3px" y="13783.1px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">&lt;/xades:MimeT<tspan x="35288.2px 35702.3px " y="13783.1px 13783.1px ">yp</tspan>e&gt;</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,0,-200.604)">
+                    <g transform="matrix(1,0,0,1,-848.159,-408.235)">
+                        <g transform="matrix(0.830605,0,0,0.665521,4616.7,1240.88)">
+                            <g transform="matrix(1,0,0,1,0.238845,0)">
+                                <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:white;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                            </g>
+                            <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                                <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(222,222,222);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                            </g>
+                        </g>
+                        <g transform="matrix(0.364572,0,0,0.364572,20793.4,2242.81)">
+                            <text x="20915.9px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">ﬁle1.txt</text>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,23857.2,1804.57)">
+                        <text x="16714.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">Signed data ﬁle&apos;s contens in original format</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,0,11.3325)">
+                    <g transform="matrix(1,0,0,1,-851.255,-22.1874)">
+                        <g transform="matrix(0.830605,0,0,0.665521,4619.8,-1190.71)">
+                            <g transform="matrix(1,0,0,1,0.238845,0)">
+                                <path d="M30919.9,6279.86L30651.4,6548.25L27545.1,6548.25L27545.1,4678.51L30919.9,4678.51L30919.9,6279.86Z" style="fill:rgb(255,253,253);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                            </g>
+                            <g transform="matrix(0.887337,0,0,1.06686,3454.08,-437.445)">
+                                <path d="M30650.8,6547.91L30674.4,6293.87L30953.4,6296.49L30650.8,6547.91Z" style="fill:rgb(222,222,222);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                            </g>
+                        </g>
+                        <g transform="matrix(0.364572,0,0,0.364572,20793.4,-220.622)">
+                            <text x="20432.8px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">mimetype</text>
+                        </g>
+                    </g>
+                    <g transform="matrix(0.364572,0,0,0.364572,23859.9,-239.197)">
+                        <text x="16714.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">application/vnd.etsi.asic-e+zip</text>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,0,-42.4649)">
+                    <g>
+                        <g transform="matrix(1,0,0,1,0.238845,0)">
+                            <path d="M29981.7,5546.88L29841.6,5686.99L29841.6,6122.62L29709,6255.27" style="fill:none;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                        <g transform="matrix(1,0,0,-1,0.238824,12510.5)">
+                            <path d="M29981.7,5546.88L29841.6,5686.99L29841.6,6122.62L29709,6255.27" style="fill:none;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,0,-1887.4)">
+                    <g>
+                        <g transform="matrix(1,0,0,1,0.238845,0)">
+                            <path d="M29981.7,5546.88L29841.6,5686.99L29841.6,6122.62L29709,6255.27" style="fill:none;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                        <g transform="matrix(1,0,0,-1,0.238824,12510.5)">
+                            <path d="M29981.7,5546.88L29841.6,5686.99L29841.6,6122.62L29709,6255.27" style="fill:none;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,0,-3721)">
+                    <g>
+                        <g transform="matrix(1,0,0,1,0.238845,0)">
+                            <path d="M29981.7,5546.88L29841.6,5686.99L29841.6,6122.62L29709,6255.27" style="fill:none;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                        <g transform="matrix(1,0,0,-1,0.238824,12510.5)">
+                            <path d="M29981.7,5546.88L29841.6,5686.99L29841.6,6122.62L29709,6255.27" style="fill:none;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                        </g>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,13.737,0)">
+                    <g transform="matrix(1,0,0,1,0.238845,0)">
+                        <path d="M29979.7,7325.95L29834.5,7471.08L29834.5,8563.63L29683.5,8714.63" style="fill:none;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                    </g>
+                    <g transform="matrix(1,0,0,-1,0.239359,17429.3)">
+                        <path d="M29979.7,7325.95L29834.5,7471.08L29834.5,8563.63L29683.5,8714.63" style="fill:none;stroke:rgb(0,49,104);stroke-width:12.5px;"/>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,0.238845,0)">
+                    <g transform="matrix(1,-0,-0,1,26205.5,688.792)">
+                        <path d="M7208.24,6122.7L7271.15,5967.25L7357.77,6110.85L7277.08,6042.01L7208.24,6122.7Z" style="fill:rgb(0,49,104);"/>
+                        <path d="M9708.8,7622.82C9708.8,6752.38 7409.27,6856.43 7277.08,6042.01" style="fill:none;stroke:rgb(0,49,104);stroke-width:16.67px;stroke-dasharray:66.67,66.67,66.67,0;"/>
+                    </g>
+                </g>
+                <g transform="matrix(1,0,0,1,2175.37,101.831)">
+                    <g transform="matrix(1,-0,-0,1,24030.4,586.961)">
+                        <path d="M10229.3,5868.98L10301.8,5717.77L10379.2,5866.52L10303,5792.76L10229.3,5868.98Z" style="fill:rgb(0,49,104);"/>
+                        <path d="M8505.95,9051.43C11745.4,9051.43 10350.6,7266.76 10303,5792.76" style="fill:none;stroke:rgb(0,49,104);stroke-width:16.67px;stroke-dasharray:66.67,66.67,66.67,0;"/>
+                    </g>
+                </g>
+                <g transform="matrix(0.3353,0,0,0.3353,24690.9,-1262.75)">
+                    <text x="16544.3px" y="7795.58px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:828.263px;">BDOC 2.1 container (ASiC-E)</text>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
