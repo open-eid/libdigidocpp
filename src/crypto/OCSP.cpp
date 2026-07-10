@@ -34,6 +34,7 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
+#include <openssl/x509v3.h>
 
 using namespace digidoc;
 using namespace std;
@@ -208,6 +209,10 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         }
     }
     auto store = X509CertStore::createStore(X509CertStore::OCSP, tm);
+    // OCSP_NOCHECKS skips ocsp_check_issuer() which requires the responder to be directly
+    // delegated by the cert's issuing CA. SK PKI uses a cross-CA OCSP responder issued by
+    // the root CA rather than the intermediate CA, so this check would always fail.
+    // We compensate by verifying the responder cert has id-kp-OCSPSigning EKU below.
     if(OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN) != 1)
     {
         unsigned long err = ERR_get_error();
@@ -222,13 +227,26 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         throw OpenSSLException(EXCEPTION_PARAMS("Failed to verify OCSP response."), err);
     }
 
-    // Find issuer before OCSP validation to activate region TSL
+    // Find issuer before status validation
     X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
     if(!issuer)
     {
         Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
         e.setCode(Exception::CertificateUnknown);
         throw e;
+    }
+
+    // Explicitly check the OCSP responder has id-kp-OCSPSigning EKU (normally done by
+    // ocsp_check_issuer which we skipped above).
+    if(X509Cert responder = responderCert(); responder)
+    {
+        bool hasOCSPSign = issuer == responder;
+        auto eku = make_unique_cast<EXTENDED_KEY_USAGE_free>(
+            X509_get_ext_d2i(responder.handle(), NID_ext_key_usage, nullptr, nullptr));
+        for(int i = 0; eku && i < sk_ASN1_OBJECT_num(eku.get()); i++)
+            hasOCSPSign |= OBJ_obj2nid(sk_ASN1_OBJECT_value(eku.get(), i)) == NID_OCSP_sign;
+        if(!hasOCSPSign)
+            THROW("OCSP responder certificate does not have id-kp-OCSPSigning EKU");
     }
 
     int status = V_OCSP_CERTSTATUS_UNKNOWN;
