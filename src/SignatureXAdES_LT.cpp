@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <ctime>
+#include <optional>
 
 using namespace digidoc;
 using namespace std;
@@ -130,18 +131,19 @@ void SignatureXAdES_LT::validate(const string &policy) const
         vector<Exception> ocspExceptions;
         for(auto resp = ocspValues/"EncapsulatedOCSPValue"; resp; resp++)
         {
-            OCSP ocsp(resp);
+            optional<OCSP> ocsp;
             try {
-                ocsp.verifyResponse(signingCertificate());
-                foundSignerOCSP = true;
+                ocsp.emplace(resp);
+                ocsp->verifyResponse(signingCertificate());
             } catch(const Exception &e) {
                 ocspExceptions.push_back(e);
                 continue;
             }
+            foundSignerOCSP = true;
 
             if(profile().find(ASiC_E::ASIC_TM_PROFILE) != string::npos)
             {
-                vector<string> policies = ocsp.responderCert().certificatePolicies();
+                vector<string> policies = ocsp->responderCert().certificatePolicies();
                 const set<string> trusted = CONF(OCSPTMProfiles);
                 if(!any_of(policies.cbegin(), policies.cend(), [&](const string &policy) { return trusted.find(policy) != trusted.cend(); }))
                 {
@@ -150,11 +152,11 @@ void SignatureXAdES_LT::validate(const string &policy) const
                 }
                 DEBUG("OCSP Responder contains valid TM OID");
 
-                string method = Digest::digestInfoUri(ocsp.nonce());
+                string method = Digest::digestInfoUri(ocsp->nonce());
                 if(method.empty())
                     THROW("Nonce digest method is missing");
                 vector<unsigned char> digest = Digest(method).result(signatureValue());
-                vector<unsigned char> respDigest = Digest::digestInfoDigest(ocsp.nonce());
+                vector<unsigned char> respDigest = Digest::digestInfoDigest(ocsp->nonce());
                 if(digest != respDigest)
                 {
                     DEBUGMEM("Calculated signature HASH", digest.data(), digest.size());
@@ -164,7 +166,7 @@ void SignatureXAdES_LT::validate(const string &policy) const
             }
             else
             {
-                tm producedAt = ocsp.producedAt();
+                tm producedAt = ocsp->producedAt();
                 string producedAt_s = util::date::to_string(producedAt);
                 time_t producedAt_t = util::date::mkgmtime(producedAt);
                 tm timeStampTime = TimeStamp().time();
@@ -276,5 +278,9 @@ OCSP SignatureXAdES_LT::getOCSPResponseValue() const
         }
     }
     // Return first OCSP response when chains are not complete and validation fails
-    return {ocspValues/"EncapsulatedOCSPValue"};
+    try {
+        return OCSP(ocspValues/"EncapsulatedOCSPValue");
+    } catch(const Exception &) {
+        return {};
+    }
 }
