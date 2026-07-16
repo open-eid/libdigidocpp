@@ -30,6 +30,9 @@
 #include <crypto/PKCS12Signer.h>
 #include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
+#include <util/log.h>
+
+#include <fstream>
 
 namespace digidoc
 {
@@ -60,6 +63,35 @@ const string ASiCS::EXT = "asics";
 }
 
 BOOST_GLOBAL_FIXTURE(TestFixture);
+
+BOOST_AUTO_TEST_SUITE(LogSuite)
+BOOST_AUTO_TEST_CASE(logEntryIsWrittenImmediately)
+{
+    const string marker = "log entry is immediately available";
+    const string path = Conf::instance()->logFile();
+    const auto size = util::File::fileSize(path);
+    INFO("%s", marker.c_str());
+
+    BOOST_CHECK_GT(util::File::fileSize(path), size);
+    ifstream log{path};
+    const string contents{istreambuf_iterator<char>{log}, istreambuf_iterator<char>{}};
+    BOOST_CHECK_NE(contents.find(marker), string::npos);
+}
+
+BOOST_AUTO_TEST_CASE(memoryLogEntryIsWrittenImmediately)
+{
+    const string marker = "memory log entry is immediately available";
+    const string path = Conf::instance()->logFile();
+    const auto size = util::File::fileSize(path);
+    const unsigned char data[] {0x01, 0x23, 0x45, 0x67};
+    DEBUGMEM(marker.c_str(), data, sizeof(data));
+
+    BOOST_CHECK_GT(util::File::fileSize(path), size);
+    ifstream log{path};
+    const string contents{istreambuf_iterator<char>{log}, istreambuf_iterator<char>{}};
+    BOOST_CHECK_NE(contents.find(marker), string::npos);
+}
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(SignerSuite)
 BOOST_AUTO_TEST_CASE(signerParameters)
