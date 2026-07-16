@@ -30,6 +30,7 @@
 #include <crypto/PKCS12Signer.h>
 #include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
+#include <util/XMLText.h>
 
 namespace digidoc
 {
@@ -114,6 +115,30 @@ BOOST_AUTO_TEST_CASE(signerParameters)
         0x12, 0x61, 0x4D, 0x00
     };
     BOOST_CHECK_EQUAL(signature, sig);
+}
+
+BOOST_AUTO_TEST_CASE(signerXMLTextValidation)
+{
+    PKCS12Signer signer{"signer1.p12", "signer1"};
+    signer.setSignerRoles({"Role1"});
+    signer.setSignatureProductionPlaceV2("Tartu", "Street", "Tartumaa", "12345", "Estonia");
+
+    const string invalidControl{"Role\x1B", 5};
+    BOOST_CHECK_THROW(signer.setSignerRoles({invalidControl}), Exception);
+    BOOST_CHECK_EQUAL(signer.signerRoles(), vector<string>{"Role1"});
+    BOOST_CHECK_THROW(signer.setSignatureProductionPlace(
+        invalidControl, "Tartumaa", "12345", "Estonia"), Exception);
+    BOOST_CHECK_EQUAL(signer.city(), "Tartu");
+
+    const string invalidUTF8{"Street\xED\xA0\x80", 9};
+    BOOST_CHECK_THROW(signer.setSignatureProductionPlaceV2(
+        "Tartu", invalidUTF8, "Tartumaa", "12345", "Estonia"), Exception);
+    BOOST_CHECK_EQUAL(signer.streetAddress(), "Street");
+
+    // Signer metadata is raw UTF-8. XML-looking input is literal text and will
+    // be escaped by libxml2 when it is eventually inserted into the document.
+    BOOST_CHECK_NO_THROW(signer.setSignerRoles({"&#x1B;"}));
+    BOOST_CHECK_EQUAL(signer.signerRoles(), vector<string>{"&#x1B;"});
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -706,6 +731,89 @@ BOOST_AUTO_TEST_CASE(WrapContainerWithExpiredSignatures)
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(XMLTestSuite)
+BOOST_AUTO_TEST_CASE(XMLTextValidation)
+{
+    const auto invalidCharacter = util::validateXMLText(string{"A\x1B" "B", 3});
+    BOOST_REQUIRE(invalidCharacter);
+    BOOST_CHECK(invalidCharacter.reason == util::XMLTextError::Reason::InvalidXMLCharacter);
+    BOOST_CHECK_EQUAL(invalidCharacter.offset, 1U);
+    BOOST_CHECK_EQUAL(invalidCharacter.codePoint, 0x1BU);
+
+    for(unsigned char value = 0; value < 0x20; ++value)
+    {
+        const auto error = util::validateXMLText(string{char(value)});
+        if(value == 0x09 || value == 0x0A || value == 0x0D)
+            BOOST_CHECK(!error);
+        else
+            BOOST_CHECK(error.reason == util::XMLTextError::Reason::InvalidXMLCharacter);
+    }
+
+    const string invalidUTF8{"A\xED\xA0\x80" "B", 5}; // UTF-8 encoded surrogate U+D800
+    const auto invalidEncoding = util::validateXMLText(invalidUTF8);
+    BOOST_REQUIRE(invalidEncoding);
+    BOOST_CHECK(invalidEncoding.reason == util::XMLTextError::Reason::InvalidUTF8);
+    BOOST_CHECK_EQUAL(invalidEncoding.offset, 1U);
+
+    const string legal = "\t\n\r\x7F"
+        "\xED\x9F\xBF"       // U+D7FF
+        "\xEE\x80\x80"       // U+E000
+        "\xEF\xBF\xBD"       // U+FFFD
+        "\xF0\x90\x80\x80" // U+10000
+        "\xF4\x8F\xBF\xBF"; // U+10FFFF
+    BOOST_CHECK(!util::validateXMLText(legal));
+
+    const string invalid[] = {
+        string{"\0", 1},
+        string{"\xC0\x80", 2},       // Overlong U+0000
+        string{"\x80", 1},           // Isolated continuation byte
+        string{"\xE2\x82", 2},       // Truncated sequence
+        string{"\xF4\x90\x80\x80", 4}, // Above U+10FFFF
+        string{"\xEF\xBF\xBE", 3},   // U+FFFE
+        string{"\xEF\xBF\xBF", 3}    // U+FFFF
+    };
+    for(const string &value: invalid)
+        BOOST_CHECK(util::validateXMLText(value));
+}
+
+BOOST_AUTO_TEST_CASE(XMLTextEscapingAndParsing)
+{
+    const string raw = "Jüri & Mari <Manager> \"'";
+    auto doc = XMLDocument::create("root");
+    XMLNode root = doc;
+    BOOST_CHECK_NO_THROW(root = raw);
+
+    string serialized;
+    BOOST_REQUIRE(doc.save([&serialized](const char *data, size_t size) {
+        serialized.append(data, size);
+    }));
+    BOOST_CHECK(serialized.contains("&amp;"));
+    BOOST_CHECK(serialized.contains("&lt;Manager&gt;"));
+
+    istringstream input{serialized};
+    auto parsed = XMLDocument::openStream(input, {"root"});
+    BOOST_CHECK_EQUAL(string(string_view(parsed)), raw);
+
+    // The API accepts raw UTF-8, not pre-escaped XML. A character-reference-like
+    // string is escaped as literal text and cannot smuggle an illegal character.
+    root = "&#x1B;";
+    serialized.clear();
+    BOOST_REQUIRE(doc.save([&serialized](const char *data, size_t size) {
+        serialized.append(data, size);
+    }));
+    BOOST_CHECK(serialized.contains("&amp;#x1B;"));
+
+    istringstream encodedInput{serialized};
+    parsed = XMLDocument::openStream(encodedInput, {"root"});
+    BOOST_CHECK_EQUAL(string(string_view(parsed)), "&#x1B;");
+
+    istringstream legalReference{"<root>&#xE4;</root>"};
+    parsed = XMLDocument::openStream(legalReference, {"root"});
+    BOOST_CHECK_EQUAL(string(string_view(parsed)), "ä");
+
+    istringstream illegalReference{"<root>&#x1B;</root>"};
+    BOOST_CHECK_THROW(XMLDocument::openStream(illegalReference, {"root"}), Exception);
+}
+
 BOOST_AUTO_TEST_CASE(XMLBomb)
 {
     BOOST_CHECK_THROW(XMLDocument("xml-bomb-attr.xml"), Exception);
