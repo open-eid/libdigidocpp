@@ -24,6 +24,7 @@
 #include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/X509Cert.h"
+#include "util/XMLText.h"
 #include "util/log.h"
 
 #include <openssl/x509.h>
@@ -34,6 +35,17 @@
 
 using namespace digidoc;
 using namespace std;
+
+static void requireXMLText(string_view value, string_view field)
+{
+    const util::XMLTextError error = util::validateXMLText(value);
+    if(!error)
+        return;
+    if(error.reason == util::XMLTextError::Reason::InvalidUTF8)
+        THROW("Invalid UTF-8 at byte offset %zu in %.*s", error.offset, STR_VIEW_FMT(field));
+    THROW("XML 1.0 character U+%04X at byte offset %zu is not allowed in %.*s",
+        unsigned(error.codePoint), error.offset, STR_VIEW_FMT(field));
+}
 
 class Signer::Private
 {
@@ -73,11 +85,17 @@ Signer::~Signer() = default;
  * @param stateOrProvince
  * @param postalCode
  * @param countryName
- * The strings have to be utf8 encoded and not contain any control values (any char < 0x20 except 0x9, 0xa and 0xd)
+ * The strings must be UTF-8 encoded and contain only XML 1.0 characters.
+ * @throws Exception if a string is not valid UTF-8 or contains a character disallowed by XML 1.0.
  */
 void Signer::setSignatureProductionPlace(const string &city,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
 {
+    requireXMLText(city, "signature production city");
+    requireXMLText(stateOrProvince, "signature production state or province");
+    requireXMLText(postalCode, "signature production postal code");
+    requireXMLText(countryName, "signature production country name");
+
     d->city = city;
     d->stateOrProvince = stateOrProvince;
     d->postalCode = postalCode;
@@ -92,11 +110,18 @@ void Signer::setSignatureProductionPlace(const string &city,
  * @param stateOrProvince
  * @param postalCode
  * @param countryName
- * The strings have to be utf8 encoded and not contain any control values (any char < 0x20 except 0x9, 0xa and 0xd)
+ * The strings must be UTF-8 encoded and contain only XML 1.0 characters.
+ * @throws Exception if a string is not valid UTF-8 or contains a character disallowed by XML 1.0.
  */
 void Signer::setSignatureProductionPlaceV2(const string &city, const string &streetAddress,
     const string &stateOrProvince, const string &postalCode, const string &countryName)
 {
+    requireXMLText(city, "signature production city");
+    requireXMLText(streetAddress, "signature production street address");
+    requireXMLText(stateOrProvince, "signature production state or province");
+    requireXMLText(postalCode, "signature production postal code");
+    requireXMLText(countryName, "signature production country name");
+
     if(!streetAddress.empty())
         setENProfile(true);
     d->city = city;
@@ -199,10 +224,14 @@ void Signer::setProfile(const string &profile)
 /**
  * Sets signature roles according XAdES standard. The parameter may contain the signer’s role and optionally the signer’s resolution. Note that only one  signer role value (i.e. one &lt;ClaimedRole&gt; XML element) should be used. 
  * If the signer role contains both role and resolution then they must be separated with a slash mark, e.g. “role / resolution”. 
- * The strings have to be utf8 encoded and not contain any control values (any char < 0x20 except 0x9, 0xa and 0xd)
+ * The strings must be UTF-8 encoded and contain only XML 1.0 characters.
+ * @throws Exception if a string is not valid UTF-8 or contains a character disallowed by XML 1.0.
  */
 void Signer::setSignerRoles(const vector<string> &signerRoles)
 {
+    for(const string &role: signerRoles)
+        requireXMLText(role, "signer role");
+
     d->signerRoles = signerRoles;
 }
 
