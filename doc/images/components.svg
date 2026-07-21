@@ -3,7 +3,7 @@
 <svg width="578" height="227" viewBox="0 0 11575 5552" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
     <g transform="matrix(1,0,0,1,-21.1987,-13074.2)">
         <g id="Components-used-in-Libdigidocpp-implementation-when-signing-with-smart-card" serif:id="Components used in Libdigidocpp implementation when signing with smart card" transform="matrix(0.907407,0,0,0.435185,-35269.9,13074.2)">
-            <rect x="38892.2" y="0" width="12755.9" height="12755.9" style="fill:none;"/>
+            <rect x="38892.2" y="0" width="12755.9" height="12755.9" style="fill:rgb(255,255,255);"/>
             <g transform="matrix(1.10204,0,0,2.29787,-4551.63,-6715.42)">
                 <g>
                     <g transform="matrix(1.09214,0,0,0.459948,37781.7,-3267.5)">

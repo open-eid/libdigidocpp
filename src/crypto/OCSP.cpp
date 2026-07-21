@@ -78,7 +78,9 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
     if(!OCSP_request_add0_id(req.get(), certId))
         THROW_OPENSSLEXCEPTION("Failed to add certificate ID to OCSP request.");
 
-    if(!OCSP_request_add1_nonce(req.get(), nullptr, 32)) // rfc8954: SIZE(1..32)
+    // RFC 8954: the OCSP nonce has SIZE(1..32).
+    // https://www.rfc-editor.org/rfc/rfc8954.html
+    if(!OCSP_request_add1_nonce(req.get(), nullptr, 32))
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 
     Connect::Result result = Connect(url, "POST", 0, {}, userAgent, "1.0").exec({

@@ -142,57 +142,57 @@ DECLARE_ASN1_FUNCTIONS(QCStatements)
  */
 
 /**
- * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcCompliance
+ * https://www.rfc-editor.org/rfc/rfc3739.html - id-etsi-qcs-QcCompliance
  * @since 3.13.0
  */
 const string X509Cert::QC_COMPLIANT = "0.4.0.1862.1.1";
 /**
- * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcSSCD
+ * https://www.rfc-editor.org/rfc/rfc3739.html - id-etsi-qcs-QcSSCD
  * @since 3.13.0
  */
 const string X509Cert::QC_SSCD = "0.4.0.1862.1.4";
 /**
- * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcPDS
+ * https://www.rfc-editor.org/rfc/rfc3739.html - id-etsi-qcs-QcPDS
  * @since 3.13.0
  */
 const string X509Cert::QC_QCP = "0.4.0.1862.1.5";
 /**
- * https://www.ietf.org/rfc/rfc3739.txt - id-etsi-qcs-QcType
+ * https://www.rfc-editor.org/rfc/rfc3739.html - id-etsi-qcs-QcType
  * @since 3.13.0
  */
 const string X509Cert::QC_QCT = "0.4.0.1862.1.6";
 /**
- * https://www.ietf.org/rfc/rfc3739.txt - id-qcs-pkixQCSyntax-v1
+ * https://www.rfc-editor.org/rfc/rfc3739.html - id-qcs-pkixQCSyntax-v1
  * @since 3.13.0
  */
 const string X509Cert::QC_SYNTAX1 = "1.3.6.1.5.5.7.11.1";
 /**
- * https://www.ietf.org/rfc/rfc3739.txt - id-qcs-pkixQCSyntax-v2
+ * https://www.rfc-editor.org/rfc/rfc3739.html - id-qcs-pkixQCSyntax-v2
  * @since 3.13.0
  */
 const string X509Cert::QC_SYNTAX2 = "1.3.6.1.5.5.7.11.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.01.01_60/en_31941201v010101p.pdf - id-etsi-qcs-semanticsId-natural
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.07.01_60/en_31941201v010701p.pdf - id-etsi-qcs-semanticsId-natural
  * @since 3.13.0
  */
 const string X509Cert::QCS_NATURAL = "0.4.0.194121.1.1";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.01.01_60/en_31941201v010101p.pdf - id-etsi-qcs-semanticsId-legal
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.07.01_60/en_31941201v010701p.pdf - id-etsi-qcs-semanticsId-legal
  * @since 3.13.0
  */
 const string X509Cert::QCS_LEGAL = "0.4.0.194121.1.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.01.01_60/en_31941205v020101p.pdf - id-etsi-qct-esign
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf - id-etsi-qct-esign
  * @since 3.13.0
  */
 const string X509Cert::QCT_ESIGN = "0.4.0.1862.1.6.1";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.01.01_60/en_31941205v020101p.pdf - id-etsi-qct-eseal
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf - id-etsi-qct-eseal
  * @since 3.13.0
  */
 const string X509Cert::QCT_ESEAL = "0.4.0.1862.1.6.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.01.01_60/en_31941205v020101p.pdf - id-etsi-qct-web
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf - id-etsi-qct-web
  * @since 3.13.0
  */
 const string X509Cert::QCT_WEB = "0.4.0.1862.1.6.3";
@@ -207,27 +207,27 @@ const string X509Cert::QCP_PUBLIC_WITH_SSCD = "0.4.0.1456.1.1";
  */
 const string X509Cert::QCP_PUBLIC = "0.4.0.1456.1.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_NATURAL = "0.4.0.194112.1.0";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_LEGAL = "0.4.0.194112.1.1";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_NATURAL_QSCD = "0.4.0.194112.1.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_LEGAL_QSCD = "0.4.0.194112.1.3";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.01.01_60/en_31941102v020101p.pdf
+ * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_WEB = "0.4.0.194112.1.4";
@@ -356,7 +356,7 @@ string X509Cert::serial() const
 }
 
 /**
- * Returns issuer name as an RFC 2253 string.
+ * Returns issuer name as an \ref RFC2253 "RFC 2253" string.
  *
  * @param obj If empty, returns the full issuer DN. If a short name (e.g., "CN", "O", "C") is provided,
  * returns only that component of the issuer name.
@@ -411,7 +411,7 @@ vector<string> X509Cert::certificatePolicies() const
 }
 
 /**
- * Returns Qualified Certificate (QC) statements as defined in RFC 3739 and ETSI EN 319 412-5.
+ * Returns Qualified Certificate (QC) statements as defined in \ref RFC3739 "RFC 3739" and ETSI EN 319 412-5.
  *
  * @since 3.13.0
  * @return Vector of OID strings representing QC statements.
@@ -460,7 +460,7 @@ vector<string> X509Cert::qcStatements() const
 }
 
 /**
- * Returns subject name as an RFC 2253 string.
+ * Returns subject name as an \ref RFC2253 "RFC 2253" string.
  *
  * @param obj If empty, returns the full subject DN. If a short name (e.g., "CN", "SN", "GN") is provided,
  * returns only that component of the subject name.

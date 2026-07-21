@@ -31,17 +31,18 @@
         git clone https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Configure
+3. List the available CMake presets and configure the default build
 
-        cmake -B build -S .
+        cmake --list-presets
+        cmake --preset default
 
 4. Build
 
-        cmake --build build
+        cmake --build build/default
 
 5. Install
 
-        sudo cmake --build build --target install
+        sudo cmake --build build/default --target install
 
 6. Execute
 
@@ -53,7 +54,7 @@
 	* [XCode](https://itunes.apple.com/en/app/xcode/id497799835?mt=12) - For macOS/iOS development
 	* [CMake](http://www.cmake.org)
 	* [Homebrew](https://brew.sh)
-	* [vcpkg](https://vcpkg.io/) - For Android development (VCPKG_ROOT)
+	* [vcpkg](https://vcpkg.io/) - For iOS and Android development (`VCPKG_ROOT`)
 	* [Android NDK](https://developer.android.com/ndk/downloads) - For Android development (ANDROID_NDK_ROOT)
 
 2. Fetch the source
@@ -61,9 +62,12 @@
         git clone https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-3. Prepare dependencies (available targets: macos, iphoneos, iphonesimulator)
+3. Prepare macOS dependencies
 
-        sh prepare_osx_build_environment.sh macos all
+        sh prepare_osx_build_environment.sh all
+
+   iOS and Android dependencies are managed by vcpkg instead. Set `VCPKG_ROOT`
+   for both platforms and `ANDROID_NDK_ROOT` for Android before configuring.
 
 4. Install dependencies
 
@@ -71,11 +75,14 @@
 
 	* doxygen - Optional, for API documentation
 	* boost - Optional, for unittests
-	* swig - Optional, for C# and Java bindings
+	* swig - Optional, for C#, Java and Python bindings
 	* openjdk - Optional, for Java bindings
 
-5. Configure, build and install (available presets: macos, iphoneos, iphonessimulator, androidarm, androidarm64, androidx86_64)
+5. List the available presets, then configure, build and install. Platform presets
+   include `macos`, `iphoneos`, `iphonesimulator`, `iphonecatalyst`,
+   `androidarm`, `androidarm64` and `androidx86_64`.
 
+        cmake --list-presets
         cmake --preset macos
         cmake --build --preset macos
         sudo cmake --build --preset macos --target install
@@ -87,7 +94,7 @@
 ### Windows
 
 1. Install dependencies and necessary tools from
-	* [Visual Studio Community 2022](https://www.visualstudio.com/downloads/)
+	* [Visual Studio](https://www.visualstudio.com/downloads/) with a supported MSVC toolset (v143 or v145)
 	* [CMake](http://www.cmake.org)
 	* [vcpkg](https://vcpkg.io/)
 	* [Swig](http://swig.org/download.html) - Optional, for C#, Python and Java bindings
@@ -107,12 +114,12 @@
         git clone https://github.com/open-eid/libdigidocpp
         cd libdigidocpp
 
-4. Configure
+4. Set the target platform and vcpkg location, then configure with the checked-in
+   Windows preset
 
-        cmake -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake `
-              -DVCPKG_TARGET_TRIPLET=x64-windows `
-              -DVCPKG_MANIFEST_FEATURES=tests `
-              -B build -S .
+        $env:PLATFORM = "x64"
+        $env:VCPKG_ROOT = "C:/src/vcpkg"
+        cmake --preset windows -DVCPKG_MANIFEST_FEATURES=tests
 
     Optional CMake parameters:
 
@@ -122,9 +129,13 @@
     After running the cmake build, digidoc_csharp.dll along with the C# source files will be created, more info at
     [examples/DigiDocCSharp/README.md](examples/DigiDocCSharp/README.md).
 
+   The preset uses a platform-specific build directory such as
+   `build/windows-x64`, keeping Windows builds separate from Linux, macOS and
+   other Windows architectures.
+
 5. Build
 
-        cmake --build build
+        cmake --build --preset windows --config RelWithDebInfo
 
 6. Alternative to steps 4. and 5. -
 
@@ -141,7 +152,7 @@
 
 7. Execute
 
-        build/src/digidoc-tool.exe
+        build/windows-x64/src/RelWithDebInfo/digidoc-tool.exe
 
 ### Examples
 [examples/README.md](examples/README.md)

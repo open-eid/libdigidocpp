@@ -1,3 +1,18 @@
+Libdigidocpp library [4.5.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.5.0) release notes
+--------------------------------------
+- Add `Container::extendContainerValidity` for adding archive timestamps to eligible ASiC-E and ASiC-S/TST containers, or wrapping a container in timestamped ASiC-S when in-place extension is unavailable
+  (#658)
+- Update libraries and platform support
+  (#722, #726, #749)
+- Improve signature and container compatibility
+  (#615, #728, #729, #730, #735, #751, #752, #754, #756)
+- Harden XML, ZIP, network, and file handling
+  (#731, #732, #734, #736, #738, #743)
+- Other fixes, optimizations, and documentation updates
+  (#727, #733, #753, #755)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v4.4.0...v4.5.0)
+
 Libdigidocpp library [4.4.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.4.0) release notes
 --------------------------------------
 - Update libraries and platform support
