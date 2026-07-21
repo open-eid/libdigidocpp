@@ -2,7 +2,7 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="646" height="522" viewBox="0 0 12284 9922" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
     <g transform="matrix(1,0,0,1,-25928,0)">
-        <g id="BDOC-2.1-container-s-contents" serif:id="BDOC 2.1 container&apos;s contents" transform="matrix(0.962963,0,0,0.777778,960.066,0)">
+        <g id="ASiC-E-container-s-contents" serif:id="ASiC-E container&apos;s contents" transform="matrix(0.962963,0,0,0.777778,960.066,0)">
             <rect x="25928.2" y="0" width="12755.9" height="12755.9" style="fill:none;"/>
             <g transform="matrix(1.03846,0,0,1.28571,-1285.43,-885.59)">
                 <g transform="matrix(1,0,0,1,0,-713.048)">
@@ -150,7 +150,7 @@
                     </g>
                 </g>
                 <g transform="matrix(0.3353,0,0,0.3353,24690.9,-1262.75)">
-                    <text x="16544.3px" y="7795.58px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:828.263px;">BDOC 2.1 container (ASiC-E)</text>
+                    <text x="22835.5px" y="7795.58px" text-anchor="middle" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:828.263px;">ASiC-E container</text>
                 </g>
             </g>
         </g>

@@ -2,7 +2,7 @@
 
 Contents of this folder is provided on as is terms, whithout support.
 
-* [DigiDocCSharp](./DigiDocCSharp/README.md) - example project to use C# on Windows
+* [DigiDocCSharp](./DigiDocCSharp/README.md) - example project for C# on Windows, macOS and Linux
 * [android](./android/README.md) - example project to use on Android platform
 * [ios](./ios/README.md) - example project to use on iOS platform
 * [java](./java/README.md) - example project to use with java

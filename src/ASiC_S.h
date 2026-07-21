@@ -25,8 +25,10 @@ namespace digidoc
 {
     /**
     * Implements the ASiC-S specification of the timestamped digital document container.
-    * Container contains a single datafile object and one time assertion file.
-    * The signing (timestamping) and save operations are not supported.
+    * The container contains a single data file and either XAdES signatures or
+    * an RFC 3161 TimeStampToken. XAdES containers can be opened and validated,
+    * but are read-only. Creating, timestamping, saving, validating, and adding
+    * archive-manifest time-stamp layers are supported for TimeStampToken containers.
     */
     class ASiC_S : public ASiContainer
     {

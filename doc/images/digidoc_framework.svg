@@ -2,7 +2,7 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="544" height="374" viewBox="0 0 9804 6733" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
     <g id="DigiDoc-framework" serif:id="DigiDoc framework" transform="matrix(0.768519,0,0,0.527778,0,0)">
-        <rect x="0" y="0" width="12755.9" height="12755.9" style="fill:none;"/>
+        <rect x="0" y="0" width="12755.9" height="12755.9" style="fill:rgb(255,255,255);"/>
         <g transform="matrix(1.3012,0,0,1.89474,-2188.71,-4598.94)">
             <g transform="matrix(1,0,0,1,-347.655,-489.997)">
                 <g transform="matrix(4.24345,0,0,1.36975,-4211.56,-1830.72)">

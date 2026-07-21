@@ -277,25 +277,36 @@ jobs:
         path: ./*.msi
   pages:
     name: Deploy pages
-    if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'master')
+    if: github.repository == 'open-eid/libdigidocpp' && github.ref == 'refs/heads/master'
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-24.04
     permissions:
-      contents: write
+      contents: read
+      pages: write
+      id-token: write
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+    - name: Setup Pages
+      uses: actions/configure-pages@v5
     - name: Install dependencies
       run: sudo apt update -qq && sudo apt install --no-install-recommends -y doxygen ${UBUNTU_DEPS}
     - name: Build docs
       run: |
         cmake -B build -S .
         cmake --build build --target docs
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v4
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v5
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./build/doc
-        force_orphan: true
+        path: ./build/doc
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v5
   coverity:
     name: Run Coverity tests
     if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'coverity_scan')
