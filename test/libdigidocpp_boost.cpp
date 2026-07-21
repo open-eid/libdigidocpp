@@ -738,6 +738,26 @@ BOOST_AUTO_TEST_CASE(WrapContainerWithExpiredSignatures)
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(XMLTestSuite)
+BOOST_AUTO_TEST_CASE(SchemaPathWithSpaces)
+{
+    struct TempSchemaDir
+    {
+        fs::path path;
+        ~TempSchemaDir()
+        {
+            error_code ec;
+            fs::remove_all(path, ec);
+        }
+    } schemaDir{util::File::tempFileName().concat(" schema path")};
+
+    fs::remove(schemaDir.path);
+    fs::copy(DIGIDOCPPCONF, schemaDir.path, fs::copy_options::recursive);
+
+    XMLSchema schema((schemaDir.path / "ts_119612v020201_201601xsd.xsd").string());
+    XMLDocument doc("TSL.xml");
+    BOOST_CHECK_NO_THROW(schema.validate(doc));
+}
+
 BOOST_AUTO_TEST_CASE(XMLBomb)
 {
     BOOST_CHECK_THROW(XMLDocument("xml-bomb-attr.xml"), Exception);

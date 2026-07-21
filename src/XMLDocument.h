@@ -25,6 +25,9 @@
 #include "util/memory.h"
 
 #include <libxml/parser.h>
+#ifndef _WIN32
+#include <libxml/uri.h>
+#endif
 #include <libxml/xmlschemas.h>
 #include <libxml/c14n.h> // needs to be last to workaround old libxml2 errors
 
@@ -583,7 +586,19 @@ struct XMLSchema
     auto parser(std::string &&path)
     {
         std::replace(path.begin(), path.end(), '\\', '/');
-        auto parser = make_unique_ptr<xmlSchemaFreeParserCtxt>(xmlSchemaNewParserCtxt(path.c_str()));
+#ifndef _WIN32
+        if(path.starts_with('/'))
+            path.insert(0, "file://");
+        auto uri = make_unique_ptr(xmlURIEscapeStr(BAD_CAST path.c_str(), BAD_CAST "/:"),
+            [](xmlChar *value) { xmlFree(value); });
+        if(!uri)
+            THROW("Failed to construct schema URI %s", path.c_str());
+        const auto *schemaPath = reinterpret_cast<const char*>(uri.get());
+#else
+        const auto *schemaPath = path.c_str();
+#endif
+        auto parser = make_unique_ptr<xmlSchemaFreeParserCtxt>(
+            xmlSchemaNewParserCtxt(schemaPath));
         if(!parser)
             THROW("Failed to create schema parser context %s", path.c_str());
         xmlSchemaSetParserErrors(parser.get(), schemaValidationError, schemaValidationWarning, nullptr);
