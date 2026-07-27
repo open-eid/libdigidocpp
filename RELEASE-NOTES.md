@@ -1,3 +1,5 @@
+# Release Notes {#release_notes}
+
 Libdigidocpp library [4.5.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.5.0) release notes
 --------------------------------------
 - Add `Container::extendContainerValidity` for adding archive timestamps to eligible ASiC-E and ASiC-S/TST containers, or wrapping a container in timestamped ASiC-S when in-place extension is unavailable
@@ -331,7 +333,7 @@ Libdigidocpp library [3.12.3](https://github.com/open-eid/libdigidocpp/releases/
 
 
 
-Libdigidocpp library 3.12.2 release notes
+Libdigidocpp library [3.12.2](https://github.com/open-eid/libdigidocpp/releases/tag/v3.12.2) release notes
 --------------------------------------
 Changes compared to ver 3.12.1
 - Fix issues found by coverity
@@ -341,7 +343,7 @@ Changes compared to ver 3.12.1
 
 
 
-Libdigidocpp library 3.12.1 release notes
+Libdigidocpp library [3.12.1](https://github.com/open-eid/libdigidocpp/releases/tag/v3.12.1) release notes
 --------------------------------------
 Changes compared to ver 3.12.0
 - Added Container::prepareWebSignature for C# bindings
@@ -351,7 +353,7 @@ Changes compared to ver 3.12.0
 
 
 
-Libdigidocpp library 3.12.0 release notes
+Libdigidocpp library [3.12.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.12.0) release notes
 --------------------------------------
 Changes compared to ver 3.11.1
 
@@ -372,7 +374,7 @@ List of known issues: https://github.com/open-eid/libdigidocpp/wiki/Known-issues
 
 
 
-Libdigidocpp library 3.11.1 release notes
+Libdigidocpp library [3.11.1](https://github.com/open-eid/libdigidocpp/releases/tag/v3.11.1) release notes
 --------------------------------------
 Changes compared to ver 3.11.0
 
@@ -383,7 +385,7 @@ List of known issues: https://github.com/open-eid/libdigidocpp/wiki/Known-issues
 
 
 
-Libdigidocpp library 3.11.0 release notes
+Libdigidocpp library [3.11.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.11.0) release notes
 --------------------------------------
 Changes compared to ver 3.10.3
 
@@ -402,7 +404,7 @@ Changes compared to ver 3.10.3
 
 
 
-Libdigidocpp library 3.10.3 release notes
+Libdigidocpp library [3.10.3](https://github.com/open-eid/libdigidocpp/releases/tag/v3.10.3-beta) release notes
 --------------------------------------
 Changes compared to ver 3.10.0
 
@@ -414,13 +416,13 @@ Changes compared to ver 3.10.0
 
 
 
-Libdigidocpp library 3.10.0 release notes
+Libdigidocpp library [3.10.0](https://github.com/open-eid/libdigidocpp/releases/tag/v3.10.0) release notes
 --------------------------------------
 Changes compared to ver 3.9
 
 - Changed the default BDOC signature profile to BDOC-TS (ASiC-E LT signature with time-stamp) for new signatures. To create a BDOC-TM (LT_TM, i.e. time-mark) signature, specify the "time-mark" profile value in Container::sign(Signer *signer, const string &profile) method call.
 - Fixed time zone usage when validating signer certificate validity period's starting time. Previously, "Not yet valid" error message was displayed even if the certificate was actually already valid.
-- Improved BDOC signatures*.xml file's XML structure validation. Transforms XML element is now allowed to enhance interoperability.
+- Improved BDOC signatures\*.xml file's XML structure validation. Transforms XML element is now allowed to enhance interoperability.
 - Improved TSL functionality
 	- In case of BDOC format, checking the trustworthiness of trust services (CA, OCSP, time-stamping services) is now possible only by using TSL lists. Previously used certificate store functionality is no longer supported.
 	- Removed country-specific filtering of the national TSLs that are referenced in the European Commission's central TSL list.
@@ -432,7 +434,7 @@ Changes compared to ver 3.9
 	- Improved TSL loading when proxy is used, proxy settings are ignored in case of HTTPS connections.
 - Changed the XmlConf class to deprecated, use XmlConfV2 instead.
 - Changed the OCSP responder URL for EID-SK 2011 certificates, http://ocsp.sk.ee is now used.
-- Fixed error message text that appears when data file's mime-type in BDOC manifest.xml does not conform with mime-type value in signatures*.xml file. Previously, the displayed mime-type values were interchanged between the signatures*.xml and manifest.xml files.
+- Fixed error message text that appears when data file's mime-type in BDOC manifest.xml does not conform with mime-type value in signatures\*.xml file. Previously, the displayed mime-type values were interchanged between the signatures\*.xml and manifest.xml files.
 - The library's release notes is now also copied to the library's documentation: http://open-eid.github.io/libdigidocpp/manual.html#releasenotes 
 - Development of the software can now be monitored in GitHub environment: https://github.com/open-eid/libdigidocpp
 
@@ -457,10 +459,10 @@ Changes compared to ver 3.8
 	- Added class XmlConfV2 that should be used instead of XmlConf class if it is needed to configure time-stamp and TSL related configuration properties. 
 	- Added Xalan library for processing TSL files.
 - Added support for adding OCSP confirmation to signature if the signer's certificate is issued by "VRK CA for Qualified Certificates - G2" or "VRK Gov. CA for Citizen Qualified Certificates - G2".
-- Improved BDOC document's validation, it is now checked that the data file mime-type value in manifest.xml file and the respective value in signatures*.xml file in <DataObjectFormat><MimeType> element are the same.
+- Improved BDOC document's validation, it is now checked that the data file mime-type value in manifest.xml file and the respective value in signatures\*.xml file in \<DataObjectFormat\>\<MimeType\> element are the same.
 - Added "--mime=" parameter to digidoc-tool utility program's "create" command. The parameter can be used along with "--file=" parameter to set the mime-type value of a data file. If not set then the default value "application/octet-stream" is used.
 - Improved BDOC document's validation, added check for weak hash algorithm (SHA-1) usage in case of ECDSA signatures.
-- Improved BDOC signatures*.xml file's XML structure validation. It is now additionally checked that unsupported elements CounterSignature, CompleteCertificateRefs, CompleteRevocationRefs, AttributeCertificateRefs, AttributeRevocationRefs, SigAndRefsTimeStamp, RefsOnlyTimeStamp, AttrAuthoritiesCertValues, AttributeRevocationValues, CommitmentTypeIndicationType, AllDataObjectsTimeStamp, IndividualDataObjectsTimeStampType would not exist in the file.
+- Improved BDOC signatures\*.xml file's XML structure validation. It is now additionally checked that unsupported elements CounterSignature, CompleteCertificateRefs, CompleteRevocationRefs, AttributeCertificateRefs, AttributeRevocationRefs, SigAndRefsTimeStamp, RefsOnlyTimeStamp, AttrAuthoritiesCertValues, AttributeRevocationValues, CommitmentTypeIndicationType, AllDataObjectsTimeStamp, IndividualDataObjectsTimeStampType would not exist in the file.
 - Improved processing of special characters in URI attribute values according to RFC3986. Special characters in URI are percent-encoded, except of unreserved characters and delimiters. Both percent-encoded and non-percent-encoded characters are supported during signature's validation. Note that as a result, the files that contain special characters in URI values and have been created with v3.9 might not be compatible with v3.8 of the library.
 - Fixed problem that caused erroneous signatures if the data file's name contained colon character.
 - Fixed digidoc-tool utility program "extract" command's "--extractAll" parameter functionality. Now, if the parameter is present but there is no extraction directory specified then the files are extracted to the working directory.
