@@ -32,6 +32,7 @@
 #include "util/log.h"
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <sstream>
@@ -124,6 +125,42 @@ static ostream &endl(ostream &os)
 {
     return os.put('\n');
 }
+}
+
+/**
+ * Encodes a container data-file leaf (UTF-8) to a native filesystem path component. On Windows,
+ * invalid filename characters and trailing spaces or dots are replaced with '_'. Reserved device
+ * names are prefixed with '_' so extraction writes a regular file instead of accessing a device.
+ * POSIX has no equivalent restrictions, so the leaf is encoded unchanged there.
+ */
+static fs::path safePath(string_view leaf)
+{
+#ifdef _WIN32
+    static constexpr string_view invalidChars = R"(<>:"/\|?*)";
+    static constexpr string_view reserved[] {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "COM¹", "COM²", "COM³",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+        "LPT¹", "LPT²", "LPT³",
+        "CONIN$", "CONOUT$" };
+
+    string name(leaf);
+    for(char &c: name)
+        if(static_cast<unsigned char>(c) < 32 || invalidChars.find(c) != string_view::npos)
+            c = '_';
+    for(auto i = name.rbegin(); i != name.rend() && (*i == ' ' || *i == '.'); ++i)
+        *i = '_';
+
+    string stem(name.substr(0, name.find('.')));
+    while(!stem.empty() && (stem.back() == ' ' || stem.back() == '.'))
+        stem.pop_back();
+    for(char &c: stem) if(c >= 'a' && c <= 'z') c -= 'a' - 'A';
+    if(any_of(begin(reserved), end(reserved), [&stem](string_view r) { return r == stem; }))
+        name.insert(name.begin(), '_');
+    return File::encodeName(name);
+#endif
+    return File::encodeName(leaf);
 }
 
 struct CertSigner final: public Signer
@@ -626,8 +663,21 @@ static int open(int argc, char* argv[])
         for(const DataFile *file: doc->dataFiles())
         {
             try {
-                auto dst = (extractPath / fs::path(file->fileName()).filename());
-                file->saveAs(dst.string());
+                string name = file->fileName();
+                auto dst = extractPath / safePath(File::fileName(name));
+                error_code ec;
+                bool exists = fs::exists(dst, ec);
+                if(ec)
+                    THROW("Failed to inspect output file for document '%s'.", name.c_str());
+                if(exists)
+                    THROW("Refusing to overwrite existing output file for document '%s'.", name.c_str());
+                ofstream ofs(dst, ofstream::binary);
+                if(!ofs)
+                    THROW("Failed to create file '%s'", name.c_str());
+                file->saveAs(ofs);
+                ofs.flush();
+                if(!ofs)
+                    THROW("Failed to write file '%s'", name.c_str());
                 cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
             } catch(const Exception &e) {
                 cout << "  Document " << file->fileName() << " extraction: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
