@@ -76,6 +76,11 @@ Select how validation warnings affect output. The default is warning.
 .BR \-\-extractAll [=directory]
 Extract all data files without validating signatures. Without a directory,
 files are written to the current directory.
+On Windows, reserved device names are written with a leading underscore
+.RB ( CON " becomes " _CON )
+and invalid filename characters, control characters, and trailing spaces or
+dots are replaced with underscores. Extraction fails if the output file
+already exists.
 .TP
 .B \-\-validateOnExtract
 Validate the container before extracting data files.
