@@ -54,3 +54,22 @@ namespace digidoc
 #define EXCEPTION_ADD(_main, ...) _main.addCause(digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__)))
 #define THROW(...) throw digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__))
 #define THROW_CAUSE(_cause, ...) throw digidoc::Exception(EXCEPTION_PARAMS(__VA_ARGS__), _cause)
+
+#ifdef WIN32
+#define DIGIDOCPP_WARNING_PUSH __pragma(warning(push))
+#define DIGIDOCPP_WARNING_POP __pragma(warning(pop))
+#define DIGIDOCPP_WARNING_DISABLE_CLANG(text)
+#define DIGIDOCPP_WARNING_DISABLE_GCC(text)
+#define DIGIDOCPP_WARNING_DISABLE_MSVC(number) __pragma(warning(disable: number))
+#else
+#define DIGIDOCPP_DO_PRAGMA(text) _Pragma(#text)
+#define DIGIDOCPP_WARNING_PUSH DIGIDOCPP_DO_PRAGMA(GCC diagnostic push)
+#define DIGIDOCPP_WARNING_POP DIGIDOCPP_DO_PRAGMA(GCC diagnostic pop)
+#if __clang__
+#define DIGIDOCPP_WARNING_DISABLE_CLANG(text) DIGIDOCPP_DO_PRAGMA(clang diagnostic ignored text)
+#else
+#define DIGIDOCPP_WARNING_DISABLE_CLANG(text)
+#endif
+#define DIGIDOCPP_WARNING_DISABLE_GCC(text) DIGIDOCPP_DO_PRAGMA(GCC diagnostic ignored text)
+#define DIGIDOCPP_WARNING_DISABLE_MSVC(text)
+#endif

@@ -47,6 +47,7 @@
       "cacheVariables": {
         "CMAKE_DISABLE_FIND_PACKAGE_Boost": "YES",
         "CMAKE_DISABLE_FIND_PACKAGE_Doxygen": "YES",
+        "CMAKE_FIND_ROOT_PATH": null,
         "BUILD_TOOLS": "NO",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
@@ -134,6 +135,11 @@
       "name": "windows",
       "displayName": "Windows",
       "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
       "environment": {
         "BUILD_SUFFIX": "-$env{PLATFORM}"
       },
@@ -156,6 +162,10 @@
     }
   ],
   "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    },
     {
       "name": "macos",
       "configurePreset": "macos"
@@ -197,8 +207,8 @@
   "testPresets":
   [
     {
-      "name": "base",
-      "hidden": true,
+      "name": "default",
+      "configurePreset": "default",
       "output": {
         "outputOnFailure": true
       },
@@ -207,15 +217,20 @@
       }
     },
     {
+      "name": "macos",
+      "configurePreset": "macos",
+      "inherits": "default"
+    },
+    {
       "name": "iphonesimulator",
       "configurePreset": "iphonesimulator",
-      "inherits": "base"
+      "inherits": "default"
     },
     {
       "name": "windows-static",
       "configurePreset": "windows-static",
       "configuration": "RelWithDebInfo",
-      "inherits": "base"
+      "inherits": "default"
     }
   ]
 }

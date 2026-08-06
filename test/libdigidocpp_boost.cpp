@@ -27,10 +27,14 @@
 #include <XmlConf.h>
 #include <XMLDocument.h>
 #include <crypto/Digest.h>
+#include <crypto/OpenSSLHelpers.h>
 #include <crypto/PKCS12Signer.h>
 #include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
 #include <util/log.h>
+
+#include <openssl/crypto.h>
+#include <openssl/x509.h>
 
 #include <fstream>
 
@@ -40,9 +44,24 @@ namespace digidoc
 class TestFixture: public DigiDocPPFixture
 {
 public:
+    inline static bool initiallyAllowsSHA1 = false;
+
     TestFixture()
     {
+        initiallyAllowsSHA1 = allowsSHA1Verification();
         initialize("untitestboost");
+    }
+
+    static bool allowsSHA1Verification()
+    {
+        X509Cert cert("ca.crt", X509Cert::Pem);
+        EVP_PKEY *pub = X509_get0_pubkey(cert.handle());
+        auto ctx = make_unique_ptr<EVP_MD_CTX_free>(EVP_MD_CTX_new());
+        if(!pub || !ctx)
+            THROW_OPENSSLEXCEPTION("Failed to prepare SHA-1 policy check");
+        const bool allowed = EVP_DigestVerifyInit(ctx.get(), nullptr, EVP_sha1(), nullptr, pub) == 1;
+        ERR_clear_error();
+        return allowed;
     }
 };
 
@@ -166,14 +185,30 @@ BOOST_AUTO_TEST_CASE(parameters)
     BOOST_CHECK_EQUAL(c.keyUsage(), vector<X509Cert::KeyUsage>{ X509Cert::NonRepudiation});
     BOOST_CHECK_EQUAL(c.isValid(), true);
 }
+
+BOOST_AUTO_TEST_CASE(legacySHA1Certificate)
+{
+    auto d = Container::openPtr("sha1-cert-ocsp.bdoc");
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1);
+    const auto *signature = d->signatures().front();
+    BOOST_CHECK_EQUAL(signature->id(), "S1");
+    BOOST_REQUIRE(X509_get0_pubkey(signature->signingCertificate().handle()));
+    BOOST_CHECK_EQUAL(X509_get_signature_nid(signature->signingCertificate().handle()), NID_sha1WithRSAEncryption);
+    const bool before = TestFixture::allowsSHA1Verification();
+    BOOST_CHECK_EQUAL(before, TestFixture::initiallyAllowsSHA1);
+    signature->validate();
+    BOOST_CHECK_EQUAL(TestFixture::allowsSHA1Verification(), before);
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(X509CryptoSuite)
 BOOST_AUTO_TEST_CASE(parameters)
 {
+    BOOST_CHECK_EQUAL(X509Crypto(X509Cert("ca.crt", X509Cert::Pem)).isRSAKey(), true);
+    BOOST_CHECK_EQUAL(X509Crypto(X509Cert("unicode.crt", X509Cert::Pem)).isRSAKey(), false);
+
     X509Cert cert("47101010033.cer", X509Cert::Pem);
     X509Crypto crypto(cert);
-    BOOST_CHECK_EQUAL(crypto.isRSAKey(), true);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()), 0);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of ESTEID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of EST\\45ID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
@@ -186,6 +221,14 @@ BOOST_AUTO_TEST_CASE(parameters)
     BOOST_CHECK_EQUAL(test.compareIssuerToString("CN=\\\"test\\\""), 0);
     X509Crypto comma(X509Cert("comma.crt", X509Cert::Pem));
     BOOST_CHECK_EQUAL(comma.compareIssuerToString("CN=test\\, comma"), 0);
+}
+
+BOOST_AUTO_TEST_CASE(negativeRSAModulus)
+{
+    // 47101010033.cer encodes the RSA modulus as a negative INTEGER, like the Estonian
+    // ID-card certificates issued 2014-2015. OpenSSL 4.0 no longer decodes such keys.
+    X509Crypto crypto(X509Cert("47101010033.cer", X509Cert::Pem));
+    BOOST_CHECK_EQUAL(crypto.isRSAKey(), OpenSSL_version_num() < 0x40000000L);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
