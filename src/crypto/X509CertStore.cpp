@@ -32,6 +32,10 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
 using namespace digidoc;
 using namespace std;
 
@@ -166,6 +170,38 @@ unique_free_t<X509_STORE> X509CertStore::createStore(const Type &type, tm &tm)
     return store;
 }
 
+unique_free_t<X509> X509CertStore::legacyCertificate(X509 *cert)
+{
+#ifndef _WIN32
+    // Fedora/RHEL can disable SHA-1 even for historical certificate and OCSP signatures.
+    // Keep that exception in a private context, leaving the caller's policy intact.
+    static const auto context = [] {
+        auto ctx = make_unique_ptr<OSSL_LIB_CTX_free>(nullptr);
+        auto *allow = reinterpret_cast<int(*)(void*, int, int)>(
+            dlsym(RTLD_DEFAULT, "ossl_ctx_legacy_digest_signatures_allowed_set"));
+        if(!allow)
+            return ctx;
+        ctx.reset(OSSL_LIB_CTX_new());
+        if(!ctx || OSSL_LIB_CTX_load_config(ctx.get(), nullptr) != 1 || allow(ctx.get(), 1, 0) != 1)
+        {
+            WARN("Failed to enable legacy certificate verification in private OpenSSL context");
+            ctx.reset();
+        }
+        return ctx;
+    }();
+    if(context)
+    {
+        ERR_clear_error();
+        auto der = i2d<i2d_X509>(cert);
+        X509 *local = X509_new_ex(context.get(), nullptr);
+        // d2i_X509 frees local and sets it to nullptr on failure.
+        if(const unsigned char *data = der.data(); local && d2i_X509(&local, &data, long(der.size())))
+            return {local, X509_free};
+    }
+#endif
+    return {nullptr, X509_free};
+}
+
 int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
 {
     switch(X509_STORE_CTX_get_error(ctx))
@@ -201,9 +237,21 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
                 if(none_of(s.certs, [&](const X509Cert &issuer) {
                         if(issuer == x509) // certificate is listed by service
                             return true;
-                        if(X509_check_issued(issuer.handle(), x509) == X509_V_OK && // certificate is issued by service (function checks only issuer name)
-                            X509_verify(x509, X509_get0_pubkey(issuer.handle())) == 1) // certificate is signed by service
-                            return true;
+                        if(X509_check_issued(issuer.handle(), x509) == X509_V_OK) // certificate is issued by service (function checks only issuer name)
+                        {
+                            auto *key = X509_get0_pubkey(issuer.handle());
+                            if(X509_verify(x509, key) == 1) // certificate is signed by service
+                                return true;
+#ifndef _WIN32
+                            if(int digest = NID_undef;
+                               OBJ_find_sigid_algs(X509_get_signature_nid(x509), &digest, nullptr) == 1 && digest == NID_sha1)
+                            {
+                                // X509_verify uses the context of the certificate, not X509_STORE_CTX.
+                                if(auto local = legacyCertificate(x509); local && X509_verify(local.get(), key) == 1)
+                                    return true;
+                            }
+#endif
+                        }
                         ERR_clear_error();
                         return false;
                     })) // certificate is trusted by service

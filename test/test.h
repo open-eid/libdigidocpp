@@ -26,6 +26,7 @@
 #include <Exception.h>
 #include <crypto/X509Cert.h>
 #include <util/File.h>
+#include <util/log.h>
 
 using namespace digidoc;
 using namespace std;
