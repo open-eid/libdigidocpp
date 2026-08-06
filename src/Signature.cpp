@@ -46,7 +46,7 @@ using namespace std;
  */
 
 /**
- * http://open-eid.github.io/SiVa/siva/appendix/validation_policy/#POLv1
+ * https://open-eid.github.io/SiVa/siva/appendix/validation_policy/#POLv1
  *
  * @since 3.13.0
  * @see validate(const std::string &policy) const
@@ -54,7 +54,7 @@ using namespace std;
 const string Signature::POLv1 = "POLv1";
 
 /**
- * http://open-eid.github.io/SiVa/siva/appendix/validation_policy/#POLv2
+ * https://open-eid.github.io/SiVa/siva/appendix/validation_policy/#POLv2
  *
  * @since 3.13.0
  * @see validate(const std::string &policy) const

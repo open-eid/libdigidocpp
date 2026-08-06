@@ -11,7 +11,7 @@ Libdigidocpp library [4.5.0](https://github.com/open-eid/libdigidocpp/releases/t
 - Harden XML, ZIP, network, and file handling
   (#731, #732, #734, #736, #738, #743)
 - Other fixes, optimizations, and documentation updates
-  (#727, #733, #753, #755)
+  (#727, #733, #753, #755, #757)
 
 [Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v4.4.0...v4.5.0)
 
@@ -435,7 +435,7 @@ Changes compared to ver 3.9
 - Changed the XmlConf class to deprecated, use XmlConfV2 instead.
 - Changed the OCSP responder URL for EID-SK 2011 certificates, http://ocsp.sk.ee is now used.
 - Fixed error message text that appears when data file's mime-type in BDOC manifest.xml does not conform with mime-type value in signatures\*.xml file. Previously, the displayed mime-type values were interchanged between the signatures\*.xml and manifest.xml files.
-- The library's release notes is now also copied to the library's documentation: http://open-eid.github.io/libdigidocpp/manual.html#releasenotes 
+- The library's release notes is now also copied to the library's documentation: https://open-eid.github.io/libdigidocpp/manual.html#releasenotes 
 - Development of the software can now be monitored in GitHub environment: https://github.com/open-eid/libdigidocpp
 
 
