@@ -5,7 +5,7 @@ endif()
 if(POLICY CMP0177)
     cmake_policy(SET CMP0177 NEW)
 endif()
-project(libdigidocpp VERSION 4.5.1
+project(libdigidocpp VERSION 4.6.0
     DESCRIPTION "C++ library for digital signatures and validation of digitally signed documents"
     HOMEPAGE_URL https://github.com/open-eid/libdigidocpp
 )
@@ -84,9 +84,24 @@ find_package(SWIG)
 if(SWIG_FOUND)
     find_package(Java COMPONENTS Development)
     find_package(JNI)
-    find_package(Python3 COMPONENTS Development)
-    if((WIN32 OR APPLE) AND CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
-        find_package(Python3 COMPONENTS Development.SABIModule)
+    if(APPLE AND NOT Python3_ROOT_DIR)
+        foreach(_py3_candidate
+            /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/Current
+            /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/Current
+        )
+            if(EXISTS ${_py3_candidate}/Headers/Python.h)
+                set(Python3_ROOT_DIR ${_py3_candidate})
+                set(Python3_FIND_FRAMEWORK FIRST)
+                set(Python3_FIND_STRATEGY LOCATION)
+                break()
+            endif()
+        endforeach()
+        unset(_py3_candidate)
+    endif()
+    if(WIN32 OR APPLE)
+        find_package(Python3 COMPONENTS Development OPTIONAL_COMPONENTS Development.SABIModule)
+    else()
+        find_package(Python3 COMPONENTS Development)
     endif()
 endif()
 

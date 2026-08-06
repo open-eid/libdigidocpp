@@ -27,10 +27,11 @@ jobs:
       run: |
         brew update
         brew install --formula swig doxygen boost
-        brew unlink python@3.13 || true
         brew unlink python@3.14 || true
         brew unlink openssl@3 || true
         brew unlink xz
+        sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.11
+        sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.12
         sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.13
         sudo rm -rf /Library/Frameworks/Python.framework/Versions/3.14
     - name: Cache
@@ -78,6 +79,14 @@ jobs:
         cp build/${{ matrix.target }}/vcpkg_installed/${{ matrix.triplet }}/lib/{libcrypto,libssl}.a libdigidocpp.${{ matrix.target }}/lib/
         cp -r build/${{ matrix.target }}/vcpkg_installed/${{ matrix.triplet }}/include/openssl libdigidocpp.${{ matrix.target }}/include/
         zip -q -r libdigidocpp.${{ matrix.target }}.zip libdigidocpp.${{ matrix.target }}
+    - name: Test on iOS Simulator
+      if: matrix.target == 'iphonesimulator'
+      run: |
+        UDID=$(xcrun simctl list devices available | grep -m1 -oE '[0-9A-F-]{36}')
+        test -n "$UDID" || { echo "no available simulator"; exit 1; }
+        xcrun simctl boot "$UDID"
+        xcrun simctl bootstatus "$UDID" -b
+        ctest --preset iphonesimulator --no-tests=error
     - name: Archive artifacts
       uses: actions/upload-artifact@v7
       with:
@@ -125,6 +134,7 @@ jobs:
   fedora:
     name: Build on Fedora ${{ matrix.container }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.container == 'rawhide' }}
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
@@ -153,7 +163,7 @@ jobs:
     strategy:
       matrix:
         dist: [ubuntu]
-        ver: ['22.04', '24.04', '25.10', '26.04']
+        ver: ['22.04', '24.04', '26.04']
         arch: [amd64, arm64]
         java: [17]
         include: [
@@ -231,11 +241,14 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-    - name: Cache vcpkg
+    - name: Cache vcpkg and WiX
       uses: actions/cache@v5
       with:
-        path: ${{ github.workspace }}/vcpkg_cache
-        key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json') }}
+        path: |
+          ${{ github.workspace }}/vcpkg_cache
+          ~/.dotnet/tools
+          ~/.wix
+        key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json') }}-wix-7.0.0
     - name: Setup winget
       if: matrix.toolset == '143'
       shell: powershell
@@ -254,7 +267,7 @@ jobs:
       with:
         name: python
         path: python/
-    - uses: actions/setup-java@v5
+    - uses: actions/setup-java@v6
       with:
         distribution: 'temurin'
         java-version: '17'
@@ -269,7 +282,8 @@ jobs:
           -swig $swig `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
           -boost `
-          -python ${{ github.workspace }}/python
+          -python ${{ github.workspace }}/python `
+          -acceptWixEULA
     - name: Archive artifacts
       uses: actions/upload-artifact@v7
       with:
