@@ -311,7 +311,7 @@ if(WIN32)
                     target_link_options(${TARGET} PRIVATE "/INTEGRITYCHECK")
                 endif()
                 add_custom_command(TARGET ${TARGET} POST_BUILD
-                    COMMAND signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256 /du http://installer.id.ee
+                    COMMAND signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256 /du https://installer.id.ee
                         "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>"
                         /tr http://timestamp.digicert.com /td SHA256 $<TARGET_FILE:${TARGET}>
                     COMMAND_EXPAND_LISTS
@@ -325,7 +325,6 @@ source_group(Resources FILES ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf)
 source_group(Resources/schemas FILES ${SCHEMA_FILES})
 
 if( FRAMEWORK )
-    install(TARGETS minizip DESTINATION ${CMAKE_INSTALL_LIBDIR}) # for example ios application
     set_source_files_properties( ${SCHEMA_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/schema )
     set_source_files_properties( ${CRYPTO_HEADER} PROPERTIES MACOSX_PACKAGE_LOCATION Headers/crypto )
     list(GET OPENSSL_LIBRARIES 0 LIBPATH)
@@ -378,7 +377,7 @@ if( FRAMEWORK )
     endif()
     if(IOS)
         add_custom_command(TARGET digidocpp POST_BUILD
-            COMMAND /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string ${CMAKE_OSX_DEPLOYMENT_TARGET}" $<TARGET_FILE_DIR:digidocpp>/Info.plist)
+            COMMAND plutil -replace MinimumOSVersion -string ${CMAKE_OSX_DEPLOYMENT_TARGET} $<TARGET_FILE_DIR:digidocpp>/Info.plist)
     endif()
     if(SIGNCERT)
         add_custom_command(TARGET embedlibs POST_BUILD
