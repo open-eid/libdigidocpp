@@ -125,6 +125,7 @@ jobs:
   fedora:
     name: Build on Fedora ${{ matrix.container }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.container == 'rawhide' }}
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
@@ -231,11 +232,14 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-    - name: Cache vcpkg
+    - name: Cache vcpkg and WiX
       uses: actions/cache@v5
       with:
-        path: ${{ github.workspace }}/vcpkg_cache
-        key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json') }}
+        path: |
+          ${{ github.workspace }}/vcpkg_cache
+          ~/.dotnet/tools
+          ~/.wix
+        key: vcpkg-${{ matrix.toolset }}-${{ matrix.platform }}-${{ hashFiles('vcpkg.json') }}-wix-7.0.0
     - name: Setup winget
       if: matrix.toolset == '143'
       shell: powershell
@@ -269,7 +273,8 @@ jobs:
           -swig $swig `
           -doxygen "C:/Program files/doxygen/bin/doxygen.exe" `
           -boost `
-          -python ${{ github.workspace }}/python
+          -python ${{ github.workspace }}/python `
+          -acceptWixEULA
     - name: Archive artifacts
       uses: actions/upload-artifact@v7
       with:
