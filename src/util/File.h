@@ -51,9 +51,6 @@ namespace digidoc
               static std::vector<unsigned char> hexToBin(std::string_view in);
 
         private:
-#ifdef _WIN32
-              static std::string dllPath(std::string_view dll);
-#endif
 #ifdef __APPLE__
               static std::string frameworkResourcesPath(std::string_view name);
 #endif
