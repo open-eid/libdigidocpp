@@ -77,11 +77,14 @@ vector<string> ZipSerialize::list() const
     if(!d)
         THROW("Zip file is not open");
 
+    constexpr size_t maxEntries = 1000;
     vector<string> list;
     for(int unzResult = unzGoToFirstFile(d.get()); unzResult != UNZ_END_OF_LIST_OF_FILE; unzResult = unzGoToNextFile(d.get()))
     {
         if(unzResult != UNZ_OK)
             THROW("Failed to go to the next file inside ZIP container. ZLib error: %d", unzResult);
+        if(list.size() >= maxEntries)
+            THROW("ZIP container exceeds maximum entry count of %zu", maxEntries);
 
         unz_file_info fileInfo{};
         unzResult = unzGetCurrentFileInfo(d.get(), &fileInfo, nullptr, 0, nullptr, 0, nullptr, 0);
