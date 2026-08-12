@@ -55,7 +55,6 @@ if($platform -eq "arm64" -and $env:VSCMD_ARG_HOST_ARCH -ne "arm64") {
 }
 if($boost) {
   $cmakeext += "-DVCPKG_MANIFEST_FEATURES=tests"
-  $target += "check"
 }
 if($python) {
   $cmakeext += "-DPython3_ROOT_DIR=$python/$platform"
@@ -71,6 +70,9 @@ Push-Location $libdigidocpp
 & $cmake --fresh --preset windows "-GNinja Multi-Config" $cmakeext "-DCMAKE_INSTALL_PREFIX=$installdir" "-DSIGNCERT=$sign"
 foreach($type in @("Debug", "RelWithDebInfo")) {
   & $cmake --build --preset windows --config $type --target $target
+  if($boost) {
+    & (Join-Path (Split-Path (Get-Command $cmake).Source) "ctest.exe") --preset windows --build-config $type
+  }
   & $cmake --build --preset windows --config $type --target install
 }
 Pop-Location

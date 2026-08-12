@@ -227,6 +227,11 @@
       "inherits": "default"
     },
     {
+      "name": "windows",
+      "configurePreset": "windows",
+      "inherits": "default"
+    },
+    {
       "name": "windows-static",
       "configurePreset": "windows-static",
       "configuration": "RelWithDebInfo",
