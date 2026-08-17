@@ -183,6 +183,11 @@ if(SWIG_FOUND)
     include(${SWIG_USE_FILE})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     set_property(SOURCE ../libdigidocpp.i PROPERTY CPLUSPLUS ON)
+    if(APPLE)
+        set(SWIG_MODULE_BUILD_WITH_INSTALL_RPATH TRUE)
+    else()
+        set(SWIG_MODULE_BUILD_WITH_INSTALL_RPATH FALSE)
+    endif()
     if(JAVA_INCLUDE_PATH)
         set(CMAKE_SWIG_FLAGS -package ee.ria.libdigidocpp)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/java)
@@ -191,6 +196,7 @@ if(SWIG_FOUND)
         target_link_libraries(digidoc_java digidocpp digidocpp_util)
         set_target_properties(digidoc_java PROPERTIES
             INSTALL_RPATH $<$<PLATFORM_ID:Darwin>:/Library/Frameworks>
+            BUILD_WITH_INSTALL_RPATH ${SWIG_MODULE_BUILD_WITH_INSTALL_RPATH}
             SWIG_COMPILE_DEFINITIONS $<$<PLATFORM_ID:Windows>:SWIGWIN>
         )
         install(TARGETS digidoc_java DESTINATION $<IF:$<PLATFORM_ID:Darwin>,/Library/Java/Extensions,${CMAKE_INSTALL_LIBDIR}>)
@@ -240,6 +246,7 @@ if(SWIG_FOUND)
         endif()
         set_target_properties(digidoc_python PROPERTIES
             INSTALL_RPATH $<$<PLATFORM_ID:Darwin>:/Library/Frameworks>
+            BUILD_WITH_INSTALL_RPATH ${SWIG_MODULE_BUILD_WITH_INSTALL_RPATH}
             SWIG_COMPILE_DEFINITIONS $<$<PLATFORM_ID:Windows>:SWIGWIN>
         )
         install(TARGETS digidoc_python DESTINATION ${Python3_SITELIB})
@@ -253,6 +260,7 @@ if(SWIG_FOUND)
     set_target_properties(digidoc_csharp PROPERTIES
         SWIG_COMPILE_DEFINITIONS $<$<PLATFORM_ID:Windows>:SWIGWIN>
         INSTALL_RPATH $<$<PLATFORM_ID:Darwin>:/Library/Frameworks>
+        BUILD_WITH_INSTALL_RPATH ${SWIG_MODULE_BUILD_WITH_INSTALL_RPATH}
         PREFIX "${CMAKE_SHARED_LIBRARY_PREFIX}"
     )
     install(TARGETS digidoc_csharp DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -334,7 +342,7 @@ if( FRAMEWORK )
     file(GET_RUNTIME_DEPENDENCIES LIBRARIES \$ENV{LIBRARY} RESOLVED_DEPENDENCIES_VAR OUT)
     file(COPY \${OUT} DESTINATION \$ENV{BUNDLE_DIR})
     ")
-    add_custom_target( embedlibs DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
+    add_custom_target(embedlibs DEPENDS digidocpp
         COMMAND mkdir -p $<TARGET_FILE_DIR:digidocpp>/Libraries
         COMMAND ln -s -f Versions/Current/Libraries $<TARGET_BUNDLE_DIR:digidocpp>
         COMMAND ${CMAKE_COMMAND} -E env
@@ -379,12 +387,25 @@ if( FRAMEWORK )
             COMMAND /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string ${CMAKE_OSX_DEPLOYMENT_TARGET}" $<TARGET_FILE_DIR:digidocpp>/Info.plist)
     endif()
     if(SIGNCERT)
+        if(TARGET digidoc-tool)
+            add_custom_command(TARGET embedlibs POST_BUILD
+                COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}" --options runtime --timestamp
+                    --entitlements ${PROJECT_SOURCE_DIR}/etc/digidoc-tool.entitlements
+                    $<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool
+            )
+        endif()
         add_custom_command(TARGET embedlibs POST_BUILD
-            COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}"
+            COMMAND codesign -f -s "Developer ID Application: ${SIGNCERT}" --options runtime --timestamp
                 $<TARGET_FILE_DIR:digidocpp>/Libraries/*
-                $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE_DIR:digidocpp>/Resources/digidoc-tool>
+                $<$<TARGET_EXISTS:digidoc_java>:$<TARGET_FILE:digidoc_java>>
+                $<$<TARGET_EXISTS:digidoc_python>:$<TARGET_FILE:digidoc_python>>
+                $<$<TARGET_EXISTS:digidoc_csharp>:$<TARGET_FILE:digidoc_csharp>>
                 $<TARGET_BUNDLE_DIR:digidocpp>
-            COMMAND touch $<TARGET_FILE:digidocpp> $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE:digidoc-tool>>
+            COMMAND touch $<TARGET_FILE:digidocpp>
+                $<$<TARGET_EXISTS:digidoc-tool>:$<TARGET_FILE:digidoc-tool>>
+                $<$<TARGET_EXISTS:digidoc_java>:$<TARGET_FILE:digidoc_java>>
+                $<$<TARGET_EXISTS:digidoc_python>:$<TARGET_FILE:digidoc_python>>
+                $<$<TARGET_EXISTS:digidoc_csharp>:$<TARGET_FILE:digidoc_csharp>>
         )
     endif()
     add_custom_target(pkgbuild DEPENDS digidocpp $<TARGET_NAME_IF_EXISTS:digidoc-tool>
