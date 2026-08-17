@@ -143,27 +143,27 @@ static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *je
     } %}
 %typemap(out) std::vector<unsigned char> %{  $result = new std::vector<unsigned char>(std::move($1)); %}
 %typemap(out) digidoc::X509Cert %{  $result = new std::vector<unsigned char>($1.operator std::vector<unsigned char>()); %}
+%typemap(out) digidoc::X509Cert * %{  $result = new std::vector<unsigned char>($1->operator std::vector<unsigned char>()); %}
 
 #elif defined(SWIGPYTHON)
-%typemap(in) std::vector<unsigned char> %{
-    if (PyBytes_Check($input)) {
-        const char *data = PyBytes_AsString($input);
-        $1 = new std::vector<unsigned char>(data, data + PyBytes_Size($input));
-    } else {
-        PyErr_SetString(PyExc_TypeError, "not a bytes");
-        SWIG_fail;
-    }
-%}
-%typemap(out) std::vector<unsigned char>
-%{ $result = PyBytes_FromStringAndSize((const char*)(&result)->data(), (&result)->size()); %}
-%typemap(out) digidoc::X509Cert {
-    std::vector<unsigned char> temp = $1;
-    $result = PyBytes_FromStringAndSize((const char*)temp.data(), temp.size());
-}
-%typemap(out) digidoc::X509Cert * {
-    std::vector<unsigned char> temp = *$1;
-    $result = PyBytes_FromStringAndSize((const char*)temp.data(), temp.size());
-}
+%fragment("SWIG_PyBytesToVectorUnsignedChar", "header") %{
+static std::vector<unsigned char>* SWIG_PyBytesToVectorUnsignedChar(PyObject *input) {
+    char *data {};
+    Py_ssize_t size {};
+    if (PyBytes_AsStringAndSize(input, &data, &size) == -1)
+        return nullptr;
+    return new std::vector<unsigned char>(data, data + size);
+}%}
+%fragment("SWIG_VectorUnsignedCharToPyBytes", "header") %{
+static PyObject* SWIG_VectorUnsignedCharToPyBytes(const std::vector<unsigned char> &data) {
+    return PyBytes_FromStringAndSize((const char*)data.data(), data.size());
+}%}
+%typemap(in, fragment="SWIG_PyBytesToVectorUnsignedChar") std::vector<unsigned char>
+%{ if ($1 = SWIG_PyBytesToVectorUnsignedChar($input); !$1) SWIG_fail; %}
+%typemap(out, fragment="SWIG_VectorUnsignedCharToPyBytes") std::vector<unsigned char>, digidoc::X509Cert
+%{ $result = SWIG_VectorUnsignedCharToPyBytes($1); %}
+%typemap(out, fragment="SWIG_VectorUnsignedCharToPyBytes") digidoc::X509Cert *
+%{ $result = SWIG_VectorUnsignedCharToPyBytes(*$1); %}
 #endif
 %typemap(freearg) std::vector<unsigned char>
 %{ delete $1; %}
