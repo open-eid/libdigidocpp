@@ -21,6 +21,7 @@
 
 #include "crypto/Digest.h"
 #include "crypto/X509Cert.h"
+#include "util/File.h"
 #include "util/log.h"
 #include "util/memory.h"
 
@@ -369,7 +370,7 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
     {
         if(path.empty())
             return;
-        if(std::ifstream f{path})
+        if(std::ifstream f{util::File::encodeName(path), std::ifstream::binary})
             *this = openStream(f, n);
     }
 
