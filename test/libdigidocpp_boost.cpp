@@ -751,6 +751,21 @@ BOOST_AUTO_TEST_CASE(XMLBomb)
     if(std::fstream f{"xml-bomb-cont.xml"})
         BOOST_CHECK_THROW(XMLDocument::openStream(f, {}, true), Exception);
 }
+BOOST_AUTO_TEST_CASE(XMLUnicodePath)
+{
+    const string path = "libdigidocpp-\xC3\xB5-\xC3\xA4-\xC3\xB6-\xC3\xBC.xml";
+    {
+        ofstream out{util::File::encodeName(path), ofstream::binary|ofstream::trunc};
+        BOOST_REQUIRE(out.is_open());
+        out << "<root>unicode path</root>";
+        BOOST_REQUIRE(out.good());
+    }
+
+    XMLDocument doc(path, {"root"});
+    BOOST_CHECK(doc);
+    BOOST_CHECK_EQUAL(string_view(doc), "unicode path");
+    fs::remove(util::File::encodeName(path));
+}
 BOOST_AUTO_TEST_CASE(XMLXXE)
 {
     BOOST_REQUIRE(fs::exists("xxe-sentinel.txt"));

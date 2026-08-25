@@ -609,7 +609,7 @@ bool TSL::validateRemoteDigest(const string &url)
     }
 
     Digest sha(URI_SHA256);
-    ifstream is(path, ifstream::binary);
+    ifstream is(File::encodeName(path), ifstream::binary);
     sha.update(is);
 
     if(!digest.empty() && digest != sha.result())
