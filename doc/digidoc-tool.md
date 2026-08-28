@@ -149,7 +149,16 @@ Input:
 ```
 
 ## Opening document, validating signatures and extracting data files {#Opening}
-Command "open" reads an existing document, prints its contents and validates its signatures. The `--extractAll` option extracts data files to disk. Supported ASiC-E, ASiC-S and legacy BDOC 2.1 variants are handled locally. PDF, legacy DDOC and ASiC containers with CAdES signatures are sent to the SiVa Online Service for validation; `--offline` disables that fallback, so those service-backed formats cannot be opened offline. BDOC 1.0 is not supported.
+Command "open" reads an existing document, prints its contents and validates its
+signatures. The `--extractAll` option extracts data files to disk. Supported
+ASiC-E, ASiC-S and legacy BDOC 2.1 variants are handled locally. PDF, legacy
+DDOC and ASiC containers with CAdES signatures are sent to the SiVa Online
+Service for validation; `--offline` disables that fallback, so those
+service-backed formats cannot be opened offline. An ASiC-S time-stamp container
+that encloses a DDoc file is opened together with the DDoc, whose data files and
+signatures are listed after validation by SiVa; with `--offline` it is opened as
+a plain time-stamped container and only its time-stamp is validated. BDOC 1.0 is
+not supported.
 General form of the command is:
 ```
 > digidoc-tool open <input-container-file>

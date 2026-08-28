@@ -93,6 +93,21 @@ Since both the original file and time-stamp are included in the container, it is
 
 An existing time-stamp token can be extended by adding an ASiC archive manifest and a new time-stamp token. Each new layer protects the data object and the preceding time-stamp information. See \ref extend-validity for the high-level validity-extension workflow.
 
+Since version 4.6.0, an ASiC-S container whose data object is a legacy DDoc file
+(`.ddoc`) and whose signature is a time-stamp token is opened together with the
+enclosed DDoc when the application passes a digidoc::ContainerOpenCB that allows
+online validation. The DDoc's signatures are validated by the \ref SiVa service:
+digidoc::Container::dataFiles returns the DDoc's data files and
+digidoc::Container::signatures returns the time-stamp token followed by the
+DDoc's signatures. The time-stamp token is still validated locally, and saving
+and archive-manifest time-stamp extension apply to the ASiC-S container.
+Signatures cannot be removed while the enclosed DDoc is exposed. Without the
+callback, when online validation is not allowed, or when DDoc parsing or the
+SiVa request fails, the container is opened as a plain time-stamped ASiC-S
+container. A SiVa report that marks a DDoc signature invalid still exposes
+that signature and its validation errors. See \ref siva-requests for the data
+sent to SiVa.
+
 ## Format compatibility notes {#implementation-notes}
 
 These notes document signature-validation and container-serialization choices that supplement the referenced format specifications.

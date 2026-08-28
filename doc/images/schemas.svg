@@ -86,6 +86,10 @@
                         <text x="19849.5px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">TSL<tspan x="21337.7px 21567.9px " y="7795.58px 7795.58px "> S</tspan>chema</text>
                     </g>
                 </g>
+                <path d="M41949,4583L41949,5162" style="fill:none;stroke:rgb(0,49,104);stroke-width:13.05px;"/>
+                <path d="M42007.7,5103L41949,5220.4L41890.3,5103L41949,5161.7L42007.7,5103Z" style="fill:rgb(0,49,104);"/>
+                <path d="M41949,6568L41949,7152" style="fill:none;stroke:rgb(0,49,104);stroke-width:13.05px;"/>
+                <path d="M42007.7,7093.3L41949,7210.7L41890.3,7093.3L41949,7152L42007.7,7093.3Z" style="fill:rgb(0,49,104);"/>
                 <g transform="matrix(1,0,0,1,25875.8,-13102.4)">
                     <g transform="matrix(1,-0,-0,1,14180.7,15135.4)">
                         <path d="M321.457,5819.52L471.457,5894.52L321.457,5969.52L396.457,5894.52L321.457,5819.52Z" style="fill:rgb(0,49,104);"/>
@@ -121,14 +125,14 @@
                         <rect x="8544.99" y="16092.8" width="3277.92" height="2544.05" style="fill:rgb(233,225,246);stroke:rgb(0,49,104);stroke-width:12.5px;"/>
                     </g>
                     <g transform="matrix(0.3353,0,0,0.3353,41503.9,1918.64)">
-                        <text x="20340.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">BDOC 2.1</text>
-                        <text x="20409.2px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">document</text>
+                        <text x="22143px" y="7795.58px" text-anchor="middle" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">ASiC-E</text>
+                        <text x="22143px" y="8650.94px" text-anchor="middle" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">container</text>
                     </g>
                 </g>
                 <g transform="matrix(1,0,0,0.475149,25875.8,-4524.42)">
                     <g transform="matrix(1,-0,-0,2.1046,14180.7,13800.6)">
-                        <path d="M2084.72,1090.93L2026.01,1208.36L1967.29,1090.93L2026.01,1149.64L2084.72,1090.93Z" style="fill:rgb(0,49,104);"/>
-                        <path d="M3940.37,614.609L2026.01,614.609L2026.01,1149.64" style="fill:none;stroke:rgb(0,49,104);stroke-width:13.05px;"/>
+                        <path d="M1951.21,1090.93L1892.5,1208.36L1833.79,1090.93L1892.5,1149.64L1951.21,1090.93Z" style="fill:rgb(0,49,104);"/>
+                        <path d="M3940.37,614.609L1892.5,614.609L1892.5,1149.64" style="fill:none;stroke:rgb(0,49,104);stroke-width:13.05px;"/>
                     </g>
                 </g>
             </g>
