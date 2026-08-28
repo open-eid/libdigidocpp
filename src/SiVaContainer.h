@@ -100,16 +100,20 @@ public:
     Signature* sign(Signer* signer) final;
 
     static std::unique_ptr<Container> createInternal(const std::string &path);
+    static std::unique_ptr<Container> openDDoc(std::istream &ddoc,
+        const std::string &fileName, ContainerOpenCB *cb);
     static std::unique_ptr<Container> openInternal(const std::string &path, ContainerOpenCB *cb);
 
 private:
     std::string path() const final;
     SiVaContainer(const std::string &path, ContainerOpenCB *cb, bool useHashCode);
+    SiVaContainer(std::istream &ddoc, const std::string &fileName, ContainerOpenCB *cb, bool useHashCode);
     DISABLE_COPY(SiVaContainer);
 
-    std::unique_ptr<std::istream> parseDDoc(const std::unique_ptr<std::istream> &ddoc, bool useHashCode);
+    std::unique_ptr<std::istream> parseDDoc(std::istream &ddoc, bool useHashCode);
+    void validate(std::istream &document, const std::string &fileName, ContainerOpenCB *cb, bool useHashCode);
 
-    class Private;
+    struct Private;
     std::unique_ptr<Private> d;
 };
 
