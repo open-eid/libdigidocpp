@@ -9,7 +9,7 @@ Libdigidocpp library [4.5.0](https://github.com/open-eid/libdigidocpp/releases/t
 - Harden XML, ZIP, network, and file handling
   (#731, #732, #734, #736, #738, #743)
 - Other fixes, optimizations, and documentation updates
-  (#727, #733, #753, #755)
+  (#727, #733, #753, #755, #757)
 
 [Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v4.4.0...v4.5.0)
 

@@ -103,7 +103,7 @@ SignatureTST::SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDo
 SignatureTST::SignatureTST(ASiC_S *asicSDoc, Signer *signer)
     : asicSDoc(asicSDoc)
 {
-    auto *dataFile = static_cast<DataFilePrivate*>(asicSDoc->dataFiles().front());
+    auto *dataFile = static_cast<DataFilePrivate*>(asicSDoc->containerDataFiles().front());
     Digest digest;
     dataFile->digest(digest);
     timestampToken = make_unique<TS>(digest, signer->userAgent());
@@ -155,7 +155,7 @@ void SignatureTST::extendSignatureProfile(Signer *signer)
         value = digest.result();
     };
 
-    DataFile *file = asicSDoc->dataFiles().front();
+    DataFile *file = asicSDoc->containerDataFiles().front();
     Digest digest;
     static_cast<DataFilePrivate*>(file)->digest(digest);
     addRef(file->fileName(), file->mediaType(), false, digest);
@@ -222,7 +222,7 @@ void SignatureTST::validate() const
         EXCEPTION_ADD(exception, "Failed to parse timestamp token.");
         throw exception;
     }
-    const DataFile *file = asicSDoc->dataFiles().front();
+    const DataFile *file = asicSDoc->containerDataFiles().front();
     try
     {
         auto digestMethod = signatureMethod();
@@ -298,7 +298,7 @@ void SignatureTST::validate() const
 
 vector<unsigned char> SignatureTST::dataToSign() const
 {
-    return asicSDoc->dataFiles().front()->calcDigest(signatureMethod());
+    return asicSDoc->containerDataFiles().front()->calcDigest(signatureMethod());
 }
 
 vector<unsigned char> SignatureTST::messageImprint() const

@@ -16,8 +16,6 @@
 <?define VCVER = "145" ?>
 <?elseif $(env.VisualStudioVersion) = "17.0" ?>
 <?define VCVER = "143" ?>
-<?elseif $(env.VisualStudioVersion) = "16.0" ?>
-<?define VCVER = "142" ?>
 <?endif?>
 
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
