@@ -288,11 +288,11 @@ string File::digidocppPath()
     string buf;
     if(sysconf(_SC_GETPW_R_SIZE_MAX) > 0)
     {
-        buf = string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
+        buf = buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
     } 
     else
     { 
-        buf = string buf(2048, 0);
+        buf = buf(2048, 0);
     }
 
     passwd pwbuf {};
