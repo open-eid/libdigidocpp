@@ -25,6 +25,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <ctime>
 
 using ASN1_OBJECT = struct asn1_object_st;
 using X509 = struct x509_st;
