@@ -288,7 +288,7 @@ string File::digidocppPath()
 #ifdef _SC_GETPW_R_SIZE_MAX
     string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
 #else
-    string buf(sysconf(1024), 0);
+    string buf(1024, 0);
 #endif
     passwd pwbuf {};
     passwd *pw {};
