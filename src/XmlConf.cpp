@@ -77,6 +77,7 @@ public:
     XmlConfParam<string> proxyUser;
     XmlConfParam<string> proxyPass;
     XmlConfParam<string> TSUrl;
+    XmlConfParam<string> TSUrlArchive;
     XmlConfParam<bool> TSLAutoUpdate;
     XmlConfParam<string> TSLCache;
     XmlConfParam<bool> TSLOnlineDigest;
@@ -105,6 +106,7 @@ XmlConf::Private::Private(Conf *self, const string &path, string schema)
     , proxyUser{"proxy.user", self->Conf::proxyUser()}
     , proxyPass{"proxy.pass", self->Conf::proxyPass()}
     , TSUrl{"ts.url", self->Conf::TSUrl()}
+    , TSUrlArchive{"ts.url.archive", {}}
     , TSLAutoUpdate{"tsl.autoupdate", self->Conf::TSLAutoUpdate()}
     , TSLCache{"tsl.cache", self->Conf::TSLCache()}
     , TSLOnlineDigest{"tsl.onlineDigest", self->Conf::TSLOnlineDigest()}
@@ -194,6 +196,7 @@ void XmlConf::Private::init(const string& path, bool global)
             setValue(proxyUser) ||
             setValue(proxyPass) ||
             setValue(TSUrl) ||
+            setValue(TSUrlArchive) ||
             setValue(TSLAutoUpdate) ||
             setValue(TSLCache) ||
             setValue(TSLOnlineDigest) ||
@@ -349,6 +352,25 @@ XmlConfV5::~XmlConfV5() = default;
  */
 XmlConfV5* XmlConfV5::instance() { return dynamic_cast<XmlConfV5*>(Conf::instance()); }
 
+/**
+ * @class digidoc::XmlConfV6
+ * @brief Version 6 of XML Configuration class
+ * @since 4.6.0
+ * @see digidoc::ConfV6
+ */
+/**
+ * Initialize xml conf from path
+ */
+XmlConfV6::XmlConfV6(const string &path, const string &schema)
+    : d(make_unique<XmlConf::Private>(this, path, schema.empty() ? File::path(xsdPath(), "conf.xsd") : schema))
+{}
+XmlConfV6::~XmlConfV6() = default;
+
+/**
+ * @copydoc digidoc::Conf::instance()
+ */
+XmlConfV6* XmlConfV6::instance() { return dynamic_cast<XmlConfV6*>(Conf::instance()); }
+
 
 
 #define GET1EX(TYPE, PROP, VALUE) \
@@ -356,7 +378,8 @@ TYPE XmlConf::PROP() const { return VALUE; } \
 TYPE XmlConfV2::PROP() const { return VALUE; } \
 TYPE XmlConfV3::PROP() const { return VALUE; } \
 TYPE XmlConfV4::PROP() const { return VALUE; } \
-TYPE XmlConfV5::PROP() const { return VALUE; }
+TYPE XmlConfV5::PROP() const { return VALUE; } \
+TYPE XmlConfV6::PROP() const { return VALUE; }
 
 #define GET1(TYPE, PROP) \
 GET1EX(TYPE, PROP, d->PROP.value_or(d->PROP.defaultValue))
@@ -366,7 +389,8 @@ void XmlConf::SET(TYPE value) { VALUE; } \
 void XmlConfV2::SET(TYPE value) { VALUE; } \
 void XmlConfV3::SET(TYPE value) { VALUE; } \
 void XmlConfV4::SET(TYPE value) { VALUE; } \
-void XmlConfV5::SET(TYPE value) { VALUE; }
+void XmlConfV5::SET(TYPE value) { VALUE; } \
+void XmlConfV6::SET(TYPE value) { VALUE; }
 
 #define SET1(TYPE, SET, PROP) \
 SET1EX(TYPE, SET, d->setUserConf(d->PROP, value))
@@ -376,7 +400,8 @@ void XmlConf::SET(const TYPE &value) { VALUE; } \
 void XmlConfV2::SET(const TYPE &value) { VALUE; } \
 void XmlConfV3::SET(const TYPE &value) { VALUE; } \
 void XmlConfV4::SET(const TYPE &value) { VALUE; } \
-void XmlConfV5::SET(const TYPE &value) { VALUE; }
+void XmlConfV5::SET(const TYPE &value) { VALUE; } \
+void XmlConfV6::SET(const TYPE &value) { VALUE; }
 
 #define SET1CONST(TYPE, SET, PROP) \
 SET1CONSTEX(TYPE, SET, d->setUserConf(d->PROP, value))
@@ -442,6 +467,15 @@ string XmlConfV4::ocsp(const string &issuer) const
  * @since 3.15.0
  */
 string XmlConfV5::ocsp(const string &issuer) const
+{
+    auto i = d->ocsp.find(issuer);
+    return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
+}
+
+/**
+ * @since 4.6.0
+ */
+string XmlConfV6::ocsp(const string &issuer) const
 {
     auto i = d->ocsp.find(issuer);
     return i != d->ocsp.end() ? i->second : Conf::ocsp(issuer);
@@ -709,6 +743,29 @@ SET1CONSTEX(string, setPKCS12Pass, (void)value)
 SET1CONST(string, setTSUrl, TSUrl)
 
 /**
+ * Gets time-stamp service URL used for archive (LTA) time-stamps.
+ * Falls back to TSUrl() when "ts.url.archive" is not configured.
+ * @since 4.6.0
+ */
+string XmlConfV6::TSUrlArchive() const
+{
+    return d->TSUrlArchive.value_or(TSUrl());
+}
+
+/**
+ * Sets an archive (LTA) TSA service URL. Also adds or replaces the archive TSA
+ * service URL in the user configuration file.
+ *
+ * @param url Target URL to connect archive TSA service.
+ * @throws Exception exception is thrown if saving the URL into a user configuration file fails.
+ * @since 4.6.0
+ */
+void XmlConfV6::setTSUrlArchive(const string &url)
+{
+    d->setUserConf(d->TSUrlArchive, url);
+}
+
+/**
  * @fn void digidoc::XmlConf::setVerifyServiceUri(const std::string &url)
  * Sets a Verify service URL. Also adds or replaces Verify service URL in the user configuration file.
  *
@@ -829,6 +886,14 @@ X509Cert XmlConfV5::verifyServiceCert() const
 }
 
 /**
+ * @since 4.6.0
+ */
+X509Cert XmlConfV6::verifyServiceCert() const
+{
+    return ConfV6::verifyServiceCert();
+}
+
+/**
  * @since 3.13.8
  */
 set<string> XmlConfV3::OCSPTMProfiles() const
@@ -853,6 +918,14 @@ set<string> XmlConfV5::OCSPTMProfiles() const
 }
 
 /**
+ * @since 4.6.0
+ */
+set<string> XmlConfV6::OCSPTMProfiles() const
+{
+    return d->ocspTMProfiles.empty() ? ConfV3::OCSPTMProfiles() : d->ocspTMProfiles;
+}
+
+/**
  * @since 3.14.7
  */
 vector<X509Cert> XmlConfV4::verifyServiceCerts() const
@@ -869,9 +942,33 @@ vector<X509Cert> XmlConfV5::verifyServiceCerts() const
 }
 
 /**
+ * @since 4.6.0
+ */
+vector<X509Cert> XmlConfV6::verifyServiceCerts() const
+{
+    return ConfV6::verifyServiceCerts();
+}
+
+/**
  * @since 3.15.0
  */
 vector<X509Cert> XmlConfV5::TSCerts() const
 {
     return ConfV5::TSCerts();
+}
+
+/**
+ * @since 4.6.0
+ */
+vector<X509Cert> XmlConfV6::TSCerts() const
+{
+    return ConfV6::TSCerts();
+}
+
+/**
+ * @since 4.6.0
+ */
+vector<X509Cert> XmlConfV6::TSCertsArchive() const
+{
+    return ConfV6::TSCertsArchive();
 }

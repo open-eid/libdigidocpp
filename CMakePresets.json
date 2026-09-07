@@ -72,7 +72,10 @@
       "inherits": "ios",
       "description": "This iphonesimulator build is only available on macOS",
       "cacheVariables": {
-        "VCPKG_TARGET_TRIPLET": "arm64-x64-ios-simulator"
+        "VCPKG_TARGET_TRIPLET": "arm64-x64-ios-simulator",
+        "CMAKE_DISABLE_FIND_PACKAGE_Boost": "NO",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_CROSSCOMPILING_EMULATOR": "xcrun;simctl;spawn;booted"
       }
     },
     {
@@ -134,8 +137,7 @@
       }
     }
   ],
-  "buildPresets":
-  [
+  "buildPresets": [
     {
       "name": "macos",
       "configurePreset": "macos"
@@ -167,6 +169,15 @@
     {
       "name": "windows",
       "configurePreset": "windows"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "iphonesimulator",
+      "configurePreset": "iphonesimulator",
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ]
 }
