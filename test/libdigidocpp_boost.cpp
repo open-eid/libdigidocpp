@@ -663,6 +663,21 @@ BOOST_AUTO_TEST_CASE(XmlConfCase) {
     const string testurl = "https://test.url";
     c.setVerifyServiceUri(testurl);
     BOOST_CHECK_EQUAL(c.verifyServiceUri(), testurl);
+
+    // ts.url.archive is unset in the fixture, so archive time-stamps fall back
+    // to the signature TSA, and keep following it when that one is changed.
+    BOOST_CHECK_EQUAL(c.TSUrlArchive(), c.TSUrl());
+    const string tsurl = "https://test.url/ts";
+    c.setTSUrl(tsurl);
+    BOOST_CHECK_EQUAL(c.TSUrl(), tsurl);
+    BOOST_CHECK_EQUAL(c.TSUrlArchive(), tsurl);
+
+    // Once set, the archive TSA is independent of the signature TSA.
+    const string tsarchiveurl = "https://test.url/ts-archive";
+    c.setTSUrlArchive(tsarchiveurl);
+    BOOST_CHECK_EQUAL(c.TSUrlArchive(), tsarchiveurl);
+    BOOST_CHECK_EQUAL(c.TSUrl(), tsurl);
+    BOOST_CHECK(c.TSCertsArchive() == c.TSCerts());
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -953,6 +968,30 @@ BOOST_AUTO_TEST_CASE(WrapContainerWithExpiredSignatures)
     BOOST_CHECK_EQUAL(wrapped->signatures().size(), 1U);
     if(!wrapped->signatures().empty())
         BOOST_CHECK_NO_THROW(wrapped->signatures().front()->validate());
+}
+
+BOOST_AUTO_TEST_CASE(WrapContainerUsesArchiveTSA)
+{
+    // The signature TSA is unreachable, so wrapping only succeeds from the archive TSA
+    struct ArchiveTSAConfig: TestConfig
+    {
+        using TestConfig::TestConfig;
+        string TSUrl() const final { return "http://127.0.0.1:1/"; }
+        string TSUrlArchive() const final { return TestConfig::TSUrl(); }
+    };
+    auto *conf = static_cast<TestConfig*>(Conf::instance());
+    string tsl = conf->tsl, path = conf->path;
+    Conf::init(new ArchiveTSAConfig(string(tsl), string(path)));
+
+    PKCS12Signer signer("signer1.p12", "signer1");
+    auto d = Container::openPtr("test.asice");
+    unique_ptr<Container> wrapped;
+    size_t extendedCount{};
+    BOOST_CHECK_NO_THROW(wrapped = Container::extendContainerValidity(*d, &signer, extendedCount));
+    BOOST_CHECK(wrapped);
+    BOOST_CHECK_EQUAL(extendedCount, 0U);
+
+    Conf::init(new TestConfig(std::move(tsl), std::move(path)));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

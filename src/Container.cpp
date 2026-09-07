@@ -82,7 +82,7 @@ string digidoc::version() {
 
 /**
  * Libdigidocpp’s initialization method: initializes dependent libraries,
- * loads configuration settings from default configuration files (see \ref conf) and initializes
+ * loads configuration settings from default configuration files (see \ref configuration) and initializes
  * certificate store using TSL lists
  *
  * @param appInfo Application name for user agent string and container comments
@@ -95,7 +95,7 @@ void digidoc::initialize(const string &appInfo, initCallBack callBack)
 
 /**
  * Libdigidocpp’s initialization method: initializes dependent libraries,
- * loads configuration settings from default configuration files (see \ref conf) and initializes
+ * loads configuration settings from default configuration files (see \ref configuration) and initializes
  * certificate store using TSL lists
  *
  * @since 3.14.3
@@ -334,6 +334,8 @@ unique_ptr<Container> Container::createPtr(const std::string &path)
  * archive timestamp. For ASiC-S containers, re-timestamps the existing EE
  * timestamp token. If in-place extension is not possible, wraps the original
  * container as a data file in a new ASiC-S container and adds a timestamp.
+ * Archive timestamps and the wrapping container's timestamp are requested from
+ * the archive time-stamping service (ConfV6::TSUrlArchive()).
  *
  * Containers where all considered EE signatures are T-level (time-stamp profile without OCSP)
  * cannot be extended and will throw. Containers with no Estonian signing certificates will throw.
@@ -455,7 +457,7 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
     signer->setProfile(string(ASiC_S::ASIC_TST_PROFILE));
     auto asics = ASiC_S::createInternal(doc.path() + ".asics");
     asics->addDataFile(doc.path(), doc.mediaType());
-    asics->sign(signer);
+    static_cast<ASiC_S*>(asics.get())->sign(signer, true);
     return asics;
 } catch(const Exception &e) {
     THROW_CAUSE(e, "Failed to extend signature");

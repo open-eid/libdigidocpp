@@ -100,13 +100,15 @@ SignatureTST::SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDo
     metadata.emplace_back("META-INF/timestamp.tst", TST_MIMETYPE, std::move(data));
 }
 
-SignatureTST::SignatureTST(ASiC_S *asicSDoc, Signer *signer)
+SignatureTST::SignatureTST(ASiC_S *asicSDoc, Signer *signer, bool archive)
     : asicSDoc(asicSDoc)
 {
     auto *dataFile = static_cast<DataFilePrivate*>(asicSDoc->dataFiles().front());
     Digest digest;
     dataFile->digest(digest);
-    timestampToken = make_unique<TS>(digest, signer->userAgent());
+    timestampToken = archive ?
+        make_unique<TS>(CONF(TSUrlArchive), CONF(TSCertsArchive), digest, signer->userAgent()) :
+        make_unique<TS>(CONF(TSUrl), CONF(TSCerts), digest, signer->userAgent());
     vector<unsigned char> der = *timestampToken;
     metadata.emplace_back("META-INF/timestamp.tst", TST_MIMETYPE, string{der.cbegin(), der.cend()});
 }
@@ -173,7 +175,7 @@ void SignatureTST::extendSignatureProfile(Signer *signer)
         return size;
     }, true);
     auto i = metadata.insert(metadata.cbegin(), {"META-INF/ASiCArchiveManifest.xml", "text/xml", std::move(data)});
-    vector<unsigned char> der = TS(i->digest(), signer->userAgent());
+    vector<unsigned char> der = TS(CONF(TSUrlArchive), CONF(TSCertsArchive), i->digest(), signer->userAgent());
     metadata.insert(next(i), {std::move(tstName), TST_MIMETYPE, string{der.cbegin(), der.cend()}});
 }
 

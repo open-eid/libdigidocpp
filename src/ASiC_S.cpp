@@ -143,9 +143,14 @@ void ASiC_S::save(const ZipSerialize &s)
 
 Signature *ASiC_S::sign(Signer *signer)
 {
+    return sign(signer, false);
+}
+
+Signature *ASiC_S::sign(Signer *signer, bool archive)
+{
     if(signer->profile() != ASIC_TST_PROFILE)
         THROW("ASiC-S container supports only TimeStampToken signing.");
     if(!signatures().empty())
         THROW("ASiC-S container supports only one TimeStampToken signature.");
-    return addSignature(make_unique<SignatureTST>(this, signer));
+    return addSignature(make_unique<SignatureTST>(this, signer, archive));
 }
