@@ -123,7 +123,9 @@ void SignatureXAdES_LTA::validate(const string &policy) const
     try {
         SignatureXAdES_LT::validate(policy);
     } catch(const Exception &e) {
-        for(const Exception &ex: e.causes())
+        if(const Exception::Causes causes = e.causes(); causes.empty())
+            exception.addCause(e);
+        else for(const Exception &ex: causes)
             exception.addCause(ex);
     }
 

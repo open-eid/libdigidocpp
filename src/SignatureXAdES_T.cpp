@@ -95,7 +95,9 @@ void SignatureXAdES_T::validate(const std::string &policy) const
     } catch(const Exception &e) {
         if(profile().find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
             throw;
-        for(const Exception &ex: e.causes())
+        if(const Exception::Causes causes = e.causes(); causes.empty())
+            exception.addCause(e);
+        else for(const Exception &ex: causes)
             exception.addCause(ex);
     }
 
