@@ -62,7 +62,8 @@ void *OPENSSL_memdup(const void *data, size_t size)
 #define TS_VERIFY_CTX_set0_store TS_VERIFY_CTX_set_store
 #endif
 
-TS::TS(const Digest &digest, const std::string &userAgent)
+TS::TS(const std::string &url, const std::vector<X509Cert> &certs, const Digest &digest,
+    const std::string &userAgent)
     : d(nullptr, PKCS7_free)
     , cms(nullptr, CMS_ContentInfo_free)
 {
@@ -94,7 +95,7 @@ TS::TS(const Digest &digest, const std::string &userAgent)
     ASN1_STRING_set(nonce.get(), nonce_bytes.data(), nonce_bytes.size());
     TS_REQ_set_nonce(req.get(), nonce.get());
 
-    Connect::Result result = Connect(CONF(TSUrl), "POST", 0, CONF(TSCerts), userAgent).exec({
+    Connect::Result result = Connect(url, "POST", 0, certs, userAgent).exec({
         {"Content-Type", "application/timestamp-query"},
         {"Accept", "application/timestamp-reply"},
         {"Connection", "Close"},

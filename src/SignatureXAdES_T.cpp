@@ -20,6 +20,7 @@
 #include "SignatureXAdES_T.h"
 
 #include "ASiC_E.h"
+#include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/OCSP.h"
 #include "crypto/Signer.h"
@@ -73,7 +74,7 @@ void SignatureXAdES_T::extendSignatureProfile(Signer *signer)
     auto method = canonicalizationMethod();
     signatures->c14n(calc, method, signatureValue());
 
-    TS tsa(calc, signer->userAgent());
+    TS tsa(CONF(TSUrl), CONF(TSCerts), calc, signer->userAgent());
     auto ts = usp + "SignatureTimeStamp";
     ts.setProperty("Id", id() + Log::format("-T%zu", i));
     (ts + CanonicalizationMethod).setProperty("Algorithm", method);
