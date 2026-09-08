@@ -1027,7 +1027,9 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = @PROJECT_SOURCE_DIR@/src \
-                         @PROJECT_SOURCE_DIR@/libdigidocpp.dox
+                         @PROJECT_SOURCE_DIR@/libdigidocpp.dox \
+                         @PROJECT_SOURCE_DIR@/doc/digidoc-tool.md \
+                         @PROJECT_SOURCE_DIR@/RELEASE-NOTES.md
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1070,7 +1072,8 @@ INPUT_FILE_ENCODING    =
 FILE_PATTERNS          = *.c \
                          *.cpp \
                          *.h \
-                         *.dox
+                         *.dox \
+                         *.md
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
