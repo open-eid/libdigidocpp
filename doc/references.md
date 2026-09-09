@@ -47,7 +47,7 @@ https://www.pkware.com/documents/casestudies/APPNOTE.TXT
 </td></tr><tr><td>\anchor OpenDocument OpenDocument</td><td>
 OASIS "Open Document Format for Office Applications. Version 1.2 Part 3: Packages"
 
-https://docs.oasis-open.org/office/v1.2/cs01/OpenDocument-v1.2-cs01-part3.html#__RefHeading__752803_826425813<br />
+https://docs.oasis-open.org/office/v1.2/os/OpenDocument-v1.2-os-part3.html#__RefHeading__752803_826425813<br />
 Other versions:<br />
 https://docs.oasis-open.org/office/v1.0/OpenDocument-v1.0-os.pdf
 </td></tr><tr><td>\anchor ASiC ASiC</td><td>
