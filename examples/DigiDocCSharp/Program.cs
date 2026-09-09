@@ -1,5 +1,7 @@
-﻿// Copyright (C) AS Sertifitseerimiskeskus
-// This software is released under the BSD License (see LICENSE.BSD)
+﻿// SPDX-FileCopyrightText: AS Sertifitseerimiskeskus
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Full licence text: LICENSE.BSD in this directory
 
 using System;
 using System.IO;

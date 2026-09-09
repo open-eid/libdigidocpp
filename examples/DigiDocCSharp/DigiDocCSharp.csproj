@@ -1,9 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<!-- SPDX-FileCopyrightText: Estonian Information System Authority -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <Version>0.6.0</Version>
-    <Copyright>Copyright ©  2015</Copyright>
+    <Copyright>Copyright © 2015 AS Sertifitseerimiskeskus</Copyright>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
     <DefineConstants>$(DefineConstants);_WINDOWS</DefineConstants>
