@@ -1,10 +1,5 @@
-//
-//  AppDelegate.h
-//  libdigidocpp-ios
-//
-//  Created by Raul Metsma on 18/07/15.
-//  Copyright (c) 2015 RIA. All rights reserved.
-//
+// SPDX-FileCopyrightText: Estonian Information System Authority
+// SPDX-License-Identifier: LGPL-2.1-or-later
 
 #import <UIKit/UIKit.h>
 

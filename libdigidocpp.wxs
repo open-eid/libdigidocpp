@@ -1,4 +1,6 @@
-﻿<?if $(sys.BUILDARCH) = x64 ?>
+<!-- SPDX-FileCopyrightText: Estonian Information System Authority -->
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
+<?if $(sys.BUILDARCH) = x64 ?>
   <?define UpgradeCode = "{93985BBA-6B59-443B-80C8-BA987407F8B8}" ?>
   <?define OpenSSLSuffix = "-x64" ?>
   <?define Suffix = "" ?>

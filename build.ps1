@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Estonian Information System Authority
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 #powershell -ExecutionPolicy ByPass -File build.ps1
 param(
   [string]$libdigidocpp = $PSScriptRoot,
