@@ -1,3 +1,13 @@
+Description: Verify legacy RSA PKCS#1 signatures via signature recovery
+ OpenSSL rejects PKCS#1 v1.5 signatures whose DigestInfo omits the ASN.1 NULL
+ algorithm parameter; some older Estonian signatures do so, therefore
+ recover the signature and compare the DigestInfo directly. Carried by
+ libdigidocpp itself from 2015 until 79d70014 moved XAdES validation to
+ xmlsec1. Rebased per xmlsec1 release; an identical copy lives in the xmlsec
+ port of open-eid/vcpkg-ports and must be kept in step.
+Author: Estonian Information System Authority
+SPDX-License-Identifier: MIT
+Forwarded: no
 --- a/src/openssl/signatures.c
 +++ b/src/openssl/signatures.c
 @@ -35,6 +35,8 @@
