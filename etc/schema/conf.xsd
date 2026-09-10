@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: Estonian Information System Authority -->
+<!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:element name="configuration">
     <xsd:complexType>

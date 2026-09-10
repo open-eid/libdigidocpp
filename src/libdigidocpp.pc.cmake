@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Estonian Information System Authority
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=@CMAKE_INSTALL_FULL_BINDIR@
 libdir=@CMAKE_INSTALL_FULL_LIBDIR@

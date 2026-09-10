@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Estonian Information System Authority
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     repositories {
