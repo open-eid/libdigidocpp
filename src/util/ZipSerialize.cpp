@@ -32,9 +32,35 @@
 #endif
 
 #include <algorithm>
+#include <cstdint>
 
 using namespace digidoc;
 using namespace std;
+
+namespace
+{
+constexpr size_t MAX_ZIP_ENTRIES = 1000;
+constexpr uint64_t MAX_ZIP_ENTRY_UNCOMPRESSED_SIZE = 1ULL*1024*1024*1024;
+constexpr uint64_t MAX_ZIP_TOTAL_UNCOMPRESSED_SIZE = 2ULL*1024*1024*1024;
+constexpr uint64_t MAX_ZIP_COMPRESSION_RATIO = 100;
+
+uint64_t validateDecompressionLimits(string_view file, const unz_file_info &info)
+{
+    const uint64_t compressed = info.compressed_size;
+    const uint64_t uncompressed = info.uncompressed_size;
+    if(uncompressed > MAX_ZIP_ENTRY_UNCOMPRESSED_SIZE)
+        THROW("ZIP decompression limit exceeded for '%.*s': uncompressed size exceeds 1 GiB",
+            STR_VIEW_FMT(file));
+
+    const bool ratioExceeded = compressed == 0 ? uncompressed != 0 :
+        uncompressed / compressed > MAX_ZIP_COMPRESSION_RATIO ||
+        (uncompressed / compressed == MAX_ZIP_COMPRESSION_RATIO && uncompressed % compressed != 0);
+    if(ratioExceeded)
+        THROW("ZIP decompression limit exceeded for '%.*s': compression ratio exceeds %llu:1",
+            STR_VIEW_FMT(file), (unsigned long long)MAX_ZIP_COMPRESSION_RATIO);
+    return uncompressed;
+}
+}
 
 /**
  * Initializes ZIP file serializer.
@@ -56,14 +82,42 @@ ZipSerialize::ZipSerialize(const string &path, bool create)
         d.reset(zipOpen2((const char*)util::File::encodeName(path).c_str(), APPEND_STATUS_CREATE, nullptr, &def));
         if(!d)
             THROW("Failed to create ZIP file '%s'.", path.c_str());
+        return;
     }
-    else
+
+    DEBUG("ZipSerialize::open(%s)", path.c_str());
+    d.reset(unzOpen2((const char*)util::File::encodeName(path).c_str(), &def));
+    if(!d)
+        THROW("Failed to open ZIP file '%s'.", path.c_str());
+
+    for(int unzResult = unzGoToFirstFile(d.get()); unzResult != UNZ_END_OF_LIST_OF_FILE; unzResult = unzGoToNextFile(d.get()))
     {
-        DEBUG("ZipSerialize::open(%s)", path.c_str());
-        d.reset(unzOpen2((const char*)util::File::encodeName(path).c_str(), &def));
-        if(!d)
-            THROW("Failed to open ZIP file '%s'.", path.c_str());
+        if(unzResult != UNZ_OK)
+            THROW("Failed to go to the next file inside ZIP container. ZLib error: %d", unzResult);
+        if(entries.size() >= MAX_ZIP_ENTRIES)
+            THROW("ZIP container exceeds maximum entry count of %zu", MAX_ZIP_ENTRIES);
+
+        unz_file_info fileInfo{};
+        unzResult = unzGetCurrentFileInfo(d.get(), &fileInfo, nullptr, 0, nullptr, 0, nullptr, 0);
+        if(unzResult != UNZ_OK)
+            THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
+
+        auto &fileName = entries.emplace_back(fileInfo.size_filename, 0);
+        unzResult = unzGetCurrentFileInfo(d.get(), nullptr, fileName.data(), uLong(fileName.size()), nullptr, 0, nullptr, 0);
+        if(unzResult != UNZ_OK)
+            THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
+
+        if(count(entries.cbegin(), entries.cend(), fileName) > 1)
+            THROW("Found multiple references of file '%s' in zip container.", fileName.c_str());
+
+        const uint64_t uncompressed = validateDecompressionLimits(fileName, fileInfo);
+        if(uncompressed > MAX_ZIP_TOTAL_UNCOMPRESSED_SIZE - uncompressedSize)
+            THROW("ZIP decompression limit exceeded: total uncompressed size exceeds 2 GiB");
+        uncompressedSize += uncompressed;
     }
+
+    if(entries.empty())
+        THROW("Failed to parse container");
 }
 
 /**
@@ -76,31 +130,9 @@ vector<string> ZipSerialize::list() const
 {
     if(!d)
         THROW("Zip file is not open");
-
-    vector<string> list;
-    for(int unzResult = unzGoToFirstFile(d.get()); unzResult != UNZ_END_OF_LIST_OF_FILE; unzResult = unzGoToNextFile(d.get()))
-    {
-        if(unzResult != UNZ_OK)
-            THROW("Failed to go to the next file inside ZIP container. ZLib error: %d", unzResult);
-
-        unz_file_info fileInfo{};
-        unzResult = unzGetCurrentFileInfo(d.get(), &fileInfo, nullptr, 0, nullptr, 0, nullptr, 0);
-        if(unzResult != UNZ_OK)
-            THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
-
-        auto &fileName = list.emplace_back(fileInfo.size_filename, 0);
-        unzResult = unzGetCurrentFileInfo(d.get(), nullptr, fileName.data(), uLong(fileName.size()), nullptr, 0, nullptr, 0);
-        if(unzResult != UNZ_OK)
-            THROW("Failed to get filename of the current file inside ZIP container. ZLib error: %d", unzResult);
-
-        if(count(list.cbegin(), list.cend(), fileName) > 1)
-            THROW("Found multiple references of file '%s' in zip container.", fileName.c_str());
-    }
-
-    if(list.empty())
+    if(entries.empty())
         THROW("Failed to parse container");
-
-    return list;
+    return entries;
 }
 
 /**
@@ -114,20 +146,23 @@ ZipSerialize::Read ZipSerialize::read(string_view file) const
     if(!d)
         THROW("Zip file is not open");
 
-    DEBUG("ZipSerialize::read(%.*s)", int(file.size()), file.data());
+    DEBUG("ZipSerialize::read(%.*s)", STR_VIEW_FMT(file));
     if(file.empty() || file.back() == '/')
         return {{nullptr, unzCloseCurrentFile}, 0};
 
     int unzResult = unzLocateFile(d.get(), file.data(), 1);
     if(unzResult != UNZ_OK)
-        THROW("Failed to locate '%.*s' inside ZIP container. ZLib error: %d", int(file.size()), file.data(), unzResult);
+        THROW("Failed to locate '%.*s' inside ZIP container. ZLib error: %d", STR_VIEW_FMT(file), unzResult);
+
+    unz_file_info info{};
+    unzResult = unzGetCurrentFileInfo(d.get(), &info, nullptr, 0, nullptr, 0, nullptr, 0);
+    if(unzResult != UNZ_OK)
+        THROW("Failed to get information for '%.*s' inside ZIP container. ZLib error: %d", STR_VIEW_FMT(file), unzResult);
+    validateDecompressionLimits(file, info);
 
     unzResult = unzOpenCurrentFile(d.get());
     if(unzResult != UNZ_OK)
-        THROW("Failed to open '%.*s' inside ZIP container. ZLib error: %d", int(file.size()), file.data(), unzResult);
-
-    unz_file_info info {};
-    unzGetCurrentFileInfo(d.get(), &info, nullptr, 0, nullptr, 0, nullptr, 0);
+        THROW("Failed to open '%.*s' inside ZIP container. ZLib error: %d", STR_VIEW_FMT(file), unzResult);
 
     return {{d.get(), unzCloseCurrentFile}, size_t(info.uncompressed_size)};
 }
@@ -146,7 +181,7 @@ ZipSerialize::Write ZipSerialize::addFile(string_view containerPath, const Prope
     if(!d)
         THROW("Zip file is not open");
 
-    DEBUG("ZipSerialize::addFile(%.*s)", int(containerPath.size()), containerPath.data());
+    DEBUG("ZipSerialize::addFile(%.*s)", STR_VIEW_FMT(containerPath));
     tm time = util::date::gmtime(prop.time);
     zip_fileinfo info {
         { time.tm_sec, time.tm_min, time.tm_hour,
