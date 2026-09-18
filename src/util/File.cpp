@@ -285,7 +285,9 @@ string File::digidocppPath()
         return decodeName(fs::path(var) / ".digidocpp");
     return {};
 #else
-    string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
+    long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    string buf(bufsize > 0 ? bufsize : 2048, 0);
+
     passwd pwbuf {};
     passwd *pw {};
     if(getpwuid_r(geteuid(), &pwbuf, buf.data(), buf.size(), &pw) != 0 || !pw)
