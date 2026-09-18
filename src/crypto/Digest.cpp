@@ -105,8 +105,9 @@ bool Digest::isWeakDigest(string_view uri)
  * For available method URIs see:
  * <li>
  *   <ul><b>W3C XML Encryption Syntax and Processing</b> (10 December 2005) http://www.w3.org/TR/xmlenc-core/</ul>
- *   <ul><b>RFC 4051</b> https://www.ietf.org/rfc/rfc4051.txt</ul>
- *   <ul><b>RFC 6931</b> https://www.ietf.org/rfc/rfc6931.txt</ul>
+ *   <ul><b>RFC 4051</b> https://www.rfc-editor.org/rfc/rfc4051.html</ul>
+ *   <ul><b>RFC 6931</b> https://www.rfc-editor.org/rfc/rfc6931.html</ul>
+ *   <ul><b>RFC 9231</b> https://www.rfc-editor.org/rfc/rfc9231.html</ul>
  * </li>
  *
  * @param uri digest method URI (e.g. 'http://www.w3.org/2000/09/xmldsig#sha1' for SHA1).

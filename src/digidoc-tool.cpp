@@ -346,7 +346,7 @@ static int printUsage(const char *executable)
     << "    Available options:" << endl
     << "      --file=        - File(s) to be signed. The option can occur multiple times." << endl
     << "      --mime=        - Specifies the file's mime-type value. When used then must be written right " << endl
-    << "                       after the \"-file\" parameter. Default value is application/octet-stream" << endl
+    << "                       after the \"--file\" parameter. Default value is application/octet-stream" << endl
     << "      --dontsign     - Don't sign the newly created container." << endl
     << "      for additional options look sign command" << endl << endl
     << "  Command createBatch:" << endl
@@ -398,15 +398,17 @@ static int printUsage(const char *executable)
     << "      --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256, same as --sigsha* with --rsapss)" << endl
     << "      --rsapkcs15    - Use RSA PKCS1.5 padding" << endl
     << "      --rsapss       - Use RSA PSS padding" << endl
-    << "      --tsurl        - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
-    << "      --dontValidate - Don't validate container on signature creation" << endl << endl
-    << "      --userAgent    - Additional info info that is sent to TSA or OCSP service" << endl << endl
+    << "      --tsurl=       - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
+    << "      --dontValidate - Don't validate container on signature creation" << endl
+    << "      --userAgent=   - Additional application info sent to TSA or OCSP service" << endl << endl
     << "  Command extend:" << endl
     << "    Example: " << executable << " extend --signature=0 demo-container.asice" << endl
     << "    Available options:" << endl
     << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive" << endl
     << "      --signature=   - signature to extend" << endl
-    << "      --dontValidate - Don't validate container on signature creation" << endl << endl
+    << "      --dontValidate - Don't validate a directly extended signature after extension" << endl << endl
+    << "  Command version:" << endl
+    << "    Prints digidoc-tool and libdigidocpp versions." << endl << endl
     << "  All commands:" << endl
     << "      --nocolor      - Disable terminal colors" << endl
     << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
@@ -457,6 +459,7 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(value v{arg, "--postalCode="}) postalCode = v;
         else if(value v{arg, "--country="}) country = v;
         else if(value v{arg, "--role="}) roles.emplace_back(v);
+        else if(value v{arg, "--userAgent="}) userAgent = v;
         else if(arg == "--sha224") uri = URI_SHA224;
         else if(arg == "--sha256") uri = URI_SHA256;
         else if(arg == "--sha384") uri = URI_SHA384;

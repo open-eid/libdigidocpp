@@ -1,27 +1,66 @@
-## C-SHARP
-Uses [http://swig.org/](http://swig.org/) tools for generating bindings. 
+# C# example
 
-## Setting up the sample C# application
+The C# bindings are generated with [SWIG](https://www.swig.org/) and work on
+Windows, macOS and Linux. The example targets .NET 8.
 
-For compiling and running the DigiDocCSharp sample C# project, do as follows:
+## Prerequisites
 
-1. Install the "libdigidocpp-3.14.4.msi" package or higher. The installation packages are available from https://github.com/open-eid/libdigidocpp/releases
-2. Open the C# sample project from source\examples\DigiDocCSharp folder located in the installation directory
-3. Add the C# source files files from include\digidocpp_csharp folder to the digidoc folder of the opened project (in Solution Explorer view, right click on the digidoc folder, choose Add->Existing item)
-4. Build the solution, DigiDocCSharp.exe executable is created
-4. Libdigidocpp library's binaries (in the x64 or x86 folder of the "libdigidocpp" package's installation directory) need to be accessible for running the DigiDocCSharp executable. You can either copy the DigiDocCSharp.exe to the x64 or x86 folder, depending on the platform or set the working directory of the project accordingly or add the binaries' folder to PATH variable.
-5. Run the DigiDocCSharp.exe sample program with the commands described in the next section
+Install the native build dependencies for your platform from the main
+[build instructions](../../README.md), together with SWIG and the .NET 8 SDK or
+newer.
 
-## Commands of the sample application Program.cs
-* DigiDocCSharp.exe version
-* DigiDocCSharp.exe help
-* DigiDocCSharp.exe verify test.bdoc
-* DigiDocCSharp.exe sign text.txt test.bdoc
-* DigiDocCSharp.exe extract=0 test.bdoc
+## Build the native wrapper
 
-## API
-* [digidoc.initialize()](http://open-eid.github.io/libdigidocpp/namespacedigidoc.html#ada31d19121d7a6d98b04267f3ed8cc8f)
-* [Container](http://open-eid.github.io/libdigidocpp/classdigidoc_1_1Container.html)
-* [DataFile](http://open-eid.github.io/libdigidocpp/classdigidoc_1_1DataFile.html)
-* [Signature](http://open-eid.github.io/libdigidocpp/classdigidoc_1_1Signature.html)
-* [digidoc.terminate()](http://open-eid.github.io/libdigidocpp/namespacedigidoc.html#a121f0363627f62f3972ac4b445986598)
+On Linux, use the default preset:
+
+    cmake --preset default
+    cmake --build build/default --target digidoc_csharp
+
+On macOS, use the macOS preset:
+
+    cmake --preset macos
+    cmake --build --preset macos --target digidoc_csharp
+
+On Windows, use a Visual Studio tools PowerShell and the Windows preset:
+
+    $env:PLATFORM = "x64"
+    $env:VCPKG_ROOT = "C:/src/vcpkg"
+    cmake --preset windows -DSWIG_EXECUTABLE=C:/swigwin/swig.exe
+    cmake --build --preset windows --config RelWithDebInfo --target digidoc_csharp
+
+The generated C# files are written to the `src/csharp` directory inside the
+selected CMake build directory—for example, `build/default/src/csharp`,
+`build/macos/src/csharp` or `build/windows-x64/src/csharp`. Copy or add those
+`.cs` files to the example's `digidoc` folder, then build the managed project:
+
+    dotnet build examples/DigiDocCSharp/DigiDocCSharp.csproj -c Release
+
+Before running the example, make the directory containing the native
+libdigidocpp and SWIG wrapper libraries available to the platform loader:
+
+- Windows: add it to `PATH`.
+- macOS: add it to `DYLD_LIBRARY_PATH`.
+- Linux: add it to `LD_LIBRARY_PATH`.
+
+Use native libraries matching the process architecture and build configuration.
+Installing libdigidocpp is an alternative to setting a build-tree loader path.
+
+## Example commands
+
+Use `DigiDocCSharp.exe` on Windows or `dotnet DigiDocCSharp.dll` on macOS and
+Linux. For example:
+
+    dotnet DigiDocCSharp.dll version
+    dotnet DigiDocCSharp.dll help
+    dotnet DigiDocCSharp.dll add text.txt unsigned.asice
+    dotnet DigiDocCSharp.dll verify signed.asice
+    dotnet DigiDocCSharp.dll extract 0 signed.asice
+
+Signing uses `WinSigner` on Windows. On macOS and Linux it uses `PKCS11Signer`,
+so the PIN precedes the input file arguments:
+
+    dotnet DigiDocCSharp.dll sign 12345 text.txt signed.asice
+
+The C# API mirrors the public libdigidocpp API. See the generated bindings and
+the [libdigidocpp API documentation](https://open-eid.github.io/libdigidocpp/)
+for the available classes and methods.

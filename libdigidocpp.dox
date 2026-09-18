@@ -1,6 +1,6 @@
 /*! @mainpage
 
-Libdigidocpp is the C++ library offering creating, signing and verification of digitally signed documents, according to <a href="http://www.etsi.org/deliver/etsi_en/319100_319199/31913201/01.01.01_60/en_31913201v010101p.pdf">XAdES</a> and <a href="http://www.etsi.org/deliver/etsi_en/319100_319199/31916201/01.01.01_60/en_31916201v010101p.pdf">ASiC</a> standards.
+Libdigidocpp is a C++ library for creating, signing, and verifying digitally signed documents according to the XML Advanced Electronic Signatures (\ref XAdES "XAdES") and Associated Signature Containers (\ref ASiC "ASiC") standards.
 
 Development of the library can be monitored in GitHub environment: <a href="https://github.com/open-eid/libdigidocpp">https://github.com/open-eid/libdigidocpp</a>
 
@@ -10,11 +10,14 @@ Additional documentation about the library can be found from GitHub wiki section
 /*! \page manual Libdigidocpp Programmer's Guide
 
 \section introduction Introduction
-Libdigidocpp is the C++ library for creating applications handling digital signatures, their creation and verification. The digitally signed files are created in "DigiDoc format" (with .asice file extension), compliant to XML Advanced Electronic Signatures (\ref XAdES), technical standard published by European Telecommunication Standards Institute (ETSI).
+Libdigidocpp is a C++ library for creating applications that create and verify digital signatures. Digitally signed files are created as Associated Signature Containers (\ref ASiC "ASiC"), using the .asice file extension and XML Advanced Electronic Signatures (\ref XAdES "XAdES") standardized by the European Telecommunications Standards Institute (ETSI).
 
-Additionally the libdigidocpp library can be used to read and verify the digitally timestamped containers (using .asics file extension) with a single datafile. There is possible to validate \ref ASiC (\ref CAdES), \ref PDF and \ref DDOC formats  with \ref SiVa service.
+Additionally, the libdigidocpp library can create, save, read, validate, and extend digitally timestamped containers (using the .asics file extension) with a single data file and \ref RFC3161 "RFC 3161" time-stamp tokens. ASiC containers with \ref CAdES "CAdES" signatures, \ref PDF "PDF", and \ref DDOC "DDOC" files can be validated with the \ref SiVa service.
 
 Development of the library can be monitored in GitHub environment: <a href="https://github.com/open-eid/libdigidocpp">https://github.com/open-eid/libdigidocpp</a>.
+
+\anchor releasenotes
+Changes by version are listed on the separate \ref release_notes "Release Notes" page.
 
 \subsection about About DigiDoc
 Libdigidocpp library forms a part of the wider DigiDoc system framework which offers a full-scale architecture for digital signature and documents, consisting of software libraries (C++ and Java), SiVa service and end-user applications such as DigiDoc4 according to the following figure:
@@ -32,14 +35,14 @@ It is easy to integrate DigiDoc components into existing applications in order t
 Actively used digitally signed file formats in DigiDoc system are:
 - ASiC-E - default format for files in Libdigidocpp library, described in \ref ASiC "The ETSI standard ETSI EN 319 162-1";
 - BDOC 2.1 - legacy format, described in \ref BDOC "BDOC2.1:2013", The library implements only read-only support for the format;
-- ASiC-S - timestamped container, described in \ref ASiC "The ETSI standard ETSI EN 319 162-1". The library implements only read-only support for the format.
+- ASiC-S - simple signature container, described in \ref ASiC "The ETSI standard ETSI EN 319 162-1". The library supports opening and validating containers with XAdES signatures. For containers with \ref RFC3161 "RFC 3161" time-stamp tokens, creating, saving, reading, validating, and archive-manifest time-stamp extension are supported.
 
-The following chapters provides an overview of ASiC-E (XAdES) digitally signed file format which is the preferred format for creating signed documents in Libdigidocpp library.
+The following chapters provide an overview of the ASiC-E (XAdES) digitally signed file format, which is the preferred format for creating signed documents with Libdigidocpp.
 
 
 
 \subsubsection container ASiC-E (XAdES) container format
-The ETSI standard \ref ASiC "EN 319 162-1" called Associated Signature Containers (ASiC) defines format of container for encapsulation of signed files and signatures with extra information. The container type used in case of ASiC-E documents is Associated Signature Extended form. In the container \ref XAdES "XAdES EN 319 132-1" (XML Advanced Electronic Signatures) format signatures are used.
+The ETSI standard \ref ASiC "EN 319 162-1" defines a container format for encapsulating signed files, signatures, and supporting information. ASiC-E documents use the Extended form and contain signatures conforming to \ref XAdES "XAdES EN 319 132-1".
 
 ASiC-E container is a ZIP file consisting of the following objects:
 - a file named "mimetype", containing only the following value: application/vnd.etsi.asic-e+zip
@@ -85,7 +88,7 @@ The element digest is a hash value of the binary value of the &lt;SignatureValue
 
 It is important to notice that additional time-stamps are not necessary as time of signing and time of obtaining validity information is indicated in the OCSP response (i.e. the time-mark).
 
-<b>NB!</b> The issuance time (producedAt field’s value) of the OCSP response (the time-mark) is regarded as the time of signature creation.
+\note The issuance time (producedAt field’s value) of the OCSP response (the time-mark) is regarded as the time of signature creation.
 
 To achieve long-time validity of digital signatures, a secure log system is employed within the model. All OCSP responses and changes in certificate validity are securely logged to preserve digital signature validity even after private key compromise of CA or OCSP responder.
 
@@ -99,34 +102,29 @@ The BDOC signature with time-stamp is based on XAdES-BES signature (Basic Electr
 In order to offer long time validation, it is necessary to obtaining proof of validity of the signer’s X.509 digital certificate issued by a certificate authority (CA) at the time of signature creation.
 
 In case of BDOC with time-stamp (TS profile), the proof is provided as follows:
-1. RFC3161 compliant time-stamp is obtained from a time-stamping service. The hash of the created signature (&lt;SignatureValue&gt; element block) is sent to the time-stamping server. The server’s response contains a time-stamp token with the same hash value that can later be used to validate that the time-stamp was indeed issued for the respective signature. The time-stamp token received from the server is added to the signature providing a proof from a trusted source that the signature value existed at a certain point of time.
-2. RFC 6960 compliant OCSP confirmation is obtained from an OCSP service. The OCSP response received from the server is used as a trusted source to confirm that the signer’s certificate was valid at a certain point of time (producedAt field’s value in the OCSP response).
+1. A time-stamp compliant with \ref RFC3161 "RFC 3161" is obtained from a time-stamping service. The hash of the created signature (&lt;SignatureValue&gt; element block) is sent to the time-stamping server. The server’s response contains a time-stamp token with the same hash value that can later be used to validate that the time-stamp was indeed issued for the respective signature. The time-stamp token received from the server is added to the signature providing a proof from a trusted source that the signature value existed at a certain point of time.
+2. An \ref RFC6960 "RFC 6960" compliant OCSP confirmation is obtained from an OCSP service. The OCSP response received from the server is used as a trusted source to confirm that the signer’s certificate was valid at a certain point of time (producedAt field’s value in the OCSP response).
 3. The verifier must check the time-stamp token’s and OCSP confirmation’s time difference. If the difference is acceptable then it can stated that the signer’s certificate was valid at the time of signature creation.
 
-<b>NB!</b> The issuance time (getTime field’s value) of the time-stamp token (received with the response from time-stamping server) is regarded as the time of signature creation.
+\note The \ref RFC3161 "RFC 3161 TSTInfo.genTime" field records when the TSA created the time-stamp token. This issuance time is regarded as the time of signature creation.
 
 \subsubsection asics ASiC-S container format
-In addition to the Associated Signature Extended form (ASiC-E) the \ref ASiC "ETSI standard TS 102 918" defines a Simple form which is used for encapsulating a single datafile and signature or time-stamp token associated with it.
+In addition to the Associated Signature Extended form (ASiC-E), the \ref ASiC "ETSI standard EN 319 162-1" defines a Simple form which is used for encapsulating a single data file and a signature or time-stamp token associated with it.
 
-ASiC-S container is a ZIP file consisting of the following objects:
+An ASiC-S container is a ZIP file consisting of the following objects:
 - an optional file named "mimetype", containing only the following value: application/vnd.etsi.asic-s+zip
 - data object (file) in original format.
-- META-INF subdirectory with one of the following files:
-  - signatures.p7s
-  - signatures.xml
-  - timestamp.tst
+- one signature form:
+  - META-INF/signatures.xml containing XAdES signatures; or
+  - META-INF/timestamp.tst containing the initial \ref RFC3161 "RFC 3161" time-stamp token.
+- for the time-stamp-token form, optional META-INF/ASiCArchiveManifest*.xml and META-INF/timestamp*.tst files containing additional archive-manifest time-stamp layers.
 
-The libdigidocpp library supports only containers with time-stamp token (container includes META-INF/timestamp.tst). The time-stamp token is a binary representation of TimeStampToken as defined in RFC 3161. The time-stamp is obtained from a time-stamping service; it is calculated over the entire binary content of the data object.
+Since version 3.17.0, libdigidocpp can open and locally validate ASiC-S containers containing XAdES signatures in META-INF/signatures.xml. This variant is read-only: creating, adding signatures to, and saving ASiC-S/XAdES containers are not supported.
+
+The library also supports local creation and validation of ASiC-S containers with a time-stamp token (the container includes META-INF/timestamp.tst). The time-stamp token is a binary representation of TimeStampToken as defined in \ref RFC3161 "RFC 3161". The time-stamp is obtained from a time-stamping service and is calculated over the entire binary content of the data object.
 Since both the original file and time-stamp are included in the container, it is possible to verify that the timestamped file existed at a certain point of time.
 
-The library can be used only for reading the content of the container and validating that the time-stamp was indeed issued for the data object included in the container.
-
-
-\section releasenotes Release Notes
-
-\include RELEASE-NOTES.md
-
-
+An existing time-stamp token can be extended by adding an ASiC archive manifest and a new time-stamp token. Each new layer protects the data object and the preceding time-stamp information. See \ref extend-validity for the high-level validity-extension workflow.
 
 
 \section overview Overview
@@ -148,7 +146,7 @@ https://www.id.ee/wp-content/uploads/2020/08/digidoc_format_1.3.pdf
 </td></tr><tr><td>\anchor XML-DSIG XML-DSIG</td><td>
 IETF RFC 3275: "XML-Signature Syntax and Processing"
 
-http://www.ietf.org/rfc/rfc3275.txt
+https://www.rfc-editor.org/rfc/rfc3275.html
 </td></tr><tr><td>\anchor XML-DSIG-1-1 XML-DSIG 1.1</td><td>
 XML Signature Syntax and Processing. Version 1.1
 
@@ -191,18 +189,64 @@ http://www.etsi.org/deliver/etsi_ts/103100_103199/103174/02.02.01_60/ts_103174v0
 ETSI EN 319 142-1 V1.1.1 (2016-04) - PAdES digital signatures
 
 https://www.etsi.org/deliver/etsi_en/319100_319199/31914201/01.01.01_60/en_31914201v010101p.pdf<br />
-</td></tr><tr><td>\anchor RFC6960 RFC6960</td><td>
-X.509 Internet Public Key Infrastructure Online Certificate Status Protocol – OCSP
+</td></tr><tr><td>\anchor RFC2045 RFC 2045</td><td>
+Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
 
-http://tools.ietf.org/html/rfc6960
-</td></tr><tr><td>\anchor RFC3161 RFC3161</td><td>
-Internet X.509 Public Key Infrastructure Time-Stamp protocol
+https://www.rfc-editor.org/rfc/rfc2045.html
+</td></tr><tr><td>\anchor RFC2253 RFC 2253</td><td>
+Lightweight Directory Access Protocol (v3): UTF-8 String Representation of Distinguished Names. Obsoleted by RFC 4514.
 
-http://tools.ietf.org/html/rfc3161
-</td></tr><tr><td>\anchor RFC5280 RFC5280</td><td>
+https://www.rfc-editor.org/rfc/rfc2253.html
+</td></tr><tr><td>\anchor RFC4514 RFC 4514</td><td>
+Lightweight Directory Access Protocol: String Representation of Distinguished Names
+
+https://www.rfc-editor.org/rfc/rfc4514.html
+</td></tr><tr><td>\anchor RFC3161 RFC 3161</td><td>
+Internet X.509 Public Key Infrastructure Time-Stamp Protocol (TSP)
+
+The TSTInfo <code>genTime</code> field records the UTC time at which the time-stamp token was created by the Time-Stamping Authority (TSA).
+
+https://www.rfc-editor.org/rfc/rfc3161.html
+</td></tr><tr><td>\anchor RFC3739 RFC 3739</td><td>
+Internet X.509 Public Key Infrastructure: Qualified Certificates Profile
+
+https://www.rfc-editor.org/rfc/rfc3739.html
+</td></tr><tr><td>\anchor RFC3986 RFC 3986</td><td>
+Uniform Resource Identifier (URI): Generic Syntax
+
+https://www.rfc-editor.org/rfc/rfc3986.html
+</td></tr><tr><td>\anchor RFC4051 RFC 4051</td><td>
+Additional XML Security Uniform Resource Identifiers. Obsoleted by RFC 6931.
+
+https://www.rfc-editor.org/rfc/rfc4051.html
+</td></tr><tr><td>\anchor RFC6931 RFC 6931</td><td>
+Additional XML Security Uniform Resource Identifiers. Obsoletes RFC 4051 and is obsoleted by RFC 9231.
+
+https://www.rfc-editor.org/rfc/rfc6931.html
+</td></tr><tr><td>\anchor RFC9231 RFC 9231</td><td>
+Additional XML Security Uniform Resource Identifiers
+
+https://www.rfc-editor.org/rfc/rfc9231.html
+</td></tr><tr><td>\anchor RFC4519 RFC 4519</td><td>
+Lightweight Directory Access Protocol: Schema for User Applications
+
+https://www.rfc-editor.org/rfc/rfc4519.html
+</td></tr><tr><td>\anchor RFC5035 RFC 5035</td><td>
+Enhanced Security Services (ESS) Update: Adding CertID Algorithm Agility
+
+https://www.rfc-editor.org/rfc/rfc5035.html
+</td></tr><tr><td>\anchor RFC5280 RFC 5280</td><td>
 Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile
 
-http://tools.ietf.org/html/rfc5280
+https://www.rfc-editor.org/rfc/rfc5280.html
+</td></tr><tr><td>\anchor RFC6960 RFC 6960</td><td>
+X.509 Internet Public Key Infrastructure Online Certificate Status Protocol (OCSP)
+
+https://www.rfc-editor.org/rfc/rfc6960.html
+</td></tr><tr><td>\anchor RFC8954 RFC 8954</td><td>
+Online Certificate Status Protocol (OCSP) Nonce Extension
+
+https://www.rfc-editor.org/rfc/rfc8954.html
 </td></tr><tr><td>\anchor TSL Trusted Lists</td><td>
 ETSI TS 119 612 V2.2.1 (2016-04)
 
@@ -217,6 +261,18 @@ Libdigidocpp library’s release notes
 X.509 V3 Certificate Profile for Certificates Issued to Natural Persons
 
 http://www.etsi.org/deliver/etsi_ts/102200_102299/102280/01.01.01_60/ts_102280v010101p.pdf
+</td></tr><tr><td>\anchor QC-cert QC Certificate Profiles</td><td>
+ETSI EN 319 412-1 V1.7.1 – Certificate Profiles; Part 1: Overview and common data structures<br />
+ETSI EN 319 412-5 V2.6.1 – Certificate Profiles; Part 5: QCStatements
+
+http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.07.01_60/en_31941201v010701p.pdf<br />
+http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf
+</td></tr><tr><td>\anchor QC-policy QC Certificate Policy</td><td>
+ETSI EN 319 411-2 V2.6.1 – Policy requirements for Trust Service Providers issuing EU qualified certificates<br />
+ETSI TS 101 456 V1.4.3 (2007-05) – Policy requirements for certification authorities issuing qualified certificates
+
+http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf<br />
+http://www.etsi.org/deliver/etsi_ts/101400_101499/101456/01.04.03_60/ts_101456v010403p.pdf
 </td></tr><tr><td>\anchor DD-libs DigiDoc libraries</td><td>
 https://www.id.ee/en/rubriik/digidoc-libraries/
 </td></tr><tr><td>\anchor openeid-github ID-software GitHub project</td><td>
@@ -255,7 +311,7 @@ SK ID Solutions AS. Certificate Authority in Estonia
 Mechanism used for adding certificate validity and signing time information with the signature.
 The information is provided with a special OCSP confirmation (also referred to as time-mark) - hash value of the binary value of the signature (along with hash algorithm identifier in case of BDOC 2.1 document format) must be present in the "nonce" field of the OCSP confirmation. In this case, signature creation time is the issuance time of the OCSP confirmation (producedAt value in the confirmation), additional time-stamp service is not required. The respective signature profile is TM profile (supported in case of DIGIDOC-XML 1.3 and BDOC 2.1 document formats).
 </td></tr><tr><td>time-stamp</td><td>
-Mechanism used for adding certificate validity and signing time information with the signature. The certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token retrieved form a time-stamping service. In this case, signature creation time is the issuance time (genTime value in the time-stamp) of the time-stamp token. The respective signature profile is TS profile.
+Mechanism used for adding certificate validity and signing time information with the signature. The certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token retrieved form a time-stamping service. In this case, signature creation time is the issuance time (\ref RFC3161 "RFC 3161 TSTInfo.genTime") of the time-stamp token. The respective signature profile is TS profile.
 </td></tr><tr><td>archive time-stamp</td><td>
 Mechanism used for providing long term validity of a XAdES signature. The signature and validation data values are time-stamped. The respective signature profile is TSA profile.
 </td></tr><tr><td>TSA</td><td>
@@ -293,15 +349,17 @@ The following table gives overview of functional features that are supported wit
   <td>DigiDoc document format</td>
   <td>
 - ASiC-E - the main document format to be used.
+- ASiC-S - a single-data-file container. Opening and validating XAdES signatures are supported; this variant is read-only. For \ref RFC3161 "RFC 3161" TimeStampToken containers, creation, saving, validation, and archive-manifest time-stamp extension are supported.
+- BDOC 2.1 - legacy read-only compatibility.
 
 \note BDOC 1.0 file format is not supported (more info can be found from https://www.id.ee/en/article/digidoc-container-format-life-cycle-2/).
 </td>
 </tr>
 <tr><td>Signature profile</td>
 <td>Signature profiles are based on the profiles defined by XAdES (\ref XAdES "XAdES").
-- time-stamp (TS) - signature profile in case of which the certificate validity information is added to the signature with an OCSP confirmation; the signing time information is added with a time-stamp token (see also \ref RFC6960 "RFC6960") retrieved from a time-stamping service. In this case, signature creation time is regarded as the issuance time of the time-stamp token (genTime value in the time-stamp).
+- time-stamp (TS) - signature profile in case of which the certificate validity information is added to the signature with an \ref RFC6960 "RFC 6960" OCSP confirmation; the signing time information is added with an \ref RFC3161 "RFC 3161" time-stamp token retrieved from a time-stamping service. In this case, signature creation time is regarded as the issuance time of the time-stamp token (\ref RFC3161 "RFC 3161 TSTInfo.genTime").
 - time-mark (TM) - certificate validity and signing time information is added to the signature with a time-mark - a special OCSP confirmation in case of which the hash value of the binary value of the signature (along with hash algorithm identifier in case of BDOC 2.1 document format) must be present in the "nonce" field of the OCSP confirmation. In this case, signature creation time is regarded as the issuance time of the OCSP confirmation (producedAt value in the confirmation), additional time-stamp token is not required.
-- archive time-stamp (LTA) - the signature and all the accompanying validation data is time-stamped in order to provide long term validity. The profile is supported only in case of BDOC 2.1 document format, the "ArchiveTimeStamp" element is added to the time-stamp or time-mark signature (see also \ref BDOC "BDOC2.1:2013").
+- archive time-stamp (TSA/LTA) - the signature and its accompanying validation data are time-stamped to provide long-term validity. Eligible ASiC-E XAdES signatures receive an ArchiveTimeStamp element. ASiC-S TimeStampToken signatures are extended with an ASiC archive manifest and another \ref RFC3161 "RFC 3161" time-stamp token.
 </td>
 </tr>
 <tr><td>Trust anchors</td>
@@ -317,7 +375,7 @@ The following table gives overview of functional features that are supported wit
 <td>Cryptographic token type</td>
 <td>
 - Smart card, e.g. Estonian ID card. Supported signature creation modules are PKCS#11 and Windows CryptoAPI.
-\note Usage of USB cryptostick (Aladdin eToken with Digital Stamp  certificate (https://www.skidsolutions.eu/en/services/Digital-stamp)) has been tested indirectly with Libdigidocpp - testing has been carried out via DigiDoc desktop application which uses Libdigidocpp as a base layer.
+\note Usage of SafeNet USB tokens with a Digital Stamp certificate (https://www.skidsolutions.eu/en/services/Digital-stamp) has been tested indirectly with Libdigidocpp through the DigiDoc desktop application, which uses Libdigidocpp as a base layer.
 </td>
 </tr>
 <tr><td>Public-key algorithm</td>
@@ -358,7 +416,7 @@ Libdigidocpp library depends on the software libraries listed below.
 <tr><td>Minizip</td><td>required</td><td>Used when creating and opening ZIP container for ASiC file. If the component is not found from system then bundled version with source code is used. Forms a part of ZLIB component.</td></tr>
 <tr><td>PKCS11</td><td>optional</td><td>Used for searching for default PKCS#11 driver in the system so that its path could be registered in configuration entries.</td></tr>
 <tr><td>Doxygen</td><td>optional</td><td>Used for generating API documentation from source code.</td></tr>
-<tr><td>SWIG</td><td>optional</td><td>Used for creating C# and Java bindings.</td></tr>
+<tr><td>SWIG</td><td>optional</td><td>Used for creating C#, Java, and Python bindings.</td></tr>
 </table>
 
 
@@ -384,7 +442,7 @@ http://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd
 </td></tr><tr><td>XAdES01903v132-201601.xsd</td><td>XML Advanced Electronic Signatures (\ref XAdES "XAdES EN")
 Defines a set of extensions to XML-DSIG making it suitable for advanced electronic signature.
 http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd
-</tr><tr><td>XAdES01903v141-201601.xsd</td><td>Defines XML syntax for additional elements of XAdES signatures that were added with version 1.4.1 of the (\ref XAdES "XAdES EN") standard. Needed for implementing archive time-stamp support in the future.
+</tr><tr><td>XAdES01903v141-201601.xsd</td><td>Defines XML syntax for additional elements of XAdES signatures that were added with version 1.4.1 of the (\ref XAdES "XAdES EN") standard. Used for XAdES archive time-stamps, including the ArchiveTimeStamp element.
 http://uri.etsi.org/01903/v1.4.1/XAdES01903v141-201601.xsd
 </td></tr><tr><td>ts_119612v020201_201601xsd.xsd<br />ts_119612v020101_additionaltypes_xsd.xsd<br />ts_119612v020101_sie_xsd.xsd</td><td>Defines the format of Trust Service status Lists (\ref TSL) that contain information about trusted CA, OCSP and TSA certificates.
 </td></tr><tr><td>conf.xsd</td><td>Configuration properties’ schema. Defines the Libdigidocpp configuration file’s digidocpp.conf structure (see also \ref conf).
@@ -521,14 +579,14 @@ Modifications are marked between xml comment tags.
 <xsd:import namespace="http://uri.etsi.org/02231/v2/additionaltypes#" schemaLocation="ts_119612v020101_additionaltypes_xsd.xsd"/>
 \endcode
 
-<b>Schema ts_119612v020101_sie_xsd.xsd</b>
+<b>Schema ts_119612v020101_sie_xsd.xsd</b><br />
 1) The schemas' locations have been modified so that the file is looked up from the local file system.
 \code{.xml}
 <xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
 <!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES.xsd" -->
 \endcode
 
-<b>Schema ts_119612v020101_additionaltypes_xsd.xsd</b>
+<b>Schema ts_119612v020101_additionaltypes_xsd.xsd</b><br />
 1) The schemas' locations have been modified so that the file is looked up from the local file system.
 \code{.xml}
 <xsd:import namespace="http://uri.etsi.org/02231/v2#" schemaLocation="ts_119612v020201_201601xsd.xsd"/>
@@ -654,9 +712,10 @@ Libdigidocpp library uses Trust Service Status List (TSL) as a source of trust a
 
 By default, the trusted certificates' information is obtained from European Commission's official TSL list (https://ec.europa.eu/tools/lotl/eu-lotl.xml). The default TSL behaviour can be changed by altering the configuration parameters listed below.
 
-\note - The TSL URL and TSL signing certificate values are not configurable via the digidocpp.conf configuration file. The default values are fixed in source code and can be accessed via methods digidoc::Conf::TSLCerts() and digidoc::Conf::TSLUrl(). The library's user has to create a subclass and override the methods in order to define other values. See also \ref initialization.
-\note - When using digidoc-tool utility program then it is possible to specify necessary TSL parameters on the command line. See also \ref utility.
-\note - For information about using test TSL lists with Libdigidocpp library, please refer to https://github.com/open-eid/libdigidocpp/wiki/Using-test-TSL-lists
+\note
+- The TSL URL and TSL signing certificate values are not configurable via the digidocpp.conf configuration file. The default values are fixed in source code and can be accessed via methods digidoc::Conf::TSLCerts() and digidoc::Conf::TSLUrl(). The library's user has to create a subclass and override the methods in order to define other values. See also \ref initialization.
+- When using digidoc-tool utility program then it is possible to specify necessary TSL parameters on the command line. See also \ref utility.
+- For information about using test TSL lists with Libdigidocpp library, please refer to https://github.com/open-eid/libdigidocpp/wiki/Using-test-TSL-lists
 
 <table>
 <tr>
@@ -813,6 +872,23 @@ Create a new container object and specify the DigiDoc document's type, for examp
 Container class is used to incorporate the data of a DigiDoc document.
 
 
+\subsubsection asics-create Creating and timestamping an ASiC-S container
+Create an ASiC-S container by using an .asics or .scs output file name. An ASiC-S TimeStampToken container supports exactly one data file and one initial \ref RFC3161 "RFC 3161" time-stamp token.
+
+\code{.cpp}
+auto doc = digidoc::Container::createPtr("timestamped-document.asics");
+doc->addDataFile("document.txt", "text/plain");
+
+digidoc::Signer *signer = ...;
+signer->setProfile("TimeStampToken"); // "time-stamp-token" is also accepted
+digidoc::Signature *timestamp = doc->sign(signer);
+timestamp->validate();
+doc->save();
+\endcode
+
+ASiC-S TimeStampToken creation uses the one-step digidoc::Container::sign method. External two-step signing with digidoc::Container::prepareSignature is not supported for this format. Additional archive-manifest time-stamp layers can be added with the workflow described in \ref extend-validity.
+
+
 
 
 \subsubsection adddatafile Adding data files
@@ -834,15 +910,19 @@ Parameter mediaType in the methods above stands for a MIME type of the data file
 Calling out any of the methods listed above shall create a new DataFile object and add it to the DigiDoc container's data file collection.
 Note that in order to add a data file to a container, the container has to be unsigned and there shouldn't be an existing data file with the same name in the container. If a container is signed then it is possible to add data files to it only after the signatures are removed.
 
+The stream overload's fileName is the name stored inside the container. It must be a single non-empty path component: ".", "..", forward slashes, and backslashes are rejected. The file-system overload accepts a source path and stores only its base name. When an existing ASiC-E container is opened, safe relative subdirectories separated by forward slashes are accepted, but absolute paths, backslashes, trailing slashes, and empty, ".", or ".." path segments are rejected. ASiC-S data files must be at the container root.
+
 \warning - It is important to pay attention that the data file's mime type value in manifest.xml file and in signatures*.xml file's &lt;DataObjectFormat&gt;&lt;MimeType&gt; element are the same, otherwise the signature is invalid! In case of the ordinary signature creation process, the library sets the correct value automatically. However, if you create a ASiC-E container with Libdigidocpp library and want to add signatures*.xml file that you have received from another source then make sure that the data files' mime-type values in manifest-xml file and in signatures*.xml file are the same.
 
 
-\warning - Data file’s mime-type value must be formatted as specified in RFC2045, section 5.1 (https://tools.ietf.org/html/rfc2045#section-5.1), i.e. the "type" and "subtype" values must be separated with a forward slash character.
+\warning - Data file’s mime-type value must be formatted as specified in \ref RFC2045 "RFC 2045", section 5.1, i.e. the "type" and "subtype" values must be separated with a forward slash character.
 
 
-\warning - It is recommended not to use special characters in the data file’s name, i.e. it is suggested to only use the characters that are categorized as "unreserved" according to RFC3986 (http://tools.ietf.org/html/rfc3986).
+\warning - It is recommended not to use special characters in the data file’s name, i.e. it is suggested to only use the characters that are categorized as "unreserved" according to \ref RFC3986 "RFC 3986".
 
 \note By default, it is recommended to use data file mime-type value "application/octet-stream" for all file types.
+
+\note For resource-exhaustion protection, structural and other non-data ZIP entries, such as manifests and signature XML, are limited to 10 MiB when read into memory. HTTP service responses are also limited to 10 MiB after decompression. Data files use a separate streaming and temporary-file strategy and are not subject to the 10 MiB metadata limit.
 
 
 
@@ -866,7 +946,7 @@ If you would like to add PIN insertion dialog window for the signer to enter the
 
 \paragraph API-sign-profile Optionally specify the signature profile
 The supported signature profiles are (see also \ref Supported, under "Signature profiles"):
-- "time-stamp" (TS) - signature profile in case of which the certificate validity information is added to the signature with an OCSP confirmation (retrieved from OCSP server); the signing time information is added with a time-stamp token (retrieved from a time-stamping service). Signature creation time is the issuance time of the time-stamp token (value of the getTime field in the token).
+- "time-stamp" (TS) - signature profile in case of which the certificate validity information is added to the signature with an OCSP confirmation (retrieved from OCSP server); the signing time information is added with a time-stamp token (retrieved from a time-stamping service). Signature creation time is the issuance time recorded in the token's \ref RFC3161 "RFC 3161 TSTInfo.genTime" field.
 
 If the signature profile value is not specified then then a "time-stamp" profile is used by default.
 
@@ -968,7 +1048,7 @@ Write a DigiDoc file (represented with a Container object) to file system with t
     digidoc::Container::save("<output-file's-path>");
 \endcode
 
-\note In case of read-only formats (e.g. ASiC-S documents), the save will throw a digidoc::Exception.
+\note ASiC-S containers with TimeStampToken signatures can be saved. Saving a read-only format or an unsupported ASiC-S signature variant throws a digidoc::Exception.
 
 \subsection validate Validating signature containers and signatures
 Validation of a signed DigiDoc document consists of three main steps:
@@ -1004,7 +1084,7 @@ If there are more than one validation errors that occur when validating a single
 2. <b>Returning a validation result of the whole DigiDoc container:</b><br>
 If there are more than one signatures in a DigiDoc container and the signatures have different validation statuses or validation of the container structure returns a different status then the overall status of the DigiDoc file should be chosen according to the status priorities.
 
-<b>NB! User of the library has to determine the validation status according to the error code that is returned by the library's validation method.</b>
+\note The user of the library has to determine the validation status according to the error code returned by the library's validation method.
 <table>
 <tr>
   <th>Priority</th>
@@ -1096,7 +1176,7 @@ It is recommended to use the validation status VALID WITH WARNINGS in case of th
 <tr>
   <td><b>16</b> ProducedATLateWarning</td>
   <td>BDOC 2.1 TS / ASiC</td>
-  <td>The difference between time-stamp issuance time (genTime value) and OCSP response's issuance time (producedAt value) exceeds 15 minutes but is less than 24 hours.
+  <td>The difference between the time-stamp issuance time (\ref RFC3161 "RFC 3161 TSTInfo.genTime") and the OCSP response's issuance time (producedAt value) exceeds 15 minutes but is less than 24 hours.
 
   Suggested warning message: "Time-stamp and OCSP issuance time difference is over 15 minutes."
 
@@ -1158,33 +1238,65 @@ Overview of validation activities is as follows:
 
 \note Libdigidocpp library uses TSL lists (Trust Service Status list) to obtain information about trusted certificates during signature validation process. See also \ref TSL-overview "TSL overview", \ref TSL "TSL standard" and \ref CA-settings "Configuring TSL settings".
 
+For formats validated through SiVa, archive time-stamp information returned by the service is available through digidoc::Signature::ArchiveTimeStamps in the same way as locally validated archive time-stamps.
+
+
+\subsection extend-validity Extending container validity
+Since version 4.5.0, digidoc::Container::extendContainerValidity provides the high-level workflow for extending the validity evidence of a container. The method sets the required signer profile automatically and uses the following strategy:
+- eligible ASiC-E LT-level signatures are extended in place with archive time-stamps;
+- an ASiC-S TimeStampToken is extended in place with an ASiC archive manifest and a new time-stamp token;
+- when in-place extension is unsuitable, the original container is embedded as the data file of a new timestamped ASiC-S container.
+
+Only signatures with an Estonian signing certificate are considered for in-place extension, and e-seal signatures are skipped. A container with no applicable Estonian signatures, or with only T-level signatures lacking OCSP validation data, cannot be extended by this workflow.
+
+\code{.cpp}
+auto doc = digidoc::Container::openPtr("signed-document.asice");
+digidoc::Signer *signer = ...;
+std::size_t extendedCount = 0;
+
+if(auto wrapped = digidoc::Container::extendContainerValidity(*doc, signer, extendedCount))
+    doc = std::move(wrapped); // original container was wrapped in a new ASiC-S container
+// Otherwise doc was extended in place and extendedCount contains the number
+// of signatures that received new validity evidence.
+doc->save();
+\endcode
+
+The returned unique pointer is empty when extension was performed in place. It contains the new ASiC-S container when wrapping was necessary; in that case extendedCount is zero. The caller must save the modified or newly returned container.
+
+The generated language bindings expose the same workflow with language-specific return values:
+- C#: Container.extendContainerValidity(doc, signer, out ulong extendedCount) returns the wrapping container, or null for an in-place extension.
+- Python: Container.extendContainerValidity(doc, signer) returns a tuple (wrapping_container_or_None, extended_count).
+- Java: Container.extendContainerValidity(doc, signer) returns the wrapping container, or null for an in-place extension; the count is not exposed.
+
+In every binding, replace the original container with the returned container when the return value is not null/None, then save the resulting container. A null/None result means the original object was modified in place.
+
 
 \subsection extracting Extracting data files
 A data file can be extracted from container and written to the specified location in the file system or to an output stream.
 1.	You can write the data file to a stream and keep it in memory:
 \code{.cpp}
-void digidoc::DataFile::saveAs(std::ostream &os);
+void digidoc::DataFile::saveAs(std::ostream &os) const;
 \endcode
 
 2.	The file can be written to file system with the following method:
 \code{.cpp}
-void digidoc::DataFile::saveAs(const std::string &path);
+void digidoc::DataFile::saveAs(const std::string &path) const;
 \endcode
 
 List of all the document’s data files can be retrieved with the following method:
 \code{.cpp}
-std::vector<digidoc::DataFile> digidoc::Container::dataFiles();
+std::vector<digidoc::DataFile *> digidoc::Container::dataFiles() const;
 \endcode
 
 For example, read in a DigiDoc document and write its data files to file system as follows:
 \code{.cpp}
-digidoc::Container doc("<input-file’s-path>"); // read in a document
-for(const digidoc::DataFile &file: doc.dataFiles()){ // get the data files’ list
+auto doc = digidoc::Container::openPtr("<input-file's-path>");
+for(const digidoc::DataFile *file: doc->dataFiles()) {
 	try {
-		std::string dst = file.fileName(); // get the data file’s name
-		file.saveAs(dst); // save the data file to working directory
+		std::string dst = file->fileName();
+		file->saveAs(dst);
 	} catch(const digidoc::Exception &e) {
-		printf("  Document %s extraction: FAILED\n", file.fileName().c_str());
+		printf("  Document %s extraction: FAILED\n", file->fileName().c_str());
 	}
 }
 \endcode
@@ -1192,16 +1304,16 @@ for(const digidoc::DataFile &file: doc.dataFiles()){ // get the data files’ li
 \subsection removing Removing signatures and data files
 In order to remove a signature from DigiDoc document, use the following method:
 \code{.cpp}
-void digidoc::Container::removeSignature(unsigned int id);
+void digidoc::Container::removeSignature(unsigned int index);
 \endcode
 
 Data files can be removed from a container only after all of its signatures have been removed. Use the following method to remove a data file from DigiDoc container:
 \code{.cpp}
-void digidoc::Container::removeDataFile(unsigned int id);
+void digidoc::Container::removeDataFile(unsigned int index);
 \endcode
 
-"Id" parameters of the abovementioned methods represent the signature’s and data file’s sequence numbers in the container. The identifiers are determined when a data file or signature is added to the container, counting starts from zero.
-\note The functionality of modifying files in DigiDoc file format ASiC-S is not supported.
+The index parameters of the methods above are the signature and data file sequence numbers in the container, starting from zero.
+\note Directly modifying the data file or initial signature of an existing ASiC-S container is not supported. Adding archive-manifest time-stamp layers through digidoc::Container::extendContainerValidity is supported.
 
 
 \subsection shutting-down Shutting down the library
@@ -1260,7 +1372,7 @@ File to log, empty to console</td></tr>
 
 \subsection	Creating Creating and signing a document (local signing)
 
-Command "create" can be used to create a new DigiDoc container, add data files, optionally some meta-info about the signer and sign the document. Documents can be created only in ASiC-E format.
+Command "create" can be used to create a new DigiDoc container, add data files, optionally some meta-info about the signer and sign the document. The output extension selects ASiC-E (.asice or .sce) or ASiC-S (.asics or .scs). ASiC-S creation requires exactly one data file and the TimeStampToken signature profile.
 General form of the command is:
 \code{.txt}
 > digidoc-tool create --file=<data-file> <output-container-file>
@@ -1271,11 +1383,11 @@ Available options:
 <tr><td>\-\-file=	</td><td>Required</td><td>
 Data file(s) to be signed. The option can occur multiple times.
 
-\warning It is recommended not to use special characters in the data file’s name, i.e. it is suggested to only use the characters that are categorized as "unreserved" according to RFC3986 (http://tools.ietf.org/html/rfc3986).</td></tr>
+\warning It is recommended not to use special characters in the data file’s name, i.e. it is suggested to only use the characters that are categorized as "unreserved" according to \ref RFC3986 "RFC 3986".</td></tr>
 <tr><td>\-\-mime=	</td><td>Optional</td><td>
 Specifies the data file's mime-type value. When used then must be written right after the "--file" parameter. If left unspecified then the default mime-type value "application/octet-stream" is used.
 
-\warning Data file’s mime-type value must be formatted as specified in RFC2045, section 5.1 (https://tools.ietf.org/html/rfc2045#section-5.1), i.e. the "type" and "subtype" values must be separated with a forward slash character.</td></tr>
+\warning Data file’s mime-type value must be formatted as specified in \ref RFC2045 "RFC 2045", section 5.1, i.e. the "type" and "subtype" values must be separated with a forward slash character.</td></tr>
 <tr><td>\-\-dontsign	</td><td>Optional</td><td>
 Don't sign the newly created container.</td></tr>
 </table>
@@ -1283,6 +1395,13 @@ Don't sign the newly created container.</td></tr>
 Additional options for the "create" command are the same as for "sign" command (see \ref Adding).
 
 Sample commands for creating and signing DigiDoc files:
+
+\code{.txt}
+Sample: creating an ASiC-S container with one data file and an RFC 3161 time-stamp token
+> digidoc-tool create --file=file1.txt --mime=text/plain --profile=TimeStampToken timestamped-document.asics
+
+The profile alias time-stamp-token is also accepted.
+\endcode
 
 \code{.txt}
 Sample: creating new ASiC-E file, adding multiple data files and signing via PKCS#11 driver
@@ -1381,7 +1500,7 @@ Input:
 
 
 \subsection	Opening Opening document, validating signatures and extracting data files
-Command "open" enables to read in an existing DigiDoc document, print out a list of its contents and validate signatures. By specifying the additional option --extractaAll, then the data files are extracted from the container and stored on the disk. All DigiDoc file formats are supported with this command (except of BDOC1.0).
+Command "open" reads an existing document, prints its contents and validates its signatures. The --extractAll option extracts data files to disk. Supported ASiC-E, ASiC-S and legacy BDOC 2.1 variants are handled locally. PDF, legacy DDOC and ASiC containers with CAdES signatures are sent to the SiVa Online Service for validation; --offline disables that fallback, so those service-backed formats cannot be opened offline. BDOC 1.0 is not supported.
 General form of the command is:
 \code{.txt}
 > digidoc-tool open <input-container-file>
@@ -1393,12 +1512,6 @@ Available options:
 If set, then all of the input container’s data files are extracted and written to disk without validating signatures. If an output directory is not specified with the value of this parameter then the extracted files are written to the same directory where the input file is located.</td></tr>
 <tr><td>--validateOnExtract	</td><td>Optional</td><td>
 If set, then validates container before extracting files.</td></tr>
-<tr><td>\-\-policy=(POLv1,POLv2)	</td><td>Optional</td><td>
-Signature Validation Policy
-
-Default POLv2
-
-http://open-eid.github.io/SiVa/siva/appendix/validation_policy/</td></tr>
 <tr><td>\-\-offline	</td><td>Optional</td><td>
 open container offline (eg. Don't send to SiVa)</td></tr>
 <tr><td>\-\-warnings=
@@ -1531,7 +1644,7 @@ Output:
 
 
 \subsection	Adding Adding signatures
-Command "sign" enables adding signatures to existing DigiDoc containers. The command is supported with DigiDoc formats BDOC 2.1 and ASiC-E.
+Command "sign" enables adding XAdES signatures to existing ASiC-E and legacy BDOC 2.1 containers. The same signing options are used by "create" to add the initial \ref RFC3161 "RFC 3161" TimeStampToken to a new ASiC-S container; an existing ASiC-S container cannot receive another ordinary signature.
 \code{.txt}
 > digidoc-tool sign <modified-digidoc-container>
 \endcode
@@ -1541,8 +1654,10 @@ Command "sign" enables adding signatures to existing DigiDoc containers. The com
 If PIN is not provided with this parameter value and (the default) PKCS#11 module is used for signing then the utility program asks for the user to insert PIN code to command line during the program’s execution time.</td></tr>
 <tr><td>\-\-profile=	</td><td>Optional</td><td>
 Profile of the signature. Possible values are:
-- TS - a time-stamp and OCSP confirmation will be added to the signature as validation data.
-- TSA - a time-stamp and OCSP confirmation will be added to the signature as validation data. Additional time-stamp is added for notarize all certificate and revocation info.
+- TS or time-stamp - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data.
+- TSA or time-stamp-archive - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data, followed by an archive time-stamp over the certificate and revocation information.
+- TimeStampToken or time-stamp-token - create the \ref RFC3161 "RFC 3161" token signature used by a new ASiC-S container.
+</td></tr>
 <tr><td>\-\-XAdESEN	</td><td>Optional</td><td>
 Use XAdES EN profile.</td></tr>
 <tr><td>\-\-city=	</td><td>Optional</td><td>
@@ -1567,8 +1682,10 @@ Used for testing purposes. With RSA keys RSA-PSS padding is used. Specifies the 
 Option to change RSA Signature padding (RSA PKCS1.5).</td></tr>
 <tr><td>\-\-rsapss	</td><td>Optional</td><td>
 Option to change RSA Signature padding (RSA PSS).</td></tr>
-<tr><td>\-\-tsurl	</td><td>Optional</td><td>
+<tr><td>\-\-tsurl=	</td><td>Optional</td><td>
 Option to change TS URL.</td></tr>
+<tr><td>\-\-userAgent=	</td><td>Optional</td><td>
+Additional application information sent to the TSA or OCSP service.</td></tr>
 <tr><td>\-\-dontValidate	</td><td>Optional</td><td>
 Don't validate container on signature creation.</td></tr>
 </table>
@@ -1617,6 +1734,30 @@ Input:
   --selectFirst			- the first signing certificate is used for signing
   --pin=12345			- PIN code (PIN2 in case of Estonian ID cards)
   demo-container.asice	- container to be modified
+\endcode
+
+
+\subsection Extending Extending container validity
+Command "extend" adds new validity evidence and saves the result. Without --signature, it calls the high-level digidoc::Container::extendContainerValidity workflow: eligible ASiC-E or ASiC-S signatures are extended in place, or the original container is wrapped in a new timestamped ASiC-S container when necessary.
+
+\code{.txt}
+> digidoc-tool extend demo-container.asice
+\endcode
+
+When one or more --signature options are specified, only those zero-based signature indexes are extended directly with digidoc::Signature::extendSignatureProfile. In this mode --profile selects the target profile and --dontValidate skips validation after each extension.
+
+<table>
+<tr><td>\-\-signature=</td><td>Optional</td><td>
+Zero-based signature index to extend directly. The option can occur multiple times.</td></tr>
+<tr><td>\-\-profile=</td><td>Optional</td><td>
+Target profile for direct per-signature extension: TS, TSA, time-stamp or time-stamp-archive. The high-level workflow chooses the required profile automatically when --signature is omitted.</td></tr>
+<tr><td>\-\-dontValidate</td><td>Optional</td><td>
+Do not validate a directly extended signature after extension.</td></tr>
+</table>
+
+\code{.txt}
+Sample: directly extend signature 0 to the archive time-stamp profile
+> digidoc-tool extend --signature=0 --profile=TSA demo-container.asice
 \endcode
 
 
@@ -1759,8 +1900,8 @@ It is expected that either a time-mark or time-stamp and OCSP confirmation have 
 10.	The data file’s MIME type that is used in case of Libdigidocpp’s utility program is always "application/octet-stream" for testing purposes.
 11.	The <ds:Signature> element’s Id attribute value is set to "S<seq_no>" during signature creation where sequence numbers are counted from zero. Other Id values that are used in the sub-elements of the <ds:Signature> element contain the signature’s Id value as a prefix. During verification, different Id attribute values are also supported but are not tested periodically.
 12. signatures*.xml file's XML structure validation is done on the basis of XAdES XML Schema (\ref XAdES), however, there are additional checks to determine any unsupported elements that are allowed by the XAdES specification. The unsupported elements are CounterSignature, AttributeCertificateRefs, AttributeRevocationRefs, RefsOnlyTimeStamp, AttrAuthoritiesCertValues, AttributeRevocationValues, CommitmentTypeIndicationType, AllDataObjectsTimeStamp, IndividualDataObjectsTimeStampType.
-13. Special characters in URI attribute values are handled according to RFC3986 (since v3.9 of the library): the characters are percent-encoded, except of unreserved characters and delimiters. Both percent-encoded and non-percent-encoded characters are supported during signature's validation.
-14. When validating a BDOC-TS document then the difference between OCSP validity confirmation's production time (producedAt field) and time-stamp's production time (getTime field) is checked. An exception is thrown if the OCSP confirmation's time is earlier than time-stamp's time. If the OCSP confirmation's time is later than time-stamp's time by more than 15 minutes then a warning is returned. If the difference is more than 24 hours then exception is thrown.
+13. Special characters in URI attribute values are handled according to \ref RFC3986 "RFC 3986" (since v3.9 of the library): the characters are percent-encoded, except of unreserved characters and delimiters. Both percent-encoded and non-percent-encoded characters are supported during signature's validation.
+14. When validating a BDOC-TS document then the difference between the OCSP validity confirmation's production time (producedAt field) and the time-stamp token's creation time (\ref RFC3161 "RFC 3161 TSTInfo.genTime") is checked. An exception is thrown if the OCSP confirmation's time is earlier than the time-stamp's time. If the OCSP confirmation's time is later than the time-stamp's time by more than 15 minutes then a warning is returned. If the difference is more than 24 hours then an exception is thrown.
 15. During signature creation, it is checked that the difference between the signer's computer time and the OCSP response's production time (producedAt value) would not exceed 15 minutes. If the difference exceeds 15 minutes then an exception is returned and signing is cancelled.
 
 \subsection cert-notes Certificate related notes
@@ -1780,4 +1921,9 @@ It is expected that either a time-mark or time-stamp and OCSP confirmation have 
 8.	When a data file is added to the container then the modification time of the file (as it is registered in the file system) is preserved also in the ZIP container file. There is an exception if the file is added by reading it from an input stream - in that case, the current timestamp value is registered as "last modified" time in the ZIP file.
 
 
+*/
+
+/*! \page release_notes Release Notes
+
+\include RELEASE-NOTES.md
 */

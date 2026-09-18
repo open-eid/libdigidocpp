@@ -86,6 +86,8 @@ using namespace std;
 DataFile::DataFile() = default;
 DataFile::~DataFile() = default;
 
+/** @cond INTERNAL */
+
 struct DataFilePrivate::Private {
     optional<unsigned long> size;
 };
@@ -187,3 +189,5 @@ void DataFilePrivate::saveAs(ostream &os) const
     m_is->seekg(0);
     os << m_is->rdbuf();
 }
+
+/** @endcond */

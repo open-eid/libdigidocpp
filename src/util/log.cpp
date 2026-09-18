@@ -128,6 +128,7 @@ void Log::out(LogType type, const char *file, unsigned int line, const char *for
         cerr << "Failed to format log message: " << e.what() << '\n';
         o << format << '\n';
     }
+    o.flush();
     va_end(args);
 }
 
@@ -143,4 +144,5 @@ void Log::dbgPrintfMemImpl(const char *msg, const unsigned char *data, size_t si
     for(size_t i = 0; i < size; ++i)
         o << setw(2) << static_cast<int>(data[i]) << ' ';
     o << dec << nouppercase << setfill(' ') << "}:" << size << '\n';
+    o.flush();
 }

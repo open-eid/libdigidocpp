@@ -56,6 +56,11 @@ ASiC_E::ASiC_E(const string &path, bool create) try
     if(create)
         return;
     auto z = load(true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
+    /**
+     * ETSI EN 319 162-1 V1.1.1 (2016-04)
+     * 5.3.3 Requirements for ASiC-E with XAdES signature, Table 5
+     * META-INF/manifest.xml shall be present (cardinality 1) in ASiC-E XAdES baseline containers.
+     */
     auto doc = XMLDocument::open(z.read("META-INF/manifest.xml"), {"manifest", MANIFEST_NS});
     static const XMLSchema schema(File::path(Conf::instance()->xsdPath(), "OpenDocument_manifest_v1_2.xsd"));
     doc.validateSchema(schema);
@@ -98,8 +103,8 @@ ASiC_E::ASiC_E(const string &path, bool create) try
     for(const string &file: z.list())
     {
         /**
-         * http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
-         * 6.2.2 Contents of Container
+         * ETSI EN 319 162-1 V1.1.1 (2016-04)
+         * 4.4.3.2 Contents of Container
          * 3) The root element of each "*signatures*.xml" content shall be either:
          */
         if(file.starts_with("META-INF/") && file.contains("signatures") && file.ends_with(".xml"))

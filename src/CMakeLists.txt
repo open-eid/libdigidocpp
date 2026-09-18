@@ -168,6 +168,7 @@ if( BUILD_TOOLS )
     target_link_options(digidoc-tool PRIVATE
         $<$<PLATFORM_ID:Windows>: /MANIFEST:NO /MANIFEST:EMBED /MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/digidoc-tool.manifest>
     )
+    string(TIMESTAMP BUILD_DATE "%Y-%m-%d" UTC)
     configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
 endif()
 

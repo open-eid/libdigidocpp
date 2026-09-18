@@ -30,7 +30,10 @@
 #include <crypto/PKCS12Signer.h>
 #include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
+#include <util/log.h>
 #include <util/XMLText.h>
+
+#include <fstream>
 
 namespace digidoc
 {
@@ -61,6 +64,35 @@ const string ASiCS::EXT = "asics";
 }
 
 BOOST_GLOBAL_FIXTURE(TestFixture);
+
+BOOST_AUTO_TEST_SUITE(LogSuite)
+BOOST_AUTO_TEST_CASE(logEntryIsWrittenImmediately)
+{
+    const string marker = "log entry is immediately available";
+    const string path = Conf::instance()->logFile();
+    const auto size = util::File::fileSize(path);
+    INFO("%s", marker.c_str());
+
+    BOOST_CHECK_GT(util::File::fileSize(path), size);
+    ifstream log{path};
+    const string contents{istreambuf_iterator<char>{log}, istreambuf_iterator<char>{}};
+    BOOST_CHECK_NE(contents.find(marker), string::npos);
+}
+
+BOOST_AUTO_TEST_CASE(memoryLogEntryIsWrittenImmediately)
+{
+    const string marker = "memory log entry is immediately available";
+    const string path = Conf::instance()->logFile();
+    const auto size = util::File::fileSize(path);
+    const unsigned char data[] {0x01, 0x23, 0x45, 0x67};
+    DEBUGMEM(marker.c_str(), data, sizeof(data));
+
+    BOOST_CHECK_GT(util::File::fileSize(path), size);
+    ifstream log{path};
+    const string contents{istreambuf_iterator<char>{log}, istreambuf_iterator<char>{}};
+    BOOST_CHECK_NE(contents.find(marker), string::npos);
+}
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(SignerSuite)
 BOOST_AUTO_TEST_CASE(signerParameters)
@@ -825,6 +857,21 @@ BOOST_AUTO_TEST_CASE(XMLBomb)
         BOOST_CHECK_THROW(XMLDocument::openStream(f, {}, true), Exception);
     if(std::fstream f{"xml-bomb-cont.xml"})
         BOOST_CHECK_THROW(XMLDocument::openStream(f, {}, true), Exception);
+}
+BOOST_AUTO_TEST_CASE(XMLUnicodePath)
+{
+    const string path = "libdigidocpp-\xC3\xB5-\xC3\xA4-\xC3\xB6-\xC3\xBC.xml";
+    {
+        ofstream out{util::File::encodeName(path), ofstream::binary|ofstream::trunc};
+        BOOST_REQUIRE(out.is_open());
+        out << "<root>unicode path</root>";
+        BOOST_REQUIRE(out.good());
+    }
+
+    XMLDocument doc(path, {"root"});
+    BOOST_CHECK(doc);
+    BOOST_CHECK_EQUAL(string_view(doc), "unicode path");
+    fs::remove(util::File::encodeName(path));
 }
 BOOST_AUTO_TEST_CASE(XMLXXE)
 {

@@ -53,7 +53,8 @@ X509Crypto::X509Crypto(X509Cert cert)
 
 bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
 {
-    // DER-encoded instance of type IssuerSerial type defined in IETF RFC 5035 [17].
+    // DER-encoded instance of type IssuerSerial defined in IETF RFC 5035:
+    // https://www.rfc-editor.org/rfc/rfc5035.html
     auto is = d2i<d2i_ESS_ISSUER_SERIAL, ESS_ISSUER_SERIAL_free>(data);
     if(!is || sk_GENERAL_NAME_num(is->issuer) != 1)
         return false;
@@ -67,7 +68,7 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
 /**
  * Check if X509Cert issuer is same as provided issuer name by
  * http://www.w3.org/TR/xmldsig-core/#dname-encrules which refers to
- * http://www.ietf.org/rfc/rfc4514.txt
+ * https://www.rfc-editor.org/rfc/rfc4514.html
  *
  * String X.500 AttributeType
  * CN commonName (2.5.4.3)
@@ -80,7 +81,8 @@ bool X509Crypto::compareIssuerToDer(const vector<unsigned char> &data) const
  * DC domainComponent (0.9.2342.19200300.100.1.25)
  * UID userId (0.9.2342.19200300.100.1.1)
  *
- * These attribute types are described in [RFC4519].
+ * These attribute types are described in RFC 4519:
+ * https://www.rfc-editor.org/rfc/rfc4519.html
  * Implementations MAY recognize other DN string representations.
  * However, as there is no requirement that alternative DN string
  * representations be recognized (and, if so, how), implementations
