@@ -19,6 +19,7 @@
 
 #include "File.h"
 
+#include "../Container.h"
 #include "log.h"
 
 #include <algorithm>
@@ -54,12 +55,10 @@ namespace fs = filesystem;
 #define f_stat _wstat64
 #define f_utime _wutime64
 using f_statbuf = struct _stat64;
-using f_utimbuf = struct __utimbuf64;
 #else
 #define f_stat stat
 #define f_utime utime
 using f_statbuf = struct stat;
-using f_utimbuf = struct utimbuf;
 #endif
 
 
@@ -71,12 +70,22 @@ static string decodeName(const fs::path &path)
 
 string File::confPath()
 {
-#if defined(__APPLE__)
+#ifdef __APPLE__
     return frameworkResourcesPath("ee.ria.digidocpp");
-#elif defined(_WIN32) && defined(_DEBUG)
-    return dllPath("digidocppd.dll");
-#elif defined(_WIN32)
-    return dllPath("digidocpp.dll");
+#elifdef _WIN32
+    if(HMODULE handle {};
+        GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                           GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           reinterpret_cast<LPCWSTR>(&digidoc::terminate),
+                           &handle))
+    {
+        wstring path(MAX_PATH, 0);
+        path.resize(GetModuleFileNameW(handle, path.data(), DWORD(path.size())));
+        if(size_t pos = path.find_last_of(L"/\\"); pos != wstring::npos)
+            path.resize(pos);
+        return decodeName(std::move(path));
+    }
+    return {};
 #else
     fs::path result;
     if(char *var = getenv("SNAP"))
@@ -105,20 +114,6 @@ bool File::fileExists(const string& path)
 {
     return fs::is_regular_file(encodeName(path));
 }
-
-#ifdef _WIN32
-string File::dllPath(string_view dll)
-{
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    HMODULE handle = GetModuleHandleW(encodeName(dll).c_str());
-    wstring path(MAX_PATH, 0);
-    path.resize(GetModuleFileNameW(handle, path.data(), DWORD(path.size())));
-    return decodeName(fs::path(path).parent_path());
-#else
-    return {};
-#endif
-}
-#endif
 
 /**
  * Returns last modified time
