@@ -21,10 +21,10 @@
         sudo dnf install cmake gcc-c++ libtool-ltdl-devel libxml2-devel minizip-ng-compat-devel openssl-devel zlib-devel xmlsec1-openssl-devel
 
 	* doxygen - Optional, for API documentation
-	* libboost-test-dev - Optional, for unittests
+	* libboost-test-dev (Fedora: boost-devel) - Optional, for unittests
 	* swig - Optional, for C#, Java and python bindings
-	* libpython3-dev, python3-setuptools - Optional, for python bindings
-	* openjdk-21-jdk-headless - Optional, for Java bindings
+	* libpython3-dev, python3-setuptools (Fedora: python3-devel, python3-setuptools) - Optional, for python bindings
+	* openjdk-21-jdk-headless (Fedora: java-25-openjdk-devel) - Optional, for Java bindings
 
 2. Fetch the source
 
@@ -139,13 +139,19 @@
 
 6. Alternative to steps 4. and 5. -
 
-        powershell -ExecutionPolicy ByPass -File build.ps1
+        powershell -ExecutionPolicy ByPass -File build.ps1 -acceptWixEULA
+
+    WiX 7 requires accepting its
+    [Open Source Maintenance Fee EULA](https://docs.firegiant.com/wix/osmf/).
+    Pass `-acceptWixEULA` only after reviewing the terms. The acceptance is stored
+    for the current user, so the switch can be omitted from subsequent builds.
 
     Optional build.ps1 parameters:
 
         -swig C:/swigwin-4.4.1/swig.exe
         -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
         -boost
+        -acceptWixEULA
 
     The build script builds executables and installation media for given
     platform (Debug and Release with debug symbols)

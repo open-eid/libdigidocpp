@@ -217,6 +217,8 @@ ZipSerialize::Properties ZipSerialize::properties(const string &file) const
 
 size_t ZipSerialize::Read::operator()(void *data, size_t size) const
 {
+    if(size == 0)
+        return 0;
     auto result = unzReadCurrentFile(d.get(), data, size);
     if(result >= UNZ_EOF)
         return size_t(result);

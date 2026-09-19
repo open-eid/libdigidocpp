@@ -13,5 +13,5 @@
    Or open the Xcode project and run it on a simulator, device or Mac Catalyst
    target directly.
 
-`AppDelegate.mm` shows how to override `digidoc::XmlConf` so TSL lists use an
-application-writable cache directory.
+`DocumentViewModel.mm` shows how to override `digidoc::ConfCurrent` so TSL lists
+use an application-writable cache directory.
