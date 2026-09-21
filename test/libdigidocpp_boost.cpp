@@ -641,6 +641,21 @@ BOOST_AUTO_TEST_CASE(TeRaASiCSContainer)
     BOOST_CHECK_EQUAL("DEMO of SK TSA 2014", ts->TimeStampCertificate().subjectName("CN"));
 }
 
+BOOST_AUTO_TEST_CASE(TeRaASiCSContainerWithoutOnlineValidation)
+{
+    struct RejectOnline final: ContainerOpenCB
+    {
+        bool validateOnline() const final { return false; }
+    } cb;
+
+    auto d = Container::openPtr("test-tera.asics", &cb);
+    BOOST_REQUIRE_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->dataFiles().front()->fileName(), "ddoc_for_testing.ddoc");
+    BOOST_CHECK_EQUAL(d->signatures().front()->profile(), "TimeStampToken");
+    BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
+}
+
 BOOST_AUTO_TEST_CASE(TeRaEmptyASiCSContainer)
 {
     auto d = Container::openPtr("test-tera-empty.asics");

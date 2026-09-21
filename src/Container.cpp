@@ -345,7 +345,11 @@ unique_ptr<Container> Container::createPtr(const std::string &path)
 std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Signer *signer, size_t &extendedCount) try
 {
     extendedCount = 0;
-    if(doc.signatures().empty())
+    auto signatures = doc.signatures();
+    if(doc.mediaType() == ASiContainer::MIMETYPE_ASIC_S &&
+        !signatures.empty() && signatures.front()->profile() == ASiC_S::ASIC_TST_PROFILE)
+        signatures.resize(1);
+    if(signatures.empty())
         THROW("Container does not contain signatures");
 
     if(doc.mediaType() == ASiContainer::MIMETYPE_ASIC_S ||
@@ -354,7 +358,7 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
         bool extendInPlace = true;
         size_t tCount = 0;
         size_t eeCount = 0;
-        for(Signature *s: doc.signatures())
+        for(Signature *s: signatures)
         {
             auto signingCert = s->signingCertificate();
             if(signingCert.subjectName("C") != "EE" ||
@@ -431,7 +435,7 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
 
         if(extendInPlace)
         {
-            for(Signature *s: doc.signatures())
+            for(Signature *s: signatures)
             {
                 if(auto cert = s->signingCertificate();
                     cert.subjectName("C") != "EE" ||
