@@ -300,6 +300,9 @@ public:
     bool TSLAllowExpired() const final { return expired.value_or(XmlConfCurrent::TSLAllowExpired()); }
     vector<X509Cert> TSLCerts() const final { return tslcerts.value_or(XmlConfCurrent::TSLCerts()); }
     string TSUrl() const final { return tsurl.value_or(XmlConfCurrent::TSUrl()); }
+    vector<X509Cert> TSCerts() const final { return tscerts.value_or(XmlConfCurrent::TSCerts()); }
+    string TSUrlArchive() const final { return tsurlarchive.value_or(XmlConfCurrent::TSUrlArchive()); }
+    vector<X509Cert> TSCertsArchive() const final { return tscertsarchive.value_or(XmlConfCurrent::TSCertsArchive()); }
     string TSLUrl() const final { return tslurl.value_or(XmlConfCurrent::TSLUrl()); }
 
     unique_ptr<Signer> getSigner(bool getwebsigner = false) const;
@@ -310,6 +313,9 @@ public:
     optional<vector<X509Cert>> tslcerts;
     optional<string> _logFile;
     optional<string> tsurl;
+    optional<vector<X509Cert>> tscerts;
+    optional<string> tsurlarchive;
+    optional<vector<X509Cert>> tscertsarchive;
     optional<string> tslurl;
     optional<string> uri;
     optional<string> siguri;
@@ -399,6 +405,9 @@ static int printUsage(const char *executable)
     << "      --rsapkcs15    - Use RSA PKCS1.5 padding" << endl
     << "      --rsapss       - Use RSA PSS padding" << endl
     << "      --tsurl=       - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
+    << "      --tscert=      - pin the TSA TLS certificate, PEM file" << endl
+    << "      --tsurlarchive= - option to change archive (LTA) TS URL (default " << CONF(TSUrlArchive) << ")" << endl
+    << "      --tscertarchive= - pin the archive (LTA) TSA TLS certificate, PEM file" << endl
     << "      --dontValidate - Don't validate container on signature creation" << endl
     << "      --userAgent=   - Additional application info sent to TSA or OCSP service" << endl << endl
     << "  Command extend:" << endl
@@ -475,7 +484,10 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg == "--rsapkcs15") rsaPss = false;
         else if(arg == "--rsapss") rsaPss = true;
         else if(value v{arg, "--tsurl="}) tsurl = v;
+        else if(value v{arg, "--tsurlarchive="}) tsurlarchive = v;
         else if(value v{arg, "--tslurl="}) tslurl = v;
+        else if(value v{arg, "--tscert="}) tscerts = vector<X509Cert>{ X509Cert(v) };
+        else if(value v{arg, "--tscertarchive="}) tscertsarchive = vector<X509Cert>{ X509Cert(v) };
         else if(value v{arg, "--tslcert="}) tslcerts = vector<X509Cert>{ X509Cert(v) };
         else if(arg == "--TSLAllowExpired") expired = true;
         else if(arg == "--dontsign") doSign = false;

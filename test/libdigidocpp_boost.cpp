@@ -501,6 +501,21 @@ BOOST_AUTO_TEST_CASE(XmlConfCase) {
     const string testurl = "https://test.url";
     c.setVerifyServiceUri(testurl);
     BOOST_CHECK_EQUAL(c.verifyServiceUri(), testurl);
+
+    // ts.url.archive is unset in the fixture, so archive time-stamps fall back
+    // to the signature TSA, and keep following it when that one is changed.
+    BOOST_CHECK_EQUAL(c.TSUrlArchive(), c.TSUrl());
+    const string tsurl = "https://test.url/ts";
+    c.setTSUrl(tsurl);
+    BOOST_CHECK_EQUAL(c.TSUrl(), tsurl);
+    BOOST_CHECK_EQUAL(c.TSUrlArchive(), tsurl);
+
+    // Once set, the archive TSA is independent of the signature TSA.
+    const string tsarchiveurl = "https://test.url/ts-archive";
+    c.setTSUrlArchive(tsarchiveurl);
+    BOOST_CHECK_EQUAL(c.TSUrlArchive(), tsarchiveurl);
+    BOOST_CHECK_EQUAL(c.TSUrl(), tsurl);
+    BOOST_CHECK(c.TSCertsArchive() == c.TSCerts());
 }
 BOOST_AUTO_TEST_SUITE_END()
 

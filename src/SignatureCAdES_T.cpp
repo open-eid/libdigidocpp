@@ -38,7 +38,7 @@ void SignatureCAdES_T::extendSignatureProfile(const string &profile)
     ASN1_OCTET_STRING *signature = CMS_SignerInfo_get0_signature(d->si);
     Digest digest;
     digest.update(signature->data, size_t(signature->length));
-    vector<unsigned char> tsa = TS(CONF(TSUrl), digest);
+    vector<unsigned char> tsa = TS(CONF(TSUrl), CONF(TSCerts), digest);
     if(tsa.empty())
         THROW("Failed to add TimeStamp info");
     if(CMS_unsigned_add1_attr_by_NID(d->si, NID_id_smime_aa_timeStampToken, V_ASN1_SEQUENCE, tsa.data(), int(tsa.size())) != 1)
