@@ -315,7 +315,7 @@ X509Cert::X509Cert(X509Cert &&other) noexcept = default;
 /**
  * Clean up underlying OpenSSL X509 data.
  */
-X509Cert::~X509Cert() = default;
+X509Cert::~X509Cert() noexcept = default;
 
 /**
  * Encodes the X509 certificate using DER encoding.
@@ -578,7 +578,16 @@ bool X509Cert::isValid(time_t *t) const
  */
 bool X509Cert::verify(bool noqscd, tm validation_time) const
 {
-    return X509CertStore::instance()->verify(*this, noqscd, validation_time);
+    return X509CertStore::instance()->verify(*this, noqscd, validation_time, {});
+}
+
+/**
+ * Returns true if certificate is signed by trusted issuer
+ * @throws Exception if error
+ */
+bool X509Cert::verify(bool noqscd, tm validation_time, const vector<X509Cert> &untrusted) const
+{
+    return X509CertStore::instance()->verify(*this, noqscd, validation_time, untrusted);
 }
 
 /**

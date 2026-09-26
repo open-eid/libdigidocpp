@@ -86,7 +86,7 @@ namespace digidoc
           explicit X509Cert(const std::string &path, Format format = Pem);
           X509Cert(X509Cert &&other) noexcept;
           X509Cert(const X509Cert &other);
-          ~X509Cert();
+          ~X509Cert() noexcept;
 
           std::string serial() const;
           std::string issuerName(const std::string &obj = std::string()) const;
@@ -97,6 +97,7 @@ namespace digidoc
           bool isCA() const;
           bool isValid(time_t *t = nullptr) const;
           bool verify(bool noqscd, tm validation_time = {}) const;
+          bool verify(bool noqscd, tm validation_time, const std::vector<X509Cert> &untrusted) const;
 
           X509* handle() const;
           operator std::vector<unsigned char>() const;

@@ -1,4 +1,5 @@
 #include <Container.h>
+#include <Exception.h>
 #include <crypto/PKCS11Signer.h>
 
 #include <iostream>
