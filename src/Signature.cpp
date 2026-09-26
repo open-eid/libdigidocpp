@@ -349,7 +349,12 @@ std::string Signature::Validator::diagnostics() const
 
 void Signature::Validator::parseException(const Exception &e)
 {
-    for(const Exception &child: e.causes())
+    if(const Exception::Causes causes = e.causes(); causes.empty())
+    {
+        d->diagnostics += e.msg() + "\n";
+        d->result = std::max(d->result, Invalid);
+    }
+    else for(const Exception &child: causes)
     {
         d->diagnostics += child.msg() + "\n";
         switch(child.code())
@@ -372,7 +377,8 @@ void Signature::Validator::parseException(const Exception &e)
         default:
             d->result = std::max(d->result, Invalid);
         }
-        parseException(child);
+        if(!child.causes().empty())
+            parseException(child);
     }
 }
 

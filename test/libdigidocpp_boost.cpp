@@ -64,6 +64,55 @@ const string ASiCS::EXT = "asics";
 
 BOOST_GLOBAL_FIXTURE(TestFixture);
 
+namespace
+{
+class ThrowingSignature final: public Signature
+{
+public:
+    explicit ThrowingSignature(Exception exception)
+        : exception(std::move(exception))
+    {}
+
+    string id() const override { return {}; }
+    string claimedSigningTime() const override { return {}; }
+    string trustedSigningTime() const override { return {}; }
+    X509Cert signingCertificate() const override { return X509Cert(); }
+    string signatureMethod() const override { return {}; }
+    void validate() const override { throw exception; }
+    vector<unsigned char> dataToSign() const override { return {}; }
+    void setSignatureValue(const vector<unsigned char> &) override {}
+    string profile() const override { return {}; }
+
+private:
+    Exception exception;
+};
+}
+
+BOOST_AUTO_TEST_SUITE(SignatureValidatorSuite)
+BOOST_AUTO_TEST_CASE(causeLessExceptionIsInvalid)
+{
+    ThrowingSignature signature(Exception(EXCEPTION_PARAMS("Validation failed without causes")));
+    Signature::Validator validator(&signature);
+
+    BOOST_CHECK_EQUAL(validator.status(), Signature::Validator::Invalid);
+    BOOST_CHECK_EQUAL(validator.diagnostics(), "Validation failed without causes\n");
+    BOOST_CHECK(validator.warnings().empty());
+}
+
+BOOST_AUTO_TEST_CASE(nestedWarningRemainsWarning)
+{
+    Exception warning(EXCEPTION_PARAMS("Signature digest weak"));
+    warning.setCode(Exception::SignatureDigestWeak);
+    ThrowingSignature signature(Exception(EXCEPTION_PARAMS("Signature validation"), warning));
+    Signature::Validator validator(&signature);
+
+    BOOST_CHECK_EQUAL(validator.status(), Signature::Validator::Warning);
+    BOOST_CHECK_EQUAL(validator.diagnostics(), "Signature digest weak\n");
+    BOOST_REQUIRE_EQUAL(validator.warnings().size(), 1U);
+    BOOST_CHECK_EQUAL(validator.warnings().front(), Exception::SignatureDigestWeak);
+}
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(LogSuite)
 BOOST_AUTO_TEST_CASE(logEntryIsWrittenImmediately)
 {
