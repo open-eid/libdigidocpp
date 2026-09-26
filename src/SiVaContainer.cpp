@@ -312,8 +312,10 @@ unique_ptr<istream> SiVaContainer::parseDDoc(const unique_ptr<istream> &ddoc, bo
     try
     {
         auto doc = XMLDocument::openStream(*ddoc, {}, true);
-        for(auto dataFile = doc/"DataFile"; dataFile; dataFile++)
+        for(auto dataFile: doc)
         {
+            if(dataFile.name() != "DataFile")
+                continue;
             auto contentType = dataFile["ContentType"];
             if(contentType == "HASHCODE")
                 THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
