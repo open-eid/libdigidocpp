@@ -107,10 +107,18 @@ DataFilePrivate::DataFilePrivate(const ZipSerialize &z, string filename, string 
 {
     auto r = z.read(m_filename);
     d->size.emplace((unsigned long)r.size);
-    if(r.size > MAX_MEM_FILE)
+    if(!useMemoryForDataFile(r.size, z.totalUncompressedSize()))
     {
         try {
             m_tempFile = util::File::tempFileName();
+            error_code ec;
+            const auto space = filesystem::space(m_tempFile.parent_path(), ec);
+            if(ec)
+                THROW("Failed to determine available disk space for extracting ZIP entry '%s'.", m_filename.c_str());
+            if(space.available < r.size)
+                THROW("Insufficient disk space for extracting ZIP entry '%s': requires %zu bytes, %ju bytes available.",
+                    m_filename.c_str(), r.size, space.available);
+
             auto fs = make_unique<fstream>(m_tempFile, fstream::in|fstream::out|fstream::binary|fstream::trunc);
             if(!fs->is_open())
                 THROW("Failed to open destination file");
