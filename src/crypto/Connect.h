@@ -60,9 +60,9 @@ public:
         }
     };
 
-    Connect(const std::string &url, std::string method = "POST",
-        int timeout = 0, const std::vector<X509Cert> &certs = {}, const std::string &userAgentData = {},
-        const std::string &version = "1.1");
+    Connect(const std::string &url, std::string_view method = "POST",
+        int timeout = 0, std::vector<X509Cert> certs = {}, std::string userAgentData = {},
+        std::string_view version = "1.1");
     ~Connect();
     inline Result exec(std::initializer_list<std::pair<std::string_view,std::string_view>> headers,
         const std::vector<unsigned char> &data)
@@ -79,7 +79,9 @@ private:
     void sendProxyAuth();
     static std::string decompress(const std::string &encoding, const std::string &data) ;
 
-    std::string baseurl, method;
+    std::string baseurl, userAgentData;
+    std::string_view method, version;
+    std::vector<X509Cert> certs;
     BIO *d = nullptr;
     std::shared_ptr<SSL_CTX> ssl;
     int timeout;
