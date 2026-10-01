@@ -1134,7 +1134,8 @@ EXCLUDE_SYMBOLS        = digidoc::*Private \
                          *m_* \
                          *tslcert* \
                          MAX_MEM_FILE \
-                         initXmlSecCallback
+                         initXmlSecCallback \
+                         allowLegacyDigestSignatures
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include

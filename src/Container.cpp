@@ -42,6 +42,10 @@
 #include <sstream>
 #include <thread>
 
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
 using namespace digidoc;
 using namespace std;
 
@@ -52,6 +56,27 @@ static string m_userAgent = "libdigidocpp";
 static vector<decltype(&Container::createPtr)> m_createList {};
 static vector<std::unique_ptr<Container> (*)(const std::string &path, ContainerOpenCB *cb)> m_openList {};
 int initXmlSecCallback();
+}
+
+/**
+ * Re-enables SHA-1 signature verification where the platform disables it.
+ *
+ * Red Hat derived distributions patch OpenSSL to reject SHA-1 signatures according to
+ * the system crypto policy (rh-allow-sha1-signatures). Certificates issued by the older
+ * Estonian CA-s are SHA-1 signed, so chain building fails there with a misleading
+ * "unable to get local issuer certificate". The setter is exported only by Red Hat's
+ * OpenSSL, so looking it up dynamically keeps this a no-op on every other platform.
+ */
+static void allowLegacyDigestSignatures()
+{
+#ifndef _WIN32
+    if(auto *allow = reinterpret_cast<int(*)(void*, int, int)>(
+            dlsym(RTLD_DEFAULT, "ossl_ctx_legacy_digest_signatures_allowed_set")))
+    {
+        if(allow(nullptr, 1, 1) != 1)
+            WARN("Failed to enable SHA-1 signature verification");
+    }
+#endif
 }
 
 /**
@@ -122,6 +147,8 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
         THROW("Error during initialisation of xmlsec. xmlsec-crypto initialization failed.");
     if(initXmlSecCallback() < 0)
         THROW("Error during initialisation of xmlsec. Failed to register custom callbacks.");
+
+    allowLegacyDigestSignatures();
 
     INFO("Libxml2 version: %s", LIBXML_DOTTED_VERSION);
     INFO("OpenSSL version: %s", OpenSSL_version(OPENSSL_VERSION_STRING));
