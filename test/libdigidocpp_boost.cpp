@@ -23,6 +23,7 @@
 #include <boost/mpl/list.hpp>
 
 #include <DataFile.h>
+#include <DataFile_p.h>
 #include <Signature.h>
 #include <XmlConf.h>
 #include <XMLDocument.h>
@@ -32,6 +33,7 @@
 #include <util/DateTime.h>
 #include <util/log.h>
 
+#include <cstdint>
 #include <fstream>
 
 namespace digidoc
@@ -63,6 +65,112 @@ const string ASiCS::EXT = "asics";
 }
 
 BOOST_GLOBAL_FIXTURE(TestFixture);
+
+namespace
+{
+void append16(vector<unsigned char> &data, uint16_t value)
+{
+    data.push_back(static_cast<unsigned char>(value));
+    data.push_back(static_cast<unsigned char>(value >> 8));
+}
+
+void append32(vector<unsigned char> &data, uint32_t value)
+{
+    append16(data, uint16_t(value));
+    append16(data, uint16_t(value >> 16));
+}
+
+class SyntheticZip
+{
+public:
+    SyntheticZip(size_t count, uint32_t compressed, uint32_t uncompressed)
+        : path(util::File::tempFileName())
+    {
+        vector<unsigned char> data;
+        vector<uint32_t> offsets;
+        vector<string> names;
+        for(size_t i = 0; i < count; ++i)
+        {
+            names.push_back("entry-" + to_string(i));
+            offsets.push_back(uint32_t(data.size()));
+            append32(data, 0x04034b50);
+            append16(data, 20);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append32(data, 0);
+            append32(data, 0);
+            append32(data, 0);
+            append16(data, uint16_t(names.back().size()));
+            append16(data, 0);
+            data.insert(data.end(), names.back().cbegin(), names.back().cend());
+        }
+
+        const uint32_t centralDirectoryOffset = uint32_t(data.size());
+        for(size_t i = 0; i < count; ++i)
+        {
+            append32(data, 0x02014b50);
+            append16(data, 20);
+            append16(data, 20);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append32(data, 0);
+            append32(data, compressed);
+            append32(data, uncompressed);
+            append16(data, uint16_t(names[i].size()));
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append32(data, 0);
+            append32(data, offsets[i]);
+            data.insert(data.end(), names[i].cbegin(), names[i].cend());
+        }
+
+        const uint32_t centralDirectorySize = uint32_t(data.size()) - centralDirectoryOffset;
+        append32(data, 0x06054b50);
+        append16(data, 0);
+        append16(data, 0);
+        append16(data, uint16_t(count));
+        append16(data, uint16_t(count));
+        append32(data, centralDirectorySize);
+        append32(data, centralDirectoryOffset);
+        append16(data, 0);
+
+        ofstream file(path, ios::binary | ios::trunc);
+        file.write(reinterpret_cast<const char*>(data.data()), streamsize(data.size()));
+        if(!file)
+            throw runtime_error("Failed to create synthetic ZIP test input");
+    }
+
+    ~SyntheticZip()
+    {
+        error_code ec;
+        fs::remove(path, ec);
+    }
+
+    string name() const { return path.string(); }
+
+private:
+    fs::path path;
+};
+
+bool exceptionContains(const Exception &e, string_view text)
+{
+    if(e.msg().find(text) != string::npos)
+        return true;
+    const auto causes = e.causes();
+    return any_of(causes.cbegin(), causes.cend(), [text](const Exception &cause) {
+        return exceptionContains(cause, text);
+    });
+}
+
+bool isDecompressionLimit(const Exception &e) { return exceptionContains(e, "ZIP decompression limit exceeded"); }
+bool isEntryCountLimit(const Exception &e) { return exceptionContains(e, "maximum entry count"); }
+}
 
 BOOST_AUTO_TEST_SUITE(LogSuite)
 BOOST_AUTO_TEST_CASE(logEntryIsWrittenImmediately)
@@ -501,6 +609,38 @@ BOOST_AUTO_TEST_CASE(XmlConfCase) {
     const string testurl = "https://test.url";
     c.setVerifyServiceUri(testurl);
     BOOST_CHECK_EQUAL(c.verifyServiceUri(), testurl);
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(ZipSerializeSuite)
+BOOST_AUTO_TEST_CASE(usesTemporaryStorageWhenContainerExceedsMemoryLimit)
+{
+    BOOST_CHECK(useMemoryForDataFile(1, MAX_MEM_FILE));
+    BOOST_CHECK(!useMemoryForDataFile(1, uint64_t(MAX_MEM_FILE) + 1));
+}
+
+BOOST_AUTO_TEST_CASE(rejectsExcessiveCompressionRatio)
+{
+    SyntheticZip zip(1, 1, 101);
+    BOOST_CHECK_EXCEPTION(Container::openPtr(zip.name()), Exception, isDecompressionLimit);
+}
+
+BOOST_AUTO_TEST_CASE(rejectsOversizedEntry)
+{
+    SyntheticZip zip(1, 1024U*1024*1024 + 1, 1024U*1024*1024 + 1);
+    BOOST_CHECK_EXCEPTION(Container::openPtr(zip.name()), Exception, isDecompressionLimit);
+}
+
+BOOST_AUTO_TEST_CASE(rejectsOversizedContainer)
+{
+    SyntheticZip zip(3, 800U*1024*1024, 800U*1024*1024);
+    BOOST_CHECK_EXCEPTION(Container::openPtr(zip.name()), Exception, isDecompressionLimit);
+}
+
+BOOST_AUTO_TEST_CASE(rejectsTooManyEntries)
+{
+    SyntheticZip zip(1001, 0, 0);
+    BOOST_CHECK_EXCEPTION(Container::openPtr(zip.name()), Exception, isEntryCountLimit);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
