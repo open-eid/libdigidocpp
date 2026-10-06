@@ -73,6 +73,8 @@ public:
     void *h {};
 #endif
 
+    ~Private() { OPENSSL_cleanse(pin.data(), pin.size()); }
+
     CK_FUNCTION_LIST *f {};
     struct SignSlot
     {
@@ -335,6 +337,7 @@ X509Cert PKCS11Signer::selectSigningCertificate(const vector<X509Cert> &certific
  */
 void PKCS11Signer::setPin(const string &pin)
 {
+    OPENSSL_cleanse(d->pin.data(), d->pin.size());
     d->pin = pin;
 }
 
@@ -382,6 +385,7 @@ vector<unsigned char> PKCS11Signer::sign(const string &method, const vector<unsi
         {
             string _pin = pin(d->sign.certificate);
             rv = d->f->C_Login(session.handle, CKU_USER, CK_BYTE_PTR(_pin.c_str()), CK_ULONG(_pin.size()));
+            OPENSSL_cleanse(_pin.data(), _pin.size());
         }
         switch(rv)
         {
