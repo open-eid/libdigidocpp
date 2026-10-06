@@ -62,7 +62,7 @@ using f_statbuf = struct stat;
 #endif
 
 
-static string decodeName(const fs::path &path)
+string File::decodeName(const fs::path &path)
 {
     auto name = path.u8string();
     return {reinterpret_cast<const char*>(name.data()), name.size()};
