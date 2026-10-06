@@ -42,10 +42,10 @@ namespace digidoc
               static bool fileExtension(std::string_view path, std::initializer_list<std::string_view> list);
               static unsigned long fileSize(const std::filesystem::path &path) noexcept;
               static std::string_view fileName(std::string_view path) noexcept;
-              static std::string directory(const std::string& path);
+              static std::string_view directory(std::string_view path);
               static std::string path(std::string dir, std::string_view relativePath);
               static std::filesystem::path tempFileName();
-              static void createDirectory(std::string path);
+              static void createDirectory(std::string_view path);
               static std::string toUriPath(const std::string &path);
               static std::string fromUriPath(std::string_view path);
               static std::vector<unsigned char> hexToBin(std::string_view in);

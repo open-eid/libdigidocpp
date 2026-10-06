@@ -212,6 +212,40 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
     BOOST_CHECK_EQUAL(d->mediaType(), Doc::TYPE);
 }
 
+BOOST_AUTO_TEST_CASE(emptyDataFile)
+{
+    auto d = Container::createPtr("empty-datafile.asice");
+    d->addDataFile(make_unique<stringstream>(), "empty.txt", "text/plain");
+    d->addDataFile(make_unique<stringstream>("data"), "data.txt", "text/plain");
+    for(const DataFile *file: d->dataFiles())
+    {
+        ostringstream os;
+        file->saveAs(os);
+        BOOST_CHECK(os.good());
+        BOOST_CHECK_EQUAL(os.str().size(), file->fileSize());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(nonSeekableDataFile)
+{
+    struct NonSeekableBuf: stringbuf
+    {
+        using stringbuf::stringbuf;
+        pos_type seekoff(off_type, ios_base::seekdir, ios_base::openmode) override { return pos_type(off_type(-1)); }
+        pos_type seekpos(pos_type, ios_base::openmode) override { return pos_type(off_type(-1)); }
+    } buf("data");
+
+    auto d = Container::createPtr("nonseekable-datafile.asice");
+    d->addDataFile(make_unique<istream>(&buf), "data.txt", "text/plain");
+    ostringstream os;
+    d->dataFiles().front()->saveAs(os);
+    BOOST_CHECK_EQUAL(os.str(), "data");
+    BOOST_CHECK(os.good());
+
+    ostringstream exhausted;
+    BOOST_CHECK_THROW(d->dataFiles().front()->saveAs(exhausted), Exception);
+}
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
 {
     auto d = Container::createPtr("test." + Doc::EXT);
@@ -505,6 +539,15 @@ BOOST_AUTO_TEST_CASE(XmlConfCase) {
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(FileUtilSuite)
+BOOST_AUTO_TEST_CASE(ToUriPathEscapesSingleDigitBytes)
+{
+    const string fileName = "file\n\t.txt";
+    const string uriPath = util::File::toUriPath(fileName);
+
+    BOOST_CHECK_EQUAL(uriPath, "file%0A%09.txt");
+    BOOST_CHECK_EQUAL(util::File::fromUriPath(uriPath), fileName);
+}
+
 BOOST_AUTO_TEST_CASE(FromUriPathConvertsAsciiEncodingToCharacters)
 {
     const string asciiEncodedStr = "%3dtest%20%40";
@@ -533,6 +576,11 @@ BOOST_AUTO_TEST_CASE(FromUriPathPreservesTrailingPercentageSign)
     string result = util::File::fromUriPath(asciiEncodedStr);
 
     BOOST_CHECK_EQUAL(expectedDecodedStr, result);
+}
+
+BOOST_AUTO_TEST_CASE(FromUriPathPreservesInvalidEscape)
+{
+    BOOST_CHECK_EQUAL(util::File::fromUriPath("file%A.txt"), "file%A.txt");
 }
 
 BOOST_AUTO_TEST_CASE(HexToBinConvertsHexEncodedStringToBinaryData)
