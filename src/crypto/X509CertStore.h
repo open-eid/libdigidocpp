@@ -26,6 +26,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <ctime>
 
 using X509_STORE = struct x509_store_st;
 using X509_STORE_CTX = struct x509_store_ctx_st;
