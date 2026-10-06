@@ -10,14 +10,12 @@ The general format for executing the program is:
 ```
 
 Available optional options on all commands:
-<table>
-<tr><td>\-\-nocolor	</td><td>
-Disable terminal colors</td></tr>
-<tr><td>\-\-loglevel=[0,1,2,3,4]	</td><td>
-Log level: 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug</td></tr>
-<tr><td>\-\-logfile=	</td><td>
-File to log, empty to console</td></tr>
-</table>
+
+| Option                   | Description                                                      |
+|--------------------------|------------------------------------------------------------------|
+| `--nocolor`              | Disable terminal colors                                          |
+| `--loglevel=[0,1,2,3,4]` | Log level: 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug |
+| `--logfile=`             | File to log, empty to console                                    |
 
 ## Creating and signing a document (local signing) {#Creating}
 
@@ -28,18 +26,18 @@ General form of the command is:
 ```
 
 Available options:
-<table>
-<tr><td>\-\-file=	</td><td>Required</td><td>
-Data file(s) to be signed. The option can occur multiple times.
 
-\warning It is recommended not to use special characters in the data file’s name, i.e. it is suggested to only use the characters that are categorized as "unreserved" according to \ref RFC3986 "RFC 3986".</td></tr>
-<tr><td>\-\-mime=	</td><td>Optional</td><td>
-Specifies the data file's mime-type value. When used then must be written right after the "--file" parameter. If left unspecified then the default mime-type value "application/octet-stream" is used.
+| Option       | Usage    | Description                                      |
+|--------------|----------|--------------------------------------------------|
+| `--file=`    | Required | Data file to be signed, can occur multiple times |
+| `--mime=`    | Optional | Mime-type of the preceding `--file`              |
+| `--dontsign` | Optional | Don't sign the newly created container           |
 
-\warning Data file’s mime-type value must be formatted as specified in \ref RFC2045 "RFC 2045", section 5.1, i.e. the "type" and "subtype" values must be separated with a forward slash character.</td></tr>
-<tr><td>\-\-dontsign	</td><td>Optional</td><td>
-Don't sign the newly created container.</td></tr>
-</table>
+`--mime=` must be written right after the `--file` parameter it applies to. If left unspecified then the default mime-type value "application/octet-stream" is used.
+
+\note Data file names are stored percent-encoded (\ref RFC3986 "RFC 3986") in signature references, so special characters in otherwise valid names can be used. Directory separators and reserved names such as `mimetype` are not accepted. Names that use only "unreserved" characters (letters, digits, `-`, `.`, `_`, `~`) are the most portable across other implementations.
+
+\warning Data file’s mime-type value must be formatted as specified in \ref RFC2045 "RFC 2045", section 5.1, i.e. the "type" and "subtype" values must be separated with a forward slash character.
 
 Additional options for the "create" command are the same as for "sign" command (see \ref Adding).
 
@@ -98,7 +96,7 @@ For additional options look sign command.
 
 ## Add additional files to container {#add}
 Command "add" for adding additional files to existing unsigned container.
-Available options are --file and --mime look "create" command for info.
+Available options are `--file` and `--mime` look "create" command for info.
 
 ## Creating and signing a document (external signing, e.g. in browser) {#websign}
 
@@ -118,14 +116,14 @@ General form of the command is:
 ```
 
 Available options:
-<table>
-<tr><td>\-\-cert=	</td><td>Required</td><td>
-Signer's certificate, in PEM format.</td></tr>
-<tr><td>\-\-file=	</td><td>Required</td><td>
-Data file(s) to be signed. The option can occur multiple times.</td></tr>
-<tr><td>\-\-mime=	</td><td>Optional</td><td>
-Specifies the data file's mime-type value. When used then must be written right after the "--file" parameter. If left unspecified then the default mime-type value "application/octet-stream" is used.</td></tr>
-</table>
+
+| Option    | Usage    | Description                                      |
+|-----------|----------|--------------------------------------------------|
+| `--cert=` | Required | Signer's certificate, in PEM format              |
+| `--file=` | Required | Data file to be signed, can occur multiple times |
+| `--mime=` | Optional | Mime-type of the preceding `--file`              |
+
+`--mime=` must be written right after the `--file` parameter it applies to. If left unspecified then the default mime-type value "application/octet-stream" is used.
 
 Additional options for the "websign" command are the same as for "sign" command (see \ref Adding).
 
@@ -147,33 +145,30 @@ Input:
   demo-container.asice	- container to be created
 ```
 
-
 ## Opening document, validating signatures and extracting data files {#Opening}
-Command "open" reads an existing document, prints its contents and validates its signatures. The --extractAll option extracts data files to disk. Supported ASiC-E, ASiC-S and legacy BDOC 2.1 variants are handled locally. PDF, legacy DDOC and ASiC containers with CAdES signatures are sent to the SiVa Online Service for validation; --offline disables that fallback, so those service-backed formats cannot be opened offline. BDOC 1.0 is not supported.
+Command "open" reads an existing document, prints its contents and validates its signatures. The `--extractAll` option extracts data files to disk. Supported ASiC-E, ASiC-S and legacy BDOC 2.1 variants are handled locally. PDF, legacy DDOC and ASiC containers with CAdES signatures are sent to the SiVa Online Service for validation; `--offline` disables that fallback, so those service-backed formats cannot be opened offline. BDOC 1.0 is not supported.
 General form of the command is:
 ```
 > digidoc-tool open <input-container-file>
 ```
 
 Available options:
-<table>
-<tr><td>\-\-extractAll	</td><td>Optional</td><td>
-If set, then all of the input container’s data files are extracted and written to disk without validating signatures. If an output directory is not specified with the value of this parameter then the extracted files are written to the current working directory.
 
-On Windows, reserved device names are prefixed with an underscore (CON becomes _CON). Characters that are invalid in Windows filenames, control characters, and trailing spaces or dots are replaced with underscores. Extraction fails rather than overwriting an existing output file.</td></tr>
-<tr><td>--validateOnExtract	</td><td>Optional</td><td>
-If set, then validates container before extracting files.</td></tr>
-<tr><td>\-\-offline	</td><td>Optional</td><td>
-open container offline (eg. Don't send to SiVa)</td></tr>
-<tr><td>\-\-warnings=
+| Option                              | Usage    | Description                                      |
+|-------------------------------------|----------|--------------------------------------------------|
+| `--extractAll`                      | Optional | Extract data files without validating signatures |
+| `--validateOnExtract`               | Optional | Validate the container before extracting files   |
+| `--offline`                         | Optional | Open container offline (e.g. don't send to SiVa) |
+| `--warnings=(ignore,warning,error)` | Optional | How validation warnings are displayed            |
 
-(ignore, warning, error)	</td><td>Optional</td><td>
-Enables to choose the displaying of validation warnings (if present) of the file being opened. Can be used to test the warnings system of the utility program (see also "Validation status VALID WITH WARNINGS").
-The options include:
--	warning – the default value used. The minor technical errors that are considered as warnings, are printed out as warnings.
--	error – the errors that are otherwise considered as warnings (by the utility program), are printed out as errors.
--	ignore – the errors that are otherwise considered as warnings (by the utility program), are not printed out. If there are any other errors present then these are treated as usual.</td></tr>
-</table>
+`--extractAll` writes all of the input container’s data files to disk without validating signatures. If an output directory is not specified with the value of this parameter then the extracted files are written to the current working directory.
+
+On Windows, reserved device names are prefixed with an underscore (CON becomes _CON). Characters that are invalid in Windows filenames, control characters, and trailing spaces or dots are replaced with underscores. Extraction fails rather than overwriting an existing output file.
+
+`--warnings` enables to choose the displaying of validation warnings (if present) of the file being opened. Can be used to test the warnings system of the utility program (see also "Validation status VALID WITH WARNINGS"). The options include:
+- warning – the default value used. The minor technical errors that are considered as warnings, are printed out as warnings.
+- error – the errors that are otherwise considered as warnings (by the utility program), are printed out as errors.
+- ignore – the errors that are otherwise considered as warnings (by the utility program), are not printed out. If there are any other errors present then these are treated as usual.
 
 Output of the default command contains the following data of the container:
 ```
@@ -291,71 +286,56 @@ Output:
     Document(application/octet-stream) extracted to demo/file2.pdf (476841 bytes)
 ```
 
-
-
-
 ## Adding signatures {#Adding}
 Command "sign" enables adding XAdES signatures to existing ASiC-E and legacy BDOC 2.1 containers. The same signing options are used by "create" to add the initial \ref RFC3161 "RFC 3161" TimeStampToken to a new ASiC-S container; an existing ASiC-S container cannot receive another ordinary signature.
 ```
 > digidoc-tool sign <modified-digidoc-container>
 ```
 
-<table>
-<tr><td>\-\-pin=	</td><td>Optional</td><td>
-If PIN is not provided with this parameter value and (the default) PKCS#11 module is used for signing then the utility program asks for the user to insert PIN code to command line during the program’s execution time.</td></tr>
-<tr><td>\-\-profile=	</td><td>Optional</td><td>
-Profile of the signature. Possible values are:
+| Option                         | Usage    | Description                                             |
+|--------------------------------|----------|---------------------------------------------------------|
+| `--pin=`                       | Optional | PIN code, asked on the command line when omitted        |
+| `--profile=`                   | Optional | Signature profile, see the values below                 |
+| `--XAdESEN`                    | Optional | Use XAdES EN profile                                    |
+| `--city=`                      | Optional | City where the signature is created                     |
+| `--street=`                    | Optional | streetAddress of production place in XAdES EN profile   |
+| `--state=`                     | Optional | State or province where the signature is created        |
+| `--postalCode=`                | Optional | Postal code of the place where the signature is created |
+| `--country=`                   | Optional | Country of origin, ISO 3166 2-character code (e.g. EE)  |
+| `--role=`                      | Optional | Signer’s role, can occur multiple times                 |
+| `--sha(224,256,384,512)`       | Optional | Hash function for digest values (testing)               |
+| `--sigsha(224,256,384,512)`    | Optional | Hash function for the signed hash (testing)             |
+| `--sigpsssha(224,256,384,512)` | Optional | Same as `--sigsha*` with `--rsapss` (testing)           |
+| `--rsapkcs15`                  | Optional | Change RSA signature padding to PKCS1.5                 |
+| `--rsapss`                     | Optional | Change RSA signature padding to PSS                     |
+| `--tsurl=`                     | Optional | Change TS URL                                           |
+| `--userAgent=`                 | Optional | Application info sent to the TSA or OCSP service        |
+| `--dontValidate`               | Optional | Don't validate container on signature creation          |
+
+If PIN is not provided with `--pin=` and (the default) PKCS#11 module is used for signing then the utility program asks for the user to insert PIN code to command line during the program’s execution time.
+
+`--profile=` possible values are:
 - TS or time-stamp - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data.
 - TSA or time-stamp-archive - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data, followed by an archive time-stamp over the certificate and revocation information.
 - TimeStampToken or time-stamp-token - create the \ref RFC3161 "RFC 3161" token signature used by a new ASiC-S container.
-</td></tr>
-<tr><td>\-\-XAdESEN	</td><td>Optional</td><td>
-Use XAdES EN profile.</td></tr>
-<tr><td>\-\-city=	</td><td>Optional</td><td>
-City where the signature is created.</td></tr>
-<tr><td>\-\-street=	</td><td>Optional</td><td>
-streetAddress of production place in XAdES EN profile.</td></tr>
-<tr><td>\-\-state=	</td><td>Optional</td><td>
-State or province where the signature is created.</td></tr>
-<tr><td>\-\-postalCode=	</td><td>Optional</td><td>
-Postal code of the place where the signature is created.</td></tr>
-<tr><td>\-\-country=	</td><td>Optional</td><td>
-Country of origin. ISO 3166-type 2-character country codes are used (e.g. EE)</td></tr>
-<tr><td>\-\-role=	</td><td>Optional</td><td>
-Signer’s role(s). The option can occur multiple times.</td></tr>
-<tr><td>\-\-sha(224,256,384,512)	</td><td>Optional</td><td>
-Used for testing purposes. Specifies the hash function that is used when calculating digest values. If not specified then SHA-256 is used by default.</td></tr>
-<tr><td>\-\-sigsha(224,256,384,512)	</td><td>Optional</td><td>
-Used for testing purposes. Specifies the hash function that is used for calculating the hash that is being signed. If not specified then SHA-256 is used by default.</td></tr>
-<tr><td>\-\-sigpsssha(224,256,384,512)	</td><td>Optional</td><td>
-Used for testing purposes. With RSA keys RSA-PSS padding is used. Specifies the hash function that is used for calculating the hash that is being signed. If not specified then SHA-256 is used by default. Same as \-\-sigsha* with \-\-rsapss</td></tr>
-<tr><td>\-\-rsapkcs15	</td><td>Optional</td><td>
-Option to change RSA Signature padding (RSA PKCS1.5).</td></tr>
-<tr><td>\-\-rsapss	</td><td>Optional</td><td>
-Option to change RSA Signature padding (RSA PSS).</td></tr>
-<tr><td>\-\-tsurl=	</td><td>Optional</td><td>
-Option to change TS URL.</td></tr>
-<tr><td>\-\-userAgent=	</td><td>Optional</td><td>
-Additional application information sent to the TSA or OCSP service.</td></tr>
-<tr><td>\-\-dontValidate	</td><td>Optional</td><td>
-Don't validate container on signature creation.</td></tr>
-</table>
 
+The hash options are used for testing purposes. `--sha*` specifies the hash function that is used when calculating digest values, `--sigsha*` the hash function that is used for calculating the hash that is being signed, and `--sigpsssha*` does the same and uses RSA-PSS padding with RSA keys. If not specified then SHA-256 is used by default.
 
 Options for specifying module used for accessing the signing token - possible alternatives are PKCS#11, CryptoAPI/CNG and PKCS#12 (for testing purposes). When signing module is not specified then PKCS#11 module is used by default.
-<table>
-<tr><td>\-\-pkcs11[=]	</td><td>Optional</td><td>
-Signing is done via PKCS#11 module - the default module for singing with smart card in Linux and macOS. When signing via PKCS#11 module then the parameter’s value can be used to specify the path and filename of PKCS#11 driver in your file system. For example, "opensc-pkcs11.dll" in Windows environment and "opensc-pkcs11.so" in Linux and OSX.
-If the parameter’s value is left unspecified then PKCS#11 driver’s location is looked up from configuration file (see also chap. \ref parameters).</td></tr>
-<tr><td>\-\-cng	</td><td>Optional</td><td>
-Set the parameter to sign via Microsoft CNG API (in Windows environment). If "--pin" parameter’s value is not set then PIN insertion dialog is displayed to the user. Parameter "--cng" may optionally be used along with parameter "--selectFirst" or "--thumbprint".</td></tr>
-<tr><td>\-\-selectFirst	</td><td>Optional</td><td>
-Additional parameter that can optionally be used along with parameter "–cng". When the parameter is set then the first certificate in Windows certificate store is chosen for signature creation. If the parameter is not set then certificate selection dialog window is displayed to user.</td></tr>
-<tr><td>\-\-thumbprint	</td><td>Optional</td><td>
-Additional parameter that can optionally be used along with parameter "–cng". When the parameter is set then the certificate by thumbprint in Windows certificate store is chosen for signature creation. If the parameter is not set then certificate selection dialog window is displayed to user.</td></tr>
-<tr><td>\-\-pkcs12=	</td><td>Optional</td><td>
-Signing is done via PKCS#12 module - can be used for testing purposes. Enables to use a PKCS#12 software token (containing the signing certificate and private key) for signature creation. Note that the created signature is not a valid signature and it is not equal to handwritten signature as the PKCS#12 software token is not considered a secure signature creation device.</td></tr>
-</table>
+
+| Option          | Usage    | Description                                            |
+|-----------------|----------|--------------------------------------------------------|
+| `--pkcs11[=]`   | Optional | Sign via PKCS#11 module (default on Linux and macOS)   |
+| `--cng`         | Optional | Sign via Microsoft CNG API (Windows)                   |
+| `--selectFirst` | Optional | With `--cng`: use the first certificate in the store   |
+| `--thumbprint=` | Optional | With `--cng`: hex thumbprint of the certificate to use |
+| `--pkcs12=`     | Optional | Sign with a PKCS#12 software token (testing)           |
+
+PKCS#11 is the default module for signing with smart card in Linux and macOS. The value of `--pkcs11=` can be used to specify the path and filename of PKCS#11 driver in your file system. For example, "opensc-pkcs11.dll" in Windows environment and "opensc-pkcs11.so" in Linux and OSX. If the parameter’s value is left unspecified then PKCS#11 driver’s location is looked up from configuration file (see also chap. \ref parameters).
+
+With `--cng`, if `--pin` parameter’s value is not set then PIN insertion dialog is displayed to the user. If neither `--selectFirst` nor `--thumbprint` is set then certificate selection dialog window is displayed to user.
+
+`--pkcs12=` enables to use a PKCS#12 software token (containing the signing certificate and private key) for signature creation. Note that the created signature is not a valid signature and it is not equal to handwritten signature as the PKCS#12 software token is not considered a secure signature creation device.
 
 Sample commands for adding signatures:
 ```
@@ -387,30 +367,27 @@ Input:
   demo-container.asice	- container to be modified
 ```
 
-
 ## Extending container validity {#Extending}
-Command "extend" adds new validity evidence and saves the result. Without --signature, it calls the high-level digidoc::Container::extendContainerValidity workflow: eligible ASiC-E or ASiC-S signatures are extended in place, or the original container is wrapped in a new timestamped ASiC-S container when necessary.
+Command "extend" adds new validity evidence and saves the result. Without `--signature`, it calls the high-level digidoc::Container::extendContainerValidity workflow: eligible ASiC-E or ASiC-S signatures are extended in place, or the original container is wrapped in a new timestamped ASiC-S container when necessary.
 
 ```
 > digidoc-tool extend demo-container.asice
 ```
 
-When one or more --signature options are specified, only those zero-based signature indexes are extended directly with digidoc::Signature::extendSignatureProfile. In this mode --profile selects the target profile and --dontValidate skips validation after each extension.
+When one or more `--signature` options are specified, only those zero-based signature indexes are extended directly with digidoc::Signature::extendSignatureProfile. In this mode `--profile` selects the target profile and `--dontValidate` skips validation after each extension.
 
-<table>
-<tr><td>\-\-signature=</td><td>Optional</td><td>
-Zero-based signature index to extend directly. The option can occur multiple times.</td></tr>
-<tr><td>\-\-profile=</td><td>Optional</td><td>
-Target profile for direct per-signature extension: TS, TSA, time-stamp or time-stamp-archive. The high-level workflow chooses the required profile automatically when --signature is omitted.</td></tr>
-<tr><td>\-\-dontValidate</td><td>Optional</td><td>
-Do not validate a directly extended signature after extension.</td></tr>
-</table>
+| Option           | Usage    | Description                                           |
+|------------------|----------|-------------------------------------------------------|
+| `--signature=`   | Optional | Zero-based index of a signature to extend, can repeat |
+| `--profile=`     | Optional | Target profile for direct per-signature extension     |
+| `--dontValidate` | Optional | Don't validate a directly extended signature          |
+
+`--profile=` values are TS, TSA, time-stamp or time-stamp-archive. The high-level workflow chooses the required profile automatically when `--signature` is omitted.
 
 ```
 Sample: directly extend signature 0 to the archive time-stamp profile
 > digidoc-tool extend --signature=0 --profile=TSA demo-container.asice
 ```
-
 
 ## Removing signatures and data files {#Removing}
 Signatures and data files can be removed from a DigiDoc container with the command "remove". Note that it is possible to remove data files only from an unsigned container (i.e all signatures must be removed before removing data files). The command is supported with DigiDoc formats BDOC 2.1 and ASiC-E.
@@ -420,12 +397,12 @@ General format of the command is:
 ```
 
 Available options:
-<table>
-<tr><td>\-\-document=	</td><td>Optional</td><td>
-Specifies the sequence number of the data file that is removed from the container. The sequence numbers are counted from zero.</td></tr>
-<tr><td>\-\-signature=	</td><td>Optional</td><td>
-Specifies the sequence number of the signature that is removed from the container. The sequence numbers are counted from zero.</td></tr>
-</table>
+
+| Option         | Usage    | Description                                         |
+|----------------|----------|-----------------------------------------------------|
+| `--document=`  | Optional | Index of the data file to remove, counted from zero |
+| `--signature=` | Optional | Index of the signature to remove, counted from zero |
+
 Sample commands for removing signatures and data files:
 ```
 Sample: removing signature from container
