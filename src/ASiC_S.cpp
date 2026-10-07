@@ -66,7 +66,7 @@ ASiC_S::ASiC_S(const string &path, bool create)
             continue;
         else if(const auto directory = File::directory(file);
             !directory.empty() && directory != "/" && directory != "./")
-            THROW("Subfolders are not supported %s", directory.c_str());
+            THROW("Subfolders are not supported %.*s", STR_VIEW_FMT(directory));
         else if(!dataFiles().empty())
             THROW("Can not add document to ASiC-S container which already contains a document.");
         else
