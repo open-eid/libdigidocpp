@@ -198,8 +198,8 @@ if(SWIG_FOUND)
             BUILD_WITH_INSTALL_RPATH ${SWIG_MODULE_BUILD_WITH_INSTALL_RPATH}
             SWIG_COMPILE_DEFINITIONS $<$<PLATFORM_ID:Windows>:SWIGWIN>
         )
-        install(TARGETS digidoc_java DESTINATION $<IF:$<PLATFORM_ID:Darwin>,/Library/Java/Extensions,${CMAKE_INSTALL_LIBDIR}>)
-        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ee/ria/libdigidocpp FILES_MATCHING PATTERN "*.java")
+        install(TARGETS digidoc_java DESTINATION $<IF:$<PLATFORM_ID:Darwin>,/Library/Java/Extensions,${CMAKE_INSTALL_LIBDIR}> COMPONENT java)
+        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/java/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ee/ria/libdigidocpp COMPONENT java FILES_MATCHING PATTERN "*.java")
         if(WIN32 AND BUILD_SHARED_LIBS)
             install(FILES $<TARGET_PDB_FILE:digidoc_java> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
         endif()
@@ -216,9 +216,9 @@ if(SWIG_FOUND)
                 BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/java_file_list
             )
             include(UseJava)
-            set(CMAKE_JAVA_COMPILE_FLAGS --release 11)
+            set(CMAKE_JAVA_COMPILE_FLAGS --release 17)
             add_jar(digidocpp_jar SOURCES @${CMAKE_CURRENT_BINARY_DIR}/java_file_list OUTPUT_NAME digidocpp)
-            install_jar(digidocpp_jar DESTINATION $<IF:$<PLATFORM_ID:Darwin>,/Library/Java/Extensions,${CMAKE_INSTALL_DATADIR}/digidocpp>)
+            install_jar(digidocpp_jar DESTINATION $<IF:$<PLATFORM_ID:Darwin>,/Library/Java/Extensions,${CMAKE_INSTALL_DATADIR}/digidocpp> COMPONENT java)
         endif()
     endif()
     if(Python3_FOUND)
@@ -248,8 +248,8 @@ if(SWIG_FOUND)
             BUILD_WITH_INSTALL_RPATH ${SWIG_MODULE_BUILD_WITH_INSTALL_RPATH}
             SWIG_COMPILE_DEFINITIONS $<$<PLATFORM_ID:Windows>:SWIGWIN>
         )
-        install(TARGETS digidoc_python DESTINATION ${Python3_SITEARCH})
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/digidoc.py DESTINATION ${Python3_SITEARCH})
+        install(TARGETS digidoc_python DESTINATION ${Python3_SITEARCH} COMPONENT python)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/digidoc.py DESTINATION ${Python3_SITEARCH} COMPONENT python)
     endif()
 
     set(CMAKE_SWIG_FLAGS -namespace digidoc)
@@ -262,8 +262,8 @@ if(SWIG_FOUND)
         BUILD_WITH_INSTALL_RPATH ${SWIG_MODULE_BUILD_WITH_INSTALL_RPATH}
         PREFIX "${CMAKE_SHARED_LIBRARY_PREFIX}"
     )
-    install(TARGETS digidoc_csharp DESTINATION ${CMAKE_INSTALL_LIBDIR})
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/csharp/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_csharp FILES_MATCHING PATTERN "*.cs")
+    install(TARGETS digidoc_csharp DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT csharp)
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/csharp/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp_csharp COMPONENT csharp FILES_MATCHING PATTERN "*.cs")
     if(WIN32 AND BUILD_SHARED_LIBS)
         install(FILES $<TARGET_PDB_FILE:digidoc_csharp> DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
     endif()
@@ -276,18 +276,32 @@ endif()
 
 install(TARGETS digidocpp ${STATIC_TARGETS}
     EXPORT libdigidocppExport
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    RESOURCE DESTINATION ${DIGIDOCPP_CONFIG_DIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp
-    FRAMEWORK DESTINATION ${FRAMEWORK_DESTINATION}
+    LIBRARY
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        COMPONENT lib
+        NAMELINK_COMPONENT devel
+    ARCHIVE
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        COMPONENT devel
+    RUNTIME
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+        COMPONENT tools
+    RESOURCE
+        DESTINATION ${DIGIDOCPP_CONFIG_DIR}
+        COMPONENT lib
+    PUBLIC_HEADER
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp
+        COMPONENT devel
+    FRAMEWORK
+        DESTINATION ${FRAMEWORK_DESTINATION}
+        COMPONENT lib
 )
 
 install(EXPORT libdigidocppExport
     FILE libdigidocpp-config.cmake
     NAMESPACE digidocpp::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libdigidocpp
+    COMPONENT devel
 )
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
@@ -297,6 +311,7 @@ write_basic_package_version_file(
 )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp-config-version.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libdigidocpp
+    COMPONENT devel
 )
 
 if(WIN32)
@@ -317,7 +332,7 @@ if(WIN32)
                     target_link_options(${TARGET} PRIVATE "/INTEGRITYCHECK")
                 endif()
                 add_custom_command(TARGET ${TARGET} POST_BUILD
-                    COMMAND signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256 /du http://installer.id.ee
+                    COMMAND signtool.exe sign /a /v /s MY /n "${SIGNCERT}" /fd SHA256 /du https://installer.id.ee
                         "$<$<BOOL:${CROSSSIGNCERT}>:/ph;/ac;${CROSSSIGNCERT}>"
                         /tr http://timestamp.digicert.com /td SHA256 $<TARGET_FILE:${TARGET}>
                     COMMAND_EXPAND_LISTS
@@ -331,7 +346,6 @@ source_group(Resources FILES ${CMAKE_CURRENT_BINARY_DIR}/digidocpp.conf)
 source_group(Resources/schemas FILES ${SCHEMA_FILES})
 
 if( FRAMEWORK )
-    install(TARGETS minizip DESTINATION ${CMAKE_INSTALL_LIBDIR}) # for example ios application
     set_source_files_properties( ${SCHEMA_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/schema )
     set_source_files_properties( ${CRYPTO_HEADER} PROPERTIES MACOSX_PACKAGE_LOCATION Headers/crypto )
     list(GET OPENSSL_LIBRARIES 0 LIBPATH)
@@ -384,7 +398,7 @@ if( FRAMEWORK )
     endif()
     if(IOS)
         add_custom_command(TARGET digidocpp POST_BUILD
-            COMMAND /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string ${CMAKE_OSX_DEPLOYMENT_TARGET}" $<TARGET_FILE_DIR:digidocpp>/Info.plist)
+            COMMAND plutil -replace MinimumOSVersion -string ${CMAKE_OSX_DEPLOYMENT_TARGET} $<TARGET_FILE_DIR:digidocpp>/Info.plist)
     endif()
     # Signing the bundle is the last mtime bump in this recipe, and digidoc-tool and
     # the SWIG modules all link against digidocpp - without the touch they relink on
@@ -427,10 +441,10 @@ if( FRAMEWORK )
     )
 else()
     if( BUILD_TOOLS )
-        install( TARGETS digidoc-tool DESTINATION ${CMAKE_INSTALL_BINDIR} )
-        install( FILES ${CMAKE_CURRENT_BINARY_DIR}/digidoc-tool.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 )
+        install(TARGETS digidoc-tool DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT tools)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/digidoc-tool.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 COMPONENT tools)
     endif()
-    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
-    install( FILES ${SCHEMA_FILES} DESTINATION ${DIGIDOCPP_CONFIG_DIR}/schema )
-    install( FILES ${CRYPTO_HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp/crypto )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libdigidocpp.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig COMPONENT devel)
+    install(FILES ${SCHEMA_FILES} DESTINATION ${DIGIDOCPP_CONFIG_DIR}/schema COMPONENT lib)
+    install(FILES ${CRYPTO_HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/digidocpp/crypto COMPONENT devel)
 endif()

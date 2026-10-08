@@ -14,7 +14,7 @@ if(WIN32)
     set_target_properties(unittests TSLTests PROPERTIES COMPILE_FLAGS "/bigobj")
 endif()
 add_test(NAME runtest
-    COMMAND $<TARGET_FILE:unittests> --build_info=YES --report_level=no --logger=${TEST_FORMAT},all,$<TARGET_FILE_DIR:unittests>/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
+    COMMAND unittests --build_info=YES --report_level=no --logger=${TEST_FORMAT},all,$<TARGET_FILE_DIR:unittests>/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY $<TARGET_FILE_DIR:digidocpp>
 )
 
@@ -25,7 +25,7 @@ foreach(TEST CA-non-qa no_QCStatement no_QCSD
         TSA-invalid-type TSA-withdrawn TSA-granted-later TSA-withdrawn-granted-later TSA-noqscd-granted-later
     )
     add_test(NAME TSLTest_${TEST}
-        COMMAND $<TARGET_FILE:TSLTests> -- EE_T-${TEST}.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
+        COMMAND TSLTests -- EE_T-${TEST}.xml bad ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY $<TARGET_FILE_DIR:digidocpp>
     )
 endforeach()
@@ -36,7 +36,7 @@ foreach(TEST CA-withdrawn-granted-before CA-noqscd-granted-before
         TSA-withdrawn-granted-before TSA-noqscd-granted-before
     )
     add_test(NAME TSLTest_${TEST}
-        COMMAND $<TARGET_FILE:TSLTests> -- EE_T-${TEST}.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
+        COMMAND TSLTests -- EE_T-${TEST}.xml good ${CMAKE_CURRENT_SOURCE_DIR}/data
         WORKING_DIRECTORY $<TARGET_FILE_DIR:digidocpp>
     )
 endforeach()
