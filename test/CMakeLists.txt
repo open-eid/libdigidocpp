@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Estonian Information System Authority
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 set_env(TEST_FORMAT XML CACHE STRING "Test result format (XML/JUNIT)")
 set( CMAKE_SKIP_RPATH OFF )
 add_definitions(

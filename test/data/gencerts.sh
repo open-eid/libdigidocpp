@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: Estonian Information System Authority
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 echo '01' > caserial.txt
 echo '01' > interserial.txt
