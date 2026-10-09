@@ -1029,6 +1029,8 @@ WARN_LOGFILE           =
 INPUT                  = @PROJECT_SOURCE_DIR@/src \
                          @PROJECT_SOURCE_DIR@/libdigidocpp.dox \
                          @PROJECT_SOURCE_DIR@/doc/digidoc-tool.md \
+                         @PROJECT_SOURCE_DIR@/doc/references.md \
+                         @PROJECT_SOURCE_DIR@/doc/terms.md
                          @PROJECT_SOURCE_DIR@/RELEASE-NOTES.md
 
 # This tag can be used to specify the character encoding of the source files
