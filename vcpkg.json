@@ -15,7 +15,7 @@
     "features": {
       "tests": { "description": "Build tests", "dependencies": ["boost-test"] }
     },
-    "builtin-baseline": "67b5ee32c608c87971eed243d4bff140568ebe53",
+    "builtin-baseline": "99e82d9c9f0b281ec11fba48cc8434574a2b6e66",
     "vcpkg-configuration": {
       "overlay-triplets": ["./vcpkg-triplets"],
       "registries": [
@@ -23,7 +23,7 @@
           "kind": "git",
           "repository": "https://github.com/open-eid/vcpkg-ports",
           "reference": "vcpkg-registry",
-          "baseline": "408ae35659d383cf5563a8d9ea943a81bba5c008",
+          "baseline": "6daff78a7188881762bb2c6aef721b3c1f35edb7",
           "packages": ["openssl", "xmlsec"]
         }
       ]

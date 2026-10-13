@@ -35,6 +35,7 @@ namespace digidoc
         {
           public:
               static std::string confPath();
+              static std::string decodeName(const std::filesystem::path &path);
               static std::string digidocppPath();
               static std::filesystem::path encodeName(std::string_view fileName);
               static time_t modifiedTime(const std::string &path);

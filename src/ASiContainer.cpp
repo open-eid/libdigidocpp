@@ -62,7 +62,7 @@ XMLDocument ASiContainer::createManifest() const
         file.setProperty("media-type", mime, MANIFEST_NS);
     };
     add("/", mediaType());
-    for(const DataFile *file: dataFiles())
+    for(const DataFile *file: d->documents)
         add(file->fileName(), file->mediaType());
     return doc;
 }
@@ -265,7 +265,7 @@ void ASiContainer::deleteSignature(Signature* s)
 
 void ASiContainer::save(const string &path)
 {
-    if(dataFiles().empty())
+    if(d->documents.empty())
         THROW("Can not save, container is empty.");
     canSave();
     if(!path.empty())
@@ -274,7 +274,7 @@ void ASiContainer::save(const string &path)
     s.addFile("mimetype", zproperty("mimetype"), false)(mediaType());
 
     array<char,10240> buf{};
-    for(const DataFile *file: dataFiles())
+    for(const DataFile *file: d->documents)
     {
         auto f = s.addFile(file->fileName(), zproperty(file->fileName()));
         const auto &is = static_cast<const DataFilePrivate*>(file)->m_is;
