@@ -363,3 +363,42 @@ vector<X509Cert> ConfV5::TSCerts() const
 {
     return {};
 }
+
+/**
+ * @class digidoc::ConfV6
+ * @brief Version 6 of configuration class to add additonial parameters.
+ *
+ * Conf contains virtual members and is not leaf class we need create
+ * subclasses to keep binary compatibility
+ * https://techbase.kde.org/Policies/Binary_Compatibility_Issues_With_C++#Adding_new_virtual_functions_to_leaf_classes
+ * @since 4.6.0
+ * @see digidoc::ConfV5
+ * @see @ref parameters
+ */
+/**
+ * Version 6 config with new parameters
+ */
+ConfV6::ConfV6() = default;
+
+ConfV6::~ConfV6() = default;
+
+/**
+ * @copydoc digidoc::Conf::instance()
+ */
+ConfV6* ConfV6::instance() { return dynamic_cast<ConfV6*>(Conf::instance()); }
+
+/**
+ * Returns default time-stamp server URL for archive (LTA) time-stamps.
+ * Defaults to TSUrl().
+ * @since 4.6.0
+ */
+std::string ConfV6::TSUrlArchive() const { return TSUrl(); }
+
+/**
+ * Returns time-stamp server certificates used to pin the TLS connection for
+ * archive (LTA) time-stamps. Defaults to TSCerts(), which is only correct
+ * while both time-stamps use the same server.
+ * @since 4.6.0
+ */
+std::vector<X509Cert> ConfV6::TSCertsArchive() const { return TSCerts(); }
+

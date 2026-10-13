@@ -139,13 +139,19 @@
 
 6. Alternative to steps 4. and 5. -
 
-        powershell -ExecutionPolicy ByPass -File build.ps1
+        powershell -ExecutionPolicy ByPass -File build.ps1 -acceptWixEULA
+
+    WiX 7 requires accepting its
+    [Open Source Maintenance Fee EULA](https://docs.firegiant.com/wix/osmf/).
+    Pass `-acceptWixEULA` only after reviewing the terms. The acceptance is stored
+    for the current user, so the switch can be omitted from subsequent builds.
 
     Optional build.ps1 parameters:
 
         -swig C:/swigwin-4.4.1/swig.exe
         -doxygen "C:/Program files/doxygen/bin/doxygen.exe"
         -boost
+        -acceptWixEULA
 
     The build script builds executables and installation media for given
     platform (Debug and Release with debug symbols)

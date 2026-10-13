@@ -21,6 +21,7 @@
 
 #include "ASiC_E.h"
 #include "DataFile_p.h"
+#include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/Signer.h"
 #include "crypto/TS.h"
@@ -98,7 +99,7 @@ void SignatureXAdES_LTA::extendSignatureProfile(Signer *signer)
     auto method = canonicalizationMethod();
     calcArchiveDigest(calc, method, {});
 
-    TS tsa(calc, signer->userAgent());
+    TS tsa(CONF(TSUrlArchive), CONF(TSCertsArchive), calc, signer->userAgent());
     auto ts = unsignedSignatureProperties() + ArchiveTimeStamp;
     ts.setNS(ts.addNS(XADESv141_NS, "xades141"));
     ts.setProperty("Id", id() + "-A" + to_string(i));
