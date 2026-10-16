@@ -21,6 +21,7 @@ add_test(NAME runtest
 # Bad status tests
 foreach(TEST CA-non-qa no_QCStatement no_QCSD
         CA-invalid-type CA-withdrawn CA-granted-later CA-withdrawn-granted-later CA-noqscd-granted-later
+        CA-signtime-withdrawn CA-signtime-granted-later CA-signtime-withdrawn-granted-later CA-signtime-noqscd-granted-later
         OCSP-invalid-type OCSP-withdrawn OCSP-granted-later OCSP-withdrawn-granted-later OCSP-noqscd-granted-later
         TSA-invalid-type TSA-withdrawn TSA-granted-later TSA-withdrawn-granted-later TSA-noqscd-granted-later
     )
@@ -32,6 +33,7 @@ endforeach()
 
 # Good status tests
 foreach(TEST CA-withdrawn-granted-before CA-noqscd-granted-before
+        CA-signtime-withdrawn-granted-before CA-signtime-noqscd-granted-before
         OCSP-withdrawn-granted-before OCSP-noqscd-granted-before
         TSA-withdrawn-granted-before TSA-noqscd-granted-before
     )
