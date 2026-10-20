@@ -19,7 +19,7 @@
 
 /*
  * Validation Service
- * http://open-eid.github.io/SiVa/
+ * https://open-eid.github.io/SiVa/
  */
 
 #include "SiVaContainer.h"

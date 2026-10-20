@@ -5,7 +5,7 @@ endif()
 if(POLICY CMP0177)
     cmake_policy(SET CMP0177 NEW)
 endif()
-project(libdigidocpp VERSION 4.5.1
+project(libdigidocpp VERSION 4.6.0
     DESCRIPTION "C++ library for digital signatures and validation of digitally signed documents"
     HOMEPAGE_URL https://github.com/open-eid/libdigidocpp
 )
@@ -43,15 +43,59 @@ set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
 set(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "Adds a postfix for debug-built libraries.")
-set(CPACK_PACKAGE_VERSION ${VERSION})
 set(CPACK_GENERATOR RPM)
 set(CPACK_PACKAGE_CONTACT "RIA <info@ria.ee>")
 set(CPACK_PACKAGE_VENDOR RIA)
 set(CPACK_PACKAGING_INSTALL_PREFIX /usr)
-list(APPEND CPACK_RPM_RELOCATION_PATHS ${CMAKE_INSTALL_SYSCONFDIR})
 set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
 set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
+set(CPACK_RPM_COMPONENT_INSTALL ON)
+set(CPACK_RPM_LIB_PACKAGE_NAME libdigidocpp)
+set(CPACK_PACKAGE_DESCRIPTION "libdigidocpp creates, signs and validates ASiC-E containers with XAdES signatures and \
+ASiC-S containers with RFC 3161 time-stamp tokens, and validates legacy BDOC 2.1 documents. Formats that are not \
+validated locally, such as PDF and DDOC, are validated with the SiVa online service.")
+set(CPACK_RPM_LIB_PACKAGE_SUMMARY ${CMAKE_PROJECT_DESCRIPTION})
+set(CPACK_RPM_LIB_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}\n\n\
+This package contains the shared library, its configuration file and XML schemas.")
+list(APPEND CPACK_RPM_LIB_RELOCATION_PATHS ${CMAKE_INSTALL_SYSCONFDIR})
+set(CPACK_RPM_DEVEL_PACKAGE_NAME libdigidocpp-devel)
+set(CPACK_RPM_DEVEL_PACKAGE_SUMMARY "Development files for libdigidocpp")
+set(CPACK_RPM_DEVEL_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}\n\n\
+This package contains the headers and the CMake and pkg-config files for developing applications with libdigidocpp.")
+set(CPACK_RPM_DEVEL_PACKAGE_REQUIRES "libdigidocpp = ${PROJECT_VERSION}")
+set(CPACK_RPM_TOOLS_PACKAGE_NAME digidoc-tool)
+set(CPACK_RPM_TOOLS_PACKAGE_SUMMARY "Command-line tool for digital signatures")
+set(CPACK_RPM_TOOLS_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}\n\n\
+This package contains digidoc-tool, a command-line utility for creating, signing, validating and extracting documents.")
+set(CPACK_RPM_TOOLS_PACKAGE_REQUIRES "libdigidocpp = ${PROJECT_VERSION}")
+set(CPACK_RPM_DOC_PACKAGE_NAME libdigidocpp-doc)
+set(CPACK_RPM_DOC_PACKAGE_SUMMARY "Documentation for libdigidocpp")
+set(CPACK_RPM_DOC_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}\n\n\
+This package contains the API documentation and programmer's guide for libdigidocpp.")
+set(CPACK_RPM_JAVA_PACKAGE_NAME libdigidocpp-java)
+set(CPACK_RPM_JAVA_PACKAGE_SUMMARY "Java bindings for libdigidocpp")
+set(CPACK_RPM_JAVA_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}\n\n\
+This package contains the Java bindings for developing applications with libdigidocpp.")
+set(CPACK_RPM_JAVA_PACKAGE_REQUIRES "libdigidocpp = ${PROJECT_VERSION}")
+set(CPACK_RPM_CSHARP_PACKAGE_NAME libdigidocpp-csharp)
+set(CPACK_RPM_CSHARP_PACKAGE_SUMMARY "C# bindings for libdigidocpp")
+set(CPACK_RPM_CSHARP_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}\n\n\
+This package contains the C# bindings for developing applications with libdigidocpp.")
+set(CPACK_RPM_CSHARP_PACKAGE_REQUIRES "libdigidocpp = ${PROJECT_VERSION}")
+set(CPACK_RPM_PYTHON_PACKAGE_NAME libdigidocpp-python)
+set(CPACK_RPM_PYTHON_PACKAGE_SUMMARY "Python bindings for libdigidocpp")
+set(CPACK_RPM_PYTHON_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}\n\n\
+This package contains the Python bindings for developing applications with libdigidocpp.")
+set(CPACK_RPM_PYTHON_PACKAGE_REQUIRES "libdigidocpp = ${PROJECT_VERSION}")
+set(CPACK_COMPONENTS_ALL lib devel tools doc java csharp python)
 include(CPack)
+cpack_add_component(lib DISPLAY_NAME "libdigidocpp")
+cpack_add_component(devel DISPLAY_NAME "libdigidocpp-devel" DEPENDS lib)
+cpack_add_component(tools DISPLAY_NAME "digidoc-tool" DEPENDS lib)
+cpack_add_component(doc DISPLAY_NAME "libdigidocpp-doc")
+cpack_add_component(java DISPLAY_NAME "libdigidocpp-java" DEPENDS lib)
+cpack_add_component(csharp DISPLAY_NAME "libdigidocpp-csharp" DEPENDS lib)
+cpack_add_component(python DISPLAY_NAME "libdigidocpp-python" DEPENDS lib)
 if(APPLE)
     set(FRAMEWORK YES CACHE BOOL "Build library as Mac OS X Framework")
     set(FRAMEWORK_DESTINATION /Library/Frameworks CACHE PATH "Mac OS X Framework install destination")
@@ -113,8 +157,8 @@ if(TARGET Doxygen::doxygen)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen" VERBATIM
     )
-    install(DIRECTORY ${PROJECT_BINARY_DIR}/doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR})
-    install( DIRECTORY doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} )
+    install(DIRECTORY ${PROJECT_BINARY_DIR}/doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} COMPONENT doc)
+    install(DIRECTORY doc/ DESTINATION ${CMAKE_INSTALL_DOCDIR} COMPONENT doc)
 endif()
 
 enable_testing()
