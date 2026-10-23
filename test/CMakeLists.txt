@@ -1,4 +1,3 @@
-set_env(TEST_FORMAT XML CACHE STRING "Test result format (XML/JUNIT)")
 set( CMAKE_SKIP_RPATH OFF )
 add_definitions(
     -DDIGIDOCPPCONF="${PROJECT_SOURCE_DIR}/etc/schema"
@@ -10,11 +9,10 @@ add_executable(TSLTests TSLTests.cpp)
 target_link_libraries(unittests digidocpp digidocpp_tsl Boost::unit_test_framework)
 target_link_libraries(TSLTests digidocpp digidocpp_util Boost::unit_test_framework)
 if(WIN32)
-    string(REPLACE "/EHsc" "/EHa" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
     set_target_properties(unittests TSLTests PROPERTIES COMPILE_FLAGS "/bigobj")
 endif()
-add_test(NAME runtest
-    COMMAND unittests --build_info=YES --report_level=no --logger=${TEST_FORMAT},all,$<TARGET_FILE_DIR:unittests>/libdigidocpp.xml -- ${CMAKE_CURRENT_SOURCE_DIR}/data
+add_test(NAME unittests
+    COMMAND unittests --build_info=YES --report_level=no -- ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY $<TARGET_FILE_DIR:digidocpp>
 )
 
@@ -42,5 +40,3 @@ foreach(TEST CA-withdrawn-granted-before CA-noqscd-granted-before
         WORKING_DIRECTORY $<TARGET_FILE_DIR:digidocpp>
     )
 endforeach()
-
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> DEPENDS unittests TSLTests)

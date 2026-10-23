@@ -210,7 +210,27 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         }
     }
     auto store = X509CertStore::createStore(X509CertStore::OCSP, tm);
-    if(OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN) != 1)
+    int verified = OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN);
+    if(verified != 1)
+    {
+        const ASN1_OBJECT *algorithm {};
+        X509_ALGOR_get0(&algorithm, nullptr, nullptr, OCSP_resp_get0_tbs_sigalg(basic.get()));
+        int digest = NID_undef;
+        X509 *signer {};
+        if(OBJ_find_sigid_algs(OBJ_obj2nid(algorithm), &digest, nullptr) == 1 && digest == NID_sha1 &&
+           OCSP_resp_get0_signer(basic.get(), &signer, stack.get()) == 1 && signer)
+        {
+            // OCSP_basic_verify uses the responder certificate's context. External
+            // certificates take precedence over certificates embedded in the response.
+            auto local = X509CertStore::legacyCertificate(signer);
+            if(local && sk_X509_insert(stack.get(), local.get(), 0) != 0)
+            {
+                verified = OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN);
+                sk_X509_delete(stack.get(), 0);
+            }
+        }
+    }
+    if(verified != 1)
     {
         unsigned long err = ERR_get_error();
         if(ERR_GET_LIB(err) == ERR_LIB_OCSP &&

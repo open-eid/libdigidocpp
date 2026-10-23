@@ -30,6 +30,7 @@
 
 using X509_STORE = struct x509_store_st;
 using X509_STORE_CTX = struct x509_store_ctx_st;
+using X509 = struct x509_st;
 
 namespace digidoc
 {
@@ -50,6 +51,7 @@ namespace digidoc
         X509Cert findIssuer(const X509Cert &cert, const Type &type) const;
         static X509Cert issuerFromAIA(const X509Cert &cert);
         static unique_free_t<X509_STORE> createStore(const Type &type, tm &tm);
+        static unique_free_t<X509> legacyCertificate(X509 *cert);
         void update() const;
         bool verify(const X509Cert &cert, bool noqscd, tm validation_time = {}) const;
 
