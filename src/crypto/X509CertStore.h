@@ -61,6 +61,7 @@ namespace digidoc
         DISABLE_COPY(X509CertStore);
 
         static int validate(int ok, X509_STORE_CTX *ctx);
+        static int getIssuer(X509 **issuer, X509_STORE_CTX *ctx, X509 *cert);
         struct Private;
         std::unique_ptr<Private> d;
     };
