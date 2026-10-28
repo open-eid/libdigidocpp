@@ -64,7 +64,8 @@ jobs:
         sudo ln -s $PWD/cache/* /Library/
         cmake --preset ${{ matrix.target }} -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build --preset ${{ matrix.target }}
-        cmake --build --preset ${{ matrix.target }} --target test pkcs11sign embedlibs
+        ctest --preset ${{ matrix.target }}
+        cmake --build --preset ${{ matrix.target }} --target pkcs11sign embedlibs
         cmake --build --preset ${{ matrix.target }} --target zipdebug pkgbuild
     - name: Build ${{ matrix.target }}
       if: matrix.target != 'macos'
@@ -86,7 +87,7 @@ jobs:
         test -n "$UDID" || { echo "no available simulator"; exit 1; }
         xcrun simctl boot "$UDID"
         xcrun simctl bootstatus "$UDID" -b
-        ctest --preset iphonesimulator --no-tests=error
+        ctest --preset iphonesimulator
     - name: Archive artifacts
       uses: actions/upload-artifact@v7
       with:
@@ -134,27 +135,30 @@ jobs:
   fedora:
     name: Build on Fedora ${{ matrix.container }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.container == 'rawhide' }}
     container: fedora:${{ matrix.container }}
     strategy:
       matrix:
-        container: [43, 44, rawhide]
+        container: [43, 44, 45, rawhide]
     steps:
     - name: Install Deps
       run: |
         dnf install -y --setopt=install_weak_deps=False \
-          ${FEDORA_DEPS} doxygen boost-test swig python3-devel java-25-openjdk-devel rpm-build
+          ${FEDORA_DEPS} ninja-build doxygen boost-devel swig python3-devel java-25-openjdk-devel rpm-build
     - name: Checkout
       uses: actions/checkout@v6
     - name: Build
       run: |
-        cmake -DCMAKE_INSTALL_SYSCONFDIR=/etc -B build -S .
-        cmake --build build
-        cmake --build build --target package
+        cmake --preset default -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_SYSCONFDIR=/etc
+        cmake --build --preset default
+        cmake --build --preset default --target package
+    - name: Test
+      run: ctest --preset default
     - name: Archive artifacts
       uses: actions/upload-artifact@v7
       with:
         name: fedora_${{ matrix.container }}
-        path: build/*.rpm
+        path: build/default/*.rpm
   ubuntu:
     name: Build on ${{ matrix.dist }} ${{ matrix.ver }} ${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch == 'arm64' && '-arm' || '' }}
@@ -162,7 +166,7 @@ jobs:
     strategy:
       matrix:
         dist: [ubuntu]
-        ver: ['22.04', '24.04', '26.04']
+        ver: ['22.04', '24.04', '26.04', '26.10']
         arch: [amd64, arm64]
         java: [17]
         include: [
