@@ -45,7 +45,7 @@
                         </g>
                         <g transform="matrix(0.364572,0,0,0.364572,19757.7,7541.97)">
                             <text x="20188.2px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">MET<tspan x="21875px 22427.5px " y="7795.58px 7795.58px ">A-</tspan>INF/</text>
-                            <text x="19903.7px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">manifest.xml</text>
+                            <text x="19328.2px" y="8650.94px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">signatures0.xml</text>
                         </g>
                     </g>
                     <g transform="matrix(0.364572,0,0,0.364572,23854.3,4813.34)">
@@ -78,7 +78,7 @@
                         </g>
                     </g>
                     <g transform="matrix(0.364572,0,0,0.364572,23857.2,1804.57)">
-                        <text x="16714.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">Signed data ﬁle&apos;s contens in original format</text>
+                        <text x="16714.6px" y="7795.58px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:828.263px;">Signed data ﬁle&apos;s contents in original format</text>
                     </g>
                 </g>
                 <g transform="matrix(1,0,0,1,0,11.3325)">

@@ -1028,6 +1028,7 @@ WARN_LOGFILE           =
 
 INPUT                  = @PROJECT_SOURCE_DIR@/src \
                          @PROJECT_SOURCE_DIR@/libdigidocpp.dox \
+                         @PROJECT_SOURCE_DIR@/doc/formats.md \
                          @PROJECT_SOURCE_DIR@/doc/digidoc-tool.md \
                          @PROJECT_SOURCE_DIR@/doc/references.md \
                          @PROJECT_SOURCE_DIR@/doc/terms.md \

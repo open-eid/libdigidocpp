@@ -7,7 +7,7 @@ Extended Associated Signature Containers. A type of ASiC container.
 </td></tr><tr><td>ASiC-S</td><td>
 Associated Signature Container Simple form. A type of ASiC container.
 </td></tr><tr><td>BDOC 2.1 (.bdoc)</td><td>
-Term is used to denote a digitally signed file format which is a profile of XAdES and follows container packaging rules based on OpenDocument and ASiC standards. The document format has been defined in \ref BDOC "BDOC2.1:2013"; an overview is provided on the \ref format "Format of digitally signed file" page.
+Term is used to denote a digitally signed file format which is a profile of XAdES and follows container packaging rules based on OpenDocument and ASiC standards. The document format has been defined in \ref BDOC "BDOC2.1:2013"; an overview is provided on the \ref formats "Supported container formats" page.
 </td></tr><tr><td>CRL</td><td>
 Certificate Revocation List, a list of certificates (or more specifically, a list of serial numbers for certificates) that have been revoked, and therefore should not be relied upon.
 </td></tr><tr><td>DIGIDOC-XML (.ddoc)</td><td>
