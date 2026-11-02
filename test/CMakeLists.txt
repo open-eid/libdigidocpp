@@ -6,13 +6,19 @@ add_definitions(
 )
 add_executable(unittests libdigidocpp_boost.cpp)
 add_executable(TSLTests TSLTests.cpp)
+add_executable(X509CertStoreTests X509CertStoreTests.cpp ../src/crypto/X509CertStore.cpp)
 target_link_libraries(unittests digidocpp digidocpp_tsl Boost::unit_test_framework)
-target_link_libraries(TSLTests digidocpp digidocpp_util Boost::unit_test_framework)
+target_link_libraries(TSLTests digidocpp digidocpp_tsl Boost::unit_test_framework)
+target_link_libraries(X509CertStoreTests digidocpp digidocpp_tsl Boost::unit_test_framework ${CMAKE_DL_LIBS})
 if(WIN32)
-    set_target_properties(unittests TSLTests PROPERTIES COMPILE_FLAGS "/bigobj")
+    set_target_properties(unittests TSLTests X509CertStoreTests PROPERTIES COMPILE_FLAGS "/bigobj")
 endif()
 add_test(NAME unittests
     COMMAND unittests --build_info=YES --report_level=no -- ${CMAKE_CURRENT_SOURCE_DIR}/data
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:digidocpp>
+)
+add_test(NAME X509CertStoreTests
+    COMMAND X509CertStoreTests -- ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY $<TARGET_FILE_DIR:digidocpp>
 )
 

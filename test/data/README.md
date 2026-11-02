@@ -13,6 +13,11 @@
   certificate elements in KeyInfo or CertificateValues. The empty elements must
   be ignored without introducing signer or OCSP validation failures. These samples
   use a TSA not trusted by the test TSL, which the regression test allows separately.
+* `issuer-chain-leaf.crt` and `issuer-chain-intermediate.crt` - Public DER test
+  certificates valid from 2025 to 2030. The leaf requires a supplied self-issued
+  key-rollover intermediate to reach the TSL-listed `inter.crt`; its root
+  `ca.crt` is not needed. The rollover uses a new EC key and does not consume
+  `inter.crt`'s path-length constraint.
 
 ## Certificate fixtures
 
