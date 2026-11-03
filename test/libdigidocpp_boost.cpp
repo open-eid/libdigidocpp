@@ -549,6 +549,42 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_EQUAL(d->signatures().size(), 0U);
 }
 
+BOOST_AUTO_TEST_CASE(weakDigest)
+{
+    // ETSI TS 119 312 V2.1.1 Annex D discontinues SHA-224; SHA3-224 is not in any table
+    for(const auto *uri: {URI_SHA1, URI_RSA_SHA1, URI_ECDSA_SHA1,
+            URI_SHA224, URI_RSA_SHA224, URI_RSA_PSS_SHA224, URI_ECDSA_SHA224,
+            URI_SHA3_224, URI_RSA_PSS_SHA3_224})
+        BOOST_CHECK_MESSAGE(Digest::isWeakDigest(uri), uri);
+    for(const auto *uri: {URI_SHA256, URI_SHA384, URI_SHA512,
+            URI_SHA3_256, URI_SHA3_384, URI_SHA3_512,
+            URI_RSA_PSS_SHA3_256, URI_ECDSA_SHA3_256, URI_ECDSA_SHA3_384, URI_ECDSA_SHA3_512})
+        BOOST_CHECK_MESSAGE(!Digest::isWeakDigest(uri), uri);
+
+    // ETSI TS 119 312 Table 16 defines no ECDSA-SHA3-224 signature suite URI
+    const string ecdsaSha3_224 = "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-224";
+    BOOST_CHECK_THROW(Digest::toMethod(ecdsaSha3_224), Exception);
+    BOOST_CHECK_EQUAL(Digest::toEcUri(URI_SHA3_224), string());
+    BOOST_CHECK_EQUAL(Digest::toEcUri(ecdsaSha3_224), string());
+
+    auto d = Container::createPtr("weak.asice");
+    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+    PKCS12Signer signerEC("signerEC.p12", "signerEC");
+    signerEC.setMethod(URI_SHA3_224);
+    BOOST_CHECK_THROW(d->sign(&signerEC), Exception);
+    BOOST_CHECK_EQUAL(d->signatures().size(), 0U);
+
+    PKCS12Signer signer1("signer1.p12", "signer1");
+    signer1.setMethod(URI_SHA224);
+    Signature *s = nullptr;
+    BOOST_REQUIRE_NO_THROW(s = d->sign(&signer1));
+    BOOST_CHECK_EQUAL(s->signatureMethod(), URI_RSA_SHA224);
+    Signature::Validator validator(s);
+    BOOST_CHECK_EQUAL(validator.status(), Signature::Validator::Warning);
+    BOOST_REQUIRE_EQUAL(validator.warnings().size(), 1U);
+    BOOST_CHECK_EQUAL(validator.warnings().front(), Exception::SignatureDigestWeak);
+}
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 {
     PKCS12Signer signer1("signer1.p12", "signer1");
