@@ -33,7 +33,7 @@ class SignatureTST final: public Signature
 {
 public:
     SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDoc);
-    SignatureTST(ASiC_S *asicSDoc, Signer *signer);
+    SignatureTST(ASiC_S *asicSDoc, Signer *signer, bool archive = false);
     ~SignatureTST();
 
     std::vector<unsigned char> messageImprint() const override;

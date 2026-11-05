@@ -197,6 +197,7 @@ static PyObject* SWIG_VectorUnsignedCharToPyBytes(const std::vector<unsigned cha
 %ignore digidoc::ConfV2::verifyServiceCert;
 %ignore digidoc::ConfV4::verifyServiceCerts;
 %ignore digidoc::ConfV5::TSCerts;
+%ignore digidoc::ConfV6::TSCertsArchive;
 // hide stream methods, swig cannot generate usable wrappers
 %ignore digidoc::DataFile::saveAs(std::ostream &os) const;
 %ignore digidoc::Container::addAdESSignature(std::istream &signature);

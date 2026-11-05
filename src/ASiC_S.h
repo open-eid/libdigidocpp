@@ -38,6 +38,7 @@ namespace digidoc
         void addAdESSignature(std::istream &sigdata) override;
         Signature* prepareSignature(Signer *signer) override;
         Signature* sign(Signer* signer) override;
+        Signature* sign(Signer* signer, bool archive);
 
         static std::unique_ptr<Container> createInternal(const std::string &path);
         static std::unique_ptr<Container> openInternal(const std::string &path, ContainerOpenCB *cb);

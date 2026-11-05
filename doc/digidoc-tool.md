@@ -313,6 +313,9 @@ Command "sign" enables adding XAdES signatures to existing ASiC-E and legacy BDO
 | `--rsapkcs15`                  | Optional | Change RSA signature padding to PKCS1.5                 |
 | `--rsapss`                     | Optional | Change RSA signature padding to PSS                     |
 | `--tsurl=`                     | Optional | Change TS URL                                           |
+| `--tscert=`                    | Optional | Pin the TSA TLS certificate, PEM file                   |
+| `--tsurlarchive=`              | Optional | Change archive (LTA) TS URL                             |
+| `--tscertarchive=`             | Optional | Pin the archive (LTA) TSA TLS certificate, PEM file     |
 | `--userAgent=`                 | Optional | Application info sent to the TSA or OCSP service        |
 | `--dontValidate`               | Optional | Don't validate container on signature creation          |
 
@@ -322,6 +325,8 @@ If PIN is not provided with `--pin=` and (the default) PKCS#11 module is used fo
 - TS or time-stamp - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data.
 - TSA or time-stamp-archive - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data, followed by an archive time-stamp over the certificate and revocation information.
 - TimeStampToken or time-stamp-token - create the \ref RFC3161 "RFC 3161" token signature used by a new ASiC-S container.
+
+`--tsurl=` and `--tscert=` set the time-stamping service for signature time-stamps and the initial ASiC-S TimeStampToken. `--tsurlarchive=` and `--tscertarchive=` set the service for archive time-stamps: the ArchiveTimeStamp of the TSA profile and the ASiC-S archive-manifest time-stamps. The archive URL is taken from `--tsurlarchive=`, then the `ts.url.archive` configuration parameter, then `--tsurl=` and `ts.url` (see \ref TS-settings); the archive certificate from `--tscertarchive=`, then `--tscert=`. The certificate options pin the TLS certificate of the service connection; they do not affect time-stamp token validation.
 
 The hash options are used for testing purposes. `--sha*` specifies the hash function that is used when calculating digest values, `--sigsha*` the hash function that is used for calculating the hash that is being signed, and `--sigpsssha*` does the same and uses RSA-PSS padding with RSA keys.
 
@@ -384,13 +389,19 @@ Command "extend" adds new validity evidence and saves the result. Without `--sig
 
 When one or more `--signature` options are specified, only those zero-based signature indexes are extended directly with digidoc::Signature::extendSignatureProfile. In this mode `--profile` selects the target profile and `--dontValidate` skips validation after each extension.
 
-| Option           | Usage    | Description                                           |
-|------------------|----------|-------------------------------------------------------|
-| `--signature=`   | Optional | Zero-based index of a signature to extend, can repeat |
-| `--profile=`     | Optional | Target profile for direct per-signature extension     |
-| `--dontValidate` | Optional | Don't validate a directly extended signature          |
+| Option             | Usage    | Description                                           |
+|--------------------|----------|-------------------------------------------------------|
+| `--signature=`     | Optional | Zero-based index of a signature to extend, can repeat |
+| `--profile=`       | Optional | Target profile for direct per-signature extension     |
+| `--dontValidate`   | Optional | Don't validate a directly extended signature          |
+| `--tsurl=`         | Optional | Change TS URL                                         |
+| `--tscert=`        | Optional | Pin the TSA TLS certificate, PEM file                 |
+| `--tsurlarchive=`  | Optional | Change archive (LTA) TS URL                           |
+| `--tscertarchive=` | Optional | Pin the archive (LTA) TSA TLS certificate, PEM file   |
 
 `--profile=` values are TS, TSA, time-stamp or time-stamp-archive. The high-level workflow chooses the required profile automatically when `--signature` is omitted.
+
+The time-stamping service options are the same as for the "sign" command. Archive time-stamps, including the TimeStampToken of a container wrapped in a new ASiC-S container, use `--tsurlarchive=` and `--tscertarchive=`.
 
 ```
 Sample: directly extend signature 0 to the archive time-stamp profile
