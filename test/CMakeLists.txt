@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Estonian Information System Authority
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 set( CMAKE_SKIP_RPATH OFF )
 add_definitions(
     -DDIGIDOCPPCONF="${PROJECT_SOURCE_DIR}/etc/schema"
