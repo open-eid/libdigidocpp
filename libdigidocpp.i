@@ -37,6 +37,11 @@
 #include "crypto/WinSigner.h"
 #endif
 #include "util/log.h"
+
+#include <concepts>
+#include <optional>
+#include <utility>
+
 DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
 
 static std::string parseException(const digidoc::Exception &e) {
@@ -45,6 +50,65 @@ static std::string parseException(const digidoc::Exception &e) {
         msg += "\n" + parseException(ex);
     return msg;
 }
+
+#ifdef SWIGJAVA
+template<class T>
+struct JNIObject {
+    JNIEnv *jenv;
+    T jobj;
+
+    constexpr JNIObject(JNIEnv *env, jobject obj) noexcept
+        : jenv(env), jobj(static_cast<T>(obj)) {}
+    constexpr JNIObject(JNIEnv *env, const char *obj) noexcept
+        : JNIObject(env, env->FindClass(obj)) {}
+    static JNIObject fromBytes(JNIEnv *env, const auto &data) noexcept
+        requires std::same_as<T, jbyteArray>
+    {
+        if(!std::in_range<jsize>(data.size())) {
+            SWIG_JavaThrowException(env, SWIG_JavaOutOfMemoryError, "Java byte array too large");
+            return {env, jobject{}};
+        }
+        JNIObject result{env, env->NewByteArray(jsize(data.size()))};
+        if(result && !data.empty()) {
+            env->SetByteArrayRegion(*result, 0, jsize(data.size()), reinterpret_cast<const jbyte*>(data.data()));
+            if(env->ExceptionCheck())
+                return {env, jobject{}};
+        }
+        return {env, result.release()};
+    }
+    JNIObject(const JNIObject &) = delete;
+    JNIObject &operator=(const JNIObject &) = delete;
+    ~JNIObject() noexcept { if(jobj) jenv->DeleteLocalRef(jobj); }
+    explicit constexpr operator bool() const noexcept { return jobj != nullptr; }
+    constexpr T operator*() const noexcept { return jobj; }
+    constexpr const JNIObject *operator->() const noexcept { return this; }
+    constexpr T release() noexcept { return std::exchange(jobj, nullptr); }
+    template<class R, typename... Args>
+    JNIObject<R> NewObject(const char *sig, Args... args) const {
+        auto ctor = jobj ? jenv->GetMethodID(jobj, "<init>", sig) : nullptr;
+        return {jenv, ctor ? jenv->NewObject(jobj, ctor, args...) : nullptr};
+    }
+};
+
+static void throwJavaException(JNIEnv *jenv, const std::string &message) {
+    JNIObject<jclass> charsetsClass{jenv, "java/nio/charset/StandardCharsets"};
+    if(!charsetsClass) return;
+    jfieldID utf8Field = jenv->GetStaticFieldID(*charsetsClass, "UTF_8", "Ljava/nio/charset/Charset;");
+    if(!utf8Field) return;
+    JNIObject<jobject> utf8{jenv, jenv->GetStaticObjectField(*charsetsClass, utf8Field)};
+    if(!utf8) return;
+
+    auto data = JNIObject<jbyteArray>::fromBytes(jenv, message);
+    if(!data) return;
+    JNIObject<jclass> stringClass{jenv, "java/lang/String"};
+    auto text = stringClass->NewObject<jstring>("([BLjava/nio/charset/Charset;)V", *data, *utf8);
+    if(!text) return;
+
+    JNIObject<jclass> exceptionClass{jenv, "java/lang/RuntimeException"};
+    if(auto exception = exceptionClass->NewObject<jthrowable>("(Ljava/lang/String;)V", *text))
+        jenv->Throw(*exception);
+}
+#endif
 
 #ifdef SWIGCSHARP
 extern "C"
@@ -81,15 +145,12 @@ extern "C"
     $modulePINVOKE.ByteVector_free(cPtr);
     return result;
   }
-%}
+%} 
 
 #ifdef SWIGJAVA
 %fragment("SWIG_VectorUnsignedCharToJavaArray", "header") {
 static jbyteArray SWIG_VectorUnsignedCharToJavaArray(JNIEnv *jenv, const std::vector<unsigned char> &data) {
-    jbyteArray jresult = JCALL1(NewByteArray, jenv, data.size());
-    if(jresult)
-        JCALL4(SetByteArrayRegion, jenv, jresult, 0, data.size(), (const jbyte*)data.data());
-    return jresult;
+    return JNIObject<jbyteArray>::fromBytes(jenv, data).release();
 }}
 %fragment("SWIG_JavaArrayToVectorUnsignedChar", "header") {
 static std::vector<unsigned char>* SWIG_JavaArrayToVectorUnsignedChar(JNIEnv *jenv, jbyteArray data) {
@@ -174,7 +235,7 @@ static PyObject* SWIG_VectorUnsignedCharToPyBytes(const std::vector<unsigned cha
    $action
  } catch (const digidoc::Exception &e) {
 #ifdef SWIGJAVA
-   SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, parseException(e).c_str());
+   throwJavaException(jenv, parseException(e));
    return $null;
 #elif defined(SWIGCSHARP)
    SWIG_CSharpSetPendingException(SWIG_CSharpApplicationException, parseException(e).c_str());
@@ -251,7 +312,68 @@ def transfer(self):
 %include <std_map.i>
 %include <typemaps.i>
 %apply unsigned long long &OUTPUT { size_t &extendedCount };
-#ifdef SWIGCSHARP
+#ifdef SWIGJAVA
+%fragment("SWIG_JavaArrayToString", "header") {
+static std::optional<std::string> SWIG_JavaArrayToString(JNIEnv *jenv, jbyteArray data) {
+    if(jenv->ExceptionCheck())
+        return std::nullopt;
+    if(!data) {
+        SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+        return std::nullopt;
+    }
+    std::string result(size_t(JCALL1(GetArrayLength, jenv, data)), '\0');
+    if(!result.empty())
+        JCALL4(GetByteArrayRegion, jenv, data, 0, jsize(result.size()), reinterpret_cast<jbyte*>(result.data()));
+    if(jenv->ExceptionCheck())
+        return std::nullopt;
+    return result;
+}}
+%fragment("SWIG_StringToJavaArray", "header") {
+static jbyteArray SWIG_StringToJavaArray(JNIEnv *jenv, const std::string &data) {
+    return JNIObject<jbyteArray>::fromBytes(jenv, data).release();
+}}
+%typemap(jni) std::string, const std::string & "jbyteArray"
+%typemap(jtype) std::string, const std::string & "byte[]"
+%typemap(jstype) std::string, const std::string & "String"
+%typemap(javain) std::string, const std::string & "$javainput.getBytes(java.nio.charset.StandardCharsets.UTF_8)"
+%typemap(javaout) std::string, const std::string & {
+    return new String($jnicall, java.nio.charset.StandardCharsets.UTF_8);
+  }
+%typemap(javadirectorin) std::string, const std::string & "new String($jniinput, java.nio.charset.StandardCharsets.UTF_8)"
+%typemap(javadirectorout) std::string, const std::string & "$javacall.getBytes(java.nio.charset.StandardCharsets.UTF_8)"
+%typemap(in, fragment="SWIG_JavaArrayToString") std::string
+%{ auto $1_str = SWIG_JavaArrayToString(jenv, $input);
+   if(!$1_str)
+     return $null;
+   $1 = std::move(*$1_str); %}
+%typemap(in, fragment="SWIG_JavaArrayToString") const std::string &
+%{ auto $1_str = SWIG_JavaArrayToString(jenv, $input);
+   if(!$1_str)
+     return $null;
+   $1 = &*$1_str; %}
+%typemap(out, fragment="SWIG_StringToJavaArray") std::string
+%{ $result = SWIG_StringToJavaArray(jenv, $1); %}
+%typemap(out, fragment="SWIG_StringToJavaArray") const std::string &
+%{ $result = SWIG_StringToJavaArray(jenv, *$1); %}
+%typemap(directorin, descriptor="[B", fragment="SWIG_StringToJavaArray") std::string, const std::string &
+%{ $input = SWIG_StringToJavaArray(jenv, $1);
+   Swig::LocalRefGuard $1_refguard(jenv, $input); %}
+%typemap(directorout, fragment="SWIG_JavaArrayToString") std::string
+%{ auto $1_str = SWIG_JavaArrayToString(jenv, $input);
+   if(!$1_str)
+     return $null;
+   $result = std::move(*$1_str); %}
+%typemap(directorout, warning=SWIGWARN_TYPEMAP_THREAD_UNSAFE_MSG,
+  fragment="SWIG_JavaArrayToString") const std::string &
+%{ auto $1_value = SWIG_JavaArrayToString(jenv, $input);
+   if(!$1_value)
+     return $null;
+   /* possible thread/reentrant code problem */
+   static $*1_ltype $1_str;
+   $1_str = std::move(*$1_value);
+   $result = &$1_str; %}
+
+#elif defined(SWIGCSHARP)
 %typemap(imtype,
   inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
   outattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]")
