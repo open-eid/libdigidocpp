@@ -2,11 +2,16 @@
   "version": 6,
   "configurePresets": [
     {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}$env{BUILD_SUFFIX}"
+    },
+    {
       "name": "default",
       "displayName": "Default config",
       "description": "Default build using Ninja generator",
+      "inherits": "base",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
@@ -42,6 +47,7 @@
       "cacheVariables": {
         "CMAKE_DISABLE_FIND_PACKAGE_Boost": "YES",
         "CMAKE_DISABLE_FIND_PACKAGE_Doxygen": "YES",
+        "CMAKE_FIND_ROOT_PATH": null,
         "BUILD_TOOLS": "NO",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
@@ -72,7 +78,10 @@
       "inherits": "ios",
       "description": "This iphonesimulator build is only available on macOS",
       "cacheVariables": {
-        "VCPKG_TARGET_TRIPLET": "arm64-x64-ios-simulator"
+        "VCPKG_TARGET_TRIPLET": "arm64-x64-ios-simulator",
+        "CMAKE_DISABLE_FIND_PACKAGE_Boost": "NO",
+        "VCPKG_MANIFEST_FEATURES": "tests",
+        "CMAKE_CROSSCOMPILING_EMULATOR": "xcrun;simctl;spawn;booted"
       }
     },
     {
@@ -125,17 +134,38 @@
     {
       "name": "windows",
       "displayName": "Windows",
-      "binaryDir": "${sourceDir}/build/windows-$env{PLATFORM}",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "environment": {
+        "BUILD_SUFFIX": "-$env{PLATFORM}"
+      },
       "cacheVariables": {
         "CMAKE_INSTALL_BINDIR": ".",
         "CMAKE_INSTALL_LIBDIR": ".",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "$env{PLATFORM}-windows"
       }
+    },
+    {
+      "name": "windows-static",
+      "displayName": "Windows static",
+      "inherits": "windows",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "VCPKG_TARGET_TRIPLET": "$env{PLATFORM}-windows-static-md",
+        "VCPKG_MANIFEST_FEATURES": "tests"
+      }
     }
   ],
-  "buildPresets":
-  [
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    },
     {
       "name": "macos",
       "configurePreset": "macos"
@@ -167,6 +197,45 @@
     {
       "name": "windows",
       "configurePreset": "windows"
+    },
+    {
+      "name": "windows-static",
+      "configurePreset": "windows-static",
+      "configuration": "RelWithDebInfo"
+    }
+  ],
+  "testPresets":
+  [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "macos",
+      "configurePreset": "macos",
+      "inherits": "default"
+    },
+    {
+      "name": "iphonesimulator",
+      "configurePreset": "iphonesimulator",
+      "inherits": "default"
+    },
+    {
+      "name": "windows",
+      "configurePreset": "windows",
+      "inherits": "default"
+    },
+    {
+      "name": "windows-static",
+      "configurePreset": "windows-static",
+      "configuration": "RelWithDebInfo",
+      "inherits": "default"
     }
   ]
 }

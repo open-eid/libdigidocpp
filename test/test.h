@@ -24,8 +24,10 @@
 #include <Container.h>
 #include <Conf.h>
 #include <Exception.h>
+#include <XMLDocument.h>
 #include <crypto/X509Cert.h>
 #include <util/File.h>
+#include <util/log.h>
 
 using namespace digidoc;
 using namespace std;
@@ -134,6 +136,7 @@ public:
 
     virtual ~DigiDocPPFixture()
     {
+        XMLSchema::clearCache();
         digidoc::terminate();
         //BOOST_MESSAGE("unloading libdigidocpp");
     }

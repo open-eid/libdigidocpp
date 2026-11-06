@@ -24,6 +24,7 @@
 #include "Exception.h"
 #include "PDF.h"
 #include "SiVaContainer.h"
+#include "XMLDocument.h"
 #include "XmlConf.h"
 #include "crypto/Signer.h"
 #include "crypto/X509CertStore.h"
@@ -81,7 +82,7 @@ string digidoc::version() {
 
 /**
  * Libdigidocpp’s initialization method: initializes dependent libraries,
- * loads configuration settings from default configuration files (see \ref conf) and initializes
+ * loads configuration settings from default configuration files (see \ref configuration) and initializes
  * certificate store using TSL lists
  *
  * @param appInfo Application name for user agent string and container comments
@@ -94,7 +95,7 @@ void digidoc::initialize(const string &appInfo, initCallBack callBack)
 
 /**
  * Libdigidocpp’s initialization method: initializes dependent libraries,
- * loads configuration settings from default configuration files (see \ref conf) and initializes
+ * loads configuration settings from default configuration files (see \ref configuration) and initializes
  * certificate store using TSL lists
  *
  * @since 3.14.3
@@ -166,6 +167,8 @@ void digidoc::terminate()
     } catch (...) {
         // Don't throw on terminate
     }
+
+    XMLSchema::clearCache();
 
     xmlSecCryptoShutdown();
     xmlSecCryptoAppShutdown();
@@ -331,6 +334,8 @@ unique_ptr<Container> Container::createPtr(const std::string &path)
  * archive timestamp. For ASiC-S containers, re-timestamps the existing EE
  * timestamp token. If in-place extension is not possible, wraps the original
  * container as a data file in a new ASiC-S container and adds a timestamp.
+ * Archive timestamps and the wrapping container's timestamp are requested from
+ * the archive time-stamping service (ConfV6::TSUrlArchive()).
  *
  * Containers where all considered EE signatures are T-level (time-stamp profile without OCSP)
  * cannot be extended and will throw. Containers with no Estonian signing certificates will throw.
@@ -345,7 +350,11 @@ unique_ptr<Container> Container::createPtr(const std::string &path)
 std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Signer *signer, size_t &extendedCount) try
 {
     extendedCount = 0;
-    if(doc.signatures().empty())
+    auto signatures = doc.signatures();
+    if(doc.mediaType() == ASiContainer::MIMETYPE_ASIC_S &&
+        !signatures.empty() && signatures.front()->profile() == ASiC_S::ASIC_TST_PROFILE)
+        signatures.resize(1);
+    if(signatures.empty())
         THROW("Container does not contain signatures");
 
     if(doc.mediaType() == ASiContainer::MIMETYPE_ASIC_S ||
@@ -354,7 +363,7 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
         bool extendInPlace = true;
         size_t tCount = 0;
         size_t eeCount = 0;
-        for(Signature *s: doc.signatures())
+        for(Signature *s: signatures)
         {
             auto signingCert = s->signingCertificate();
             if(signingCert.subjectName("C") != "EE" ||
@@ -431,7 +440,7 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
 
         if(extendInPlace)
         {
-            for(Signature *s: doc.signatures())
+            for(Signature *s: signatures)
             {
                 if(auto cert = s->signingCertificate();
                     cert.subjectName("C") != "EE" ||
@@ -452,7 +461,7 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
     signer->setProfile(string(ASiC_S::ASIC_TST_PROFILE));
     auto asics = ASiC_S::createInternal(doc.path() + ".asics");
     asics->addDataFile(doc.path(), doc.mediaType());
-    asics->sign(signer);
+    static_cast<ASiC_S*>(asics.get())->sign(signer, true);
     return asics;
 } catch(const Exception &e) {
     THROW_CAUSE(e, "Failed to extend signature");
@@ -461,6 +470,11 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
 /**
  * @fn digidoc::Container::dataFiles
  * List of all the data files in the container
+ *
+ * Since 4.6.0, for an ASiC-S container whose enclosed DDoc was opened through
+ * SiVa using a callback allowing online validation, returns the data files of
+ * the DDoc. If the enclosed DDoc is not opened through SiVa, returns the DDoc
+ * file itself.
  *
  * Container holds ownership of data files objects
  */
@@ -556,7 +570,8 @@ unique_ptr<Container> Container::openPtr(const string &path, ContainerOpenCB *cb
  * Removes signature from container by signature index.
  *
  * @param index signature's index, which will be removed.
- * @throws Exception throws exception if the signature id is incorrect.
+ * @throws Exception throws exception if the signature id is incorrect or the
+ * container is an ASiC-S container exposing a DDoc opened through SiVa.
  * @see digidoc::Container::signatures
  */
 
@@ -599,6 +614,11 @@ void Container::addContainerImplementation()
 /**
  * @fn digidoc::Container::signatures
  * Returns list of all container's signatures.
+ *
+ * Since 4.6.0, for an ASiC-S container whose enclosed DDoc was opened through
+ * SiVa using a callback allowing online validation, returns the time-stamp token
+ * followed by the signatures of the DDoc. Otherwise, returns only the
+ * container's own signatures.
  *
  * Container holds ownership of signature objects
  */

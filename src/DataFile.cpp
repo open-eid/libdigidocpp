@@ -186,7 +186,15 @@ void DataFilePrivate::saveAs(const string& path) const
 void DataFilePrivate::saveAs(ostream &os) const
 {
     m_is->clear();
-    m_is->seekg(0);
+    bool seekFailed = !m_is->seekg(0);
+    if(seekFailed)
+        m_is->clear();
+    if(m_is->peek() == istream::traits_type::eof())
+    {
+        if(seekFailed || m_is->bad() || d->size.value_or(0) != 0)
+            THROW("Failed to read data file '%s'.", m_filename.c_str());
+        return;
+    }
     os << m_is->rdbuf();
 }
 

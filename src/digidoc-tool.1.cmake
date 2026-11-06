@@ -15,6 +15,8 @@ PDF, legacy DDOC, and ASiC containers with CAdES signatures are validated
 through the SiVa Online Service. The
 .B \-\-offline
 option disables this service fallback.
+An ASiC-S time-stamp container that encloses a DDoc file is opened together
+with the DDoc, whose signatures are validated through SiVa.
 .PP
 The interface is intended for testing and as an API usage example. Its
 command-line compatibility is not guaranteed between releases.
@@ -76,13 +78,19 @@ Select how validation warnings affect output. The default is warning.
 .BR \-\-extractAll [=directory]
 Extract all data files without validating signatures. Without a directory,
 files are written to the current directory.
+On Windows, reserved device names are written with a leading underscore
+.RB ( CON " becomes " _CON )
+and invalid filename characters, control characters, and trailing spaces or
+dots are replaced with underscores. Extraction fails if the output file
+already exists.
 .TP
 .B \-\-validateOnExtract
 Validate the container before extracting data files.
 .TP
 .B \-\-offline
 Do not send unsupported local formats to SiVa. Service-backed formats cannot
-be opened in this mode.
+be opened in this mode. An ASiC-S container that encloses a DDoc file is
+opened as a plain time-stamped container.
 .SS add
 Add data files to an unsigned ASiC-E container. The
 .B \-\-file

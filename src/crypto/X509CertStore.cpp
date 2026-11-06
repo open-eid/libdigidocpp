@@ -32,8 +32,60 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
 using namespace digidoc;
 using namespace std;
+
+namespace {
+
+int storeTypeIndex()
+{
+    static const int index = X509_STORE_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+    return index;
+}
+
+int storeContextValidityIndex()
+{
+    static const int index = X509_STORE_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+    return index;
+}
+
+bool verifyLegacySignature(X509 *cert, EVP_PKEY *key)
+{
+#ifndef _WIN32
+    if(int digest = NID_undef;
+       cert && key && OBJ_find_sigid_algs(X509_get_signature_nid(cert), &digest, nullptr) == 1 && digest == NID_sha1)
+    {
+        // X509_verify uses the certificate's context, not X509_STORE_CTX.
+        if(auto local = X509CertStore::legacyCertificate(cert); local && X509_verify(local.get(), key) == 1)
+            return true;
+    }
+#endif
+    return false;
+}
+
+bool issuedBy(X509 *cert, const X509Cert &issuer)
+{
+    if(X509_check_issued(issuer.handle(), cert) == X509_V_OK)
+    {
+        auto *key = X509_get0_pubkey(issuer.handle());
+        if(X509_verify(cert, key) == 1 || verifyLegacySignature(cert, key))
+            return true;
+    }
+    ERR_clear_error();
+    return false;
+}
+
+bool validAt(X509 *cert, time_t time)
+{
+    return X509_cmp_time(X509_get0_notBefore(cert), &time) < 0 &&
+        X509_cmp_time(X509_get0_notAfter(cert), &time) > 0;
+}
+
+}
 
 const X509CertStore::Type X509CertStore::CA {
     "http://uri.etsi.org/TrstSvc/Svctype/CA/QC",
@@ -48,7 +100,21 @@ const X509CertStore::Type X509CertStore::OCSP {
     "http://uri.etsi.org/TrstSvc/Svctype/Certstatus/OCSP/QC",
 };
 
-struct X509CertStore::Private: public vector<TSL::Service> {};
+struct X509CertStore::Private: public vector<TSL::Service>
+{
+    void enumServices(const Type &type, const string &time, const auto &callback) const
+    {
+        for(const TSL::Service &service: *this)
+        {
+            auto i = service.validity.upper_bound(time);
+            if(i == service.validity.cbegin())
+                continue;
+            --i;
+            if(i->second && contains(type, i->second->type) && callback(service, *i->second))
+                return;
+        }
+    }
+};
 
 /**
  * X509CertStore constructor.
@@ -86,7 +152,9 @@ vector<X509Cert> X509CertStore::certs(const Type &type) const
     vector<X509Cert> certs;
     for(const TSL::Service &s: *d)
     {
-        if(type.find(s.type) != type.cend())
+        if(any_of(s.validity, [&type](const auto &v) {
+                return v.second && contains(type, v.second->type);
+            }))
             certs.insert(certs.cend(), s.certs.cbegin(), s.certs.cend());
     }
     return certs;
@@ -97,7 +165,9 @@ X509Cert X509CertStore::findIssuer(const X509Cert &cert, const Type &type) const
     activate(cert);
     for(const TSL::Service &s: *d)
     {
-        if(type.find(s.type) == type.cend())
+        if(!any_of(s.validity, [&type](const auto &v) {
+                return v.second && contains(type, v.second->type);
+            }))
             continue;
         for(const X509Cert &i: s.certs)
         {
@@ -136,16 +206,109 @@ unique_free_t<X509_STORE> X509CertStore::createStore(const Type &type, tm &tm)
     if (!store)
         THROW_OPENSSLEXCEPTION("Failed to create X509_STORE_CTX");
     X509_STORE_set_verify_cb(store.get(), X509CertStore::validate);
-    X509_STORE_set_ex_data(store.get(), 0, const_cast<Type*>(&type));
+    X509_STORE_set_get_issuer(store.get(), [](X509 **issuer, X509_STORE_CTX *ctx, auto *cert) {
+        return X509CertStore::getIssuer(issuer, ctx, const_cast<X509*>(cert));
+    });
+    const int typeIndex = storeTypeIndex();
+    const int validityIndex = storeContextValidityIndex();
+    if(typeIndex < 0 || validityIndex < 0 ||
+       X509_STORE_set_ex_data(store.get(), typeIndex, const_cast<Type*>(&type)) != 1)
+        THROW_OPENSSLEXCEPTION("Failed to initialize X509 store application data");
     X509_STORE_set_flags(store.get(), X509_V_FLAG_USE_CHECK_TIME | X509_V_FLAG_PARTIAL_CHAIN);
     X509_VERIFY_PARAM_set_time(X509_STORE_get0_param(store.get()), util::date::mkgmtime(tm));
     return store;
+}
+
+unique_free_t<X509> X509CertStore::legacyCertificate(X509 *cert)
+{
+#ifndef _WIN32
+    // Fedora/RHEL can disable SHA-1 even for historical certificate and OCSP signatures.
+    // Keep that exception in a private context, leaving the caller's policy intact.
+    static const auto context = [] {
+        auto ctx = make_unique_ptr<OSSL_LIB_CTX_free>(nullptr);
+        auto *allow = reinterpret_cast<int(*)(void*, int, int)>(
+            dlsym(RTLD_DEFAULT, "ossl_ctx_legacy_digest_signatures_allowed_set"));
+        if(!allow)
+            return ctx;
+        ctx.reset(OSSL_LIB_CTX_new());
+        if(!ctx || OSSL_LIB_CTX_load_config(ctx.get(), nullptr) != 1 || allow(ctx.get(), 1, 0) != 1)
+        {
+            WARN("Failed to enable legacy certificate verification in private OpenSSL context");
+            ctx.reset();
+        }
+        return ctx;
+    }();
+    if(context)
+    {
+        ERR_clear_error();
+        auto der = i2d<i2d_X509>(cert);
+        X509 *local = X509_new_ex(context.get(), nullptr);
+        // d2i_X509 frees local and sets it to nullptr on failure.
+        if(const unsigned char *data = der.data(); local && d2i_X509(&local, &data, long(der.size())))
+            return {local, X509_free};
+    }
+#endif
+    return {nullptr, X509_free};
+}
+
+int X509CertStore::getIssuer(X509 **issuer, X509_STORE_CTX *ctx, X509 *cert)
+{
+    *issuer = nullptr;
+    const auto *type = static_cast<const Type*>(
+        X509_STORE_get_ex_data(X509_STORE_CTX_get0_store(ctx), storeTypeIndex()));
+    if(!type)
+        return 0;
+    auto time = X509_VERIFY_PARAM_get_time(X509_STORE_CTX_get0_param(ctx));
+    auto current = util::date::to_string(time);
+    X509 *fallback{};
+    const TSL::Validity *fallbackValidity{};
+    auto useIssuer = [&](X509 *candidate, const TSL::Validity *validity) {
+        if(X509_STORE_CTX_set_ex_data(ctx, storeContextValidityIndex(),
+                const_cast<TSL::Validity*>(validity)) != 1 || X509_up_ref(candidate) != 1)
+            return -1;
+        *issuer = candidate;
+        return 1;
+    };
+    int result = 0;
+    instance()->d->enumServices(*type, current, [&](const TSL::Service &service, const TSL::Validity &validity) {
+        for(const X509Cert &candidate: service.certs)
+        {
+            if(!issuedBy(cert, candidate))
+                continue;
+            if(validAt(candidate.handle(), time))
+            {
+                result = useIssuer(candidate.handle(), &validity);
+                return true;
+            }
+            if(!fallback)
+            {
+                fallback = candidate.handle();
+                fallbackValidity = &validity;
+            }
+        }
+        return false;
+    });
+    if(result != 0)
+        return result;
+    return fallback ? useIssuer(fallback, fallbackValidity) : 0;
 }
 
 int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
 {
     switch(X509_STORE_CTX_get_error(ctx))
     {
+    case X509_V_ERR_CERT_SIGNATURE_FAILURE:
+    {
+        if(ok)
+            return ok;
+        auto *chain = X509_STORE_CTX_get0_chain(ctx);
+        int depth = X509_STORE_CTX_get_error_depth(ctx);
+        int count = sk_X509_num(chain);
+        if(depth < 0 || depth >= count)
+            return ok;
+        X509 *issuer = sk_X509_value(chain, depth + 1 < count ? depth + 1 : depth);
+        return verifyLegacySignature(X509_STORE_CTX_get_current_cert(ctx), X509_get0_pubkey(issuer)) ? 1 : ok;
+    }
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
     case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
     case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
@@ -156,36 +319,37 @@ int X509CertStore::validate(int ok, X509_STORE_CTX *ctx)
     default: return ok;
     }
 
-    auto *type = static_cast<Type*>(X509_STORE_get_ex_data(X509_STORE_CTX_get0_store(ctx), 0));
-    X509 *x509 = X509_STORE_CTX_get0_cert(ctx);
+    const int typeIndex = storeTypeIndex();
+    if(typeIndex < 0)
+        return 0;
+    auto *type = static_cast<Type*>(X509_STORE_get_ex_data(X509_STORE_CTX_get0_store(ctx), typeIndex));
+    if(!type)
+        return 0;
     auto current = util::date::to_string(X509_VERIFY_PARAM_get_time(X509_STORE_CTX_get0_param(ctx)));
-    for(const TSL::Service &s: *instance()->d)
-    {
-        if(type->find(s.type) == type->cend()) // correct service type
-            continue;
-        if(none_of(s.certs, [&](const X509Cert &issuer) {
-                if(issuer == x509) // certificate is listed by service
-                    return true;
-                if(X509_check_issued(issuer.handle(), x509) != X509_V_OK) // certificate is issued by service (function checks only issuer name)
-                    return false;
-                auto pub = make_unique_ptr<EVP_PKEY_free>(X509_get_pubkey(issuer.handle()));
-                if(X509_verify(x509, pub.get()) == 1) // certificate is signed by service
-                    return true;
-                ERR_clear_error();
+    auto trusted = [&](X509 *x509) -> const TSL::Validity* {
+        const TSL::Validity *result{};
+        instance()->d->enumServices(*type, current, [&](const TSL::Service &service, const TSL::Validity &validity) {
+            if(none_of(service.certs, [&](const X509Cert &issuer) {
+                    return issuer == x509 || issuedBy(x509, issuer); // certificate is listed or issued by service
+                })) // certificate is trusted by service
                 return false;
-            })) // certificate is trusted by service
-            continue;
-        for(auto i = s.validity.crbegin(), end = s.validity.crend(); i != end; ++i)
-        {
-            if(current < i->first) // Search older status
-                continue;
-            if(!i->second.has_value()) // Has revoked
-                break;
-            X509_STORE_CTX_set_ex_data(ctx, 0, const_cast<TSL::Qualifiers*>(&i->second));
-            return 1;
-        }
-    }
-    return ok;
+            result = &validity;
+            return true;
+        });
+        return result;
+    };
+    X509 *current_cert = X509_STORE_CTX_get_current_cert(ctx);
+    X509 *target_cert = X509_STORE_CTX_get0_cert(ctx);
+    const TSL::Validity *validity = current_cert ? trusted(current_cert) : nullptr;
+    if(!validity && target_cert && target_cert != current_cert)
+        validity = trusted(target_cert);
+    if(!validity)
+        return ok;
+    if(const int validityIndex = storeContextValidityIndex();
+        validityIndex < 0 || X509_STORE_CTX_set_ex_data(ctx, validityIndex,
+            const_cast<TSL::Validity*>(validity)) != 1)
+        return 0;
+    return 1;
 }
 
 void X509CertStore::update() const
@@ -203,14 +367,20 @@ void X509CertStore::update() const
  * Check if X509Cert is signed by trusted issuer
  * @throw Exception if error
  */
-bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time) const
+bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time, const vector<X509Cert> &untrusted) const
 {
     activate(cert);
     if(util::date::is_empty(validation_time))
         ASN1_TIME_to_tm(X509_get0_notBefore(cert.handle()), &validation_time);
     auto store = createStore(X509CertStore::CA, validation_time);
     auto csc = make_unique_ptr<X509_STORE_CTX_free>(X509_STORE_CTX_new());
-    if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), nullptr))
+    auto stack = make_unique_ptr(sk_X509_new_null(), [](auto *sk) { sk_X509_free(sk); });
+    for(const X509Cert &i: untrusted)
+    {
+        if(i)
+            sk_X509_push(stack.get(), i.handle());
+    }
+    if(!X509_STORE_CTX_init(csc.get(), store.get(), cert.handle(), stack.get()))
         THROW_OPENSSLEXCEPTION("Failed to init X509_STORE_CTX");
     if(X509_verify_cert(csc.get()) <= 0)
     {
@@ -224,7 +394,10 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time
     if(noqscd)
         return true;
 
-    const auto *qualifiers = static_cast<const TSL::Qualifiers*>(X509_STORE_CTX_get_ex_data(csc.get(), 0));
+    const auto *v = static_cast<const TSL::Validity*>(
+        X509_STORE_CTX_get_ex_data(csc.get(), storeContextValidityIndex()));
+    if(!v)
+        THROW("Failed to resolve TSL service validity");
     const vector<string> policies = cert.certificatePolicies();
     const vector<string> qcstatement = cert.qcStatements();
     const vector<X509Cert::KeyUsage> keyUsage = cert.keyUsage();
@@ -249,7 +422,7 @@ bool X509CertStore::verify(const X509Cert &cert, bool noqscd, tm validation_time
         });
     };
 
-    for(const TSL::Qualifier &q: qualifiers->value())
+    for(const TSL::Qualifier &q: v->qualifiers)
     {
         if(q.assert_ == "all")
         {

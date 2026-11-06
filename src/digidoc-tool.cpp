@@ -32,6 +32,7 @@
 #include "util/log.h"
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <sstream>
@@ -124,6 +125,42 @@ static ostream &endl(ostream &os)
 {
     return os.put('\n');
 }
+}
+
+/**
+ * Encodes a container data-file leaf (UTF-8) to a native filesystem path component. On Windows,
+ * invalid filename characters and trailing spaces or dots are replaced with '_'. Reserved device
+ * names are prefixed with '_' so extraction writes a regular file instead of accessing a device.
+ * POSIX has no equivalent restrictions, so the leaf is encoded unchanged there.
+ */
+static fs::path safePath(string_view leaf)
+{
+#ifdef _WIN32
+    static constexpr string_view invalidChars = R"(<>:"/\|?*)";
+    static constexpr string_view reserved[] {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "COM¹", "COM²", "COM³",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+        "LPT¹", "LPT²", "LPT³",
+        "CONIN$", "CONOUT$" };
+
+    string name(leaf);
+    for(char &c: name)
+        if(static_cast<unsigned char>(c) < 32 || invalidChars.find(c) != string_view::npos)
+            c = '_';
+    for(auto i = name.rbegin(); i != name.rend() && (*i == ' ' || *i == '.'); ++i)
+        *i = '_';
+
+    string stem(name.substr(0, name.find('.')));
+    while(!stem.empty() && (stem.back() == ' ' || stem.back() == '.'))
+        stem.pop_back();
+    for(char &c: stem) if(c >= 'a' && c <= 'z') c -= 'a' - 'A';
+    if(any_of(begin(reserved), end(reserved), [&stem](string_view r) { return r == stem; }))
+        name.insert(name.begin(), '_');
+    return File::encodeName(name);
+#endif
+    return File::encodeName(leaf);
 }
 
 struct CertSigner final: public Signer
@@ -300,6 +337,9 @@ public:
     bool TSLAllowExpired() const final { return expired.value_or(XmlConfCurrent::TSLAllowExpired()); }
     vector<X509Cert> TSLCerts() const final { return tslcerts.value_or(XmlConfCurrent::TSLCerts()); }
     string TSUrl() const final { return tsurl.value_or(XmlConfCurrent::TSUrl()); }
+    vector<X509Cert> TSCerts() const final { return tscerts.value_or(XmlConfCurrent::TSCerts()); }
+    string TSUrlArchive() const final { return tsurlarchive.value_or(XmlConfCurrent::TSUrlArchive()); }
+    vector<X509Cert> TSCertsArchive() const final { return tscertsarchive.value_or(XmlConfCurrent::TSCertsArchive()); }
     string TSLUrl() const final { return tslurl.value_or(XmlConfCurrent::TSLUrl()); }
 
     unique_ptr<Signer> getSigner(bool getwebsigner = false) const;
@@ -310,6 +350,9 @@ public:
     optional<vector<X509Cert>> tslcerts;
     optional<string> _logFile;
     optional<string> tsurl;
+    optional<vector<X509Cert>> tscerts;
+    optional<string> tsurlarchive;
+    optional<vector<X509Cert>> tscertsarchive;
     optional<string> tslurl;
     optional<string> uri;
     optional<string> siguri;
@@ -399,6 +442,9 @@ static int printUsage(const char *executable)
     << "      --rsapkcs15    - Use RSA PKCS1.5 padding" << endl
     << "      --rsapss       - Use RSA PSS padding" << endl
     << "      --tsurl=       - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
+    << "      --tscert=      - pin the TSA TLS certificate, PEM file" << endl
+    << "      --tsurlarchive= - option to change archive (LTA) TS URL (default " << CONF(TSUrlArchive) << ")" << endl
+    << "      --tscertarchive= - pin the archive (LTA) TSA TLS certificate, PEM file" << endl
     << "      --dontValidate - Don't validate container on signature creation" << endl
     << "      --userAgent=   - Additional application info sent to TSA or OCSP service" << endl << endl
     << "  Command extend:" << endl
@@ -406,7 +452,8 @@ static int printUsage(const char *executable)
     << "    Available options:" << endl
     << "      --profile=     - signature profile, TS, TSA, time-stamp, time-stamp-archive" << endl
     << "      --signature=   - signature to extend" << endl
-    << "      --dontValidate - Don't validate a directly extended signature after extension" << endl << endl
+    << "      --dontValidate - Don't validate a directly extended signature after extension" << endl
+    << "      --tsurl=, --tscert=, --tsurlarchive=, --tscertarchive= look sign command for info" << endl << endl
     << "  Command version:" << endl
     << "    Prints digidoc-tool and libdigidocpp versions." << endl << endl
     << "  All commands:" << endl
@@ -475,7 +522,10 @@ ToolConfig::ToolConfig(int argc, char *argv[])
         else if(arg == "--rsapkcs15") rsaPss = false;
         else if(arg == "--rsapss") rsaPss = true;
         else if(value v{arg, "--tsurl="}) tsurl = v;
+        else if(value v{arg, "--tsurlarchive="}) tsurlarchive = v;
         else if(value v{arg, "--tslurl="}) tslurl = v;
+        else if(value v{arg, "--tscert="}) tscerts = vector<X509Cert>{ X509Cert(v) };
+        else if(value v{arg, "--tscertarchive="}) tscertsarchive = vector<X509Cert>{ X509Cert(v) };
         else if(value v{arg, "--tslcert="}) tslcerts = vector<X509Cert>{ X509Cert(v) };
         else if(arg == "--TSLAllowExpired") expired = true;
         else if(arg == "--dontsign") doSign = false;
@@ -626,8 +676,21 @@ static int open(int argc, char* argv[])
         for(const DataFile *file: doc->dataFiles())
         {
             try {
-                auto dst = (extractPath / fs::path(file->fileName()).filename());
-                file->saveAs(dst.string());
+                string name = file->fileName();
+                auto dst = extractPath / safePath(File::fileName(name));
+                error_code ec;
+                bool exists = fs::exists(dst, ec);
+                if(ec)
+                    THROW("Failed to inspect output file for document '%s'.", name.c_str());
+                if(exists)
+                    THROW("Refusing to overwrite existing output file for document '%s'.", name.c_str());
+                ofstream ofs(dst, ofstream::binary);
+                if(!ofs)
+                    THROW("Failed to create file '%s'", name.c_str());
+                file->saveAs(ofs);
+                ofs.flush();
+                if(!ofs)
+                    THROW("Failed to write file '%s'", name.c_str());
                 cout << "  Document(" << file->mediaType() << ") extracted to " << dst << " (" << file->fileSize() << " bytes)" << endl;
             } catch(const Exception &e) {
                 cout << "  Document " << file->fileName() << " extraction: " << ToolConfig::RED << "FAILED" << ToolConfig::RESET << endl;
@@ -1073,8 +1136,12 @@ static int tslcmd(int /*argc*/, char* /*argv*/[])
         }
         for(const TSL::Service &s: tp.services())
         {
-            cout << "          Service: " << s.name << endl
-                << "             Type: " << s.type << endl;
+            cout << "          Service: " << s.name << endl;
+            if(!s.validity.empty())
+            {
+                if(const auto &v = s.validity.crbegin()->second; v)
+                    cout << "             Type: " << v->type << endl;
+            }
             for(const X509Cert &x: s.certs)
                 cout << "             Cert: " << x << endl;
         }

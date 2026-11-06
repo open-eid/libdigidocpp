@@ -32,8 +32,6 @@ using namespace std;
 
 /**
  * Formats string, use same syntax as <code>printf()</code> function.
- * Example implementation from:
- * http://www.senzee5.com/2006/05/c-formatting-stdstring.html
  *
  * @param fmt format of the string. Uses same formating as <code>printf()</code> function.
  * @param ... parameters for the string format.

@@ -1,7 +1,7 @@
 #powershell -ExecutionPolicy ByPass -File build.ps1
 param(
   [string]$libdigidocpp = $PSScriptRoot,
-  [string]$platform = $env:PLATFORM,
+  [string]$platform = $(if ($null -eq $env:PLATFORM) {"x64"} else {$env:PLATFORM}),
   [string]$build_number = $(if ($null -eq $env:BUILD_NUMBER) {"0"} else {$env:BUILD_NUMBER}),
   [string]$msiversion = (Select-String -Path "$libdigidocpp/CMakeLists.txt" -Pattern 'project\(\w+ VERSION (\S+)').Matches[0].Groups[1].Value + ".$build_number",
   [string]$msi_name = "libdigidocpp-$msiversion$env:VER_SUFFIX.$platform.msi",
@@ -16,7 +16,8 @@ param(
   [string]$doxygen = $null,
   [switch]$boost = $false,
   [string]$sign = $null,
-  [string]$python = $null
+  [string]$python = $null,
+  [switch]$acceptWixEULA = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,9 +26,13 @@ Try {
   & wix > $null
 }
 Catch {
-  & dotnet tool install -g --version 6.0.2 wix
-  & wix extension add -g WixToolset.UI.wixext/6.0.2
+  & dotnet tool install -g --version 7.0.0 wix
 }
+
+if($acceptWixEULA) {
+  & wix eula accept wix7
+}
+& wix extension add -g WixToolset.UI.wixext/7.0.0
 
 if(!(Test-Path -Path $vcpkg)) {
   $vcpkg = "$libdigidocpp\vcpkg"
@@ -50,7 +55,6 @@ if($platform -eq "arm64" -and $env:VSCMD_ARG_HOST_ARCH -ne "arm64") {
 }
 if($boost) {
   $cmakeext += "-DVCPKG_MANIFEST_FEATURES=tests"
-  $target += "check"
 }
 if($python) {
   $cmakeext += "-DPython3_ROOT_DIR=$python/$platform"
@@ -66,12 +70,15 @@ Push-Location $libdigidocpp
 & $cmake --fresh --preset windows "-GNinja Multi-Config" $cmakeext "-DCMAKE_INSTALL_PREFIX=$installdir" "-DSIGNCERT=$sign"
 foreach($type in @("Debug", "RelWithDebInfo")) {
   & $cmake --build --preset windows --config $type --target $target
+  if($boost) {
+    & (Join-Path (Split-Path (Get-Command $cmake).Source) "ctest.exe") --preset windows --build-config $type
+  }
   & $cmake --build --preset windows --config $type --target install
 }
 Pop-Location
 
 if($sign) {
-  & signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
+  & signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du https://installer.id.ee `
     /tr http://timestamp.digicert.com /td SHA256 `
     $vcpkg_installed_platform/$vcpkg_triplet/bin/*.dll `
     $vcpkg_installed_platform/$vcpkg_triplet/debug/bin/*.dll
@@ -92,6 +99,6 @@ if (Test-Path -Path $docLocation -PathType Container) {
   $libdigidocpp\libdigidocpp.wxs
 
 if($sign) {
-  & signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du http://installer.id.ee `
+  & signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du https://installer.id.ee `
     /tr http://timestamp.digicert.com /td SHA256 "$msi_name"
 }

@@ -93,7 +93,7 @@
 +            }
 +
 +            dgstSize = (unsigned int)EVP_MD_size(ctx->digest);
-+            if(((const unsigned int)value->length == dgstSize) && (memcmp(value->data, dataToSign, dgstSize) == 0)) {
++            if(((const unsigned int)ASN1_STRING_length(value) == dgstSize) && (memcmp(ASN1_STRING_get0_data(value), dataToSign, dgstSize) == 0)) {
 +                ret = 1;
 +            } else {
 +                ret = 0;

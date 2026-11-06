@@ -62,7 +62,8 @@ void *OPENSSL_memdup(const void *data, size_t size)
 #define TS_VERIFY_CTX_set0_store TS_VERIFY_CTX_set_store
 #endif
 
-TS::TS(const Digest &digest, const std::string &userAgent)
+TS::TS(const std::string &url, const std::vector<X509Cert> &certs, const Digest &digest,
+    const std::string &userAgent)
     : d(nullptr, PKCS7_free)
     , cms(nullptr, CMS_ContentInfo_free)
 {
@@ -94,7 +95,7 @@ TS::TS(const Digest &digest, const std::string &userAgent)
     ASN1_STRING_set(nonce.get(), nonce_bytes.data(), nonce_bytes.size());
     TS_REQ_set_nonce(req.get(), nonce.get());
 
-    Connect::Result result = Connect(CONF(TSUrl), "POST", 0, CONF(TSCerts), userAgent).exec({
+    Connect::Result result = Connect(url, "POST", 0, certs, userAgent).exec({
         {"Content-Type", "application/timestamp-query"},
         {"Accept", "application/timestamp-reply"},
         {"Connection", "Close"},
@@ -238,6 +239,8 @@ tm TS::time() const
 void TS::verify(const vector<unsigned char> &digest)
 {
     tm tm = time();
+    // Full chain validation against the TSA trust store (populated from TSL) is performed
+    // by TS_RESP_verify_token (PKCS#7 path) and CMS_verify (CMS path) below.
     auto store = X509CertStore::createStore(X509CertStore::TSA, tm);
     X509CertStore::instance()->activate(cert());
     if(d)
@@ -275,7 +278,7 @@ void TS::verify(const vector<unsigned char> &digest)
 
         auto info = make_unique_ptr<TS_TST_INFO_free>(d2i_TS_TST_INFO_bio(out.get(), nullptr));
         if(ASN1_OCTET_STRING *msg = TS_MSG_IMPRINT_get_msg(TS_TST_INFO_get_msg_imprint(info.get()));
-            std::equal(digest.cbegin(), digest.cend(),
+            !std::equal(digest.cbegin(), digest.cend(),
                 ASN1_STRING_get0_data(msg), std::next(ASN1_STRING_get0_data(msg), ASN1_STRING_length(msg))))
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
     }

@@ -19,11 +19,13 @@
 
 #include "File.h"
 
+#include "../Container.h"
 #include "log.h"
 
 #include <algorithm>
 #include <charconv>
 #include <ctime>
+#include <iomanip>
 #include <locale>
 #include <sstream>
 #include <sys/stat.h>
@@ -54,16 +56,14 @@ namespace fs = filesystem;
 #define f_stat _wstat64
 #define f_utime _wutime64
 using f_statbuf = struct _stat64;
-using f_utimbuf = struct __utimbuf64;
 #else
 #define f_stat stat
 #define f_utime utime
 using f_statbuf = struct stat;
-using f_utimbuf = struct utimbuf;
 #endif
 
 
-static string decodeName(const fs::path &path)
+string File::decodeName(const fs::path &path)
 {
     auto name = path.u8string();
     return {reinterpret_cast<const char*>(name.data()), name.size()};
@@ -71,12 +71,22 @@ static string decodeName(const fs::path &path)
 
 string File::confPath()
 {
-#if defined(__APPLE__)
+#ifdef __APPLE__
     return frameworkResourcesPath("ee.ria.digidocpp");
-#elif defined(_WIN32) && defined(_DEBUG)
-    return dllPath("digidocppd.dll");
-#elif defined(_WIN32)
-    return dllPath("digidocpp.dll");
+#elifdef _WIN32
+    if(HMODULE handle {};
+        GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                           GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           reinterpret_cast<LPCWSTR>(&digidoc::terminate),
+                           &handle))
+    {
+        wstring path(MAX_PATH, 0);
+        path.resize(GetModuleFileNameW(handle, path.data(), DWORD(path.size())));
+        if(size_t pos = path.find_last_of(L"/\\"); pos != wstring::npos)
+            path.resize(pos);
+        return decodeName(std::move(path));
+    }
+    return {};
 #else
     fs::path result;
     if(char *var = getenv("SNAP"))
@@ -105,20 +115,6 @@ bool File::fileExists(const string& path)
 {
     return fs::is_regular_file(encodeName(path));
 }
-
-#ifdef _WIN32
-string File::dllPath(string_view dll)
-{
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    HMODULE handle = GetModuleHandleW(encodeName(dll).c_str());
-    wstring path(MAX_PATH, 0);
-    path.resize(GetModuleFileNameW(handle, path.data(), DWORD(path.size())));
-    return decodeName(fs::path(path).parent_path());
-#else
-    return {};
-#endif
-}
-#endif
 
 /**
  * Returns last modified time
@@ -192,10 +188,10 @@ string File::frameworkResourcesPath(string_view name)
  * @param path full path of the file.
  * @return returns directory part of the file full path.
  */
-string File::directory(const string& path)
+string_view File::directory(string_view path)
 {
     size_t pos = path.find_last_of("/\\");
-    return pos == string::npos ? string() : path.substr(0, pos);
+    return pos == string::npos ? string_view() : path.substr(0, pos);
 }
 
 /**
@@ -248,12 +244,12 @@ fs::path File::tempFileName()
  * @param path full path of the directory created.
  * @throws IOException exception is thrown if the directory creation failed.
  */
-void File::createDirectory(string path)
+void File::createDirectory(string_view path)
 {
     if(path.empty())
         THROW("Can not create directory with no name.");
     if(path.back() == '/' || path.back() == '\\')
-        path.pop_back();
+        path.remove_suffix(1);
     auto _path = encodeName(path);
 #ifdef _WIN32
     int result = _wmkdir(_path.c_str());
@@ -262,13 +258,13 @@ void File::createDirectory(string path)
 #endif
     if(result == 0 || errno == EEXIST)
     {
-        DEBUG("Created directory or directory exists '%s'", path.c_str());
+        DEBUG("Created directory or directory exists '%.*s'", STR_VIEW_FMT(path));
         return;
     }
     if(errno != ENOENT)
-        THROW("Failed to create directory '%s', errno = %d", path.c_str(), errno);
+        THROW("Failed to create directory '%.*s', errno = %d", STR_VIEW_FMT(path), errno);
     createDirectory(directory(path));
-    createDirectory(std::move(path));
+    createDirectory(path);
 }
 
 string File::digidocppPath()
@@ -285,7 +281,9 @@ string File::digidocppPath()
         return decodeName(fs::path(var) / ".digidocpp");
     return {};
 #else
-    string buf(sysconf(_SC_GETPW_R_SIZE_MAX), 0);
+    long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    string buf(bufsize > 0 ? bufsize : 2048, 0);
+
     passwd pwbuf {};
     passwd *pw {};
     if(getpwuid_r(geteuid(), &pwbuf, buf.data(), buf.size(), &pw) != 0 || !pw)
@@ -321,7 +319,7 @@ string File::toUriPath(const string &path)
         if(isalnum(i, locC) || unreserved.find(i) != string::npos)
             dst << i;
         else
-            dst << '%' << hex << uppercase << (static_cast<int>(i) & 0xFF);
+            dst << '%' << hex << uppercase << setw(2) << setfill('0') << (static_cast<int>(i) & 0xFF);
     }
     return dst.str();
 }
@@ -331,7 +329,8 @@ constexpr bool fromHexChar(auto pos, auto end, auto &value)
     if(distance(pos, end) < 2)
         return false;
     auto *p = to_address(pos);
-    return from_chars(p, p + 2, value, 16).ec == errc{};
+    auto [ptr, ec] = from_chars(p, p + 2, value, 16);
+    return ec == errc{} && ptr == p + 2;
 }
 
 string File::fromUriPath(string_view path)

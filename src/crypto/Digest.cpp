@@ -96,7 +96,16 @@ bool Digest::isRsaPssUri(string_view uri)
 
 bool Digest::isWeakDigest(string_view uri)
 {
-    return toMethod(uri) == NID_sha1;
+    switch(toMethod(uri))
+    {
+    case NID_sha1:
+    case NID_sha224:
+#ifndef LIBRESSL_VERSION_NUMBER
+    case NID_sha3_224:
+#endif
+        return true;
+    default: return false;
+    }
 }
 
 /**
@@ -123,14 +132,14 @@ int Digest::toMethod(string_view uri)
     if(uri == URI_SHA512 || uri == URI_RSA_SHA512 || uri == URI_RSA_PSS_SHA512 || uri == URI_ECDSA_SHA512) return NID_sha512;
 #ifndef LIBRESSL_VERSION_NUMBER
     if(uri == URI_SHA3_224 || uri == URI_RSA_PSS_SHA3_224) return NID_sha3_224;
-    if(uri == URI_SHA3_256 || uri == URI_RSA_PSS_SHA3_256) return NID_sha3_256;
-    if(uri == URI_SHA3_384 || uri == URI_RSA_PSS_SHA3_384) return NID_sha3_384;
-    if(uri == URI_SHA3_512 || uri == URI_RSA_PSS_SHA3_512) return NID_sha3_512;
+    if(uri == URI_SHA3_256 || uri == URI_RSA_PSS_SHA3_256 || uri == URI_ECDSA_SHA3_256) return NID_sha3_256;
+    if(uri == URI_SHA3_384 || uri == URI_RSA_PSS_SHA3_384 || uri == URI_ECDSA_SHA3_384) return NID_sha3_384;
+    if(uri == URI_SHA3_512 || uri == URI_RSA_PSS_SHA3_512 || uri == URI_ECDSA_SHA3_512) return NID_sha3_512;
 #endif
     THROW("Digest method URI '%.*s' is not supported.", int(uri.size()), uri.data());
 }
 
-string Digest::toRsaUri(const string &uri)
+string Digest::toRsaUri(string uri)
 {
     DEBUG("method %s", uri.c_str());
     if(uri == URI_SHA1) return URI_RSA_SHA1;
@@ -144,7 +153,7 @@ string Digest::toRsaUri(const string &uri)
         uri == URI_RSA_SHA384 ||
         uri == URI_RSA_SHA512)
         return uri;
-    return toRsaPssUri(uri);
+    return toRsaPssUri(std::move(uri));
 }
 
 string Digest::toRsaPssUri(string uri)
@@ -171,11 +180,17 @@ string Digest::toEcUri(const string &uri)
     if(uri == URI_SHA256) return URI_ECDSA_SHA256;
     if(uri == URI_SHA384) return URI_ECDSA_SHA384;
     if(uri == URI_SHA512) return URI_ECDSA_SHA512;
+    if(uri == URI_SHA3_256) return URI_ECDSA_SHA3_256;
+    if(uri == URI_SHA3_384) return URI_ECDSA_SHA3_384;
+    if(uri == URI_SHA3_512) return URI_ECDSA_SHA3_512;
     if(uri == URI_ECDSA_SHA1 ||
         uri == URI_ECDSA_SHA224 ||
         uri == URI_ECDSA_SHA256 ||
         uri == URI_ECDSA_SHA384 ||
-        uri == URI_ECDSA_SHA512)
+        uri == URI_ECDSA_SHA512 ||
+        uri == URI_ECDSA_SHA3_256 ||
+        uri == URI_ECDSA_SHA3_384 ||
+        uri == URI_ECDSA_SHA3_512)
         return uri;
     return {};
 }

@@ -1,0 +1,451 @@
+# digidoc-tool {#digidoc-tool}
+
+The command line utility program digidoc-tool which is included in the Libdigidocpp distribution can be used to test the library or simply use it directly to handle digitally signed documents.
+
+> [!NOTE]
+> The utility program is intended for testing and presentation of sample implementation of the library’s API. The interface of the utility program is not fixed and its long-term stability is not guaranteed.
+
+The general format for executing the program is:
+```
+> digidoc-tool [command] [options] [input/output file]
+```
+
+Available optional options on all commands:
+
+| Option                   | Description                                                      |
+|--------------------------|------------------------------------------------------------------|
+| `--nocolor`              | Disable terminal colors                                          |
+| `--loglevel=[0,1,2,3,4]` | Log level: 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug |
+| `--logfile=`             | File to log, empty to console                                    |
+
+## Creating and signing a document (local signing) {#Creating}
+
+Command "create" can be used to create a new DigiDoc container, add data files, optionally some meta-info about the signer and sign the document. The output extension selects ASiC-E (.asice or .sce) or ASiC-S (.asics or .scs). ASiC-S creation requires exactly one data file and the TimeStampToken signature profile.
+General form of the command is:
+```
+> digidoc-tool create --file=<data-file> <output-container-file>
+```
+
+Available options:
+
+| Option       | Usage    | Description                                      |
+|--------------|----------|--------------------------------------------------|
+| `--file=`    | Required | Data file to be signed, can occur multiple times |
+| `--mime=`    | Optional | Mime-type of the preceding `--file`              |
+| `--dontsign` | Optional | Don't sign the newly created container           |
+
+`--mime=` must be written right after the `--file` parameter it applies to. If left unspecified then the default mime-type value "application/octet-stream" is used.
+
+> [!NOTE]
+> Data file names are stored percent-encoded (\ref RFC3986 "RFC 3986") in signature references, so special characters in otherwise valid names can be used. Directory separators and reserved names such as `mimetype` are not accepted. Names that use only "unreserved" characters (letters, digits, `-`, `.`, `_`, `~`) are the most portable across other implementations.
+
+> [!WARNING]
+> Data file’s mime-type value must be formatted as specified in \ref RFC2045 "RFC 2045", section 5.1, i.e. the "type" and "subtype" values must be separated with a forward slash character.
+
+Additional options for the "create" command are the same as for "sign" command (see \ref Adding).
+
+Sample commands for creating and signing DigiDoc files:
+
+```
+Sample: creating an ASiC-S container with one data file and an RFC 3161 time-stamp token
+> digidoc-tool create --file=file1.txt --mime=text/plain --profile=TimeStampToken timestamped-document.asics
+
+The profile alias time-stamp-token is also accepted.
+```
+
+```
+Sample: creating new ASiC-E file, adding multiple data files and signing via PKCS#11 driver
+> digidoc-tool create --file=file1.txt --mime=text/plain --file=file2.pdf --mime=application/pdf --country=Estonia
+--state=Harjumaa --city=Tallinn --postalCode=12345 --pkcs11 demo-container.asice
+
+Input:
+  --file=file1.txt			- a data file to be added to container
+  --mime=text/plain			- data file 'file1.txt' mime-type
+  --file=file2.pdf			- a data file to be added to container
+  --mime=application/pdf	- data file 'file2.pdf' mime-type
+  --country=Estonia			- country where the signature is created
+  --state=Harjumaa			- state where the signature is created
+  --city=Tallinn			- city where the signature is created
+  --postalCode=12345		- postal code of the signature creation location
+  --pkcs11					- signing is done via PKCS#11 module
+  demo-container.asice		- container to be created
+```
+
+```
+Sample: creating new ASiC-E file on Windows, adding data file and signing via CNG API
+> digidoc-tool create --file=file1.txt --cng demo-container.asice
+
+Input:
+  --file=file1.txt			- a data file to be added to container
+  --cng						- CNG API is used for signing
+  demo-container.asice		- container to be created
+```
+
+```
+Sample: creating new ASiC-E file on Windows, adding data file and signing via CNG API, dialog windows for certificate selection and PIN insertion are not displayed
+> digidoc-tool create --file=file1.txt --cng --selectFirst --pin=01497 demo-container.asice
+
+Input:
+  --file=file1.txt			- a data file to be added to container
+  --cng						- CNG API is used for signing
+  --selectFirst				- the first signing certificate in store is used for signing
+  --pin=01497				- PIN code (PIN2 in case of Estonian ID cards)
+  demo-container.asice		- container to be created
+```
+
+## Creating and signing multiple documents {#createBatch}
+Command "createBatch" Takes folder as argument folder/content/to/sign and sign them separate containers.
+For additional options look sign command.
+
+## Add additional files to container {#add}
+Command "add" for adding additional files to existing unsigned container.
+Available options are `--file` and `--mime` look "create" command for info.
+
+## Creating and signing a document (external signing, e.g. in browser) {#websign}
+
+Command "websign" can be used to create a new DigiDoc container, add data files, optionally some meta-info about the signer and sign the document. Documents can be created only in ASiC-E format.
+External signing use case may be used when signing is done in web applications, the communication with the signer's token and signing the hash is done via a web browser's signing module (plug-in or extension). See also https://web-eid.eu for implementing signing in browser environment.
+
+External signing process with websign command is as follows:
+1. After executing the websign command, the utility program outputs the value of hash to be signed (in HEX) to console and waits until user enters the respective signature value
+2. Send the hash to be signed to the signing token (e.g. by using the web signing demo page at https://open-eid.github.io/hwcrypto.js/sign.html)
+3. Conduct signing, enter PIN2, retireve the signed hash (signature value) from the signing token
+4. Enter the signature value (also in HEX) to the console
+5. Utility program continues with signing process and outputs the signed container
+
+General form of the command is:
+```
+> digidoc-tool websign --cert=<signer-certificate> --file=<data-file> <output-container-file>
+```
+
+Available options:
+
+| Option    | Usage    | Description                                      |
+|-----------|----------|--------------------------------------------------|
+| `--cert=` | Required | Signer's certificate, in PEM format              |
+| `--file=` | Required | Data file to be signed, can occur multiple times |
+| `--mime=` | Optional | Mime-type of the preceding `--file`              |
+
+`--mime=` must be written right after the `--file` parameter it applies to. If left unspecified then the default mime-type value "application/octet-stream" is used.
+
+Additional options for the "websign" command are the same as for "sign" command (see \ref Adding).
+
+Sample command for creating and external signing of ASiC-E files:
+
+```
+Sample: creating new ASiC-E file, specifying signers certificate, adding data files and other meta-data and calculating the RSA signature value in browser
+> digidoc-tool websign --cert=signer.cer --file=file1.txt --file=file2.pdf --country=Estonia --state=Harjumaa --city=Tallinn --postalCode=12345 --profile=time-stamp demo-container.asice
+
+Input:
+  --cert=signer.cer		- signers certificate
+  --file=file1.txt		- a data file to be added to container
+  --file=file2.txt		- a data file to be added to container
+  --profile=time-stamp	- profile of the signature
+  --country=Estonia		- country where the signature is created
+  --state=Harjumaa		- state where the signature is created
+  --city=Tallinn		- city where the signature is created
+  --postalCode=12345	- postal code of the signature creation location
+  demo-container.asice	- container to be created
+```
+
+## Opening document, validating signatures and extracting data files {#Opening}
+Command "open" reads an existing document, prints its contents and validates its
+signatures. The `--extractAll` option extracts data files to disk. Supported
+ASiC-E, ASiC-S and legacy BDOC 2.1 variants are handled locally. PDF, legacy
+DDOC and ASiC containers with CAdES signatures are sent to the SiVa Online
+Service for validation; `--offline` disables that fallback, so those
+service-backed formats cannot be opened offline. An ASiC-S time-stamp container
+that encloses a DDoc file is opened together with the DDoc, whose data files and
+signatures are listed after validation by SiVa; with `--offline` it is opened as
+a plain time-stamped container and only its time-stamp is validated. BDOC 1.0 is
+not supported.
+General form of the command is:
+```
+> digidoc-tool open <input-container-file>
+```
+
+Available options:
+
+| Option                              | Usage    | Description                                      |
+|-------------------------------------|----------|--------------------------------------------------|
+| `--extractAll`                      | Optional | Extract data files without validating signatures |
+| `--validateOnExtract`               | Optional | Validate the container before extracting files   |
+| `--offline`                         | Optional | Open container offline (e.g. don't send to SiVa) |
+| `--warnings=(ignore,warning,error)` | Optional | How validation warnings are displayed            |
+
+`--extractAll` writes all of the input container’s data files to disk without validating signatures. If an output directory is not specified with the value of this parameter then the extracted files are written to the current working directory.
+
+On Windows, reserved device names are prefixed with an underscore (CON becomes _CON). Characters that are invalid in Windows filenames, control characters, and trailing spaces or dots are replaced with underscores. Extraction fails rather than overwriting an existing output file.
+
+`--warnings` enables to choose the displaying of validation warnings (if present) of the file being opened. Can be used to test the warnings system of the utility program (see also "Validation status VALID WITH WARNINGS"). The options include:
+- warning – the default value used. The minor technical errors that are considered as warnings, are printed out as warnings.
+- error – the errors that are otherwise considered as warnings (by the utility program), are printed out as errors.
+- ignore – the errors that are otherwise considered as warnings (by the utility program), are not printed out. If there are any other errors present then these are treated as usual.
+
+Output of the default command contains the following data of the container:
+```
+  Container file: <container’s file name>
+  Container type: <container’s mime-type>
+  Documents (<number of data files in container>):
+    Document (<data file’s mime-type>): <file’s name> (<file’s size> bytes)
+  Signatures (<number of signatures in container>):
+    Signature <signature’s sequence number> (<signature’s profile>):
+      Validation: <signature validation result: OK/FAILED>
+      EPES policy: urn:oid: <signature policy identifier OID>
+      SPUri: <URL to the BDOC 2.1 specification document>
+      Signature method: <signature method URI>
+      Signing time: <signing time according to computer’s settings (not the official signing time)>
+      Signing cert: <subject CN field’s value>
+      Signed by: <subject CN field’s value>
+      Produced At: <time of OCSP response’s issuance, i.e. official signing time>
+      OCSP Responder: <OCSP responder certificate CN field’s value>
+      Message imprint (<length in bytes>): <OCSP responses nonce field’s or TSA messageImprint value (has to correspond to the &lt;SignatureValue&gt; element’s hash)>
+      TS: <TSA certificate CN field’s value>
+      TS time: <time of TSA issuance, i.e. official signing time>
+      TSA: <archive TSA certificate CN field’s value>
+      TSA time: <time of archive TSA issuance, i.e. official signing time>
+      Warnings: <possible validation related warnings (see explanation below)>
+```
+
+> [!NOTE]
+> By default, if the signature validation process discovered errors that are regarded as minor technical errors in digidoc-tool.cpp utility program then the document is considered as VALID WITH WARNINGS, the errors are printed out as warnings to the end user. See also chapter \ref validation-status.
+
+Sample commands for validating signatures and extracting data files:
+```
+Sample: opening ASiC-E container, listing its contents and validating signatures
+> digidoc-tool open demo-container.asice
+
+Input:
+  demo-container.asice	- input DigiDoc file which contents are listed and signatures validated
+
+Output:
+  Container type: application/vnd.etsi.asic-e+zip
+  Documents (2):
+    Document (application/octet-stream): file1.txt (434 bytes)
+    Document (application/octet-stream): file2.pdf (476841 bytes)
+  Signatures (1):
+    Signature 0 (EPES/time-mark):
+      Validation: OK
+      EPES policy: urn:oid:1.3.6.1.4.1.10015.1000.3.2.1
+      SPUri: https://www.skidsolutions.eu/repository/bdoc-spec21.pdf
+      Signature method: http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
+      Signing time: 2013-03-13T08:48:13Z
+      Signing cert: MÄNNIK,MARI-LIIS,47101010033
+      Signed by: MÄNNIK,MARI-LIIS,47101010033
+      Produced At: 2013-05-14T23:41:20Z
+      OCSP Responder: TEST of SK OCSP RESPONDER 2011
+      Message imprint (51): 30 31 30 0D 06 09 60 86 48 01 65 03 04 02 01 05 00 04 20 10 35 D7 45 F1 42 C1 0C 4D 96 EA 1A 13 C4 34 28 B0 8A 0A 07 47 AA 96 72 0D 3B 1C C9 02 D0 4B 15
+      TS:
+      TS time:
+      TSA:
+      TSA time:
+```
+
+```
+Sample: opening ASiC-E container, listing its contents and validating signatures (warnings are displayed as SHA-1 hash function is used in a ASiC-E file)
+> digidoc-tool open weak-sha.asice
+
+Input:
+  weak-sha.asice			- input file which contents are listed and signatures validated
+
+Output:
+  Container type: application/vnd.etsi.asic-e+zip
+  Documents (1):
+    Document (application/octet-stream): test.txt (314 bytes)
+  Signatures (1):
+    Signature 0 (EPES/time-mark):
+      Validation: OK
+      EPES policy: urn:oid:1.3.6.1.4.1.10015.1000.3.2.1
+      SPUri: https://www.skidsolutions.eu/repository/bdoc-spec21.pdf
+      Signature method: http://www.w3.org/2000/09/xmldsig#rsa-sha1
+      Signing time: 2012-11-13T11:04:32Z
+      Signing cert: MÄNNIK,MARI-LIIS,47101010033
+      Signed by: MÄNNIK,MARI-LIIS,47101010033
+      Produced At: 2012-11-13T11:04:45Z
+      OCSP Responder: TEST of SK OCSP RESPONDER 2011
+      Message imprint (51): 30 31 30 0D 06 09 60 86 48 01 65 03 04 02 01 05 00 04 20 10 35 D7 45 F1 42 C1 0C 4D 96 EA 1A 13 C4 34 28 B0 8A 0A 07 47 AA 96 72 0D 3B 1C C9 02 D0 4B 15
+      TS:
+      TS time:
+      TSA:
+      TSA time:
+      Warnings: RefereneceDigestWeak, SignatureDigestWeak,
+```
+
+```
+Sample: opening container, extracting its data files
+> digidoc-tool open --extractAll demo-container.asice
+
+Input:
+  --extractAll=demo		- Extract all files into current folder
+  demo-container.asice	- input DigiDoc file that is extracted
+
+Output:
+  Extracting documents:
+    Document(application/octet-stream) extracted to file1.txt (434 bytes)
+    Document(application/octet-stream) extracted to file2.pdf (476841 bytes)
+```
+
+```
+Sample: opening container, extracting its data files to a specific directory
+> digidoc-tool open --extractAll=demo demo-container.bdoc
+
+Input:
+  --extractAll=demo		- Extract all files into folder "demo"
+  demo-container.bdoc	- input DigiDoc file that is extracted
+
+Output:
+  Extracting documents:
+    Document(application/octet-stream) extracted to demo/file1.txt (434 bytes)
+    Document(application/octet-stream) extracted to demo/file2.pdf (476841 bytes)
+```
+
+## Adding signatures {#Adding}
+Command "sign" enables adding XAdES signatures to existing ASiC-E and legacy BDOC 2.1 containers. The same signing options are used by "create" to add the initial \ref RFC3161 "RFC 3161" TimeStampToken to a new ASiC-S container; an existing ASiC-S container cannot receive another ordinary signature.
+```
+> digidoc-tool sign <modified-digidoc-container>
+```
+
+| Option                         | Usage    | Description                                             |
+|--------------------------------|----------|---------------------------------------------------------|
+| `--pin=`                       | Optional | PIN code, asked on the command line when omitted        |
+| `--profile=`                   | Optional | Signature profile, see the values below                 |
+| `--XAdESEN`                    | Optional | Use XAdES EN profile                                    |
+| `--city=`                      | Optional | City where the signature is created                     |
+| `--street=`                    | Optional | streetAddress of production place in XAdES EN profile   |
+| `--state=`                     | Optional | State or province where the signature is created        |
+| `--postalCode=`                | Optional | Postal code of the place where the signature is created |
+| `--country=`                   | Optional | Country of origin, ISO 3166 2-character code (e.g. EE)  |
+| `--role=`                      | Optional | Signer’s role, can occur multiple times                 |
+| `--sha(224,256,384,512)`       | Optional | Hash function for digest values (testing)               |
+| `--sigsha(224,256,384,512)`    | Optional | Hash function for the signed hash (testing)             |
+| `--sigpsssha(224,256,384,512)` | Optional | Same as `--sigsha*` with `--rsapss` (testing)           |
+| `--rsapkcs15`                  | Optional | Change RSA signature padding to PKCS1.5                 |
+| `--rsapss`                     | Optional | Change RSA signature padding to PSS                     |
+| `--tsurl=`                     | Optional | Change TS URL                                           |
+| `--tscert=`                    | Optional | Pin the TSA TLS certificate, PEM file                   |
+| `--tsurlarchive=`              | Optional | Change archive (LTA) TS URL                             |
+| `--tscertarchive=`             | Optional | Pin the archive (LTA) TSA TLS certificate, PEM file     |
+| `--userAgent=`                 | Optional | Application info sent to the TSA or OCSP service        |
+| `--dontValidate`               | Optional | Don't validate container on signature creation          |
+
+If PIN is not provided with `--pin=` and (the default) PKCS#11 module is used for signing then the utility program asks for the user to insert PIN code to command line during the program’s execution time.
+
+`--profile=` possible values are:
+- TS or time-stamp - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data.
+- TSA or time-stamp-archive - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data, followed by an archive time-stamp over the certificate and revocation information.
+- TimeStampToken or time-stamp-token - create the \ref RFC3161 "RFC 3161" token signature used by a new ASiC-S container.
+
+`--tsurl=` and `--tscert=` set the time-stamping service for signature time-stamps and the initial ASiC-S TimeStampToken. `--tsurlarchive=` and `--tscertarchive=` set the service for archive time-stamps: the ArchiveTimeStamp of the TSA profile and the ASiC-S archive-manifest time-stamps. The archive URL is taken from `--tsurlarchive=`, then the `ts.url.archive` configuration parameter, then `--tsurl=` and `ts.url` (see \ref TS-settings); the archive certificate from `--tscertarchive=`, then `--tscert=`. The certificate options pin the TLS certificate of the service connection; they do not affect time-stamp token validation.
+
+The hash options are used for testing purposes. `--sha*` specifies the hash function that is used when calculating digest values, `--sigsha*` the hash function that is used for calculating the hash that is being signed, and `--sigpsssha*` does the same and uses RSA-PSS padding with RSA keys.
+
+By default, reference digests use `signer.digestUri` and RSA signatures use `signer.signatureDigestUri`, both configured as SHA-256 by default. For ECDSA signatures, the default signature hash is selected by the EC key size: SHA-224 for 224-bit keys, SHA-256 for 256-bit keys, SHA-384 for 384-bit keys, and SHA-512 for other key sizes (including 521-bit keys).
+
+ECDSA with SHA3-256, SHA3-384 and SHA3-512 can be selected through digidoc::Signer::setMethod() using the algorithm URI. The command-line hash switches listed above select SHA-2 algorithms only.
+
+Options for specifying module used for accessing the signing token - possible alternatives are PKCS#11, CryptoAPI/CNG and PKCS#12 (for testing purposes). When signing module is not specified then PKCS#11 module is used by default.
+
+| Option          | Usage    | Description                                            |
+|-----------------|----------|--------------------------------------------------------|
+| `--pkcs11[=]`   | Optional | Sign via PKCS#11 module (default on Linux and macOS)   |
+| `--cng`         | Optional | Sign via Microsoft CNG API (Windows)                   |
+| `--selectFirst` | Optional | With `--cng`: use the first certificate in the store   |
+| `--thumbprint=` | Optional | With `--cng`: hex thumbprint of the certificate to use |
+| `--pkcs12=`     | Optional | Sign with a PKCS#12 software token (testing)           |
+
+PKCS#11 is the default module for signing with smart card in Linux and macOS. The value of `--pkcs11=` can be used to specify the path and filename of PKCS#11 driver in your file system. For example, "opensc-pkcs11.dll" in Windows environment and "opensc-pkcs11.so" in Linux and OSX. If the parameter’s value is left unspecified then PKCS#11 driver’s location is looked up from configuration file (see also chap. \ref parameters).
+
+With `--cng`, if `--pin` parameter’s value is not set then PIN insertion dialog is displayed to the user. If neither `--selectFirst` nor `--thumbprint` is set then certificate selection dialog window is displayed to user.
+
+`--pkcs12=` enables to use a PKCS#12 software token (containing the signing certificate and private key) for signature creation. Note that the created signature is not a valid signature and it is not equal to handwritten signature as the PKCS#12 software token is not considered a secure signature creation device.
+
+Sample commands for adding signatures:
+```
+Sample: adding a signature via PKCS#11 driver
+> digidoc-tool sign --pkcs11 demo-container.asice
+
+Input:
+  --pkcs11				- PKCS#11 module is used for signing
+  demo-container.asice	- container to be modified
+```
+
+```
+Sample: adding a signature via CNG API
+> digidoc-tool sign --cng demo-container.asice
+
+Input:
+  --cng					- CNG API is used for signing
+  demo-container.asice	- container to be modified
+```
+
+```
+Sample: adding a signature via CNG API, no dialog windows are displayed
+> digidoc-tool sign --cng --selectFirst --pin=12345 demo-container.asice
+
+Input:
+  --cng					- CNG API is used for signing
+  --selectFirst			- the first signing certificate is used for signing
+  --pin=12345			- PIN code (PIN2 in case of Estonian ID cards)
+  demo-container.asice	- container to be modified
+```
+
+## Extending container validity {#Extending}
+Command "extend" adds new validity evidence and saves the result. Without `--signature`, it calls the high-level digidoc::Container::extendContainerValidity workflow: eligible ASiC-E or ASiC-S signatures are extended in place, or the original container is wrapped in a new timestamped ASiC-S container when necessary.
+
+```
+> digidoc-tool extend demo-container.asice
+```
+
+When one or more `--signature` options are specified, only those zero-based signature indexes are extended directly with digidoc::Signature::extendSignatureProfile. In this mode `--profile` selects the target profile and `--dontValidate` skips validation after each extension.
+
+| Option             | Usage    | Description                                           |
+|--------------------|----------|-------------------------------------------------------|
+| `--signature=`     | Optional | Zero-based index of a signature to extend, can repeat |
+| `--profile=`       | Optional | Target profile for direct per-signature extension     |
+| `--dontValidate`   | Optional | Don't validate a directly extended signature          |
+| `--tsurl=`         | Optional | Change TS URL                                         |
+| `--tscert=`        | Optional | Pin the TSA TLS certificate, PEM file                 |
+| `--tsurlarchive=`  | Optional | Change archive (LTA) TS URL                           |
+| `--tscertarchive=` | Optional | Pin the archive (LTA) TSA TLS certificate, PEM file   |
+
+`--profile=` values are TS, TSA, time-stamp or time-stamp-archive. The high-level workflow chooses the required profile automatically when `--signature` is omitted.
+
+The time-stamping service options are the same as for the "sign" command. Archive time-stamps, including the TimeStampToken of a container wrapped in a new ASiC-S container, use `--tsurlarchive=` and `--tscertarchive=`.
+
+```
+Sample: directly extend signature 0 to the archive time-stamp profile
+> digidoc-tool extend --signature=0 --profile=TSA demo-container.asice
+```
+
+## Removing signatures and data files {#Removing}
+Signatures and data files can be removed from a DigiDoc container with the command "remove". Note that it is possible to remove data files only from an unsigned container (i.e all signatures must be removed before removing data files). The command is supported with DigiDoc formats BDOC 2.1 and ASiC-E.
+General format of the command is:
+```
+> digidoc-tool remove --document=<doc-id> --signature=<sig-id> <modified-digidoc-container>
+```
+
+Available options:
+
+| Option         | Usage    | Description                                         |
+|----------------|----------|-----------------------------------------------------|
+| `--document=`  | Optional | Index of the data file to remove, counted from zero |
+| `--signature=` | Optional | Index of the signature to remove, counted from zero |
+
+Sample commands for removing signatures and data files:
+```
+Sample: removing signature from container
+> digidoc-tool remove --signature=1 demo-container.asice
+
+Input:
+  --signature=1			- sequence number of the signature that is removed
+  demo-container.asice	- container to be modified
+```
+```
+Sample: removing data files from container
+> digidoc-tool remove --document=0 --document=1 demo-container.asice
+
+Input:
+  --document=0			- sequence number of the data file that is removed
+  --document=1			- sequence number of the data file that is removed
+  demo-container.asice	- container to be modified
+```

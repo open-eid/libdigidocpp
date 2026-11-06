@@ -19,7 +19,7 @@
 
 /*
  * Validation Service
- * http://open-eid.github.io/SiVa/
+ * https://open-eid.github.io/SiVa/
  */
 
 #include "SiVaContainer.h"
@@ -30,6 +30,7 @@
 #include "XMLDocument.h"
 #include "crypto/Connect.h"
 #include "crypto/TS.h"
+#include "util/algorithm.h"
 #include "util/DateTime.h"
 #include "util/File.h"
 
@@ -43,9 +44,20 @@ using namespace digidoc::util;
 using namespace std;
 using json = nlohmann::json;
 
-class SiVaContainer::Private
+namespace
 {
-public:
+struct RetryWithoutHashCode {};
+struct UnknownFile {};
+}
+
+struct SiVaContainer::Private
+{
+    ~Private()
+    {
+        for_each(signatures.cbegin(), signatures.cend(), default_delete<Signature>());
+        for_each(dataFiles.cbegin(), dataFiles.cend(), default_delete<DataFile>());
+    }
+
     std::filesystem::path path;
     string  mediaType;
     vector<DataFile*> dataFiles;
@@ -69,7 +81,7 @@ void SignatureSiVa::validate() const
 
 void SignatureSiVa::validate(const string &policy) const
 {
-    static const set<string_view> QES = { "QESIG", "QES", "QESEAL",
+    constexpr array QES { "QESIG", "QES", "QESEAL",
         "ADESEAL_QC", "ADESEAL" }; // Special treamtent for E-Seals
     Exception e(EXCEPTION_PARAMS("Signature validation"));
     try {
@@ -85,7 +97,7 @@ void SignatureSiVa::validate(const string &policy) const
         if(_indication == "TOTAL-PASSED")
         {
             // DDoc returns _signatureLevel empty
-            if(policy == POLv2 && !_signatureLevel.empty() && !QES.contains(_signatureLevel))
+            if(policy == POLv2 && !_signatureLevel.empty() && !contains(QES, _signatureLevel))
             {
                 Exception ex(EXCEPTION_PARAMS("Signing certificate does not meet Qualification requirements"));
                 ex.setCode(Exception::CertificateIssuerMissing);
@@ -111,8 +123,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     istream *is = ifs.get();
     if(File::fileExtension(path, {"ddoc"}))
     {
-        d->mediaType = "application/x-ddoc";
-        ifs = parseDDoc(ifs, useHashCode);
+        ifs = parseDDoc(*ifs, useHashCode);
         is = ifs.get();
     }
     else if(File::fileExtension(path, {"pdf"}))
@@ -125,12 +136,12 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
         ZipSerialize z(path, false);
         if(d->mediaType = z.mimetype();
             d->mediaType != ASiContainer::MIMETYPE_ASIC_E && d->mediaType != ASiContainer::MIMETYPE_ASIC_S)
-            THROW("Unknown file");
+            throw UnknownFile {};
         vector<string> list = z.list();
         if(none_of(list.cbegin(), list.cend(), [](const string &file) {
                 return file.starts_with("META-INF/") && util::File::fileExtension(file, {"p7s"});
             }))
-            THROW("Unknown file");
+            throw UnknownFile {};
 
         for(const string &file: list)
         {
@@ -142,27 +153,39 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
         }
     }
     else
-        THROW("Unknown file");
+        throw UnknownFile {};
 
+    validate(*is, string(fileName), cb, useHashCode);
+}
+
+SiVaContainer::SiVaContainer(istream &ddoc, const string &fileName, ContainerOpenCB *cb, bool useHashCode)
+    : d(make_unique<Private>())
+{
+    DEBUG("SiVaContainer::SiVaContainer(%s, %d)", fileName.c_str(), useHashCode);
+    auto document = parseDDoc(ddoc, useHashCode);
+    validate(*document, fileName, cb, useHashCode);
+}
+
+void SiVaContainer::validate(istream &document, const string &fileName, ContainerOpenCB *cb, bool useHashCode)
+{
     if(useHashCode && cb && !cb->validateOnline())
         THROW("Online validation disabled");
 
     array<unsigned char, 4800> buf{};
     string b64;
-    is->clear();
-    is->seekg(0);
-    while(*is)
+    document.clear();
+    document.seekg(0);
+    while(document)
     {
-        is->read((char*)buf.data(), buf.size());
-        if(is->gcount() <= 0)
+        document.read((char*)buf.data(), buf.size());
+        if(document.gcount() <= 0)
             break;
 
         size_t pos = b64.size();
         b64.resize(b64.size() + ((buf.size() + 2) / 3) * 4);
-        int size = EVP_EncodeBlock((unsigned char*)&b64[pos], buf.data(), int(is->gcount()));
+        int size = EVP_EncodeBlock((unsigned char*)&b64[pos], buf.data(), int(document.gcount()));
         b64.resize(pos + size);
     }
-    ifs.reset();
 
     string req = json({
         {"filename", fileName},
@@ -238,7 +261,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
         {
             string message = error["content"];
             if(message.find("Bad digest for DataFile", 0) != string::npos && useHashCode)
-                THROW("%s", message.c_str());
+                throw RetryWithoutHashCode {};
             s->_exceptions.emplace_back(EXCEPTION_PARAMS("%s", message.c_str()));
         }
         for(const json &warning: signature.value<json>("warnings", {}))
@@ -258,11 +281,7 @@ SiVaContainer::SiVaContainer(const string &path, ContainerOpenCB *cb, bool useHa
     }
 }
 
-SiVaContainer::~SiVaContainer()
-{
-    for_each(d->signatures.cbegin(), d->signatures.cend(), default_delete<Signature>());
-    for_each(d->dataFiles.cbegin(), d->dataFiles.cend(), default_delete<DataFile>());
-}
+SiVaContainer::~SiVaContainer() = default;
 
 void SiVaContainer::addDataFile(const string & /*path*/, const string & /*mediaType*/)
 {
@@ -298,22 +317,37 @@ unique_ptr<Container> SiVaContainer::openInternal(const string &path, ContainerO
 {
     try {
         return unique_ptr<Container>(new SiVaContainer(path, cb, true));
-    } catch(const Exception &e) {
-        if(e.msg().find("Bad digest for DataFile") != string::npos)
-            return unique_ptr<Container>(new SiVaContainer(path, cb, false));
-        if(e.msg() == "Unknown file")
-            return {};
-        throw;
+    } catch(const RetryWithoutHashCode &) {
+        return unique_ptr<Container>(new SiVaContainer(path, cb, false));
+    } catch(const UnknownFile &) {
+        return {};
     }
 }
 
-unique_ptr<istream> SiVaContainer::parseDDoc(const unique_ptr<istream> &ddoc, bool useHashCode)
+unique_ptr<Container> SiVaContainer::openDDoc(istream &ddoc, const string &fileName, ContainerOpenCB *cb)
+{
+    auto open = [&](bool useHashCode) -> unique_ptr<Container> {
+        ddoc.clear();
+        ddoc.seekg(0);
+        return unique_ptr<Container>(new SiVaContainer(ddoc, fileName, cb, useHashCode));
+    };
+    try {
+        return open(true);
+    } catch(const RetryWithoutHashCode &) {
+        return open(false);
+    }
+}
+
+unique_ptr<istream> SiVaContainer::parseDDoc(istream &ddoc, bool useHashCode)
 {
     try
     {
-        auto doc = XMLDocument::openStream(*ddoc, {}, true);
-        for(auto dataFile = doc/"DataFile"; dataFile; dataFile++)
+        d->mediaType = "application/x-ddoc";
+        auto doc = XMLDocument::openStream(ddoc, {}, true);
+        for(auto dataFile: doc)
         {
+            if(dataFile.name() != "DataFile")
+                continue;
             auto contentType = dataFile["ContentType"];
             if(contentType == "HASHCODE")
                 THROW("Currently supports only content types EMBEDDED_BASE64 for DDOC format");
@@ -349,8 +383,7 @@ unique_ptr<istream> SiVaContainer::parseDDoc(const unique_ptr<istream> &ddoc, bo
 
 string SiVaContainer::path() const
 {
-    auto name = d->path.u8string();
-    return {reinterpret_cast<const char*>(name.data()), name.size()};
+    return File::decodeName(d->path);
 }
 
 Signature* SiVaContainer::prepareSignature(Signer * /*signer*/)

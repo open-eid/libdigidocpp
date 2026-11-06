@@ -22,6 +22,7 @@
 
     <!--Time-stamping service settings-->
     <!--<param name="ts.url" lock="false">@TSA_URL@</param>-->
+    <!--<param name="ts.url.archive" lock="false">@TSA_URL@</param>-->
 
     <!--TSL settings-->
     <!--<param name="tsl.autoupdate" lock="false">true</param>-->

@@ -27,11 +27,15 @@
 #include <XmlConf.h>
 #include <XMLDocument.h>
 #include <crypto/Digest.h>
+#include <crypto/OpenSSLHelpers.h>
 #include <crypto/PKCS12Signer.h>
 #include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
 #include <util/log.h>
 #include <util/XMLText.h>
+
+#include <openssl/crypto.h>
+#include <openssl/x509.h>
 
 #include <fstream>
 
@@ -41,9 +45,24 @@ namespace digidoc
 class TestFixture: public DigiDocPPFixture
 {
 public:
+    inline static bool initiallyAllowsSHA1 = false;
+
     TestFixture()
     {
+        initiallyAllowsSHA1 = allowsSHA1Verification();
         initialize("untitestboost");
+    }
+
+    static bool allowsSHA1Verification()
+    {
+        X509Cert cert("ca.crt", X509Cert::Pem);
+        EVP_PKEY *pub = X509_get0_pubkey(cert.handle());
+        auto ctx = make_unique_ptr<EVP_MD_CTX_free>(EVP_MD_CTX_new());
+        if(!pub || !ctx)
+            THROW_OPENSSLEXCEPTION("Failed to prepare SHA-1 policy check");
+        const bool allowed = EVP_DigestVerifyInit(ctx.get(), nullptr, EVP_sha1(), nullptr, pub) == 1;
+        ERR_clear_error();
+        return allowed;
     }
 };
 
@@ -64,6 +83,55 @@ const string ASiCS::EXT = "asics";
 }
 
 BOOST_GLOBAL_FIXTURE(TestFixture);
+
+namespace
+{
+class ThrowingSignature final: public Signature
+{
+public:
+    explicit ThrowingSignature(Exception exception)
+        : exception(std::move(exception))
+    {}
+
+    string id() const override { return {}; }
+    string claimedSigningTime() const override { return {}; }
+    string trustedSigningTime() const override { return {}; }
+    X509Cert signingCertificate() const override { return X509Cert(); }
+    string signatureMethod() const override { return {}; }
+    void validate() const override { throw exception; }
+    vector<unsigned char> dataToSign() const override { return {}; }
+    void setSignatureValue(const vector<unsigned char> &) override {}
+    string profile() const override { return {}; }
+
+private:
+    Exception exception;
+};
+}
+
+BOOST_AUTO_TEST_SUITE(SignatureValidatorSuite)
+BOOST_AUTO_TEST_CASE(causeLessExceptionIsInvalid)
+{
+    ThrowingSignature signature(Exception(EXCEPTION_PARAMS("Validation failed without causes")));
+    Signature::Validator validator(&signature);
+
+    BOOST_CHECK_EQUAL(validator.status(), Signature::Validator::Invalid);
+    BOOST_CHECK_EQUAL(validator.diagnostics(), "Validation failed without causes\n");
+    BOOST_CHECK(validator.warnings().empty());
+}
+
+BOOST_AUTO_TEST_CASE(nestedWarningRemainsWarning)
+{
+    Exception warning(EXCEPTION_PARAMS("Signature digest weak"));
+    warning.setCode(Exception::SignatureDigestWeak);
+    ThrowingSignature signature(Exception(EXCEPTION_PARAMS("Signature validation"), warning));
+    Signature::Validator validator(&signature);
+
+    BOOST_CHECK_EQUAL(validator.status(), Signature::Validator::Warning);
+    BOOST_CHECK_EQUAL(validator.diagnostics(), "Signature digest weak\n");
+    BOOST_REQUIRE_EQUAL(validator.warnings().size(), 1U);
+    BOOST_CHECK_EQUAL(validator.warnings().front(), Exception::SignatureDigestWeak);
+}
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(LogSuite)
 BOOST_AUTO_TEST_CASE(logEntryIsWrittenImmediately)
@@ -191,14 +259,30 @@ BOOST_AUTO_TEST_CASE(parameters)
     BOOST_CHECK_EQUAL(c.keyUsage(), vector<X509Cert::KeyUsage>{ X509Cert::NonRepudiation});
     BOOST_CHECK_EQUAL(c.isValid(), true);
 }
+
+BOOST_AUTO_TEST_CASE(legacySHA1Certificate)
+{
+    auto d = Container::openPtr("sha1-cert-ocsp.bdoc");
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1);
+    const auto *signature = d->signatures().front();
+    BOOST_CHECK_EQUAL(signature->id(), "S1");
+    BOOST_REQUIRE(X509_get0_pubkey(signature->signingCertificate().handle()));
+    BOOST_CHECK_EQUAL(X509_get_signature_nid(signature->signingCertificate().handle()), NID_sha1WithRSAEncryption);
+    const bool before = TestFixture::allowsSHA1Verification();
+    BOOST_CHECK_EQUAL(before, TestFixture::initiallyAllowsSHA1);
+    signature->validate();
+    BOOST_CHECK_EQUAL(TestFixture::allowsSHA1Verification(), before);
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(X509CryptoSuite)
 BOOST_AUTO_TEST_CASE(parameters)
 {
+    BOOST_CHECK_EQUAL(X509Crypto(X509Cert("ca.crt", X509Cert::Pem)).isRSAKey(), true);
+    BOOST_CHECK_EQUAL(X509Crypto(X509Cert("unicode.crt", X509Cert::Pem)).isRSAKey(), false);
+
     X509Cert cert("47101010033.cer", X509Cert::Pem);
     X509Crypto crypto(cert);
-    BOOST_CHECK_EQUAL(crypto.isRSAKey(), true);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString(cert.issuerName()), 0);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of ESTEID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
     BOOST_CHECK_EQUAL(crypto.compareIssuerToString("emailAddress=pki@sk.ee,CN=TEST of EST\\45ID-SK 2015,O=AS Sertifitseerimiskeskus,C=EE"), -1);
@@ -211,6 +295,14 @@ BOOST_AUTO_TEST_CASE(parameters)
     BOOST_CHECK_EQUAL(test.compareIssuerToString("CN=\\\"test\\\""), 0);
     X509Crypto comma(X509Cert("comma.crt", X509Cert::Pem));
     BOOST_CHECK_EQUAL(comma.compareIssuerToString("CN=test\\, comma"), 0);
+}
+
+BOOST_AUTO_TEST_CASE(negativeRSAModulus)
+{
+    // 47101010033.cer encodes the RSA modulus as a negative INTEGER, like the Estonian
+    // ID-card certificates issued 2014-2015. OpenSSL 4.0 no longer decodes such keys.
+    X509Crypto crypto(X509Cert("47101010033.cer", X509Cert::Pem));
+    BOOST_CHECK_EQUAL(crypto.isRSAKey(), OpenSSL_version_num() < 0x40000000L);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -235,6 +327,40 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
     BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
     BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
     BOOST_CHECK_EQUAL(d->mediaType(), Doc::TYPE);
+}
+
+BOOST_AUTO_TEST_CASE(emptyDataFile)
+{
+    auto d = Container::createPtr("empty-datafile.asice");
+    d->addDataFile(make_unique<stringstream>(), "empty.txt", "text/plain");
+    d->addDataFile(make_unique<stringstream>("data"), "data.txt", "text/plain");
+    for(const DataFile *file: d->dataFiles())
+    {
+        ostringstream os;
+        file->saveAs(os);
+        BOOST_CHECK(os.good());
+        BOOST_CHECK_EQUAL(os.str().size(), file->fileSize());
+    }
+}
+
+BOOST_AUTO_TEST_CASE(nonSeekableDataFile)
+{
+    struct NonSeekableBuf: stringbuf
+    {
+        using stringbuf::stringbuf;
+        pos_type seekoff(off_type, ios_base::seekdir, ios_base::openmode) override { return pos_type(off_type(-1)); }
+        pos_type seekpos(pos_type, ios_base::openmode) override { return pos_type(off_type(-1)); }
+    } buf("data");
+
+    auto d = Container::createPtr("nonseekable-datafile.asice");
+    d->addDataFile(make_unique<istream>(&buf), "data.txt", "text/plain");
+    ostringstream os;
+    d->dataFiles().front()->saveAs(os);
+    BOOST_CHECK_EQUAL(os.str(), "data");
+    BOOST_CHECK(os.good());
+
+    ostringstream exhausted;
+    BOOST_CHECK_THROW(d->dataFiles().front()->saveAs(exhausted), Exception);
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(document, Doc, DocTypes)
@@ -448,6 +574,42 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
     BOOST_CHECK_EQUAL(d->signatures().size(), 0U);
 }
 
+BOOST_AUTO_TEST_CASE(weakDigest)
+{
+    // ETSI TS 119 312 V2.1.1 Annex D discontinues SHA-224; SHA3-224 is not in any table
+    for(const auto *uri: {URI_SHA1, URI_RSA_SHA1, URI_ECDSA_SHA1,
+            URI_SHA224, URI_RSA_SHA224, URI_RSA_PSS_SHA224, URI_ECDSA_SHA224,
+            URI_SHA3_224, URI_RSA_PSS_SHA3_224})
+        BOOST_CHECK_MESSAGE(Digest::isWeakDigest(uri), uri);
+    for(const auto *uri: {URI_SHA256, URI_SHA384, URI_SHA512,
+            URI_SHA3_256, URI_SHA3_384, URI_SHA3_512,
+            URI_RSA_PSS_SHA3_256, URI_ECDSA_SHA3_256, URI_ECDSA_SHA3_384, URI_ECDSA_SHA3_512})
+        BOOST_CHECK_MESSAGE(!Digest::isWeakDigest(uri), uri);
+
+    // ETSI TS 119 312 Table 16 defines no ECDSA-SHA3-224 signature suite URI
+    const string ecdsaSha3_224 = "http://www.w3.org/2021/04/xmldsig-more#ecdsa-sha3-224";
+    BOOST_CHECK_THROW(Digest::toMethod(ecdsaSha3_224), Exception);
+    BOOST_CHECK_EQUAL(Digest::toEcUri(URI_SHA3_224), string());
+    BOOST_CHECK_EQUAL(Digest::toEcUri(ecdsaSha3_224), string());
+
+    auto d = Container::createPtr("weak.asice");
+    BOOST_CHECK_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+    PKCS12Signer signerEC("signerEC.p12", "signerEC");
+    signerEC.setMethod(URI_SHA3_224);
+    BOOST_CHECK_THROW(d->sign(&signerEC), Exception);
+    BOOST_CHECK_EQUAL(d->signatures().size(), 0U);
+
+    PKCS12Signer signer1("signer1.p12", "signer1");
+    signer1.setMethod(URI_SHA224);
+    Signature *s = nullptr;
+    BOOST_REQUIRE_NO_THROW(s = d->sign(&signer1));
+    BOOST_CHECK_EQUAL(s->signatureMethod(), URI_RSA_SHA224);
+    Signature::Validator validator(s);
+    BOOST_CHECK_EQUAL(validator.status(), Signature::Validator::Warning);
+    BOOST_REQUIRE_EQUAL(validator.warnings().size(), 1U);
+    BOOST_CHECK_EQUAL(validator.warnings().front(), Exception::SignatureDigestWeak);
+}
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 {
     PKCS12Signer signer1("signer1.p12", "signer1");
@@ -526,10 +688,34 @@ BOOST_AUTO_TEST_CASE(XmlConfCase) {
     const string testurl = "https://test.url";
     c.setVerifyServiceUri(testurl);
     BOOST_CHECK_EQUAL(c.verifyServiceUri(), testurl);
+
+    // ts.url.archive is unset in the fixture, so archive time-stamps fall back
+    // to the signature TSA, and keep following it when that one is changed.
+    BOOST_CHECK_EQUAL(c.TSUrlArchive(), c.TSUrl());
+    const string tsurl = "https://test.url/ts";
+    c.setTSUrl(tsurl);
+    BOOST_CHECK_EQUAL(c.TSUrl(), tsurl);
+    BOOST_CHECK_EQUAL(c.TSUrlArchive(), tsurl);
+
+    // Once set, the archive TSA is independent of the signature TSA.
+    const string tsarchiveurl = "https://test.url/ts-archive";
+    c.setTSUrlArchive(tsarchiveurl);
+    BOOST_CHECK_EQUAL(c.TSUrlArchive(), tsarchiveurl);
+    BOOST_CHECK_EQUAL(c.TSUrl(), tsurl);
+    BOOST_CHECK(c.TSCertsArchive() == c.TSCerts());
 }
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(FileUtilSuite)
+BOOST_AUTO_TEST_CASE(ToUriPathEscapesSingleDigitBytes)
+{
+    const string fileName = "file\n\t.txt";
+    const string uriPath = util::File::toUriPath(fileName);
+
+    BOOST_CHECK_EQUAL(uriPath, "file%0A%09.txt");
+    BOOST_CHECK_EQUAL(util::File::fromUriPath(uriPath), fileName);
+}
+
 BOOST_AUTO_TEST_CASE(FromUriPathConvertsAsciiEncodingToCharacters)
 {
     const string asciiEncodedStr = "%3dtest%20%40";
@@ -560,6 +746,11 @@ BOOST_AUTO_TEST_CASE(FromUriPathPreservesTrailingPercentageSign)
     BOOST_CHECK_EQUAL(expectedDecodedStr, result);
 }
 
+BOOST_AUTO_TEST_CASE(FromUriPathPreservesInvalidEscape)
+{
+    BOOST_CHECK_EQUAL(util::File::fromUriPath("file%A.txt"), "file%A.txt");
+}
+
 BOOST_AUTO_TEST_CASE(HexToBinConvertsHexEncodedStringToBinaryData)
 {
     const string asciiEncodedStr = "3031323334";
@@ -572,6 +763,30 @@ BOOST_AUTO_TEST_CASE(HexToBinConvertsHexEncodedStringToBinaryData)
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(ASiCETestSuite)
+BOOST_AUTO_TEST_CASE(empty_supplemental_certificates_do_not_break_validation)
+{
+    for(const char *file: {"keyinfo-empty-cert.asice",
+            "certvalues-empty-cert.asice",
+            "keyinfo-whitespace-cert.asice"})
+    {
+        BOOST_TEST_CONTEXT(file)
+        {
+            auto d = Container::openPtr(file);
+            BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+            try {
+                d->signatures().front()->validate();
+            } catch(const Exception &e) {
+                // These fixtures use a TSA not trusted by the test TSL. No signer
+                // or OCSP validation failures may accompany that independent error.
+                BOOST_REQUIRE_EQUAL(e.causes().size(), 1U);
+                BOOST_CHECK_EQUAL(e.causes().front().code(), Exception::CertificateUnknown);
+                BOOST_CHECK_EQUAL(fs::path(e.causes().front().file()).filename().string(), "TS.cpp");
+            }
+            BOOST_CHECK(d->signatures().front()->OCSPCertificate());
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(key_substitution_detected)
 {
     auto d = Container::openPtr("forged_lt.asice");
@@ -634,6 +849,26 @@ BOOST_AUTO_TEST_CASE(OpenValidASiCSContainerWithOtherMeta)
     BOOST_CHECK_NO_THROW(ts->validate());
 }
 
+BOOST_AUTO_TEST_CASE(OpenCMSTimeStampASiCSContainer)
+{
+    // The token is pkcs7-signedData carrying id-smime-ct-TSTInfo, which d2i_PKCS7
+    // rejects, so TS falls back to the CMS path where the message imprint is
+    // compared by hand rather than by TS_RESP_verify_token. The same token over
+    // matching and forged content pins both directions of that comparison.
+    auto d = Container::openPtr("ASICS-test-match.asics");
+    BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->mediaType(), ASiCS::TYPE);
+    BOOST_CHECK_EQUAL(d->dataFiles().front()->fileName(), "valid-bdoc-tm.bdoc");
+    BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
+
+    auto forged = Container::openPtr("CMS-imprint-mismatch.asics");
+    BOOST_CHECK_EQUAL(forged->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(forged->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(forged->dataFiles().front()->fileName(), "forged-document.txt");
+    BOOST_CHECK_THROW(forged->signatures().front()->validate(), Exception);
+}
+
 BOOST_AUTO_TEST_CASE(OpenInvalidTsASiCSContainer)
 {
     auto d = Container::openPtr("test-invalidts.asics");
@@ -664,6 +899,21 @@ BOOST_AUTO_TEST_CASE(TeRaASiCSContainer)
 
     BOOST_CHECK_EQUAL("2017-04-10T06:27:28Z", ts->TimeStampTime());
     BOOST_CHECK_EQUAL("DEMO of SK TSA 2014", ts->TimeStampCertificate().subjectName("CN"));
+}
+
+BOOST_AUTO_TEST_CASE(TeRaASiCSContainerWithoutOnlineValidation)
+{
+    struct RejectOnline final: ContainerOpenCB
+    {
+        bool validateOnline() const final { return false; }
+    } cb;
+
+    auto d = Container::openPtr("test-tera.asics", &cb);
+    BOOST_REQUIRE_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->dataFiles().front()->fileName(), "ddoc_for_testing.ddoc");
+    BOOST_CHECK_EQUAL(d->signatures().front()->profile(), "TimeStampToken");
+    BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
 }
 
 BOOST_AUTO_TEST_CASE(TeRaEmptyASiCSContainer)
@@ -760,6 +1010,30 @@ BOOST_AUTO_TEST_CASE(WrapContainerWithExpiredSignatures)
         BOOST_CHECK_NO_THROW(wrapped->signatures().front()->validate());
 }
 
+BOOST_AUTO_TEST_CASE(WrapContainerUsesArchiveTSA)
+{
+    // The signature TSA is unreachable, so wrapping only succeeds from the archive TSA
+    struct ArchiveTSAConfig: TestConfig
+    {
+        using TestConfig::TestConfig;
+        string TSUrl() const final { return "http://127.0.0.1:1/"; }
+        string TSUrlArchive() const final { return TestConfig::TSUrl(); }
+    };
+    auto *conf = static_cast<TestConfig*>(Conf::instance());
+    string tsl = conf->tsl, path = conf->path;
+    Conf::init(new ArchiveTSAConfig(string(tsl), string(path)));
+
+    PKCS12Signer signer("signer1.p12", "signer1");
+    auto d = Container::openPtr("test.asice");
+    unique_ptr<Container> wrapped;
+    size_t extendedCount{};
+    BOOST_CHECK_NO_THROW(wrapped = Container::extendContainerValidity(*d, &signer, extendedCount));
+    BOOST_CHECK(wrapped);
+    BOOST_CHECK_EQUAL(extendedCount, 0U);
+
+    Conf::init(new TestConfig(std::move(tsl), std::move(path)));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(XMLTestSuite)
@@ -843,6 +1117,25 @@ BOOST_AUTO_TEST_CASE(XMLTextEscapingAndParsing)
 
     istringstream illegalReference{"<root>&#x1B;</root>"};
     BOOST_CHECK_THROW(XMLDocument::openStream(illegalReference, {"root"}), Exception);
+}
+
+BOOST_AUTO_TEST_CASE(SchemaPathWithSpaces)
+{
+    struct TempSchemaDir
+    {
+        fs::path path;
+        ~TempSchemaDir()
+        {
+            error_code ec;
+            fs::remove_all(path, ec);
+        }
+    } schemaDir{util::File::tempFileName().concat(" schema path")};
+
+    fs::remove(schemaDir.path);
+    fs::copy(DIGIDOCPPCONF, schemaDir.path, fs::copy_options::recursive);
+
+    XMLDocument doc("TSL.xml");
+    BOOST_CHECK_NO_THROW(XMLSchema::validate((schemaDir.path / "ts_119612v020201_201601xsd.xsd").string(), doc));
 }
 
 BOOST_AUTO_TEST_CASE(XMLBomb)

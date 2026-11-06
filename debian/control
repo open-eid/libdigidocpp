@@ -27,9 +27,14 @@ Breaks:
  libdigidocpp0 (<< ${binary:Version})
 Replaces:
  libdigidocpp0 (<< ${binary:Version})
-Description: DigiDoc digital signature library common files
- This package contains common files for using applications with the DigiDoc
- digital signature library.
+Description: Common files for libdigidocpp
+ libdigidocpp creates, signs and validates ASiC-E containers with XAdES
+ signatures and ASiC-S containers with RFC 3161 time-stamp tokens, and validates
+ legacy BDOC 2.1 documents. Formats that are not validated locally, such as PDF
+ and DDOC, are validated with the SiVa online service.
+ .
+ This package contains the configuration file and XML schemas used by
+ libdigidocpp.
 
 Package: libdigidocpp1
 Replaces:
@@ -48,10 +53,13 @@ Recommends:
  opensc-pkcs11
 Conflicts:
  libdigidoc2 (<<3.0)
-Description: DigiDoc digital signature library
- DigiDoc is an XML file format for documents with digital signatures in use by
- the Estonian ID card infrastructure. This library allows for creation and
- reading of DigiDoc files.
+Description: C++ library for digital signatures and validation of digitally signed documents
+ libdigidocpp creates, signs and validates ASiC-E containers with XAdES
+ signatures and ASiC-S containers with RFC 3161 time-stamp tokens, and validates
+ legacy BDOC 2.1 documents. Formats that are not validated locally, such as PDF
+ and DDOC, are validated with the SiVa online service.
+ .
+ This package contains the shared library.
 
 Package: libdigidocpp-tools
 Architecture: any
@@ -60,9 +68,14 @@ Depends:
  libdigidocpp1 (= ${binary:Version}),
  ${misc:Depends},
  ${shlibs:Depends}
-Description: DigiDoc digital signature library tools
- This package contains tools for manipulating signatures command line with the
- DigiDoc digital signature library.
+Description: Command-line tool for digital signatures
+ libdigidocpp creates, signs and validates ASiC-E containers with XAdES
+ signatures and ASiC-S containers with RFC 3161 time-stamp tokens, and validates
+ legacy BDOC 2.1 documents. Formats that are not validated locally, such as PDF
+ and DDOC, are validated with the SiVa online service.
+ .
+ This package contains digidoc-tool, a command-line utility for creating,
+ signing, validating and extracting documents.
 
 Package: libdigidocpp-dev
 Architecture: any
@@ -72,9 +85,14 @@ Depends:
  libdigidocpp1 (= ${binary:Version}),
  ${misc:Depends}
 Suggests: libdigidocpp-doc
-Description: DigiDoc digital signature library development files
- This package contains files necessary for developing applications with the
- DigiDoc digital signature library.
+Description: Development files for libdigidocpp
+ libdigidocpp creates, signs and validates ASiC-E containers with XAdES
+ signatures and ASiC-S containers with RFC 3161 time-stamp tokens, and validates
+ legacy BDOC 2.1 documents. Formats that are not validated locally, such as PDF
+ and DDOC, are validated with the SiVa online service.
+ .
+ This package contains the headers and the CMake and pkg-config files for
+ developing applications with libdigidocpp.
 
 Package: libdigidocpp-csharp
 Architecture: any
@@ -83,9 +101,14 @@ Depends:
  libdigidocpp1 (= ${binary:Version}),
  ${misc:Depends},
  ${shlibs:Depends}
-Description: DigiDoc digital signature C# bindings
- This package contains files necessary for developing applications with the
- DigiDoc digital signature library using C# bindings.
+Description: C# bindings for libdigidocpp
+ libdigidocpp creates, signs and validates ASiC-E containers with XAdES
+ signatures and ASiC-S containers with RFC 3161 time-stamp tokens, and validates
+ legacy BDOC 2.1 documents. Formats that are not validated locally, such as PDF
+ and DDOC, are validated with the SiVa online service.
+ .
+ This package contains the C# bindings for developing applications with
+ libdigidocpp.
 
 Package: libdigidocpp-java
 Architecture: any
@@ -94,9 +117,14 @@ Depends:
  libdigidocpp1 (= ${binary:Version}),
  ${misc:Depends},
  ${shlibs:Depends}
-Description: DigiDoc digital signature java bindings
- This package contains files necessary for developing applications with the
- DigiDoc digital signature library using java bindings.
+Description: Java bindings for libdigidocpp
+ libdigidocpp creates, signs and validates ASiC-E containers with XAdES
+ signatures and ASiC-S containers with RFC 3161 time-stamp tokens, and validates
+ legacy BDOC 2.1 documents. Formats that are not validated locally, such as PDF
+ and DDOC, are validated with the SiVa online service.
+ .
+ This package contains the Java bindings for developing applications with
+ libdigidocpp.
 
 Package: libdigidocpp-python
 Architecture: any
@@ -106,9 +134,14 @@ Depends:
  python3,
  ${misc:Depends},
  ${shlibs:Depends}
-Description: DigiDoc digital signature python bindings
- This package contains files necessary for developing applications with the
- DigiDoc digital signature library using python bindings.
+Description: Python bindings for libdigidocpp
+ libdigidocpp creates, signs and validates ASiC-E containers with XAdES
+ signatures and ASiC-S containers with RFC 3161 time-stamp tokens, and validates
+ legacy BDOC 2.1 documents. Formats that are not validated locally, such as PDF
+ and DDOC, are validated with the SiVa online service.
+ .
+ This package contains the Python bindings for developing applications with
+ libdigidocpp.
 
 Package: libdigidocpp-doc
 Architecture: all
@@ -116,6 +149,11 @@ Multi-Arch: foreign
 Section: doc
 Depends:
  ${misc:Depends}
-Description: DigiDoc digital signature library documentation
- This package contains documentation for developing applications with the
- DigiDoc digital signature library.
+Description: Documentation for libdigidocpp
+ libdigidocpp creates, signs and validates ASiC-E containers with XAdES
+ signatures and ASiC-S containers with RFC 3161 time-stamp tokens, and validates
+ legacy BDOC 2.1 documents. Formats that are not validated locally, such as PDF
+ and DDOC, are validated with the SiVa online service.
+ .
+ This package contains the API documentation and programmer's guide for
+ libdigidocpp.

@@ -210,9 +210,9 @@ Signatures::Signatures(XMLDocument &&doc, string_view mediaType)
      */
     try {
         if(mediaType == ASiC_E::MIMETYPE_ADOC && name() == "document-signatures" && ns() == OPENDOCUMENT_NS)
-            validateSchema(File::path(Conf::instance()->xsdPath(), "OpenDocument_dsig.xsd"));
+            XMLSchema::validate(File::path(Conf::instance()->xsdPath(), "OpenDocument_dsig.xsd"), *this);
         else
-            validateSchema(File::path(Conf::instance()->xsdPath(), "en_31916201v010101.xsd"));
+            XMLSchema::validate(File::path(Conf::instance()->xsdPath(), "en_31916201v010101.xsd"), *this);
     }
     catch(const Exception &e) {
         THROW_CAUSE(e, "Failed to validate signature XML");
@@ -231,13 +231,16 @@ SignatureXAdES_B::SignatureXAdES_B(const shared_ptr<Signatures> &signatures, uns
     X509Cert c = signer->cert();
     string nr = "S" + to_string(id);
     auto canonMethod = XMLDocument::C14D_ID_1_1;
+    string method = signer->method();
+    string signatureUri = X509Crypto(c).isRSAKey() ? Digest::toRsaUri(method) : Digest::toEcUri(method);
+    if(signatureUri.empty())
+        THROW("Signature method '%s' is not supported for this key.", method.c_str());
 
     signature = *signatures + XMLName{"Signature", DSIG_NS};
     signature.setProperty("Id", nr);
     auto signedInfo = signature + "SignedInfo";
     (signedInfo + CanonicalizationMethod).setProperty("Algorithm", canonMethod);
-    (signedInfo + "SignatureMethod").setProperty("Algorithm", X509Crypto(c).isRSAKey() ?
-            Digest::toRsaUri(signer->method()) : Digest::toEcUri(signer->method()));
+    (signedInfo + "SignatureMethod").setProperty("Algorithm", signatureUri);
 
     (signature + "SignatureValue").setProperty("Id", nr + "-SIG");
     signature + "KeyInfo" + "X509Data" + "X509Certificate" = c;
@@ -480,7 +483,7 @@ void SignatureXAdES_B::validate(const string &policy) const
 
         map<string,string> signatureref;
         string_view signedPropertiesId = sp["Id"];
-        bool signedInfoFound = false;
+        int signedInfoFound = 0;
         for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
         {
             auto uri = ref["URI"];
@@ -499,7 +502,7 @@ void SignatureXAdES_B::validate(const string &policy) const
             }
 
             if(uri.front() == '#' && uri.substr(1) == signedPropertiesId && ref["Type"] == REF_TYPE)
-                signedInfoFound = true;
+                ++signedInfoFound;
             else if(!sdop)
                 continue; // DataObjectProperties is missing, no need to match later MediaTypes
             else if(ref["Id"].empty())
@@ -512,8 +515,8 @@ void SignatureXAdES_B::validate(const string &policy) const
                 signatureref.emplace(uriPath, mimeinfo[string("#").append(ref["Id"])]);
             }
         }
-        if(!signedInfoFound)
-            EXCEPTION_ADD(exception, "SignedProperties not found");
+        if(signedInfoFound != 1)
+            EXCEPTION_ADD(exception, "Exactly one SignedProperties Reference required, found %d", signedInfoFound);
 
         // Match DataObjectFormat element MediaTypes with Manifest
         if(!signatureref.empty())
@@ -545,11 +548,8 @@ void SignatureXAdES_B::validate(const string &policy) const
         if(!signatureref.empty())
             EXCEPTION_ADD(exception, "Manifest references and signature references do not match");
 
-        try { checkKeyInfo(); }
-        catch(const Exception& e) { exception.addCause(e); }
-
-        try { checkSigningCertificate(policy == POLv1); }
-        catch(const Exception& e) { exception.addCause(e); }
+        auto signingCertificate = checkSigningCertificate(policy == POLv1);
+        checkKeyInfo(signingCertificate);
     } catch(const Exception &e) {
         exception.addCause(e);
     } catch(...) {
@@ -596,9 +596,8 @@ void SignatureXAdES_B::checkDigest(XMLNode digest, const vector<unsigned char> &
  * Verify if SigningCertificate matches with
  * XAdES::SigningCertificate/SigningCertificateV2 Digest and IssuerSerial info
  */
-void SignatureXAdES_B::checkKeyInfo() const
+void SignatureXAdES_B::checkKeyInfo(const X509Cert &x509) const
 {
-    X509Cert x509 = signingCertificate();
     if(auto sigCert = signedSignatureProperties()/"SigningCertificate")
     {
         if(auto certs = sigCert/"Cert"; certs || !(certs + 1))
@@ -627,21 +626,29 @@ void SignatureXAdES_B::checkKeyInfo() const
  * Check if signing certificate was issued by trusted party.
  * @throws Exception on a problem with signing certificate
  */
-void SignatureXAdES_B::checkSigningCertificate(bool noqscd) const
+X509Cert SignatureXAdES_B::checkSigningCertificate(bool noqscd, tm validation_time) const
 {
-    try
+    X509Cert signingCertificate;
+    vector<X509Cert> untrusted;
+    for(auto x509Data = signature/"KeyInfo"/"X509Data"; x509Data; x509Data++)
     {
-        X509Cert signingCert = signingCertificate();
-        vector<X509Cert::KeyUsage> usage = signingCert.keyUsage();
-        if(!contains(usage, X509Cert::NonRepudiation))
-            THROW("Signing certificate does not contain NonRepudiation key usage flag");
-        if(!signingCertificate().verify(noqscd))
-            THROW("Unable to verify signing certificate");
+        for(auto x509Cert = x509Data/"X509Certificate"; x509Cert; x509Cert++)
+        {
+            if(X509Cert cert(x509Cert); !cert)
+                continue;
+            else if(!signingCertificate)
+                signingCertificate = std::move(cert);
+            else
+                untrusted.emplace_back(std::move(cert));
+        }
     }
-    catch(const Exception &e)
-    {
-        THROW_CAUSE( e, "Unable to verify signing certificate" );
-    }
+    if(!signingCertificate)
+        THROW("Signature does not contain signer certificate");
+    if(!contains(signingCertificate.keyUsage(), X509Cert::NonRepudiation))
+        THROW("Signing certificate does not contain NonRepudiation key usage flag");
+    if(!signingCertificate.verify(noqscd, validation_time, untrusted))
+        THROW("Unable to verify signing certificate");
+    return signingCertificate;
 }
 
 void SignatureXAdES_B::addDataObjectFormat(const string &uri, const string &mime)

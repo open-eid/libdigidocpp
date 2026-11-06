@@ -35,8 +35,8 @@ class TSL: private XMLDocument
 {
 public:
     struct Qualifier { std::vector<std::string> qualifiers; std::vector<std::vector<std::string>> policySet; std::vector<std::map<X509Cert::KeyUsage,bool>> keyUsage; std::string assert_; };
-    using Qualifiers = std::optional<std::vector<Qualifier>>;
-    struct Service { std::vector<X509Cert> certs; std::map<std::string,Qualifiers> validity; std::string type, additional, name; };
+    struct Validity { std::string type; std::vector<Qualifier> qualifiers; };
+    struct Service { std::vector<X509Cert> certs; std::map<std::string,std::optional<Validity>> validity; std::string additional, name; };
     struct Pointer { std::string territory, location; std::vector<X509Cert> certs; };
 
     TSL(std::string file = {});

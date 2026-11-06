@@ -20,6 +20,7 @@
 #include "SignatureXAdES_T.h"
 
 #include "ASiC_E.h"
+#include "Conf.h"
 #include "crypto/Digest.h"
 #include "crypto/OCSP.h"
 #include "crypto/Signer.h"
@@ -73,7 +74,7 @@ void SignatureXAdES_T::extendSignatureProfile(Signer *signer)
     auto method = canonicalizationMethod();
     signatures->c14n(calc, method, signatureValue());
 
-    TS tsa(calc, signer->userAgent());
+    TS tsa(CONF(TSUrl), CONF(TSCerts), calc, signer->userAgent());
     auto ts = usp + "SignatureTimeStamp";
     ts.setProperty("Id", id() + Log::format("-T%zu", i));
     (ts + CanonicalizationMethod).setProperty("Algorithm", method);
@@ -95,7 +96,9 @@ void SignatureXAdES_T::validate(const std::string &policy) const
     } catch(const Exception &e) {
         if(profile().find(ASiC_E::ASIC_TS_PROFILE) == string::npos)
             throw;
-        for(const Exception &ex: e.causes())
+        if(const Exception::Causes causes = e.causes(); causes.empty())
+            exception.addCause(e);
+        else for(const Exception &ex: causes)
             exception.addCause(ex);
     }
 
@@ -113,7 +116,7 @@ void SignatureXAdES_T::validate(const std::string &policy) const
             signatures->c14n(digest, canonicalizationMethod, signatureValue());
         });
 
-        if(!signingCertificate().verify(policy == POLv1, tsa.time()))
+        if(!checkSigningCertificate(policy == POLv1, tsa.time()))
             THROW("Signing certificate was not valid on signing time");
 
         auto completeCertRefs = usp/"CompleteCertificateRefs";

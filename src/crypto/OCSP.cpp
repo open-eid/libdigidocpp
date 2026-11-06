@@ -34,6 +34,7 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
+#include <openssl/x509v3.h>
 
 using namespace digidoc;
 using namespace std;
@@ -193,7 +194,7 @@ OCSP::operator vector<unsigned char>() const
 /**
  * Check that response was signed with trusted OCSP certificate
  */
-void OCSP::verifyResponse(const X509Cert &cert) const
+void OCSP::verifyResponse(const X509Cert &cert, const vector<X509Cert> &untrusted) const
 {
     if(!basic)
         THROW("Failed to verify OCSP response.");
@@ -209,8 +210,38 @@ void OCSP::verifyResponse(const X509Cert &cert) const
                 sk_X509_push(stack.get(), i.handle());
         }
     }
+    for(const X509Cert &i: untrusted)
+    {
+        if(i)
+            sk_X509_push(stack.get(), i.handle());
+    }
     auto store = X509CertStore::createStore(X509CertStore::OCSP, tm);
-    if(OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN) != 1)
+    // OCSP_NOCHECKS skips ocsp_check_issuer() which requires the responder to be directly
+    // delegated by the cert's issuing CA. SK PKI uses a cross-CA OCSP responder issued by
+    // the root CA rather than the intermediate CA, so this check would always fail.
+    // We compensate by verifying the responder cert has id-kp-OCSPSigning EKU below.
+    ERR_clear_error();
+    int verified = OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN);
+    if(verified != 1)
+    {
+        const ASN1_OBJECT *algorithm {};
+        X509_ALGOR_get0(&algorithm, nullptr, nullptr, OCSP_resp_get0_tbs_sigalg(basic.get()));
+        int digest = NID_undef;
+        X509 *signer {};
+        if(OBJ_find_sigid_algs(OBJ_obj2nid(algorithm), &digest, nullptr) == 1 && digest == NID_sha1 &&
+           OCSP_resp_get0_signer(basic.get(), &signer, stack.get()) == 1 && signer)
+        {
+            // OCSP_basic_verify uses the responder certificate's context. External
+            // certificates take precedence over certificates embedded in the response.
+            auto local = X509CertStore::legacyCertificate(signer);
+            if(local && sk_X509_insert(stack.get(), local.get(), 0) != 0)
+            {
+                verified = OCSP_basic_verify(basic.get(), stack.get(), store.get(), OCSP_NOCHECKS | OCSP_PARTIAL_CHAIN);
+                sk_X509_delete(stack.get(), 0);
+            }
+        }
+    }
+    if(verified != 1)
     {
         unsigned long err = ERR_get_error();
         if(ERR_GET_LIB(err) == ERR_LIB_OCSP &&
@@ -224,13 +255,37 @@ void OCSP::verifyResponse(const X509Cert &cert) const
         throw OpenSSLException(EXCEPTION_PARAMS("Failed to verify OCSP response."), err);
     }
 
-    // Find issuer before OCSP validation to activate region TSL
+    // Find issuer from TSL or from untrusted CertificateValues
     X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::CA);
+    if(!issuer)
+    {
+        for(const X509Cert &i: untrusted)
+        {
+            if(i && X509_check_issued(i.handle(), cert.handle()) == X509_V_OK)
+            {
+                issuer = i;
+                break;
+            }
+        }
+    }
     if(!issuer)
     {
         Exception e(EXCEPTION_PARAMS("Certificate status: unknown"));
         e.setCode(Exception::CertificateUnknown);
         throw e;
+    }
+
+    // Explicitly check the OCSP responder has id-kp-OCSPSigning EKU (normally done by
+    // ocsp_check_issuer which we skipped above).
+    if(X509Cert responder = responderCert(); responder)
+    {
+        bool hasOCSPSign = issuer == responder;
+        auto eku = make_unique_cast<EXTENDED_KEY_USAGE_free>(
+            X509_get_ext_d2i(responder.handle(), NID_ext_key_usage, nullptr, nullptr));
+        for(int i = 0; eku && i < sk_ASN1_OBJECT_num(eku.get()); i++)
+            hasOCSPSign |= OBJ_obj2nid(sk_ASN1_OBJECT_value(eku.get(), i)) == NID_OCSP_sign;
+        if(!hasOCSPSign)
+            THROW("OCSP responder certificate does not have id-kp-OCSPSigning EKU");
     }
 
     int status = V_OCSP_CERTSTATUS_UNKNOWN;

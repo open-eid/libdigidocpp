@@ -45,6 +45,7 @@ private:
 
     void addOCSPValue(const std::string &id, const OCSP &ocsp);
     void addCertificateValue(const std::string& certId, const X509Cert& x509);
+    std::vector<X509Cert> certificateValues(XMLNode until = XMLNode{}) const;
     OCSP getOCSPResponseValue() const;
 };
 
