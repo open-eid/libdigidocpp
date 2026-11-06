@@ -350,7 +350,11 @@ unique_ptr<Container> Container::createPtr(const std::string &path)
 std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Signer *signer, size_t &extendedCount) try
 {
     extendedCount = 0;
-    if(doc.signatures().empty())
+    auto signatures = doc.signatures();
+    if(doc.mediaType() == ASiContainer::MIMETYPE_ASIC_S &&
+        !signatures.empty() && signatures.front()->profile() == ASiC_S::ASIC_TST_PROFILE)
+        signatures.resize(1);
+    if(signatures.empty())
         THROW("Container does not contain signatures");
 
     if(doc.mediaType() == ASiContainer::MIMETYPE_ASIC_S ||
@@ -359,7 +363,7 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
         bool extendInPlace = true;
         size_t tCount = 0;
         size_t eeCount = 0;
-        for(Signature *s: doc.signatures())
+        for(Signature *s: signatures)
         {
             auto signingCert = s->signingCertificate();
             if(signingCert.subjectName("C") != "EE" ||
@@ -436,7 +440,7 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
 
         if(extendInPlace)
         {
-            for(Signature *s: doc.signatures())
+            for(Signature *s: signatures)
             {
                 if(auto cert = s->signingCertificate();
                     cert.subjectName("C") != "EE" ||
@@ -466,6 +470,11 @@ std::unique_ptr<Container> Container::extendContainerValidity(Container &doc, Si
 /**
  * @fn digidoc::Container::dataFiles
  * List of all the data files in the container
+ *
+ * Since 4.6.0, for an ASiC-S container whose enclosed DDoc was opened through
+ * SiVa using a callback allowing online validation, returns the data files of
+ * the DDoc. If the enclosed DDoc is not opened through SiVa, returns the DDoc
+ * file itself.
  *
  * Container holds ownership of data files objects
  */
@@ -561,7 +570,8 @@ unique_ptr<Container> Container::openPtr(const string &path, ContainerOpenCB *cb
  * Removes signature from container by signature index.
  *
  * @param index signature's index, which will be removed.
- * @throws Exception throws exception if the signature id is incorrect.
+ * @throws Exception throws exception if the signature id is incorrect or the
+ * container is an ASiC-S container exposing a DDoc opened through SiVa.
  * @see digidoc::Container::signatures
  */
 
@@ -604,6 +614,11 @@ void Container::addContainerImplementation()
 /**
  * @fn digidoc::Container::signatures
  * Returns list of all container's signatures.
+ *
+ * Since 4.6.0, for an ASiC-S container whose enclosed DDoc was opened through
+ * SiVa using a callback allowing online validation, returns the time-stamp token
+ * followed by the signatures of the DDoc. Otherwise, returns only the
+ * container's own signatures.
  *
  * Container holds ownership of signature objects
  */

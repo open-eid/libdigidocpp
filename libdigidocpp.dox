@@ -20,6 +20,7 @@ Development of the library can be monitored in GitHub environment: <a href="http
 Changes by version are listed on the separate \ref release_notes "Release Notes" page.
 Supported container formats are described on the separate \ref formats "Supported container formats" page.
 Configuration is described on the separate \ref configuration "Configuration guide" page.
+Implementation notes are described on the separate \ref implementation "Implementation notes" page.
 
 \subsection about About DigiDoc
 Libdigidocpp library forms a part of the wider DigiDoc system framework which offers a full-scale architecture for digital signature and documents, consisting of software libraries (C++ and Java), SiVa service and end-user applications such as DigiDoc4 according to the following figure:
@@ -60,7 +61,7 @@ The following table gives overview of functional features that are supported wit
   <td>DigiDoc document format</td>
   <td>
 - ASiC-E - the main document format to be used.
-- ASiC-S - a single-data-file container. Opening and validating XAdES signatures are supported; this variant is read-only. For \ref RFC3161 "RFC 3161" TimeStampToken containers, creation, saving, validation, and archive-manifest time-stamp extension are supported.
+- ASiC-S - a single-data-file container. Opening and validating XAdES signatures are supported; this variant is read-only. For \ref RFC3161 "RFC 3161" TimeStampToken containers, creation, saving, validation, and archive-manifest time-stamp extension are supported. A TimeStampToken container that encloses a legacy DDoc file also exposes the DDoc's data files and signatures, validated by the \ref SiVa service (see \ref asics).
 - BDOC 2.1 - legacy read-only compatibility.
 
 \note BDOC 1.0 file format is not supported (more info can be found from https://www.id.ee/en/article/digidoc-container-format-life-cycle-2/).
@@ -112,201 +113,6 @@ The figure below describes the architecture of software and hardware components 
 <tr><td>CCID</td><td>USB driver  for Chip/Smart Card Interface Devices </td></tr>
 <tr><td>Reader</td><td>Device used for communication with a smart card</td></tr>
 </table>
-
-
-
-\subsection Dependencies Dependencies
-\subsubsection libraries Software libraries
-Libdigidocpp library depends on the software libraries listed below.
-<table>
-<tr><th>Base Component</th><th>Required/optional</th><th>Description</th></tr>
-<tr><td>OpenSSL</td><td>required</td><td>Used for validating certificates and digest values.</td></tr>
-<tr><td>libxml2</td><td>required</td><td>Used for validating the documents according to XML Schema, reading and writing XML.</td></tr>
-<tr><td>xmlsec</td><td>required</td><td>Used for handling signature related components.</td></tr>
-<tr><td>ZLIB</td><td>required</td><td>Used when compressing and extracting ASiC files in ZIP format.</td></tr>
-<tr><td>Minizip</td><td>required</td><td>Used when creating and opening ZIP container for ASiC file. If the component is not found from system then bundled version with source code is used. Forms a part of ZLIB component.</td></tr>
-<tr><td>PKCS11</td><td>optional</td><td>Used for searching for default PKCS#11 driver in the system so that its path could be registered in configuration entries.</td></tr>
-<tr><td>Doxygen</td><td>optional</td><td>Used for generating API documentation from source code.</td></tr>
-<tr><td>SWIG</td><td>optional</td><td>Used for creating C#, Java, and Python bindings.</td></tr>
-</table>
-
-
-
-\subsubsection Schemas XML Schemas
-Several XML schemas are used when creating digitally signed documents in ASiC file format and validating their structure. The schemas are included in etc/schema/ subdirectory of the Libdigidocpp distribution package, their description is given in the table below.
-
-\note Some modifications have been made to some of the schemas. Differences in comparison with the original schemas are listed in section \ref schema-modification of the current document.
-
-<table>
-<tr><th>Schema file</th><th>Description</th>
-</tr><tr><td>OpenDocument_manifest.xsd</td><td>OASIS OpenDocument v1.2 (\ref OpenDocument "OpenDocument")
-Defines the structure of META-INF/manifest.xml file in ASiC container.
-https://docs.oasis-open.org/office/v1.2/csd06/OpenDocument-v1.2-csd06-manifest-schema.rng
-</td></tr><tr><td>OpenDocument_dsig.xsd</td><td>OASIS OpenDocument v1.2 (\ref OpenDocument "OpenDocument")
-Defines the structure of META-INF/signature.xml file in ADOC container.
-https://docs.oasis-open.org/office/v1.2/csd06/OpenDocument-v1.2-csd06-dsig-schema.rng
-</td></tr><tr><td>en_31916201v010101.xsd</td><td>Associated Signature Containers (\ref ASiC "ASiC")
-Defines the format of container for encapsulating the signed documents, signatures and additional information. http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.02.01_60/
-</td></tr><tr><td>xmldsig-core-schema.xsd</td><td>XML Signature Core Schema Instance (\ref XML-DSIG "XML-DSIG")
-Defines XML syntax for digital signatures.
-http://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd
-</td></tr><tr><td>XAdES01903v132-201601.xsd</td><td>XML Advanced Electronic Signatures (\ref XAdES "XAdES EN")
-Defines a set of extensions to XML-DSIG making it suitable for advanced electronic signature.
-http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd
-</tr><tr><td>XAdES01903v141-201601.xsd</td><td>Defines XML syntax for additional elements of XAdES signatures that were added with version 1.4.1 of the (\ref XAdES "XAdES EN") standard. Used for XAdES archive time-stamps, including the ArchiveTimeStamp element.
-http://uri.etsi.org/01903/v1.4.1/XAdES01903v141-201601.xsd
-</td></tr><tr><td>ts_119612v020201_201601xsd.xsd<br />ts_119612v020101_additionaltypes_xsd.xsd<br />ts_119612v020101_sie_xsd.xsd</td><td>Defines the format of Trust Service status Lists (\ref TSL) that contain information about trusted CA, OCSP and TSA certificates.
-</td></tr><tr><td>conf.xsd</td><td>Configuration properties’ schema. Defines the Libdigidocpp configuration file’s digidocpp.conf structure (see also \ref configuration).
-</td></tr>
-</table>
-
-The following figure describes dependencies between the abovementioned schemas (direction of the arrow indicates the direction of dependency).
-\image html schemas.svg "Dependencies between XML Schemas"
-
-\paragraph schema-modification XML schema modifications
-The following section describes modifications that have been made to XML schemas used in Libdigidocpp. The library uses several XML schemas when creating digitally signed documents and validating their structure. The schemas are included in etc/schema/ subdirectory of the Libdigidocpp distribution package, their description has been provided in section \ref Schemas.
-
-Modifications are marked between xml comment tags.
-
-<b>Schema en_31916201v010101.xsd</b>
-
-1) The schema’s location has been altered so that the imported schema file is looked up from the local file system.
-\code{.xml}
-<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
-<!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
-\endcode
-2) Additional schema’s location imports has been added so that the imported schema file is looked up from the local file system.
-\code{.xml}
-<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
-<xsd:import namespace="http://uri.etsi.org/01903/v1.4.1#" schemaLocation="XAdES01903v141-201601.xsd"/> 
-\endcode
-
-<b>Schema xmldsig-core-schema.xsd</b>
-
-1) The XMLSchema.dtd reference has been commented out due to implementation issues (otherwise a warning message would be produced).
-\code{.xml}
-<!--
-<!DOCTYPE schema
-  PUBLIC "-//W3C//DTD XMLSchema 200102//EN" "http://www.w3.org/2001/XMLSchema.dtd"
- [
-   <!ATTLIST schema
-     xmlns:ds CDATA #FIXED "http://www.w3.org/2000/09/xmldsig#">
-   <!ENTITY dsig 'http://www.w3.org/2000/09/xmldsig#'>
-   <!ENTITY % p ''>
-   <!ENTITY % s ''>
-  ]>
--->
-\endcode
-2) The initial integer data type used in the original schema is converted into long data type when generating C++ source code from the current schema. However, as the SK issued certificates’ serial numbers are too long to fit into long type variable then the data type has been changed to string.
-\code{.xml}
-<complexType name="X509IssuerSerialType">
-  <sequence>
-    <element name="X509IssuerName" type="string"/>
-    <element name="X509SerialNumber" type="string"/> <!-- originally type="integer" -->
-  </sequence>
-</complexType>
-\endcode
-
-<b>Schema XAdES01903v132-201601.xsd</b>
-
-1) The schema’s location has been modified so that the file is looked up from the local file system.
-\code{.xml}
-<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
-<!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
-\endcode
-2) The "type" attribute has been added, otherwise a warning message would be produced.
-\code{.xml}
-  <xsd:complexType name="SignaturePolicyIdentifierType">
-    <xsd:choice>
-      <xsd:element name="SignaturePolicyId" type="SignaturePolicyIdType"/>
-      <xsd:element name="SignaturePolicyImplied" type="AnyType"/> <!-- added type="AnyType" -->
-    </xsd:choice>
-  </xsd:complexType>
-\endcode
-3) The "type" attribute has been added, otherwise a warning message would be produced.
-\code{.xml}
-  <xsd:complexType name="CommitmentTypeIndicationType">
-    <xsd:sequence>
-      <xsd:element name="CommitmentTypeId" type="ObjectIdentifierType"/>
-      <xsd:choice>
-        <xsd:element name="ObjectReference" type="xsd:anyURI"
-          maxOccurs="unbounded"/>
-        <xsd:element name="AllSignedDataObjects" type="AnyType"/> <!-- added type="AnyType" -->
-      </xsd:choice>
-      <xsd:element name="CommitmentTypeQualifiers"
-        type="CommitmentTypeQualifiersListType" minOccurs="0"/>
-    </xsd:sequence>
-  </xsd:complexType>
-\endcode
-4) Change child elements of type SignedSignaturePropertiesType from "xsd:sequence" to "xsd:all" in order to allow the child elements to be listed in any order.
-\code{.xml}
-<xsd:complexType name="SignedSignaturePropertiesType">
-  <xsd:all>
-    <xsd:element ref="SigningTime" minOccurs="0"/>
-    <xsd:element ref="SigningCertificate" minOccurs="0"/>
-    <xsd:element ref="SigningCertificateV2" minOccurs="0"/>
-    <xsd:element ref="SignaturePolicyIdentifier" minOccurs="0"/>
-    <xsd:element ref="SignatureProductionPlace" minOccurs="0"/>
-    <xsd:element ref="SignatureProductionPlaceV2" minOccurs="0"/>
-    <xsd:element ref="SignerRole" minOccurs="0"/>
-    <xsd:element ref="SignerRoleV2" minOccurs="0"/>
-    <xsd:any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
-  </xsd:all>
-  <xsd:attribute name="Id" type="xsd:ID" use="optional"/>
-</xsd:complexType>
-\endcode
-5) Change child elements of type SignatureProductionPlaceType from "xsd:sequence" to "xsd:all" in order to allow the child elements to be listed in any order.
-\code{.xml}
-<xsd:complexType name="SignatureProductionPlaceType">
-  <xsd:all>
-    <xsd:element name="City" type="xsd:string" minOccurs="0"/>
-    <xsd:element name="StateOrProvince" type="xsd:string" minOccurs="0"/>
-    <xsd:element name="PostalCode" type="xsd:string" minOccurs="0"/>
-    <xsd:element name="CountryName" type="xsd:string" minOccurs="0"/>
-  </xsd:all>
-</xsd:complexType>
-\endcode
-
-<b>Schema XAdES01903v141-201601.xsd</b>
-
-1) The schema's location has been modified so that the file is looked up from the local file system.
-\code{.xml}
-<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
-<!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd" -->
-\endcode
-
-<b>Schema ts_119612v020201_201601xsd.xsd</b>
-
-1) The schemas' locations have been modified so that the file is looked up from the local file system.
-\code{.xml}
-<xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
-<!-- originally "http://www.w3.org/2001/xml.xsd" -->
-<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
-<!-- originally "http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd" -->
-\endcode
-2) The schemas' locations have been added so that TSL extension content can be validated through lax processing.
-\code{.xml}
-<xsd:import namespace="http://uri.etsi.org/TrstSvc/SvcInfoExt/eSigDir-1999-93-EC-TrustedList/#" schemaLocation="ts_119612v020101_sie_xsd.xsd"/>
-<xsd:import namespace="http://uri.etsi.org/02231/v2/additionaltypes#" schemaLocation="ts_119612v020101_additionaltypes_xsd.xsd"/>
-\endcode
-
-<b>Schema ts_119612v020101_sie_xsd.xsd</b><br />
-1) The schemas' locations have been modified so that the file is looked up from the local file system.
-\code{.xml}
-<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
-<!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES.xsd" -->
-\endcode
-
-<b>Schema ts_119612v020101_additionaltypes_xsd.xsd</b><br />
-1) The schemas' locations have been modified so that the file is looked up from the local file system.
-\code{.xml}
-<xsd:import namespace="http://uri.etsi.org/02231/v2#" schemaLocation="ts_119612v020201_201601xsd.xsd"/>
-<!-- originally "http://uri.etsi.org/19612/v1.2.1/tsl.xsd" -->
-<xsd:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
-<!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES.xsd" -->
-\endcode
-
-
 
 
 
@@ -521,6 +327,8 @@ In order to read an existing DigiDoc file from the file system, do as follows:
     auto doc = digidoc::Container::openPtr("<input-file's-path>");
 \endcode
 The method above reads in the DigiDoc file from the specified location in file system and creates the respective Container object representing the document's data. The file's structure is also validated during its parsing according to the corresponding standards.
+
+\note Formats that are not validated locally are sent to the \ref SiVa service while opening. Pass a digidoc::ContainerOpenCB to digidoc::Container::openPtr to control online access; the callback is also required for opening a DDoc enclosed in an ASiC-S container. See \ref siva-requests.
 
 Write a DigiDoc file (represented with a Container object) to file system with the following method:
 \code{.cpp}
@@ -792,7 +600,7 @@ void digidoc::Container::removeDataFile(unsigned int index);
 \endcode
 
 The index parameters of the methods above are the signature and data file sequence numbers in the container, starting from zero.
-\note Directly modifying the data file or initial signature of an existing ASiC-S container is not supported. Adding archive-manifest time-stamp layers through digidoc::Container::extendContainerValidity is supported.
+\note Directly modifying the data file or initial signature of an existing ASiC-S container is not supported. Adding archive-manifest time-stamp layers through digidoc::Container::extendContainerValidity is supported. Signatures cannot be removed from an ASiC-S container while an enclosed DDoc opened through SiVa is exposed.
 
 
 \subsection shutting-down Shutting down the library
@@ -837,33 +645,4 @@ The library is also tested with the following tokens (indirectly via the DigiDoc
 - Latvian national eID card
 - Lithuanian national eID card
 - SafeNet eToken 5110 with SK issued certificates for organizations
-
-
-
-
-
-
-
-
-
-
-
-\section testing Interoperability testing
-\subsection cross-usability DigiDoc framework cross-usability tests
-Automated cross-usability tests of digitally signed and encrypted files are periodically carried out between different \ref DD-libs "DigiDoc software libraries":
-- Cross-usability of ASiC-E file format with TS (time-stamp) profile is tested between DigiDoc4j and Libdigidocpp libraries.
-
-
-The interoperability tests are executed through the command line utility tools of the software libraries (for example, in case of Libdigidocpp library, the utility program which is described on the \ref digidoc-tool page).
-
-
-
-
-
-\section cert-notes Certificate related notes
-1.	Valid signatures (qualified electronic signatures) can be created with a certificate that has "Non-repudiation" value (also referred to as "Content Commitment") in its "Key usage" field. The requirement is based on the following sources:
-	-	\ref nat-cert "ETSI EN 319 412-2 V2.4.1": "Certificate Profiles; Part 2: Certificate profile for certificates issued to natural persons"; chap. 5.4.3;
-2.	Signature can be created with a certificate that doesn’t have "Non-repudiation" value in its "Key-Usage" field when specific parameters have been set but validation of such signature will produce a respective error message and the signature is not considered as a qualified electronic signature.
-3.	During signature validation, it is checked that the validity periods of the signer’s certificate and all the certificates in its CA chain include the signature creation time (value of the time in TSA response or case time-mark profile producedAt field in OCSP response).
-	
 */
