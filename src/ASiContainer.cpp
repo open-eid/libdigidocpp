@@ -162,7 +162,7 @@ void ASiContainer::addDataFile(const string &path, const string &mediaType)
         *data << is->rdbuf();
         is = std::move(data);
     }
-    d->properties[string(fileName)] = { appInfo(), File::modifiedTime(path), size };
+    d->properties[string(fileName)] = { appInfo(), File::modifiedTime(path), static_cast<unsigned long>(size) };
     d->documents.push_back(new DataFilePrivate(std::move(is), string(fileName), mediaType));
 }
 
@@ -199,6 +199,8 @@ void ASiContainer::validateDataFilePath(string_view fileName)
 
 void ASiContainer::addDataFileChecks(string_view fileName, const string &mediaType)
 {
+    if(d->documents.size() >= MAX_DATA_FILES)
+        THROW("Container exceeds maximum data file count of %zu", MAX_DATA_FILES);
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
     if(fileName == "mimetype")
@@ -212,6 +214,8 @@ void ASiContainer::addDataFileChecks(string_view fileName, const string &mediaTy
 
 void ASiContainer::addDataFilePrivate(const ZipSerialize &z, string_view filename, string_view mediatype)
 {
+    if(d->documents.size() >= MAX_DATA_FILES)
+        THROW("Container exceeds maximum data file count of %zu", MAX_DATA_FILES);
     validateDataFilePath(filename);
     d->documents.push_back(new DataFilePrivate(z, string(filename), string(mediatype)));
 }

@@ -23,6 +23,7 @@
 #include <boost/mpl/list.hpp>
 
 #include <DataFile.h>
+#include <DataFile_p.h>
 #include <Signature.h>
 #include <XmlConf.h>
 #include <XMLDocument.h>
@@ -36,7 +37,10 @@
 
 #include <openssl/crypto.h>
 #include <openssl/x509.h>
+#include <zlib.h>
 
+#include <array>
+#include <cstdint>
 #include <fstream>
 
 namespace digidoc
@@ -106,6 +110,133 @@ public:
 private:
     Exception exception;
 };
+
+void append16(vector<unsigned char> &data, uint16_t value)
+{
+    data.push_back(static_cast<unsigned char>(value));
+    data.push_back(static_cast<unsigned char>(value >> 8));
+}
+
+void append32(vector<unsigned char> &data, uint32_t value)
+{
+    append16(data, uint16_t(value));
+    append16(data, uint16_t(value >> 16));
+}
+
+class SyntheticZip
+{
+public:
+    SyntheticZip(size_t count, uint32_t compressed, uint32_t uncompressed, bool asic = false)
+        : path(util::File::tempFileName())
+    {
+        vector<unsigned char> data;
+        vector<uint32_t> offsets;
+        vector<string> names;
+        vector<string> contents(count);
+        if(asic)
+        {
+            contents.at(0) = "application/vnd.etsi.asic-e+zip";
+            contents.at(1) = "<manifest:manifest xmlns:manifest=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\" manifest:version=\"1.2\">"
+                "<manifest:file-entry manifest:full-path=\"/\" manifest:media-type=\"application/vnd.etsi.asic-e+zip\"/>";
+            for(size_t i = 2; i < count; ++i)
+                contents[1] += "<manifest:file-entry manifest:full-path=\"entry-" + to_string(i) + "\" manifest:media-type=\"text/plain\"/>";
+            contents[1] += "</manifest:manifest>";
+        }
+        auto crc = [&](size_t i) { return uint32_t(crc32(0, reinterpret_cast<const Bytef*>(contents[i].data()), uInt(contents[i].size()))); };
+        for(size_t i = 0; i < count; ++i)
+        {
+            names.push_back(asic && i < 2 ? (i == 0 ? "mimetype" : "META-INF/manifest.xml") : "entry-" + to_string(i));
+            offsets.push_back(uint32_t(data.size()));
+            append32(data, 0x04034b50);
+            append16(data, 20);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append32(data, crc(i));
+            append32(data, uint32_t(contents[i].size()));
+            append32(data, uint32_t(contents[i].size()));
+            append16(data, uint16_t(names.back().size()));
+            append16(data, 0);
+            data.insert(data.end(), names.back().cbegin(), names.back().cend());
+            data.insert(data.end(), contents[i].cbegin(), contents[i].cend());
+        }
+
+        const uint32_t centralDirectoryOffset = uint32_t(data.size());
+        for(size_t i = 0; i < count; ++i)
+        {
+            append32(data, 0x02014b50);
+            append16(data, 20);
+            append16(data, 20);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append32(data, crc(i));
+            append32(data, asic ? uint32_t(contents[i].size()) : compressed);
+            append32(data, asic ? uint32_t(contents[i].size()) : uncompressed);
+            append16(data, uint16_t(names[i].size()));
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append16(data, 0);
+            append32(data, 0);
+            append32(data, offsets[i]);
+            data.insert(data.end(), names[i].cbegin(), names[i].cend());
+        }
+
+        const uint32_t centralDirectorySize = uint32_t(data.size()) - centralDirectoryOffset;
+        append32(data, 0x06054b50);
+        append16(data, 0);
+        append16(data, 0);
+        append16(data, uint16_t(count));
+        append16(data, uint16_t(count));
+        append32(data, centralDirectorySize);
+        append32(data, centralDirectoryOffset);
+        append16(data, 0);
+
+        ofstream file(path, ios::binary | ios::trunc);
+        file.write(reinterpret_cast<const char*>(data.data()), streamsize(data.size()));
+        if(!file)
+            throw runtime_error("Failed to create synthetic ZIP test input");
+    }
+
+    ~SyntheticZip()
+    {
+        error_code ec;
+        fs::remove(path, ec);
+    }
+
+    string name() const { return path.string(); }
+
+private:
+    fs::path path;
+};
+
+bool exceptionContains(const Exception &e, string_view text)
+{
+    if(e.msg().find(text) != string::npos)
+        return true;
+    const auto causes = e.causes();
+    return any_of(causes.cbegin(), causes.cend(), [text](const Exception &cause) {
+        return exceptionContains(cause, text);
+    });
+}
+
+bool isDecompressionLimit(const Exception &e) { return exceptionContains(e, "ZIP decompression limit exceeded"); }
+bool isEntryCountLimit(const Exception &e) { return exceptionContains(e, "maximum entry count"); }
+bool isDataFileCountLimit(const Exception &e) { return exceptionContains(e, "maximum data file count of 1000"); }
+
+struct TemporaryContainer
+{
+    fs::path path = util::File::tempFileName();
+    ~TemporaryContainer()
+    {
+        error_code ec;
+        fs::remove(path, ec);
+    }
+    string name() const { return util::File::decodeName(path); }
+};
 }
 
 BOOST_AUTO_TEST_SUITE(SignatureValidatorSuite)
@@ -137,7 +268,7 @@ BOOST_AUTO_TEST_SUITE(LogSuite)
 BOOST_AUTO_TEST_CASE(logEntryIsWrittenImmediately)
 {
     const string marker = "log entry is immediately available";
-    const string path = Conf::instance()->logFile();
+    const auto path = util::File::encodeName(Conf::instance()->logFile());
     const auto size = util::File::fileSize(path);
     INFO("%s", marker.c_str());
 
@@ -150,7 +281,7 @@ BOOST_AUTO_TEST_CASE(logEntryIsWrittenImmediately)
 BOOST_AUTO_TEST_CASE(memoryLogEntryIsWrittenImmediately)
 {
     const string marker = "memory log entry is immediately available";
-    const string path = Conf::instance()->logFile();
+    const auto path = util::File::encodeName(Conf::instance()->logFile());
     const auto size = util::File::fileSize(path);
     const unsigned char data[] {0x01, 0x23, 0x45, 0x67};
     DEBUGMEM(marker.c_str(), data, sizeof(data));
@@ -706,7 +837,97 @@ BOOST_AUTO_TEST_CASE(XmlConfCase) {
 }
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(ZipSerializeSuite)
+BOOST_AUTO_TEST_CASE(usesTemporaryStorageWhenContainerExceedsMemoryLimit)
+{
+    BOOST_CHECK(useMemoryForDataFile(1, MAX_MEM_FILE));
+    BOOST_CHECK(!useMemoryForDataFile(1, uint64_t(MAX_MEM_FILE) + 1));
+}
+
+BOOST_AUTO_TEST_CASE(reopensHighlyCompressibleData)
+{
+    TemporaryContainer temporary;
+
+    const auto path = util::File::decodeName(temporary.path);
+    auto container = Container::createPtr(path);
+    container->addDataFile(make_unique<istringstream>(string(1500, ' ')), "space_1500.txt", "text/plain");
+    container->save();
+
+    auto reopened = Container::openPtr(path);
+    BOOST_REQUIRE_EQUAL(reopened->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(reopened->dataFiles().front()->fileName(), "space_1500.txt");
+    ostringstream output;
+    reopened->dataFiles().front()->saveAs(output);
+    const auto content = output.str();
+    BOOST_CHECK_EQUAL(content.size(), 1500U);
+    BOOST_CHECK(all_of(content.cbegin(), content.cend(), [](char c) { return c == ' '; }));
+}
+
+BOOST_AUTO_TEST_CASE(rejectsOversizedEntry)
+{
+    SyntheticZip zip(1, 1024U*1024*1024 + 1, 1024U*1024*1024 + 1);
+    BOOST_CHECK_EXCEPTION(Container::openPtr(zip.name()), Exception, isDecompressionLimit);
+}
+
+BOOST_AUTO_TEST_CASE(rejectsOversizedContainer)
+{
+    SyntheticZip zip(3, 800U*1024*1024, 800U*1024*1024);
+    BOOST_CHECK_EXCEPTION(Container::openPtr(zip.name()), Exception, isDecompressionLimit);
+}
+
+BOOST_AUTO_TEST_CASE(rejectsTooManyEntries)
+{
+    SyntheticZip zip(2001, 0, 0);
+    BOOST_CHECK_EXCEPTION(Container::openPtr(zip.name()), Exception, isEntryCountLimit);
+}
+
+BOOST_AUTO_TEST_CASE(rejectsTooManyDataFilesOnOpen)
+{
+    SyntheticZip zip(1003, 0, 0, true); // 1001 data files, mimetype and manifest
+    BOOST_CHECK_EXCEPTION(Container::openPtr(zip.name()), Exception, isDataFileCountLimit);
+}
+
+BOOST_AUTO_TEST_CASE(reopensMaximumDataFileCountWithSignatures)
+{
+    TemporaryContainer temporary;
+    auto container = Container::createPtr(temporary.name());
+    for(size_t i = 0; i < 1000; ++i)
+        container->addDataFile(make_unique<istringstream>("data"), "file-" + to_string(i), "text/plain");
+    container->save();
+    BOOST_CHECK_EQUAL(Container::openPtr(temporary.name())->dataFiles().size(), 1000U);
+
+    const auto before = fs::file_size(temporary.path);
+    BOOST_CHECK_EXCEPTION(container->addDataFile(make_unique<istringstream>("extra"), "extra.txt", "text/plain"),
+        Exception, isDataFileCountLimit);
+    BOOST_CHECK_EQUAL(fs::file_size(temporary.path), before);
+    BOOST_CHECK_EQUAL(container->dataFiles().size(), 1000U);
+
+    PKCS12Signer signer("signer1.p12", "signer1");
+    // Create signatures locally; this test exercises ZIP round-tripping without OCSP/TSA requests.
+    signer.setProfile("BES");
+    for(size_t i = 0; i < 3; ++i)
+    {
+        auto *signature = container->prepareSignature(&signer);
+        signature->setSignatureValue(signer.sign(signature->signatureMethod(), signature->dataToSign()));
+    }
+    container->save();
+    auto reopened = Container::openPtr(temporary.name());
+    BOOST_REQUIRE_EQUAL(reopened->dataFiles().size(), 1000U);
+    BOOST_REQUIRE_EQUAL(reopened->signatures().size(), 3U);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(FileUtilSuite)
+static_assert(util::File::fileName("/dir/file.txt") == "file.txt");
+static_assert(util::File::fileName(R"(C:\dir\file.txt)") == "file.txt");
+static_assert(util::File::fileName("file.txt") == "file.txt");
+static_assert(util::File::fileName("").empty());
+static_assert(util::File::directory("/dir/file.txt") == "/dir");
+static_assert(util::File::directory(R"(C:\dir\file.txt)") == R"(C:\dir)");
+static_assert(util::File::directory("file.txt").empty());
+static_assert(util::File::directory("").empty());
+
 BOOST_AUTO_TEST_CASE(ToUriPathEscapesSingleDigitBytes)
 {
     const string fileName = "file\n\t.txt";
@@ -938,7 +1159,33 @@ BOOST_AUTO_TEST_CASE(OpenInvalidMimetypeContainer)
 
 BOOST_AUTO_TEST_CASE(OpenASiCSContainerWithSubfolderDataObject)
 {
-    BOOST_CHECK_THROW(Container::openPtr("asics-subfolder.asics"), Exception);
+    BOOST_CHECK_EXCEPTION(Container::openPtr("asics-subfolder.asics"), Exception,
+        [](const Exception &e) { return exceptionContains(e, "Subfolders are not supported"); });
+}
+
+BOOST_AUTO_TEST_CASE(OpenContainersWithoutKnownExtension)
+{
+    struct TemporaryContainer
+    {
+        fs::path path = util::File::tempFileName();
+        ~TemporaryContainer()
+        {
+            error_code ec;
+            fs::remove(path, ec);
+        }
+    } temporary;
+
+    constexpr array files {"test.asics", "test.asice"};
+    for(const char *file: files)
+    {
+        BOOST_TEST_CONTEXT(file)
+        {
+            fs::copy_file(file, temporary.path, fs::copy_options::overwrite_existing);
+            auto d = Container::openPtr(util::File::decodeName(temporary.path));
+            BOOST_CHECK_EQUAL(d->mediaType(), string_view(file).ends_with(".asics") ? ASiCS::TYPE : ASiCE::TYPE);
+            BOOST_CHECK_EQUAL(d->dataFiles().size(), 1U);
+        }
+    }
 }
 BOOST_AUTO_TEST_SUITE_END()
 

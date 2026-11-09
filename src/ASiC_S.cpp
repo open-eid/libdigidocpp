@@ -29,6 +29,8 @@
 #include "util/File.h"
 #include "util/log.h"
 
+#include <optional>
+
 using namespace digidoc;
 using namespace digidoc::util;
 using namespace std;
@@ -36,12 +38,12 @@ using namespace std;
 /**
  * Initialize ASiCS container.
  */
-ASiC_S::ASiC_S(const string &path, bool create, ContainerOpenCB *cb)
+ASiC_S::ASiC_S(const string &path)
     : ASiContainer(path, MIMETYPE_ASIC_S)
+{}
+
+void ASiC_S::open(const ZipSerialize &z, ContainerOpenCB *cb)
 {
-    if(create)
-        return;
-    auto z = load(false, {mediaType()});
     bool foundTimestamp = false;
     bool foundManifest = false;
     for(const string &file: z.list())
@@ -147,7 +149,7 @@ unique_ptr<Container> ASiC_S::createInternal(const string &path)
     if(!util::File::fileExtension(path, {"asics", "scs"}))
         return {};
     DEBUG("ASiC_S::createInternal(%s)", path.c_str());
-    return unique_ptr<Container>(new ASiC_S(path, true));
+    return unique_ptr<Container>(new ASiC_S(path));
 }
 
 void ASiC_S::addAdESSignature(istream & /*signature*/)
@@ -164,17 +166,22 @@ void ASiC_S::canSave()
 unique_ptr<Container> ASiC_S::openInternal(const string &path, ContainerOpenCB *cb)
 {
     DEBUG("ASiC_S::openInternal(%s)", path.c_str());
+    if(util::File::fileExtension(path, {"asice", "sce", "bdoc"}))
+        return {};
+
+    auto container = unique_ptr<ASiC_S>(new ASiC_S(path));
+    optional<ZipSerialize> z;
     try
     {
-        if(util::File::fileExtension(path, {"asice", "sce", "bdoc"}))
-            return {};
-        return unique_ptr<Container>(new ASiC_S(path, false, cb));
+        z.emplace(container->load(false, {MIMETYPE_ASIC_S}));
     }
     catch(const Exception &)
     {
         // Ignore the exception: not ASiC/zip document
+        return {};
     }
-    return {};
+    container->open(*z, cb);
+    return container;
 }
 
 Signature* ASiC_S::prepareSignature(Signer * /*signer*/)

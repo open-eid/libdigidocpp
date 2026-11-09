@@ -1,5 +1,15 @@
 # Implementation notes {#implementation}
 
+## Container entry limits {#container-entry-limits}
+
+ZIP-based containers support up to 1000 data files. The ZIP reader also limits
+the entire archive to 2000 entries, including `mimetype`, manifests, signature
+files, other metadata, and directory entries. These are library resource limits;
+signature and metadata files do not consume the data-file allowance.
+
+Adding a 1001st data file is rejected. Multiple signatures stored in one XML
+file consume one ZIP entry.
+
 This page documents build dependencies, bundled schema adaptations,
 interoperability testing, and certificate-validation behavior relevant to
 maintainers and advanced integrators.
