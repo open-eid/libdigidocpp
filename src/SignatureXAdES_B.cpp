@@ -500,43 +500,46 @@ void SignatureXAdES_B::validate(const string &policy) const
 
             if(uri.front() == '#' && uri.substr(1) == signedPropertiesId && ref["Type"] == REF_TYPE)
                 signedInfoFound = true;
-            else if(!sdop)
-                continue; // DataObjectProperties is missing, no need to match later MediaTypes
-            else if(ref["Id"].empty())
+            else if(sdop && ref["Id"].empty())
                 EXCEPTION_ADD(exception, "Reference '%.*s' ID  missing", int(uri.size()), uri.data());
             else
             {
                 string uriPath = File::fromUriPath(uri);
                 if(uriPath.front() == '/')
                     uriPath.erase(0);
-                signatureref.emplace(uriPath, mimeinfo[string("#").append(ref["Id"])]);
+                // ADoc 1.0 has no DataObjectFormat elements, so there is no MediaType to match
+                signatureref.emplace(uriPath, sdop ? mimeinfo[string("#").append(ref["Id"])] : string());
             }
         }
         if(!signedInfoFound)
             EXCEPTION_ADD(exception, "SignedProperties not found");
 
-        // Match DataObjectFormat element MediaTypes with Manifest
-        if(!signatureref.empty())
+        // Every data file must be covered by a signature reference
+        for(const DataFile *file: bdoc->dataFiles())
         {
-            for(const DataFile *file: bdoc->dataFiles())
+            if(auto i = signatureref.find(file->fileName()); i != signatureref.end())
             {
-                if(auto i = signatureref.find(file->fileName()); i != signatureref.end())
+                if(sdop && bdoc->mediaType() != ASiContainer::MIMETYPE_ASIC_S && i->second != file->mediaType())
+                    EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
+                        file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
+                static const regex reg(R"(([\w])*/([\w\-\+\.])*)");
+                if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
                 {
-                    if(bdoc->mediaType() != ASiContainer::MIMETYPE_ASIC_S && i->second != file->mediaType())
-                        EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
-                            file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
-                    static const regex reg(R"(([\w])*/([\w\-\+\.])*)");
-                    if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
-                    {
-                        Exception w(EXCEPTION_PARAMS("'%s' is not conformant mime-type string!", file->mediaType().c_str()));
-                        w.setCode(Exception::MimeTypeWarning);
-                        exception.addCause(w);
-                    }
-                    signatureref.erase(i);
+                    Exception w(EXCEPTION_PARAMS("'%s' is not conformant mime-type string!", file->mediaType().c_str()));
+                    w.setCode(Exception::MimeTypeWarning);
+                    exception.addCause(w);
                 }
-                else
-                    EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
+                signatureref.erase(i);
             }
+            else
+                EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
+        }
+
+        // ADoc signatures may also cover META-INF metadata files
+        if(bdoc->mediaType() == ASiC_E::MIMETYPE_ADOC)
+        {
+            for(const DataFile *file: static_cast<const ASiC_E*>(bdoc)->metaFiles())
+                signatureref.erase(file->fileName());
         }
 
         if(bdoc->dataFiles().empty())
