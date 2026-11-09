@@ -11,10 +11,11 @@ namespace digidoc
     struct XMLDocument;
 
     /**
-     * Base class for the ASiC (Associated Signature Container) documents.
-     * Implements the operations and data structures common for more specific ASiC
-     * signature containers like ASiC-S and ASiC-E (e.g. Estonian BDoc).
-     * See standards ETSI TS 102 918, ETSI TS 103 171, ETSI TS 103 174 for details.
+     * Base class for ZIP-based signature containers.
+     * Implements operations and data structures shared by ASiC-S, ASiC-E,
+     * legacy BDOC 2.1, and read-only Lithuanian ADOC V1.0 compatibility.
+     * See ETSI TS 102 918, ETSI TS 103 171, ETSI TS 103 174, and
+     * \ref ADOC "ADOC-V1.0" for format details.
      *
      * Contains methods for detecting the container type and manipulating the container's
      * zip archive.
@@ -25,7 +26,6 @@ namespace digidoc
           static constexpr size_t MAX_DATA_FILES = 1000;
           static constexpr std::string_view MIMETYPE_ASIC_E = "application/vnd.etsi.asic-e+zip";
           static constexpr std::string_view MIMETYPE_ASIC_S = "application/vnd.etsi.asic-s+zip";
-          //https://signa.mitsoft.lt/static/signa-web/webResources/docs/ADOC_specification_approved20090907_EN.pdf
           static constexpr std::string_view MIMETYPE_ADOC = "application/vnd.lt.archyvai.adoc-2008";
           static constexpr std::string_view MANIFEST_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
           static constexpr std::string_view ASIC_NS = "http://uri.etsi.org/02918/v1.2.1#";

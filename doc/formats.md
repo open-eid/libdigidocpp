@@ -3,6 +3,7 @@
 Actively used digitally signed file formats in DigiDoc system are:
 - ASiC-E - default format for files in Libdigidocpp library, described in \ref ASiC "The ETSI standard ETSI EN 319 162-1";
 - BDOC 2.1 - legacy format, described in \ref BDOC "BDOC2.1:2013", The library implements only read-only support for the format;
+- Lithuanian ADOC V1.0 - legacy format, described in \ref ADOC "ADOC-V1.0". The library implements only read-only compatibility for opening and locally validating XAdES signatures;
 - ASiC-S - simple signature container, described in \ref ASiC "The ETSI standard ETSI EN 319 162-1". The library supports opening and validating containers with XAdES signatures. For containers with \ref RFC3161 "RFC 3161" time-stamp tokens, creating, saving, reading, validating, and archive-manifest time-stamp extension are supported.
 
 The following chapters provide an overview of the ASiC-E (XAdES) digitally signed file format, which is the preferred format for creating signed documents with Libdigidocpp.
@@ -76,6 +77,24 @@ In case of BDOC with time-stamp (TS profile), the proof is provided as follows:
 
 > [!NOTE]
 > The \ref RFC3161 "RFC 3161 TSTInfo.genTime" field records when the TSA created the time-stamp token. This issuance time is regarded as the time of signature creation.
+
+## Lithuanian ADOC V1.0 compatibility {#adoc}
+
+The Lithuanian \ref ADOC "ADOC-V1.0" format is an OpenDocument-based ZIP
+package identified by the media type
+`application/vnd.lt.archyvai.adoc-2008`. In addition to signed data files, an
+ADOC package can contain format-specific metadata referenced by its XAdES
+signatures.
+
+Since version 3.13.0, libdigidocpp provides legacy read-only compatibility for
+ADOC V1.0. The library can open the package, expose its data files, and locally
+validate its XAdES signatures, including signatures using the OpenDocument
+`document-signatures` root element and references to ADOC metadata.
+
+Creating ADOC containers, adding data files or signatures, signing, and saving
+changes are not supported. This compatibility statement is limited to ADOC
+V1.0 and does not claim full support for later ADOC specifications or the
+complete Lithuanian ADOC format family.
 
 ## ASiC-S container format {#asics}
 

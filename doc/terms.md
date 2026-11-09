@@ -6,6 +6,10 @@ Associated Signature Containers
 Extended Associated Signature Containers. A type of ASiC container.
 </td></tr><tr><td>ASiC-S</td><td>
 Associated Signature Container Simple form. A type of ASiC container.
+</td></tr><tr><td>ADOC V1.0 (.adoc)</td><td>
+A Lithuanian OpenDocument-based signed electronic document format defined by
+\ref ADOC "ADOC-V1.0". Libdigidocpp provides legacy read-only compatibility
+for opening and locally validating XAdES signatures in this format.
 </td></tr><tr><td>BDOC 2.1 (.bdoc)</td><td>
 Term is used to denote a digitally signed file format which is a profile of XAdES and follows container packaging rules based on OpenDocument and ASiC standards. The document format has been defined in \ref BDOC "BDOC2.1:2013"; an overview is provided on the \ref formats "Supported container formats" page.
 </td></tr><tr><td>CRL</td><td>

@@ -12,6 +12,13 @@ https://www.skidsolutions.eu/repository/bdoc-spec20.pdf<br />
 https://www.skidsolutions.eu/repository/bdoc-spec212.pdf<br />
 https://www.id.ee/wp-content/uploads/2020/08/bdoc-spec21-est.pdf<br />
 https://www.id.ee/wp-content/uploads/2020/01/bdoc-spec212-est.pdf
+</td></tr><tr><td>\anchor ADOC ADOC-V1.0</td><td>
+Specification ADOC-V1.0 of the Electronic Document Signed by the Electronic Signature
+
+Official Lithuanian legal act and consolidated versions:<br />
+https://www.e-tar.lt/portal/tt/legalActEditions/TAR.11EFBB8DA962<br />
+English translation:<br />
+https://signa.mitsoft.lt/signa-web/webResources/docs/ADOC_specification_approved20090907_EN.pdf
 </td></tr><tr><td>\anchor DDOC DigiDoc format</td><td>
 DigiDoc file format
 

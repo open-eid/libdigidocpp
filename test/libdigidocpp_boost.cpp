@@ -1190,6 +1190,43 @@ BOOST_AUTO_TEST_CASE(manifest_data_file_dot_and_empty_paths_are_rejected)
     BOOST_CHECK_THROW(Container::openPtr("dot.asice"), Exception);
     BOOST_CHECK_THROW(Container::openPtr("pt-empty.asice"), Exception);
 }
+
+BOOST_AUTO_TEST_CASE(signature_must_cover_every_data_file)
+{
+    // B-level fixtures signed with signer1, so LT validation always reports this cause as well
+    constexpr string_view missingLT = "UnsignedProperties block 'UnsignedSignatureProperties' is missing.";
+
+    // SignedInfo references only the SignedProperties
+    for(const char *file: {"unbound-signature.asice", "unbound-signature.adoc"})
+    {
+        BOOST_TEST_CONTEXT(file)
+        {
+            auto d = Container::openPtr(file);
+            BOOST_REQUIRE_EQUAL(d->dataFiles().size(), 1U);
+            BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+            try {
+                d->signatures().front()->validate();
+                BOOST_ERROR("Signature validated without covering the data file");
+            } catch(const Exception &e) {
+                BOOST_REQUIRE_EQUAL(e.causes().size(), 2U);
+                BOOST_CHECK_EQUAL(e.causes().front().msg(), "Manifest datafile not listed in signature references unsigned.txt");
+                BOOST_CHECK_EQUAL(e.causes().back().msg(), missingLT);
+            }
+        }
+    }
+
+    // ADoc 1.0 has no DataObjectFormat elements and may sign META-INF metadata files
+    auto d = Container::openPtr("adoc-no-dataobjectformat.adoc");
+    BOOST_REQUIRE_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+    try {
+        d->signatures().front()->validate();
+        BOOST_ERROR("B-level signature validated");
+    } catch(const Exception &e) {
+        BOOST_REQUIRE_EQUAL(e.causes().size(), 1U);
+        BOOST_CHECK_EQUAL(e.causes().front().msg(), missingLT);
+    }
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(ASiCSTestSuite)
