@@ -1,3 +1,11 @@
+Libdigidocpp library [4.5.2](https://github.com/open-eid/libdigidocpp/releases/tag/v4.5.2) release notes
+--------------------------------------
+- Security fix: reject XAdES signatures in ASiC-E, BDOC and ADoc containers that do not reference every data file in the container; such signatures were previously accepted as covering unsigned data files
+- Require id-kp-OCSPSigning extended key usage on the OCSP responder certificate
+  (#745)
+
+[Full Changelog](https://github.com/open-eid/libdigidocpp/compare/v4.5.1...v4.5.2)
+
 Libdigidocpp library [4.5.0](https://github.com/open-eid/libdigidocpp/releases/tag/v4.5.0) release notes
 --------------------------------------
 - Add `Container::extendContainerValidity` for adding archive timestamps to eligible ASiC-E and ASiC-S/TST containers, or wrapping a container in timestamped ASiC-S when in-place extension is unavailable
