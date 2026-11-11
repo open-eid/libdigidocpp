@@ -60,6 +60,7 @@ private:
     std::vector<std::string> _signerRoles;
     std::vector<unsigned char> _messageImprint;
     std::vector<Exception> _exceptions;
+    std::vector<Exception> _warnings;
 
     friend SiVaContainer;
 };

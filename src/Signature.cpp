@@ -291,6 +291,17 @@ struct Signature::Validator::Private
  * @param s Signature to validate.
  */
 Signature::Validator::Validator(const Signature *s)
+    : Validator(s, true)
+{}
+
+/**
+ * Validates a signature and controls which messages appear in diagnostics().
+ * @param s Signature to validate.
+ * @param includeWarningDiagnostics Include warning messages in diagnostics().
+ * This setting affects the diagnostics text only.
+ * @since 4.6.0
+ */
+Signature::Validator::Validator(const Signature *s, bool includeWarningDiagnostics)
     : d(new Private)
 {
     try
@@ -299,7 +310,7 @@ Signature::Validator::Validator(const Signature *s)
     }
     catch(const Exception &e)
     {
-        parseException(e);
+        parseException(e, includeWarningDiagnostics);
     }
     if(d->result == Unknown)
     {
@@ -310,7 +321,7 @@ Signature::Validator::Validator(const Signature *s)
         }
         catch(const Exception &e)
         {
-            parseException(e);
+            parseException(e, includeWarningDiagnostics);
         }
     }
 }
@@ -331,7 +342,7 @@ std::string Signature::Validator::diagnostics() const
     return d->diagnostics;
 }
 
-void Signature::Validator::parseException(const Exception &e)
+void Signature::Validator::parseException(const Exception &e, bool includeWarningDiagnostics)
 {
     if(const Exception::Causes causes = e.causes(); causes.empty())
     {
@@ -340,7 +351,7 @@ void Signature::Validator::parseException(const Exception &e)
     }
     else for(const Exception &child: causes)
     {
-        d->diagnostics += child.msg() + "\n";
+        bool warning = false;
         switch(child.code())
         {
         case Exception::ReferenceDigestWeak:
@@ -349,6 +360,8 @@ void Signature::Validator::parseException(const Exception &e)
         case Exception::IssuerNameSpaceWarning:
         case Exception::ProducedATLateWarning:
         case Exception::MimeTypeWarning:
+        case Exception::GeneralWarning:
+            warning = true;
             d->warnings.push_back(child.code());
             d->result = std::max(d->result, Warning);
             break;
@@ -361,8 +374,10 @@ void Signature::Validator::parseException(const Exception &e)
         default:
             d->result = std::max(d->result, Invalid);
         }
+        if(includeWarningDiagnostics || !warning)
+            d->diagnostics += child.msg() + "\n";
         if(!child.causes().empty())
-            parseException(child);
+            parseException(child, includeWarningDiagnostics);
     }
 }
 

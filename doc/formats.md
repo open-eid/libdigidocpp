@@ -47,7 +47,8 @@ long-term validation.
 In order to provide long-term validation, proof is needed that the signer's
 X.509 certificate was valid at the time of signature creation. For the
 time-stamp profile, the proof is provided as follows:
-1. A time-stamp compliant with [RFC 3161](#RFC3161) is obtained from a
+1. A time-stamp compliant with
+   [RFC 3161](https://www.rfc-editor.org/rfc/rfc3161.html) is obtained from a
    time-stamping service. The hash of the created signature
    (`<SignatureValue>` element) is sent to the service. The returned
    time-stamp token contains the same hash and proves that the signature value
@@ -59,7 +60,8 @@ time-stamp profile, the proof is provided as follows:
    time and the OCSP response's production time.
 
 > [!NOTE]
-> The [RFC 3161 TSTInfo.genTime](#RFC3161) field records when the TSA
+> The `TSTInfo.genTime` field defined in
+> [RFC 3161](https://www.rfc-editor.org/rfc/rfc3161.html) records when the TSA
 > issued the time-stamp token. A valid token proves that the signature value
 > existed by that time. Libdigidocpp reports this value as the trusted signing
 > time when a signature time-stamp is available.

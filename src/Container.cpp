@@ -218,6 +218,7 @@ Container::~Container() = default;
  * @note When saving an ASiC container, the ZIP entry uses the source file's
  * modification time captured when the file was added.
  * @note Data files can be removed from container only after all signatures are removed.
+ * @see \ref adddatafile "Adding data files"
  */
 
 /**
@@ -258,6 +259,7 @@ void Container::addDataFile(istream *is, const string &fileName, const string &m
  * the stored modification time for that file name, or the current time if no
  * ZIP properties exist for it.
  * @note Data files can be removed from container only after all signatures are removed.
+ * @see \ref adddatafile "Adding data files"
  */
 void Container::addDataFile(unique_ptr<istream> /*is*/, const string & /*fileName*/, const string & /*mediaType*/)
 {

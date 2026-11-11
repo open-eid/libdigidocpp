@@ -28,12 +28,13 @@ namespace digidoc
                 Valid,
                 Warning,
                 NonQSCD,
-                Test, //DIGIDOCPP_DEPRECATED
+                Test DIGIDOCPP_DEPRECATED,
                 Invalid,
                 Unknown
             };
 
             Validator(const Signature *s);
+            Validator(const Signature *s, bool includeWarningDiagnostics);
             ~Validator();
 
             std::string diagnostics() const;
@@ -43,7 +44,7 @@ namespace digidoc
         private:
             DISABLE_COPY(Validator);
 
-            void parseException(const Exception &e);
+            void parseException(const Exception &e, bool includeWarningDiagnostics);
 
             struct Private;
             Private *d;

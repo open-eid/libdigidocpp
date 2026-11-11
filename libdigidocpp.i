@@ -253,6 +253,10 @@ static PyObject* SWIG_VectorUnsignedCharToPyBytes(const std::vector<unsigned cha
 %ignore digidoc::Conf::certsPath;
 %ignore digidoc::ConfV3::OCSPTMProfiles;
 %ignore digidoc::Signature::Validator::warnings;
+#ifdef SWIGPYTHON
+// Python does not support nested classes
+%feature("flatnested") digidoc::Signature::Validator;
+#endif
 %ignore digidoc::Signature::OCSPNonce;
 // std::unique_ptr is since swig 4.1
 %ignore digidoc::Container::createPtr;

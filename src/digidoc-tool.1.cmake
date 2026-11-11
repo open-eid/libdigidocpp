@@ -80,7 +80,8 @@ digidoc-tool open container-file.asice
 .EE
 .TP
 .BR \-\-warnings= "ignore|warning|error"
-Select how validation warnings affect output. The default is warning.
+Select whether to hide warning details, show them (the default), or fail on
+warnings. The ignore mode still shows the signature's validation status.
 .TP
 .BR \-\-extractAll [=directory]
 Extract all data files without validating signatures. Without a directory,
@@ -271,7 +272,7 @@ Set logging verbosity: 0 for errors, 1 for warnings, 2 for info,
 and 3 or higher for debug. Each level includes the lower levels.
 .TP
 .BI \-\-logfile= file
-Write logs to a file. An empty value writes logs to the console.
+Write logs to the specified file instead of the configured destination.
 .TP
 .BI \-\-tslurl= url
 Use a custom list of trusted lists (LOTL) for testing.
