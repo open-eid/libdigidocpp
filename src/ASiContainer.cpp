@@ -8,6 +8,7 @@
 #include "XMLDocument.h"
 #include "util/algorithm.h"
 #include "util/File.h"
+#include "util/XMLText.h"
 #include "util/log.h"
 
 #include <array>
@@ -185,6 +186,8 @@ void ASiContainer::addDataFileChecks(string_view fileName, const string &mediaTy
 {
     if(!d->signatures.empty())
         THROW("Can not add document to container which has signatures, remove all signatures before adding new document.");
+    requireXMLText(fileName, "document file name");
+    requireXMLText(mediaType, "document media type");
     if(fileName == "mimetype")
         THROW("mimetype is reserved file.");
     validateDataFileName(fileName);
