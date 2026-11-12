@@ -342,6 +342,50 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(constructor, Doc, DocTypes)
     BOOST_CHECK_EQUAL(d->mediaType(), Doc::TYPE);
 }
 
+BOOST_AUTO_TEST_CASE(dataFileXMLTextValidation)
+{
+    constexpr array invalid {
+        string_view{"bad\0.txt", 8},
+        string_view{"bad\x1B.txt"},
+        string_view{"bad\x80.txt"},
+        string_view{"bad\xED\xA0\x80.txt"},
+        string_view{"bad\xEF\xBF\xBE.txt"},
+        string_view{"bad\xEF\xBF\xBF.txt"}
+    };
+    const auto fileNameError = [](const Exception &e) { return e.msg().contains("document file name"); };
+    const auto mediaTypeError = [](const Exception &e) { return e.msg().contains("document media type"); };
+    for(string_view extension: {".asice", ".asics"})
+    {
+        auto d = Container::createPtr(string("xml-datafile").append(extension));
+        for(string_view value: invalid)
+        {
+            const string fileName(value);
+            const string mime = string("text/plain;").append(value);
+            BOOST_CHECK_EXCEPTION(d->addDataFile(make_unique<stringstream>("data"), fileName, "text/plain"),
+                Exception, fileNameError);
+            BOOST_CHECK_EXCEPTION(d->addDataFile(fileName, "text/plain"), Exception, fileNameError);
+            BOOST_CHECK_EXCEPTION(d->addDataFile(make_unique<stringstream>("data"), "data.txt", mime),
+                Exception, mediaTypeError);
+            BOOST_CHECK_EXCEPTION(d->addDataFile("test1.txt", mime), Exception, mediaTypeError);
+            BOOST_CHECK(d->dataFiles().empty());
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(dataFileXMLTextRoundTrip)
+{
+    // TAB, LF and CR are legal XML characters and must survive attribute serialization.
+    const string fileName = "Jüri & Mari &#x1B;\xC2\x9C\t\n\r.txt";
+    const string mime = "text/plain; name=\"a&b\t\n\r\"";
+    auto d = Container::createPtr("xml-datafile.asice");
+    BOOST_REQUIRE_NO_THROW(d->addDataFile(make_unique<stringstream>("data"), fileName, mime));
+    BOOST_REQUIRE_NO_THROW(d->save());
+    BOOST_REQUIRE_NO_THROW(d = Container::openPtr("xml-datafile.asice"));
+    BOOST_REQUIRE_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_CHECK_EQUAL(d->dataFiles().front()->fileName(), fileName);
+    BOOST_CHECK_EQUAL(d->dataFiles().front()->mediaType(), mime);
+}
+
 BOOST_AUTO_TEST_CASE(emptyDataFile)
 {
     auto d = Container::createPtr("empty-datafile.asice");

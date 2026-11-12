@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "log.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -95,5 +97,16 @@ inline XMLTextError validateXMLText(std::string_view text) noexcept
         offset += length;
     }
     return {};
+}
+
+inline void requireXMLText(std::string_view value, std::string_view field)
+{
+    const XMLTextError error = validateXMLText(value);
+    if(!error)
+        return;
+    if(error.reason == XMLTextError::Reason::InvalidUTF8)
+        THROW("Invalid UTF-8 at byte offset %zu in %.*s", error.offset, STR_VIEW_FMT(field));
+    THROW("XML 1.0 character U+%04X at byte offset %zu is not allowed in %.*s",
+        unsigned(error.codePoint), error.offset, STR_VIEW_FMT(field));
 }
 }

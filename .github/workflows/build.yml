@@ -359,10 +359,13 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v5
       with:
+        name: github-pages-${{ github.run_attempt }}
         path: ./build/doc
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v5
+      with:
+        artifact_name: github-pages-${{ github.run_attempt }}
   coverity:
     name: Run Coverity tests
     if: github.repository == 'open-eid/libdigidocpp' && contains(github.ref, 'coverity_scan')

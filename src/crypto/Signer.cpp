@@ -17,18 +17,8 @@
 #include <optional>
 
 using namespace digidoc;
+using namespace digidoc::util;
 using namespace std;
-
-static void requireXMLText(string_view value, string_view field)
-{
-    const util::XMLTextError error = util::validateXMLText(value);
-    if(!error)
-        return;
-    if(error.reason == util::XMLTextError::Reason::InvalidUTF8)
-        THROW("Invalid UTF-8 at byte offset %zu in %.*s", error.offset, STR_VIEW_FMT(field));
-    THROW("XML 1.0 character U+%04X at byte offset %zu is not allowed in %.*s",
-        unsigned(error.codePoint), error.offset, STR_VIEW_FMT(field));
-}
 
 class Signer::Private
 {

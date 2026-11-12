@@ -374,6 +374,8 @@ static int printUsage(const char *executable)
     << "      --file=        - File(s) to be signed. The option can occur multiple times." << endl
     << "      --mime=        - Specifies the file's mime-type value. When used then must be written right " << endl
     << "                       after the \"--file\" parameter. Default value is application/octet-stream" << endl
+    << "                       File names and mime-types must be valid UTF-8 without characters" << endl
+    << "                       disallowed by XML 1.0, such as control characters." << endl
     << "      --dontsign     - Don't sign the newly created container." << endl
     << "      for additional options look sign command" << endl << endl
     << "  Command createBatch:" << endl
