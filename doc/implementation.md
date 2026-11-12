@@ -38,11 +38,11 @@ description is given in the list below.
 - `OpenDocument_manifest_v1_2.xsd` – OASIS OpenDocument v1.2
   (\ref OpenDocument "OpenDocument"). Defines the structure of
   META-INF/manifest.xml file in ASiC container.
-  https://docs.oasis-open.org/office/v1.2/csd06/OpenDocument-v1.2-csd06-manifest-schema.rng
+  https://docs.oasis-open.org/office/v1.2/os/OpenDocument-v1.2-os-manifest-schema.rng
 - `OpenDocument_dsig.xsd` – OASIS OpenDocument v1.2
   (\ref OpenDocument "OpenDocument"). Defines the structure of
   META-INF/signature.xml file in ADOC container.
-  https://docs.oasis-open.org/office/v1.2/csd06/OpenDocument-v1.2-csd06-dsig-schema.rng
+  https://docs.oasis-open.org/office/v1.2/os/OpenDocument-v1.2-os-dsig-schema.rng
 - `en_31916201v010101.xsd` – Associated Signature Containers
   (\ref ASiC "ASiC"). Defines the format of container for encapsulating the
   signed documents, signatures and additional information.
@@ -81,6 +81,18 @@ included in etc/schema/ subdirectory of the Libdigidocpp distribution package,
 their description has been provided in section \ref Schemas.
 
 Modifications are marked between xml comment tags.
+
+OASIS publishes the OpenDocument schemas in RELAX NG only, so
+`OpenDocument_manifest_v1_2.xsd` and `OpenDocument_dsig.xsd` are not
+distributed by OASIS but generated from the .rng files shipped alongside them
+in etc/schema/, using [Trang](https://relaxng.org/jclark/trang.html):
+```sh
+java -jar trang.jar OpenDocument-v1.2-os-manifest-schema.rng OpenDocument_manifest_v1_2.xsd
+java -jar trang.jar OpenDocument-v1.2-os-dsig-schema.rng OpenDocument_dsig.xsd
+```
+Trang carries the OASIS copyright notice across into its output. The
+modifications listed below are applied to the generated files afterwards, so
+regenerating a schema means re-applying them.
 
 **Schema en_31916201v010101.xsd**
 

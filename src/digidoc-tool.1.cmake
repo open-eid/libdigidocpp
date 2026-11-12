@@ -1,3 +1,5 @@
+.\" SPDX-FileCopyrightText: Estonian Information System Authority
+.\" SPDX-License-Identifier: LGPL-2.1-or-later
 .\" Manpage for digidoc-tool
 .TH DIGIDOC-TOOL 1 "${BUILD_DATE}" "${VERSION}" "User Commands"
 .SH NAME

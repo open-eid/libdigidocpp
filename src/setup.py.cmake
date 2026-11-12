@@ -1,9 +1,12 @@
+# SPDX-FileCopyrightText: Estonian Information System Authority
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 from distutils.core import setup
 
 setup(
     name='digidocpp',
     version='${VERSION}',
-    license='LGPL 2.1',
+    license='LGPL-2.1-or-later',
     author='RIA',
     author_email='info@ria.ee',
     url='https://open-eid.github.io/libdigidocpp/',
