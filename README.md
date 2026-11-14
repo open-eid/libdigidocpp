@@ -101,7 +101,7 @@ To build the same way:
 	* [CMake](https://www.cmake.org)
 	* [Homebrew](https://brew.sh)
 	* [vcpkg](https://vcpkg.io/) - For iOS and Android development (`VCPKG_ROOT`)
-	* [Android NDK](https://developer.android.com/ndk/downloads) - For Android development (ANDROID_NDK_ROOT)
+	* [Android NDK](https://developer.android.com/ndk/downloads) - For Android development (`ANDROID_NDK_HOME`)
 
 2. Fetch the source
 
@@ -113,7 +113,9 @@ To build the same way:
         sh prepare_osx_build_environment.sh all
 
    iOS and Android dependencies are managed by vcpkg instead. Set `VCPKG_ROOT`
-   for both platforms and `ANDROID_NDK_ROOT` for Android before configuring.
+   for both platforms and `ANDROID_NDK_HOME` for Android before configuring.
+   The Android presets pass `ANDROID_NDK_HOME` to CMake as `CMAKE_ANDROID_NDK`,
+   and vcpkg uses it to build the dependencies.
 
 4. Install dependencies
 
@@ -205,6 +207,33 @@ To build the same way:
 7. Execute
 
         build/windows-x64/src/RelWithDebInfo/digidoc-tool.exe
+
+### Sanitizer builds
+
+Debug builds with AddressSanitizer (ASan) and UndefinedBehaviorSanitizer
+(UBSan) are available as CMake presets. Run them from the build tree only; do
+not install them over a regular build.
+
+* `asan` - Linux. ASan also detects memory leaks on Linux.
+* `asan-macos` - macOS, arm64 only. Apple clang does not support leak
+  detection, so this preset uses Homebrew LLVM (`brew install llvm`, expected
+  under `/opt/homebrew/opt/llvm`) and enables leak detection in its test preset.
+  Its [suppression file](test/lsan-macos.supp) matches macOS resolver dependency
+  modules (Network.framework, libxpc and libswiftCore), leaving ordinary
+  `getaddrinfo()` result leaks detectable.
+
+Configure, build and test:
+
+    cmake --preset asan            # or asan-macos
+    cmake --build --preset asan
+    ctest --preset asan
+
+The test presets stop on the first UBSan error and fail when ASan reports
+memory errors or leaks. Sanitizer builds use several gigabytes of memory per
+compile job; lower the build parallelism (`-j`) if memory is limited.
+
+If LLVM is installed elsewhere, create a `CMakeUserPresets.json` preset that
+inherits `asan-macos` and sets `"environment": {"LLVM": "<llvm prefix>"}`.
 
 ### Examples
 [examples/README.md](examples/README.md)

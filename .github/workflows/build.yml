@@ -17,12 +17,7 @@ jobs:
     runs-on: xcode-27
     strategy:
       matrix:
-        include:
-        - target: macos
-        - target: iphoneos
-          triplet: arm64-ios
-        - target: iphonesimulator
-          triplet: arm64-x64-ios-simulator
+        target: [macos, iphoneos, iphonesimulator]
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -49,7 +44,7 @@ jobs:
       uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/vcpkg_cache
-        key: vcpkg-${{ matrix.target }}-${{ hashFiles('vcpkg.json') }}
+        key: vcpkg-${{ matrix.target }}-${{ hashFiles('vcpkg.json', 'vcpkg-triplets/*.cmake') }}
     - name: Build openssl
       if: matrix.target == 'macos' && steps.cache.outputs.cache-hit != 'true'
       run: ./prepare_osx_build_environment.sh openssl ${{ matrix.target }}
@@ -80,8 +75,8 @@ jobs:
         cmake --build --preset ${{ matrix.target }}
         cmake --build --preset ${{ matrix.target }} --target install/strip
         mkdir -p libdigidocpp.${{ matrix.target }}/include
-        cp build/${{ matrix.target }}/vcpkg_installed/${{ matrix.triplet }}/lib/{libcrypto,libssl}.a libdigidocpp.${{ matrix.target }}/lib/
-        cp -r build/${{ matrix.target }}/vcpkg_installed/${{ matrix.triplet }}/include/openssl libdigidocpp.${{ matrix.target }}/include/
+        cp build/${{ matrix.target }}/vcpkg_installed/*ios*/lib/{libcrypto,libssl}.a libdigidocpp.${{ matrix.target }}/lib/
+        cp -r build/${{ matrix.target }}/vcpkg_installed/*ios*/include/openssl libdigidocpp.${{ matrix.target }}/include/
         zip -q -r libdigidocpp.${{ matrix.target }}.zip libdigidocpp.${{ matrix.target }}
     - name: Test on iOS Simulator
       if: matrix.target == 'iphonesimulator'
@@ -103,13 +98,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        include:
-        - target: androidarm
-          triplet: arm-neon-android
-        - target: androidarm64
-          triplet: arm64-android
-        - target: androidx86_64
-          triplet: x64-android
+        target: [androidarm, androidarm64, androidx86_64]
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -117,14 +106,13 @@ jobs:
       uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/vcpkg_cache
-        key: vcpkg-${{ matrix.target }}-${{ hashFiles('vcpkg.json') }}
+        key: vcpkg-${{ matrix.target }}-${{ hashFiles('vcpkg.json', 'vcpkg-triplets/*.cmake') }}
     - name: Build
       env:
         VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg_cache,readwrite
       run: |
         export VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT
         export ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME
-        export ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME
         cmake --preset ${{ matrix.target }} "-GUnix Makefiles" -DCMAKE_BUILD_TYPE=RelWithDebInfo
         cmake --build --preset ${{ matrix.target }}
         cmake --build --preset ${{ matrix.target }} --target install/strip
