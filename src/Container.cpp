@@ -160,6 +160,7 @@ void digidoc::terminate()
 #ifndef XMLSEC_NO_XSLT
     xsltCleanupGlobals();
 #endif
+    xmlResetLastError();
     xmlCleanupParser();
     m_createList.clear();
     m_openList.clear();

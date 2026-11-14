@@ -264,7 +264,8 @@ struct XMLNode: public XMLElem<xmlNode>
 
     void setProperty(sv name, sv value, xmlNsPtr ns = {}) const noexcept
     {
-        xmlSetNsProp(d, ns, pcxmlChar(name.data()), pcxmlChar(value.data()));
+        if(d)
+            xmlSetNsProp(d, ns, pcxmlChar(name.data()), pcxmlChar(value.data()));
     }
 
     static iterator erase(iterator pos) noexcept

@@ -28,6 +28,7 @@
 #include <array>
 #include <cstdint>
 #include <fstream>
+#include <optional>
 
 namespace digidoc
 {
@@ -287,7 +288,8 @@ BOOST_AUTO_TEST_CASE(logEntryIsWrittenImmediately)
     INFO("%s", marker.c_str());
 
     BOOST_CHECK_GT(util::File::fileSize(path), size);
-    ifstream log{path};
+    ifstream log{path, ios::binary};
+    log.seekg(streamoff(size));
     const string contents{istreambuf_iterator<char>{log}, istreambuf_iterator<char>{}};
     BOOST_CHECK_NE(contents.find(marker), string::npos);
 }
@@ -301,7 +303,8 @@ BOOST_AUTO_TEST_CASE(memoryLogEntryIsWrittenImmediately)
     DEBUGMEM(marker.c_str(), data, sizeof(data));
 
     BOOST_CHECK_GT(util::File::fileSize(path), size);
-    ifstream log{path};
+    ifstream log{path, ios::binary};
+    log.seekg(streamoff(size));
     const string contents{istreambuf_iterator<char>{log}, istreambuf_iterator<char>{}};
     BOOST_CHECK_NE(contents.find(marker), string::npos);
 }
@@ -877,6 +880,24 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(ConfSuite)
 BOOST_AUTO_TEST_CASE(XmlConfCase) {
+    struct UserConfGuard {
+        fs::path path = util::File::encodeName(util::File::path(util::File::digidocppPath(), "digidocpp.conf"));
+        optional<string> backup;
+        UserConfGuard()
+        {
+            if(ifstream f{path, ios::binary})
+                backup.emplace(istreambuf_iterator<char>{f}, istreambuf_iterator<char>{});
+        }
+        ~UserConfGuard()
+        {
+            error_code ec;
+            if(backup)
+                ofstream{path, ios::binary|ios::trunc} << *backup;
+            else
+                fs::remove(path, ec);
+        }
+    } guard;
+
     XmlConfCurrent c("digidocpp.conf", util::File::path(DIGIDOCPPCONF, "conf.xsd"));
     BOOST_CHECK_EQUAL(c.logLevel(), 2);
     BOOST_CHECK_EQUAL(c.logFile(), "digidocpp-test.log");
