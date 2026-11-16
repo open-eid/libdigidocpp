@@ -215,6 +215,8 @@ Container::~Container() = default;
  * @throws Exception exception is thrown if the data file path is incorrect or a data file
  * with same file name already exists. Also, no data file can be added if the container
  * already has one or more signatures.
+ * @throws Exception if the stored file name or MIME type is not valid UTF-8 or contains
+ * a character disallowed by XML 1.0. Invalid metadata is rejected without adding the data file.
  * @note Data files can be removed from container only after all signatures are removed.
  */
 
@@ -229,6 +231,8 @@ Container::~Container() = default;
  * @throws Exception exception is thrown if the data file path is incorrect or a data file
  * with same file name already exists. Also, no data file can be added if the container
  * already has one or more signatures.
+ * @throws Exception if the stored file name or MIME type is not valid UTF-8 or contains
+ * a character disallowed by XML 1.0. Invalid metadata is rejected without adding the data file.
  * @note Data files can be removed from container only after all signatures are removed.
  */
 void Container::addDataFile(istream *is, const string &fileName, const string &mediaType)
@@ -246,6 +250,8 @@ void Container::addDataFile(istream *is, const string &fileName, const string &m
  * @throws Exception exception is thrown if the data file path is incorrect or a data file
  * with same file name already exists. Also, no data file can be added if the container
  * already has one or more signatures.
+ * @throws Exception if the stored file name or MIME type is not valid UTF-8 or contains
+ * a character disallowed by XML 1.0. Invalid metadata is rejected without adding the data file.
  * @note Data files can be removed from container only after all signatures are removed.
  */
 void Container::addDataFile(unique_ptr<istream> /*is*/, const string & /*fileName*/, const string & /*mediaType*/)

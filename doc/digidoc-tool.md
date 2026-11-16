@@ -37,7 +37,13 @@ Available options:
 `--mime=` must be written right after the `--file` parameter it applies to. If left unspecified then the default mime-type value "application/octet-stream" is used.
 
 > [!NOTE]
-> Data file names are stored percent-encoded (\ref RFC3986 "RFC 3986") in signature references, so special characters in otherwise valid names can be used. Directory separators and reserved names such as `mimetype` are not accepted. Names that use only "unreserved" characters (letters, digits, `-`, `.`, `_`, `~`) are the most portable across other implementations.
+> Data file names are stored percent-encoded (\ref RFC3986 "RFC 3986") in
+> signature references, so special characters in otherwise valid names can be
+> used. Directory separators and reserved names such as `mimetype` are not
+> accepted. File names and `--mime=` values must be valid UTF-8 and must not
+> contain characters disallowed by XML 1.0, such as control characters. Names
+> that use only "unreserved" characters (letters, digits, `-`, `.`, `_`, `~`)
+> are the most portable across other implementations.
 
 > [!WARNING]
 > Data file’s mime-type value must be formatted as specified in \ref RFC2045 "RFC 2045", section 5.1, i.e. the "type" and "subtype" values must be separated with a forward slash character.

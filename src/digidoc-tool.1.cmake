@@ -43,12 +43,15 @@ digidoc-tool create --file=document.txt --profile=TimeStampToken timestamped-doc
 .EE
 .TP
 .BI \-\-file= path
-Add a data file. This option may occur multiple times for ASiC-E.
+Add a data file. This option may occur multiple times for ASiC-E. The file
+name must be valid UTF-8 and must not contain characters disallowed by
+XML 1.0, such as control characters.
 .TP
 .BI \-\-mime= type/subtype
 Set the MIME type for the preceding
 .B \-\-file
-option. The default is application/octet-stream.
+option. The default is application/octet-stream. The same character rules
+apply as for the file name.
 .TP
 .B \-\-dontsign
 Create the container without signing it. This is intended for ASiC-E.
