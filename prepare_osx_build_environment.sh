@@ -5,7 +5,7 @@
 set -e
 
 OPENSSL_DIR=openssl-3.5.9
-XMLSEC_DIR=xmlsec1-1.3.12
+XMLSEC_DIR=xmlsec1-1.3.13
 
 case "$@" in
 *android*|*iphone*|*simulator*)
@@ -29,7 +29,7 @@ function xmlsec {
     rm -rf ${XMLSEC_DIR}
     tar xf ${XMLSEC_DIR}.tar.gz
     cd ${XMLSEC_DIR}
-    patch -Np1 -i ../xmlsec1-1.3.12.legacy.patch
+    patch -Np1 -i ../xmlsec1-1.3.13.legacy.patch
     sed -i '' 's/XMLSEC_VERSION_INFO=.*/XMLSEC_VERSION_INFO="1:0:0"/' configure
     ./configure CFLAGS="-arch ${ARCHS// / -arch }" --prefix=${TARGET_PATH} --disable-static --enable-shared \
         --disable-dependency-tracking \
