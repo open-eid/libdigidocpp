@@ -519,7 +519,8 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
         return xmlSaveFormatFileTo(buf, get(), "UTF-8", format) > 0;
     }
 
-    static bool verifySignature(XMLNode signature, const X509Cert &cert, [[maybe_unused]] Exception *e = {}) noexcept
+    static bool verifySignature(XMLNode signature, const X509Cert &cert, [[maybe_unused]] Exception *e = {},
+        xmlSecTransformUriType referenceUris = xmlSecTransformUriTypeEmpty | xmlSecTransformUriTypeSameDocument) noexcept
     {
         if(!cert)
             return false;
@@ -532,6 +533,7 @@ struct XMLDocument: public unique_free_d<xmlFreeDoc>, public XMLNode
         if(!ctx)
             return false;
         ctx->keyInfoReadCtx.flags |= XMLSEC_KEYINFO_FLAGS_X509DATA_DONT_VERIFY_CERTS;
+        ctx->enabledReferenceUris = referenceUris;
         auto pkey = make_unique_ptr<EVP_PKEY_free>(X509_get_pubkey(cert.handle()));
         if(!pkey) return false;
         auto data = make_unique_ptr<xmlSecKeyDataDestroy>(xmlSecOpenSSLEvpKeyAdopt(pkey.get()));
