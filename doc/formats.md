@@ -18,6 +18,9 @@ ASiC-E container is a ZIP file consisting of the following objects:
   - `manifest.xml` – a file containing list of all files in the container. The list does not contain the "mimetype" file and files in META-INF subdirectory.
   - `signatures*.xml` – one file for each signature, ‘`*`’ in the file’s name denotes the sequence number of a signature (counting starts from zero). The `signatures*.xml` file also incorporates certificates, validity confirmation and meta-data about the signer.
 
+For compatibility with older jdigidoc documents, reading also accepts a compressed
+`mimetype` entry. The library writes it uncompressed; see \ref mimetype-compatibility.
+
 When ASiC-E container is signed then all files in the container are signed, except of the mimetype file and files in META-INF subdirectory.
 
 Original files (which were signed) along with the signature(s), timestamp(s), validation confirmation(s) and certificates are encapsulated within the container. As a result, it is possible to verify signature validity without any additional external information – the verifier should trust the issuer of signer’s certificate, TS Authority and the OCSP responder’s certificate.

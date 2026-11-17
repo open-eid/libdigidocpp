@@ -1,8 +1,48 @@
 # Implementation notes {#implementation}
 
+## Container entry limits {#container-entry-limits}
+
+ZIP-based containers support up to 1000 data files. The ZIP reader also limits
+the entire archive to 2000 entries, including `mimetype`, manifests, signature
+files, other metadata, and directory entries. These are library resource limits;
+signature and metadata files do not consume the data-file allowance.
+
+Adding a 1001st data file is rejected. Multiple signatures stored in one XML
+file consume one ZIP entry.
+
+The ZIP reader limits each uncompressed entry to 1 GiB and the aggregate to 2 GiB.
+Adding a data file larger than 1 GiB is rejected before inserting it into the
+container, for filesystem files and streams whose size can be determined by seeking.
+Adding a file that would take the combined known data-file sizes above 2032 MiB is
+also rejected, reserving 16 MiB of the reader's 2 GiB allowance for `mimetype`,
+manifests, and signatures. Non-seekable streams are not measured when added.
+These add-time checks do not monitor later changes to the source or guarantee
+that metadata fits within the reserve; the reader applies its 2 GiB limit to
+all entries, including metadata.
+
 This page documents build dependencies, bundled schema adaptations,
 interoperability testing, and certificate-validation behavior relevant to
 maintainers and advanced integrators.
+
+## Mimetype compatibility {#mimetype-compatibility}
+
+Reading the `mimetype` ZIP entry does not require the STORED (uncompressed) mode:
+DEFLATE-compressed entries are also accepted for backward compatibility with older
+jdigidoc documents. Containers written by this library use STORED mode for `mimetype`.
+
+The reader accepts and removes a UTF-8 byte-order mark and trailing ASCII whitespace.
+UTF-16 byte-order marks (`FF FE` or `FE FF`) are rejected; no UTF-16 conversion is performed.
+
+ASiC-S permits an absent `mimetype` entry (ETSI EN 319 162-1 V1.1.1, clause
+4.3.3.2). When present, Annex A.1 requires it to be first and uncompressed.
+Accepting compressed or misplaced entries is library compatibility behavior,
+rather than a format requirement.
+
+When opening `.asics` or `.scs` files, the ASiC-S reader retains its tolerance
+for a misplaced `mimetype` entry. For other extensions, including extensionless files,
+the first ZIP entry must be `mimetype` and identify ASiC-S before the archive is
+handled as ASiC-S. Consequently, an extensionless ASiC-S file with a misplaced
+`mimetype` entry is rejected.
 
 ## Dependencies {#Dependencies}
 

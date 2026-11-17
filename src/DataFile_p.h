@@ -6,6 +6,7 @@
 #include "DataFile.h"
 
 #include <filesystem>
+#include <cstdint>
 #include <istream>
 #include <memory>
 #include <optional>
@@ -14,6 +15,11 @@ namespace digidoc
 {
 
 constexpr unsigned long MAX_MEM_FILE = 500UL*1024UL*1024UL;
+
+constexpr bool useMemoryForDataFile(uint64_t entrySize, uint64_t totalUncompressedSize) noexcept
+{
+    return entrySize <= MAX_MEM_FILE && totalUncompressedSize <= MAX_MEM_FILE;
+}
 
 class Digest;
 class ZipSerialize;

@@ -7,10 +7,11 @@ add_definitions(
     -DPKCS11_MODULE="${PKCS11_MODULE}"
     -DSIVA_URL="${SIVA_URL}"
 )
-add_executable(unittests libdigidocpp_boost.cpp)
+add_executable(unittests libdigidocpp_boost.cpp ../src/util/ZipSerialize.cpp)
 add_executable(TSLTests TSLTests.cpp)
 add_executable(X509CertStoreTests X509CertStoreTests.cpp ../src/crypto/X509CertStore.cpp)
-target_link_libraries(unittests digidocpp digidocpp_tsl Boost::unit_test_framework)
+target_link_libraries(unittests digidocpp digidocpp_tsl Boost::unit_test_framework
+    $<IF:$<TARGET_EXISTS:PkgConfig::MINIZIP>,PkgConfig::MINIZIP,minizip>)
 target_link_libraries(TSLTests digidocpp digidocpp_tsl Boost::unit_test_framework)
 target_link_libraries(X509CertStoreTests digidocpp digidocpp_tsl Boost::unit_test_framework ${CMAKE_DL_LIBS})
 if(WIN32)

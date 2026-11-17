@@ -1143,6 +1143,9 @@ EXCLUDE_SYMBOLS        = digidoc::*Private \
                          *m_* \
                          *tslcert* \
                          MAX_MEM_FILE \
+                         digidoc::ZipSerialize::MAX_ENTRY_SIZE \
+                         digidoc::ZipSerialize::MAX_TOTAL_SIZE \
+                         digidoc::ZipSerialize::MAX_DATA_SIZE \
                          initXmlSecCallback
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories

@@ -34,12 +34,18 @@ public:
  * Initialize BDOC container.
  */
 ASiC_E::ASiC_E(const string &path, bool create) try
-    : ASiContainer(path, MIMETYPE_ASIC_E)
+    : ASiContainer(path, create ? MIMETYPE_ASIC_E : string_view{})
     , d(make_unique<Private>())
 {
     if(create)
         return;
-    auto z = load(true, {MIMETYPE_ASIC_E, MIMETYPE_ADOC});
+    ZipSerialize z(path, false);
+    if(z.list().front() != "mimetype")
+        THROW("required mimetype not found");
+    string mimetype = z.mimetype();
+    if(mimetype != MIMETYPE_ASIC_E && mimetype != MIMETYPE_ADOC)
+        THROW("Incorrect mimetype '%s'", mimetype.c_str());
+    mediaType(std::move(mimetype));
     /**
      * ETSI EN 319 162-1 V1.1.1 (2016-04)
      * 5.3.3 Requirements for ASiC-E with XAdES signature, Table 5
@@ -85,6 +91,7 @@ ASiC_E::ASiC_E(const string &path, bool create) try
 
     for(const string &file: z.list())
     {
+        zproperty(file) = z.properties(file);
         /**
          * ETSI EN 319 162-1 V1.1.1 (2016-04)
          * 4.4.3.2 Contents of Container
