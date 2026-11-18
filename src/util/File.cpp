@@ -4,10 +4,10 @@
 #include "File.h"
 
 #include "../Container.h"
+#include "algorithm.h"
 #include "log.h"
 
 #include <algorithm>
-#include <charconv>
 #include <ctime>
 #include <iomanip>
 #include <locale>
@@ -274,11 +274,7 @@ string File::toUriPath(const string &path)
 
 constexpr bool fromHexChar(auto pos, auto end, auto &value)
 {
-    if(distance(pos, end) < 2)
-        return false;
-    auto *p = to_address(pos);
-    auto [ptr, ec] = from_chars(p, p + 2, value, 16);
-    return ec == errc{} && ptr == p + 2;
+    return distance(pos, end) >= 2 && parseInteger({to_address(pos), 2}, value, 16);
 }
 
 string File::fromUriPath(string_view path)

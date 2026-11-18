@@ -293,3 +293,18 @@ library. By default, the TSL itself and its freshness is checked on-line:
    - appropriate trust services are found from the national TSL lists, their
      certificates are added to the library's internal trusted certificates'
      store.
+
+### TSL loading failures {#TSL-failures}
+
+The LOTL is required. If it cannot be loaded, for example because tsl.cache has
+no valid copy and the download fails, library initialization reports an error:
+`digidoc::initialize()` throws, or passes the exception to its callback when
+one is given. No trust services are loaded then, so signature validation fails
+until the LOTL can be loaded.
+
+National TSL lists are loaded on a best-effort basis. If a list cannot be
+downloaded, parsed or validated, the error is logged and that country's trust
+services are left out. The LOTL and the other national lists are still used,
+and initialization succeeds. Signatures that depend on the missing country's
+trust services fail validation until its list loads. A valid, unexpired copy in
+tsl.cache is used even when the list's URL is unavailable.

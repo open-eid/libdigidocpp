@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Estonian Information System Authority
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
-#include "Connect.h"
+#include "Connect_p.h"
 
 #include "Conf.h"
 #include "Container.h"
@@ -12,10 +12,8 @@
 #include <openssl/ocsp.h>
 #include <openssl/ssl.h>
 
-#include <zlib.h>
-
 #include <chrono>
-#include <sstream>
+#include <ctime>
 #include <thread>
 
 #if defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
@@ -30,17 +28,6 @@
 
 using namespace digidoc;
 using namespace std;
-
-#define THROW_NETWORKEXCEPTION(...) { \
-    OpenSSLException ex(EXCEPTION_PARAMS(__VA_ARGS__)); \
-    if(ex.code() == Exception::General) \
-        ex.setCode(Exception::NetworkError); \
-    throw ex; \
-}
-
-static constexpr size_t MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
-
-
 
 Connect::Connect(const string &_url, string_view _method, int _timeout, vector<X509Cert> _certs, string _userAgentData, string_view _version)
     : method(_method)
@@ -171,51 +158,7 @@ Connect::~Connect()
 
 void Connect::addHeader(string_view key, string_view value)
 {
-    BIO_printf(d, "%.*s: %.*s\r\n", int(key.size()), key.data(), int(value.size()), value.data());
-}
-
-string Connect::decompress(const string &encoding, const string &data)
-{
-    if(data.empty())
-        return data;
-
-    z_stream s {};
-    s.next_in = (Bytef*)data.c_str();
-    s.avail_in = uInt(data.size());
-    int result = Z_OK;
-    if(encoding == "gzip")
-        result = inflateInit2(&s, 16 + MAX_WBITS);
-    else if(encoding == "deflate")
-        result = inflateInit2(&s, -MAX_WBITS);
-    else
-    {
-        WARN("Unsuported Content-Encoding: %s", encoding.c_str());
-        return data;
-    }
-    if(result != Z_OK) {
-        WARN("Failed to uncompress content Content-Encoding: %s", encoding.c_str());
-        return data;
-    }
-
-    string out(2048, 0);
-    do {
-        if(s.total_out >= out.size()) {
-            if(out.size() >= MAX_RESPONSE_SIZE)
-                THROW_NETWORKEXCEPTION("HTTP decompressed response exceeds maximum allowed size of %zu bytes", MAX_RESPONSE_SIZE)
-            out.resize(out.size() * 2);
-        }
-        s.next_out = (Bytef*)&out[s.total_out];
-        s.avail_out = uInt(uLong(out.size()) - s.total_out);
-        switch(inflate(&s, Z_NO_FLUSH))
-        {
-        case Z_OK:
-        case Z_STREAM_END: break;
-        default: THROW_NETWORKEXCEPTION("Failed to decompress HTTP content")
-        }
-    } while(s.avail_out == 0);
-    out.resize(s.total_out);
-    inflateEnd(&s);
-    return out;
+    BIO_printf(d, "%.*s: %.*s\r\n", STR_VIEW_FMT(key), STR_VIEW_FMT(value));
 }
 
 Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> headers,
@@ -237,7 +180,7 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
     size_t pos = 0;
     Result r;
     r.content.resize(1024);
-    chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
+    const time_t deadline = time(nullptr) + timeout;
     do {
         if(rc > 0) {
             pos += size_t(rc);
@@ -249,54 +192,72 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
         rc = BIO_read(d, &r.content[pos], int(r.content.size() - pos));
         if(rc == -1 && BIO_should_read(d) != 1)
             break;
-        if(doProxyConnect && rc > 0) {
-            pos = size_t(rc);
+        // The tunnel carries TLS next, so read the CONNECT response headers and nothing more.
+        if(doProxyConnect && rc > 0 && headerEnd({r.content.data(), pos + size_t(rc)}) != string_view::npos) {
+            pos += size_t(rc);
             break;
         }
-        auto end = chrono::high_resolution_clock::now();
-        if(timeout > 0 && timeout < chrono::duration_cast<chrono::seconds>(end - start).count())
+        if(rc == -1 && timeout > 0 && BIO_wait(d, deadline, 100) != 1)
             break;
     } while(rc != 0);
     r.content.resize(pos);
 
-    stringstream stream(r.content);
-    string line;
-    while(getline(stream, line))
+    // Parse HTTP headers
+    const size_t bodyStart = headerEnd(r.content);
+    if(bodyStart == string_view::npos)
+        THROW_NETWORKEXCEPTION("Invalid HTTP response: missing end of headers")
+    for(string_view head = string_view(r.content).substr(0, bodyStart), line; nextLine(head, line);)
     {
-        line.resize(max<size_t>(line.size() - 1, 0));
         if(line.empty())
             break;
         if(r.result.empty())
         {
-            r.result = to_lower(line);
+            r.result = to_lower(string(line));
             continue;
         }
-        size_t split = line.find(": ");
-        if(split != string::npos)
-            r.headers[to_lower(line.erase(split))] = line.substr(split + 2);
-        else
-            r.headers[to_lower(line)] = string();
+        size_t colon = line.find(':');
+        string_view value = colon == string_view::npos ? string_view{} : line.substr(colon + 1);
+        r.headers[to_lower(string(line.substr(0, colon)))] = trim(value, " \t");
     }
+    r.content.erase(0, bodyStart);
 
-    pos = r.content.find("\r\n\r\n");
-    if(pos != string::npos)
-        r.content.erase(0, pos + 4);
-
-    if(const auto it = r.headers.find("transfer-encoding");
+    // HEAD, 204 and 304 responses have no body, whatever their framing headers say.
+    if(method == "HEAD" || r.isStatusCode("204") || r.isStatusCode("304"))
+        r.content.clear();
+    // Handle chunked transfer encoding
+    else if(const auto it = r.headers.find("transfer-encoding");
         it != r.headers.cend() &&
         it->second.find("chunked") != string::npos) {
-        pos = 0;
-        for(size_t chunkpos = r.content.find("\r\n", pos);
-            chunkpos != string::npos;
-            chunkpos = r.content.find("\r\n", pos))
+        size_t out = 0;
+        for(pos = 0;;)
         {
-            string chunk = r.content.substr(pos, chunkpos - pos);
-            r.content.erase(pos, chunk.size() + 2);
-            pos += stoul(chunk, nullptr, 16);
-            r.content.erase(pos, 2);
+            size_t end = r.content.find("\r\n", pos);
+            if(end == string::npos)
+                THROW_NETWORKEXCEPTION("Invalid HTTP chunked response: missing chunk size")
+            string_view field = string_view(r.content).substr(pos, end - pos);
+            if(size_t ext = field.find(';'); ext != string_view::npos)
+                field = trim_suffix(field.substr(0, ext), " \t");
+            size_t chunk = 0;
+            if(!parseInteger(field, chunk, 16))
+                THROW_NETWORKEXCEPTION("Invalid HTTP chunked response: chunk size '%.*s'", STR_VIEW_FMT(field))
+            pos = end + 2;
+            if(chunk == 0)
+            {
+                // The last chunk is followed by optional trailer fields and an empty line.
+                if(r.content.compare(pos, 2, "\r\n") != 0 && !string_view(r.content).substr(pos).contains("\r\n\r\n"))
+                    THROW_NETWORKEXCEPTION("Invalid HTTP chunked response: missing final CRLF")
+                break;
+            }
+            if(chunk > r.content.size() - pos || r.content.compare(pos + chunk, 2, "\r\n") != 0)
+                THROW_NETWORKEXCEPTION("Invalid HTTP chunked response: truncated chunk")
+            copy_n(r.content.data() + pos, chunk, r.content.data() + out);
+            out += chunk;
+            pos += chunk + 2;
         }
+        r.content.resize(out);
     }
 
+    // Handle content encoding
     if(const auto it = r.headers.find("content-encoding");
         it != r.headers.cend())
         r.content = decompress(it->second, r.content);

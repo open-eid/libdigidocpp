@@ -4,6 +4,11 @@
 #pragma once
 
 #include <algorithm>
+#include <cctype>
+#include <charconv>
+#include <string>
+#include <string_view>
+#include <utility>
 
 namespace digidoc
 {
@@ -48,11 +53,34 @@ inline auto to_lower(std::string str)
     return str;
 }
 
+template<typename T>
 [[nodiscard]]
-constexpr auto trim_prefix(std::string_view src)
+constexpr bool parseInteger(std::string_view text, T &value, int base)
 {
-    constexpr std::string_view whitespace {" \n\r\f\t\v"};
-    return src.substr(std::min<size_t>(src.find_first_not_of(whitespace), src.size()));
+    if(text.empty())
+        return false;
+    const auto *end = text.data() + text.size();
+    const auto [ptr, ec] = std::from_chars(text.data(), end, value, base);
+    return ec == std::errc{} && ptr == end;
+}
+
+[[nodiscard]]
+constexpr auto trim_prefix(std::string_view src, std::string_view chars = " \n\r\f\t\v")
+{
+    return src.substr(std::min(src.find_first_not_of(chars), src.size()));
+}
+
+[[nodiscard]]
+constexpr auto trim_suffix(std::string_view src, std::string_view chars)
+{
+    const auto end = src.find_last_not_of(chars);
+    return src.substr(0, end == std::string_view::npos ? 0 : end + 1);
+}
+
+[[nodiscard]]
+constexpr auto trim(std::string_view src, std::string_view chars)
+{
+    return trim_suffix(trim_prefix(src, chars), chars);
 }
 
 }
