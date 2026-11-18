@@ -119,6 +119,14 @@ Since both the original file and time-stamp are included in the container, it is
 
 An existing time-stamp token can be extended by adding an ASiC archive manifest and a new time-stamp token. Each new layer protects the data object and the preceding time-stamp information. See \ref extend-validity for the high-level validity-extension workflow.
 
+When opening the container, the layers are read from
+`META-INF/ASiCArchiveManifest.xml` through the reference marked
+`Rootfile="true"` (or `"1"`, the other `xsd:boolean` true value) in each
+manifest, as described in ETSI EN 319 162-1 clause 4.4.3. Opening fails if a
+manifest marks more than one reference as a root file or if a root file
+reference has an empty URI. Opening also fails if the chain references the
+same manifest or time-stamp token more than once.
+
 Since version 4.6.0, an ASiC-S container whose data object is a legacy DDoc file
 (`.ddoc`) and whose signature is a time-stamp token is opened together with the
 enclosed DDoc when the application passes a digidoc::ContainerOpenCB that allows

@@ -1309,6 +1309,110 @@ BOOST_AUTO_TEST_CASE(OpenInvalidTsASiCSContainer)
     BOOST_CHECK_THROW(ts->validate(), Exception);
 }
 
+BOOST_AUTO_TEST_CASE(ArchiveManifestChain)
+{
+    struct Root { string_view uri, rootfile; };
+    struct Manifest { string_view name, sigReference; array<string_view, 2> roots; Root extra{}; };
+    struct Case { string_view error; array<Manifest, 2> manifests; };
+    constexpr string_view root = "META-INF/ASiCArchiveManifest.xml";
+    constexpr string_view first = "META-INF/ASiCArchiveManifest001.xml";
+    constexpr string_view second = "META-INF/ASiCArchiveManifest002.xml";
+    constexpr string_view tst = "META-INF/timestamp.tst";
+    constexpr string_view tst1 = "META-INF/timestamp001.tst";
+    constexpr string_view tst2 = "META-INF/timestamp002.tst";
+    constexpr string_view repeated = "is referenced more than once";
+    constexpr array cases {
+        Case{{}, {{{root, tst2, {first}}, {first, tst1, {}}}}},
+        Case{repeated, {{{root, tst1, {root}}}}},
+        Case{repeated, {{{root, tst2, {first}}, {first, tst1, {root}}}}},
+        Case{repeated, {{{root, tst1, {first}}, {first, tst1, {}}}}},
+        Case{repeated, {{{root, tst, {}}}}},
+        Case{repeated, {{{root, root, {}}}}},
+        Case{"more than one Rootfile", {{{root, tst2, {first, second}}, {first, tst1, {}}}}},
+        Case{{}, {{{root, tst2, {}, {first, "1"}}, {first, tst1, {}}}}},
+        Case{"more than one Rootfile", {{{root, tst2, {first}, {second, "1"}}, {first, tst1, {}}}}},
+        Case{"more than one Rootfile", {{{root, tst2, {first}, {second, " true "}}, {first, tst1, {}}}}},
+        Case{"empty URI", {{{root, tst2, {first}, {"", "true"}}, {first, tst1, {}}}}},
+        Case{"empty URI", {{{root, tst1, {}, {"", "1"}}}}},
+    };
+
+    ZipSerialize original("test.asics", false);
+    const string data = original.read("test1.txt");
+    const string timestamp = original.read(tst);
+    for(size_t i = 0; i < cases.size(); ++i)
+    BOOST_TEST_CONTEXT("case " << i)
+    {
+        const Case &c = cases[i];
+        TemporaryContainer temporary;
+        fs::remove(temporary.path);
+        temporary.path += ".asics";
+        {
+            ZipSerialize zip(temporary.name(), true);
+            zip.addFile("mimetype", {}, false)(ASiCS::TYPE);
+            zip.addFile("test1.txt", {})(data);
+            for(string_view name: {tst, tst1, tst2})
+                zip.addFile(name, {})(timestamp);
+            for(const Manifest &m: c.manifests)
+            {
+                if(m.name.empty())
+                    continue;
+                string xml = R"(<asic:ASiCManifest xmlns:asic="http://uri.etsi.org/02918/v1.2.1#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">)";
+                xml.append(R"(<asic:SigReference MimeType="application/vnd.etsi.timestamp-token" URI=")")
+                    .append(m.sigReference).append(R"("/>)");
+                auto addRef = [&xml](string_view uri, string_view mime, string_view rootfile) {
+                    xml.append(R"(<asic:DataObjectReference URI=")").append(uri)
+                        .append(R"(" MimeType=")").append(mime).append("\"");
+                    if(!rootfile.empty())
+                        xml.append(R"( Rootfile=")").append(rootfile).append("\"");
+                    xml.append(">")
+                        .append(R"(<ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>)"
+                            "<ds:DigestValue>AA==</ds:DigestValue></asic:DataObjectReference>");
+                };
+                addRef("test1.txt", "text/plain", {});
+                if(!m.extra.rootfile.empty())
+                    addRef(m.extra.uri, "text/xml", m.extra.rootfile);
+                for(string_view r: m.roots)
+                {
+                    if(!r.empty())
+                        addRef(r, "text/xml", "true");
+                }
+                xml.append("</asic:ASiCManifest>");
+                zip.addFile(m.name, {})(xml);
+            }
+        }
+        if(c.error.empty())
+        {
+            auto d = Container::openPtr(temporary.name());
+            BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+            BOOST_CHECK_EQUAL(d->signatures().front()->ArchiveTimeStamps().size(), 2U);
+        }
+        else
+            BOOST_CHECK_EXCEPTION(Container::openPtr(temporary.name()), Exception,
+                [&c](const Exception &e) { return exceptionContains(e, c.error); });
+    }
+}
+
+BOOST_TEST_DECORATOR(* boost::unit_test::precondition(networkAvailable))
+BOOST_AUTO_TEST_CASE(ArchiveManifestChainRoundTrip)
+{
+    TemporaryContainer temporary;
+    fs::remove(temporary.path);
+    temporary.path += ".asics";
+    PKCS12Signer signer("signer1.p12", "signer1");
+    {
+        auto d = Container::openPtr("test.asics");
+        BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+        Signature *s = d->signatures().front();
+        BOOST_REQUIRE_NO_THROW(s->extendSignatureProfile(&signer));
+        BOOST_REQUIRE_NO_THROW(s->extendSignatureProfile(&signer));
+        BOOST_REQUIRE_NO_THROW(d->save(temporary.name()));
+    }
+    auto d = Container::openPtr(temporary.name());
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->signatures().front()->ArchiveTimeStamps().size(), 2U);
+    BOOST_CHECK_NO_THROW(d->signatures().front()->validate());
+}
+
 BOOST_AUTO_TEST_CASE(TeRaASiCSContainer)
 {
     auto d = Container::openPtr("test-tera.asics");

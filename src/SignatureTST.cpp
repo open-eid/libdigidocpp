@@ -58,26 +58,38 @@ SignatureTST::SignatureTST(bool manifest, const ZipSerialize &z, ASiC_S *asicSDo
     if(manifest)
     {
         auto schema = util::File::path(Conf::instance()->xsdPath(), "en_31916201v010101.xsd");
+        auto referenced = [this](string_view name) {
+            return name == "META-INF/timestamp.tst" ||
+                any_of(metadata, [name](const Data &d) { return d.name == name; });
+        };
         string file = "META-INF/ASiCArchiveManifest.xml";
         string mime = "text/xml";
         while(!file.empty()) {
+            if(referenced(file))
+                THROW("Archive manifest '%s' is referenced more than once", file.c_str());
             stringstream xml(z.read(file).operator string());
             XMLDocument doc = XMLDocument::openStream(xml, {"ASiCManifest", ASiContainer::ASIC_NS});
             XMLSchema::validate(schema, doc);
             auto ref = doc/"SigReference";
             string uri = util::File::fromUriPath(ref["URI"]);
             metadata.emplace_back(std::move(file), std::move(mime), xml.str());
+            if(referenced(uri))
+                THROW("Archive time-stamp '%s' is referenced more than once", uri.c_str());
             auto refData = z.read(uri);
             metadata.emplace_back(std::move(uri), string(ref["MimeType"]), std::move(refData));
             file.clear();
 
             for(auto ref = doc/"DataObjectReference"; ref; ref++)
             {
-                if(ref["Rootfile"] == "true")
-                {
-                    file = util::File::fromUriPath(ref["URI"]);
-                    mime = ref["MimeType"];
-                }
+                if(const auto rootfile = trim(ref["Rootfile"]);
+                    rootfile != "true" && rootfile != "1")
+                    continue;
+                if(!file.empty())
+                    THROW("Archive manifest contains more than one Rootfile reference");
+                file = util::File::fromUriPath(ref["URI"]);
+                if(file.empty())
+                    THROW("Archive manifest contains a Rootfile reference with an empty URI");
+                mime = ref["MimeType"];
             }
         }
     }

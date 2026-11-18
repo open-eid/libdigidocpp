@@ -36,23 +36,25 @@ constexpr bool none_of(const C &list, P pred)
     return std::none_of(list.begin(), list.end(), std::forward<P>(pred));
 }
 
-template<typename T>
-[[nodiscard]]
-constexpr bool starts_with(T str, std::string_view needle) {
-    return str.size() >= needle.size() && str.compare(0, needle.size(), needle) == 0;
-}
-
 inline auto to_lower(std::string str)
 {
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
     return str;
 }
 
+inline constexpr std::string_view asciiWhitespace {" \n\r\f\t\v"};
+
 [[nodiscard]]
 constexpr auto trim_prefix(std::string_view src)
 {
-    constexpr std::string_view whitespace {" \n\r\f\t\v"};
-    return src.substr(std::min<size_t>(src.find_first_not_of(whitespace), src.size()));
+    return src.substr(std::min<size_t>(src.find_first_not_of(asciiWhitespace), src.size()));
+}
+
+[[nodiscard]]
+constexpr auto trim(std::string_view src)
+{
+    src = trim_prefix(src);
+    return src.empty() ? src : src.substr(0, src.find_last_not_of(asciiWhitespace) + 1);
 }
 
 }

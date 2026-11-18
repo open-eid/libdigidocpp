@@ -53,7 +53,7 @@ ASiC_S::ASiC_S(const string &path, const ZipSerialize &z, ContainerOpenCB *cb)
             for(auto s = signatures->signature(); s; s++)
                 addSignature(make_unique<SignatureXAdES_LTA>(signatures, s, this));
         }
-        else if(starts_with(file, "META-INF/"))
+        else if(file.starts_with("META-INF/"))
             continue;
         else if(const auto directory = File::directory(file);
             !directory.empty() && directory != "/" && directory != "./")
