@@ -128,6 +128,15 @@ ADOC V1.0. The library can open the package, expose its data files, and locally
 validate its XAdES signatures, including signatures using the OpenDocument
 `document-signatures` root element and references to ADOC metadata.
 
+ADOC signatures usually have a signature time-stamp but no revocation data.
+When opening such a signature, libdigidocpp checks the signing certificate
+against the trusted lists at the time-stamp time. If the certificate is
+trusted, the library requests an OCSP response from the issuer's OCSP
+responder, which signature validation then uses. The request times out after
+10 seconds. If it fails, validation reports the missing revocation data.
+digidoc::ContainerOpenCB does not control this request; it applies only to
+SiVa requests.
+
 Creating ADOC containers, adding data files or signatures, signing, and saving
 changes are not supported. This compatibility statement is limited to ADOC
 V1.0 and does not claim full support for later ADOC specifications or the

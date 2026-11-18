@@ -28,19 +28,19 @@ SignatureXAdES_LT::SignatureXAdES_LT(const shared_ptr<Signatures> &signatures, u
 SignatureXAdES_LT::SignatureXAdES_LT(const shared_ptr<Signatures> &signatures, XMLNode s, ASiContainer *container)
     : SignatureXAdES_T(signatures, s, container)
 {
+    // ADOC files are default T level, take OCSP response to create temporary LT level
+    if(container->mediaType() != ASiContainer::MIMETYPE_ADOC)
+        return;
     try {
-        // ADOC files are default T level, take OCSP response to create temporary LT level
-        if(container->mediaType() == ASiContainer::MIMETYPE_ADOC &&
-            !(unsignedSignatureProperties()/"RevocationValues"))
-        {
-            X509Cert cert = signingCertificate();
-            X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::OCSP);
-            if(!issuer)
-                THROW("Could not find certificate issuer '%s' in certificate store.",
-                      cert.issuerName().c_str());
+        if(auto usp = unsignedSignatureProperties(); !(usp/"SignatureTimeStamp") || usp/"RevocationValues")
+            return;
+        X509Cert cert = checkSigningCertificate(true, TimeStamp().time());
+        X509Cert issuer = X509CertStore::instance()->findIssuer(cert, X509CertStore::OCSP);
+        if(!issuer)
+            THROW("Could not find certificate issuer '%s' in certificate store.",
+                  cert.issuerName().c_str());
 
-            addOCSPValue(id().replace(0, 1, "N"), OCSP(cert, issuer));
-        }
+        addOCSPValue(id().replace(0, 1, "N"), OCSP(cert, issuer, {}, 10s));
     } catch(const Exception &) {
     }
 }

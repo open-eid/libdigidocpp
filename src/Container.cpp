@@ -174,8 +174,15 @@ void digidoc::terminate()
 
 /**
  * @fn digidoc::ContainerOpenCB::validateOnline
- * Return false to prevent sending the container to SiVa for validation.
- * Other network requests, such as TSL updates, can still occur.
+ * Asks whether the document may be sent to the SiVa service for validation.
+ *
+ * Called before a format that is not validated locally, such as PDF, legacy DDoc or an ASiC
+ * container with CAdES signatures, is sent to SiVa. Return false to keep the document on the
+ * computer: opening such formats then fails, and an ASiC-S container that encloses a DDoc is
+ * opened as a plain time-stamped container. The default implementation returns true.
+ *
+ * The callback controls only these SiVa requests. It does not disable other network access,
+ * such as TSL updates or OCSP and time-stamp requests, which do not send document content.
  */
 /**
  * @fn digidoc::ContainerOpenCB::~ContainerOpenCB
@@ -521,7 +528,8 @@ unique_ptr<Container> Container::openPtr(const string &path)
  *
  * @since 3.17.0
  * @param path
- * @param cb Callback called when additional info is requested (digidoc::ContainerOpenCB::validateOnline)
+ * @param cb Callback that decides whether the document may be sent to SiVa
+ *     (digidoc::ContainerOpenCB::validateOnline). Without a callback, SiVa is contacted when needed.
  * @throws Exception
  */
 unique_ptr<Container> Container::openPtr(const string &path, ContainerOpenCB *cb)
