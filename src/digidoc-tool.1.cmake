@@ -13,6 +13,7 @@ digidoc-tool \- create, sign, open, validate, and extend ASiC containers
 .B digidoc-tool
 is a command-line utility for working with digital signature containers.
 Supported ASiC-E, ASiC-S, and legacy BDOC 2.1 variants are handled locally.
+Lithuanian ADOC V1.0 containers are handled locally in read-only mode.
 PDF, legacy DDOC, and ASiC containers with CAdES signatures are validated
 through the SiVa Online Service. The
 .B \-\-offline

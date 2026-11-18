@@ -45,7 +45,7 @@ const map<string_view,SignatureXAdES_B::Policy> SignatureXAdES_B::policylist{
             0xa6,0x7b,0x18,0x86,0x04,0xd8,0x20,0x9b,0xf8,0x54,0x4e,0xb0,0x5f,0xb3,0x67,0x58,
             0x39,0xb9,0xef,0xfe,0xf7,0x75,0x7d,0x34,0x5e,0x39,0xa8,0xa5,0xbf,0x4a,0xa1,0xd7}
     }},
-    {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.3",{ // http://id.ee/public/bdoc-spec212-eng.pdf
+    {"urn:oid:1.3.6.1.4.1.10015.1000.3.2.3",{ // https://id.ee/public/bdoc-spec212-eng.pdf
         // SHA-1
         {   0x0b,0x2d,0x60,0x6b,0x17,0x9b,0x3b,0x92,0x9c,0x3f,0x79,0xf5,0x92,0x5c,0x84,0xc8,
             0xeb,0xef,0x31,0xc6},
@@ -184,7 +184,7 @@ Signatures::Signatures()
 Signatures::Signatures(XMLDocument &&doc, string_view mediaType)
     : XMLDocument(std::move(doc))
 {
-    /* http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
+    /* https://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.03.01_60/ts_102918v010301p.pdf
      * 6.2.2
      * 3) The root element of each "*signatures*.xml" content shall be either:
      * a) <asic:XAdESSignatures> as specified in clause A.5, the recommended format; or
@@ -487,43 +487,46 @@ void SignatureXAdES_B::validate(const string &policy) const
 
             if(uri.front() == '#' && uri.substr(1) == signedPropertiesId && ref["Type"] == REF_TYPE)
                 ++signedInfoFound;
-            else if(!sdop)
-                continue; // DataObjectProperties is missing, no need to match later MediaTypes
-            else if(ref["Id"].empty())
+            else if(sdop && ref["Id"].empty())
                 EXCEPTION_ADD(exception, "Reference '%.*s' ID  missing", int(uri.size()), uri.data());
             else
             {
                 string uriPath = File::fromUriPath(uri);
                 if(uriPath.front() == '/')
                     uriPath.erase(0);
-                signatureref.emplace(uriPath, mimeinfo[string("#").append(ref["Id"])]);
+                // ADoc 1.0 has no DataObjectFormat elements, so there is no MediaType to match
+                signatureref.emplace(uriPath, sdop ? mimeinfo[string("#").append(ref["Id"])] : string());
             }
         }
         if(signedInfoFound != 1)
             EXCEPTION_ADD(exception, "Exactly one SignedProperties Reference required, found %d", signedInfoFound);
 
-        // Match DataObjectFormat element MediaTypes with Manifest
-        if(!signatureref.empty())
+        // Every data file must be covered by a signature reference
+        for(const DataFile *file: bdoc->dataFiles())
         {
-            for(const DataFile *file: bdoc->dataFiles())
+            if(auto i = signatureref.find(file->fileName()); i != signatureref.end())
             {
-                if(auto i = signatureref.find(file->fileName()); i != signatureref.end())
+                if(sdop && bdoc->mediaType() != ASiContainer::MIMETYPE_ASIC_S && i->second != file->mediaType())
+                    EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
+                        file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
+                static const regex reg(R"(([\w])*/([\w\-\+\.])*)");
+                if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
                 {
-                    if(bdoc->mediaType() != ASiContainer::MIMETYPE_ASIC_S && i->second != file->mediaType())
-                        EXCEPTION_ADD(exception, "Manifest datafile '%s' mime '%s' does not match signature mime '%s'",
-                            file->fileName().c_str(), file->mediaType().c_str(), i->second.c_str());
-                    static const regex reg(R"(([\w])*/([\w\-\+\.])*)");
-                    if(!file->mediaType().empty() && !regex_match(file->mediaType(), reg))
-                    {
-                        Exception w(EXCEPTION_PARAMS("'%s' is not conformant mime-type string!", file->mediaType().c_str()));
-                        w.setCode(Exception::MimeTypeWarning);
-                        exception.addCause(w);
-                    }
-                    signatureref.erase(i);
+                    Exception w(EXCEPTION_PARAMS("'%s' is not conformant mime-type string!", file->mediaType().c_str()));
+                    w.setCode(Exception::MimeTypeWarning);
+                    exception.addCause(w);
                 }
-                else
-                    EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
+                signatureref.erase(i);
             }
+            else
+                EXCEPTION_ADD(exception, "Manifest datafile not listed in signature references %s", file->fileName().c_str());
+        }
+
+        // ADoc signatures may also cover META-INF metadata files
+        if(bdoc->mediaType() == ASiC_E::MIMETYPE_ADOC)
+        {
+            for(const DataFile *file: static_cast<const ASiC_E*>(bdoc)->metaFiles())
+                signatureref.erase(file->fileName());
         }
 
         if(bdoc->dataFiles().empty())

@@ -58,6 +58,7 @@ The following table gives overview of functional features that are supported wit
 - ASiC-E - the main document format to be used.
 - ASiC-S - a single-data-file container. Opening and validating XAdES signatures are supported; this variant is read-only. For \ref RFC3161 "RFC 3161" TimeStampToken containers, creation, saving, validation, and archive-manifest time-stamp extension are supported. A TimeStampToken container that encloses a legacy DDoc file also exposes the DDoc's data files and signatures, validated by the \ref SiVa service (see \ref asics).
 - BDOC 2.1 - legacy read-only compatibility.
+- Lithuanian ADOC V1.0 - legacy read-only compatibility for opening and locally validating XAdES signatures. Creating, modifying, signing, and saving ADOC containers are not supported.
 
 \note BDOC 1.0 file format is not supported (more info can be found from https://www.id.ee/en/article/digidoc-container-format-life-cycle-2/).
 </td>
