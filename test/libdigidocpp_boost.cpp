@@ -775,6 +775,54 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(signature, Doc, DocTypes)
 }
 
 BOOST_TEST_DECORATOR(* boost::unit_test::precondition(networkAvailable))
+BOOST_AUTO_TEST_CASE(archiveTimeStampEmptyReferenceURI)
+{
+    TemporaryContainer signedContainer;
+    fs::remove(signedContainer.path);
+    signedContainer.path += ".asice";
+    {
+        auto d = Container::createPtr(signedContainer.name());
+        BOOST_REQUIRE_NO_THROW(d->addDataFile("test1.txt", "text/plain"));
+        PKCS12Signer signer("signer2.p12", "signer2");
+        signer.setProfile("time-stamp-archive");
+        BOOST_REQUIRE_NO_THROW(d->sign(&signer));
+        BOOST_REQUIRE_NO_THROW(d->save());
+    }
+
+    ZipSerialize original(signedContainer.name(), false);
+    constexpr array<string_view, 2> references {R"(URI="test1.txt")", R"(URI="#)"};
+    constexpr array<string_view, 2> replacements {"", R"(URI="")"};
+    for(string_view reference: references)
+    for(string_view replacement: replacements)
+    BOOST_TEST_CONTEXT(reference << " -> " << replacement)
+    {
+        string xml = original.read("META-INF/signatures0.xml");
+        size_t pos = xml.find(reference);
+        BOOST_REQUIRE_NE(pos, string::npos);
+        xml.replace(pos, xml.find('"', pos + 5) + 1 - pos, replacement);
+
+        TemporaryContainer temporary;
+        fs::remove(temporary.path);
+        temporary.path += ".asice";
+        {
+            ZipSerialize zip(temporary.name(), true);
+            zip.addFile("mimetype", {}, false)(ASiCE::TYPE);
+            for(const string &name: original.list())
+            {
+                if(name == "META-INF/signatures0.xml")
+                    zip.addFile(name, {})(xml);
+                else if(name != "mimetype")
+                    zip.addFile(name, {})(original.read(name).operator string());
+            }
+        }
+        auto d = Container::openPtr(temporary.name());
+        BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+        BOOST_CHECK_EXCEPTION(d->signatures().front()->validate(), Exception,
+            [](const Exception &e) { return exceptionContains(e, "Archive time-stamp reference URI missing"); });
+    }
+}
+
+BOOST_TEST_DECORATOR(* boost::unit_test::precondition(networkAvailable))
 BOOST_AUTO_TEST_CASE(weakDigest)
 {
     // ETSI TS 119 312 V2.1.1 Annex D discontinues SHA-224; SHA3-224 is not in any table

@@ -29,6 +29,8 @@ void SignatureXAdES_LTA::calcArchiveDigest(const Digest &digest, string_view can
     for(auto ref = signature/"SignedInfo"/"Reference"; ref; ref++)
     {
         auto uri = ref["URI"];
+        if(uri.empty())
+            THROW("Archive time-stamp reference URI missing");
         if(ref["Type"] == REF_TYPE)
         {
             auto sp = qualifyingProperties()/"SignedProperties";
@@ -38,9 +40,8 @@ void SignatureXAdES_LTA::calcArchiveDigest(const Digest &digest, string_view can
             continue;
         }
 
-        string uriPath = File::fromUriPath(uri);
         auto files = bdoc->dataFiles();
-        auto file = find_if(files.cbegin(), files.cend(), [&uriPath](DataFile *file) {
+        auto file = find_if(files.cbegin(), files.cend(), [uriPath = File::fromUriPath(uri)](DataFile *file) {
             return file->fileName() == uriPath;
         });
         if(file == files.cend())
