@@ -311,7 +311,10 @@ ConfV4::~ConfV4() = default;
 ConfV4* ConfV4::instance() { return dynamic_cast<ConfV4*>(Conf::instance()); }
 
 /**
- * Gets verify service Certs
+ * Returns TLS trust anchors for the signature verification service.
+ * An empty list uses the platform's default HTTPS trust configuration.
+ * A non-empty list replaces those defaults.
+ * @see @ref https-trust
  * @since 3.14.7
  */
 vector<X509Cert> ConfV4::verifyServiceCerts() const
@@ -345,7 +348,10 @@ ConfV5::~ConfV5() = default;
 ConfV5* ConfV5::instance() { return dynamic_cast<ConfV5*>(Conf::instance()); }
 
 /**
- * Returns time-stamp server certificates used to pin the TLS connection
+ * Returns TLS trust anchors for the time-stamp server.
+ * An empty list uses the platform's default HTTPS trust configuration.
+ * A non-empty list replaces those defaults.
+ * @see @ref https-trust
  * @since 3.15.0
  */
 vector<X509Cert> ConfV5::TSCerts() const
@@ -384,8 +390,8 @@ ConfV6* ConfV6::instance() { return dynamic_cast<ConfV6*>(Conf::instance()); }
 std::string ConfV6::TSUrlArchive() const { return TSUrl(); }
 
 /**
- * Returns time-stamp server certificates used to pin the TLS connection for
- * archive (LTA) time-stamps. Defaults to TSCerts(), which is only correct
+ * Returns TLS trust anchors for archive (LTA) time-stamps.
+ * Defaults to TSCerts(), which is only correct
  * while both time-stamps use the same server.
  * @since 4.6.0
  */

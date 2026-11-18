@@ -4,6 +4,7 @@
 #pragma once
 
 #include "crypto/X509Cert.h"
+#include "util/memory.h"
 
 #include <map>
 #include <memory>
@@ -47,7 +48,6 @@ public:
     Connect(const std::string &url, std::string_view method = "POST",
         int timeout = 0, std::vector<X509Cert> certs = {}, std::string userAgentData = {},
         std::string_view version = "1.1");
-    ~Connect();
     inline Result exec(std::initializer_list<std::pair<std::string_view,std::string_view>> headers,
         const std::vector<unsigned char> &data)
     {
@@ -59,6 +59,9 @@ public:
 private:
     DISABLE_COPY(Connect);
 
+    Connect(const std::string &url, std::string_view method, int timeout, std::vector<X509Cert> certs,
+        std::string userAgentData, std::string_view version, unique_free_t<SSL_CTX> ssl);
+
     void addHeader(std::string_view key, std::string_view value);
     void sendProxyAuth();
     static std::string decompress(const std::string &encoding, const std::string &data) ;
@@ -66,8 +69,8 @@ private:
     std::string baseurl, userAgentData;
     std::string_view method, version;
     std::vector<X509Cert> certs;
-    BIO *d = nullptr;
-    std::shared_ptr<SSL_CTX> ssl;
+    unique_free_t<BIO> d;
+    unique_free_t<SSL_CTX> ssl;
     int timeout;
     bool doProxyConnect = false;
     int recursive = 0;

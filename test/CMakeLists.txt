@@ -7,13 +7,20 @@ add_definitions(
     -DPKCS11_MODULE="${PKCS11_MODULE}"
     -DSIVA_URL="${SIVA_URL}"
 )
-add_executable(unittests libdigidocpp_boost.cpp ../src/util/ZipSerialize.cpp)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # Homebrew Boost is arm64 only; the header-only variant links universal macOS builds
+    set(BOOST_TEST Boost::headers)
+    add_definitions(-DUNIT_TEST_HEADER_ONLY)
+else()
+    set(BOOST_TEST Boost::unit_test_framework)
+endif()
+add_executable(unittests libdigidocpp_boost.cpp ConnectTests.cpp ../src/util/ZipSerialize.cpp)
 add_executable(TSLTests TSLTests.cpp)
 add_executable(X509CertStoreTests X509CertStoreTests.cpp ../src/crypto/X509CertStore.cpp)
-target_link_libraries(unittests digidocpp digidocpp_tsl Boost::unit_test_framework
+target_link_libraries(unittests digidocpp digidocpp_tsl ${BOOST_TEST}
     $<IF:$<TARGET_EXISTS:PkgConfig::MINIZIP>,PkgConfig::MINIZIP,minizip>)
-target_link_libraries(TSLTests digidocpp digidocpp_tsl Boost::unit_test_framework)
-target_link_libraries(X509CertStoreTests digidocpp digidocpp_tsl Boost::unit_test_framework ${CMAKE_DL_LIBS})
+target_link_libraries(TSLTests digidocpp digidocpp_tsl ${BOOST_TEST})
+target_link_libraries(X509CertStoreTests digidocpp digidocpp_tsl ${BOOST_TEST} ${CMAKE_DL_LIBS})
 if(WIN32)
     set_target_properties(unittests TSLTests X509CertStoreTests PROPERTIES COMPILE_FLAGS "/bigobj")
 endif()
@@ -21,6 +28,7 @@ add_test(NAME unittests
     COMMAND unittests --build_info=YES --report_level=no -- ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY $<TARGET_FILE_DIR:digidocpp>
 )
+set_tests_properties(unittests PROPERTIES TIMEOUT 600)
 add_test(NAME X509CertStoreTests
     COMMAND X509CertStoreTests -- ${CMAKE_CURRENT_SOURCE_DIR}/data
     WORKING_DIRECTORY $<TARGET_FILE_DIR:digidocpp>
