@@ -615,22 +615,17 @@ void SignatureXAdES_B::checkKeyInfo(const X509Cert &x509) const
  */
 X509Cert SignatureXAdES_B::checkSigningCertificate(bool noqscd, tm validation_time) const
 {
-    X509Cert signingCertificate;
+    // Must be the certificate that verifies the signature value; other KeyInfo certificates are intermediates
+    X509Cert signingCertificate = this->signingCertificate();
     vector<X509Cert> untrusted;
     for(auto x509Data = signature/"KeyInfo"/"X509Data"; x509Data; x509Data++)
     {
         for(auto x509Cert = x509Data/"X509Certificate"; x509Cert; x509Cert++)
         {
-            if(X509Cert cert(x509Cert); !cert)
-                continue;
-            else if(!signingCertificate)
-                signingCertificate = std::move(cert);
-            else
+            if(X509Cert cert(x509Cert); cert && cert != signingCertificate)
                 untrusted.emplace_back(std::move(cert));
         }
     }
-    if(!signingCertificate)
-        THROW("Signature does not contain signer certificate");
     if(!contains(signingCertificate.keyUsage(), X509Cert::NonRepudiation))
         THROW("Signing certificate does not contain NonRepudiation key usage flag");
     if(!signingCertificate.verify(noqscd, validation_time, untrusted))
