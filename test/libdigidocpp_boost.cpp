@@ -1173,6 +1173,22 @@ BOOST_AUTO_TEST_CASE(key_substitution_detected)
     BOOST_CHECK_THROW(d->signatures().at(0)->validate(), Exception);
 }
 
+BOOST_AUTO_TEST_CASE(signer_certificate_is_the_one_checked_for_trust)
+{
+    // KeyInfo: empty certificate and the trusted signer, then a re-signed copy with another CN and the same key
+    auto d = Container::openPtr("keyinfo-split-signer.asice");
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+    const Signature *s = d->signatures().front();
+    BOOST_CHECK_EQUAL(s->signingCertificate().subjectName("CN"), "FORGED,SIGNER,38001085718");
+    // The fixture's untrusted TSA is reported as well; the copy must fail on its own chain
+    BOOST_CHECK_EXCEPTION(s->validate(), Exception, [](const Exception &e) {
+        const auto causes = e.causes();
+        return any_of(causes.cbegin(), causes.cend(), [](const Exception &cause) {
+            return cause.code() == Exception::CertificateIssuerMissing;
+        });
+    });
+}
+
 BOOST_AUTO_TEST_CASE(manifest_data_file_paths_are_supported)
 {
     auto d = Container::openPtr("asice-path.asice");
