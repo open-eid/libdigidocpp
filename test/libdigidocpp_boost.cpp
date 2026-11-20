@@ -815,7 +815,7 @@ BOOST_TEST_DECORATOR(* boost::unit_test::precondition(networkAvailable))
 BOOST_AUTO_TEST_CASE_TEMPLATE(files, Doc, DocTypes)
 {
     PKCS12Signer signer1("signer1.p12", "signer1");
-    for(const string &data : {"0123456789~#%&()=`@{[]}'", "öäüõ"})
+    for(const string &data : {"0123456789~#%&()=`@{[]}'", "öäüõ", "test%20file", "test file"})
     {
         auto d = Container::createPtr("test." + Doc::EXT);
         const Signature *s1 = nullptr;

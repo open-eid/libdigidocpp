@@ -23,7 +23,7 @@
           "kind": "git",
           "repository": "https://github.com/open-eid/vcpkg-ports",
           "reference": "vcpkg-registry",
-          "baseline": "10f07d1b2f04f98fce8de4398d0ae98b71e5e8b1",
+          "baseline": "a6698ca4d4550e22124f754d95f1e2b455acb112",
           "packages": ["openssl", "xmlsec"]
         }
       ]

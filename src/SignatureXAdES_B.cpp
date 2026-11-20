@@ -138,10 +138,15 @@ int initXmlSecCallback()
                 return {};
             }
 
-            auto find = [name](auto files) -> const DataFile* {
+            // Since xmlsec 1.3.13 the URI is passed as-is, older versions pass it percent-decoded
+#if VERSION_CHECK(XMLSEC_VERSION_MAJOR, XMLSEC_VERSION_MINOR, XMLSEC_VERSION_SUBMINOR) >= VERSION_CHECK(1, 3, 13)
+            auto find = [uriName = File::fromUriPath(name)](auto files) -> const DataFile* {
+#else
+            auto find = [uriName = string_view(name)](auto files) -> const DataFile* {
+#endif
                 for(const DataFile *file: files)
                 {
-                    if(file->fileName() == name)
+                    if(file->fileName() == uriName)
                         return file;
                 }
                 return {};
@@ -441,7 +446,8 @@ void SignatureXAdES_B::validate(const string &policy) const
         X509Cert cert = signingCertificate();
         cb_doc = bdoc;
         cb_exception = &exception;
-        bool result = XMLDocument::verifySignature(signature, cert, &exception);
+        bool result = XMLDocument::verifySignature(signature, cert, &exception,
+            xmlSecTransformUriTypeEmpty | xmlSecTransformUriTypeSameDocument | xmlSecTransformUriTypeRemote);
         cb_doc = {};
         cb_exception = {};
         if(!result)
