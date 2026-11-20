@@ -292,6 +292,14 @@ regenerating a schema means re-applying them.
    <!-- originally "http://uri.etsi.org/01903/v1.3.2/XAdES.xsd" -->
    ```
 
+## Local XAdES file references {#xades-file-references}
+
+Local XAdES validation matches file references relative to the container root.
+Previous versions stripped a leading `/` before matching references during
+file coverage and archive time-stamp checks. With that compatibility
+workaround removed, `/test1.txt` no longer covers `test1.txt`. A relative
+path such as `folder/test1.txt` still works where the format permits it.
+
 ## Online validation through SiVa {#siva-requests}
 
 PDF files, legacy DDoc files and ASiC containers with CAdES signatures are not

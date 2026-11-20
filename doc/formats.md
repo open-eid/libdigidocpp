@@ -86,6 +86,10 @@ package identified by the media type
 ADOC package can contain format-specific metadata referenced by its XAdES
 signatures.
 
+Clause 25 of ADOC V1.0 requires file and directory references to be relative
+to the package root. The reference `/` identifies the package itself. File
+and directory references must not begin with `/`.
+
 Since version 3.13.0, libdigidocpp provides legacy read-only compatibility for
 ADOC V1.0. The library can open the package, expose its data files, and locally
 validate its XAdES signatures, including signatures using the OpenDocument

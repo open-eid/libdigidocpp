@@ -1227,6 +1227,18 @@ BOOST_AUTO_TEST_CASE(signature_must_cover_every_data_file)
         BOOST_CHECK_EQUAL(e.causes().front().msg(), missingLT);
     }
 }
+
+BOOST_AUTO_TEST_CASE(LeadingSlashReferenceURI)
+{
+    // URI="/test1.txt" is not a container-relative reference, so it does not match test1.txt
+    auto d = Container::openPtr("test-leading-slash-uri.asice");
+    BOOST_REQUIRE_EQUAL(d->dataFiles().size(), 1U);
+    BOOST_REQUIRE_EQUAL(d->signatures().size(), 1U);
+    BOOST_CHECK_EQUAL(d->dataFiles().front()->fileName(), "test1.txt");
+    BOOST_CHECK_EXCEPTION(d->signatures().front()->validate(), Exception, [](const Exception &e) {
+        return exceptionContains(e, "Manifest datafile not listed in signature references test1.txt");
+    });
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(ASiCSTestSuite)
