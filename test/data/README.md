@@ -13,6 +13,13 @@
   certificate elements in KeyInfo or CertificateValues. The empty elements must
   be ignored without introducing signer or OCSP validation failures. These samples
   use a TSA not trusted by the test TSL, which the regression test allows separately.
+* `keyinfo-split-signer.asice` - `keyinfo-empty-cert.asice` with its KeyInfo
+  rearranged: an empty certificate and the signer certificate in the first
+  X509Data, then a second X509Data holding a copy of the signer certificate with
+  a different CN, re-signed with an unrelated key. The signature value, OCSP
+  response and the signed SigningCertificate digest are unchanged. Validation
+  must check the copy, which verifies the signature value, against the TSL and
+  reject it.
 * `issuer-chain-leaf.crt` and `issuer-chain-intermediate.crt` - Public DER test
   certificates valid from 2025 to 2030. The leaf requires a supplied self-issued
   key-rollover intermediate to reach the TSL-listed `inter.crt`; its root
