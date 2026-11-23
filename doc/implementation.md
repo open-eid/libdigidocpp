@@ -24,19 +24,32 @@ This page documents build dependencies, bundled schema adaptations,
 interoperability testing, and certificate-validation behavior relevant to
 maintainers and advanced integrators.
 
+## ZIP archive comment {#zip-archive-comment}
+
+When writing a container, libdigidocpp puts its application identification
+string in the ZIP archive comment. This can help identify the software that
+wrote the archive when troubleshooting a container.
+
 ## Mimetype compatibility {#mimetype-compatibility}
 
-Reading the `mimetype` ZIP entry does not require the STORED (uncompressed) mode:
-DEFLATE-compressed entries are also accepted for backward compatibility with older
-jdigidoc documents. Containers written by this library use STORED mode for `mimetype`.
+[ETSI EN 319 162-1](#ASiC), Annex A.1, requires the `mimetype` ZIP entry
+to be uncompressed. Libdigidocpp deliberately accepts DEFLATE-compressed
+`mimetype` entries when reading existing containers, as a compatibility
+exception for previously created documents, including older jdigidoc files.
+A compressed `mimetype` alone does not cause rejection. This exception is
+retained alongside ZIP consistency checks; other ZIP integrity and signature
+checks still apply. Containers written by this library use STORED
+(uncompressed) mode for `mimetype`.
+
+Earlier ASiC interoperability plug tests found that an uncompressed
+`mimetype` entry was the most widely used approach.
 
 The reader accepts and removes a UTF-8 byte-order mark and trailing ASCII whitespace.
 UTF-16 byte-order marks (`FF FE` or `FE FF`) are rejected; no UTF-16 conversion is performed.
 
 ASiC-S permits an absent `mimetype` entry (ETSI EN 319 162-1 V1.1.1, clause
-4.3.3.2). When present, Annex A.1 requires it to be first and uncompressed.
-Accepting compressed or misplaced entries is library compatibility behavior,
-rather than a format requirement.
+4.3.3.2). When present, Annex A.1 also requires it to be first.
+Accepting misplaced entries is another library compatibility tolerance.
 
 When opening `.asics` or `.scs` files, the ASiC-S reader retains its tolerance
 for a misplaced `mimetype` entry. For other extensions, including extensionless files,
@@ -86,19 +99,19 @@ description is given in the list below.
 - `en_31916201v010101.xsd` – Associated Signature Containers
   (\ref ASiC "ASiC"). Defines the format of container for encapsulating the
   signed documents, signatures and additional information.
-  http://www.etsi.org/deliver/etsi_ts/102900_102999/102918/01.02.01_60/
+  https://www.etsi.org/deliver/etsi_en/319100_319199/31916201/01.01.01_60/
 - `xmldsig-core-schema.xsd` – XML Signature Core Schema Instance
   (\ref XML-DSIG "XML-DSIG"). Defines XML syntax for digital signatures.
-  http://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd
+  https://www.w3.org/TR/2008/REC-xmldsig-core-20080610/xmldsig-core-schema.xsd
 - `XAdES01903v132-201601.xsd` – XML Advanced Electronic Signatures
   (\ref XAdES "XAdES EN"). Defines a set of extensions to XML-DSIG making it
   suitable for advanced electronic signature.
-  http://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd
+  https://uri.etsi.org/01903/v1.3.2/XAdES01903v132-201601.xsd
 - `XAdES01903v141-201601.xsd` – Defines XML syntax for additional elements of
   XAdES signatures that were added with version 1.4.1 of the
   (\ref XAdES "XAdES EN") standard. Used for XAdES archive time-stamps,
   including the ArchiveTimeStamp element.
-  http://uri.etsi.org/01903/v1.4.1/XAdES01903v141-201601.xsd
+  https://uri.etsi.org/01903/v1.4.1/XAdES01903v141-201601.xsd
 - `ts_119612v020201_201601xsd.xsd`, `ts_119612v020101_additionaltypes_xsd.xsd`,
   `ts_119612v020101_sie_xsd.xsd` – Defines the format of Trust Service status
   Lists (\ref TSL) that contain information about trusted CA, OCSP and TSA
@@ -133,6 +146,44 @@ java -jar trang.jar OpenDocument-v1.2-os-dsig-schema.rng OpenDocument_dsig.xsd
 Trang carries the OASIS copyright notice across into its output. The
 modifications listed below are applied to the generated files afterwards, so
 regenerating a schema means re-applying them.
+
+**Schema OpenDocument_manifest_v1_2.xsd**
+
+1. The `manifest:version` attribute is optional, to keep backward compatibility
+   with manifests that omit it.
+   ```xml
+   <xs:attribute name="version" form="qualified"><!-- use="required" removed to keep backward compatibility -->
+   ```
+
+**Schema OpenDocument_dsig.xsd**
+
+1. Import the local XML Signature and XAdES schemas at the schema root.
+   ```xml
+   <xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
+   <xs:import namespace="http://uri.etsi.org/01903/v1.3.2#" schemaLocation="XAdES01903v132-201601.xsd"/>
+   <xs:import namespace="http://uri.etsi.org/01903/v1.4.1#" schemaLocation="XAdES01903v141-201601.xsd"/>
+   ```
+2. In the `document-signatures` sequence, replace the generated signature
+   declaration with a reference to the imported `ds:Signature` element. This
+   validates the signature against the full XML Signature schema.
+   ```xml
+   <xs:element maxOccurs="unbounded" ref="ds:Signature"/>
+   ```
+3. The required `dsig:version` attribute has been commented out, so ADOC
+   signature files without it are accepted.
+   ```xml
+   <!--xs:attributeGroup ref="dsig:dsig-document-signatures-attlist"/-->
+   <!--xs:attributeGroup name="dsig-document-signatures-attlist">
+     ...
+   </xs:attributeGroup-->
+   ```
+4. The `ds:Signature` reference makes the wildcard `dsMarkup` type unused.
+   Comment out that type.
+   ```xml
+   <!--xs:complexType name="dsMarkup" mixed="true">
+     ...
+   </xs:complexType-->
+   ```
 
 **Schema en_31916201v010101.xsd**
 
@@ -321,10 +372,13 @@ What is sent depends on the format:
   the original DDoc, including the data file content. DDoc files whose data
   files are already in `HASHCODE` form are rejected.
 
-Applications control online access with the digidoc::ContainerOpenCB passed to
-digidoc::Container::openPtr. If digidoc::ContainerOpenCB::validateOnline
+Applications control whether a container is sent to SiVa with the
+digidoc::ContainerOpenCB passed to digidoc::Container::openPtr.
+If digidoc::ContainerOpenCB::validateOnline
 returns `false`, the library does not contact SiVa and opening these formats
-fails. Without a callback, SiVa is always contacted.
+fails. Without a callback, formats that require SiVa are sent automatically.
+Other network access, such as TSL updates and requests to OCSP or time-stamp
+services, can still occur.
 
 An ASiC-S container whose only data file is a `.ddoc` file and whose only
 signature is an \ref RFC3161 "RFC 3161" time-stamp token can enclose a DDoc.

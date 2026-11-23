@@ -98,8 +98,9 @@ for more information).
 
 > [!NOTE]
 > For testing purposes, the SK's test time-stamping service can be used. The
-> service is available at http://demo.sk.ee/tsa/ additional information can be
-> found at https://www.id.ee/en/article/trust-services-timestamping-service/.
+> service is available at http://tsa.demo.sk.ee/tsa. Additional information
+> can be found at
+> https://www.id.ee/en/article/trust-services-timestamping-service/.
 
 ### Signature Verify Service settings {#VerifyService-settings}
 

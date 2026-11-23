@@ -129,13 +129,16 @@ string Conf::proxyPass() const { return {}; }
 /**
  * Gets PKCS12 certificate file location.
  *
- * Used for signing OCSP request
+ * Was used for signing OCSP requests. OCSP request signing was removed in 3.16.0,
+ * and this setting has no effect; it always returns an empty string.
  * @deprecated Since 3.16.0
  */
 string Conf::PKCS12Cert() const { return {}; }
 
 /**
  * Gets PKCS12 password.
+ *
+ * Has no effect; always returns an empty string.
  * @deprecated Since 3.16.0
  * @see digidoc::Conf::PKCS12Cert
  */
@@ -143,6 +146,8 @@ string Conf::PKCS12Pass() const { return {}; }
 
 /**
  * Gets PKCS12 usage.
+ *
+ * Has no effect; always returns false.
  * @deprecated Since 3.16.0
  * @see digidoc::Conf::PKCS12Cert
  */

@@ -638,12 +638,11 @@ SET1CONST(string, setProxyPass, proxyPass)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Cert(const std::string &cert)
- * Sets a PKCS#12 certficate path. Also adds or replaces PKCS#12 certificate path in the user configuration file.
- * By default the PKCS#12 certificate file should be located at default path, given by getUserConfDir() function.
+ * Does nothing. OCSP request signing with a PKCS#12 certificate was removed in 3.16.0,
+ * and the value is neither used nor saved to the user configuration file.
  *
  * @deprecated Since 3.16.0
- * @param cert PKCS#12 certificate location path.
- * @throws Exception exception is thrown if saving a PKCS#12 certificate path into a user configuration file fails.
+ * @param cert ignored.
  */
 /**
  * @fn void digidoc::XmlConfV2::setPKCS12Cert(const std::string &cert)
@@ -669,11 +668,10 @@ SET1CONSTEX(string, setPKCS12Cert, (void)value)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Pass(const std::string &pass)
- * Sets a PKCS#12 certificate password. Also adds or replaces PKCS#12 certificate password in the user configuration file.
+ * Does nothing. The value is neither used nor saved to the user configuration file.
  *
  * @deprecated Since 3.16.0
- * @param pass PKCS#12 certificate password.
- * @throws Exception exception is thrown if saving a PKCS#12 certificate password into a user configuration file fails.
+ * @param pass ignored.
  */
 /**
  * @fn void digidoc::XmlConfV2::setPKCS12Pass(const std::string &pass)
@@ -780,11 +778,10 @@ SET1CONST(string, setVerifyServiceUri, verifyServiceUri)
 
 /**
  * @fn void digidoc::XmlConf::setPKCS12Disable(bool disable)
- * Sets a PKCS#12 certificate usage. Also adds or replaces PKCS#12 certificate usage in the user configuration file.
+ * Does nothing. The value is neither used nor saved to the user configuration file.
  *
  * @deprecated Since 3.16.0
- * @param disable PKCS#12 certificate usage.
- * @throws Exception exception is thrown if saving a PKCS#12 certificate usage into a user configuration file fails.
+ * @param disable ignored.
  */
 /**
  * @fn void digidoc::XmlConfV2::setPKCS12Disable(bool disable)

@@ -97,7 +97,8 @@ Validate the container before extracting data files.
 .B \-\-offline
 Do not send unsupported local formats to SiVa. Service-backed formats cannot
 be opened in this mode. An ASiC-S container that encloses a DDoc file is
-opened as a plain time-stamped container.
+opened as a plain time-stamped container. Other network access, such as TSL
+updates, can still occur.
 .SS add
 Add data files to an unsigned ASiC-E container. The
 .B \-\-file
@@ -177,7 +178,7 @@ Two-character country code of the signature production place.
 Signer role. This option may occur multiple times.
 .TP
 .BR \-\-pkcs11 [=driver]
-Use PKCS#11. If no driver is given, the configured default is
+Use PKCS#11 (default on Linux and macOS). If no driver is given, the configured default is
 ${PKCS11_MODULE}.
 .TP
 .BI \-\-pkcs12= file
@@ -186,10 +187,14 @@ Use a PKCS#12 software token. The
 value is used as its password.
 .TP
 .BI \-\-pin= value
-PIN or PKCS#12 password. PKCS#11 prompts for a PIN when this is omitted.
+PIN or PKCS#12 password. With PKCS#11, omitting this option prompts for a PIN
+if the token requires login without a protected authentication path.
+With a protected authentication path, the token or driver handles PIN entry.
+With CNG, a supplied PIN is passed to the provider, which handles any prompts.
+With PKCS#12, omitting this option uses an empty password without prompting.
 .TP
 .B \-\-cng
-On Windows, use the Microsoft CNG signing API.
+Use the Microsoft CNG signing API (default on Windows).
 .TP
 .B \-\-selectFirst
 On Windows, select the first suitable certificate instead of showing a
@@ -199,13 +204,14 @@ selection dialog.
 On Windows, select a certificate by its hexadecimal thumbprint.
 .TP
 .BR \-\-sha224 | \-\-sha256 | \-\-sha384 | \-\-sha512
-Select the data digest algorithm. The default is SHA-256.
+Select the default digest for references and time-stamps. The default is SHA-256.
 .TP
 .BR \-\-sigsha224 | \-\-sigsha256 | \-\-sigsha384 | \-\-sigsha512
-Select the signature digest algorithm. The default is SHA-256.
+Select the RSA signature hash. The default is SHA-256.
+ECDSA selects the signature hash based on the EC key size.
 .TP
 .BR \-\-sigpsssha224 | \-\-sigpsssha256 | \-\-sigpsssha384 | \-\-sigpsssha512
-Select the signature digest algorithm and RSA-PSS padding.
+Select the RSA signature hash and enable RSA-PSS padding.
 .TP
 .B \-\-rsapkcs15
 Use RSA PKCS#1 v1.5 padding.
@@ -260,10 +266,18 @@ Print the digidoc-tool and libdigidocpp versions.
 .B \-\-nocolor
 Disable terminal colors.
 .TP
-.BR \-\-loglevel= 0|1|2|3|4
-Set logging to none, error, warning, info, or debug respectively.
+.BI \-\-loglevel= level
+Set logging verbosity: 0 for errors, 1 for warnings, 2 for info,
+and 3 or higher for debug. Each level includes the lower levels.
 .TP
 .BI \-\-logfile= file
 Write logs to a file. An empty value writes logs to the console.
+.TP
+.BI \-\-tslurl= url
+Use a custom list of trusted lists (LOTL) for testing.
+.TP
+.BI \-\-tslcert= file
+Use the certificate in this file to verify the LOTL signature.
+Use both options when the test LOTL has its own signing certificate.
 .SH SEE ALSO
 .BR qdigidoc4 (1)

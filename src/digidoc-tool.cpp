@@ -388,7 +388,7 @@ static int printUsage(const char *executable)
     << "      --warnings=(ignore,warning,error) - warning handling (default warning)" << endl
     << "      --extractAll[=path]    - extracts documents without validating signatures (to path when provided)" << endl
     << "      --validateOnExtract    - validates container before extracting files" << endl << endl
-    << "      --offline              - open container offline (eg. Don't send to SiVa)" << endl << endl
+    << "      --offline              - Do not send the container to SiVa. TSL updates can still occur." << endl << endl
     << "  Command add:" << endl
     << "    Example: " << executable << " add --file=file1.txt container-file.asice" << endl
     << "    Available options:" << endl
@@ -415,16 +415,24 @@ static int printUsage(const char *executable)
     << "      --country=     - country of production place" << endl
     << "      --role=        - option can occur multiple times. Signer role(s)" << endl
 #ifdef _WIN32
-    << "      --cng          - Use CNG api for signing under windows." << endl
+    << "      --cng          - Use CNG for signing (default on Windows)." << endl
     << "      --selectFirst  - Select first certificate in store." << endl
     << "      --thumbprint=  - Select certificate in store with specified thumbprint (HEX)." << endl
 #endif
-    << "      --pkcs11[=]    - default is " << CONF(PKCS11Driver) << ". Path of PKCS11 driver." << endl
+    << "      --pkcs11[=]    - Use PKCS#11 (default on Linux and macOS)." << endl
+    << "                       Default driver: " << CONF(PKCS11Driver) << endl
     << "      --pkcs12=      - pkcs12 signer certificate (use --pin for password)" << endl
-    << "      --pin=         - default asks pin from prompt" << endl
-    << "      --sha(224,256,384,512) - set default digest method (default sha256)" << endl
-    << "      --sigsha(224,256,384,512) - set default digest method (default sha256)" << endl
-    << "      --sigpsssha(224,256,384,512) - set default digest method using RSA PSS (default sha256, same as --sigsha* with --rsapss)" << endl
+    << "      --pin=         - PIN or PKCS#12 password." << endl
+    << "                       PKCS#11 prompts if login requires a PIN supplied by the tool." << endl
+    << "                       A protected authentication path handles PIN entry itself." << endl
+#ifdef _WIN32
+    << "                       CNG passes a supplied PIN to the provider, which handles prompts." << endl
+#endif
+    << "                       PKCS#12 uses an empty password if omitted." << endl
+    << "      --sha(224,256,384,512) - Select the default digest for references and time-stamps." << endl
+    << "      --sigsha(224,256,384,512) - Select the RSA signature hash." << endl
+    << "      --sigpsssha(224,256,384,512) - Select the RSA signature hash and enable RSA-PSS padding." << endl
+    << "      ECDSA selects the signature hash based on the EC key size." << endl
     << "      --rsapkcs15    - Use RSA PKCS1.5 padding" << endl
     << "      --rsapss       - Use RSA PSS padding" << endl
     << "      --tsurl=       - option to change TS URL (default " << CONF(TSUrl) << ")" << endl
@@ -444,8 +452,11 @@ static int printUsage(const char *executable)
     << "    Prints digidoc-tool and libdigidocpp versions." << endl << endl
     << "  All commands:" << endl
     << "      --nocolor      - Disable terminal colors" << endl
-    << "      --loglevel=[0,1,2,3,4] - Log level 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug" << endl
-    << "      --logfile=     - File to log, empty to console" << endl;
+    << "      --loglevel=    - 0: errors, 1: warnings, 2: info, 3 or higher: debug" << endl
+    << "      --logfile=     - File to log, empty to console" << endl << endl
+    << "  Testing with a custom trust list:" << endl
+    << "      --tslurl=      - URL of the test list of trusted lists (LOTL)" << endl
+    << "      --tslcert=     - File containing the test LOTL signing certificate" << endl;
     return EXIT_FAILURE;
 }
 
