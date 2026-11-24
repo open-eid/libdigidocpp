@@ -17,6 +17,28 @@
       }
     },
     {
+      "name": "asan",
+      "displayName": "AddressSanitizer",
+      "description": "Debug build with AddressSanitizer and UndefinedBehaviorSanitizer; leak detection on Linux",
+      "inherits": "default",
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "environment": {
+        "SANITIZER_FLAGS": "-fsanitize=address,undefined",
+        "SANITIZER_LDFLAGS": "$env{SANITIZER_FLAGS}"
+      },
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "$env{SANITIZER_FLAGS} -fno-omit-frame-pointer",
+        "CMAKE_CXX_FLAGS": "$env{SANITIZER_FLAGS} -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "$env{SANITIZER_LDFLAGS}",
+        "CMAKE_SHARED_LINKER_FLAGS": "$env{SANITIZER_LDFLAGS}",
+        "CMAKE_MODULE_LINKER_FLAGS": "$env{SANITIZER_LDFLAGS}"
+      }
+    },
+    {
       "name": "macos",
       "description": "This macos build is only available on macOS",
       "inherits": "default",
@@ -33,6 +55,22 @@
         "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
         "CMAKE_OSX_DEPLOYMENT_TARGET": "14.0",
         "CMAKE_FIND_ROOT_PATH": "$env{DEST}"
+      }
+    },
+    {
+      "name": "asan-macos",
+      "displayName": "AddressSanitizer (macOS)",
+      "description": "arm64 ASan/UBSan/LSan build with Homebrew LLVM (brew install llvm); run from the build tree, do not install",
+      "inherits": ["macos", "asan"],
+      "environment": {
+        "LLVM": "/opt/homebrew/opt/llvm",
+        "SANITIZER_LDFLAGS": "$env{SANITIZER_FLAGS} -L$env{LLVM}/lib/c++ -L$env{LLVM}/lib/unwind -Wl,-rpath,$env{LLVM}/lib/c++ -Wl,-rpath,$env{LLVM}/lib/unwind -lunwind"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "$env{LLVM}/bin/clang",
+        "CMAKE_CXX_COMPILER": "$env{LLVM}/bin/clang++",
+        "CMAKE_OSX_SYSROOT": "macosx",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
       }
     },
     {
@@ -53,69 +91,58 @@
       }
     },
     {
-      "name": "ios",
-      "hidden": true,
+      "name": "iphoneos",
+      "description": "This iphoneos build is only available on macOS",
       "inherits": ["mobile","macos"],
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
         "CMAKE_OSX_SYSROOT": "${presetName}",
         "CMAKE_OSX_DEPLOYMENT_TARGET": "16.0",
         "CMAKE_DISABLE_FIND_PACKAGE_SWIG": "YES",
-        "FRAMEWORK_DESTINATION": "$env{DEST}/lib"
-      }
-    },
-    {
-      "name": "iphoneos",
-      "inherits": "ios",
-      "description": "This iphoneos build is only available on macOS",
-      "cacheVariables": {
-        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "FRAMEWORK_DESTINATION": "$env{DEST}/lib",
         "VCPKG_TARGET_TRIPLET": "arm64-ios"
       }
     },
     {
       "name": "iphonesimulator",
-      "inherits": "ios",
+      "inherits": "iphoneos",
       "description": "This iphonesimulator build is only available on macOS",
       "cacheVariables": {
-        "VCPKG_TARGET_TRIPLET": "arm64-x64-ios-simulator",
+        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
         "CMAKE_DISABLE_FIND_PACKAGE_Boost": "NO",
         "VCPKG_MANIFEST_FEATURES": "tests",
-        "CMAKE_CROSSCOMPILING_EMULATOR": "xcrun;simctl;spawn;booted"
+        "CMAKE_CROSSCOMPILING_EMULATOR": "xcrun;simctl;spawn;booted",
+        "VCPKG_TARGET_TRIPLET": "arm64-x64-ios-simulator"
       }
     },
     {
       "name": "iphonecatalyst",
-      "inherits": "ios",
+      "inherits": "iphoneos",
       "description": "This iphonecatalyst build is only available on macOS",
       "cacheVariables": {
+        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
         "CMAKE_OSX_SYSROOT": "macosx",
         "VCPKG_TARGET_TRIPLET": "arm64-x64-ios-catalyst"
       }
     },
     {
-      "name": "android",
-      "hidden": true,
+      "name": "androidarm",
+      "description": "androidarm build",
       "inherits": "mobile",
       "cacheVariables": {
+        "CMAKE_ANDROID_ARCH_ABI": "armeabi-v7a",
+        "CMAKE_ANDROID_NDK": "$env{ANDROID_NDK_HOME}",
         "CMAKE_SYSTEM_NAME": "Android",
         "CMAKE_SYSTEM_VERSION": "30",
         "CMAKE_DISABLE_FIND_PACKAGE_Python3": "YES",
-        "BUILD_SHARED_LIBS": "NO"
-      }
-    },
-    {
-      "name": "androidarm",
-      "inherits": "android",
-      "description": "androidarm build",
-      "cacheVariables": {
-        "CMAKE_ANDROID_ARCH_ABI": "armeabi-v7a",
+        "BUILD_SHARED_LIBS": "NO",
         "VCPKG_TARGET_TRIPLET": "arm-neon-android"
       }
     },
     {
       "name": "androidarm64",
-      "inherits": "android",
+      "inherits": "androidarm",
       "description": "androidarm64 build",
       "cacheVariables": {
         "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a",
@@ -124,7 +151,7 @@
     },
     {
       "name": "androidx86_64",
-      "inherits": "android",
+      "inherits": "androidarm",
       "description": "androidx86_64 build",
       "cacheVariables": {
         "CMAKE_ANDROID_ARCH_ABI": "x86_64",
@@ -167,8 +194,16 @@
       "configurePreset": "default"
     },
     {
+      "name": "asan",
+      "configurePreset": "asan"
+    },
+    {
       "name": "macos",
       "configurePreset": "macos"
+    },
+    {
+      "name": "asan-macos",
+      "configurePreset": "asan-macos"
     },
     {
       "name": "iphoneos",
@@ -217,9 +252,26 @@
       }
     },
     {
+      "name": "asan",
+      "configurePreset": "asan",
+      "inherits": "default",
+      "environment": {
+        "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+      }
+    },
+    {
       "name": "macos",
       "configurePreset": "macos",
       "inherits": "default"
+    },
+    {
+      "name": "asan-macos",
+      "configurePreset": "asan-macos",
+      "inherits": "asan",
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=1",
+        "LSAN_OPTIONS": "suppressions=${sourceDir}/test/lsan-macos.supp"
+      }
     },
     {
       "name": "iphonesimulator",

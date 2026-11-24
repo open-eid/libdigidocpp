@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Estonian Information System Authority
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# Process-lifetime allocations in macOS resolver dependencies.
+# Match the system modules instead of getaddrinfo, so callers' leaked
+# addrinfo results remain detectable.
+leak:Network.framework
+leak:libxpc.dylib
+leak:libswiftCore.dylib

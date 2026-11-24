@@ -10,6 +10,8 @@
 #include "util/DateTime.h"
 #include "util/File.h"
 
+#include <openssl/crypto.h>
+
 #include <array>
 #include <charconv>
 #include <chrono>
@@ -191,16 +193,19 @@ vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs
     {
         if(!File::fileExists(cache + "/" + p.territory + ".xml"))
             continue;
-        futures.push_back(async(launch::async, [p, cache] noexcept -> vector<TSL::Service> {
+        futures.push_back(async(launch::async, [p, cache] noexcept {
+            vector<TSL::Service> services;
             try {
-                return parse(p.location, p.certs, cache, p.territory + ".xml");
+                services = parse(p.location, p.certs, cache, p.territory + ".xml");
             }
             catch(const Exception &e)
             {
                 debugException(e);
                 ERR("TSL %s Failed to validate list", p.territory.c_str());
-                return {};
             }
+            xmlResetLastError();
+            OPENSSL_thread_stop();
+            return services;
         }));
     }
     vector<Service> list;

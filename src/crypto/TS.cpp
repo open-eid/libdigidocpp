@@ -167,7 +167,7 @@ auto TS::tstInfo() const
 #ifndef OPENSSL_NO_CMS
     if(cms)
     {
-        if(auto out = make_unique_ptr<BIO_free>(CMS_dataInit(cms.get(), nullptr)))
+        if(auto out = make_unique_ptr<BIO_free_all>(CMS_dataInit(cms.get(), nullptr)))
             return make_unique_ptr<TS_TST_INFO_free>(d2i_TS_TST_INFO_bio(out.get(), nullptr));
     }
 #endif
@@ -250,13 +250,8 @@ void TS::verify(const vector<unsigned char> &digest)
     else if(cms)
     {
         auto out = make_unique_ptr<BIO_free>(BIO_new(BIO_s_mem()));
-        // Override smime_sign purpose bit because it is actually timestamp
-        X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
-        X509_VERIFY_PARAM_set1_name(param, "smime_sign");
-        X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_TIMESTAMP_SIGN);
-        X509_VERIFY_PARAM_add0_table(param);
+        X509_STORE_set_purpose(store.get(), X509_PURPOSE_TIMESTAMP_SIGN);
         int err = CMS_verify(cms.get(), nullptr, store.get(), nullptr, out.get(), 0);
-        X509_VERIFY_PARAM_table_cleanup();
         if(err != 1)
             THROW_OPENSSLEXCEPTION("Failed to verify TS response.");
 
