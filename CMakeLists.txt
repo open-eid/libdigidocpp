@@ -106,7 +106,6 @@ endif()
 
 find_package(OpenSSL 3.0.0 REQUIRED)
 find_package(PKCS11)
-#find_package(PoDoFo)
 find_package(Threads)
 find_package(LibXml2 REQUIRED)
 find_package(ZLIB REQUIRED)
