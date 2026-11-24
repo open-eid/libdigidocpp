@@ -5,20 +5,14 @@ import SwiftUI
 
 @main
 struct LibdigidocppApp: App {
-    @State private var documentURL: URL?
+    @State private var selection: DocumentSelection?
 
     var body: some Scene {
         WindowGroup {
-            ContentView(path: documentPath)
+            ContentView(selection: $selection)
                 .onOpenURL { url in
-                    documentURL = url
+                    selection = DocumentSelection(url: url)
                 }
         }
-    }
-
-    private var documentPath: String {
-        documentURL?.path
-            ?? Bundle.main.path(forResource: "test", ofType: "bdoc")
-            ?? ""
     }
 }
