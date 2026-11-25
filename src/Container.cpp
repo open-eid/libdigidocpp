@@ -178,7 +178,8 @@ void digidoc::terminate()
 
 /**
  * @fn digidoc::ContainerOpenCB::validateOnline
- * Called when requested access online resources.
+ * Return false to prevent sending the container to SiVa for validation.
+ * Other network requests, such as TSL updates, can still occur.
  */
 /**
  * @fn digidoc::ContainerOpenCB::~ContainerOpenCB
@@ -218,6 +219,8 @@ Container::~Container() = default;
  * @throws Exception if the stored file name or MIME type is not valid UTF-8 or contains
  * a character disallowed by XML 1.0. Invalid metadata is rejected without adding the data file.
  * @note ASiC containers reject data files larger than 1 GiB or a combined data-file size above 2032 MiB when adding them.
+ * @note When saving an ASiC container, the ZIP entry uses the source file's
+ * modification time captured when the file was added.
  * @note Data files can be removed from container only after all signatures are removed.
  */
 
@@ -255,6 +258,9 @@ void Container::addDataFile(istream *is, const string &fileName, const string &m
  * a character disallowed by XML 1.0. Invalid metadata is rejected without adding the data file.
  * @note ASiC containers reject streams larger than 1 GiB or a combined known data-file size above 2032 MiB
  * when their size can be determined by seeking.
+ * @note When saving an ASiC data file added from a stream, the ZIP entry uses
+ * the stored modification time for that file name, or the current time if no
+ * ZIP properties exist for it.
  * @note Data files can be removed from container only after all signatures are removed.
  */
 void Container::addDataFile(unique_ptr<istream> /*is*/, const string & /*fileName*/, const string & /*mediaType*/)

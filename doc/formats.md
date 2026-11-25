@@ -19,8 +19,11 @@ ASiC-E container is a ZIP file consisting of the following objects:
   - `manifest.xml` – a file containing list of all files in the container. The list does not contain the "mimetype" file and files in META-INF subdirectory.
   - `signatures*.xml` – one file for each signature, ‘`*`’ in the file’s name denotes the sequence number of a signature (counting starts from zero). The `signatures*.xml` file also incorporates certificates, validity confirmation and meta-data about the signer.
 
-For compatibility with older jdigidoc documents, reading also accepts a compressed
-`mimetype` entry. The library writes it uncompressed; see \ref mimetype-compatibility.
+Reading deliberately accepts a DEFLATE-compressed `mimetype` entry for backward
+compatibility with existing documents, including older jdigidoc files. This is
+an exception to [ETSI EN 319 162-1](#ASiC), Annex A.1, which requires it to
+be uncompressed. The library writes it uncompressed; see "Mimetype
+compatibility" in the [implementation notes](implementation.md).
 
 When ASiC-E container is signed then all files in the container are signed, except of the mimetype file and files in META-INF subdirectory.
 
@@ -28,19 +31,63 @@ Original files (which were signed) along with the signature(s), timestamp(s), va
 
 ![ASiC-E container's contents](images/asic.svg)
 
-## Legacy BDOC signature profiles {#profiles}
+## ASiC-E XAdES signature profiles {#profiles}
 
-The format of the BDOC 2.1 digitally signed file is based on ETSI \ref XAdES "XAdES TS 101 903" standard. The XAdES standard defines formats for advanced electronic signatures that remain valid over long periods of time. The ETSI standard \ref XAdES "TS 103 171" "XAdES Baseline Profile" further profiles the XAdES signature by putting limitations on choices.
+The [XAdES EN 319 132-1](#XAdES) standard defines formats for advanced
+electronic signatures that remain valid over long periods of time. XAdES
+Baseline profiles further constrain the signature syntax and the validation
+material included with a signature.
 
-BDOC 2.1 specification defines two profiles of qualified BDOC signatures: BDOC with time-mark and BDOC with time-stamp. Both of the profiles offer long-term validation possibility by incorporating the necessary validation data in the signature. Both of the profiles are compliant to XAdES LT-Level requirements.
+### ASiC-E signature with time-stamp {#ASiC-E-TS}
+
+The default libdigidocpp signature profile for ASiC-E is an XAdES signature
+with a time-stamp. It incorporates the validation material needed for
+long-term validation.
+
+In order to provide long-term validation, proof is needed that the signer's
+X.509 certificate was valid at the time of signature creation. For the
+time-stamp profile, the proof is provided as follows:
+1. A time-stamp compliant with [RFC 3161](#RFC3161) is obtained from a
+   time-stamping service. The hash of the created signature
+   (`<SignatureValue>` element) is sent to the service. The returned
+   time-stamp token contains the same hash and proves that the signature value
+   existed at the token's issuance time.
+2. An [RFC 6960](#RFC6960) compliant OCSP confirmation is obtained from an
+   OCSP service. The response confirms the status of the signer's certificate
+   at its production time.
+3. The verifier checks the difference between the time-stamp token's issuance
+   time and the OCSP response's production time.
+
+> [!NOTE]
+> The [RFC 3161 TSTInfo.genTime](#RFC3161) field records when the TSA
+> issued the time-stamp token. A valid token proves that the signature value
+> existed by that time. Libdigidocpp reports this value as the trusted signing
+> time when a signature time-stamp is available.
+
+## Legacy BDOC 2.1 profiles {#bdoc}
+
+BDOC 2.1 is a legacy profile based on the older ETSI
+[XAdES TS 101 903](#XAdES) specification. It defines the BDOC-TS and
+BDOC-TM profiles. Both incorporate material for long-term validation.
+
+### BDOC signature with time-stamp {#BDOC-TS}
+
+BDOC-TS uses the same time-stamp and OCSP mechanism as the
+[ASiC-E signature with time-stamp](#ASiC-E-TS).
 
 ### BDOC signature with time-mark {#BDOC-TM}
 
-The BDOC signature with time-mark is based XAdES-EPES signature (Explicit Policy based Electronic Signature, see \ref XAdES "XAdES").
+The BDOC signature with time-mark is based on an XAdES-EPES signature
+(Explicit Policy-based Electronic Signature, see [XAdES](#XAdES)).
 
-In order to offer long time validation, it is necessary to obtain proof of validity of the signer’s X.509 digital certificate issued by a certificate authority (CA) at the time of signature creation. In case of BDOC with time-marks (TM profile), the proof is obtained with a single OCSP response that has a specific "nonce" field’s value (i.e. the time-mark).
+For the time-mark profile, proof of certificate validity and signing time is
+obtained with a single OCSP response whose `nonce` contains the signature
+digest. This OCSP response is referred to as the time-mark.
 
-The hash of the created signature (the `<SignatureValue>` element’s contents) is sent within the OCSP request’s and received back within the response’s "nonce" field. The OCSP request’s and response’s "nonce" field is a DER-encoding of the following ASN.1 data structure:
+The hash of the created signature (the `<SignatureValue>` element's contents)
+is sent in the OCSP request and returned in the response's `nonce`. The
+request's and response's `nonce` is a DER encoding of the following ASN.1 data
+structure:
 
 ```
 TBSDocumentDigest ::= SEQUENCE {
@@ -63,20 +110,6 @@ It is important to notice that additional time-stamps are not necessary as time 
 To achieve long-time validity of digital signatures, a secure log system is employed within the model. All OCSP responses and changes in certificate validity are securely logged to preserve digital signature validity even after private key compromise of CA or OCSP responder.
 
 ![Security model of time-marking mechanism](images/security.svg)
-
-### BDOC signature with time-stamp {#BDOC-TS}
-
-The BDOC signature with time-stamp is based on XAdES-BES signature (Basic Electronic Signature, see \ref XAdES).
-
-In order to offer long time validation, it is necessary to obtaining proof of validity of the signer’s X.509 digital certificate issued by a certificate authority (CA) at the time of signature creation.
-
-In case of BDOC with time-stamp (TS profile), the proof is provided as follows:
-1. A time-stamp compliant with \ref RFC3161 "RFC 3161" is obtained from a time-stamping service. The hash of the created signature (`<SignatureValue>` element block) is sent to the time-stamping server. The server’s response contains a time-stamp token with the same hash value that can later be used to validate that the time-stamp was indeed issued for the respective signature. The time-stamp token received from the server is added to the signature providing a proof from a trusted source that the signature value existed at a certain point of time.
-2. An \ref RFC6960 "RFC 6960" compliant OCSP confirmation is obtained from an OCSP service. The OCSP response received from the server is used as a trusted source to confirm that the signer’s certificate was valid at a certain point of time (producedAt field’s value in the OCSP response).
-3. The verifier must check the time-stamp token’s and OCSP confirmation’s time difference. If the difference is acceptable then it can stated that the signer’s certificate was valid at the time of signature creation.
-
-> [!NOTE]
-> The \ref RFC3161 "RFC 3161 TSTInfo.genTime" field records when the TSA created the time-stamp token. This issuance time is regarded as the time of signature creation.
 
 ## Lithuanian ADOC V1.0 compatibility {#adoc}
 
@@ -174,7 +207,3 @@ These notes document signature-validation and container-serialization choices th
 2. Signatures are stored in `META-INF/signatures*.xml` files where ‘`*`’ is a sequence number, counting is started from zero.
 3. It is not allowed to add two data files with the same name to the container as the signed data file must be uniquely identifiable in the container.
 4. All data files in the container must be signed. All signatures in the container must sign all of the data files.
-5. Relative file paths are used, for example `META-INF/signatures*.xml` and `document.txt` instead of `/META-INF/signatures*.xml` and `/document.txt` to ensure better interoperability with third party applications when validating signatures.
-6. The ZIP container’s comment field contains application name of the library that was used for creating the file. The value can be useful, for example, when trying to determine the origin of an erroneous file.
-7. "mimetype" file is not compressed in the ASiC-E file’s ZIP container as the results of ASiC plug-tests event shows that this solution is most widely used.
-8. When a data file is added to the container then the modification time of the file (as it is registered in the file system) is preserved also in the ZIP container file. There is an exception if the file is added by reading it from an input stream - in that case, the current timestamp value is registered as "last modified" time in the ZIP file.

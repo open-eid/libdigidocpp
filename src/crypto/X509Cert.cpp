@@ -156,62 +156,62 @@ const string X509Cert::QC_SYNTAX1 = "1.3.6.1.5.5.7.11.1";
  */
 const string X509Cert::QC_SYNTAX2 = "1.3.6.1.5.5.7.11.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.07.01_60/en_31941201v010701p.pdf - id-etsi-qcs-semanticsId-natural
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.07.01_60/en_31941201v010701p.pdf - id-etsi-qcs-semanticsId-natural
  * @since 3.13.0
  */
 const string X509Cert::QCS_NATURAL = "0.4.0.194121.1.1";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.07.01_60/en_31941201v010701p.pdf - id-etsi-qcs-semanticsId-legal
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941201/01.07.01_60/en_31941201v010701p.pdf - id-etsi-qcs-semanticsId-legal
  * @since 3.13.0
  */
 const string X509Cert::QCS_LEGAL = "0.4.0.194121.1.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf - id-etsi-qct-esign
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf - id-etsi-qct-esign
  * @since 3.13.0
  */
 const string X509Cert::QCT_ESIGN = "0.4.0.1862.1.6.1";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf - id-etsi-qct-eseal
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf - id-etsi-qct-eseal
  * @since 3.13.0
  */
 const string X509Cert::QCT_ESEAL = "0.4.0.1862.1.6.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf - id-etsi-qct-web
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941205/02.06.01_60/en_31941205v020601p.pdf - id-etsi-qct-web
  * @since 3.13.0
  */
 const string X509Cert::QCT_WEB = "0.4.0.1862.1.6.3";
 /**
- * http://www.etsi.org/deliver/etsi_ts/101400_101499/101456/01.04.03_60/ts_101456v010403p.pdf
+ * https://www.etsi.org/deliver/etsi_ts/101400_101499/101456/01.04.03_60/ts_101456v010403p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_PUBLIC_WITH_SSCD = "0.4.0.1456.1.1";
 /**
- * http://www.etsi.org/deliver/etsi_ts/101400_101499/101456/01.04.03_60/ts_101456v010403p.pdf
+ * https://www.etsi.org/deliver/etsi_ts/101400_101499/101456/01.04.03_60/ts_101456v010403p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_PUBLIC = "0.4.0.1456.1.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_NATURAL = "0.4.0.194112.1.0";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_LEGAL = "0.4.0.194112.1.1";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_NATURAL_QSCD = "0.4.0.194112.1.2";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_LEGAL_QSCD = "0.4.0.194112.1.3";
 /**
- * http://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
+ * https://www.etsi.org/deliver/etsi_en/319400_319499/31941102/02.06.01_60/en_31941102v020601p.pdf
  * @since 3.13.0
  */
 const string X509Cert::QCP_WEB = "0.4.0.194112.1.4";

@@ -15,8 +15,18 @@ Available optional options on all commands:
 | Option                   | Description                                                      |
 |--------------------------|------------------------------------------------------------------|
 | `--nocolor`              | Disable terminal colors                                          |
-| `--loglevel=[0,1,2,3,4]` | Log level: 0 - none, 1 - error, 2 - warning, 3 - info, 4 - debug |
+| `--loglevel=level`       | 0: errors, 1: warnings, 2: info, 3 or higher: debug                |
 | `--logfile=`             | File to log, empty to console                                    |
+
+Each log level includes messages from the lower levels.
+
+## Testing with a custom trust list {#test-tsl}
+
+Use `--tslurl=<url>` to select a test list of trusted lists (LOTL) and
+`--tslcert=<file>` to supply its signing certificate. Use the options
+together when the test LOTL has its own signing certificate. See
+[Using test TSL lists](https://github.com/open-eid/libdigidocpp/wiki/Using-test-TSL-lists)
+for an example setup.
 
 ## Creating and signing a document (local signing) {#Creating}
 
@@ -162,7 +172,8 @@ disables that fallback, so those service-backed formats cannot be opened
 offline. An ASiC-S time-stamp container that encloses a DDoc file is opened
 together with the DDoc, whose data files and signatures are listed after
 validation by SiVa; with `--offline` it is opened as a plain time-stamped
-container and only its time-stamp is validated. BDOC 1.0 is not supported.
+container and only its time-stamp is validated. Other network access, such as
+TSL updates, can still occur. BDOC 1.0 is not supported.
 General form of the command is:
 ```
 > digidoc-tool open <input-container-file>
@@ -174,7 +185,7 @@ Available options:
 |-------------------------------------|----------|--------------------------------------------------|
 | `--extractAll`                      | Optional | Extract data files without validating signatures |
 | `--validateOnExtract`               | Optional | Validate the container before extracting files   |
-| `--offline`                         | Optional | Open container offline (e.g. don't send to SiVa) |
+| `--offline`                         | Optional | Do not send the container to SiVa                |
 | `--warnings=(ignore,warning,error)` | Optional | How validation warnings are displayed            |
 
 `--extractAll` writes all of the input container’s data files to disk without validating signatures. If an output directory is not specified with the value of this parameter then the extracted files are written to the current working directory.
@@ -311,7 +322,7 @@ Command "sign" enables adding XAdES signatures to existing ASiC-E and legacy BDO
 
 | Option                         | Usage    | Description                                             |
 |--------------------------------|----------|---------------------------------------------------------|
-| `--pin=`                       | Optional | PIN code, asked on the command line when omitted        |
+| `--pin=`                       | Optional | PIN code or PKCS#12 password; see below when omitted    |
 | `--profile=`                   | Optional | Signature profile, see the values below                 |
 | `--XAdESEN`                    | Optional | Use XAdES EN profile                                    |
 | `--city=`                      | Optional | City where the signature is created                     |
@@ -320,9 +331,9 @@ Command "sign" enables adding XAdES signatures to existing ASiC-E and legacy BDO
 | `--postalCode=`                | Optional | Postal code of the place where the signature is created |
 | `--country=`                   | Optional | Country of origin, ISO 3166 2-character code (e.g. EE)  |
 | `--role=`                      | Optional | Signer’s role, can occur multiple times                 |
-| `--sha(224,256,384,512)`       | Optional | Hash function for digest values (testing)               |
-| `--sigsha(224,256,384,512)`    | Optional | Hash function for the signed hash (testing)             |
-| `--sigpsssha(224,256,384,512)` | Optional | Same as `--sigsha*` with `--rsapss` (testing)           |
+| `--sha(224,256,384,512)`       | Optional | Select the default digest for references and time-stamps (testing) |
+| `--sigsha(224,256,384,512)`    | Optional | Select the RSA signature hash (testing)                |
+| `--sigpsssha(224,256,384,512)` | Optional | Select the RSA signature hash and enable RSA-PSS       |
 | `--rsapkcs15`                  | Optional | Change RSA signature padding to PKCS1.5                 |
 | `--rsapss`                     | Optional | Change RSA signature padding to PSS                     |
 | `--tsurl=`                     | Optional | Change TS URL                                           |
@@ -332,7 +343,17 @@ Command "sign" enables adding XAdES signatures to existing ASiC-E and legacy BDO
 | `--userAgent=`                 | Optional | Application info sent to the TSA or OCSP service        |
 | `--dontValidate`               | Optional | Don't validate container on signature creation          |
 
-If PIN is not provided with `--pin=` and (the default) PKCS#11 module is used for signing then the utility program asks for the user to insert PIN code to command line during the program’s execution time.
+When signing via PKCS#11, the utility prompts for the PIN on the command line
+if `--pin=` is omitted and the token requires login without a protected
+authentication path. With a protected authentication path, such as a PIN-pad
+reader, the tool logs in without passing a PIN. The token or driver handles
+PIN entry, and the tool leaves `--pin=` unused.
+
+On Windows, CNG passes a supplied PIN to the cryptographic provider, which
+handles any prompting.
+
+With `--pkcs12=`, `--pin=` supplies the PKCS#12 file password. If omitted,
+the utility uses an empty password without prompting.
 
 `--profile=` possible values are:
 - TS or time-stamp - a time-stamp and OCSP confirmation will be added to an XAdES signature as validation data.
@@ -341,18 +362,22 @@ If PIN is not provided with `--pin=` and (the default) PKCS#11 module is used fo
 
 `--tsurl=` and `--tscert=` set the time-stamping service for signature time-stamps and the initial ASiC-S TimeStampToken. `--tsurlarchive=` and `--tscertarchive=` set the service for archive time-stamps: the ArchiveTimeStamp of the TSA profile and the ASiC-S archive-manifest time-stamps. The archive URL is taken from `--tsurlarchive=`, then the `ts.url.archive` configuration parameter, then `--tsurl=` and `ts.url` (see \ref TS-settings); the archive certificate from `--tscertarchive=`, then `--tscert=`. The certificate options pin the TLS certificate of the service connection; they do not affect time-stamp token validation.
 
-The hash options are used for testing purposes. `--sha*` specifies the hash function that is used when calculating digest values, `--sigsha*` the hash function that is used for calculating the hash that is being signed, and `--sigpsssha*` does the same and uses RSA-PSS padding with RSA keys.
-
-By default, reference digests use `signer.digestUri` and RSA signatures use `signer.signatureDigestUri`, both configured as SHA-256 by default. For ECDSA signatures, the default signature hash is selected by the EC key size: SHA-224 for 224-bit keys, SHA-256 for 256-bit keys, SHA-384 for 384-bit keys, and SHA-512 for other key sizes (including 521-bit keys).
+References and time-stamp requests use `signer.digestUri`, which defaults to
+SHA-256. For example, `--sha384` selects SHA-384 for both. RSA signatures use the
+separate `signer.signatureDigestUri` setting, which also defaults to SHA-256.
+For ECDSA signatures, the default signature hash is selected by the EC key
+size: SHA-224 for 224-bit keys, SHA-256 for 256-bit keys, SHA-384 for 384-bit
+keys, and SHA-512 for other key sizes (including 521-bit keys).
 
 ECDSA with SHA3-256, SHA3-384 and SHA3-512 can be selected through digidoc::Signer::setMethod() using the algorithm URI. The command-line hash switches listed above select SHA-2 algorithms only.
 
-Options for specifying module used for accessing the signing token - possible alternatives are PKCS#11, CryptoAPI/CNG and PKCS#12 (for testing purposes). When signing module is not specified then PKCS#11 module is used by default.
+The signing module defaults to CNG on Windows and PKCS#11 on Linux and macOS.
+PKCS#12 is available for testing.
 
 | Option          | Usage    | Description                                            |
 |-----------------|----------|--------------------------------------------------------|
 | `--pkcs11[=]`   | Optional | Sign via PKCS#11 module (default on Linux and macOS)   |
-| `--cng`         | Optional | Sign via Microsoft CNG API (Windows)                   |
+| `--cng`         | Optional | Sign via Microsoft CNG API (default on Windows)        |
 | `--selectFirst` | Optional | With `--cng`: use the first certificate in the store   |
 | `--thumbprint=` | Optional | With `--cng`: hex thumbprint of the certificate to use |
 | `--pkcs12=`     | Optional | Sign with a PKCS#12 software token (testing)           |

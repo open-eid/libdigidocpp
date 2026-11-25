@@ -220,7 +220,11 @@ In order to read an existing DigiDoc file from the file system, do as follows:
 The method above reads in the DigiDoc file from the specified location in file system and creates the respective Container object representing the document's data. The file's structure is also validated during its parsing according to the corresponding standards.
 
 > [!NOTE]
-> Formats that are not validated locally are sent to the \ref SiVa service while opening. Pass a digidoc::ContainerOpenCB to digidoc::Container::openPtr to control online access; the callback is also required for opening a DDoc enclosed in an ASiC-S container. See \ref siva-requests.
+> Pass a digidoc::ContainerOpenCB to digidoc::Container::openPtr to decide
+> whether the library may send a container to SiVa. A callback that permits
+> SiVa validation is required to open a DDoc enclosed in an ASiC-S container.
+> Other network access, such as TSL updates, can still occur.
+> See the [implementation notes](implementation.md).
 
 Write a DigiDoc file (represented with a Container object) to file system with the following method:
 ```cpp
@@ -278,9 +282,6 @@ Validation process determines that one or more of the certificates included in t
 
 Suggested warning message (also displayed in DigiDoc desktop application): "Signature status is displayed as unknown if you don't have all validity confirmation service certificates and/or certificate authority certificates available in TSL"
 
-- Sample file: `unknown_CA_TS.asice` (BDOC 2.1, time-stamp profile)
-- Sample file: `unknown_CA_TM.asice` (BDOC 2.1, time-mark profile)
-
 **Priority 2: INVALID**
 
 Error codes: all errors except of the ones that are regarded as warnings by the library's user.
@@ -332,16 +333,11 @@ Weaker digest method (SHA-1, SHA-224 or SHA3-224) has been used than recommended
 
 Suggested warning message (also displayed in DigiDoc desktop application): "The current DigiDoc container uses weaker encryption method than officially accepted in Estonia."
 
-- Sample file: `weak-sha1-warning-TS.asice` (time-stamp profile)
-- Sample file: `weak-sha1-warning-TM.bdoc` (time-mark profile)
-
 **16 ProducedATLateWarning** (BDOC 2.1 TS / ASiC)
 
 The difference between the time-stamp issuance time (\ref RFC3161 "RFC 3161 TSTInfo.genTime") and the OCSP response's issuance time (producedAt value) exceeds 15 minutes but is less than 24 hours.
 
 Suggested warning message: "Time-stamp and OCSP issuance time difference is over 15 minutes."
-
-- Sample file: `TS_OCPS_difference_exceeds_15min.asice`
 
 **14 DataFileNameSpaceWarning** (DDOC 1.0, DDOC 1.1, DDOC 1.2, DDOC 1.3)
 
@@ -351,8 +347,6 @@ Suggested warning message (also displayed in DigiDoc desktop application): "This
 
 More info: https://www.id.ee/en/article/digital-signing-and-electronic-signatures/
 
-- Sample file: `datafile_xmlns_missing.ddoc`
-
 **15 IssuerNameSpace Warning** (DDOC 1.1, DDOC 1.2, DDOC 1.3)
 
 `<IssuerSerial><X509IssuerName>` and/or `<IssuerSerial><X509SerialNumber>` element's xmlns attribute is missing.
@@ -361,8 +355,6 @@ Suggested warning message (also displayed in DigiDoc desktop application): "This
 
 More info: https://www.id.ee/en/article/digital-signing-and-electronic-signatures/
 
-- Sample file: `issuerserial_xmlns_missing.ddoc`
-
 **N/A (Separate error code has not been determined.)** (DDOC 1.0, DDOC 1.1, DDOC 1.2)
 
 DigiDoc file's version is older than currently supported. Note that the error situation affects only the container and not the signatures, therefore, in DigiDoc libraries, it is returned and displayed only at container level.
@@ -370,8 +362,6 @@ DigiDoc file's version is older than currently supported. Note that the error si
 Suggested warning message (also displayed in DigiDoc desktop application): "The current file is a DigiDoc container that is not supported officially any longer. You are not allowed to add or remove signatures to this container"
 
 More info: https://www.id.ee/en/article/digidoc-container-format-life-cycle-2/
-
-- Sample file: `old_digidoc_format_1.0.ddoc`
 
 #### Additional information about validation {#validation-info}
 
