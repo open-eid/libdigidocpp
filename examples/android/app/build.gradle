@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: Estonian Information System Authority
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.plugin.compose'
+}
 
 def projectRoot = rootDir.parentFile.parentFile.absolutePath
 def cmakeInstall = "${projectDir}/build/cmake"
@@ -9,17 +12,21 @@ def cmakeInstall = "${projectDir}/build/cmake"
 def localProps = new Properties()
 def localPropsFile = rootDir.toPath().resolve('local.properties').toFile()
 if (localPropsFile.exists()) localProps.load(localPropsFile.newDataInputStream())
+def sdkDir = localProps.getProperty('sdk.dir', '')
 def cmake = localProps.getProperty('cmake') ?: {
-    def sdkCmake = new File(localProps.getProperty('sdk.dir', ''), 'cmake')
+    def sdkCmake = new File(sdkDir, 'cmake')
     sdkCmake.listFiles()?.collect { new File(it, 'bin/cmake') }?.find { it.exists() }?.absolutePath ?: 'cmake'
 }()
+def vcpkgRoot = localProps.getProperty('vcpkg.root') ?: System.getenv('VCPKG_ROOT')
+def ndkRoot = localProps.getProperty('ndk.root') ?: System.getenv('ANDROID_NDK_HOME') ?:
+    System.getenv('ANDROID_NDK_ROOT') ?: new File(sdkDir, 'ndk').listFiles()?.sort()?.last()?.absolutePath
 
 android {
-    compileSdk = 36
+    compileSdk = 37
     defaultConfig {
         applicationId "ee.ria.libdigidocpp"
-        minSdk = 33
-        targetSdk = 36
+        minSdk = 34
+        targetSdk = 37
         versionCode 1
         versionName "1.0"
         if (System.getenv("BUILD_NUMBER")) {
@@ -34,11 +41,26 @@ android {
         }
     }
     compileOptions {
-        targetCompatibility JavaVersion.VERSION_17
-        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_21
+        sourceCompatibility JavaVersion.VERSION_21
+    }
+    buildFeatures {
+        compose = true
     }
     sourceSets.main.java.srcDirs += ["${cmakeInstall}/androidarm64/include"]
     namespace 'ee.ria.libdigidocpp'
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    }
+}
+
+dependencies {
+    implementation platform('androidx.compose:compose-bom:2026.09.00')
+    implementation 'androidx.activity:activity-compose:1.13.0'
+    implementation 'androidx.compose.material3:material3'
 }
 
 def versionNameValue = System.getenv("BUILD_NUMBER") ? "1.0.${System.getenv('BUILD_NUMBER')}" : "1.0"
@@ -59,6 +81,9 @@ androidComponents {
         inputs.files("${projectRoot}/CMakePresets.json", "${projectRoot}/CMakeLists.txt", "${projectRoot}/vcpkg.json")
         outputs.dir("${projectRoot}/build/${cfg.preset}")
         workingDir projectRoot
+        if (vcpkgRoot) environment 'VCPKG_ROOT', vcpkgRoot
+        if (ndkRoot) environment 'ANDROID_NDK_HOME', ndkRoot
+        if (ndkRoot) environment 'ANDROID_NDK_ROOT', ndkRoot
         commandLine cmake, '--preset', cfg.preset,
             '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
             "-DCMAKE_INSTALL_PREFIX=${cmakeInstall}/${cfg.preset}"
@@ -69,6 +94,9 @@ androidComponents {
         inputs.dir("${projectRoot}/build/${cfg.preset}")
         outputs.dir("${cmakeInstall}/${cfg.preset}")
         workingDir projectRoot
+        if (vcpkgRoot) environment 'VCPKG_ROOT', vcpkgRoot
+        if (ndkRoot) environment 'ANDROID_NDK_HOME', ndkRoot
+        if (ndkRoot) environment 'ANDROID_NDK_ROOT', ndkRoot
         commandLine cmake, '--build', '--preset', cfg.preset, '--target', 'install'
     }
 

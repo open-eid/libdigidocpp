@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 @objcMembers
 final class SignatureInfo: NSObject, Sendable, Identifiable {
@@ -39,18 +40,31 @@ final class SignatureInfo: NSObject, Sendable, Identifiable {
     }
 }
 
-struct ContentView: View {
-    @State private var result: Result<DocumentViewModel, any Error>?
+struct DocumentSelection: Equatable {
+    let url: URL
+    let id = UUID()
+}
 
-    let path: String
+struct ContentView: View {
+    @Binding var selection: DocumentSelection?
+    @State private var result: Result<DocumentViewModel, any Error>?
+    @State private var isImporting = false
 
     var body: some View {
         List {
+            Section {
+                Button("Open document", systemImage: "folder") {
+                    isImporting = true
+                }
+            }
+
             switch result {
             case nil:
-                Section {
-                    ProgressView("Opening document…")
-                        .frame(maxWidth: .infinity, alignment: .center)
+                if selection != nil {
+                    Section {
+                        ProgressView("Opening document…")
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
                 }
             case let .success(document)?:
                 Section("Data files") {
@@ -80,12 +94,30 @@ struct ContentView: View {
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
         }
-        .task(id: path) {
+        .fileImporter(isPresented: $isImporting,
+                      allowedContentTypes: [UTType(exportedAs: "ee.ria.bdoc")]) { picked in
+            switch picked {
+            case let .success(url):
+                selection = DocumentSelection(url: url)
+            case let .failure(error):
+                result = .failure(error)
+            }
+        }
+        .task(id: selection) {
+            guard let url = selection?.url else {
+                return
+            }
             result = nil
             let opened = await Task.detached(priority: .userInitiated) {
                 Result {
                     try DocumentViewModel.initializeLibrary()
-                    return try DocumentViewModel(path: path)
+                    let accessing = url.startAccessingSecurityScopedResource()
+                    defer {
+                        if accessing {
+                            url.stopAccessingSecurityScopedResource()
+                        }
+                    }
+                    return try DocumentViewModel(path: url.path(percentEncoded: false))
                 }
             }.value
             guard !Task.isCancelled else {
@@ -97,5 +129,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(path: Bundle.main.path(forResource: "test", ofType: "bdoc") ?? "")
+    ContentView(selection: .constant(nil))
 }

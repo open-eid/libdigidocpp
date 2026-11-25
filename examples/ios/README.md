@@ -13,5 +13,8 @@
    Or open the Xcode project and run it on a simulator, device or Mac Catalyst
    target directly.
 
+The app opens a signed document chosen with **Open document** or shared to it
+from another app, validates it, and lists its data files and signatures.
+
 `DocumentViewModel.mm` shows how to override `digidoc::ConfCurrent` so TSL lists
 use an application-writable cache directory.
