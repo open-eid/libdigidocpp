@@ -1122,13 +1122,11 @@ EXCLUDE_PATTERNS       = */crypto/Connect.* \
                          */minizip/* \
                          */util/* \
                          */digidoc-tool.cpp \
-                         */SignatureCAdES_*.* \
                          */SignatureXAdES*.* \
                          */SignatureTST.* \
                          */ASiC*.* \
                          */json.* \
                          */SiVa*.* \
-                         */PDF.* \
                          */libdigidocpp.i.h \
                          */XMLDocument.h \
                          */*_p.h

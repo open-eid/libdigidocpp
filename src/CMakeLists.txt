@@ -174,13 +174,6 @@ if( BUILD_TOOLS )
     configure_file( digidoc-tool.1.cmake digidoc-tool.1 )
 endif()
 
-if(PODOFO_FOUND)
-    target_sources(digidocpp PRIVATE PDF.cpp SignatureCAdES_B.cpp SignatureCAdES_T.cpp)
-    target_include_directories(digidocpp PRIVATE ${PODOFO_INCLUDE_DIR})
-    target_link_libraries(digidocpp PRIVATE ${PODOFO_LIBRARIES})
-    set_property(SOURCE Container.cpp APPEND PROPERTY COMPILE_DEFINITIONS PDF_SUPPORT)
-endif()
-
 if(SWIG_FOUND)
     include(${SWIG_USE_FILE})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})

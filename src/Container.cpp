@@ -6,7 +6,6 @@
 #include "ASiC_E.h"
 #include "ASiC_S.h"
 #include "Exception.h"
-#include "PDF.h"
 #include "SiVaContainer.h"
 #include "XMLDocument.h"
 #include "XmlConf.h"
@@ -116,9 +115,6 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
     if(!Conf::instance())
         Conf::init(new XmlConfCurrent);
 
-#ifdef PDF_SUPPORT
-    Container::addContainerImplementation<PDF>();
-#endif
     Container::addContainerImplementation<SiVaContainer>();
     Container::addContainerImplementation<ASiC_S>();
 
