@@ -26,7 +26,7 @@ using namespace std;
 /**
  * Initialize OCSP certificate validator.
  */
-OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &userAgent)
+OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &userAgent, chrono::seconds timeout)
     : resp(nullptr, OCSP_RESPONSE_free)
     , basic(nullptr, OCSP_BASICRESP_free)
 {
@@ -68,7 +68,7 @@ OCSP::OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &user
     if(!OCSP_request_add1_nonce(req.get(), nullptr, 32))
         THROW_OPENSSLEXCEPTION("Failed to add NONCE to OCSP request.");
 
-    Connect::Result result = Connect(url, "POST", 0, {}, userAgent, "1.0").exec({
+    Connect::Result result = Connect(url, "POST", int(timeout.count()), {}, userAgent, "1.0").exec({
         {"Content-Type", "application/ocsp-request"},
         {"Accept", "application/ocsp-response"},
         {"Connection", "Close"},

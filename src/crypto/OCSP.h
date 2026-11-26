@@ -5,6 +5,7 @@
 
 #include "util/memory.h"
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -22,7 +23,7 @@ namespace digidoc
     {
 
       public:
-          OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &userAgent = {});
+          OCSP(const X509Cert &cert, const X509Cert &issuer, const std::string &userAgent = {}, std::chrono::seconds timeout = {});
           inline OCSP(const std::vector<unsigned char> &data): OCSP(data.data(), data.size()) {}
           OCSP(const unsigned char *data = nullptr, size_t size = 0);
 

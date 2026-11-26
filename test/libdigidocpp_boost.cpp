@@ -23,11 +23,15 @@
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #include <zlib.h>
 
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <fstream>
+#include <future>
+#include <thread>
 
 namespace digidoc
 {
@@ -1238,6 +1242,129 @@ BOOST_AUTO_TEST_CASE(LeadingSlashReferenceURI)
     BOOST_CHECK_EXCEPTION(d->signatures().front()->validate(), Exception, [](const Exception &e) {
         return exceptionContains(e, "Manifest datafile not listed in signature references test1.txt");
     });
+}
+
+BOOST_AUTO_TEST_CASE(adoc_ocsp_requires_trusted_time_stamped_signature)
+{
+    auto server = make_unique_ptr<BIO_free_all>(BIO_new_accept("127.0.0.1:0"));
+    BOOST_REQUIRE(server);
+    BIO_set_nbio_accept(server.get(), 1);
+    BOOST_REQUIRE_GT(BIO_do_accept(server.get()), 0);
+    auto address = make_unique_ptr<BIO_ADDR_free>(BIO_ADDR_new());
+    BIO_sock_info_u info {};
+    info.addr = address.get();
+    BOOST_REQUIRE(BIO_sock_info(int(BIO_get_fd(server.get(), nullptr)), BIO_SOCK_INFO_ADDRESS, &info));
+    char *service = BIO_ADDR_service_string(address.get(), 1);
+    BOOST_REQUIRE(service);
+    string url = string("http://127.0.0.1:") + service;
+    OPENSSL_free(service);
+
+    atomic<bool> stop {false};
+    atomic<int> connections {0};
+    auto acceptor = async(launch::async, [&] {
+        // Never answer; close only long after the client should have timed out
+        vector<pair<unique_free_d<BIO_free_all>, chrono::steady_clock::time_point>> clients;
+        while(!stop)
+        {
+            if(BIO_do_accept(server.get()) > 0)
+            {
+                ++connections;
+                clients.emplace_back(BIO_pop(server.get()), chrono::steady_clock::now());
+            }
+            else
+                this_thread::sleep_for(10ms);
+            erase_if(clients, [](const auto &client) { return chrono::steady_clock::now() - client.second > 20s; });
+        }
+    });
+    struct StopAcceptor { atomic<bool> &stop; ~StopAcceptor() { stop = true; } } stopAcceptor {stop};
+
+    // Send every OCSP request to the listener
+    struct OCSPConfig: TestConfig
+    {
+        OCSPConfig(string &&tsl, string &&path, string url)
+            : TestConfig(std::move(tsl), std::move(path)), url(std::move(url)) {}
+        string ocsp(const string &/*issuer*/) const final { return url; }
+        string url;
+    };
+    struct RestoreConfig
+    {
+        string tsl, path;
+        ~RestoreConfig() { Conf::init(new TestConfig(std::move(tsl), std::move(path))); }
+    };
+    auto *conf = static_cast<TestConfig*>(Conf::instance());
+    RestoreConfig restore {conf->tsl, conf->path};
+    Conf::init(new OCSPConfig(string(restore.tsl), string(restore.path), url));
+
+    // Names the TSL-listed inter.crt as issuer without being signed by it
+    X509Cert inter("inter.crt");
+    auto key = make_unique_ptr<EVP_PKEY_free>(EVP_RSA_gen(2048));
+    auto cert = make_unique_ptr<X509_free>(X509_new());
+    BOOST_REQUIRE(key && cert);
+    X509_set_version(cert.get(), X509_VERSION_3);
+    ASN1_INTEGER_set(X509_get_serialNumber(cert.get()), 1);
+    X509_set_issuer_name(cert.get(), X509_get_subject_name(inter.handle()));
+    auto subject = make_unique_ptr<X509_NAME_free>(X509_NAME_new());
+    X509_NAME_add_entry_by_txt(subject.get(), "CN", MBSTRING_UTF8, (const unsigned char*)"Untrusted signer", -1, -1, 0);
+    X509_set_subject_name(cert.get(), subject.get());
+    X509_gmtime_adj(X509_getm_notBefore(cert.get()), -20L * 365 * 24 * 3600);
+    X509_gmtime_adj(X509_getm_notAfter(cert.get()), 20L * 365 * 24 * 3600);
+    X509_set_pubkey(cert.get(), key.get());
+    X509V3_CTX ctx {};
+    X509V3_set_ctx(&ctx, cert.get(), cert.get(), nullptr, nullptr, 0);
+    auto keyUsage = make_unique_ptr<X509_EXTENSION_free>(
+        X509V3_EXT_conf_nid(nullptr, &ctx, NID_key_usage, "critical,nonRepudiation"));
+    BOOST_REQUIRE(keyUsage && X509_add_ext(cert.get(), keyUsage.get(), -1));
+    BOOST_REQUIRE_GT(X509_sign(cert.get(), key.get(), EVP_sha256()), 0);
+    const vector<unsigned char> untrusted = i2d<i2d_X509>(cert);
+    const vector<unsigned char> trusted = i2d<i2d_X509>(PKCS12Signer("signer1.p12", "signer1").cert().handle());
+
+    // ADoc built from tsl.asice without revocation values, so opening it may request OCSP
+    constexpr string_view ADOC = "application/vnd.lt.archyvai.adoc-2008";
+    ZipSerialize original("tsl.asice", false);
+    const string signatures = original.read("META-INF/signatures0.xml");
+    const string data = original.read("test.txt");
+    string manifest = original.read("META-INF/manifest.xml");
+    size_t pos = manifest.find(ASiCE::TYPE);
+    BOOST_REQUIRE(pos != string::npos);
+    manifest.replace(pos, ASiCE::TYPE.size(), ADOC);
+
+    auto requests = [&](const vector<unsigned char> &signer, bool timestamp) {
+        string signature = signatures;
+        auto replace = [&signature](string_view begin, string_view end, string_view value) {
+            size_t from = signature.find(begin);
+            size_t to = signature.find(end, from);
+            BOOST_REQUIRE(from != string::npos && to != string::npos);
+            signature.replace(from, to + end.size() - from, value);
+        };
+        string base64(4 * ((signer.size() + 2) / 3), 0);
+        base64.resize(size_t(EVP_EncodeBlock((unsigned char*)base64.data(), signer.data(), int(signer.size()))));
+        replace("<ds:X509Certificate>", "</ds:X509Certificate>", "<ds:X509Certificate>" + base64 + "</ds:X509Certificate>");
+        replace("<xades:RevocationValues", "</xades:RevocationValues>", {});
+        if(!timestamp)
+            replace("<xades:SignatureTimeStamp", "</xades:SignatureTimeStamp>", {});
+
+        TemporaryContainer temporary;
+        fs::remove(temporary.path);
+        temporary.path += ".adoc";
+        {
+            ZipSerialize zip(temporary.name(), true);
+            zip.addFile("mimetype", {}, false)(ADOC);
+            zip.addFile("test.txt", {})(data);
+            zip.addFile("META-INF/manifest.xml", {})(manifest);
+            zip.addFile("META-INF/signatures0.xml", {})(signature);
+        }
+        const int before = connections;
+        auto d = Container::openPtr(temporary.name());
+        BOOST_REQUIRE(d);
+        BOOST_CHECK_EQUAL(d->mediaType(), ADOC);
+        BOOST_CHECK_EQUAL(d->signatures().size(), 1U);
+        return connections - before;
+    };
+    BOOST_CHECK_EQUAL(requests(untrusted, true), 0);
+    BOOST_CHECK_EQUAL(requests(trusted, false), 0);
+    const auto start = chrono::steady_clock::now();
+    BOOST_CHECK_EQUAL(requests(trusted, true), 1);
+    BOOST_CHECK_LT(chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - start).count(), 15);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
