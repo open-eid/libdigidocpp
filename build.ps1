@@ -25,6 +25,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function checkExit {
+  if($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+
 Try {
   & wix > $null
 }
@@ -71,12 +75,16 @@ $env:VCPKG_ROOT = $vcpkg
 
 Push-Location $libdigidocpp
 & $cmake --fresh --preset windows "-GNinja Multi-Config" $cmakeext "-DCMAKE_INSTALL_PREFIX=$installdir" "-DSIGNCERT=$sign"
+checkExit
 foreach($type in @("Debug", "RelWithDebInfo")) {
   & $cmake --build --preset windows --config $type --target $target
+  checkExit
   if($boost) {
     & (Join-Path (Split-Path (Get-Command $cmake).Source) "ctest.exe") --preset windows --build-config $type
+    checkExit
   }
   & $cmake --build --preset windows --config $type --target install
+  checkExit
 }
 Pop-Location
 
@@ -85,6 +93,7 @@ if($sign) {
     /tr http://timestamp.digicert.com /td SHA256 `
     $vcpkg_installed_platform/$vcpkg_triplet/bin/*.dll `
     $vcpkg_installed_platform/$vcpkg_triplet/debug/bin/*.dll
+  checkExit
 }
 
 $docLocation = "$installdir/share/doc/libdigidocpp"
@@ -100,8 +109,10 @@ if (Test-Path -Path $docLocation -PathType Container) {
   -d "vcpkg=$vcpkg_installed_platform/$vcpkg_triplet" `
   -d "libdigidocpp=$installdir" `
   $libdigidocpp\libdigidocpp.wxs
+checkExit
 
 if($sign) {
   & signtool.exe sign /a /v /s MY /n "$sign" /fd SHA256 /du https://installer.id.ee `
     /tr http://timestamp.digicert.com /td SHA256 "$msi_name"
+  checkExit
 }

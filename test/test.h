@@ -3,7 +3,12 @@
 
 #pragma once
 
+#ifdef UNIT_TEST_HEADER_ONLY
 #include <boost/test/included/unit_test.hpp>
+#else
+#include <boost/test/unit_test.hpp>
+#include <boost/test/unit_test_monitor.hpp>
+#endif
 
 #include <Container.h>
 #include <Conf.h>

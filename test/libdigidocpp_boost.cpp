@@ -11,6 +11,7 @@
 #include <Signature.h>
 #include <XmlConf.h>
 #include <XMLDocument.h>
+#include <crypto/Connect.h>
 #include <crypto/Digest.h>
 #include <crypto/OpenSSLHelpers.h>
 #include <crypto/PKCS12Signer.h>
@@ -28,6 +29,8 @@
 #include <array>
 #include <cstdint>
 #include <fstream>
+#include <future>
+#include <thread>
 
 namespace digidoc
 {
@@ -1537,6 +1540,116 @@ BOOST_AUTO_TEST_CASE(WrapContainerUsesArchiveTSA)
     Conf::init(new TestConfig(std::move(tsl), std::move(path)));
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+namespace
+{
+struct ProxyFixture
+{
+    struct ProxyConfig: TestConfig
+    {
+        using TestConfig::TestConfig;
+        string port;
+        string proxyHost() const final { return "127.0.0.1"; }
+        string proxyPort() const final { return port; }
+        bool proxyTunnelSSL() const final { return true; }
+    };
+
+    unique_free_d<BIO_free_all> listener {BIO_new_accept("127.0.0.1:0")};
+    string port, tsl, path;
+
+    ProxyFixture()
+    {
+        BOOST_REQUIRE(listener);
+        BIO_set_nbio_accept(listener.get(), 1);
+        BIO_set_nbio(listener.get(), 1);
+        BOOST_REQUIRE_EQUAL(BIO_do_accept(listener.get()), 1);
+        auto address = make_unique_ptr<BIO_ADDR_free>(BIO_ADDR_new());
+        BOOST_REQUIRE(address);
+        union BIO_sock_info_u info {};
+        info.addr = address.get();
+        BOOST_REQUIRE_EQUAL(BIO_sock_info(BIO_get_fd(listener.get(), nullptr), BIO_SOCK_INFO_ADDRESS, &info), 1);
+        char *service = BIO_ADDR_service_string(address.get(), 1);
+        BOOST_REQUIRE(service);
+        port = service;
+        OPENSSL_free(service);
+
+        auto *conf = static_cast<TestConfig*>(Conf::instance());
+        tsl = conf->tsl;
+        path = conf->path;
+        auto *proxy = new ProxyConfig(string(tsl), string(path));
+        proxy->port = port;
+        Conf::init(proxy);
+    }
+
+    ~ProxyFixture()
+    {
+        Conf::init(new TestConfig(std::move(tsl), std::move(path)));
+    }
+
+    // Answers the first CONNECT with reply (closing without one when empty) and later requests with 200 OK
+    vector<string> tunnel(int timeout, string_view reply)
+    {
+        auto server = async(launch::async, [&] {
+            vector<string> requests;
+            auto deadline = chrono::steady_clock::now() + chrono::seconds(5);
+            while(chrono::steady_clock::now() < deadline)
+            {
+                if(BIO_do_accept(listener.get()) != 1)
+                {
+                    if(!BIO_should_retry(listener.get()))
+                        break;
+                    this_thread::sleep_for(chrono::milliseconds(5));
+                    continue;
+                }
+                auto peer = make_unique_ptr<BIO_free_all>(BIO_pop(listener.get()));
+                string &request = requests.emplace_back();
+                while(request.find("\r\n\r\n") == string::npos && chrono::steady_clock::now() < deadline)
+                {
+                    char buffer[1024];
+                    if(int read = BIO_read(peer.get(), buffer, sizeof(buffer)); read > 0)
+                        request.append(buffer, size_t(read));
+                    else if(!BIO_should_retry(peer.get()))
+                        break;
+                    else
+                        this_thread::sleep_for(chrono::milliseconds(5));
+                }
+                string_view response = requests.size() == 1 ? reply : "HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n";
+                BIO_write(peer.get(), response.data(), int(response.size()));
+                if(requests.size() == 1)
+                    deadline = min(deadline, chrono::steady_clock::now() + chrono::seconds(1));
+            }
+            return requests;
+        });
+        BOOST_CHECK_EXCEPTION(Connect("https://localhost:1/", "GET", timeout), Exception, [](const Exception &e) {
+            return e.code() == Exception::NetworkError && e.msg().find("Failed to create proxy connection") != string::npos;
+        });
+        return server.get();
+    }
+};
+}
+
+BOOST_AUTO_TEST_SUITE(ConnectSuite)
+BOOST_FIXTURE_TEST_CASE(proxyConnectRequest, ProxyFixture)
+{
+    auto requests = tunnel(1, "HTTP/1.0 403 Forbidden\r\n\r\n");
+    BOOST_REQUIRE_EQUAL(requests.size(), 1U);
+    BOOST_CHECK(requests.front().starts_with("CONNECT localhost:1 HTTP/1.0\r\n"));
+    BOOST_CHECK_NE(requests.front().find("\r\nHost: localhost:1\r\n"), string::npos);
+}
+
+BOOST_FIXTURE_TEST_CASE(proxyConnectDoesNotFollowRedirect, ProxyFixture)
+{
+    auto requests = tunnel(1, "HTTP/1.0 302 Found\r\nLocation: http://127.0.0.1:" + port + "/\r\n\r\n");
+    BOOST_CHECK_EQUAL(requests.size(), 1U);
+}
+
+BOOST_TEST_DECORATOR(* boost::unit_test::timeout(20))
+BOOST_FIXTURE_TEST_CASE(proxyClosesBeforeStatusLine, ProxyFixture)
+{
+    auto requests = tunnel(0, {});
+    BOOST_CHECK_EQUAL(requests.size(), 1U);
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(XMLTestSuite)

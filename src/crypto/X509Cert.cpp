@@ -217,12 +217,18 @@ const string X509Cert::QCP_LEGAL_QSCD = "0.4.0.194112.1.3";
 const string X509Cert::QCP_WEB = "0.4.0.194112.1.4";
 
 /**
- * Creates copy of the OpenSSL X509 certificate.
+ * Retains a reference to an OpenSSL X509 certificate.
  *
- * @param cert OpenSSL X509 certificate structure to be wrapped.
+ * Since 4.6.0, this constructor shares the certificate with the caller. The
+ * caller remains responsible for releasing its own reference. Treat the
+ * certificate as read-only while it is shared. Use X509_dup() when you need
+ * an independent certificate that you can modify.
+ *
+ * @param cert OpenSSL X509 certificate to retain. Pass nullptr to create an
+ * empty object.
  */
 X509Cert::X509Cert(X509* cert)
-    : cert(X509_dup(cert), X509_free)
+    : cert(cert && X509_up_ref(cert) == 1 ? cert : nullptr, X509_free)
 {
 }
 
@@ -513,9 +519,12 @@ string X509Cert::toString(const string &obj) const
 }
 
 /**
- * Returns the internal OpenSSL X509 structure handle.
+ * Returns a borrowed handle to the OpenSSL X509 certificate.
  *
- * @return Pointer to OpenSSL X509 structure.
+ * Treat the certificate as read-only. To retain it independently of this
+ * X509Cert, acquire a reference with X509_up_ref() and release it with X509_free().
+ *
+ * @return Pointer to the OpenSSL X509 certificate, or nullptr if empty.
  */
 X509* X509Cert::handle() const
 {

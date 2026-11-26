@@ -10,13 +10,24 @@
 
 #include <openssl/bio.h>
 #include <openssl/ocsp.h>
+#include <openssl/pem.h>
 #include <openssl/ssl.h>
 
 #include <zlib.h>
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
+#if TARGET_OS_OSX || TARGET_OS_IOS
+#include <Security/Security.h>
+#endif
+
+#include <array>
 #include <chrono>
+#include <cstdio>
+#include <filesystem>
 #include <sstream>
-#include <thread>
 
 #if defined(__aarch64__) || defined(__ARM64__) || defined(_M_ARM64)
 #define TARGET_ARCH "arm64"
@@ -40,13 +51,92 @@ using namespace std;
 
 static constexpr size_t MAX_RESPONSE_SIZE = 10 * 1024 * 1024;
 
+#if TARGET_OS_OSX || TARGET_OS_IOS
+static constexpr auto CFScope(auto *value) noexcept
+{
+    return make_unique_ptr<CFRelease>(value);
+}
 
+// The system evaluates the chain, so keychain trust settings apply and iOS, which does not expose its roots, works
+static int verifyWithSystemRoots(X509_STORE_CTX *ctx, void * /*arg*/)
+{
+    auto *ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+    const char *host = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+    auto hostname = CFScope(host && *host ? CFStringCreateWithCString(nullptr, host, kCFStringEncodingUTF8) : nullptr);
+    auto policy = CFScope(hostname ? SecPolicyCreateSSL(true, hostname.get()) : nullptr);
+    auto chain = CFScope(CFArrayCreateMutable(nullptr, 0, &kCFTypeArrayCallBacks));
+    STACK_OF(X509) *certs = X509_STORE_CTX_get0_untrusted(ctx);
+    for(int i = 0; i < sk_X509_num(certs); ++i)
+    {
+        vector<unsigned char> der = X509Cert(sk_X509_value(certs, i));
+        auto data = CFScope(CFDataCreate(nullptr, der.data(), CFIndex(der.size())));
+        if(auto cert = CFScope(SecCertificateCreateWithData(nullptr, data.get())))
+            CFArrayAppendValue(chain.get(), cert.get());
+    }
+    SecTrustRef trust = nullptr;
+    if(policy)
+        SecTrustCreateWithCertificates(chain.get(), policy.get(), &trust);
+    auto trustScope = CFScope(trust);
+    // Fetching missing intermediates would run outside the connection timeout
+    bool trusted = trust && SecTrustSetNetworkFetchAllowed(trust, false) == errSecSuccess &&
+        SecTrustEvaluateWithError(trust, nullptr);
+    X509_STORE_CTX_set_error(ctx, trusted ? X509_V_OK : X509_V_ERR_APPLICATION_VERIFICATION);
+    return trusted;
+}
+#elifdef __ANDROID__
+// Apps run with AT_SECURE, so OpenSSL ignores SSL_CERT_FILE; load only the system roots named by the old
+// subject hash of the chain's issuers
+static int verifyWithSystemRoots(X509_STORE_CTX *ctx, void * /*arg*/)
+{
+    error_code ec;
+    const char *dir = filesystem::is_directory("/apex/com.android.conscrypt/cacerts", ec) ?
+        "/apex/com.android.conscrypt/cacerts" : "/system/etc/security/cacerts";
+    X509_STORE *store = X509_STORE_CTX_get0_store(ctx);
+    STACK_OF(X509) *certs = X509_STORE_CTX_get0_untrusted(ctx);
+    for(int i = 0; i < sk_X509_num(certs); ++i)
+    {
+        unsigned long hash = X509_NAME_hash_old(X509_get_issuer_name(sk_X509_value(certs, i)));
+        array<char, 64> path {};
+        for(int n = 0; snprintf(path.data(), path.size(), "%s/%08lx.%d", dir, hash, n) > 0; ++n)
+        {
+            auto file = make_unique_ptr<fclose>(fopen(path.data(), "r"));
+            if(!file)
+                break;
+            if(auto x509 = make_unique_ptr<X509_free>(PEM_read_X509(file.get(), nullptr, nullptr, nullptr)))
+                X509_STORE_add_cert(store, x509.get());
+        }
+    }
+    return X509_verify_cert(ctx);
+}
+#endif
+
+static void loadSystemRoots(SSL_CTX *ctx)
+{
+#if TARGET_OS_OSX || TARGET_OS_IOS || defined(__ANDROID__)
+    SSL_CTX_set_cert_verify_callback(ctx, verifyWithSystemRoots, nullptr);
+#else
+    X509_STORE *store = SSL_CTX_get_cert_store(ctx);
+    if(X509_STORE_set_default_paths(store) != 1)
+        THROW_NETWORKEXCEPTION("Failed to load default TLS trust store")
+#ifdef _WIN32
+    if(X509_STORE_load_store(store, "org.openssl.winstore:") != 1)
+        THROW_NETWORKEXCEPTION("Failed to load Windows TLS trust store")
+#endif
+#endif
+}
 
 Connect::Connect(const string &_url, string_view _method, int _timeout, vector<X509Cert> _certs, string _userAgentData, string_view _version)
-    : method(_method)
-    , userAgentData(std::move(_userAgentData))
+    : Connect(_url, _method, _timeout, std::move(_certs), std::move(_userAgentData), _version, {nullptr, SSL_CTX_free})
+{}
+
+Connect::Connect(const string &_url, string_view _method, int _timeout, vector<X509Cert> _certs, string _userAgentData,
+        string_view _version, unique_free_t<SSL_CTX> _ssl)
+    : userAgentData(std::move(_userAgentData))
+    , method(_method)
     , version(_version)
     , certs(std::move(_certs))
+    , d(nullptr, BIO_free_all)
+    , ssl(std::move(_ssl))
     , timeout(_timeout)
 {
     DEBUG("Connecting to URL: %s", _url.c_str());
@@ -81,22 +171,24 @@ Connect::Connect(const string &_url, string_view _method, int _timeout, vector<X
     }
 
     DEBUG("Connecting to Host: %s timeout: %i", hostname.c_str(), _timeout);
-    d = BIO_new_connect(hostname.c_str());
+    d.reset(BIO_new_connect(hostname.c_str()));
     if(!d)
         THROW_NETWORKEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str())
 
-    BIO_set_nbio(d, _timeout > 0);
-    auto start = chrono::high_resolution_clock::now();
-    if(timeout > 0 && BIO_do_connect_retry(d, timeout, -1) < 1)
-        THROW_NETWORKEXCEPTION("Failed to create connection with host timeout: '%s'", hostname.c_str())
-    if(timeout == 0 && BIO_do_connect(d) < 1)
+    BIO_set_nbio(d.get(), _timeout > 0);
+    const auto deadline = chrono::steady_clock::now() + chrono::seconds(timeout);
+    if(int rc = timeout > 0 ? BIO_do_connect_retry(d.get(), timeout, -1) : BIO_do_connect(d.get()); rc < 1)
+    {
+        if(rc == 0 && timeout > 0)
+            THROW_NETWORKEXCEPTION("Failed to create connection with host timeout: '%s'", hostname.c_str())
         THROW_NETWORKEXCEPTION("Failed to create connection with host: '%s'", hostname.c_str())
+    }
 
     if(usessl > 0)
     {
         if(!c->proxyHost().empty() && (CONF(proxyTunnelSSL)))
         {
-            BIO_printf(d, "CONNECT %s:%s HTTP/1.0\r\n", host.c_str(), port.c_str());
+            BIO_printf(d.get(), "CONNECT %s:%s HTTP/1.0\r\n", host.c_str(), port.c_str());
             addHeader("Host", host + ':' + port);
             sendProxyAuth();
             doProxyConnect = true;
@@ -106,52 +198,61 @@ Connect::Connect(const string &_url, string_view _method, int _timeout, vector<X
             doProxyConnect = false;
         }
 
-        ssl.reset(SSL_CTX_new(TLS_client_method()), SSL_CTX_free);
         if(!ssl)
-            THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
-        SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
-#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
-        /* Make OpenSSL 3.0.0 behave like 1.1.1 */
-        auto options = SSL_CTX_get_options(ssl.get());
-        options |= SSL_OP_IGNORE_UNEXPECTED_EOF;
-        SSL_CTX_set_options(ssl.get(), options);
-#endif
-        SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
-        // TLS peer verification is performed only when pinned certificates are provided.
-        // Without pinning, content-level crypto covers integrity: OCSP responses are signed
-        // by the responder cert, TSA responses are CMS-signed, and TSL uses known public keys.
-        if(!certs.empty())
         {
-            SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
-            X509_STORE *store = SSL_CTX_get_cert_store(ssl.get());
-            X509_STORE_set_flags(store, X509_V_FLAG_TRUSTED_FIRST | X509_V_FLAG_PARTIAL_CHAIN);
-            for(const X509Cert &cert: certs)
+            ssl.reset(SSL_CTX_new(TLS_client_method()));
+            if(!ssl)
+                THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
+            SSL_CTX_set_mode(ssl.get(), SSL_MODE_AUTO_RETRY);
+#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
+            SSL_CTX_set_options(ssl.get(), SSL_OP_IGNORE_UNEXPECTED_EOF);
+#endif
+            SSL_CTX_set_quiet_shutdown(ssl.get(), 1);
+            SSL_CTX_set_verify(ssl.get(), SSL_VERIFY_PEER, nullptr);
+            if(!certs.empty())
             {
-                if(cert.handle())
-                    X509_STORE_add_cert(store, cert.handle());
+                X509_STORE *store = SSL_CTX_get_cert_store(ssl.get());
+                X509_STORE_set_flags(store, X509_V_FLAG_TRUSTED_FIRST | X509_V_FLAG_PARTIAL_CHAIN);
+                for(const X509Cert &cert: certs)
+                {
+                    if(cert.handle())
+                        X509_STORE_add_cert(store, cert.handle());
+                }
             }
+            else
+                loadSystemRoots(ssl.get());
         }
-        BIO *sbio = BIO_new_ssl(ssl.get(), 1);
+        auto sbio = make_unique_ptr(BIO_new_ssl(ssl.get(), 1), BIO_free_all);
         if(!sbio)
             THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
-        if(SSL *ssl {}; BIO_get_ssl(sbio, &ssl) == 1 && ssl)
+        SSL *session {};
+        if(BIO_get_ssl(sbio.get(), &session) != 1 || !session)
+            THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
+#if OPENSSL_VERSION_MAJOR >= 4
+        if(SSL_set1_ipaddr(session, host.c_str()) != 1 && SSL_set1_dnsname(session, host.c_str()) != 1)
+#else
+        if(SSL_set1_host(session, host.c_str()) != 1)
+#endif
+            THROW_NETWORKEXCEPTION("Failed to set TLS host name: '%s'", host.c_str())
+        SSL_set_tlsext_host_name(session, host.c_str());
+        d.reset(BIO_push(sbio.release(), d.release()));
+        int rc = 0;
+        if(timeout == 0)
+            rc = BIO_do_handshake(d.get());
+        else if(auto remaining = chrono::ceil<chrono::seconds>(deadline - chrono::steady_clock::now()).count(); remaining > 0)
+            rc = BIO_do_connect_retry(d.get(), int(remaining), -1);
+        if(rc < 1)
         {
-            SSL_set1_host(ssl, host.c_str());
-            SSL_set_tlsext_host_name(ssl, host.c_str());
-        }
-        d = BIO_push(sbio, d);
-        while(BIO_do_handshake(d) != 1)
-        {
-            if(_timeout == 0)
-                THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
-            auto end = chrono::high_resolution_clock::now();
-            if(chrono::duration_cast<chrono::seconds>(end - start).count() >= _timeout)
+            if(long result = SSL_get_verify_result(session); result != X509_V_OK)
+                THROW_NETWORKEXCEPTION("TLS certificate verification failed for host '%s': %s",
+                    host.c_str(), X509_verify_cert_error_string(result))
+            if(rc == 0 && timeout > 0)
                 THROW_NETWORKEXCEPTION("Failed to create ssl connection with host timeout: '%s'", hostname.c_str())
-            this_thread::sleep_for(chrono::milliseconds(50));
+            THROW_NETWORKEXCEPTION("Failed to create ssl connection with host: '%s'", hostname.c_str())
         }
     }
 
-    BIO_printf(d, "%.*s %s HTTP/%.*s\r\n", STR_VIEW_FMT(method), path.c_str(), STR_VIEW_FMT(version));
+    BIO_printf(d.get(), "%.*s %s HTTP/%.*s\r\n", STR_VIEW_FMT(method), path.c_str(), STR_VIEW_FMT(version));
     addHeader("Connection", "close");
     if(port == "80" || port == "443")
         addHeader("Host", host);
@@ -163,15 +264,9 @@ Connect::Connect(const string &_url, string_view _method, int _timeout, vector<X
         sendProxyAuth();
 }
 
-Connect::~Connect()
-{
-    if(d)
-        BIO_free_all(d);
-}
-
 void Connect::addHeader(string_view key, string_view value)
 {
-    BIO_printf(d, "%.*s: %.*s\r\n", int(key.size()), key.data(), int(value.size()), value.data());
+    BIO_printf(d.get(), "%.*s: %.*s\r\n", STR_VIEW_FMT(key), STR_VIEW_FMT(value));
 }
 
 string Connect::decompress(const string &encoding, const string &data)
@@ -227,11 +322,11 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
     if(size != 0)
     {
         addHeader("Content-Length", to_string(size));
-        BIO_printf(d, "\r\n");
-        BIO_write(d, data, int(size));
+        BIO_printf(d.get(), "\r\n");
+        BIO_write(d.get(), data, int(size));
     }
     else
-        BIO_printf(d, "\r\n");
+        BIO_printf(d.get(), "\r\n");
 
     int rc = 0;
     size_t pos = 0;
@@ -246,8 +341,8 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
             if(pos >= r.content.size())
                 r.content.resize(r.content.size() * 2);
         }
-        rc = BIO_read(d, &r.content[pos], int(r.content.size() - pos));
-        if(rc == -1 && BIO_should_read(d) != 1)
+        rc = BIO_read(d.get(), &r.content[pos], int(r.content.size() - pos));
+        if(rc == -1 && BIO_should_read(d.get()) != 1)
             break;
         if(doProxyConnect && rc > 0) {
             pos = size_t(rc);
@@ -301,11 +396,13 @@ Connect::Result Connect::exec(initializer_list<pair<string_view,string_view>> he
         it != r.headers.cend())
         r.content = decompress(it->second, r.content);
 
-    if(!r.isRedirect() || recursive > 3)
+    if(doProxyConnect || !r.isRedirect() || recursive > 3)
         return r;
     string &location = r.headers["location"];
     string url = location.find("://") != string::npos ? std::move(location) : baseurl + location;
-    Connect c(url, method, timeout, std::move(certs), std::move(userAgentData), version);
+    if(ssl && !to_lower(url.substr(0, 8)).starts_with("https://"))
+        THROW_NETWORKEXCEPTION("Refusing redirect from HTTPS to a non-HTTPS URL: '%s'", url.c_str())
+    Connect c(url, method, timeout, std::move(certs), std::move(userAgentData), version, std::move(ssl));
     c.recursive = recursive + 1;
     return c.exec(headers);
 }
@@ -316,12 +413,12 @@ void Connect::sendProxyAuth()
     if(c->proxyUser().empty() || c->proxyPass().empty())
         return;
 
-    BIO_printf(d, "Proxy-Authorization: Basic ");
+    BIO_printf(d.get(), "Proxy-Authorization: Basic ");
     auto b64 = make_unique_ptr<BIO_free>(BIO_new(BIO_f_base64()));
     BIO_set_flags(b64.get(), BIO_FLAGS_BASE64_NO_NL);
-    BIO_push(b64.get(), d);
+    BIO_push(b64.get(), d.get());
     BIO_printf(b64.get(), "%s:%s", c->proxyUser().c_str(), c->proxyPass().c_str());
     (void)BIO_flush(b64.get());
     BIO_pop(b64.get());
-    BIO_printf(d, "\r\n");
+    BIO_printf(d.get(), "\r\n");
 }

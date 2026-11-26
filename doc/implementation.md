@@ -359,7 +359,11 @@ document is base64-encoded into a JSON request together with its file name and
 the `POLv4` signature policy, and posted to the URL configured with
 `verify.serivceUri` (see \ref VerifyService-settings). When
 digidoc::ConfV4::verifyServiceCerts returns a non-empty list, those certificates
-are used as trust anchors for the TLS connection. The default list is empty.
+are used as the exclusive trust anchors for the TLS connection. The default
+list is empty, in which case the connection uses the platform's default
+HTTPS trust configuration. HTTPS connections always verify the server
+certificate chain and host name. See “HTTPS trust” in the
+[configuration guide](configuration.md) for platform requirements.
 The whole request is built in memory, so its size grows with the document.
 
 What is sent depends on the format:

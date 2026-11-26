@@ -108,6 +108,52 @@ for more information).
   is used during signature validation. By default, the RIA's signature-verify
   service is used by the library (https://siva.eesti.ee/V3/validate)
 
+### HTTPS trust {#https-trust}
+
+HTTPS connections to SiVa, time-stamp and OCSP services, and TSL download
+servers verify the server certificate chain and host name. When an
+application supplies certificates through digidoc::ConfV4::verifyServiceCerts,
+digidoc::ConfV5::TSCerts or digidoc::ConfV6::TSCertsArchive, those certificates
+are the exclusive trust anchors for the corresponding service.
+
+Otherwise, OpenSSL's default CA file, directory and store are used, except on
+macOS, iOS and Android as described below. `SSL_CERT_FILE` and `SSL_CERT_DIR`
+can override the default file and directory. Windows builds also use the Windows
+`ROOT` certificate store through OpenSSL's built-in Windows store loader. This
+requires OpenSSL 3.2 or newer; supported Windows builds use OpenSSL 3.5 or
+newer. OpenSSL performs certificate-chain and host-name validation, so the
+loader does not reproduce the full native Windows trust evaluation.
+
+On Windows, the library only sees root certificates already present in the
+`ROOT` store. Windows adds many Microsoft-trusted roots to that store only when
+a CryptoAPI or Schannel connection first needs them, so a root that no other
+application has used yet may be missing, and connections that depend on it,
+such as the LOTL download, fail certificate verification. Administrators can
+install the roots in advance, for example with
+`certutil -generateSSTFromWU roots.sst` and importing the file into the local
+computer's `ROOT` store, or deploy the needed roots through Group Policy.
+
+Android builds load the system root certificates that a server's chain needs
+from `/apex/com.android.conscrypt/cacerts` on Android 14 and newer, or otherwise
+from `/system/etc/security/cacerts`. Roots that the user installs are not
+trusted, roots that the user disables remain trusted, and the application's
+network security configuration does not apply. `SSL_CERT_FILE` and
+`SSL_CERT_DIR` have no effect.
+
+macOS and iOS builds pass the server's certificate chain and host name to the
+system's trust evaluation (`SecTrustEvaluateWithError`). It applies the system's
+trusted roots and trust settings, including roots that an administrator or user
+adds to the keychain, and Apple's requirements for TLS server certificates.
+`SSL_CERT_FILE` and `SSL_CERT_DIR` have no effect on these platforms.
+
+A server whose certificate cannot be verified is rejected. Servers should
+send the intermediate certificates needed to build the chain. Verification
+uses intermediates supplied by the server or available locally. Fetching
+missing intermediates over the network is disabled.
+
+Plain HTTP connections are unaffected by these TLS settings, and a redirect
+from an HTTPS URL to a non-HTTPS URL is rejected.
+
 ### PKCS#11 settings {#pkcs11-settings}
 
 - `pkcs11.driver.path` – PKCS#11 driver library to be used when communicating
@@ -186,7 +232,8 @@ parameters listed below.
 - `proxy.pass` – Specifies the proxy password.
 - `proxy.tunnelSSL` – May be used to enable downloading TSL-s in case of HTTPS
   connections and proxy. If enabled, the library tries to download use the proxy
-  tunnel also for the HTTPS session.
+  tunnel also for the HTTPS session. If the proxy answers the `CONNECT` request
+  with a redirect, setting up the tunnel fails; the redirect is not followed.
 - `proxy.forceSSL` – May be used to enable downloading TSL-s in case of HTTPS
   connections and proxy. If enabled then the library tries to pass by the proxy
   connection in case of HTTPS sessions.

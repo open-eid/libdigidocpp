@@ -46,6 +46,7 @@ Multi-Arch: same
 Pre-Depends:
  ${misc:Pre-Depends}
 Depends:
+ ca-certificates,
  libdigidocpp-common (= ${binary:Version}),
  ${misc:Depends},
  ${shlibs:Depends}

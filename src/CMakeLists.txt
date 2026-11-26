@@ -1,19 +1,19 @@
 # SPDX-FileCopyrightText: Estonian Information System Authority
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
+set(CMAKE_POSITION_INDEPENDENT_CODE YES)
+set_env(BUILD_NUMBER 0)
+set(VERSION ${PROJECT_VERSION}.${BUILD_NUMBER})
+
 if(TARGET PkgConfig::MINIZIP)
     add_library(minizip ALIAS PkgConfig::MINIZIP)
 else()
     message(STATUS "MiniZip not found; using bundled copy.")
     add_library(minizip STATIC minizip/zip.c minizip/unzip.c minizip/ioapi.c $<$<PLATFORM_ID:Windows>:minizip/iowin32.c>)
     target_compile_options(minizip PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-parameter -Wno-unused-value>)
-    set_target_properties(minizip PROPERTIES POSITION_INDEPENDENT_CODE YES)
     target_compile_definitions(minizip PRIVATE NOUNCRYPT NOCRYPT $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN UNICODE>)
     target_link_libraries(minizip ZLIB::ZLIB)
 endif()
-
-set_env(BUILD_NUMBER 0)
-set(VERSION ${PROJECT_VERSION}.${BUILD_NUMBER})
 
 configure_file( libdigidocpp.pc.cmake libdigidocpp.pc @ONLY )
 configure_file(${PROJECT_SOURCE_DIR}/etc/digidocpp.conf.cmake digidocpp.conf)
@@ -72,7 +72,7 @@ add_library(digidocpp_util STATIC
     util/File.cpp
     util/log.cpp
 )
-
+target_compile_definitions(digidocpp_util PRIVATE $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,digidocpp_EXPORTS,digidocpp_STATIC>)
 target_link_libraries(digidocpp_util
     PUBLIC $<BUILD_INTERFACE:digidocpp_ver>
     PRIVATE $<$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:iOS>>:-framework\ CoreFoundation>
@@ -86,19 +86,15 @@ add_library(digidocpp_tsl STATIC
     util/DateTime.cpp
     XMLDocument.h
 )
-
 target_compile_definitions(digidocpp_tsl PRIVATE $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,digidocpp_EXPORTS,digidocpp_STATIC>)
-target_compile_definitions(digidocpp_util PRIVATE $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,digidocpp_EXPORTS,digidocpp_STATIC>)
-set_target_properties(digidocpp_util digidocpp_tsl PROPERTIES POSITION_INDEPENDENT_CODE YES)
-
-target_include_directories(digidocpp_tsl PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-
+target_include_directories(digidocpp_tsl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(digidocpp_tsl
     digidocpp_util
     ZLIB::ZLIB
     LibXml2::LibXml2
     OpenSSL::SSL
     xmlsec
+    $<$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:iOS>>:-framework\ Security>
 )
 
 add_library(digidocpp
@@ -154,13 +150,12 @@ set_target_properties(digidocpp PROPERTIES
     MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${PROJECT_VERSION}
     MACOSX_FRAMEWORK_BUNDLE_VERSION ${BUILD_NUMBER}
     MACOSX_RPATH YES
-    POSITION_INDEPENDENT_CODE YES
 )
 
 target_include_directories(digidocpp PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:include>
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
 )
 target_link_libraries(digidocpp PRIVATE ${CMAKE_DL_LIBS} minizip digidocpp_tsl)
 
