@@ -11,7 +11,6 @@
 #include "util/File.h"
 
 #include <array>
-#include <charconv>
 #include <chrono>
 #include <fstream>
 #include <future>
@@ -198,6 +197,16 @@ vector<TSL::Service> TSL::parse(const string &url, const vector<X509Cert> &certs
             catch(const Exception &e)
             {
                 debugException(e);
+                ERR("TSL %s Failed to validate list", p.territory.c_str());
+                return {};
+            }
+            catch(const std::exception &e)
+            {
+                ERR("TSL %s Failed to validate list: %s", p.territory.c_str(), e.what());
+                return {};
+            }
+            catch(...)
+            {
                 ERR("TSL %s Failed to validate list", p.territory.c_str());
                 return {};
             }
@@ -406,10 +415,11 @@ vector<TSL::Pointer> TSL::pointers() const
 
 unsigned long long TSL::sequenceNumber() const
 {
+    auto number = trim(schemeInformation/"TSLSequenceNumber", " \t\r\n");
+    if(number.starts_with('+'))
+        number.remove_prefix(1);
     unsigned long long value{};
-    if(string_view num = schemeInformation/"TSLSequenceNumber"; !num.empty())
-        from_chars(num.data(), num.data() + num.size(), value);
-    return value;
+    return parseInteger(number, value, 10) ? value : 0;
 }
 
 vector<X509Cert> TSL::serviceDigitalIdentity(XMLNode service, string_view ctx)

@@ -129,6 +129,16 @@ void digidoc::initialize(const string &appInfo, const string &userAgent, initCal
                 ERR("Failed to load TSL lists: %s", e.msg().c_str());
                 callBack(&e);
             }
+            catch(const std::exception &e) {
+                Exception ex(EXCEPTION_PARAMS("Failed to load TSL lists: %s", e.what()));
+                ERR("%s", ex.msg().c_str());
+                callBack(&ex);
+            }
+            catch(...) {
+                Exception ex(EXCEPTION_PARAMS("Failed to load TSL lists: unknown error"));
+                ERR("%s", ex.msg().c_str());
+                callBack(&ex);
+            }
         }).detach();
     }
     else

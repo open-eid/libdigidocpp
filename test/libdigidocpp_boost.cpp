@@ -11,9 +11,11 @@
 #include <Signature.h>
 #include <XmlConf.h>
 #include <XMLDocument.h>
+#include <crypto/Connect_p.h>
 #include <crypto/Digest.h>
 #include <crypto/OpenSSLHelpers.h>
 #include <crypto/PKCS12Signer.h>
+#include <crypto/TSL.h>
 #include <crypto/X509Crypto.h>
 #include <util/DateTime.h>
 #include <util/log.h>
@@ -25,9 +27,17 @@
 #include <openssl/x509.h>
 #include <zlib.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <array>
+#include <chrono>
 #include <cstdint>
+#include <ctime>
 #include <fstream>
+#include <future>
+#include <thread>
 
 namespace digidoc
 {
@@ -906,6 +916,232 @@ BOOST_AUTO_TEST_CASE(XmlConfCase) {
     BOOST_CHECK_EQUAL(c.TSUrlArchive(), tsarchiveurl);
     BOOST_CHECK_EQUAL(c.TSUrl(), tsurl);
     BOOST_CHECK(c.TSCertsArchive() == c.TSCerts());
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(tslSequenceNumber)
+{
+    XMLDocument doc("TSL.xml");
+    auto number = doc/"SchemeInformation"/"TSLSequenceNumber";
+    BOOST_REQUIRE(bool(number));
+    number = " \t+0042 \n"sv;
+    TemporaryContainer temporary;
+    BOOST_REQUIRE(doc.save(temporary.name()));
+    BOOST_CHECK_EQUAL(TSL(temporary.name()).sequenceNumber(), 42ULL);
+}
+
+BOOST_AUTO_TEST_SUITE(ConnectSuite)
+namespace {
+Connect::Result rawHttpResponse(string_view response, chrono::milliseconds delay = {}, string_view method = "GET")
+{
+    auto listener = make_unique_ptr<BIO_free_all>(BIO_new_accept("127.0.0.1:0"));
+    BOOST_REQUIRE(listener);
+    BOOST_REQUIRE_EQUAL(BIO_do_accept(listener.get()), 1);
+    auto address = make_unique_ptr<BIO_ADDR_free>(BIO_ADDR_new());
+    BOOST_REQUIRE(address);
+    union BIO_sock_info_u info {};
+    info.addr = address.get();
+    BOOST_REQUIRE_EQUAL(BIO_sock_info(BIO_get_fd(listener.get(), nullptr), BIO_SOCK_INFO_ADDRESS, &info), 1);
+    char *port = BIO_ADDR_service_string(address.get(), 1);
+    BOOST_REQUIRE(port);
+    string url = "http://127.0.0.1:" + string(port) + '/';
+    OPENSSL_free(port);
+
+    auto server = async(launch::async, [&listener, response, delay] {
+        if(BIO_do_accept(listener.get()) != 1)
+            return;
+        auto client = make_unique_ptr<BIO_free_all>(BIO_pop(listener.get()));
+        string request;
+        array<char, 1024> buf{};
+        while(request.find("\r\n\r\n") == string::npos)
+        {
+            int rc = BIO_read(client.get(), buf.data(), int(buf.size()));
+            if(rc <= 0)
+                return;
+            request.append(buf.data(), size_t(rc));
+        }
+        this_thread::sleep_for(delay);
+        BIO_write(client.get(), response.data(), int(response.size()));
+        (void)BIO_flush(client.get());
+    });
+    struct Join {
+        future<void> &f;
+        ~Join() { f.wait(); }
+    } join{server};
+    return Connect(url, method, 5).exec();
+}
+
+bool isNetworkError(const Exception &e, string_view text)
+{
+    return e.code() == Exception::NetworkError && exceptionContains(e, text);
+}
+
+string compressZeros(size_t size, int windowBits)
+{
+    const string data(size, '\0');
+    z_stream s {
+        .next_in = (Bytef*)data.data(),
+        .avail_in = uInt(data.size())
+    };
+    BOOST_REQUIRE_EQUAL(deflateInit2(&s, Z_BEST_COMPRESSION, Z_DEFLATED, windowBits, 8, Z_DEFAULT_STRATEGY), Z_OK);
+    auto stream = make_unique_ptr<deflateEnd>(&s);
+    string out(deflateBound(&s, uLong(size)), 0);
+    s.next_out = (Bytef*)out.data();
+    s.avail_out = uInt(out.size());
+    BOOST_REQUIRE_EQUAL(deflate(&s, Z_FINISH), Z_STREAM_END);
+    out.resize(s.total_out);
+    return out;
+}
+}
+
+static_assert([] {
+    string_view data = "A\r\nB\nC";
+    string_view line;
+    return nextLine(data, line) && line == "A" && nextLine(data, line) && line == "B" &&
+        !nextLine(data, line) && data == "C";
+}());
+static_assert(headerEnd("A\n\nB") == 3);
+static_assert(headerEnd("A\r\n\r\nB") == 5);
+static_assert(headerEnd("\n") == 1);
+static_assert(headerEnd("\r\n") == 2);
+static_assert(headerEnd("A\r\r\n\r\n") == 6);
+static_assert(headerEnd("A\r\nB\r\n") == string_view::npos);
+static_assert(headerEnd("") == string_view::npos);
+
+BOOST_AUTO_TEST_CASE(headerLineEndings)
+{
+    Connect::Result r = rawHttpResponse("HTTP/1.1 200 OK\nContent-Type: text/plain\n\nbody");
+    BOOST_CHECK(r.isOK());
+    BOOST_CHECK_EQUAL(r.headers["content-type"], "text/plain");
+    BOOST_CHECK_EQUAL(r.content, "body");
+
+    r = rawHttpResponse("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nbody");
+    BOOST_CHECK_EQUAL(r.headers["content-type"], "text/plain");
+    BOOST_CHECK_EQUAL(r.content, "body");
+
+    r = rawHttpResponse("HTTP/1.1 200 OK\r\nContent-Type:text/plain\r\nX-Padded: \t value \t\r\nX-Empty:\r\nX-Bare\r\n\r\nbody");
+    BOOST_CHECK_EQUAL(r.headers["content-type"], "text/plain");
+    BOOST_CHECK_EQUAL(r.headers["x-padded"], "value");
+    BOOST_CHECK(r.headers.contains("x-empty") && r.headers["x-empty"].empty());
+    BOOST_CHECK(r.headers.contains("x-bare") && r.headers["x-bare"].empty());
+    BOOST_CHECK_EQUAL(r.content, "body");
+
+    for(string_view response: {"HTTP/1.1 200 OK\r\nContent-Type: text/plain", "HTTP/1.1 200 OK\r\n", ""})
+    {
+        BOOST_TEST_CONTEXT(response)
+        BOOST_CHECK_EXCEPTION(rawHttpResponse(response), Exception,
+            [](const Exception &e) { return isNetworkError(e, "missing end of headers"); });
+    }
+
+    r = rawHttpResponse("\n");
+    BOOST_CHECK(!r.isOK());
+    BOOST_CHECK(r.content.empty());
+}
+
+BOOST_AUTO_TEST_CASE(chunkedResponse)
+{
+    constexpr string_view header = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n";
+    auto response = [header](string_view body) { return string(header).append(body); };
+    BOOST_CHECK_EQUAL(rawHttpResponse(response("4;name=value\r\nWiki\r\n5\r\npedia\r\n0\r\n\r\n")).content, "Wikipedia");
+    BOOST_CHECK_EQUAL(rawHttpResponse(response("4 \t;name=value\r\nWiki\r\n0\r\n\r\n")).content, "Wiki");
+
+    for(string_view body: {"zz\r\n", "-1\r\n", "\r\n", "1 \r\nx\r\n0\r\n\r\n", " ;name\r\nx\r\n0\r\n\r\n", "10000000000000000\r\n"})
+    {
+        BOOST_TEST_CONTEXT(body)
+        BOOST_CHECK_EXCEPTION(rawHttpResponse(response(body)), Exception,
+            [](const Exception &e) { return isNetworkError(e, "chunk size"); });
+    }
+    for(string_view body: {"a\r\nabc", "3\r\nabcde\r\n0\r\n\r\n", "3\r\nabc"})
+    {
+        BOOST_TEST_CONTEXT(body)
+        BOOST_CHECK_EXCEPTION(rawHttpResponse(response(body)), Exception,
+            [](const Exception &e) { return isNetworkError(e, "truncated chunk"); });
+    }
+    BOOST_CHECK_EXCEPTION(rawHttpResponse(response("")), Exception,
+        [](const Exception &e) { return isNetworkError(e, "missing chunk size"); });
+    BOOST_CHECK_EQUAL(rawHttpResponse(response("4\r\nWiki\r\n0\r\nX-Trailer: 1\r\n\r\n")).content, "Wiki");
+    for(string_view body: {"4\r\nWiki\r\n0\r\n", "4\r\nWiki\r\n0\r\nX-Trailer: 1\r\n"})
+    {
+        BOOST_TEST_CONTEXT(body)
+        BOOST_CHECK_EXCEPTION(rawHttpResponse(response(body)), Exception,
+            [](const Exception &e) { return isNetworkError(e, "missing final CRLF"); });
+    }
+}
+
+BOOST_AUTO_TEST_CASE(bodylessResponses)
+{
+    Connect::Result r = rawHttpResponse("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nETag: \"tag\"\r\n\r\n", {}, "HEAD");
+    BOOST_CHECK(r.isOK());
+    BOOST_CHECK_EQUAL(r.headers["etag"], "\"tag\"");
+    BOOST_CHECK(r.content.empty());
+    r = rawHttpResponse("HTTP/1.1 304 Not Modified\r\nTransfer-Encoding: chunked\r\n\r\n");
+    BOOST_CHECK(r.content.empty());
+    r = rawHttpResponse("HTTP/1.1 204 No Content\r\nContent-Encoding: gzip\r\n\r\n");
+    BOOST_CHECK(r.content.empty());
+}
+
+BOOST_AUTO_TEST_CASE(statusCodeToken)
+{
+    Connect::Result r = rawHttpResponse("HTTP/1.1 200 Not 204 or 304\r\n\r\nbody");
+    BOOST_CHECK(r.isOK());
+    BOOST_CHECK(!r.isStatusCode("204") && !r.isStatusCode("304"));
+    BOOST_CHECK_EQUAL(r.content, "body");
+    for(string_view response: {"HTTP/1.1 2000 OK\r\n\r\n", "HTTP/1.1 404 Not 200\r\n\r\n", "HTTP/1.1\r\n\r\n"})
+    {
+        BOOST_TEST_CONTEXT(response)
+        BOOST_CHECK(!rawHttpResponse(response).isOK());
+    }
+    BOOST_CHECK(rawHttpResponse("HTTP/1.1 200\r\n\r\n").isOK());
+}
+
+// clock() measures wall time on Windows, so use the process times there.
+chrono::milliseconds processCpuTime()
+{
+#ifdef _WIN32
+    FILETIME creation, exit, kernel, user;
+    if(!GetProcessTimes(GetCurrentProcess(), &creation, &exit, &kernel, &user))
+        return {};
+    auto ticks = [](FILETIME t) { return (uint64_t(t.dwHighDateTime) << 32) | t.dwLowDateTime; };
+    return chrono::duration_cast<chrono::milliseconds>(chrono::duration<uint64_t, ratio<1, 10'000'000>>(ticks(kernel) + ticks(user)));
+#else
+    return chrono::milliseconds(clock() * 1000 / CLOCKS_PER_SEC);
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(waitsForSlowResponseWithoutSpinning)
+{
+    constexpr auto delay = chrono::milliseconds(500);
+    const auto cpu = processCpuTime();
+    Connect::Result r = rawHttpResponse("HTTP/1.1 200 OK\r\n\r\nbody", delay);
+    const auto used = processCpuTime() - cpu;
+    BOOST_CHECK_EQUAL(r.content, "body");
+    BOOST_CHECK_LT(used.count(), delay.count() / 2);
+}
+
+BOOST_AUTO_TEST_CASE(malformedContentEncoding)
+{
+    for(string_view encoding: {"gzip", "deflate"})
+    {
+        BOOST_TEST_CONTEXT(encoding)
+        BOOST_CHECK_EXCEPTION(rawHttpResponse(
+            string("HTTP/1.1 200 OK\r\nContent-Encoding: ").append(encoding).append("\r\n\r\nnot compressed")),
+            Exception, [](const Exception &e) { return isNetworkError(e, "Failed to decompress HTTP content"); });
+    }
+}
+
+BOOST_AUTO_TEST_CASE(decompressedResponseLimit)
+{
+    for(const auto &[encoding, windowBits]: {pair{"gzip", 16 + MAX_WBITS}, pair{"deflate", -MAX_WBITS}})
+    {
+        BOOST_TEST_CONTEXT(encoding)
+        {
+            BOOST_CHECK_EQUAL(decompress(encoding, compressZeros(MAX_RESPONSE_SIZE, windowBits)).size(), MAX_RESPONSE_SIZE);
+            BOOST_CHECK_EXCEPTION(decompress(encoding, compressZeros(MAX_RESPONSE_SIZE + 1, windowBits)), Exception,
+                [](const Exception &e) { return isNetworkError(e, "HTTP decompressed response exceeds maximum allowed size"); });
+        }
+    }
+    BOOST_CHECK_EQUAL(decompress("br", "body"), "body");
+    BOOST_CHECK(decompress("gzip", {}).empty());
 }
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using BIO = struct bio_st;
@@ -25,10 +26,14 @@ public:
         {
             return isOK();
         }
-        template<class T>
-        inline bool isStatusCode(T code) const noexcept
+        bool isStatusCode(std::string_view code) const noexcept
         {
-            return result.find(std::forward<T>(code)) != std::string::npos;
+            std::string_view line = result;
+            if(size_t start = line.find(' '); start != std::string_view::npos)
+                line.remove_prefix(start + 1);
+            else
+                return false;
+            return line.substr(0, line.find(' ')) == code;
         }
         bool isOK() const noexcept
         {
@@ -61,7 +66,6 @@ private:
 
     void addHeader(std::string_view key, std::string_view value);
     void sendProxyAuth();
-    static std::string decompress(const std::string &encoding, const std::string &data) ;
 
     std::string baseurl, userAgentData;
     std::string_view method, version;
