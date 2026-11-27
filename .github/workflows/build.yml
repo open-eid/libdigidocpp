@@ -440,6 +440,7 @@ jobs:
           -src/minizip/*
           -**:cpp/poorly-documented-function
           -**:cpp/loop-variable-changed
+          -test/**:cpp/short-global-name
         input: sarif-results/cpp.sarif
         output: sarif-results/cpp.sarif
     - name: Upload results
