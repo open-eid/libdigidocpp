@@ -276,6 +276,30 @@ BOOST_AUTO_TEST_CASE(nestedWarningRemainsWarning)
     BOOST_REQUIRE_EQUAL(validator.warnings().size(), 1U);
     BOOST_CHECK_EQUAL(validator.warnings().front(), Exception::SignatureDigestWeak);
 }
+
+BOOST_AUTO_TEST_CASE(generalWarningDiagnosticsCanBeHidden)
+{
+    Exception warning(EXCEPTION_PARAMS("SiVa warning"));
+    warning.setCode(Exception::GeneralWarning);
+    Exception result(EXCEPTION_PARAMS("Signature validation"), warning);
+    ThrowingSignature signature(result);
+
+    Signature::Validator validator(&signature);
+    BOOST_CHECK_EQUAL(validator.status(), Signature::Validator::Warning);
+    BOOST_CHECK_EQUAL(validator.diagnostics(), "SiVa warning\n");
+
+    Signature::Validator quiet(&signature, false);
+    BOOST_CHECK_EQUAL(quiet.status(), Signature::Validator::Warning);
+    BOOST_CHECK(quiet.diagnostics().empty());
+    BOOST_REQUIRE_EQUAL(quiet.warnings().size(), 1U);
+    BOOST_CHECK_EQUAL(quiet.warnings().front(), Exception::GeneralWarning);
+
+    result.addCause(Exception(EXCEPTION_PARAMS("Invalid signature")));
+    ThrowingSignature invalid(std::move(result));
+    Signature::Validator quietInvalid(&invalid, false);
+    BOOST_CHECK_EQUAL(quietInvalid.status(), Signature::Validator::Invalid);
+    BOOST_CHECK_EQUAL(quietInvalid.diagnostics(), "Invalid signature\n");
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(LogSuite)

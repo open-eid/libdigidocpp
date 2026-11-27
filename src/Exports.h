@@ -13,14 +13,14 @@
     #define DIGIDOCPP_EXPORT __declspec(dllimport)
   #endif
   #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    #define DIGIDOCPP_DEPRECATED __declspec(deprecated)
+    #define DIGIDOCPP_DEPRECATED [[deprecated]]
   #else
     #define DIGIDOCPP_DEPRECATED
   #endif
   #pragma warning( disable: 4251 ) // shut up std::vector warnings
 #else
   #define DIGIDOCPP_EXPORT __attribute__ ((visibility("default")))
-  #define DIGIDOCPP_DEPRECATED __attribute__ ((__deprecated__))
+  #define DIGIDOCPP_DEPRECATED [[deprecated]]
 #endif
 
 #define DISABLE_COPY(Class) \

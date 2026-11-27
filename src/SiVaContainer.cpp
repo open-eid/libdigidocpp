@@ -71,6 +71,11 @@ void SignatureSiVa::validate(const string &policy) const
     try {
         for(const Exception &exception: _exceptions)
             e.addCause(exception);
+        for(const Exception &warning: _warnings)
+        {
+            if(!Exception::hasWarningIgnore(warning.code()))
+                e.addCause(warning);
+        }
         if(!Exception::hasWarningIgnore(Exception::SignatureDigestWeak) &&
             Digest::isWeakDigest(_signatureMethod))
         {
@@ -255,15 +260,15 @@ void SiVaContainer::validate(istream &document, const string &fileName, Containe
         for(const json &warning: signature.value<json>("warnings", {}))
         {
             string message = warning["content"];
-            Exception ex(EXCEPTION_PARAMS("%s", message.c_str()));
+            if(message == "Old and unsupported format: SK-XML version: 1.0")
+                continue;
+            auto code = Exception::GeneralWarning;
             if(message == "X509IssuerName has none or invalid namespace: null" ||
                 message == "X509SerialNumber has none or invalid namespace: null")
-                ex.setCode(Exception::IssuerNameSpaceWarning);
+                code = Exception::IssuerNameSpaceWarning;
             else if(message.find("Bad digest for DataFile") != string::npos)
-                ex.setCode(Exception::DataFileNameSpaceWarning);
-            else if(message == "Old and unsupported format: SK-XML version: 1.0")
-                continue;
-            WARN("%s", message.c_str());
+                code = Exception::DataFileNameSpaceWarning;
+            s->_warnings.emplace_back(EXCEPTION_PARAMS("%s", message.c_str())).setCode(code);
         }
         d->signatures.push_back(s.release());
     }

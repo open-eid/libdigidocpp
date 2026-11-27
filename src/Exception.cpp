@@ -82,6 +82,10 @@ std::vector<Exception::ExceptionCode> Exception::ignores {};
  * @var digidoc::Exception::MimeTypeWarning
  * Mime type is not conformant mime-type strings
  * @since 3.13.2
+ * @var digidoc::Exception::GeneralWarning
+ * Validation warning without a more specific code. The message contains the
+ * warning text, for example a warning returned by the SiVa validation service.
+ * @since 4.6.0
  *
  * @var digidoc::Exception::DDocError
  * DDoc libdigidoc error codes bit masked

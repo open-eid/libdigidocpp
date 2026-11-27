@@ -15,8 +15,8 @@ Available optional options on all commands:
 | Option                   | Description                                                      |
 |--------------------------|------------------------------------------------------------------|
 | `--nocolor`              | Disable terminal colors                                          |
-| `--loglevel=level`       | 0: errors, 1: warnings, 2: info, 3 or higher: debug                |
-| `--logfile=`             | File to log, empty to console                                    |
+| `--loglevel=level`       | 0: errors, 1: warnings, 2: info, 3 or higher: debug              |
+| `--logfile=<file>`       | Write logs to this file instead of the configured destination    |
 
 Each log level includes messages from the lower levels.
 
@@ -192,10 +192,12 @@ Available options:
 
 On Windows, reserved device names are prefixed with an underscore (CON becomes _CON). Characters that are invalid in Windows filenames, control characters, and trailing spaces or dots are replaced with underscores. Extraction fails rather than overwriting an existing output file.
 
-`--warnings` enables to choose the displaying of validation warnings (if present) of the file being opened. Can be used to test the warnings system of the utility program (see also "Validation status VALID WITH WARNINGS"). The options include:
-- warning – the default value used. The minor technical errors that are considered as warnings, are printed out as warnings.
-- error – the errors that are otherwise considered as warnings (by the utility program), are printed out as errors.
-- ignore – the errors that are otherwise considered as warnings (by the utility program), are not printed out. If there are any other errors present then these are treated as usual.
+`--warnings` controls how the tool reports validation warnings.
+
+- `warning` shows warning codes and messages. This is the default.
+- `error` shows warning codes and messages and fails validation on warnings.
+- `ignore` hides warning codes and messages. The validation status and any
+  error messages are still shown.
 
 Output of the default command contains the following data of the container:
 ```
@@ -283,7 +285,7 @@ Output:
       TS time:
       TSA:
       TSA time:
-      Warnings: RefereneceDigestWeak, SignatureDigestWeak,
+      Warnings: ReferenceDigestWeak, SignatureDigestWeak
 ```
 
 ```
@@ -332,8 +334,8 @@ Command "sign" enables adding XAdES signatures to existing ASiC-E and legacy BDO
 | `--country=`                   | Optional | Country of origin, ISO 3166 2-character code (e.g. EE)  |
 | `--role=`                      | Optional | Signer’s role, can occur multiple times                 |
 | `--sha(224,256,384,512)`       | Optional | Select the default digest for references and time-stamps (testing) |
-| `--sigsha(224,256,384,512)`    | Optional | Select the RSA signature hash (testing)                |
-| `--sigpsssha(224,256,384,512)` | Optional | Select the RSA signature hash and enable RSA-PSS       |
+| `--sigsha(224,256,384,512)`    | Optional | Select the RSA signature hash (testing)                 |
+| `--sigpsssha(224,256,384,512)` | Optional | Select the RSA signature hash and enable RSA-PSS        |
 | `--rsapkcs15`                  | Optional | Change RSA signature padding to PKCS1.5                 |
 | `--rsapss`                     | Optional | Change RSA signature padding to PSS                     |
 | `--tsurl=`                     | Optional | Change TS URL                                           |

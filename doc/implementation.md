@@ -20,6 +20,10 @@ These add-time checks do not monitor later changes to the source or guarantee
 that metadata fits within the reserve; the reader applies its 2 GiB limit to
 all entries, including metadata.
 
+In-memory reads of ZIP metadata entries, such as manifests and signature XML,
+have a 10 MiB limit per entry. Data-file extraction uses separate limits and
+can stream entries to temporary files.
+
 This page documents build dependencies, bundled schema adaptations,
 interoperability testing, and certificate-validation behavior relevant to
 maintainers and advanced integrators.
@@ -351,6 +355,12 @@ file coverage and archive time-stamp checks. With that compatibility
 workaround removed, `/test1.txt` no longer covers `test1.txt`. A relative
 path such as `folder/test1.txt` still works where the format permits it.
 
+## HTTP response limits {#http-response-limits}
+
+The HTTP client limits the received response to 10 MiB. When decompressing a
+response body, its output buffer can grow to 16 MiB and the client rejects a
+body that fills that buffer.
+
 ## Online validation through SiVa {#siva-requests}
 
 PDF files, legacy DDoc files and ASiC containers with CAdES signatures are not
@@ -391,6 +401,17 @@ validation is not allowed, or when DDoc parsing or the SiVa request fails, the
 container is opened as a plain time-stamped ASiC-S container and the `.ddoc`
 file is its only data file. A SiVa report that marks a DDoc signature invalid
 still exposes that signature and its validation errors.
+
+Signature errors and warnings in the SiVa report are returned as causes of the
+exception thrown by digidoc::Signature::validate. Known DDoc namespace warnings
+use digidoc::Exception::IssuerNameSpaceWarning and
+digidoc::Exception::DataFileNameSpaceWarning; all other SiVa warnings use
+digidoc::Exception::GeneralWarning, with the warning text as the message. The
+"Old and unsupported format: SK-XML version: 1.0" warning is not returned,
+because it describes the container format, not the signature. Each call to
+digidoc::Signature::validate applies the current warning ignore list
+(digidoc::Exception::addWarningIgnore) to the stored report warnings.
+Container-level warnings in the report are not returned.
 
 ## Interoperability testing {#testing}
 

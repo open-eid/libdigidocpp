@@ -19,6 +19,7 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <span>
 #include <sstream>
 #include <unordered_map>
 
@@ -50,6 +51,9 @@ static ostream &operator<<(ostream &os, const vector<unsigned char> &data)
     return os << dec << nouppercase << setfill(' ');
 }
 
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
+DIGIDOCPP_WARNING_DISABLE_MSVC(4996)
 static ostream &operator<<(ostream &os, const Exception::ExceptionCode code)
 {
     switch(code)
@@ -78,6 +82,7 @@ static ostream &operator<<(ostream &os, const Exception::ExceptionCode code)
     case Exception::IssuerNameSpaceWarning: return os << "IssuerNameSpaceWarning";
     case Exception::ProducedATLateWarning: return os << "ProducedATLateWarning";
     case Exception::MimeTypeWarning: return os << "MimeTypeWarning";
+    case Exception::GeneralWarning: return os << "GeneralWarning";
     case Exception::DDocError: return os << "DDocError";
     }
     return os;
@@ -104,6 +109,7 @@ static ostream &operator<<(ostream &os, Signature::Validator::Status status)
     }
     return os;
 }
+DIGIDOCPP_WARNING_POP
 
 static ostream &endl(ostream &os)
 {
@@ -313,7 +319,7 @@ public:
         WIgnore
     };
 
-    ToolConfig(int argc, char *argv[]);
+    ToolConfig(span<char *> options);
     int logLevel() const final { return _logLevel.value_or(XmlConfCurrent::logLevel()); }
     string logFile() const final { return _logFile.value_or(XmlConfCurrent::logFile()); }
     string digestUri() const final { return uri.value_or(XmlConfCurrent::digestUri()); }
@@ -385,7 +391,7 @@ static int printUsage(const char *executable)
     << "  Command open:" << endl
     << "    Example: " << executable << " open container-file.asice" << endl
     << "    Available options:" << endl
-    << "      --warnings=(ignore,warning,error) - warning handling (default warning)" << endl
+    << "      --warnings=(ignore,warning,error) - hide warning details, show them (default), or fail on warnings" << endl
     << "      --extractAll[=path]    - extracts documents without validating signatures (to path when provided)" << endl
     << "      --validateOnExtract    - validates container before extracting files" << endl << endl
     << "      --offline              - Do not send the container to SiVa. TSL updates can still occur." << endl << endl
@@ -453,7 +459,7 @@ static int printUsage(const char *executable)
     << "  All commands:" << endl
     << "      --nocolor      - Disable terminal colors" << endl
     << "      --loglevel=    - 0: errors, 1: warnings, 2: info, 3 or higher: debug" << endl
-    << "      --logfile=     - File to log, empty to console" << endl << endl
+    << "      --logfile=     - Write logs to the specified file instead of the configured destination" << endl << endl
     << "  Testing with a custom trust list:" << endl
     << "      --tslurl=      - URL of the test list of trusted lists (LOTL)" << endl
     << "      --tslcert=     - File containing the test LOTL signing certificate" << endl;
@@ -465,15 +471,15 @@ string_view ToolConfig::GREEN = "\033[32m";
 string_view ToolConfig::YELLOW = "\033[33m";
 string_view ToolConfig::RESET = "\033[0m";
 
-ToolConfig::ToolConfig(int argc, char *argv[])
+ToolConfig::ToolConfig(span<char *> options)
 {
-    for(int i = 2; i < argc; i++)
+    for(auto i = options.begin(); i != options.end(); ++i)
     {
-        string_view arg(argv[i]);
+        string_view arg(*i);
         if(value v{arg, "--profile="}) profile = v;
         else if(value v{arg, "--file="})
         {
-            value mime(i+1 < argc ? argv[i+1] : string_view(), "--mime=");
+            value mime(i + 1 != options.end() ? *(i + 1) : string_view(), "--mime=");
             files.emplace(v, mime ? mime : "application/octet-stream");
         }
 #ifdef _WIN32
@@ -566,6 +572,9 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
     return signer;
 }
 
+DIGIDOCPP_WARNING_PUSH
+DIGIDOCPP_WARNING_DISABLE_GCC("-Wdeprecated-declarations")
+DIGIDOCPP_WARNING_DISABLE_MSVC(4996)
 /**
  * Validate signature.
  *
@@ -575,7 +584,7 @@ unique_ptr<Signer> ToolConfig::getSigner(bool getwebsigner) const
 static int validateSignature(const Signature *s, ToolConfig::Warning warning = ToolConfig::WWarning)
 {
     int returnCode = EXIT_SUCCESS;
-    Signature::Validator v(s);
+    Signature::Validator v(s, warning != ToolConfig::WIgnore);
     cout << "    Validation: ";
     switch (v.status()) {
     case Signature::Validator::Valid:
@@ -600,23 +609,28 @@ static int validateSignature(const Signature *s, ToolConfig::Warning warning = T
     if(!v.warnings().empty() && warning != ToolConfig::WIgnore)
     {
         cout << "    Warnings: " << ToolConfig::YELLOW;
+        string_view separator;
         for(Exception::ExceptionCode code: v.warnings())
-            cout << code;
+        {
+            cout << separator << code;
+            separator = ", ";
+        }
         cout << ToolConfig::RESET << endl;
     }
-    if(!v.diagnostics().empty())
-        cout << "    Exception:" << endl << v.diagnostics() << endl;
+    if(auto diagnostics = v.diagnostics(); !diagnostics.empty())
+        cout << "    Exception:" << endl << diagnostics << endl;
     return returnCode;
 }
+DIGIDOCPP_WARNING_POP
 
 /**
  * Open container
  *
- * @param argc number of command line arguments.
- * @param argv command line arguments.
+ * @param options command line options after the command name.
+ * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int open(int argc, char* argv[])
+static int open(span<char *> options, const char *program)
 {
     ToolConfig::Warning reportwarnings = ToolConfig::WWarning;
     value path;
@@ -630,9 +644,8 @@ static int open(int argc, char* argv[])
     } cb;
 
     // Parse command line arguments.
-    for(int i = 2; i < argc; i++)
+    for(string_view arg: options)
     {
-        string_view arg(argv[i]);
         if(arg == "--list")
             continue;
         if(value v{arg, "--warnings="})
@@ -657,7 +670,7 @@ static int open(int argc, char* argv[])
     }
 
     if(path.empty())
-        return printUsage(argv[0]);
+        return printUsage(program);
 
     unique_ptr<Container> doc;
     try {
@@ -717,7 +730,7 @@ static int open(int argc, char* argv[])
     unsigned int pos = 0;
     for(const Signature *s: doc->signatures())
     {
-        cout << "  Signature " << pos++ << " (" << s->profile().c_str() << "):" << endl
+        cout << "  Signature " << pos++ << " (" << s->profile() << "):" << endl
              << "    ID: " << s->id() << endl;
         // Validate signature. Checks, whether signature format is correct
         // and signed documents checksums are correct.
@@ -774,19 +787,18 @@ static int open(int argc, char* argv[])
 /**
  * Extend signatures in container.
  *
- * @param argc number of command line arguments.
- * @param argv command line arguments.
+ * @param options command line options after the command name.
+ * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int extend(int argc, char *argv[])
+static int extend(span<char *> options, const char *program)
 {
     vector<unsigned int> extendId;
     bool dontValidate = false;
     CertSigner signer(X509Cert{});
     value path;
-    for(int i = 2; i < argc; i++)
+    for(string_view arg: options)
     {
-        string_view arg(argv[i]);
         if(value v{arg, "--profile="})
             signer.setProfile(v);
         else if(value v{arg, "--signature="})
@@ -798,7 +810,7 @@ static int extend(int argc, char *argv[])
     }
 
     if(path.empty())
-        return printUsage(argv[0]);
+        return printUsage(program);
 
     unique_ptr<Container> doc;
     try {
@@ -847,17 +859,16 @@ static int extend(int argc, char *argv[])
 /**
  * Remove items from container.
  *
- * @param argc number of command line arguments.
- * @param argv command line arguments.
+ * @param options command line options after the command name.
+ * @param program command line argument.
  * @return EXIT_FAILURE (1) - failure, EXIT_SUCCESS (0) - success
  */
-static int remove(int argc, char *argv[])
+static int remove(span<char *> options, const char *program)
 {
     vector<unsigned int> documents, signatures;
     value path;
-    for(int i = 2; i < argc; i++)
+    for(string_view arg: options)
     {
-        string_view arg(argv[i]);
         if(value v{arg, "--document="})
             documents.push_back(unsigned(atoi(v.data())));
         else if(value v{arg, "--signature="})
@@ -867,7 +878,7 @@ static int remove(int argc, char *argv[])
     }
 
     if(path.empty())
-        return printUsage(argv[0]);
+        return printUsage(program);
 
     unique_ptr<Container> doc;
     try {
@@ -1071,7 +1082,7 @@ static int websign(const ToolConfig &p, const char *program)
     return returnCode;
 }
 
-static int tslcmd(int /*argc*/, char* /*argv*/[])
+static int tslcmd()
 {
     int returnCode = EXIT_SUCCESS;
     string cache = CONF(TSLCache);
@@ -1159,16 +1170,18 @@ int main(int argc, char *argv[]) try
     struct codepage_scope {
         ~codepage_scope() noexcept { SetConsoleOutputCP(oldOutputCP); }
         UINT oldOutputCP;
-    };
-    codepage_scope scope{GetConsoleOutputCP()};
+    } scope{GetConsoleOutputCP()};
     SetConsoleOutputCP(CP_UTF8);
 #endif
     printf("Version\n");
     printf("  digidoc-tool version: %s\n", VERSION_STR);
     printf("  libdigidocpp version: %s\n", version().c_str());
 
+    const char *program = argv[0];
+    const span args(argv, size_t(argc));
+    const auto options = args.subspan(min<size_t>(args.size(), 2));
     ToolConfig *conf = nullptr;
-    Conf::init(conf = new ToolConfig(argc, argv));
+    Conf::init(conf = new ToolConfig(options));
     stringstream info;
     info << "digidoc-tool/" << VERSION_STR << " (";
 #ifdef _WIN32
@@ -1185,34 +1198,34 @@ int main(int argc, char *argv[]) try
         cout.flush();
     });
 
-    if(argc < 2)
+    if(args.size() < 2)
     {
-        printUsage(argv[0]);
+        printUsage(program);
         return EXIT_SUCCESS;
     }
 
-    string_view command(argv[1]);
+    string_view command(args[1]);
     if(command == "open")
-        return open(argc, argv);
+        return open(options, program);
     if(command == "create")
-        return create(*conf, argv[0]);
+        return create(*conf, program);
     if(command == "add")
-        return add(*conf, argv[0]);
+        return add(*conf, program);
     if(command == "createBatch")
-        return createBatch(*conf, argv[0]);
+        return createBatch(*conf, program);
     if(command == "remove")
-        return remove(argc, argv);
+        return remove(options, program);
     if(command == "sign")
-        return sign(*conf, argv[0]);
+        return sign(*conf, program);
     if(command == "extend")
-        return extend(argc, argv);
+        return extend(options, program);
     if(command == "websign")
-        return websign(*conf, argv[0]);
+        return websign(*conf, program);
     if(command == "tsl")
-        return tslcmd(argc, argv);
+        return tslcmd();
     if(command == "version")
         return EXIT_SUCCESS;
-    return printUsage(argv[0]);
+    return printUsage(program);
 } catch(const Exception &e) {
     cout << "Caught Exception:" << endl << e;
     return EXIT_FAILURE;
